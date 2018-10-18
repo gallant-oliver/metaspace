@@ -1,5 +1,7 @@
 package org.apache.atlas.model.metadata;
 
+import java.util.List;
+
 public class Table {
     private String tableId;
     private String tableName;
@@ -27,7 +29,17 @@ public class Table {
     private String location;
     private String description;
     private String topic;
+
+    public List<Column> getColumns() {
+        return columns;
+    }
+
+    public void setColumns(List<Column> columns) {
+        this.columns = columns;
+    }
+
     private TablePermission tablePermission;
+    private List<Column> columns;
 
     public String getTableId() {
         return tableId;
