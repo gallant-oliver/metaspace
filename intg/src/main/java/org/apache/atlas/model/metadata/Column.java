@@ -42,6 +42,15 @@ public class Column {
     private String databaseName;
     private String type;
     private String description;
+    private Boolean isPartitionKey;
+
+    public Boolean getPartitionKey() {
+        return isPartitionKey;
+    }
+
+    public void setPartitionKey(Boolean partitionKey) {
+        isPartitionKey = partitionKey;
+    }
 
     public String getColumnId() {
         return columnId;
