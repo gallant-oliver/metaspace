@@ -184,6 +184,13 @@ public class EntityLineageService implements AtlasLineageService {
         return columnIds.contains(e.getValue().getGuid());
     }
 
+    public Integer getMaxLineageDepth(String guid) throws AtlasBaseException {
+        String lineageQuery = getMaxDepthQuery(guid);
+        List edgeMapList = (List)graph.executeGremlinScript(lineageQuery, false);
+
+        return 0;
+    }
+
     private AtlasLineageInfo getLineageInfo(String guid, LineageDirection direction, int depth) throws AtlasBaseException {
         Map<String, AtlasEntityHeader> entities     = new HashMap<>();
         Set<LineageRelation>           relations    = new HashSet<>();
@@ -266,6 +273,13 @@ public class EntityLineageService implements AtlasLineageService {
             lineageQuery = generateLineageQuery(entityGuid, depth, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
         }
 
+        return lineageQuery;
+    }
+
+    private String getMaxDepthQuery(String entityGuid) {
+        String lineageQuery = null;
+        String query =  gremlinQueryProvider.getQuery(AtlasGremlinQuery.MAX_LINEAGE);
+        lineageQuery = String.format(query, entityGuid);
         return lineageQuery;
     }
 
