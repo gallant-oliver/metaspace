@@ -10,39 +10,36 @@
 //
 //
 // ======================================================================
-
-package org.apache.atlas.model.metadata;
+package org.apache.atlas.model.result;
 
 import java.util.List;
-import java.util.Map;
 
-public class TableShow {
-    private String tableId;
-    private List<String> columnNames;
+public class PageResult<E> {
+    private int offset;
+    private int count;
+    private List<E> lists;
 
-    public String getTableId() {
-        return tableId;
+    public int getCount() {
+        return count;
     }
 
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
+    public void setCount(int count) {
+        this.count = count;
     }
 
-    public List<String> getColumnNames() {
-        return columnNames;
+    public List<E> getLists() {
+        return lists;
     }
 
-    public void setColumnNames(List<String> columnNames) {
-        this.columnNames = columnNames;
+    public void setLists(List<E> lists) {
+        this.lists = lists;
     }
 
-    public List<Map<String, String>> getLines() {
-        return lines;
+    public int getOffset() {
+        return offset;
     }
 
-    public void setLines(List<Map<String, String>> lines) {
-        this.lines = lines;
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
-
-    private List<Map<String,String>> lines;
 }
