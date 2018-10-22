@@ -17,6 +17,9 @@
  */
 package org.apache.atlas.utils;
 
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -156,6 +159,12 @@ public final class ParamChecker {
     public static void greaterThan(long value, long minValue, String name) {
         if (value <= minValue) {
             throw new IllegalArgumentException(name + " should be > " + minValue + ", current value " + value);
+        }
+    }
+
+    public static void checkPaging(int offset, int limit) throws AtlasBaseException {
+        if (offset < 0 || limit < 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Limit/offset should be non-negative");
         }
     }
 }
