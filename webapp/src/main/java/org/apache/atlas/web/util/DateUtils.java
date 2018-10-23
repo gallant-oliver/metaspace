@@ -47,6 +47,18 @@ public class DateUtils {
         return inDay;
     }
 
+    public static String today() {
+        return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now());
+    }
+
+    public static String yesterday() {
+        return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now().minusDays(1));
+    }
+
+    public static String currentMonth() {
+        return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now());
+    }
+
     public static LocalDate parseLocalDate(String dateString) {
         return LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
     }

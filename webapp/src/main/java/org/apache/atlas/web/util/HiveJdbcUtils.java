@@ -86,6 +86,9 @@ public class HiveJdbcUtils {
                 }
             }
             return ret;
+        } catch (SQLException e) {
+            LOG.warn(e.getMessage(), e);
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
