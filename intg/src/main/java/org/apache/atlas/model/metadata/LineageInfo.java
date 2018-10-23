@@ -17,6 +17,8 @@
 package org.apache.atlas.model.metadata;
 
 import java.util.List;
+import java.util.Set;
+
 
 /*
  * @description
@@ -27,8 +29,8 @@ public class LineageInfo {
 
     private String guid;
     private Integer lineageDepth;
-    private List<LineageEntity> entities;
-    private List<LineageRelation> relations;
+    private List<LineageEntity> guidEntityMap;
+    private Set<LineageRelation> relations;
 
     public String getGuid() {
         return guid;
@@ -47,18 +49,155 @@ public class LineageInfo {
     }
 
     public List<LineageEntity> getEntities() {
-        return entities;
+        return guidEntityMap;
     }
 
-    public void setEntities(List<LineageEntity> entities) {
-        this.entities = entities;
+    public void setEntities(List<LineageEntity> guidEntityMap) {
+        this.guidEntityMap = guidEntityMap;
     }
 
-    public List<LineageRelation> getRelations() {
+    public Set<LineageRelation> getRelations() {
         return relations;
     }
 
-    public void setRelations(List<LineageRelation> relations) {
+    public void setRelations(Set<LineageRelation> relations) {
         this.relations = relations;
     }
+
+    public static class LineageEntity {
+
+        private String typeName;
+        private String guid;
+        private String tableName;
+        private String dbName;
+        private long directUpStreamNum;
+        private long directDownStreamNum;
+        private long upStreamLevelNum;
+        private long downStreamLevelNum;
+        private String tableUpdateTime;
+        private String displayText;
+
+
+        public String getTypeName() {
+            return typeName;
+        }
+
+        public void setTypeName(String typeName) {
+            this.typeName = typeName;
+        }
+
+        public String getGuid() {
+            return guid;
+        }
+
+        public void setGuid(String guid) {
+            this.guid = guid;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public void setTableName(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public void setDbName(String dbName) {
+            this.dbName = dbName;
+        }
+
+        public long getDirectUpStreamNum() {
+            return directUpStreamNum;
+        }
+
+        public void setDirectUpStreamNum(long directUpStreamNum) {
+            this.directUpStreamNum = directUpStreamNum;
+        }
+
+        public long getDirectDownStreamNum() {
+            return directDownStreamNum;
+        }
+
+        public void setDirectDownStreamNum(long directDownStreamNum) {
+            this.directDownStreamNum = directDownStreamNum;
+        }
+
+        public long getUpStreamLevelNum() {
+            return upStreamLevelNum;
+        }
+
+        public void setUpStreamLevelNum(long upStreamLevelNum) {
+            this.upStreamLevelNum = upStreamLevelNum;
+        }
+
+        public long getDownStreamLevelNum() {
+            return downStreamLevelNum;
+        }
+
+        public void setDownStreamLevelNum(long downStreamLevelNum) {
+            this.downStreamLevelNum = downStreamLevelNum;
+        }
+
+        public String getTableUpdateTime() {
+            return tableUpdateTime;
+        }
+
+        public void setTableUpdateTime(String tableUpdateTime) {
+            this.tableUpdateTime = tableUpdateTime;
+        }
+
+        public String getDisplayText() {
+            return displayText;
+        }
+
+        public void setDisplayText(String displayText) {
+            this.displayText = displayText;
+        }
+    }
+
+
+    public static class LineageRelation {
+        private String fromEntityId;
+        private String toEntityId;
+        private String relationshipId;
+
+        public LineageRelation() { }
+
+        public LineageRelation(String fromEntityId, String toEntityId, final String relationshipId) {
+            this.fromEntityId = fromEntityId;
+            this.toEntityId   = toEntityId;
+            this.relationshipId = relationshipId;
+        }
+
+        public String getFromEntityId() {
+            return fromEntityId;
+        }
+
+        public void setFromEntityId(String fromEntityId) {
+            this.fromEntityId = fromEntityId;
+        }
+
+        public String getToEntityId() {
+            return toEntityId;
+        }
+
+        public void setToEntityId(String toEntityId) {
+            this.toEntityId = toEntityId;
+        }
+
+        public String getRelationshipId() {
+            return relationshipId;
+        }
+
+        public void setRelationshipId(final String relationshipId) {
+            this.relationshipId = relationshipId;
+        }
+    }
+
+
+
 }
