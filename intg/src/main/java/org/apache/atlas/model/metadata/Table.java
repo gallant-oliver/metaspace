@@ -19,7 +19,7 @@ public class Table {
     private String tableId;
     private String tableName;
     private String business;
-    private String relations;
+    private List<String> relations;
     private String owner;
     private String createTime;
 
@@ -42,6 +42,23 @@ public class Table {
     private String location;
     private String description;
     private String topic;
+    private String type;
+
+    public List<String> getRelations() {
+        return relations;
+    }
+
+    public void setRelations(List<String> relations) {
+        this.relations = relations;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public List<Column> getColumns() {
         return columns;
@@ -76,14 +93,6 @@ public class Table {
 
     public void setBusiness(String business) {
         this.business = business;
-    }
-
-    public String getRelations() {
-        return relations;
-    }
-
-    public void setRelations(String relations) {
-        this.relations = relations;
     }
 
     public String getOwner() {
