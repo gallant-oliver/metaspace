@@ -1,16 +1,3 @@
-// ======================================================================
-//
-//      Copyright (C) 北京国双科技有限公司
-//                    http://www.gridsum.com
-//
-//      保密性声明：此文件属北京国双科技有限公司所有，仅限拥有由国双科技
-//      授予了相应权限的人所查看和所修改。如果你没有被国双科技授予相应的
-//      权限而得到此文件，请删除此文件。未得国双科技同意，不得查看、修改、
-//      散播此文件。
-//
-//
-// ======================================================================
-
 package org.apache.atlas.model.metadata;
 
 public class TablePermission {
@@ -26,4 +13,52 @@ public class TablePermission {
     private boolean SELECT ;
     //为表加载本地数据的权限
     private boolean UPDATE  ;
+
+    public void setALTER(boolean ALTER) {
+        this.ALTER = ALTER;
+    }
+
+    public boolean isALTER() {
+        return ALTER;
+    }
+
+    public void setDROP(boolean DROP) {
+        this.DROP = DROP;
+    }
+
+    public boolean isDROP() {
+        return DROP;
+    }
+
+    public void setINDEX(boolean INDEX) {
+        this.INDEX = INDEX;
+    }
+
+    public boolean isINDEX() {
+        return INDEX;
+    }
+
+    public void setLOCK(boolean LOCK) {
+        this.LOCK = LOCK;
+    }
+
+    public boolean isLOCK() {
+        return LOCK;
+    }
+
+    public void setSELECT(boolean SELECT) {
+        this.SELECT = SELECT;
+    }
+
+    public boolean isSELECT() {
+        return SELECT;
+    }
+
+    public void setUPDATE(boolean UPDATE) {
+        this.UPDATE = UPDATE;
+    }
+
+    public boolean isUPDATE() {
+        return UPDATE;
+    }
 }
