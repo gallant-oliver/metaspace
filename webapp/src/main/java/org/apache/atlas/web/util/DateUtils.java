@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.Year;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
@@ -28,9 +29,14 @@ import java.util.TimeZone;
 public class DateUtils {
 
 
+    private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyy-MM");
+
+    private static final DateTimeFormatter YEAR = DateTimeFormatter.ofPattern("yyyy");
+
     /**
      * 时间戳是否在这天内
-     * @param date 日期，格式yyyy-MM-dd
+     *
+     * @param date      日期，格式yyyy-MM-dd
      * @param timestamp 时间戳，毫秒
      * @return
      */
@@ -56,7 +62,11 @@ public class DateUtils {
     }
 
     public static String currentMonth() {
-        return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now());
+        return MONTH.format(LocalDate.now());
+    }
+
+    public static String currentYear() {
+        return YEAR.format(LocalDate.now());
     }
 
     public static LocalDate parseLocalDate(String dateString) {
