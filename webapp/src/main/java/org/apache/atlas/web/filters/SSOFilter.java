@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,9 +51,18 @@ public class SSOFilter implements Filter {
             throws IOException, ServletException {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        Enumeration<String> attributeNames = httpServletRequest.getSession().getAttributeNames();
+        while(attributeNames.hasMoreElements()){
+            String s = attributeNames.nextElement();
+        }
         try {
-            StringBuffer requestURL = httpServletRequest.getRequestURL();
-            if (httpServletRequest.getSession().getAttribute("user") != null) {
+            String requestURL = httpServletRequest.getRequestURL().toString();
+            String[] split = requestURL.split("/");
+            String welcome = split[0]+"//"+split[2]+""+"/welcome.jsp";
+            if(requestURL.contains("/css/")||requestURL.contains("/img/")||requestURL.contains("/libs/") ||requestURL.contains("/js/")){
+                filterChain.doFilter(request, response);
+            }
+                else if (httpServletRequest.getSession().getAttribute("user") != null) {
                 Map user = (Map) httpServletRequest.getSession().getAttribute("user");
                 String ticket = user == null ? "" : user.get("Ticket").toString();
                 HashMap<String, String> header = new HashMap<>();
@@ -62,12 +72,11 @@ public class SSOFilter implements Filter {
                 JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                 Object message = jsonObject.get("message");
                 if (message != null & (message.toString().equals("Success"))){
-                    filterChain.doFilter(httpServletRequest,httpServletResponse);
+                    filterChain.doFilter(request, response);
                 }else{
-                    httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + requestURL);
+                    httpServletRequest.getSession().removeAttribute("user");
+                    httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + welcome);
                 }
-
-
             } else if (httpServletRequest.getParameter("ticket") != null) {
                 String ticket = httpServletRequest.getParameter("ticket");
                 HashMap<String, String> header = new HashMap<>();
@@ -89,7 +98,7 @@ public class SSOFilter implements Filter {
                     }
                 }
             } else {
-                httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + requestURL);
+                httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + welcome);
             }
         } finally {
             Map user = (Map) httpServletRequest.getSession().getAttribute("user");

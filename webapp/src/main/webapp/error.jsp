@@ -48,7 +48,7 @@ Redirect();
     <div id="page-content-wrapper">
         <div class="page-title clearfix">
             <h3>Looking for something?</h3>
-            <p>We're sorry. The web address you're looking for is not a functioning page in Apache Atlas. Please try navigating from <a href="index.html">Apache Atlas Home</a></p>
+            <p>We're sorry. The web address you're looking for is not a functioning page in metaspace</p>
         </div>
     </div>
     <!-- Page Content End -->
