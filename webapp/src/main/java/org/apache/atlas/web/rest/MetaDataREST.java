@@ -36,6 +36,7 @@ import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.AtlasPerfTracer;
+import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -954,5 +958,50 @@ public class MetaDataREST {
         }
 
 
+    }
+    /**
+     * 数据预览
+     *
+     * @return TableShow
+     */
+    @POST
+    @Path("/search/table/preview")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableShow getAllDatabase(GuidCount guidCount) throws AtlasBaseException, SQLException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "EntityREST.getById(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
+            }
+            TableShow tableShow = new TableShow();
+            //获取entity
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
+            AtlasEntity entity = info.getEntity();
+            String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
+            if (name == "") {
+                System.out.println("该id不存在");
+            }
+            String sql = "select * from " + name + " limit " + guidCount.getCount();
+            ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql);
+            List<String> columns = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<Map<String, String>> resultList = new ArrayList<>();
+            for (int i = 0; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                columns.add(columnName);
+                Map<String, String> map = new HashMap<>();
+                resultSet.next();
+                String s = resultSet.getObject(columnName).toString();
+                map.put(columnName, s);
+                resultList.add(map);
+            }
+            tableShow.setTableId(guidCount.getGuid());
+            tableShow.setColumnNames(columns);
+            tableShow.setLines(resultList);
+            return tableShow;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 }
