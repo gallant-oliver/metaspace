@@ -720,37 +720,94 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 修改目录信息
+     *
+     * @param category
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/update/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public CategoryEntity updateMetadataCategory(CategoryEntity category) throws AtlasBaseException {
+        String guid = category.getGuid();
+        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(guid);
+        String historyName = glossaryCategory.getName();
+        glossaryCategory.setName(category.getName());
+        glossaryCategory.setLongDescription(category.getDescription());
+        glossaryCategory.setShortDescription(category.getDescription());
+        glossaryCategory = glossaryService.updateCategory(glossaryCategory);
 
-
+        if(glossaryCategory.getAnchor() != null)
+            category.setAnchor(glossaryCategory.getAnchor());
+        if(glossaryCategory.getParentCategory() != null)
+            category.setParentCategory(glossaryCategory.getParentCategory());
+        if(glossaryCategory.getChildrenCategories() != null)
+            category.setChildrenCategories(glossaryCategory.getChildrenCategories());
+        String qualfiiedName = glossaryCategory.getQualifiedName().replaceFirst(historyName, category.getName());
+        glossaryCategory.setQualifiedName(qualfiiedName);
+        category.setQualifiedName(qualfiiedName);
+        category.setQualifiedName(glossaryCategory.getQualifiedName());
         return category;
     }
 
-    @DELETE
-    @Path("/glossary/{glossaryGuid}")
-    public void deleteGlossary(@PathParam("glossaryGuid") String glossaryGuid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("glossaryGuid", glossaryGuid);
+    /**
+     * 获取全部目录层级
+     * @param limit
+     * @param offset
+     * @param sort
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    public Set<CategoryEntity> getCategories(@DefaultValue("-1") @QueryParam("limit") final String limit,
+                                             @DefaultValue("0") @QueryParam("offset") final String offset,
+                                             @DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
-            /*if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.deleteGlossary(" + glossaryGuid + ")");
-            }*/
-            glossaryService.deleteGlossary(glossaryGuid);
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
+            }
+            Set<CategoryEntity> categoryEntities = new HashSet<>();
+            List<AtlasGlossary> glossaries = glossaryService.getGlossaries(Integer.parseInt(limit), Integer.parseInt(offset), SortOrder.ASCENDING);
+            if(glossaries==null || glossaries.size()==0) {
+                return categoryEntities;
+            } else {
+                AtlasGlossary baseGlosary = glossaries.get(0);
+                Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
+                Iterator<AtlasRelatedCategoryHeader> iterator = categories.iterator();
+                while(iterator.hasNext()) {
+                    AtlasRelatedCategoryHeader header = iterator.next();
+                    CategoryEntity entity = new CategoryEntity();
+                    entity.setGuid(header.getCategoryGuid());
+                    entity.setName(header.getDisplayText());
+
+
+
+                }
+            }
+            return categoryEntities;
         } finally {
-            //AtlasPerfTracer.log(perf);
+            AtlasPerfTracer.log(perf);
         }
     }
 
+    /**
+     * 删除目录
+     *
+     * @param categoryGuid
+     * @throws AtlasBaseException
+     */
     @DELETE
-    @Path("/glossary/category/{categoryGuid}")
+    @Path("/category/{categoryGuid}")
     public void deleteGlossaryCategory(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.deleteGlossaryCategory(" + categoryGuid + ")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteGlossaryCategory(" + categoryGuid + ")");
             }
             glossaryService.deleteCategory(categoryGuid);
         } finally {
