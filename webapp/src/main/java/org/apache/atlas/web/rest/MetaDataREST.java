@@ -13,6 +13,7 @@
 package org.apache.atlas.web.rest;
 
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.SortOrder;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.glossary.GlossaryService;
@@ -46,6 +47,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("metadata")
 @Singleton
@@ -259,18 +261,22 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
-    /***
-     *
-     * @param guid
+
+
+    /**
+     * 获取字段详情
      * @param minExtInfo
+     * @param query
      * @return
      * @throws AtlasBaseException
      */
-    @GET
-    @Path("/table/column/guid/{guid}")
+    @POST
+    @Path("/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Column> getColumnInfoById(@PathParam("guid") String guid, @QueryParam("minExtInfo") @DefaultValue("false") boolean minExtInfo) throws AtlasBaseException {
+    public List<Column> getColumnInfoById(@QueryParam("minExtInfo") @DefaultValue("false") boolean minExtInfo,
+                                          ColumnQuery query) throws AtlasBaseException {
+        String guid = query.getGuid();
         Servlets.validateQueryParamLength("guid", guid);
         List<Column> columns = null;
         AtlasPerfTracer perf = null;
@@ -342,6 +348,21 @@ public class MetaDataREST {
                     columns.add(column);
                 }
             }
+            if(query.getColumnFilter() != null) {
+                ColumnQuery.ColumnFilter filter = query.getColumnFilter();
+                String columnName = filter.getColumnName();
+                String type = filter.getType();
+                String description = filter.getDescription();
+                if(columnName!=null && !columnName.equals("")) {
+                    columns = columns.stream().filter(col -> col.getColumnName().equals(filter.getColumnName())).collect(Collectors.toList());
+                }
+                if(type!=null && !type.equals("")) {
+                    columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
+                }
+                if(description!=null && description.equals("")) {
+                    columns = columns.stream().filter(col -> col.getDescription().equals(description)).collect(Collectors.toList());
+                }
+            }
             return columns;
 
         } finally {
@@ -349,6 +370,14 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 获取表详情
+     *
+     * @param guid
+     * @param minExtInfo
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/table/guid/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -465,6 +494,14 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 表血缘
+     * @param guid
+     * @param direction
+     * @param depth
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/table/lineage/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -520,16 +557,21 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 表血缘深度详情
+     *
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
-    @Path("/table/lineage/info/{guid}")
+    @Path("/table/lineage/depth/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageInfo.LineageEntity getLineageInfo(@PathParam("guid") String guid,
-                                                    @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
-                                                    @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
+    public LineageInfo.LineageEntity getLineageInfo(@PathParam("guid") String guid) throws AtlasBaseException {
         LineageInfo.LineageEntity lineageEntity = new LineageInfo.LineageEntity();
 
-        AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
+        AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, 1);
         Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
         AtlasEntityHeader atlasEntity = entities.get(guid);
         getEntityInfo(guid, lineageEntity, entities, atlasEntity);
@@ -544,10 +586,10 @@ public class MetaDataREST {
             lineageEntity.setDirectDownStreamNum(directDownStreamNum);
             //上游表层数
             long upStreamLevelNum = getMaxDepth("in", lineageEntity.getGuid(), fullRelations);
-            lineageEntity.setUpStreamLevelNum((upStreamLevelNum + 1) / 2);
+            lineageEntity.setUpStreamLevelNum((upStreamLevelNum - 1) / 2);
             //下游表层数
             long downStreamLevelNum = getMaxDepth("out", lineageEntity.getGuid(), fullRelations);
-            lineageEntity.setDownStreamLevelNum((downStreamLevelNum + 1) / 2);
+            lineageEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
         }
         return lineageEntity;
     }
@@ -631,36 +673,59 @@ public class MetaDataREST {
         return max;
     }
 
-
+    /**
+     * 添加目录
+     * @param category
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
-    @Path("/glossary")
-    public AtlasGlossary createMetadataGlossary(AtlasGlossary atlasGlossary) throws AtlasBaseException {
-        //AtlasPerfTracer perf = null;
+    @Path("/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public CategoryEntity createMetadataCategory(CategoryEntity category) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
         try {
-            /*if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.createGlossary()");
-            }*/
-            return glossaryService.createGlossary(atlasGlossary);
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
+            }
+
+            List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, SortOrder.ASCENDING);
+            AtlasGlossary baseGlosary = null;
+            //如果Glossary为空，此时没有数据，则需要创建根Glossary
+            if(glossaries == null || glossaries.size() ==0) {
+                baseGlosary = new AtlasGlossary();
+                baseGlosary.setName("BaseGlosary");
+                baseGlosary.setQualifiedName("BaseGlosary");
+                baseGlosary = glossaryService.createGlossary(baseGlosary);
+            } else {
+                baseGlosary = glossaries.get(0);
+            }
+            AtlasGlossaryHeader baseGlossaryHeader = new AtlasGlossaryHeader();
+            baseGlossaryHeader.setGlossaryGuid(baseGlosary.getGuid());
+            baseGlossaryHeader.setDisplayText(baseGlosary.getName());
+
+            AtlasGlossaryCategory tmpCategory = new AtlasGlossaryCategory();
+            tmpCategory.setAnchor(baseGlossaryHeader);
+            tmpCategory.setName(category.getName());
+            tmpCategory.setShortDescription(category.getDescription());
+            tmpCategory.setLongDescription(category.getDescription());
+            tmpCategory = glossaryService.createCategory(tmpCategory);
+            category.setQualifiedName(tmpCategory.getQualifiedName());
+            category.setGuid(tmpCategory.getGuid());
+            category.setAnchor(tmpCategory.getAnchor());
+            return category;
         } finally {
-            //AtlasPerfTracer.log(perf);
+            AtlasPerfTracer.log(perf);
         }
     }
 
     @POST
-    @Path("/glossary/category")
-    public AtlasGlossaryTerm createGlossaryTerm(AtlasGlossaryTerm glossaryTerm) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            /*if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.createGlossaryTerm()");
-            }*/
-            if (Objects.isNull(glossaryTerm.getAnchor())) {
-                throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ANCHOR);
-            }
-            return glossaryService.createTerm(glossaryTerm);
-        } finally {
-            //AtlasPerfTracer.log(perf);
-        }
+    @Path("/update/category")
+    public CategoryEntity updateMetadataCategory(CategoryEntity category) throws AtlasBaseException {
+
+
+        return category;
     }
 
     @DELETE
