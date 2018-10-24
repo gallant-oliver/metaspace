@@ -1,0 +1,12 @@
+<configuration>
+  <!-- 指定hdfs的nameservice为ns1 -->
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://node1:9000</value>
+  </property>
+  <!-- 指定hadoop临时目录 -->
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/usr/local/soft/hadoop-2.6.4/tmp</value>
+  </property>
+</configuration>
