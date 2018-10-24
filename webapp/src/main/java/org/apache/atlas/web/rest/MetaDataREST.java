@@ -762,7 +762,7 @@ public class MetaDataREST {
      * @throws AtlasBaseException
      */
     @GET
-    public Set<CategoryEntity> getCategories(@DefaultValue("-1") @QueryParam("limit") final String limit,
+    public Set<CategoryHeader> getCategories(@DefaultValue("-1") @QueryParam("limit") final String limit,
                                              @DefaultValue("0") @QueryParam("offset") final String offset,
                                              @DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
@@ -770,10 +770,10 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            Set<CategoryEntity> categoryEntities = new HashSet<>();
+            Set<CategoryHeader> categoryHeaders = new HashSet<>();
             List<AtlasGlossary> glossaries = glossaryService.getGlossaries(Integer.parseInt(limit), Integer.parseInt(offset), SortOrder.ASCENDING);
             if(glossaries==null || glossaries.size()==0) {
-                return categoryEntities;
+                return categoryHeaders;
             } else {
                 AtlasGlossary baseGlosary = glossaries.get(0);
                 Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
@@ -785,10 +785,9 @@ public class MetaDataREST {
                     entity.setName(header.getDisplayText());
 
 
-
                 }
             }
-            return categoryEntities;
+            return categoryHeaders;
         } finally {
             AtlasPerfTracer.log(perf);
         }
