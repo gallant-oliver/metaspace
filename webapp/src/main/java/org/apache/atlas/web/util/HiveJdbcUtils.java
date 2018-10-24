@@ -76,19 +76,19 @@ public class HiveJdbcUtils {
                 String key = rs.getString("prpt_name");
                 String value = rs.getString("prpt_value");
                 if ("totalSize".equals(key)) {
-                    float size = Float.valueOf(value) / 1000;
-                    DecimalFormat decimalFormat = new DecimalFormat(".00");
-                    String totalSize = decimalFormat.format(size);
-                    ret.setTotalSize(totalSize);
+                    ret.setTotalSize(Long.valueOf(value));
                 }
                 if ("numFiles".equals(key)) {
-                    ret.setNumFiles(value);
+                    ret.setNumFiles(Integer.valueOf(value));
+                }
+                if ("numRows".equals(key)) {
+                    ret.setNumRows(Long.valueOf(value));
                 }
             }
             return ret;
         } catch (SQLException e) {
-            LOG.warn(e.getMessage(), e);
-            return null;
+            LOG.debug(e.getMessage(), e);
+            return ret;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

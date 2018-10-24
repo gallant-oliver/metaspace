@@ -11,15 +11,17 @@
 //
 // ======================================================================
 
-package org.apache.atlas.web.util;
+package org.apache.atlas.utils;
 
-import org.apache.atlas.web.util.DateUtils;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public class DateUtilsTest {
 
@@ -29,7 +31,7 @@ public class DateUtilsTest {
         String today = DateUtils.formatDateString(LocalDate.now());
         String yesterday = DateUtils.formatDateString(LocalDate.now().minusDays(1));
 
-        Assert.assertTrue(DateUtils.inDay(today, now));
-        Assert.assertFalse(DateUtils.inDay(yesterday, now));
+        assertTrue(DateUtils.inDay(today, now));
+        assertFalse(DateUtils.inDay(yesterday, now));
     }
 }

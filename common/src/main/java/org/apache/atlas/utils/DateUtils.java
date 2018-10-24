@@ -11,26 +11,20 @@
 //
 // ======================================================================
 
-package org.apache.atlas.web.util;
+package org.apache.atlas.utils;
 
-import scala.annotation.meta.param;
-
-import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.Period;
-import java.time.Year;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
 public class DateUtils {
 
 
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
     private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyy-MM");
-
     private static final DateTimeFormatter YEAR = DateTimeFormatter.ofPattern("yyyy");
 
     /**
@@ -65,8 +59,16 @@ public class DateUtils {
         return MONTH.format(LocalDate.now());
     }
 
+    public static String lastMonth() {
+        return MONTH.format(LocalDate.now().minusMonths(1));
+    }
+
     public static String currentYear() {
         return YEAR.format(LocalDate.now());
+    }
+
+    public static String lastYear() {
+        return YEAR.format(LocalDate.now().minusMonths(1));
     }
 
     public static LocalDate parseLocalDate(String dateString) {
@@ -75,6 +77,11 @@ public class DateUtils {
 
     public static String formatDateString(LocalDate localDate) {
         return DateTimeFormatter.ISO_LOCAL_DATE.format(localDate);
+    }
+
+    public static String formatDateTime(long timestamp) {
+        LocalDateTime date = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+        return DATE_TIME.format(date);
     }
 
 }

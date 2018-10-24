@@ -28,7 +28,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("v2/table")
+@Path("table")
 @Singleton
 @Service
 public class TableREST {

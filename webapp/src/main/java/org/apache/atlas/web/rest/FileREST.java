@@ -30,6 +30,7 @@ import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableMetadata;
 import org.apache.atlas.query.QueryParams;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.ParamChecker;
 import org.apache.atlas.web.service.FileService;
 import org.apache.atlas.web.util.HdfsUtils;
@@ -64,7 +65,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-@Path("v2/file")
+@Path("file")
 @Singleton
 @Service
 public class FileREST {
@@ -138,7 +139,7 @@ public class FileREST {
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
-                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), f.getModificationTime(), f.getOwner(), type, f.getPermission().toString());
+                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
         return new PageList<>(params.offset(), pair.getLeft(), list);
@@ -163,7 +164,7 @@ public class FileREST {
 
         List<File> list = pair.getRight().stream()
                 .map(f -> {
-                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), f.getModificationTime(), f.getOwner(), "File", f.getPermission().toString());
+                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), "File", f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
         return new PageList<>(params.offset(), pair.getLeft(), list);
