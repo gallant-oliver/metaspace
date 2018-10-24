@@ -13,7 +13,9 @@
 
 package org.apache.atlas.model.table;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang.StringUtils;
+import sun.rmi.runtime.Log;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -32,27 +35,60 @@ import javax.xml.bind.annotation.XmlRootElement;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class TableStat {
+public class TableStat implements Cloneable {
 
-    private String guid;
+    private String tableId;
     private String tableName;
     private String date;
-    private int fieldNum;
-    private int fileNum;
-    private int recordNum;
-    private String dataVolume; //KB
-    private String dataIncrement; //KB
-    private List<Table> sourceTable;
+    private String dateType;
+    private Integer fieldNum;
+    private Integer fileNum;
+    private Long recordNum;
+    private String dataVolume;
+    private Long dataVolumeBytes;
+    private String dataIncrement;
+    private List<Table> sourceTable = new ArrayList<>();
 
     public TableStat() {
     }
 
-    public String getGuid() {
-        return guid;
+    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, List<Table> sourceTable) {
+        this.tableId = tableId;
+        this.tableName = tableName;
+        this.date = date;
+        this.dateType = dateType;
+        this.fieldNum = fieldNum;
+        this.fileNum = fileNum;
+        this.recordNum = recordNum;
+        this.dataVolume = dataVolume;
+        this.dataVolumeBytes = dataVolumeBytes;
+        this.dataIncrement = dataIncrement;
+        this.sourceTable = sourceTable;
     }
 
-    public void setGuid(String guid) {
-        this.guid = guid;
+    @Override
+    public String toString() {
+        return "TableStat{" +
+               "tableId='" + tableId + '\'' +
+               ", tableName='" + tableName + '\'' +
+               ", date='" + date + '\'' +
+               ", dateType='" + dateType + '\'' +
+               ", fieldNum=" + fieldNum +
+               ", fileNum=" + fileNum +
+               ", recordNum=" + recordNum +
+               ", dataVolume='" + dataVolume + '\'' +
+               ", dataVolumeBytes=" + dataVolumeBytes +
+               ", dataIncrement='" + dataIncrement + '\'' +
+               ", sourceTable=" + sourceTable +
+               '}';
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
     }
 
     public String getTableName() {
@@ -71,27 +107,35 @@ public class TableStat {
         this.date = date;
     }
 
-    public int getFieldNum() {
+    public String getDateType() {
+        return dateType;
+    }
+
+    public void setDateType(String dateType) {
+        this.dateType = dateType;
+    }
+
+    public Integer getFieldNum() {
         return fieldNum;
     }
 
-    public void setFieldNum(int fieldNum) {
+    public void setFieldNum(Integer fieldNum) {
         this.fieldNum = fieldNum;
     }
 
-    public int getFileNum() {
+    public Integer getFileNum() {
         return fileNum;
     }
 
-    public void setFileNum(int fileNum) {
+    public void setFileNum(Integer fileNum) {
         this.fileNum = fileNum;
     }
 
-    public int getRecordNum() {
+    public Long getRecordNum() {
         return recordNum;
     }
 
-    public void setRecordNum(int recordNum) {
+    public void setRecordNum(Long recordNum) {
         this.recordNum = recordNum;
     }
 
@@ -101,6 +145,14 @@ public class TableStat {
 
     public void setDataVolume(String dataVolume) {
         this.dataVolume = dataVolume;
+    }
+
+    public Long getDataVolumeBytes() {
+        return dataVolumeBytes;
+    }
+
+    public void setDataVolumeBytes(Long dataVolumeBytes) {
+        this.dataVolumeBytes = dataVolumeBytes;
     }
 
     public String getDataIncrement() {
@@ -117,5 +169,19 @@ public class TableStat {
 
     public void setSourceTable(List<Table> sourceTable) {
         this.sourceTable = sourceTable;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        TableStat ret = (TableStat) super.clone();
+        List<Table> sourceTable = getSourceTable().stream().map(table -> {
+            try {
+                return (Table) table.clone();
+            } catch (CloneNotSupportedException e) {
+                return null;
+            }
+        }).collect(Collectors.toList());
+        ret.setSourceTable(sourceTable);
+        return ret;
     }
 }

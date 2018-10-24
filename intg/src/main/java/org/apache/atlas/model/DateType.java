@@ -11,38 +11,25 @@
 //
 // ======================================================================
 
-package org.apache.atlas.model.table;
+package org.apache.atlas.model;
 
-/**
- * hive: show tblproperties {table}
- */
-public class TableMetadata {
+public enum DateType {
 
-    private int numFiles;
-    private long numRows;
-    private long totalSize;
+    DAY("1"),
+    MONTH("2"),
+    YEAR("3");
 
-    public int getNumFiles() {
-        return numFiles;
+    private String literal;
+
+    DateType(String literal) {
+        this.literal = literal;
     }
 
-    public void setNumFiles(int numFiles) {
-        this.numFiles = numFiles;
+    public String getLiteral() {
+        return literal;
     }
 
-    public long getNumRows() {
-        return numRows;
-    }
-
-    public void setNumRows(long numRows) {
-        this.numRows = numRows;
-    }
-
-    public long getTotalSize() {
-        return totalSize;
-    }
-
-    public void setTotalSize(long totalSize) {
-        this.totalSize = totalSize;
+    public void setLiteral(String literal) {
+        this.literal = literal;
     }
 }

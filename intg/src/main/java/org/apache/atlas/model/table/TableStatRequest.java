@@ -31,28 +31,31 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class TableStatRequest {
 
-    private String tableName;
+    private String tableId;
     private String dateType;
     private String fromDate;
-    private String endDat;
+    private String endDate;
     private int offset;
     private int limit;
 
-    public TableStatRequest(String tableName, String dateType, String fromDate, String endDat, int offset, int limit) {
-        this.tableName = tableName;
+    public TableStatRequest() {
+    }
+
+    public TableStatRequest(String tableId, String dateType, String fromDate, String endDate, int offset, int limit) {
+        this.tableId = tableId;
         this.dateType = dateType;
         this.fromDate = fromDate;
-        this.endDat = endDat;
+        this.endDate = endDate;
         this.offset = offset;
         this.limit = limit;
     }
 
-    public String getTableName() {
-        return tableName;
+    public String getTableId() {
+        return tableId;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
     }
 
     public String getDateType() {
@@ -71,12 +74,12 @@ public class TableStatRequest {
         this.fromDate = fromDate;
     }
 
-    public String getEndDat() {
-        return endDat;
+    public String getEndDate() {
+        return endDate;
     }
 
-    public void setEndDat(String endDat) {
-        this.endDat = endDat;
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     public int getOffset() {

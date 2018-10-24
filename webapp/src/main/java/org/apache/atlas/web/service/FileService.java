@@ -13,26 +13,19 @@
 
 package org.apache.atlas.web.service;
 
-import com.google.common.collect.Lists;
-import org.apache.atlas.web.util.DateUtils;
+import org.apache.atlas.utils.DateUtils;
+import org.apache.atlas.utils.PageUtils;
 import org.apache.atlas.web.util.HdfsUtils;
-import org.apache.atlas.web.util.PageUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -122,7 +115,6 @@ public class FileService {
                 //遍历到最后一个文件直接next导致的，忽略
             } catch (AccessControlException e) {
                 //忽略没权限的文件
-                hasNext = files.hasNext();
             } catch (Exception e) {
                 LOG.error(e.getMessage(), e);
             }

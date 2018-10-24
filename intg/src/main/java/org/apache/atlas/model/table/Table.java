@@ -17,22 +17,36 @@ import javax.xml.bind.annotation.XmlRootElement;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class Table {
+public class Table implements Cloneable{
+
+    private String guid;
     private String database;
     private String tableName;
-
 
     public Table() {
     }
 
-    public Table(String database, String tableName) {
+    public Table(String guid, String database, String tableName) {
+        this.guid = guid;
         this.database = database;
         this.tableName = tableName;
     }
 
     @Override
     public String toString() {
-        return database + "." + tableName;
+        return "Table{" +
+               "guid='" + guid + '\'' +
+               ", database='" + database + '\'' +
+               ", tableName='" + tableName + '\'' +
+               '}';
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     public String getDatabase() {
@@ -49,5 +63,10 @@ public class Table {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return (Table)super.clone();
     }
 }

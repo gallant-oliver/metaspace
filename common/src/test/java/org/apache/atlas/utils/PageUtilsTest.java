@@ -1,10 +1,9 @@
-package org.apache.atlas.web.util;
+package org.apache.atlas.utils;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import java.util.Iterator;
 import java.util.List;

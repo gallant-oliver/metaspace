@@ -11,9 +11,7 @@
 //
 // ======================================================================
 
-package org.apache.atlas.web.util;
-
-import com.google.common.collect.Lists;
+package org.apache.atlas.utils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
