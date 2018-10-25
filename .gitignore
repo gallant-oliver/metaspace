@@ -1700,3 +1700,4 @@ addons/falcon-bridge-shim/target/checkstyle-result.xml
 addons/falcon-bridge-shim/target/checkstyle-header.txt
 addons/falcon-bridge-shim/target/checkstyle-checker.xml
 addons/falcon-bridge-shim/target/checkstyle-cachefile
+repository/target/test-classes/atlas-application.properties

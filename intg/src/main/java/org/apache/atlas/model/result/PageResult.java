@@ -17,6 +17,16 @@ import java.util.List;
 public class PageResult<E> {
     private int offset;
     private int count;
+
+    public int getSum() {
+        return sum;
+    }
+
+    public void setSum(int sum) {
+        this.sum = sum;
+    }
+
+    private int sum;
     private List<E> lists;
 
     public int getCount() {

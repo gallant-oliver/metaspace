@@ -11,7 +11,7 @@
 //
 // ======================================================================
 
-package org.apache.atlas.model.metadata;
+package org.apache.atlas.model.result;
 
 import java.util.List;
 import java.util.Map;

@@ -11,11 +11,19 @@
 //
 // ======================================================================
 
-package org.apache.atlas.model.metadata;
+package org.apache.atlas.model.result;
 
 public class BuildTableSql {
     private String tableId;
     private String sql;
+
+    public String getSql() {
+        return sql;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
+    }
 
     public String getTableId() {
         return tableId;
