@@ -84,7 +84,7 @@ public class TableStatREST {
     @Path("/today/{tableId}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<TableStat> today(@PathParam("tableId") String tableId) throws Exception {
-        TableStatRequest request = new TableStatRequest(tableId, DateType.DAY.getLiteral(), DateUtils.today(), DateUtils.today(), 0, 10);
+        TableStatRequest request = new TableStatRequest(tableId, DateType.DAY.getLiteral(), DateUtils.yesterday(), DateUtils.yesterday(), 0, 10);
         List<TableStat> statList = tableStatService.query(request).getRight();
         return statList;
     }
