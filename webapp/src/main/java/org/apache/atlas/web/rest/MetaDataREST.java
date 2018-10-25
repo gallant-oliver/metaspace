@@ -759,6 +759,7 @@ public class MetaDataREST {
 
     /**
      * 获取全部目录层级
+     *
      * @param limit
      * @param offset
      * @param sort
@@ -766,6 +767,9 @@ public class MetaDataREST {
      * @throws AtlasBaseException
      */
     @GET
+    @Path("/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Set<CategoryHeader> getCategories(@DefaultValue("-1") @QueryParam("limit") final String limit,
                                              @DefaultValue("0") @QueryParam("offset") final String offset,
                                              @DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
@@ -774,21 +778,24 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            Set<CategoryHeader> categoryHeaders = new HashSet<>();
+            Set<CategoryHeader> categoryHeaders = new HashSet<CategoryHeader>();
             List<AtlasGlossary> glossaries = glossaryService.getGlossaries(Integer.parseInt(limit), Integer.parseInt(offset), SortOrder.ASCENDING);
-            if(glossaries==null || glossaries.size()==0) {
-                return categoryHeaders;
-            } else {
+            if(glossaries!=null && glossaries.size()!=0) {
                 AtlasGlossary baseGlosary = glossaries.get(0);
                 Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
                 Iterator<AtlasRelatedCategoryHeader> iterator = categories.iterator();
                 while(iterator.hasNext()) {
                     AtlasRelatedCategoryHeader header = iterator.next();
-                    CategoryEntity entity = new CategoryEntity();
-                    entity.setGuid(header.getCategoryGuid());
-                    entity.setName(header.getDisplayText());
-
-
+                    CategoryHeader categoryHeader = new CategoryHeader();
+                    categoryHeader.setCategoryGuid(header.getCategoryGuid());
+                    categoryHeader.setName(header.getDisplayText());
+                    categoryHeader.setRelationGuid(header.getRelationGuid());
+                    if(header.getParentCategoryGuid() != null)
+                        categoryHeader.setParentCategoryGuid(header.getParentCategoryGuid());
+                    AtlasGlossaryCategory category = glossaryService.getCategory(categoryHeader.getCategoryGuid());
+                    if(category.getLongDescription() != null)
+                        categoryHeader.setDescription(category.getLongDescription());
+                    categoryHeaders.add(categoryHeader);
                 }
             }
             return categoryHeaders;
@@ -819,7 +826,13 @@ public class MetaDataREST {
     }
 
 
-
+    /**
+     * 添加关联
+     *
+     * @param categoryGuid
+     * @param relatedObjectIds
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/category/{categoryGuid}/assignedEntities")
     public void assignTermToEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
@@ -827,16 +840,28 @@ public class MetaDataREST {
         AtlasPerfTracer perf = null;
         //根据categoryGuid获取GlossaryGuid
         AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
-        String glossaryGuid = glossaryCategory.getAnchor().getGlossaryGuid();
-        String glossaryShowText = glossaryCategory.getAnchor().getDisplayText();
+        AtlasGlossaryHeader glossaryHeader = glossaryCategory.getAnchor();
+        /*String glossaryGuid = glossaryCategory.getAnchor().getGlossaryGuid();
+        String glossaryShowText = glossaryCategory.getAnchor().getDisplayText();*/
         String categoryName = glossaryCategory.getName();
 
+        AtlasGlossary glossary = glossaryService.getGlossary(glossaryHeader.getGlossaryGuid());
+        glossaryHeader.setDisplayText(glossary.getName());
+
+
+        for(int i=0; i<relatedObjectIds.size(); i++) {
+            AtlasRelatedObjectId relatedObjectId = relatedObjectIds.get(i);
+            AtlasGlossaryTerm glossaryTerm = new AtlasGlossaryTerm();
+            glossaryTerm.setName(categoryName);
+
+        }
+
         //创建Term
-        AtlasGlossaryHeader glossaryHeader = new AtlasGlossaryHeader();
+        /*AtlasGlossaryHeader glossaryHeader = new AtlasGlossaryHeader();
         glossaryHeader.setDisplayText(glossaryShowText);
-        glossaryHeader.setGlossaryGuid(glossaryGuid);
+        glossaryHeader.setGlossaryGuid(glossaryGuid);*/
         AtlasGlossaryTerm glossaryTerm = new AtlasGlossaryTerm();
-        glossaryTerm.setName(categoryName + "-Term");
+
         glossaryTerm.setAnchor(glossaryHeader);
         glossaryTerm = glossaryService.createTerm(glossaryTerm);
         //创建关联关系
@@ -946,6 +971,13 @@ public class MetaDataREST {
         try {
             //获取Category信息
             AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
+
+            for(int i=0; i<relatedObjectIds.size(); i++) {
+                String tableGuid = relatedObjectIds.get(i).getGuid();
+                AtlasEntity.AtlasEntityWithExtInfo tableInfo = entitiesStore.getById(tableGuid);
+                AtlasEntity entity = tableInfo.getEntity(tableGuid);
+                relatedObjectIds = (List) entity.getRelationshipAttribute("meanings");
+            }
 
             Set<AtlasRelatedTermHeader> relatedTerms = glossaryCategory.getTerms();
             Iterator<AtlasRelatedTermHeader> iterator = relatedTerms.iterator();
