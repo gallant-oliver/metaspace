@@ -64,7 +64,7 @@ public class HiveJdbcUtils {
     /**
      * 表数据量大小（KB）
      *
-     * @param sql
+     * @param
      * @return
      */
     public static TableMetadata metadata(String tableName) {
@@ -94,8 +94,8 @@ public class HiveJdbcUtils {
         }
 
     }
-    public static ResultSet selectBySQL(String sql) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl)) {
+    public static ResultSet selectBySQL(String sql,String db) throws AtlasBaseException {
+        try (Connection conn = DriverManager.getConnection(hiveUrl+"/"+db)) {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (Exception e) {
