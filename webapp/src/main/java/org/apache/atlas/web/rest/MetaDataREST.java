@@ -1000,7 +1000,7 @@ public class MetaDataREST {
     @Path("/search/table/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TableShow getAllDatabase(GuidCount guidCount) throws AtlasBaseException, SQLException {
+    public TableShow selectData(GuidCount guidCount) throws AtlasBaseException, SQLException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -1019,15 +1019,19 @@ public class MetaDataREST {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
             List<Map<String, String>> resultList = new ArrayList<>();
-            for (int i = 0; i <= metaData.getColumnCount(); i++) {
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 columns.add(columnName);
+            }
+            while (resultSet.next()){
                 Map<String, String> map = new HashMap<>();
-                resultSet.next();
-                String s = resultSet.getObject(columnName).toString();
-                map.put(columnName, s);
+                for (String column : columns) {
+                    String s = resultSet.getObject(column).toString();
+                    map.put(column, s);
+                }
                 resultList.add(map);
             }
+            resultSet.close();
             tableShow.setTableId(guidCount.getGuid());
             tableShow.setColumnNames(columns);
             tableShow.setLines(resultList);

@@ -36,12 +36,12 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
-<!--    <servlet-mapping>
+    <servlet-mapping>
         <servlet-name>jersey-servlet</servlet-name>
         <url-pattern>/api/atlas/*</url-pattern>
     </servlet-mapping>
 
-    <filter>
+<!--    <filter>
         <filter-name>springSecurityFilterChain</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
     </filter>-->
