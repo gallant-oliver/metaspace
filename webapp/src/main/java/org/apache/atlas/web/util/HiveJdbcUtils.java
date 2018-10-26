@@ -94,8 +94,10 @@ public class HiveJdbcUtils {
         }
 
     }
-    public static ResultSet selectBySQL(String sql,String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl+"/"+db)) {
+
+    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException {
+        try {
+            Connection conn = DriverManager.getConnection(hiveUrl + "/" + db, "hive", "hive");
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (Exception e) {
