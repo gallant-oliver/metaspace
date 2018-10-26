@@ -18,6 +18,7 @@ package org.apache.atlas.web.service;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.annotation.AtlasService;
@@ -38,10 +39,12 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.CategoryEntity;
 import org.apache.atlas.model.metadata.CategoryHeader;
 import org.apache.atlas.model.metadata.Column;
+import org.apache.atlas.model.metadata.ColumnEdit;
 import org.apache.atlas.model.metadata.ColumnQuery;
 import org.apache.atlas.model.metadata.LineageInfo;
 import org.apache.atlas.model.metadata.RelationEntity;
 import org.apache.atlas.model.metadata.Table;
+import org.apache.atlas.model.metadata.TableEdit;
 import org.apache.atlas.model.metadata.TablePermission;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -181,7 +184,11 @@ public class MetaDataService {
             TablePermission permission = new TablePermission();
             table.setTablePermission(permission);
         }
-        List<Column> columns = new ArrayList<>();
+
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(guid);
+        List<Column> columns = getColumnInfoById(columnQuery);
+
         table.setColumns(columns);
         return table;
     }
@@ -627,7 +634,7 @@ public class MetaDataService {
 
     public Set<CategoryHeader> getCategories(String sort) throws AtlasBaseException {
         Set<CategoryHeader> categoryHeaders = new HashSet<CategoryHeader>();
-        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(0, -1, toSortOrder(sort));
+        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, toSortOrder(sort));
         if(glossaries!=null && glossaries.size()!=0) {
             AtlasGlossary baseGlosary = glossaries.get(0);
             Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
@@ -649,12 +656,25 @@ public class MetaDataService {
         return categoryHeaders;
     }
 
-    public void updateTableDescription(String guid, String description) throws AtlasBaseException {
+    public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
+        String guid = tableEdit.getGuid();
+        String description = tableEdit.getDescription();
         Table table = getTableInfoById(guid);
         String dbName = table.getDatabaseName();
         String tableName = table.getTableName();
-        String sql = String.format("alter table %s set tblproperties('comment'=%s)", tableName, description);
-        HiveJdbcUtils.execute(sql);
+        String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
+        HiveJdbcUtils.execute(sql, dbName);
+    }
+
+    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
+        Table table = getTableInfoById(columnEdit.getTableId());
+        String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
+        String columnName = columnEdit.getColumnName();
+        String type = columnEdit.getType();
+        String description = columnEdit.getDescription();
+        String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
+        HiveJdbcUtils.execute(sql, dbName);
     }
 
     private SortOrder toSortOrder(final String sort) {
