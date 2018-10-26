@@ -164,7 +164,8 @@ public class FileREST {
 
         List<File> list = pair.getRight().stream()
                 .map(f -> {
-                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), "File", f.getPermission().toString());
+                    String type = f.isDirectory() ? "Directory" : "File";
+                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
         return new PageList<>(params.offset(), pair.getLeft(), list);

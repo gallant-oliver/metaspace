@@ -26,6 +26,7 @@ import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableMetadata;
+import org.apache.atlas.model.table.TableSourceCount;
 import org.apache.atlas.model.table.TableStat;
 import org.apache.atlas.model.table.TableStatRequest;
 import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,15 +106,24 @@ public class TableStatREST {
     @Path("/sourceTableCount")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, Long> sourceTableCount(TableStatRequest request) throws Exception {
+    public List<TableSourceCount> sourceTableCount(TableStatRequest request) throws Exception {
+
+        List<TableSourceCount> ret = new ArrayList<>();
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
         List<TableStat> statList = tableStatService.query(request).getRight();
         Map<String, Long> counted = statList.stream().flatMap(stat -> {
             List<Table> sourceTableList = stat.getSourceTable();
             return sourceTableList.stream().map(sourceTable -> sourceTable.getDatabase() + "." + sourceTable.getTableName());
         }).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        return counted;
+        if (counted != null) {
+            counted.forEach(new BiConsumer<String, Long>() {
+                @Override
+                public void accept(String key, Long value) {
+                    ret.add(new TableSourceCount(key, value));
+                }
+            });
+        }
+        return ret;
     }
 
 

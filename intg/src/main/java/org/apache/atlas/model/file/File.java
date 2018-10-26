@@ -20,16 +20,16 @@ public class File {
 
     private String fileName;
     private String filePath;
-    private Long blockSize;
+    private Long size;
     private String modificationTime;
     private String owner;
     private String type;
     private String permission;
 
-    public File(String fileName, String filePath, Long blockSize, String modificationTime, String owner, String type, String permission) {
+    public File(String fileName, String filePath, Long size, String modificationTime, String owner, String type, String permission) {
         this.fileName = fileName;
         this.filePath = filePath;
-        this.blockSize = blockSize;
+        this.size = size;
         this.modificationTime = modificationTime;
         this.owner = owner;
         this.type = type;
@@ -52,12 +52,12 @@ public class File {
         this.filePath = filePath;
     }
 
-    public Long getBlockSize() {
-        return blockSize;
+    public Long getSize() {
+        return size;
     }
 
-    public void setBlockSize(Long blockSize) {
-        this.blockSize = blockSize;
+    public void setSize(Long size) {
+        this.size = size;
     }
 
     public String getModificationTime() {

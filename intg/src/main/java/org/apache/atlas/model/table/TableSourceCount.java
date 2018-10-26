@@ -1,3 +1,16 @@
+// ======================================================================
+//
+//      Copyright (C) 北京国双科技有限公司
+//                    http://www.gridsum.com
+//
+//      保密性声明：此文件属北京国双科技有限公司所有，仅限拥有由国双科技
+//      授予了相应权限的人所查看和所修改。如果你没有被国双科技授予相应的
+//      权限而得到此文件，请删除此文件。未得国双科技同意，不得查看、修改、
+//      散播此文件。
+//
+//
+// ======================================================================
+
 package org.apache.atlas.model.table;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
@@ -6,7 +19,6 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.apache.commons.lang.StringUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -17,35 +29,17 @@ import javax.xml.bind.annotation.XmlRootElement;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class Table implements Cloneable{
+public class TableSourceCount {
 
-    private String tableId;
-    private String database;
     private String tableName;
+    private Long count;
 
-    public Table() {
+    public TableSourceCount() {
     }
 
-    public Table(String tableId, String database, String tableName) {
-        this.tableId = tableId;
-        this.database = database;
+    public TableSourceCount(String tableName, Long count) {
         this.tableName = tableName;
-    }
-
-    public String getTableId() {
-        return tableId;
-    }
-
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
-    }
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public void setDatabase(String database) {
-        this.database = database;
+        this.count = count;
     }
 
     public String getTableName() {
@@ -56,8 +50,11 @@ public class Table implements Cloneable{
         this.tableName = tableName;
     }
 
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        return (Table)super.clone();
+    public Long getCount() {
+        return count;
+    }
+
+    public void setCount(Long count) {
+        this.count = count;
     }
 }
