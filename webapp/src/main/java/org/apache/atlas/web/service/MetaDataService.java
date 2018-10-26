@@ -271,7 +271,7 @@ public class MetaDataService {
             if(type!=null && !type.equals("")) {
                 columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
             }
-            if(description!=null && description.equals("")) {
+            if(description!=null && !description.equals("")) {
                 columns = columns.stream().filter(col -> col.getDescription().equals(description)).collect(Collectors.toList());
             }
         }
@@ -602,31 +602,34 @@ public class MetaDataService {
         for(int i=pathList.size()-1; i>=0; i--) {
             pathStr += pathList.get(i) + "/";
         }
-        Iterator<AtlasRelatedTermHeader> iterator = relatedTerms.iterator();
-        if(iterator.hasNext()) {
-            AtlasRelatedTermHeader term = iterator.next();
-            String termGuid = term.getTermGuid();
-            AtlasGlossaryTerm ret = glossaryService.getTerm(termGuid);
-            //获取Term下的关联
-            Set<AtlasRelatedObjectId> relatedObjectIds = ret.getAssignedEntities();
-            if(relatedObjectIds != null && relatedObjectIds.size()!=0) {
-                Iterator<AtlasRelatedObjectId> relatedIterator = relatedObjectIds.iterator();
-                Set<RelationEntity.RelationInfo> relationInfos = new HashSet<>();
-                while(relatedIterator.hasNext()) {
-                    AtlasRelatedObjectId relatedObject = relatedIterator.next();
-                    RelationEntity.RelationInfo relationInfo = new RelationEntity.RelationInfo();
-                    String relatedObjectGuid = relatedObject.getGuid();
-                    Table table = getTableInfoById(relatedObjectGuid);
-                    String tableName = table.getTableName();
-                    String dbName = table.getDatabaseName();
-                    relationInfo.setGuid(relatedObjectGuid);
-                    relationInfo.setTableName(tableName);
-                    relationInfo.setDbName(dbName);
-                    relationInfo.setPath(pathStr + tableName);
-                    relationInfo.setRealationGuid(relatedObject.getRelationshipGuid());
-                    relationInfos.add(relationInfo);
+
+        if(relatedTerms!=null && relatedTerms.size()!=0) {
+            Iterator<AtlasRelatedTermHeader> iterator = relatedTerms.iterator();
+            if (iterator.hasNext()) {
+                AtlasRelatedTermHeader term = iterator.next();
+                String termGuid = term.getTermGuid();
+                AtlasGlossaryTerm ret = glossaryService.getTerm(termGuid);
+                //获取Term下的关联
+                Set<AtlasRelatedObjectId> relatedObjectIds = ret.getAssignedEntities();
+                if (relatedObjectIds != null && relatedObjectIds.size() != 0) {
+                    Iterator<AtlasRelatedObjectId> relatedIterator = relatedObjectIds.iterator();
+                    Set<RelationEntity.RelationInfo> relationInfos = new HashSet<>();
+                    while (relatedIterator.hasNext()) {
+                        AtlasRelatedObjectId relatedObject = relatedIterator.next();
+                        RelationEntity.RelationInfo relationInfo = new RelationEntity.RelationInfo();
+                        String relatedObjectGuid = relatedObject.getGuid();
+                        Table table = getTableInfoById(relatedObjectGuid);
+                        String tableName = table.getTableName();
+                        String dbName = table.getDatabaseName();
+                        relationInfo.setGuid(relatedObjectGuid);
+                        relationInfo.setTableName(tableName);
+                        relationInfo.setDbName(dbName);
+                        relationInfo.setPath(pathStr + tableName);
+                        relationInfo.setRealationGuid(relatedObject.getRelationshipGuid());
+                        relationInfos.add(relationInfo);
+                    }
+                    relationEntity.setRelations(relationInfos);
                 }
-                relationEntity.setRelations(relationInfos);
             }
         }
         return relationEntity;
