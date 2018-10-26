@@ -42,19 +42,23 @@ public class HiveJdbcUtils {
 
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
     private static String hiveUrl;
+    private static String hiveUser;
+    private static String hivePwd;
 
     static {
         try {
             Class.forName(hivedriverClassName);
             Configuration conf = ApplicationProperties.get();
-            hiveUrl = conf.getString("atlas.hive.url");
+            hiveUrl = conf.getString("metaspace.hive.url");
+            hiveUser="hive";
+            hivePwd="hive";
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public static void execute(String sql) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl)) {
+        try (Connection conn = DriverManager.getConnection(hiveUrl,hiveUser,hivePwd)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -69,7 +73,7 @@ public class HiveJdbcUtils {
      */
     public static TableMetadata metadata(String tableName) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = DriverManager.getConnection(hiveUrl)) {
+        try (Connection conn = DriverManager.getConnection(hiveUrl,hiveUser,hivePwd)) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
@@ -97,7 +101,7 @@ public class HiveJdbcUtils {
 
     public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException {
         try {
-            Connection conn = DriverManager.getConnection(hiveUrl + "/" + db, "hive", "hive");
+            Connection conn = DriverManager.getConnection(hiveUrl + "/" + db,hiveUser,hivePwd);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (Exception e) {
@@ -106,7 +110,7 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl+ "/" + db)) {
+        try (Connection conn = DriverManager.getConnection(hiveUrl+ "/" + db,hiveUser,hivePwd)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
