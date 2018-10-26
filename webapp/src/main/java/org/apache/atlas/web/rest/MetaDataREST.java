@@ -255,8 +255,13 @@ public class MetaDataREST {
             if (name == "") {
                 System.out.println("该id不存在");
             }
+            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
+            AtlasEntity tableEntity = tableInfo.getEntity();
+            Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
+            AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
+            String dbDisplayText = db.getDisplayText();
             String sql = "select * from " + name + " limit " + guidCount.getCount();
-            ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql);
+            ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql,dbDisplayText);
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
             List<Map<String, String>> resultList = new ArrayList<>();
@@ -304,18 +309,20 @@ public class MetaDataREST {
             if (name == "") {
                 System.out.println("该id不存在");
             }
+            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(tableId, true);
+            AtlasEntity tableEntity = tableInfo.getEntity();
+            Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
+            AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
+            String dbDisplayText = db.getDisplayText();
             String sql = "show create table " + name ;
-            ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql);
+            ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql,dbDisplayText);
+            StringBuffer stringBuffer = new StringBuffer();
             while(resultSet.next()){
                 Object object = resultSet.getObject(1);
-                System.out.println(object);
+                stringBuffer.append(object.toString());
             }
-            System.out.println(resultSet);
-//            HiveMetaStoreClient hiveMetaStoreClient = HiveJdbcUtils.getHiveMetaStoreClient();
-//            org.apache.hadoop.hive.metastore.api.Table table = hiveMetaStoreClient.getTable("default", "tax_2015");
-//            String viewOriginalText = table.getViewOriginalText();
-//            System.out.println(viewOriginalText);
-//            buildTableSql.setSql(viewOriginalText);
+            buildTableSql.setSql(stringBuffer.toString());
+            buildTableSql.setTableId(tableId);
             return buildTableSql;
         } finally {
             AtlasPerfTracer.log(perf);
