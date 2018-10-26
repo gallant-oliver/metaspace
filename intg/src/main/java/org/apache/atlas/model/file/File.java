@@ -20,13 +20,13 @@ public class File {
 
     private String fileName;
     private String filePath;
-    private Long size;
+    private String size;
     private String modificationTime;
     private String owner;
     private String type;
     private String permission;
 
-    public File(String fileName, String filePath, Long size, String modificationTime, String owner, String type, String permission) {
+    public File(String fileName, String filePath, String size, String modificationTime, String owner, String type, String permission) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.size = size;
@@ -52,11 +52,11 @@ public class File {
         this.filePath = filePath;
     }
 
-    public Long getSize() {
+    public String getSize() {
         return size;
     }
 
-    public void setSize(Long size) {
+    public void setSize(String size) {
         this.size = size;
     }
 
