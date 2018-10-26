@@ -16,7 +16,9 @@ package org.apache.atlas.web.filters;
 
 import com.google.gson.Gson;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.util.SSLClient;
 import org.apache.atlas.web.util.DateTimeHelper;
 import org.apache.atlas.web.util.Servlets;
@@ -59,16 +61,21 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
-        String loginURL = conf.getString("sso.login.url");
-        String validateURL = conf.getString("sso.validate.url");
-        String infoURL = conf.getString("sso.info.url");
+
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        try {
+            String loginURL = conf.getString("sso.login.url");
+            String validateURL = conf.getString("sso.validate.url");
+            String infoURL = conf.getString("sso.info.url");
+            if(loginURL.equals("")|validateURL.equals("")|infoURL.equals("")|loginURL==null|validateURL==null|infoURL==null){
+                throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS);
+            }
         Enumeration<String> attributeNames = httpServletRequest.getSession().getAttributeNames();
         while(attributeNames.hasMoreElements()){
             String s = attributeNames.nextElement();
         }
-        try {
+
             String requestURL = httpServletRequest.getRequestURL().toString();
             String[] split = requestURL.split("/");
             String welcome = split[0]+"//"+split[2];
@@ -113,6 +120,8 @@ public class SSOFilter implements Filter {
             } else {
                 httpServletResponse.sendRedirect(loginURL + welcome);
             }
+        } catch (AtlasBaseException e) {
+            e.printStackTrace();
         } finally {
             Map user = (Map) httpServletRequest.getSession().getAttribute("user");
             String username = user == null ? "" : user.get("LoginEmail").toString();
