@@ -15,9 +15,12 @@
 package org.apache.atlas.web.filters;
 
 import com.google.gson.Gson;
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.util.SSLClient;
 import org.apache.atlas.web.util.DateTimeHelper;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.configuration.Configuration;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,15 +43,25 @@ public class SSOFilter implements Filter {
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private final Long startTime = System.currentTimeMillis();
     private final Date date = new Date();
+    Configuration conf;
+
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         LOG.info("SSOFilter initialization started");
+        try {
+            conf = ApplicationProperties.get();
+        } catch (AtlasException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
+        String loginURL = conf.getString("sso.login.url");
+        String validateURL = conf.getString("sso.validate.url");
+        String infoURL = conf.getString("sso.info.url");
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         Enumeration<String> attributeNames = httpServletRequest.getSession().getAttributeNames();
@@ -58,7 +71,7 @@ public class SSOFilter implements Filter {
         try {
             String requestURL = httpServletRequest.getRequestURL().toString();
             String[] split = requestURL.split("/");
-            String welcome = split[0]+"//"+split[2]+""+"/welcome.jsp";
+            String welcome = split[0]+"//"+split[2];
             if(requestURL.contains("/css/")||requestURL.contains("/img/")||requestURL.contains("/libs/") ||requestURL.contains("/js/")){
                 filterChain.doFilter(request, response);
             }
@@ -67,7 +80,7 @@ public class SSOFilter implements Filter {
                 String ticket = user == null ? "" : user.get("Ticket").toString();
                 HashMap<String, String> header = new HashMap<>();
                 header.put("ticket", ticket);
-                String s = SSLClient.doGet("https://sso-cas.gridsumdissector.com/api/v2/info", header);
+                String s = SSLClient.doGet(infoURL, header);
                 Gson gson = new Gson();
                 JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                 Object message = jsonObject.get("message");
@@ -75,13 +88,13 @@ public class SSOFilter implements Filter {
                     filterChain.doFilter(request, response);
                 }else{
                     httpServletRequest.getSession().removeAttribute("user");
-                    httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + welcome);
+                    httpServletResponse.sendRedirect(loginURL + welcome);
                 }
             } else if (httpServletRequest.getParameter("ticket") != null) {
                 String ticket = httpServletRequest.getParameter("ticket");
                 HashMap<String, String> header = new HashMap<>();
                 header.put("s-ticket", ticket);
-                String s = SSLClient.doGet("https://sso-cas.gridsumdissector.com/api/v2/validate", header);
+                String s = SSLClient.doGet(validateURL, header);
                 Gson gson = new Gson();
                 JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                 Object message = jsonObject.get("message");
@@ -92,13 +105,13 @@ public class SSOFilter implements Filter {
                     if (data != null) {
                         HttpSession session = httpServletRequest.getSession();
                         session.setAttribute("user", data);
-                        httpServletResponse.sendRedirect(requestURL.toString());
+                        httpServletResponse.sendRedirect(requestURL);
                     } else {
                         LOG.warn("用户信息获取失败");
                     }
                 }
             } else {
-                httpServletResponse.sendRedirect("https://sso-cas.gridsumdissector.com/login?service=" + welcome);
+                httpServletResponse.sendRedirect(loginURL + welcome);
             }
         } finally {
             Map user = (Map) httpServletRequest.getSession().getAttribute("user");

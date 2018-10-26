@@ -35,7 +35,8 @@ public class SearchService {
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
-        List<List<Object>> hiveDbs = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_db", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
+        String s = parameters.getQuery() == null ? "" : parameters.getQuery();
+        List<List<Object>> hiveDbs = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_db", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
         if (hiveDbs == null) {
             throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS, parameters.getQuery());
         }
@@ -65,9 +66,8 @@ public class SearchService {
                 tables.add(table);
             }
             databases.add(database);
-
         }
-        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select count()", "hive_db", "", 1, 0);
+        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select count()", "hive_db", "", 1, 0);
         Object values = numResult.getAttributes().getValues().get(0).get(0);
         pageResult.setOffset(parameters.getOffset());
         pageResult.setCount(databases.size());
@@ -78,7 +78,8 @@ public class SearchService {
 
     public PageResult<Table> getTablePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Table> pageResult = new PageResult<>();
-        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_table", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
+        String s = parameters.getQuery() == null ? "" : parameters.getQuery();
+        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_table", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
         if (hiveTables == null) {
             throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS, parameters.getQuery());
         }
@@ -98,7 +99,7 @@ public class SearchService {
             table.setDatabaseName(db.getDisplayText());
             tables.add(table);
         }
-        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select count()", "hive_table", "", 1, 0);
+        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select count()", "hive_table", "", 1, 0);
         Object values = numResult.getAttributes().getValues().get(0).get(0);
         pageResult.setOffset(parameters.getOffset());
         pageResult.setCount(tables.size());
@@ -109,7 +110,8 @@ public class SearchService {
 
     public PageResult<Column> getColumnPageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Column> pageResult = new PageResult<>();
-        List<List<Object>> hiveColumns = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_column", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
+        String s = parameters.getQuery() == null ? "" : parameters.getQuery();
+        List<List<Object>> hiveColumns = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_column", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
         if (hiveColumns == null) {
             throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS, parameters.getQuery());
         }
@@ -132,7 +134,7 @@ public class SearchService {
             column.setDatabaseName(db.getDisplayText());
             columns.add(column);
         }
-        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + parameters.getQuery() + "*' where __state = 'ACTIVE' select count()", "hive_column", "", 1, 0);
+        AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select count()", "hive_column", "", 1, 0);
         Object values = numResult.getAttributes().getValues().get(0).get(0);
         pageResult.setOffset(parameters.getOffset());
         pageResult.setCount(columns.size());
