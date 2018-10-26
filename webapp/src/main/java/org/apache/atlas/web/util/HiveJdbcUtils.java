@@ -104,4 +104,12 @@ public class HiveJdbcUtils {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
+
+    public static void execute(String sql, String db) throws AtlasBaseException {
+        try (Connection conn = DriverManager.getConnection(hiveUrl+ "/" + db)) {
+            conn.createStatement().execute(sql);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
 }

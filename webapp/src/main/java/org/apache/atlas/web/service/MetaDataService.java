@@ -18,6 +18,7 @@ package org.apache.atlas.web.service;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.annotation.AtlasService;
@@ -42,6 +43,7 @@ import org.apache.atlas.model.metadata.ColumnQuery;
 import org.apache.atlas.model.metadata.LineageInfo;
 import org.apache.atlas.model.metadata.RelationEntity;
 import org.apache.atlas.model.metadata.Table;
+import org.apache.atlas.model.metadata.TableEdit;
 import org.apache.atlas.model.metadata.TablePermission;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -181,7 +183,11 @@ public class MetaDataService {
             TablePermission permission = new TablePermission();
             table.setTablePermission(permission);
         }
-        List<Column> columns = new ArrayList<>();
+
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(guid);
+        List<Column> columns = getColumnInfoById(columnQuery);
+
         table.setColumns(columns);
         return table;
     }
@@ -654,7 +660,18 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         String tableName = table.getTableName();
         String sql = String.format("alter table %s set tblproperties('comment'=%s)", tableName, description);
-        HiveJdbcUtils.execute(sql);
+        HiveJdbcUtils.execute(sql, dbName);
+    }
+
+    public void updateColumnDescription(TableEdit.ColumnEdit columnEdit) throws AtlasBaseException {
+        Table table = getTableInfoById(columnEdit.getTableId());
+        String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
+        String columnName = columnEdit.getColumnName();
+        String type = columnEdit.getType();
+        String description = columnEdit.getDescription();
+        String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
+        HiveJdbcUtils.execute(sql, dbName);
     }
 
     private SortOrder toSortOrder(final String sort) {
