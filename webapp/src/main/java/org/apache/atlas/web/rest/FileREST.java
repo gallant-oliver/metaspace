@@ -30,6 +30,7 @@ import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableMetadata;
 import org.apache.atlas.query.QueryParams;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.ParamChecker;
 import org.apache.atlas.web.service.FileService;
@@ -139,7 +140,8 @@ public class FileREST {
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
-                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
+                    String size = BytesUtils.humanReadableByteCount(f.getBlockSize());
+                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), size, DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
         return new PageList<>(params.offset(), pair.getLeft(), list);
@@ -165,7 +167,8 @@ public class FileREST {
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
-                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), f.getBlockSize(), DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
+                    String size = BytesUtils.humanReadableByteCount(f.getBlockSize());
+                    return new File(f.getPath().getName(), f.getPath().toUri().getPath(), size, DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
         return new PageList<>(params.offset(), pair.getLeft(), list);
