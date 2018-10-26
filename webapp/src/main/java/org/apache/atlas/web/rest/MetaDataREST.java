@@ -420,4 +420,36 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    @POST
+    @Path("/update/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
+            }
+            metadataService.updateTableDescription(tableEdit);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @POST
+    @Path("/update/table/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateColumnDescription()");
+            }
+            metadataService.updateColumnDescription(columnEdit);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }

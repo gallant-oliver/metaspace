@@ -39,6 +39,7 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.CategoryEntity;
 import org.apache.atlas.model.metadata.CategoryHeader;
 import org.apache.atlas.model.metadata.Column;
+import org.apache.atlas.model.metadata.ColumnEdit;
 import org.apache.atlas.model.metadata.ColumnQuery;
 import org.apache.atlas.model.metadata.LineageInfo;
 import org.apache.atlas.model.metadata.RelationEntity;
@@ -655,15 +656,17 @@ public class MetaDataService {
         return categoryHeaders;
     }
 
-    public void updateTableDescription(String guid, String description) throws AtlasBaseException {
+    public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
+        String guid = tableEdit.getGuid();
+        String description = tableEdit.getDescription();
         Table table = getTableInfoById(guid);
         String dbName = table.getDatabaseName();
         String tableName = table.getTableName();
-        String sql = String.format("alter table %s set tblproperties('comment'=%s)", tableName, description);
+        String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
         HiveJdbcUtils.execute(sql, dbName);
     }
 
-    public void updateColumnDescription(TableEdit.ColumnEdit columnEdit) throws AtlasBaseException {
+    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
         Table table = getTableInfoById(columnEdit.getTableId());
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
