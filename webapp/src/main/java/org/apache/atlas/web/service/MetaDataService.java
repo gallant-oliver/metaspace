@@ -633,7 +633,7 @@ public class MetaDataService {
 
     public Set<CategoryHeader> getCategories(String sort) throws AtlasBaseException {
         Set<CategoryHeader> categoryHeaders = new HashSet<CategoryHeader>();
-        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(0, -1, toSortOrder(sort));
+        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, toSortOrder(sort));
         if(glossaries!=null && glossaries.size()!=0) {
             AtlasGlossary baseGlosary = glossaries.get(0);
             Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
