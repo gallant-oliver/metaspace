@@ -1,6 +1,7 @@
 package org.apache.atlas.web.service;
 
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -14,7 +15,6 @@ import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.ws.rs.QueryParam;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+@AtlasService
 public class SearchService {
     @Autowired
     private DiscoveryREST discoveryREST;

@@ -12,23 +12,16 @@
 // ======================================================================
 package org.apache.atlas.web.rest;
 
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.glossary.GlossaryService;
-import org.apache.atlas.model.discovery.AtlasSearchResult;
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.model.result.BuildTableSql;
 import org.apache.atlas.model.result.PageResult;
 import org.apache.atlas.model.result.TableShow;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.service.MetaDataService;
 import org.apache.atlas.web.service.SearchService;
-import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -40,10 +33,9 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 @Path("metadata")
 @Singleton
