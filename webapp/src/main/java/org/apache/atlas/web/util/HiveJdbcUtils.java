@@ -66,7 +66,7 @@ public class HiveJdbcUtils {
     }
 
     /**
-     * 表数据量大小（KB）
+     * 表数据量大小，单位bytes
      *
      * @param
      * @return

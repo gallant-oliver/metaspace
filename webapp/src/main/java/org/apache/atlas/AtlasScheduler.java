@@ -18,6 +18,7 @@ import static javax.swing.text.html.CSS.getAttribute;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.DateType;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -71,7 +72,7 @@ public class AtlasScheduler {
     @Scheduled(cron = "* * 23 * * ? ")   //每天晚上11点
     public void insertTableMetadataStat() throws Exception {
 
-        System.out.println("scheduler start");
+        log.info("scheduler start");
         List<TableStat> tableStatList = new ArrayList<>();
         SearchParameters parameters = new SearchParameters();
         parameters.setTypeName("hive_table");
@@ -137,33 +138,39 @@ public class AtlasScheduler {
                         List<Table> sourceTableList = new ArrayList<>();
                         fromProcessGuids.forEach(fromProcessGuid -> {
                             String sourceTableGuid = toFromGuidMap.get(fromProcessGuid).get(0);
-                            String sourceTableQualifiedName = lineage.getGuidEntityMap().get(sourceTableGuid).getAttribute("qualifiedName").toString();
+                            AtlasEntityHeader entityHeader = lineage.getGuidEntityMap().get(sourceTableGuid);
+                            String sourceTableQualifiedName = entityHeader.getAttribute("qualifiedName").toString();
+                            String sourceTableTypeName = entityHeader.getTypeName();
                             String sourceTableName = sourceTableQualifiedName.substring(0, sourceTableQualifiedName.indexOf("@"));
-                            String[] split = sourceTableName.split("\\.");
-                            sourceTableList.add(new Table(sourceTableGuid, split[0], split[1]));
+                            if ("hdfs_path".equals(sourceTableTypeName)) {
+                                sourceTableList.add(new Table(sourceTableGuid, "", sourceTableName));
+                            } else if ("hive_table".equals(sourceTableTypeName)) {
+                                String[] split = sourceTableName.split("\\.");
+                                sourceTableList.add(new Table(sourceTableGuid, split[0], split[1]));
+                            }
                         });
                         tableStat.setSourceTable(sourceTableList);
                     }
 
                     //数据增量
                     Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId);
-                    tableStat.setDateType("1");
+                    tableStat.setDateType(DateType.DAY.getLiteral());
                     long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
                     tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
-                    tableStat.setDate(DateUtils.today());
+                    tableStat.setDate(DateUtils.yesterday());
                     tableStatList.add(tableStat);
                     log.info("add tableStat day done {} ,index at {}/{}", qualifiedName, i, tables.size());
 
-                    TableStat tableStatMonth = (TableStat)tableStat.clone();
-                    tableStatMonth.setDateType("2");
+                    TableStat tableStatMonth = (TableStat) tableStat.clone();
+                    tableStatMonth.setDateType(DateType.MONTH.getLiteral());
                     long monthIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("month");
                     tableStatMonth.setDataIncrement(BytesUtils.humanReadableByteCount(monthIncrement));
                     tableStatMonth.setDate(DateUtils.currentMonth());
                     tableStatList.add(tableStatMonth);
                     log.info("add tableStat month done {} ,index at {}/{}", qualifiedName, i, tables.size());
 
-                    TableStat tableStatYear = (TableStat)tableStat.clone();
-                    tableStatYear.setDateType("3");
+                    TableStat tableStatYear = (TableStat) tableStat.clone();
+                    tableStatYear.setDateType(DateType.YEAR.getLiteral());
                     long yearIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("year");
                     tableStatYear.setDataIncrement(BytesUtils.humanReadableByteCount(yearIncrement));
                     tableStatYear.setDate(DateUtils.currentYear());
@@ -176,7 +183,7 @@ public class AtlasScheduler {
         }
         //插入hbase
         tableStatService.add(tableStatList);
-        System.out.println("scheduler end");
+        log.info("scheduler end");
     }
 
 }

@@ -14,6 +14,7 @@
 package org.apache.atlas.web.rest;
 
 import org.apache.atlas.model.table.TableForm;
+import org.apache.atlas.model.table.TableSql;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.TableSqlUtils;
@@ -46,9 +47,9 @@ public class TableREST {
 
     @POST
     @Path("/create/sql")
-    @Consumes(MediaType.TEXT_PLAIN)
-    public Response sqlCreate(String sql) throws Exception {
-        HiveJdbcUtils.execute(sql);
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Response sqlCreate(TableSql sql) throws Exception {
+        HiveJdbcUtils.execute(sql.getSql());
         return Response.status(200).entity("success").build();
     }
 
