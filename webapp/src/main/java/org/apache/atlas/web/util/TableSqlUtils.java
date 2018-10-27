@@ -61,6 +61,7 @@ public class TableSqlUtils {
             }
 
             if (StringUtils.isNotBlank(storedFormat)) {
+                storedFormat = storedFormat.toUpperCase();
                 StorageFormat.of(storedFormat);
                 sqlFormat.append(" STORED AS " + storedFormat);
             }

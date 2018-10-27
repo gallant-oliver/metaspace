@@ -15,12 +15,12 @@ package org.apache.atlas.model.table;
 
 public enum StorageFormat {
 
-    AVRO("avro"),
-    JSONFILE("jsonfile"),
-    PARQUET("parquet"),
-    TEXTFILE("textfile"),
-    SEQUENCEFILE("sequencefile"),
-    ORC("orc");
+    AVRO("AVRO"),
+    JSONFILE("JSONFILE"),
+    PARQUET("PARQUET"),
+    TEXTFILE("TEXTFILE"),
+    SEQUENCEFILE("SEQUENCEFILE"),
+    ORC("ORC");
 
 
     private String literal;
@@ -31,20 +31,20 @@ public enum StorageFormat {
 
     public static StorageFormat of(String storageFormat) {
         switch (storageFormat) {
-            case "avro":
+            case "AVRO":
                 return AVRO;
-            case "jsonfile":
+            case "JSONFILE":
                 return JSONFILE;
-            case "parquet":
+            case "PARQUET":
                 return PARQUET;
-            case "textfile":
+            case "TEXTFILE":
                 return TEXTFILE;
-            case "sequencefile":
+            case "SEQUENCEFILE":
                 return SEQUENCEFILE;
-            case "orc":
+            case "ORC":
                 return ORC;
             default:
-                throw new RuntimeException("StorageFormat " + storageFormat + "is not support");
+                throw new RuntimeException("StorageFormat " + storageFormat + " is not support");
         }
     }
 
