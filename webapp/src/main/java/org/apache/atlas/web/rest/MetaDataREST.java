@@ -132,7 +132,7 @@ public class MetaDataREST {
      * @return TableShow
      */
     @POST
-    @Path("/search/table/preview")
+    @Path("/table/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TableShow selectData(GuidCount guidCount) throws AtlasBaseException, SQLException {
@@ -152,10 +152,10 @@ public class MetaDataREST {
     /**
      * sql
      *
-     * @return List<Table>
+     * @return BuildTableSql
      */
     @GET
-    @Path("/search/table/sql")
+    @Path("/table/sql")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BuildTableSql getTableSQL(@QueryParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
@@ -382,7 +382,7 @@ public class MetaDataREST {
     }
 
     @DELETE
-    @Path("/category/relations/{categoryGuid}/assignedEntities")
+    @Path("/category/{categoryGuid}/assignedEntities")
     public void removeRelationAssignmentFromEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
