@@ -21,6 +21,7 @@ import org.apache.atlas.model.table.StorageFormat;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.model.table.TableType;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class TableSqlUtils {
             String comment = tableForm.getComment();
             String expireDate = tableForm.getExpireDate();
             boolean isPartition = tableForm.isPartition();
-            List<Field> partitionFileds = tableForm.getPartitionFileds();
+            List<Field> partitionFields = tableForm.getPartitionFields();
             String storedFormat = tableForm.getStoredFormat();
             String hdfsPath = tableForm.getHdfsPath();
             String fieldsTerminated = tableForm.getFieldsTerminated();
@@ -45,9 +46,9 @@ public class TableSqlUtils {
             if (StringUtils.isNotBlank(comment)) {
                 sqlFormat.append(" COMMENT '" + comment + "'");
             }
-            if (isPartition) {
-                String partitionFiledsLiteral = Joiner.on(",").join(partitionFileds);
-                sqlFormat.append(" PARTITIONED BY (" + partitionFiledsLiteral + ")");
+            if (isPartition && partitionFields != null) {
+                String partitionFieldsLiteral = Joiner.on(",").join(partitionFields);
+                sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
             }
 
             if (tableTypeEnum.isExternal()) {
@@ -74,7 +75,7 @@ public class TableSqlUtils {
                                        database, tableName, fieldsLiteral);
             return sql;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
         }
 
     }

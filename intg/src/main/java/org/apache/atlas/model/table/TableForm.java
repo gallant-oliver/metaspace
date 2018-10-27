@@ -18,6 +18,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang.StringUtils;
 
@@ -42,7 +43,7 @@ public class TableForm {
     private String expireDate;
     private List<Field> fields;
     private boolean isPartition;
-    private List<Field> partitionFileds;
+    private List<Field> partitionFields;
     private String storedFormat;
     private String hdfsPath;
     private String fieldsTerminated;
@@ -59,7 +60,7 @@ public class TableForm {
         this.expireDate = expireDate;
         this.fields = fields;
         this.isPartition = isPartition;
-        this.partitionFileds = partitionFileds;
+        this.partitionFields = partitionFields;
         this.storedFormat = storedFormat;
         this.hdfsPath = hdfsPath;
         this.fieldsTerminated = fieldsTerminated;
@@ -118,16 +119,16 @@ public class TableForm {
         return isPartition;
     }
 
-    public void setPartition(boolean partition) {
-        isPartition = partition;
+    public void setIsPartition(boolean isPartition) {
+        this.isPartition = isPartition;
     }
 
-    public List<Field> getPartitionFileds() {
-        return partitionFileds;
+    public List<Field> getPartitionFields() {
+        return partitionFields;
     }
 
-    public void setPartitionFileds(List<Field> partitionFileds) {
-        this.partitionFileds = partitionFileds;
+    public void setPartitionFields(List<Field> partitionFields) {
+        this.partitionFields = partitionFields;
     }
 
     public String getStoredFormat() {

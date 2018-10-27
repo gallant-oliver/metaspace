@@ -45,7 +45,18 @@ public class TableFormSqlUtilsTest {
         String sql = TableSqlUtils.format(tableForm);
         assertEquals(sql, "CREATE EXTERNAL TABLE default.person (name string,age int) COMMENT 'desc person' PARTITIONED BY (gender int COMMENT 'sex')" +
                           " ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n" +
-                          "' STORED AS parquet LOCATION '/usr/local/person'");
+                          "' STORED AS PARQUET LOCATION '/usr/local/person'");
     }
 
+    @Test
+    public void testFormatInternal() throws AtlasBaseException {
+        TableForm tableForm = new TableForm("default", "person", "desc person", 2, "-1",
+                                            Lists.newArrayList(new Field("name", null, "string"), new Field("age", null, "int"))
+                , true, Lists.newArrayList(new Field("gender", "sex", "int")),
+                                            "parquet", null, null, null
+        );
+
+        String sql = TableSqlUtils.format(tableForm);
+        assertEquals(sql, "CREATE  TABLE default.person (name string,age int) COMMENT 'desc person' PARTITIONED BY (gender int COMMENT 'sex') STORED AS PARQUET");
+    }
 }
