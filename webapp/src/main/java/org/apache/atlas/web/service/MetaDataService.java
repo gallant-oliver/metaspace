@@ -56,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -371,7 +372,9 @@ public class MetaDataService {
         }
         AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
         //updateTime
-        lineageEntity.setTableUpdateTime(atlasTableEntity.getUpdateTime().toString());
+        SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formatDateStr = sdf.format(atlasTableEntity.getUpdateTime());
+        lineageEntity.setTableUpdateTime(formatDateStr);
         //dbName
         if(atlasTableEntity.hasRelationshipAttribute("db") && atlasTableEntity.getRelationshipAttribute("db") != null) {
             Object obj = atlasTableEntity.getRelationshipAttribute("db");
