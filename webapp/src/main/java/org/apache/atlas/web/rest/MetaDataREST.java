@@ -382,7 +382,7 @@ public class MetaDataREST {
     }
 
     @DELETE
-    @Path("/category/relations/{categoryGuid}/assignedEntities")
+    @Path("/category/{categoryGuid}/assignedEntities")
     public void removeRelationAssignmentFromEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;

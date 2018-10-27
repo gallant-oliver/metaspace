@@ -461,6 +461,9 @@ public class MetaDataService {
         tmpCategory.setName(category.getName());
         tmpCategory.setShortDescription(category.getDescription());
         tmpCategory.setLongDescription(category.getDescription());
+        AtlasRelatedCategoryHeader parentCategoryHeader = category.getParentCategory();
+        if(parentCategoryHeader != null)
+            tmpCategory.setParentCategory(parentCategoryHeader);
         tmpCategory = glossaryService.createCategory(tmpCategory);
         category.setQualifiedName(tmpCategory.getQualifiedName());
         category.setGuid(tmpCategory.getGuid());
@@ -501,6 +504,15 @@ public class MetaDataService {
         List<AtlasRelatedTermHeader> terms = glossaryService.getCategoryTerms(categoryGuid, -1, 0, SortOrder.ASCENDING);
         for (AtlasRelatedTermHeader term : terms) {
             glossaryService.deleteTerm(term.getTermGuid());
+        }
+        AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
+        Set<AtlasRelatedCategoryHeader> childrenCategories = category.getChildrenCategories();
+        if(childrenCategories != null) {
+            Iterator<AtlasRelatedCategoryHeader> iterator = childrenCategories.iterator();
+            while(iterator.hasNext()) {
+                String chidGuid = iterator.next().getCategoryGuid();
+                deleteGlossaryCategory(chidGuid);
+            }
         }
 
         glossaryService.deleteCategory(categoryGuid);
