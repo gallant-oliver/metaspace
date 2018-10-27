@@ -182,7 +182,7 @@ public class MetaDataREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/table/guid/{guid}")
+    @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {

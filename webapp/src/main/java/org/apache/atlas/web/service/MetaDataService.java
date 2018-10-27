@@ -335,23 +335,44 @@ public class MetaDataService {
 
         AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, 1);
         Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
-        AtlasEntityHeader atlasEntity = entities.get(guid);
-        getEntityInfo(guid, lineageEntity, entities, atlasEntity);
-        if(atlasEntity.getTypeName().contains("table")) {
-            AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
-            Set<AtlasLineageInfo.LineageRelation> fullRelations = fullLineageInfo.getRelations();
-            //直接上游表数量
-            long directUpStreamNum = getInDirectRelationNode(guid, fullRelations).size();
-            lineageEntity.setDirectUpStreamNum(directUpStreamNum);
-            //直接下游表数量
-            long directDownStreamNum = getOutDirectRelationNode(lineageEntity.getGuid(), fullRelations).size();
-            lineageEntity.setDirectDownStreamNum(directDownStreamNum);
-            //上游表层数
-            long upStreamLevelNum = getMaxDepth("in", lineageEntity.getGuid(), fullRelations);
-            lineageEntity.setUpStreamLevelNum((upStreamLevelNum - 1) / 2);
-            //下游表层数
-            long downStreamLevelNum = getMaxDepth("out", lineageEntity.getGuid(), fullRelations);
-            lineageEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
+        if(entities!=null && entities.size()!=0) {
+            AtlasEntityHeader atlasEntity = entities.get(guid);
+            getEntityInfo(guid, lineageEntity, entities, atlasEntity);
+            if (atlasEntity.getTypeName().contains("table")) {
+                AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+                Set<AtlasLineageInfo.LineageRelation> fullRelations = fullLineageInfo.getRelations();
+                //直接上游表数量
+                long directUpStreamNum = getInDirectRelationNode(guid, fullRelations).size();
+                lineageEntity.setDirectUpStreamNum(directUpStreamNum);
+                //直接下游表数量
+                long directDownStreamNum = getOutDirectRelationNode(lineageEntity.getGuid(), fullRelations).size();
+                lineageEntity.setDirectDownStreamNum(directDownStreamNum);
+                //上游表层数
+                long upStreamLevelNum = getMaxDepth("in", lineageEntity.getGuid(), fullRelations);
+                lineageEntity.setUpStreamLevelNum((upStreamLevelNum - 1) / 2);
+                //下游表层数
+                long downStreamLevelNum = getMaxDepth("out", lineageEntity.getGuid(), fullRelations);
+                lineageEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
+            }
+        } else {
+            lineageEntity.setGuid(guid);
+            AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
+            if(atlasTableEntity.hasAttribute("name")) {
+                lineageEntity.setTableName(atlasTableEntity.getAttribute("name").toString());
+            }
+            lineageEntity.setTypeName(atlasTableEntity.getTypeName());
+            //updateTime
+            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(atlasTableEntity.getUpdateTime());
+            lineageEntity.setTableUpdateTime(formatDateStr);
+            //dbName
+            if(atlasTableEntity.hasRelationshipAttribute("db") && atlasTableEntity.getRelationshipAttribute("db") != null) {
+                Object obj = atlasTableEntity.getRelationshipAttribute("db");
+                if(obj instanceof AtlasRelatedObjectId) {
+                    AtlasRelatedObjectId relatedObject = (AtlasRelatedObjectId)obj;
+                    lineageEntity.setDbName(relatedObject.getDisplayText());
+                }
+            }
         }
         return lineageEntity;
     }
