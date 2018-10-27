@@ -65,6 +65,7 @@ public class SearchService {
                 table.setDescription(tableDescription);
                 tables.add(table);
             }
+            database.setTableList(tables);
             databases.add(database);
         }
         AtlasSearchResult numResult = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select count()", "hive_db", "", 1, 0);
