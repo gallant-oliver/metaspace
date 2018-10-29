@@ -155,7 +155,7 @@ public class MetaDataREST {
      * @return BuildTableSql
      */
     @GET
-    @Path("/table/sql")
+    @Path("/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BuildTableSql getTableSQL(@QueryParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
