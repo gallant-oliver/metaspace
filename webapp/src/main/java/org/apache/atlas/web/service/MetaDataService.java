@@ -18,7 +18,6 @@ package org.apache.atlas.web.service;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.annotation.AtlasService;
@@ -47,15 +46,10 @@ import org.apache.atlas.model.metadata.Table;
 import org.apache.atlas.model.metadata.TableEdit;
 import org.apache.atlas.model.metadata.TablePermission;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import org.apache.atlas.utils.AtlasPerfTracer;
-import org.apache.atlas.web.rest.DiscoveryREST;
-import org.apache.atlas.web.rest.EntityREST;
 import org.apache.atlas.web.util.HiveJdbcUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -113,7 +107,9 @@ public class MetaDataService {
             }
             //创建时间
             if(entity.hasAttribute("createTime") && Objects.nonNull(entity.getAttribute("createTime"))) {
-                table.setCreateTime(entity.getAttribute("createTime").toString());
+                SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formatDateStr = sdf.format(entity.getAttribute("createTime"));
+                table.setCreateTime(formatDateStr);
             }
             //描述
             if(entity.hasAttribute("comment") && Objects.nonNull(entity.getAttribute("comment"))) {
@@ -705,15 +701,20 @@ public class MetaDataService {
         HiveJdbcUtils.execute(sql, dbName);
     }
 
-    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
-        Table table = getTableInfoById(columnEdit.getTableId());
-        String tableName = table.getTableName();
-        String dbName = table.getDatabaseName();
-        String columnName = columnEdit.getColumnName();
-        String type = columnEdit.getType();
-        String description = columnEdit.getDescription();
-        String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
-        HiveJdbcUtils.execute(sql, dbName);
+    public void updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
+        if(Objects.isNull(columnEdits))
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "parameters is none");
+        for(int i=0; i<columnEdits.size(); i++) {
+            ColumnEdit columnEdit = columnEdits.get(i);
+            Table table = getTableInfoById(columnEdit.getTableId());
+            String tableName = table.getTableName();
+            String dbName = table.getDatabaseName();
+            String columnName = columnEdit.getColumnName();
+            String type = columnEdit.getType();
+            String description = columnEdit.getDescription();
+            String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
+            HiveJdbcUtils.execute(sql, dbName);
+        }
     }
 
     private SortOrder toSortOrder(final String sort) {

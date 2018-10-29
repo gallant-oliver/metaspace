@@ -444,13 +444,13 @@ public class MetaDataREST {
     @Path("/update/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
+    public void updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateColumnDescription()");
             }
-            metadataService.updateColumnDescription(columnEdit);
+            metadataService.updateColumnDescription(columnEdits);
         } finally {
             AtlasPerfTracer.log(perf);
         }
