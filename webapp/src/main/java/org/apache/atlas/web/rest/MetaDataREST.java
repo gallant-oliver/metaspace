@@ -158,9 +158,12 @@ public class MetaDataREST {
     @Path("/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getTableSQL(@QueryParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
+    public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
         AtlasPerfTracer perf = null;
-        try {
+        if(tableId==null|tableId.equals("")){
+            //表id为空
+
+        }        try {
 
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
