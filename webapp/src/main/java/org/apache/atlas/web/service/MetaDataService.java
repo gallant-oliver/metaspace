@@ -116,8 +116,8 @@ public class MetaDataService {
                 table.setCreateTime(entity.getAttribute("createTime").toString());
             }
             //描述
-            if(entity.hasAttribute("description") && Objects.nonNull(entity.getAttribute("description"))) {
-                table.setDescription(entity.getAttribute("description").toString());
+            if(entity.hasAttribute("comment") && Objects.nonNull(entity.getAttribute("comment"))) {
+                table.setDescription(entity.getAttribute("comment").toString());
             }
 
             if(entity.hasAttribute("sd") && Objects.nonNull(entity.getAttribute("sd"))) {
