@@ -100,9 +100,10 @@ public class AtlasScheduler {
                     }
                     //表名
                     String qualifiedName = entity.getAttribute("qualifiedName").toString();
+                    String displayName = entity.getAttribute("name").toString();
                     String tableName = qualifiedName.substring(0, qualifiedName.indexOf("@"));
                     log.info("add tableStat start {} ,index at {}/{}", qualifiedName, i, tables.size());
-                    tableStat.setTableName(tableName);
+                    tableStat.setTableName(displayName);
 
                     TableMetadata metadata = HiveJdbcUtils.metadata(tableName);
                     //表数据量
@@ -141,12 +142,13 @@ public class AtlasScheduler {
                             AtlasEntityHeader entityHeader = lineage.getGuidEntityMap().get(sourceTableGuid);
                             String sourceTableQualifiedName = entityHeader.getAttribute("qualifiedName").toString();
                             String sourceTableTypeName = entityHeader.getTypeName();
+                            String sourceDisplayName = entityHeader.getAttribute("name").toString();
                             String sourceTableName = sourceTableQualifiedName.substring(0, sourceTableQualifiedName.indexOf("@"));
                             if ("hdfs_path".equals(sourceTableTypeName)) {
                                 sourceTableList.add(new Table(sourceTableGuid, "", sourceTableName));
                             } else if ("hive_table".equals(sourceTableTypeName)) {
                                 String[] split = sourceTableName.split("\\.");
-                                sourceTableList.add(new Table(sourceTableGuid, split[0], split[1]));
+                                sourceTableList.add(new Table(sourceTableGuid, split[0], sourceDisplayName));
                             }
                         });
                         tableStat.setSourceTable(sourceTableList);
