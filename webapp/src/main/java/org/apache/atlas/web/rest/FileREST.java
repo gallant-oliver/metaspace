@@ -140,7 +140,7 @@ public class FileREST {
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
-                    String size = BytesUtils.humanReadableByteCount(f.getBlockSize());
+                    String size = BytesUtils.humanReadableByteCount(f.getLen());
                     return new File(f.getPath().getName(), f.getPath().toUri().getPath(), size, DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
@@ -167,7 +167,7 @@ public class FileREST {
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
-                    String size = BytesUtils.humanReadableByteCount(f.getBlockSize());
+                    String size = BytesUtils.humanReadableByteCount(f.getLen());
                     return new File(f.getPath().getName(), f.getPath().toUri().getPath(), size, DateUtils.formatDateTime(f.getModificationTime()), f.getOwner(), type, f.getPermission().toString());
                 })
                 .collect(Collectors.toList());
