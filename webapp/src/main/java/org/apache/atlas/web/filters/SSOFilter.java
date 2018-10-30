@@ -68,7 +68,7 @@ public class SSOFilter implements Filter {
             String loginURL = conf.getString("sso.login.url");
             String validateURL = conf.getString("sso.validate.url");
             String infoURL = conf.getString("sso.info.url");
-            if(loginURL.equals("")|validateURL.equals("")|infoURL.equals("")|loginURL==null|validateURL==null|infoURL==null){
+            if(loginURL==null|validateURL==null|infoURL==null|loginURL.equals("")|validateURL.equals("")|infoURL.equals("")){
                 throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS);
             }
         Enumeration<String> attributeNames = httpServletRequest.getSession().getAttributeNames();

@@ -42,10 +42,10 @@ public class HiveJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
 
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
-    private static String hiveUrl;
-    private static String hivePrincipal;
-    private static String kerberosAdmin;
-    private static String kerberosKeytab;
+    private static String hiveUrl="";
+    private static String hivePrincipal="";
+    private static String kerberosAdmin="";
+    private static String kerberosKeytab="";
 
 
     static {
@@ -55,13 +55,12 @@ public class HiveJdbcUtils {
             hiveUrl = conf.getString("metaspace.hive.url");
             if(conf.getString("metaspace.kerberos.enable").equals("true")) {
                 if(
-                        conf.getString("metaspace.kerberos.admin")  .equals("")|
-                        conf.getString("metaspace.kerberos.keytab")  .equals("")|
-                        conf.getString("metaspace.hive.principal")  .equals("")|
                         conf.getString("metaspace.kerberos.admin")  ==null|
                         conf.getString("metaspace.kerberos.keytab")  ==null|
-                        conf.getString("metaspace.hive.principal")  ==null
-
+                        conf.getString("metaspace.hive.principal")  ==null|
+                        conf.getString("metaspace.kerberos.admin")  .equals("")|
+                        conf.getString("metaspace.kerberos.keytab")  .equals("")|
+                        conf.getString("metaspace.hive.principal")  .equals("")
                 ){
                     LOG.error("kerberos info incomplete");
                 }else {
@@ -71,7 +70,7 @@ public class HiveJdbcUtils {
                     configuration.set("hadoop.security.authentication", "Kerberos");
                     UserGroupInformation.setConfiguration(configuration);
                     UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
-                    hivePrincipal = conf.getString("metaspace.hive.principal");
+                    hivePrincipal = ";principal="+conf.getString("metaspace.hive.principal");
                 }
             }
         } catch (Exception e) {
@@ -80,7 +79,7 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl+";"+hivePrincipal)) {
+        try (Connection conn = DriverManager.getConnection((hiveUrl+";").replace(";",hivePrincipal))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -95,7 +94,7 @@ public class HiveJdbcUtils {
      */
     public static TableMetadata metadata(String tableName) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = DriverManager.getConnection(hiveUrl+","+hivePrincipal)) {
+        try (Connection conn = DriverManager.getConnection((hiveUrl+";").replace(";",hivePrincipal))) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
@@ -123,7 +122,7 @@ public class HiveJdbcUtils {
 
     public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException {
         try {
-            Connection conn = DriverManager.getConnection(hiveUrl + "/" + db+";"+hivePrincipal);
+            Connection conn = DriverManager.getConnection((hiveUrl+"/"+db+";").replace(";",hivePrincipal));
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (Exception e) {
@@ -132,7 +131,7 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(hiveUrl+ "/" + db+";"+hivePrincipal)) {
+        try (Connection conn = DriverManager.getConnection((hiveUrl+"/"+db+";").replace(";",hivePrincipal))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
