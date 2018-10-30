@@ -182,7 +182,7 @@ public class SearchService {
         return tableShow;
     }
 
-    public BuildTableSql getBuildTableSql(@QueryParam("tableId") String tableId) throws AtlasBaseException, SQLException {
+    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException {
         BuildTableSql buildTableSql = new BuildTableSql();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(tableId);
         AtlasEntity entity = info.getEntity();

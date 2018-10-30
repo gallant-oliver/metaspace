@@ -155,12 +155,15 @@ public class MetaDataREST {
      * @return BuildTableSql
      */
     @GET
-    @Path("/table/sql")
+    @Path("/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getTableSQL(@QueryParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
+    public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
         AtlasPerfTracer perf = null;
-        try {
+        if(tableId==null|tableId.equals("")){
+            //表id为空
+
+        }        try {
 
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
@@ -182,7 +185,7 @@ public class MetaDataREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/table/guid/{guid}")
+    @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
@@ -441,13 +444,13 @@ public class MetaDataREST {
     @Path("/update/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateColumnDescription(ColumnEdit columnEdit) throws AtlasBaseException {
+    public void updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateColumnDescription()");
             }
-            metadataService.updateColumnDescription(columnEdit);
+            metadataService.updateColumnDescription(columnEdits);
         } finally {
             AtlasPerfTracer.log(perf);
         }
