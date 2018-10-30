@@ -27,6 +27,7 @@ import org.apache.atlas.glossary.GlossaryService;
 import org.apache.atlas.model.glossary.AtlasGlossary;
 import org.apache.atlas.model.glossary.AtlasGlossaryCategory;
 import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
+import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
@@ -60,6 +61,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.PathParam;
 
 
 /*
@@ -763,6 +766,78 @@ public class MetaDataService {
             String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
             HiveJdbcUtils.execute(sql, dbName);
         }
+    }
+
+    public List<RelationEntity.RelationInfo> getQueryTables(String tableName) throws AtlasBaseException {
+        List<RelationEntity.RelationInfo> relationInfoList = new ArrayList<>();
+        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1,0, SortOrder.ASCENDING);
+        if(Objects.nonNull(glossaries) && glossaries.size()!=0) {
+            AtlasGlossary glossary = glossaries.get(0);
+            Set<AtlasRelatedTermHeader> terms = glossary.getTerms();
+            if(Objects.nonNull(terms) && terms.size()!=0) {
+                Iterator<AtlasRelatedTermHeader> iterator = terms.iterator();
+                while (iterator.hasNext()) {
+                    AtlasRelatedTermHeader termHeader = iterator.next();
+                    String termGuid = termHeader.getTermGuid();
+                    AtlasGlossaryTerm term = glossaryService.getTerm(termGuid);
+                    Set<AtlasRelatedObjectId> relatedObjectIds = term.getAssignedEntities();
+                    if(Objects.nonNull(relatedObjectIds) && relatedObjectIds.size()!=0) {
+                        Iterator<AtlasRelatedObjectId> relatedIterator = relatedObjectIds.iterator();
+                        while(relatedIterator.hasNext()) {
+                            AtlasRelatedObjectId object = relatedIterator.next();
+                            String name  = object.getDisplayText();
+                            AtlasEntity.Status status = object.getEntityStatus();
+                            if(tableName.equals(name) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                                RelationEntity.RelationInfo info = new RelationEntity.RelationInfo();
+                                info.setGuid(object.getGuid());
+                                info.setRealationGuid(object.getRelationshipGuid());
+                                AtlasEntity entity = entitiesStore.getById(object.getGuid()).getEntity();
+                                //表名称
+                                if(entity.hasAttribute("name") && Objects.nonNull(entity.getAttribute("name"))) {
+                                    info.setTableName(entity.getAttribute("name").toString());
+                                } else {
+                                    info.setTableName("");
+                                }
+                                //库名称
+                                if(entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
+                                    Object relAttribute = entity.getRelationshipAttribute("db");
+                                    if(relAttribute instanceof AtlasRelatedObjectId) {
+                                        AtlasRelatedObjectId relObject = (AtlasRelatedObjectId)relAttribute;
+                                        info.setDbName(relObject.getDisplayText());
+                                    }
+                                }
+
+                                Set<AtlasTermCategorizationHeader> categoriesHeader  = term.getCategories();
+                                if(Objects.nonNull(categoriesHeader) && categoriesHeader.size()!=0) {
+                                    AtlasTermCategorizationHeader categoryHeader = categoriesHeader.iterator().next();
+                                    String  categoryGuid = categoryHeader.getCategoryGuid();
+                                    AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
+
+                                    //迭代获取父级目录信息
+                                    AtlasRelatedCategoryHeader parent = category.getParentCategory();
+                                    List<String> pathList = new ArrayList<>();
+                                    pathList.add(category.getName());
+                                    while(Objects.nonNull(parent)) {
+                                        AtlasGlossaryCategory parentCategory = glossaryService.getCategory(parent.getCategoryGuid());
+                                        parent = parentCategory.getParentCategory();
+                                        pathList.add(parentCategory.getName());
+                                    }
+                                    //拼接路径
+                                    String pathStr = "";
+                                    for(int i=pathList.size()-1; i>=0; i--) {
+                                        pathStr += pathList.get(i) + "/";
+                                    }
+                                    pathStr += tableName;
+                                    info.setPath(pathStr);
+                                }
+                                relationInfoList.add(info);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return relationInfoList;
     }
 
     private SortOrder toSortOrder(final String sort) {

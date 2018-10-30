@@ -453,4 +453,23 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    @POST
+    @Path("/table/relations/")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<RelationEntity.RelationInfo> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
+            }
+            String filterName = relationQuery.getFilterTableName();
+            return metadataService.getQueryTables(filterName);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+
+    }
+
 }
