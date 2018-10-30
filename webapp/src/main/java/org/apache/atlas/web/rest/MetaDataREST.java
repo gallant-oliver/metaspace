@@ -397,8 +397,6 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
-
-
     }
 
     /**

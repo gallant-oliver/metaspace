@@ -30,6 +30,7 @@ import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
 import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
+import org.apache.atlas.model.glossary.relations.AtlasTermCategorizationHeader;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
@@ -166,7 +167,7 @@ public class MetaDataService {
             //所属业务
             table.setBusiness("");
             //表关联信息
-            List<String> relations = new ArrayList<>();
+            List<String> relations = getRelationList(guid);
             table.setRelations(relations);
             //类别
             table.setCategory("");
@@ -186,6 +187,55 @@ public class MetaDataService {
 
         table.setColumns(columns);
         return table;
+    }
+
+    public List<String> getRelationList(String guid) throws AtlasBaseException {
+        List<String> relations = new ArrayList<>();
+        //获取当前entity
+        AtlasEntity entityInfo = entitiesStore.getById(guid).getEntity();
+
+        List<String> relationDirs = new ArrayList<>();
+        String tableName = entityInfo.getAttribute("name").toString();
+
+        //获取RelationShip中的"meanings"属性
+        List<AtlasRelatedObjectId> relatedObjectIds = (ArrayList)entityInfo.getRelationshipAttribute("meanings");
+        if(Objects.nonNull(relatedObjectIds) && relatedObjectIds.size()!=0) {
+
+            //遍历，得到每一个关联关系
+            for(AtlasRelatedObjectId objectId: relatedObjectIds) {
+                relationDirs.add(tableName);
+                String termGuid = objectId.getGuid();
+                //获取Term
+                AtlasGlossaryTerm term = glossaryService.getTerm(termGuid);
+                //获取与Term关联的CategoryHeather
+                Set<AtlasTermCategorizationHeader> termCategoryHeaders = term.getCategories();
+                if(Objects.nonNull(termCategoryHeaders)) {
+                    Iterator<AtlasTermCategorizationHeader> categories = termCategoryHeaders.iterator();
+                    if(categories.hasNext()) {
+                        AtlasTermCategorizationHeader categoryHeader = categories.next();
+                        //根据guid获取category
+                        String categoryGuid = categoryHeader.getCategoryGuid();
+                        AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
+                        //获取category的名字
+                        String categoryName = category.getName();
+                        relationDirs.add(categoryName);
+                        while(Objects.nonNull(category.getParentCategory())) {
+                            AtlasRelatedCategoryHeader parentCategoryHeader = category.getParentCategory();
+                            category = glossaryService.getCategory(parentCategoryHeader.getCategoryGuid());
+                            relationDirs.add(category.getName());
+                        }
+                    }
+                }
+                StringBuffer path = new StringBuffer();
+                for(int i=relationDirs.size()-1; i>0; i--) {
+                    path.append(relationDirs.get(i) + "/");
+                }
+                path.append(relationDirs.get(0));
+                relations.add(path.toString());
+                relationDirs.clear();
+            }
+        }
+        return relations;
     }
 
     public List<Column> getColumnInfoById(ColumnQuery query) throws AtlasBaseException {
