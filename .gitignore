@@ -1701,3 +1701,5 @@ addons/falcon-bridge-shim/target/checkstyle-header.txt
 addons/falcon-bridge-shim/target/checkstyle-checker.xml
 addons/falcon-bridge-shim/target/checkstyle-cachefile
 repository/target/test-classes/atlas-application.properties
+webapp/target/atlas-webapp-1.1.0/welcome.jsp
+distro/target/conf/core-site.xml

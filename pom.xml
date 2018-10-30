@@ -28,12 +28,11 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
-    <artifactId>apache-atlas</artifactId>
-    <version>1.1.0</version>
+    <artifactId>metaspace</artifactId>
+    <version>1.0.0</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
-    <name>apache-atlas</name>
+    <name>metaspace</name>
     <packaging>pom</packaging>
-    <url>http://atlas.apache.org</url>
 
     <licenses>
         <license>
@@ -42,20 +41,11 @@
         </license>
     </licenses>
 
-    <organization>
-        <name>Apache Software Foundation</name>
-        <url>http://www.apache.org</url>
-    </organization>
 
     <issueManagement>
-        <system>JIRA</system>
-        <url>https://issues.apache.org/jira/browse/ATLAS</url>
+        <system>gitlab</system>
+        <url>https://gitlab.gridsum.com/gdp/zeta/metaspace/issues</url>
     </issueManagement>
-
-    <ciManagement>
-        <system>Jenkins</system>
-        <url>https://builds.apache.org/job/atlas</url>
-    </ciManagement>
 
     <inceptionYear>2015</inceptionYear>
 
@@ -84,10 +74,10 @@
     </mailingLists>
 
     <scm>
-        <connection>scm:git:git://git.apache.org/atlas.git</connection>
-        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/atlas.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/apache/atlas.git</url>
+        <connection>git@gitlab.gridsum.com:gdp/dev/metaspace.git</connection>
+        <developerConnection>git@gitlab.gridsum.com:gdp/dev/metaspace.git</developerConnection>
+        <tag>dev</tag>
+        <url>https://gitlab.gridsum.com/gdp/dev/metaspace.git</url>
     </scm>
 
     <developers>
@@ -1845,7 +1835,7 @@
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <level>ERROR</level>
-                                    <version>[1.8.0-151,)</version>
+                                    <version>[1.8.0,)</version>
                                     <message>** JAVA VERSION ERROR ** Java 8 (Update 151) or above is required.</message>
                                 </requireJavaVersion>
                                 <requireJavaVersion>
