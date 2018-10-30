@@ -14,9 +14,17 @@
 package org.apache.atlas.web.rest;
 
 import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.util.JdbcConstants;
+import org.apache.atlas.discovery.AtlasDiscoveryService;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.discovery.AtlasSearchResult;
+import org.apache.atlas.model.discovery.SearchParameters;
+import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.model.table.TableSql;
+import org.apache.atlas.repository.table.TableService;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.TableSqlUtils;
@@ -24,10 +32,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -38,20 +52,26 @@ public class TableREST {
 
     private static final Logger LOG = LoggerFactory.getLogger(TableREST.class);
 
+    @Inject
+    private TableService tableService;
+
     @POST
     @Path("/create/form")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
         HiveJdbcUtils.execute(sql);
-        String tableId = null;
-        Table ret = new Table(tableId);
+        String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
+        Table ret = new Table(tablId);
         return ret;
     }
+
 
     @POST
     @Path("/create/sql")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table sqlCreate(TableSql sql) throws Exception {
         HiveJdbcUtils.execute(sql.getSql());
         String tableId = null;
