@@ -77,7 +77,6 @@ public class MetaDataService {
     @Autowired
     private  GlossaryService glossaryService;
 
-
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
@@ -181,7 +180,6 @@ public class MetaDataService {
             TablePermission permission = new TablePermission();
             table.setTablePermission(permission);
         }
-
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(guid);
         List<Column> columns = getColumnInfoById(columnQuery);
@@ -461,7 +459,7 @@ public class MetaDataService {
         List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, SortOrder.ASCENDING);
         AtlasGlossary baseGlosary = null;
         //如果Glossary为空，此时没有数据，则需要创建根Glossary
-        if(Objects.nonNull(glossaries) || glossaries.size() ==0) {
+        if(Objects.isNull(glossaries) || glossaries.size() ==0) {
             baseGlosary = new AtlasGlossary();
             baseGlosary.setName("BaseGlosary");
             baseGlosary.setQualifiedName("BaseGlosary");
@@ -544,7 +542,7 @@ public class MetaDataService {
         Set<AtlasRelatedTermHeader> terms = category.getTerms();
 
         AtlasGlossaryTerm glossaryTerm = null;
-        if(Objects.nonNull(terms) || terms.size()==0) {
+        if(Objects.isNull(terms) || terms.size()==0) {
             //根据categoryGuid获取Category
             AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
             String categoryName = glossaryCategory.getName();
