@@ -26,6 +26,10 @@ public class Table implements Cloneable{
     public Table() {
     }
 
+    public Table(String tableId) {
+        this.tableId = tableId;
+    }
+
     public Table(String tableId, String database, String tableName) {
         this.tableId = tableId;
         this.database = database;

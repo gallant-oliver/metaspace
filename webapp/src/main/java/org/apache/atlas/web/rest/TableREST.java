@@ -13,6 +13,8 @@
 
 package org.apache.atlas.web.rest;
 
+import com.alibaba.druid.sql.SQLUtils;
+import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.model.table.TableSql;
 import org.apache.atlas.web.util.HiveJdbcUtils;
@@ -39,18 +41,22 @@ public class TableREST {
     @POST
     @Path("/create/form")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Response formCreate(TableForm request) throws Exception {
+    public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
         HiveJdbcUtils.execute(sql);
-        return Response.status(200).entity("success").build();
+        String tableId = null;
+        Table ret = new Table(tableId);
+        return ret;
     }
 
     @POST
     @Path("/create/sql")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Response sqlCreate(TableSql sql) throws Exception {
+    public Table sqlCreate(TableSql sql) throws Exception {
         HiveJdbcUtils.execute(sql.getSql());
-        return Response.status(200).entity("success").build();
+        String tableId = null;
+        Table ret = new Table(tableId);
+        return ret;
     }
 
     /**
@@ -65,7 +71,8 @@ public class TableREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Response sqlFormat(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
-        return Response.status(200).entity(sql).build();
+        String formatedSql = SQLUtils.formatHive(sql);
+        return Response.status(200).entity(formatedSql).build();
     }
 
 }

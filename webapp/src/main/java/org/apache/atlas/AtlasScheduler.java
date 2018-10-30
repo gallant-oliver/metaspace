@@ -157,7 +157,7 @@ public class AtlasScheduler {
                     tableStat.setDateType(DateType.DAY.getLiteral());
                     long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
                     tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
-                    tableStat.setDate(DateUtils.yesterday());
+                    tableStat.setDate(DateUtils.today());
                     tableStatList.add(tableStat);
                     log.info("add tableStat day done {} ,index at {}/{}", qualifiedName, i, tables.size());
 
