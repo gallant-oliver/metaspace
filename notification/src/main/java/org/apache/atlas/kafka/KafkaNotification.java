@@ -228,7 +228,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
                 String topic = TOPIC_MAP.get(type);
 
                 consumerProperties.put("enable.auto.commit", autoCommitEnabled);
-                consumerProperties.put("security.protocol","SASL_PLAINTEXT");
+//                consumerProperties.put("security.protocol","SASL_PLAINTEXT");
                 this.consumer = new KafkaConsumer(consumerProperties);
 
                 this.consumer.subscribe(Arrays.asList(topic));
