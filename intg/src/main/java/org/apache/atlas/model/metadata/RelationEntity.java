@@ -27,8 +27,6 @@ public class RelationEntity {
     private String categoryName;
     private String categoryGuid;
     private Set<RelationInfo> relations;
-    private Set<ChildCatetory> childCategory;
-
 
     public String getCategoryName() {
         return categoryName;
@@ -53,16 +51,6 @@ public class RelationEntity {
     public void setRelations(Set<RelationInfo> relatios) {
         this.relations = relatios;
     }
-
-    public Set<ChildCatetory> getChildCategory() {
-        return childCategory;
-    }
-
-    public void setChildCategory(Set<ChildCatetory> childCategory) {
-        this.childCategory = childCategory;
-    }
-
-
 
     public static class ChildCatetory {
         String guid;
