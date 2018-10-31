@@ -14,19 +14,24 @@
 package org.apache.atlas.repository.table;
 
 
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.repository.tablestat.TableStatService;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -38,6 +43,16 @@ public class TableService {
     @Inject
     private AtlasDiscoveryService atlasDiscoveryService;
 
+
+    public String databaseAndTable(String sql) throws Exception {
+        Pattern pattern = Pattern.compile("CREATE[\\s\\S]*TABLE[\\s|\\sIF\\sNOT\\sEXISTS\\s]*([\\S]*\\.[\\S]*)");
+        Matcher matcher = pattern.matcher(sql);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "sql格式不正确" + sql);
+    }
 
     /**
      * hive元数据同步有时间差

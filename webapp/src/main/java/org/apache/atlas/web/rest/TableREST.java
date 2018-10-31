@@ -15,6 +15,8 @@ package org.apache.atlas.web.rest;
 
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.dialect.postgresql.visitor.PGSchemaStatVisitor;
+import com.alibaba.druid.stat.*;
 import com.alibaba.druid.util.JdbcConstants;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -32,9 +34,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.dialect.postgresql.visitor.PGSchemaStatVisitor;
+import com.alibaba.druid.stat.TableStat.*;
+import com.alibaba.druid.stat.*;
+import com.alibaba.druid.util.JdbcConstants;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -74,7 +90,8 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table sqlCreate(TableSql sql) throws Exception {
         HiveJdbcUtils.execute(sql.getSql());
-        String tableId = null;
+        String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
+        String tableId = tableService.tableId(split[0], split[1]);
         Table ret = new Table(tableId);
         return ret;
     }
@@ -91,7 +108,7 @@ public class TableREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Response sqlFormat(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
-        String formatedSql = SQLUtils.formatHive(sql);
+        String formatedSql = SQLUtils.formatHive(sql).replaceAll("STORE", "STORED");
         return Response.status(200).entity(formatedSql).build();
     }
 
