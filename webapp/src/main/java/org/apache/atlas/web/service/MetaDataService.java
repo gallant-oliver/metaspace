@@ -20,14 +20,12 @@ import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
-import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.glossary.GlossaryService;
 import org.apache.atlas.model.glossary.AtlasGlossary;
 import org.apache.atlas.model.glossary.AtlasGlossaryCategory;
 import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
-import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
@@ -37,6 +35,7 @@ import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.apache.atlas.model.metadata.CategoryChildren;
 import org.apache.atlas.model.metadata.CategoryEntity;
 import org.apache.atlas.model.metadata.CategoryHeader;
 import org.apache.atlas.model.metadata.Column;
@@ -52,6 +51,10 @@ import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,15 +65,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.PathParam;
-
-
 /*
  * @description
  * @author sunhaoning
  * @date 2018/10/25 15:11
  */
-@AtlasService
+@Service
 public class MetaDataService {
     private static final Logger LOG  = LoggerFactory.getLogger(MetaDataService.class);
 
@@ -85,7 +85,6 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
-
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "TableGuid is null/empty");
         }
@@ -93,64 +92,47 @@ public class MetaDataService {
         Table table  = new Table();
         table.setTableId(guid);
         //获取entity
-        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
-        AtlasEntity entity = info.getEntity();
+        AtlasEntity entity = getEntityById(guid);
         if(entity.getTypeName().contains("table")) {
             //表名称
-            if(entity.hasAttribute("name") && Objects.nonNull(entity.getAttribute("name"))) {
-                table.setTableName(entity.getAttribute("name").toString());
-            } else {
-                table.setTableName("");
-            }
+            table.setTableName(getEntityAttribute(entity, "name"));
             //创建人
-            if(entity.hasAttribute("owner") && Objects.nonNull(entity.getAttribute("owner"))) {
-                table.setOwner(entity.getAttribute("owner").toString());
-            } else {
-                table.setOwner("");
-            }
+            table.setOwner(getEntityAttribute(entity, "owner"));
             //创建时间
-            if(entity.hasAttribute("createTime") && Objects.nonNull(entity.getAttribute("createTime"))) {
-                SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String formatDateStr = sdf.format(entity.getAttribute("createTime"));
-                table.setCreateTime(formatDateStr);
-            }
+            Object createTime = entity.getAttribute("createTime");
+            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(createTime);
+            table.setCreateTime(formatDateStr);
             //描述
-            if(entity.hasAttribute("comment") && Objects.nonNull(entity.getAttribute("comment"))) {
-                table.setDescription(entity.getAttribute("comment").toString());
-            }
+            table.setDescription(getEntityAttribute(entity, "comment"));
 
             if(entity.hasAttribute("sd") && Objects.nonNull(entity.getAttribute("sd"))) {
                 Object obj = entity.getAttribute("sd");
                 if(obj instanceof AtlasObjectId) {
                     AtlasObjectId atlasObject = (AtlasObjectId)obj;
                     String sdGuid = atlasObject.getGuid();
-                    AtlasEntity sdEntity = entitiesStore.getById(sdGuid).getEntity();
+                    AtlasEntity sdEntity = getEntityById(sdGuid);
                     //位置
-                    if(sdEntity.hasAttribute("location") && Objects.nonNull(sdEntity.getAttribute("location"))) {
-                        table.setLocation(sdEntity.getAttribute("location").toString());
-                    }
+                    table.setLocation(getEntityAttribute(sdEntity, "location"));
                     //格式
-                    if(sdEntity.hasAttribute("inputFormat") && Objects.nonNull(sdEntity.getAttribute("inputFormat"))) {
-                        String inputFormat = sdEntity.getAttribute("inputFormat").toString();
-                        if(inputFormat.contains("TextInputFormat")) {
-                            table.setFormat("TextFile");
-                        } else if(inputFormat.contains("SequenceFileInputFormat")) {
-                            table.setFormat("SequenceFile");
-                        } else if(inputFormat.contains("RCFileInputFormat")) {
-                            table.setFormat("RCFile");
-                        } else if(inputFormat.contains("OrcInputFormat")) {
-                            table.setFormat("ORCFile");
-                        }
+                    String inputFormat = getEntityAttribute(sdEntity, "inputFormat");
+                    if(inputFormat.contains("TextInputFormat")) {
+                        table.setFormat("TextFile");
+                    } else if(inputFormat.contains("SequenceFileInputFormat")) {
+                        table.setFormat("SequenceFile");
+                    } else if(inputFormat.contains("RCFileInputFormat")) {
+                        table.setFormat("RCFile");
+                    } else if(inputFormat.contains("OrcInputFormat")) {
+                        table.setFormat("ORCFile");
                     }
                 }
             }
             //类型
-            if(entity.hasAttribute("tableType") && Objects.nonNull(entity.getAttribute("tableType"))) {
-                if(entity.getAttribute("tableType").toString().contains("EXTERNAL")) {
-                    table.setType("EXTERNAL_TABLE");
-                } else {
-                    table.setType("INTERNAL_TABLE");
-                }
+            String tableType = getEntityAttribute(entity, "tableType");
+            if(tableType.contains("EXTERNAL")) {
+                table.setType("EXTERNAL_TABLE");
+            } else {
+                table.setType("INTERNAL_TABLE");
             }
             //是否为分区表
             if(entity.hasAttribute("partitionKeys") && Objects.nonNull(entity.getAttribute("partitionKeys"))) {
@@ -159,14 +141,9 @@ public class MetaDataService {
                 table.setPartitionTable(false);
             }
             //数据库名
-            if(entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-                Object obj = entity.getRelationshipAttribute("db");
-                if(obj instanceof AtlasRelatedObjectId) {
-                    AtlasRelatedObjectId relatedObject = (AtlasRelatedObjectId)obj;
-                    table.setDatabaseId(relatedObject.getGuid());
-                    table.setDatabaseName(relatedObject.getDisplayText());
-                }
-            }
+            AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+            table.setDatabaseId(relatedObject.getGuid());
+            table.setDatabaseName(relatedObject.getDisplayText());
             //所属业务
             table.setBusiness("");
             //表关联信息
@@ -187,9 +164,32 @@ public class MetaDataService {
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(guid);
         List<Column> columns = getColumnInfoById(columnQuery);
-
         table.setColumns(columns);
         return table;
+    }
+
+    public AtlasEntity getEntityById(String guid) throws AtlasBaseException {
+        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
+        return info.getEntity();
+    }
+
+    public String getEntityAttribute(AtlasEntity entity, String attributeName) {
+        if(entity.hasAttribute(attributeName) && Objects.nonNull(entity.getAttribute(attributeName))) {
+            return entity.getAttribute(attributeName).toString();
+        } else {
+            return null;
+        }
+    }
+
+    public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
+        AtlasRelatedObjectId objectId = null;
+        if(entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
+            Object obj = entity.getRelationshipAttribute("db");
+            if(obj instanceof AtlasRelatedObjectId) {
+                objectId = (AtlasRelatedObjectId)obj;
+            }
+        }
+        return objectId;
     }
 
     public List<String> getRelationList(String guid) throws AtlasBaseException {
@@ -266,18 +266,12 @@ public class MetaDataService {
             //tableId
             column.setTableId(guid);
             //tableName
-            if(entity.hasAttribute("name") && Objects.nonNull(entity.getAttribute("name")))
-                column.setTableName(entity.getAttribute("name").toString());
-
+            column.setTableName(getEntityAttribute(entity, "name"));
             //databaseId && dataBaseName
-            if(entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-                Object relAttribute = entity.getRelationshipAttribute("db");
-                if(relAttribute instanceof AtlasRelatedObjectId) {
-                    AtlasRelatedObjectId relObject = (AtlasRelatedObjectId)relAttribute;
-                    column.setDatabaseId(relObject.getGuid());
-                    column.setDatabaseName(relObject.getDisplayText());
-                }
-            }
+            AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+            column.setDatabaseId(relatedDB.getGuid());
+            column.setDatabaseName(relatedDB.getDisplayText());
+
             AtlasEntity referredEntity = referredEntities.get(key);
             if(referredEntity.getTypeName().contains("column")) {
                 column.setColumnId(referredEntity.getGuid());
@@ -308,6 +302,7 @@ public class MetaDataService {
                 columns.add(column);
             }
         }
+        //过滤
         if(query.getColumnFilter() != null) {
             ColumnQuery.ColumnFilter filter = query.getColumnFilter();
             String columnName = filter.getColumnName();
@@ -326,6 +321,7 @@ public class MetaDataService {
         return columns;
     }
 
+    @Cacheable(value = "lineageCache")
     public LineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
                                        int depth) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -373,6 +369,7 @@ public class MetaDataService {
         return info;
     }
 
+    @Cacheable(value = "default")
     public LineageInfo.LineageEntity getLineageInfo(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getLineageInfo({})", guid);
@@ -403,23 +400,17 @@ public class MetaDataService {
             }
         } else {
             lineageEntity.setGuid(guid);
-            AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
-            if(atlasTableEntity.hasAttribute("name")) {
-                lineageEntity.setTableName(atlasTableEntity.getAttribute("name").toString());
-            }
+            AtlasEntity atlasTableEntity = getEntityById(guid);
+            lineageEntity.setTableName(getEntityAttribute(atlasTableEntity, "name"));
+
             lineageEntity.setTypeName(atlasTableEntity.getTypeName());
             //updateTime
             SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String formatDateStr = sdf.format(atlasTableEntity.getUpdateTime());
             lineageEntity.setTableUpdateTime(formatDateStr);
             //dbName
-            if(atlasTableEntity.hasRelationshipAttribute("db") && atlasTableEntity.getRelationshipAttribute("db") != null) {
-                Object obj = atlasTableEntity.getRelationshipAttribute("db");
-                if(obj instanceof AtlasRelatedObjectId) {
-                    AtlasRelatedObjectId relatedObject = (AtlasRelatedObjectId)obj;
-                    lineageEntity.setDbName(relatedObject.getDisplayText());
-                }
-            }
+            AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
+            lineageEntity.setDbName(relatedObject.getDisplayText());
         }
         return lineageEntity;
     }
@@ -444,13 +435,8 @@ public class MetaDataService {
         String formatDateStr = sdf.format(atlasTableEntity.getUpdateTime());
         lineageEntity.setTableUpdateTime(formatDateStr);
         //dbName
-        if(atlasTableEntity.hasRelationshipAttribute("db") && Objects.nonNull(atlasTableEntity.getRelationshipAttribute("db"))) {
-            Object obj = atlasTableEntity.getRelationshipAttribute("db");
-            if(obj instanceof AtlasRelatedObjectId) {
-                AtlasRelatedObjectId relatedObject = (AtlasRelatedObjectId)obj;
-                lineageEntity.setDbName(relatedObject.getDisplayText());
-            }
-        }
+        AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
+        lineageEntity.setDbName(relatedObject.getDisplayText());
         return lineageEntity;
     }
 
@@ -509,6 +495,7 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.createMetadataCategory({})", category);
         }
+        //cacheDirs.clear();
         List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, SortOrder.ASCENDING);
         AtlasGlossary baseGlosary = null;
         //如果Glossary为空，此时没有数据，则需要创建根Glossary
@@ -536,6 +523,8 @@ public class MetaDataService {
         category.setQualifiedName(tmpCategory.getQualifiedName());
         category.setGuid(tmpCategory.getGuid());
         category.setAnchor(tmpCategory.getAnchor());
+
+        getCategories("ASC");
         return category;
     }
 
@@ -543,13 +532,16 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.createMetadataCategory({})", category);
         }
+        //cacheDirs.clear();
         String guid = category.getGuid();
         AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(guid);
         String historyName = glossaryCategory.getName();
         glossaryCategory.setName(category.getName());
         glossaryCategory.setLongDescription(category.getDescription());
         glossaryCategory.setShortDescription(category.getDescription());
-        glossaryCategory = glossaryService.updateCategory(glossaryCategory);
+        String qualifiedName = glossaryCategory.getQualifiedName().replaceFirst(historyName, category.getName());
+        glossaryCategory.setQualifiedName(qualifiedName);
+        glossaryCategory = glossaryService.updateCategory_V2(glossaryCategory);
 
         if(Objects.nonNull(glossaryCategory.getAnchor()))
             category.setAnchor(glossaryCategory.getAnchor());
@@ -557,19 +549,18 @@ public class MetaDataService {
             category.setParentCategory(glossaryCategory.getParentCategory());
         if(Objects.nonNull(glossaryCategory.getChildrenCategories()))
             category.setChildrenCategories(glossaryCategory.getChildrenCategories());
-        String qualfiiedName = glossaryCategory.getQualifiedName().replaceFirst(historyName, category.getName());
-        glossaryCategory.setQualifiedName(qualfiiedName);
-        category.setQualifiedName(qualfiiedName);
+
         category.setQualifiedName(glossaryCategory.getQualifiedName());
         return category;
     }
+
 
     public void deleteGlossaryCategory(String categoryGuid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.deleteGlossaryCategory({})", categoryGuid);
         }
         //删除Category之前需先删除与之关联的Term
-        List<AtlasRelatedTermHeader> terms = glossaryService.getCategoryTerms(categoryGuid, -1, 0, SortOrder.ASCENDING);
+        List<AtlasRelatedTermHeader> terms = glossaryService.getCategoryTerms(categoryGuid, 0, -1, SortOrder.ASCENDING);
         for (AtlasRelatedTermHeader term : terms) {
             glossaryService.deleteTerm(term.getTermGuid());
         }
@@ -582,10 +573,12 @@ public class MetaDataService {
                 deleteGlossaryCategory(chidGuid);
             }
         }
-
         glossaryService.deleteCategory(categoryGuid);
+
+        getCategories("ASC");
     }
 
+    @CacheEvict(value = "relationCache", key = "#categoryGuid")
     public Set<AtlasRelatedObjectId> assignTermToEntities(String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.assignTermToEntities({}, {})", categoryGuid, relatedObjectIds);
@@ -626,9 +619,11 @@ public class MetaDataService {
         //创建关联关系
         glossaryService.assignTermToEntities(glossaryTerm.getGuid(), relatedObjectIds);
         AtlasGlossaryTerm ret = glossaryService.getTerm(glossaryTerm.getGuid());
+
         return ret.getAssignedEntities();
     }
 
+    @CacheEvict(value = "relationCache", key = "#categoryGuid")
     public void removeRelationAssignmentFromEntities(String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.removeRelationAssignmentFromEntities({}, {})", categoryGuid, relatedObjectIds);
@@ -642,9 +637,9 @@ public class MetaDataService {
             String termGuid = iterator.next().getTermGuid();
             glossaryService.removeTermFromEntities(termGuid, relatedObjectIds);
         }
-
     }
 
+    @Cacheable(value = "relationCache")
     public RelationEntity getCategoryRelations(String categoryGuid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getCategoryRelations({})", categoryGuid);
@@ -654,21 +649,6 @@ public class MetaDataService {
         AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
         relationEntity.setCategoryGuid(glossaryCategory.getGuid());
         relationEntity.setCategoryName(glossaryCategory.getName());
-        //获取当前Category的子Category
-        Set<AtlasRelatedCategoryHeader> childrenCategories =glossaryCategory.getChildrenCategories();
-        Set<RelationEntity.ChildCatetory> childs = new HashSet<>();
-        if(Objects.nonNull(childrenCategories)) {
-            Iterator<AtlasRelatedCategoryHeader> it = childrenCategories.iterator();
-            while(it.hasNext()) {
-                AtlasRelatedCategoryHeader atlasRelatedCategory = it.next();
-                RelationEntity.ChildCatetory childCatetory = new RelationEntity.ChildCatetory();
-                childCatetory.setGuid(atlasRelatedCategory.getCategoryGuid());
-                childCatetory.setName(atlasRelatedCategory.getDisplayText());
-                childs.add(childCatetory);
-            }
-        }
-        //添加子目录信息
-        relationEntity.setChildCategory(childs);
         //获取与Category关联Term
         Set<AtlasRelatedTermHeader> relatedTerms = glossaryCategory.getTerms();
         //迭代获取父级目录信息
@@ -701,9 +681,14 @@ public class MetaDataService {
                         AtlasRelatedObjectId relatedObject = relatedIterator.next();
                         RelationEntity.RelationInfo relationInfo = new RelationEntity.RelationInfo();
                         String relatedObjectGuid = relatedObject.getGuid();
-                        Table table = getTableInfoById(relatedObjectGuid);
-                        String tableName = table.getTableName();
-                        String dbName = table.getDatabaseName();
+                        //获取entity
+                        AtlasEntity entity = getEntityById(relatedObjectGuid);
+                        //表名称
+                        String tableName = getEntityAttribute(entity, "name");
+
+                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                        String dbName = relatedDB.getDisplayText();
+                        //数据库名
                         relationInfo.setGuid(relatedObjectGuid);
                         relationInfo.setTableName(tableName);
                         relationInfo.setDbName(dbName);
@@ -718,7 +703,34 @@ public class MetaDataService {
         return relationEntity;
     }
 
+    public CategoryChildren getCategoryChildren(String categoryGuid) throws AtlasBaseException {
+        CategoryChildren children = new CategoryChildren();
+        //获取Category信息
+        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
+        children.setCategoryGuid(glossaryCategory.getGuid());
+        children.setCategoryName(glossaryCategory.getName());
+        //获取当前Category的子Category
+        Set<AtlasRelatedCategoryHeader> childrenCategories =glossaryCategory.getChildrenCategories();
+        Set<RelationEntity.ChildCatetory> childs = new HashSet<>();
+        if(Objects.nonNull(childrenCategories)) {
+            Iterator<AtlasRelatedCategoryHeader> it = childrenCategories.iterator();
+            while(it.hasNext()) {
+                AtlasRelatedCategoryHeader atlasRelatedCategory = it.next();
+                RelationEntity.ChildCatetory childCatetory = new RelationEntity.ChildCatetory();
+                childCatetory.setGuid(atlasRelatedCategory.getCategoryGuid());
+                childCatetory.setName(atlasRelatedCategory.getDisplayText());
+                childs.add(childCatetory);
+            }
+        }
+        children.setChildCategory(childs);
+        return children;
+    }
+
+    @Cacheable(value = "categoryCache")
     public Set<CategoryHeader> getCategories(String sort) throws AtlasBaseException {
+        /*if(cacheDirs.size() !=0) {
+            return cacheDirs;
+        }*/
         Set<CategoryHeader> categoryHeaders = new HashSet<CategoryHeader>();
         List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, toSortOrder(sort));
         if(Objects.nonNull(glossaries) && glossaries.size()!=0) {
@@ -745,9 +757,11 @@ public class MetaDataService {
     public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
-        Table table = getTableInfoById(guid);
-        String dbName = table.getDatabaseName();
-        String tableName = table.getTableName();
+
+        AtlasEntity entity = getEntityById(guid);
+        String tableName = getEntityAttribute(entity, "name");
+        AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+        String dbName = relatedObject.getDisplayText();
         String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
         HiveJdbcUtils.execute(sql, dbName);
     }
@@ -757,9 +771,10 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "parameters is none");
         for(int i=0; i<columnEdits.size(); i++) {
             ColumnEdit columnEdit = columnEdits.get(i);
-            Table table = getTableInfoById(columnEdit.getTableId());
-            String tableName = table.getTableName();
-            String dbName = table.getDatabaseName();
+            AtlasEntity entity = getEntityById(columnEdit.getTableId());
+            String tableName = getEntityAttribute(entity, "name");
+            AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+            String dbName = relatedObject.getDisplayText();
             String columnName = columnEdit.getColumnName();
             String type = columnEdit.getType();
             String description = columnEdit.getDescription();
@@ -768,6 +783,7 @@ public class MetaDataService {
         }
     }
 
+    @Cacheable(value = "default")
     public List<RelationEntity.RelationInfo> getQueryTables(String tableName) throws AtlasBaseException {
         List<RelationEntity.RelationInfo> relationInfoList = new ArrayList<>();
         List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1,0, SortOrder.ASCENDING);
@@ -791,22 +807,13 @@ public class MetaDataService {
                                 RelationEntity.RelationInfo info = new RelationEntity.RelationInfo();
                                 info.setGuid(object.getGuid());
                                 info.setRealationGuid(object.getRelationshipGuid());
-                                AtlasEntity entity = entitiesStore.getById(object.getGuid()).getEntity();
-                                //表名称
-                                if(entity.hasAttribute("name") && Objects.nonNull(entity.getAttribute("name"))) {
-                                    info.setTableName(entity.getAttribute("name").toString());
-                                } else {
-                                    info.setTableName("");
-                                }
-                                //库名称
-                                if(entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-                                    Object relAttribute = entity.getRelationshipAttribute("db");
-                                    if(relAttribute instanceof AtlasRelatedObjectId) {
-                                        AtlasRelatedObjectId relObject = (AtlasRelatedObjectId)relAttribute;
-                                        info.setDbName(relObject.getDisplayText());
-                                    }
-                                }
 
+                                AtlasEntity entity = getEntityById(object.getGuid());
+                                //表名称
+                                info.setTableName(getEntityAttribute(entity, "name"));
+                                //库名称
+                                AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+                                info.setDbName(relatedObject.getDisplayText());
                                 Set<AtlasTermCategorizationHeader> categoriesHeader  = term.getCategories();
                                 if(Objects.nonNull(categoriesHeader) && categoriesHeader.size()!=0) {
                                     AtlasTermCategorizationHeader categoryHeader = categoriesHeader.iterator().next();
