@@ -13,11 +13,8 @@
 
 package org.apache.atlas;
 
-import static javax.swing.text.html.CSS.getAttribute;
-
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.DateType;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
@@ -66,10 +63,9 @@ public class AtlasScheduler {
 
 
     public AtlasScheduler() {
-        log.info("AtlasScheduler");
     }
 
-    @Scheduled(cron = "* * 23 * * ? ")   //每天晚上11点
+    @Scheduled(cron = "0 0 23 * * ?")   //每天晚上11点
     public void insertTableMetadataStat() throws Exception {
 
         log.info("scheduler start");

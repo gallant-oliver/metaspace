@@ -15,27 +15,16 @@ package org.apache.atlas.web.rest;
 
 import com.sun.jersey.multipart.FormDataParam;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.discovery.AtlasDiscoveryService;
-import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.PageList;
-import org.apache.atlas.model.discovery.AtlasSearchResult;
-import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.file.File;
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.file.FileRequest;
-import org.apache.atlas.model.table.Table;
-import org.apache.atlas.model.table.TableMetadata;
 import org.apache.atlas.query.QueryParams;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.ParamChecker;
 import org.apache.atlas.web.service.FileService;
 import org.apache.atlas.web.util.HdfsUtils;
-import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileStatus;
@@ -47,10 +36,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -92,9 +78,14 @@ public class FileREST {
             @FormDataParam("filePath") String filePath,
             @FormDataParam("override") boolean override) throws Exception {
         if (!override && HdfsUtils.exist(filePath)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "File exists:" + filePath);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件已存在: " + filePath);
         }
-        HdfsUtils.uploadFile(fileInputStream, filePath);
+        try {
+            HdfsUtils.uploadFile(fileInputStream, filePath);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件没有权限: " + filePath);
+        }
         return Response.status(200).entity("success").build();
     }
 
@@ -104,7 +95,7 @@ public class FileREST {
     public Response download(@QueryParam("filePath") String filePath) throws Exception {
 
         if (!HdfsUtils.exist(filePath)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "File not exists:" + filePath);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件不存在: " + filePath);
         }
         String filename = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
         StreamingOutput fileStream = new StreamingOutput() {
