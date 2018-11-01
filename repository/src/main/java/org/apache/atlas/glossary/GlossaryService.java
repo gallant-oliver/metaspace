@@ -69,6 +69,11 @@ public class GlossaryService {
 
     private final char[] invalidNameChars = {'@', '.'};
 
+    public enum AtlasBrotherCategoryDirection {
+        UP,
+        DOWN
+    }
+
     @Inject
     public GlossaryService(DataAccess dataAccess, final AtlasRelationshipStore relationshipStore,
                            final AtlasTypeRegistry typeRegistry, AtlasEntityChangeNotifier entityChangeNotifier) {
@@ -528,6 +533,27 @@ public class GlossaryService {
         return ret;
     }
 
+
+    @GraphTransaction
+    public AtlasGlossaryCategory getCategory(String categoryGuid, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
+        if (DEBUG_ENABLED) {
+            LOG.debug("==> GlossaryService.getCategory({}, {}, {})", categoryGuid, attributes, relationshipAttributes);
+        }
+        if (Objects.isNull(categoryGuid)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "categoryGuid is null/empty");
+        }
+
+        AtlasGlossaryCategory atlasGlossary = getAtlasGlossaryCategorySkeleton(categoryGuid);
+        AtlasGlossaryCategory ret           = dataAccess.load(atlasGlossary, attributes, relationshipAttributes);
+
+        setInfoForRelations(ret);
+
+        if (DEBUG_ENABLED) {
+            LOG.debug("<== GlossaryService.getCategory() : {}", ret);
+        }
+        return ret;
+    }
+
     @GraphTransaction
     public AtlasGlossaryCategory createCategory(AtlasGlossaryCategory glossaryCategory) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -595,6 +621,43 @@ public class GlossaryService {
     }
 
     @GraphTransaction
+    public AtlasGlossaryCategory createBrotherCategory(String brotherGuid, AtlasGlossaryCategory glossaryCategory, String direction) throws AtlasBaseException {
+        AtlasGlossaryCategory newCategory = null;
+        if(direction.equals("up")) {
+            AtlasGlossaryCategory brotherCategory = getCategory(brotherGuid);
+            String brotherUpCategoryGuid = brotherCategory.getUpBrothCategoryGuid();
+            glossaryCategory.setDownBrothCategoryGuid(brotherGuid);
+            newCategory = createCategory(glossaryCategory);
+
+            if(Objects.nonNull(brotherUpCategoryGuid) && !brotherUpCategoryGuid.isEmpty()) {
+                AtlasGlossaryCategory brotherUpCategory = getCategory(brotherUpCategoryGuid);
+                brotherUpCategory.setDownBrothCategoryGuid(newCategory.getGuid());
+                newCategory.setUpBrothCategoryGuid(brotherUpCategoryGuid);
+                updateCategory(brotherUpCategory);
+            }
+
+            brotherCategory.setUpBrothCategoryGuid(newCategory.getGuid());
+            updateCategory(newCategory);
+            updateCategory(brotherCategory);
+        } else if(direction.equals("down")) {
+            AtlasGlossaryCategory brotherCategory = getCategory(brotherGuid);
+            String brotherDownCategoryGuid = brotherCategory.getDownBrothCategoryGuid();
+            if(Objects.nonNull(brotherDownCategoryGuid) && !brotherDownCategoryGuid.isEmpty()) {
+                AtlasGlossaryCategory brotherDownCategory = getCategory(brotherDownCategoryGuid);
+                brotherDownCategory.setUpBrothCategoryGuid(newCategory.getGuid());
+                newCategory.setDownBrothCategoryGuid(brotherDownCategoryGuid);
+                updateCategory(brotherDownCategory);
+
+            }
+            newCategory.setUpBrothCategoryGuid(brotherGuid);
+            brotherCategory.setDownBrothCategoryGuid(newCategory.getGuid());
+            updateCategory(newCategory);
+            updateCategory(brotherCategory);
+        }
+        return newCategory;
+    }
+
+    @GraphTransaction
     public List<AtlasGlossaryCategory> createCategories(List<AtlasGlossaryCategory> glossaryCategory) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> GlossaryService.createCategories({})", glossaryCategory);
@@ -633,6 +696,8 @@ public class GlossaryService {
 
         AtlasGlossaryCategory storeObject = dataAccess.load(glossaryCategory);
 
+
+
         if (!storeObject.equals(glossaryCategory)) {
             try {
                 glossaryCategory.setGuid(storeObject.getGuid());
@@ -657,6 +722,72 @@ public class GlossaryService {
 
                 storeObject = dataAccess.save(glossaryCategory);
             }
+
+            dataAccess.save(impactedCategories.values());
+        }
+
+        if (DEBUG_ENABLED) {
+            LOG.debug("<== GlossaryService.updateCategory() : {}", storeObject);
+        }
+
+        setInfoForRelations(storeObject);
+
+        return storeObject;
+    }
+
+    @GraphTransaction
+    public AtlasGlossaryCategory updateCategory_V2(AtlasGlossaryCategory glossaryCategory) throws AtlasBaseException {
+        if (DEBUG_ENABLED) {
+            LOG.debug("==> GlossaryService.updateCategory({})", glossaryCategory);
+        }
+
+        if (Objects.isNull(glossaryCategory)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GlossaryCategory is null/empty");
+        }
+
+        if (StringUtils.isEmpty(glossaryCategory.getName())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "DisplayName can't be null/empty");
+        }
+
+        if (isNameInvalid(glossaryCategory.getName())) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_DISPLAY_NAME);
+        }
+        if (categoryExists(glossaryCategory)) {
+            throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+        }
+
+        AtlasGlossaryCategory storeObject = dataAccess.load(glossaryCategory);
+
+
+
+        if (!storeObject.equals(glossaryCategory)) {
+            try {
+                glossaryCategory.setGuid(storeObject.getGuid());
+                if(Objects.isNull(glossaryCategory.getQualifiedName()))
+                    glossaryCategory.setQualifiedName(storeObject.getQualifiedName());
+                else
+                    storeObject.setQualifiedName(glossaryCategory.getQualifiedName());
+
+                storeObject = dataAccess.save(glossaryCategory);
+            } catch (AtlasBaseException e) {
+                LOG.debug("No immediate attribute update. Exception: {}", e.getMessage());
+            }
+
+            Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, GlossaryUtils.RelationshipOperation.UPDATE);
+
+            // Since the current category is also affected, we need to update qualifiedName and save again
+            if (StringUtils.equals(glossaryCategory.getQualifiedName(), storeObject.getQualifiedName())) {
+                storeObject = dataAccess.load(glossaryCategory);
+            } else {
+                glossaryCategory.setQualifiedName(storeObject.getQualifiedName());
+
+                if (categoryExists(glossaryCategory)) {
+                    throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+                }
+
+                storeObject = dataAccess.save(glossaryCategory);
+            }
+
 
             dataAccess.save(impactedCategories.values());
         }
