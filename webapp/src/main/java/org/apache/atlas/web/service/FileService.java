@@ -13,6 +13,7 @@
 
 package org.apache.atlas.web.service;
 
+import com.google.common.collect.Lists;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.PageUtils;
 import org.apache.atlas.web.util.HdfsUtils;
@@ -57,12 +58,13 @@ public class FileService {
         List<FileStatus> list = Arrays.stream(HdfsUtils.listStatus(filePath))
                 .filter(fileStatus -> match(fileStatus, null, modificationDate, owner))
                 .collect(Collectors.toList());
-        Iterator<FileStatus> all = list.iterator();
+        List<FileStatus> all = Lists.newArrayList(list.iterator());
+        if (StringUtils.isNotBlank(orderBy)) {
+            Collections.sort(all, new FileComparator(orderBy, sortBy));
+        }
 
         List<FileStatus> pageList = PageUtils.pageList(all, offset, limit);
-        if (StringUtils.isNotBlank(orderBy)) {
-            Collections.sort(pageList, new FileComparator(orderBy, sortBy));
-        }
+
         return Pair.of(list.size(), pageList);
     }
 
@@ -119,10 +121,11 @@ public class FileService {
                 LOG.error(e.getMessage(), e);
             }
         }
-        List<FileStatus> pageList = PageUtils.pageList(all.iterator(), offset, limit);
         if (StringUtils.isNotBlank(orderBy)) {
-            Collections.sort(pageList, new FileComparator(orderBy, sortBy));
+            Collections.sort(all, new FileComparator(orderBy, sortBy));
         }
+        List<FileStatus> pageList = PageUtils.pageList(all, offset, limit);
+
         return Pair.of(all.size(), pageList);
     }
 

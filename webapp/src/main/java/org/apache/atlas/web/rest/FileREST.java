@@ -153,7 +153,7 @@ public class FileREST {
 
         ParamChecker.checkPaging(request.getOffset(), request.getLimit());
         QueryParams params = QueryParams.getNormalizedParams(request.getLimit(), request.getOffset());
-        Pair<Integer, List<FileStatus>> pair = fileService.listFiles(request.getFileName(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), true, request.getOrderBy(), request.getOrderBy());
+        Pair<Integer, List<FileStatus>> pair = fileService.listFiles(request.getFileName(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), true, request.getOrderBy(), request.getSortType());
 
         List<File> list = pair.getRight().stream()
                 .map(f -> {

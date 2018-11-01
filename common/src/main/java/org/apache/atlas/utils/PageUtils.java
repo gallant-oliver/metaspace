@@ -46,4 +46,22 @@ public class PageUtils {
         return ret;
     }
 
+    public static <T> List<T> pageList(List<T> list, int offset, int limit) {
+
+        List ret = new ArrayList();
+        int index = -1;
+
+        for (T next : list) {
+            index++;
+            if (index < offset) {
+                continue;
+            }
+            if (ret.size() >= limit) {
+                break;
+            }
+            ret.add(next);
+        }
+        return ret;
+    }
+
 }
