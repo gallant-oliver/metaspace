@@ -377,14 +377,15 @@ public class MetaDataREST {
     @Path("/category/relations/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RelationEntity getCategoryRelations(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
+    public RelationEntity getCategoryRelations(@PathParam("categoryGuid") String categoryGuid,
+                                               @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
-            return metadataService.getCategoryRelations(categoryGuid);
+            return metadataService.getCategoryRelations(categoryGuid,refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }

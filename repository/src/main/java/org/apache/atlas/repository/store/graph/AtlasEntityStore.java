@@ -19,6 +19,7 @@ package org.apache.atlas.repository.store.graph;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasClassification;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
@@ -50,6 +51,8 @@ public interface AtlasEntityStore {
      * @return AtlasEntity
      */
     AtlasEntityWithExtInfo getById(String guid) throws AtlasBaseException;
+
+    AtlasEntityWithExtInfo getByIdWithAttributes(String guid, List<String> attributes,List<String> relationshipAttributes) throws AtlasBaseException;
 
     /**
      *

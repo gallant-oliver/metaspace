@@ -639,14 +639,20 @@ public class MetaDataService {
         }
     }
 
-    @Cacheable(value = "relationCache")
-    public RelationEntity getCategoryRelations(String categoryGuid) throws AtlasBaseException {
+    @Cacheable(value = "relationCache", key = "#categoryGuid", condition = "#refreshCache==false")
+    public RelationEntity getCategoryRelations(String categoryGuid,Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getCategoryRelations({})", categoryGuid);
         }
         RelationEntity relationEntity = new RelationEntity();
         //获取Category信息
-        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
+        //AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
+        List<String> categoryAttributes = new ArrayList<>();
+        List<String> categoryRelationshipAttributes = new ArrayList<>();
+        categoryAttributes.add("name");
+        categoryRelationshipAttributes.add("parentCategory");
+        categoryRelationshipAttributes.add("terms");
+        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid, categoryAttributes, categoryRelationshipAttributes);
         relationEntity.setCategoryGuid(glossaryCategory.getGuid());
         relationEntity.setCategoryName(glossaryCategory.getName());
         //获取与Category关联Term
@@ -656,7 +662,8 @@ public class MetaDataService {
         List<String> pathList = new ArrayList<>();
         pathList.add(glossaryCategory.getName());
         while(Objects.nonNull(parent)) {
-            AtlasGlossaryCategory parentCategory = glossaryService.getCategory(parent.getCategoryGuid());
+
+            AtlasGlossaryCategory parentCategory = glossaryService.getCategory(parent.getCategoryGuid(),categoryAttributes, categoryRelationshipAttributes);
             parent = parentCategory.getParentCategory();
             pathList.add(parentCategory.getName());
         }
@@ -682,7 +689,13 @@ public class MetaDataService {
                         RelationEntity.RelationInfo relationInfo = new RelationEntity.RelationInfo();
                         String relatedObjectGuid = relatedObject.getGuid();
                         //获取entity
-                        AtlasEntity entity = getEntityById(relatedObjectGuid);
+                        List<String> attributes = new ArrayList<>();
+                        attributes.add("name");
+                        List<String> relationshipAttributes = new ArrayList<>();
+                        relationshipAttributes.add("db");
+                        AtlasEntity entity = entitiesStore.getByIdWithAttributes(relatedObjectGuid, attributes, relationshipAttributes).getEntity();
+
+                        //AtlasEntity entity = getEntityById(relatedObjectGuid);
                         //表名称
                         String tableName = getEntityAttribute(entity, "name");
 

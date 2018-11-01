@@ -162,6 +162,19 @@ public final class EntityGraphRetriever {
         return toAtlasEntityWithExtInfo(getEntityVertex(guid), isMinExtInfo);
     }
 
+    public AtlasEntityWithExtInfo toAtlasEntityWithAttribute(String guid, List<String> attributes, List<String> relationshipAttributes, boolean isMinExtInfo) throws AtlasBaseException{
+        return toAtlasEntityWithAttribute(getEntityVertex(guid), attributes, relationshipAttributes, isMinExtInfo);
+    }
+    public AtlasEntityWithExtInfo toAtlasEntityWithAttribute(AtlasVertex entityVertex, List<String> attributes, List<String> relationshipAttributes, boolean isMinExtInfo) throws AtlasBaseException {
+        AtlasEntityExtInfo     entityExtInfo = new AtlasEntityExtInfo();
+        AtlasEntity            entity        = mapVertexToAtlasEntity(entityVertex, entityExtInfo, attributes, relationshipAttributes, isMinExtInfo);
+        AtlasEntityWithExtInfo ret           = new AtlasEntityWithExtInfo(entity, entityExtInfo);
+
+        ret.compact();
+
+        return ret;
+    }
+
     public AtlasEntityWithExtInfo toAtlasEntityWithExtInfo(AtlasObjectId objId) throws AtlasBaseException {
         return toAtlasEntityWithExtInfo(getEntityVertex(objId));
     }
@@ -393,6 +406,51 @@ public final class EntityGraphRetriever {
         return entity;
     }
 
+    private AtlasEntity mapVertexToAtlasEntity(AtlasVertex entityVertex, AtlasEntityExtInfo entityExtInfo, List<String> attributes, List<String> relationshipAttributes, boolean isMinExtInfo) throws AtlasBaseException {
+        String      guid   = GraphHelper.getGuid(entityVertex);
+        AtlasEntity entity = entityExtInfo != null ? entityExtInfo.getEntity(guid) : null;
+
+        if (entity == null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Mapping graph vertex to atlas entity for guid {}", guid);
+            }
+
+            entity = new AtlasEntity();
+
+            if (entityExtInfo != null) {
+                entityExtInfo.addReferredEntity(guid, entity);
+            }
+            entity.setTypeName(getTypeName(entityVertex));
+
+
+            AtlasType objType = typeRegistry.getType(entity.getTypeName());
+            if (!(objType instanceof AtlasStructType)) {
+                throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, entity.getTypeName());
+            }
+
+            AtlasStructType structType = (AtlasStructType) objType;
+
+            for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
+                String name = attribute.getName();
+                if(attributes.contains(attribute.getName())) {
+                    Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
+                    entity.setAttribute(attribute.getName(), attrValue);
+                }
+            }
+
+            AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
+            for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
+                String name = attribute.getName();
+                if(relationshipAttributes.contains(attribute.getName())) {
+                    Object attrValue = mapVertexToRelationshipAttribute(entityVertex, entityType, attribute);
+                    entity.setRelationshipAttribute(attribute.getName(), attrValue);
+                }
+            }
+        }
+
+        return entity;
+    }
+
     private AtlasEntity mapVertexToAtlasEntityMin(AtlasVertex entityVertex, AtlasEntityExtInfo entityExtInfo) throws AtlasBaseException {
         return mapVertexToAtlasEntityMin(entityVertex, entityExtInfo, null);
     }
@@ -535,6 +593,23 @@ public final class EntityGraphRetriever {
             Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
 
             struct.setAttribute(attribute.getName(), attrValue);
+        }
+    }
+
+    private void mapAttributes(AtlasVertex entityVertex, AtlasStruct struct, AtlasEntityExtInfo entityExtInfo, List<String> attributes, boolean isMinExtInfo) throws AtlasBaseException {
+        AtlasType objType = typeRegistry.getType(struct.getTypeName());
+
+        if (!(objType instanceof AtlasStructType)) {
+            throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, struct.getTypeName());
+        }
+
+        AtlasStructType structType = (AtlasStructType) objType;
+
+        for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
+            if(attributes.contains(attribute.getName())) {
+                Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
+                struct.setAttribute(attribute.getName(), attrValue);
+            }
         }
     }
 

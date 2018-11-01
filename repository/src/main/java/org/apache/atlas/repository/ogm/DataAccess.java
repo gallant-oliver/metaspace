@@ -141,6 +141,58 @@ public class DataAccess {
         return load(obj, false);
     }
 
+    public <T extends AtlasBaseModelObject> T load(T obj, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
+        return load(obj, false, attributes, relationshipAttributes);
+    }
+    public <T extends AtlasBaseModelObject> T load(T obj, boolean loadDeleted, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
+        Objects.requireNonNull(obj, "Can't load a null object");
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAccess.load()");
+            }
+
+            DataTransferObject<T> dto = (DataTransferObject<T>) dtoRegistry.get(obj.getClass());
+
+            AtlasEntityWithExtInfo entityWithExtInfo;
+
+            String guid = obj.getGuid();
+            // GUID can be null/empty/-ve
+            if (StringUtils.isNotEmpty(guid) && guid.charAt(0) != '-') {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Load using GUID");
+                }
+                entityWithExtInfo = entityStore.getByIdWithAttributes(guid, attributes, relationshipAttributes);
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Load using unique attributes");
+                }
+                entityWithExtInfo = entityStore.getByUniqueAttributes(dto.getEntityType(), dto.getUniqueAttributes(obj));
+            }
+
+            // Since GUID alone can't be used to determine what ENTITY TYPE is loaded from the graph
+            String actualTypeName   = entityWithExtInfo.getEntity().getTypeName();
+            String expectedTypeName = dto.getEntityType().getTypeName();
+            if (!actualTypeName.equals(expectedTypeName)) {
+                throw new AtlasBaseException(AtlasErrorCode.UNEXPECTED_TYPE, expectedTypeName, actualTypeName);
+            }
+
+            if (!loadDeleted && entityWithExtInfo.getEntity().getStatus() == AtlasEntity.Status.DELETED) {
+                throw new AtlasBaseException(AtlasErrorCode.INSTANCE_GUID_DELETED, guid);
+            }
+
+            return dto.from(entityWithExtInfo);
+
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+
+    }
+
+
+
     public <T extends AtlasBaseModelObject> T load(T obj, boolean loadDeleted) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't load a null object");
 
