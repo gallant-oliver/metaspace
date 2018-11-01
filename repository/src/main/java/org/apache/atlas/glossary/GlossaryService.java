@@ -620,7 +620,7 @@ public class GlossaryService {
         return storeObject;
     }
 
-    @GraphTransaction
+    /*@GraphTransaction
     public AtlasGlossaryCategory createBrotherCategory(String brotherGuid, AtlasGlossaryCategory glossaryCategory, String direction) throws AtlasBaseException {
         AtlasGlossaryCategory newCategory = null;
         if(direction.equals("up")) {
@@ -655,7 +655,7 @@ public class GlossaryService {
             updateCategory(brotherCategory);
         }
         return newCategory;
-    }
+    }*/
 
     @GraphTransaction
     public List<AtlasGlossaryCategory> createCategories(List<AtlasGlossaryCategory> glossaryCategory) throws AtlasBaseException {
