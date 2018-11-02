@@ -13,9 +13,10 @@
 
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Table {
+public class Table  implements Serializable {
     private String tableId;
     private String tableName;
     private String business;
@@ -43,6 +44,7 @@ public class Table {
     private String description;
     private String topic;
     private String type;
+    private Boolean virtualTable;
 
     public List<String> getRelations() {
         return relations;
@@ -197,5 +199,13 @@ public class Table {
 
     public void setTablePermission(TablePermission tablePermission) {
         this.tablePermission = tablePermission;
+    }
+
+    public Boolean getVirtualTable() {
+        return virtualTable;
+    }
+
+    public void setVirtualTable(Boolean virtualTable) {
+        this.virtualTable = virtualTable;
     }
 }

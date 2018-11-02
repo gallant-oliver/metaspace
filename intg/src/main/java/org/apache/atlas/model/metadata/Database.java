@@ -13,9 +13,10 @@
 
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Database {
+public class Database implements Serializable {
     private String databaseId;
     private String databaseName;
     private String databaseDescription;

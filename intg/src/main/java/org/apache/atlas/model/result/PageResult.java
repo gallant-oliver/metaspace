@@ -12,9 +12,10 @@
 // ======================================================================
 package org.apache.atlas.model.result;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class PageResult<E> {
+public class PageResult<E> implements Serializable {
     private int offset;
     private int count;
 

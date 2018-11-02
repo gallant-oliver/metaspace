@@ -16,12 +16,14 @@
  */
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2018/10/24 17:09
  */
-public class CategoryHeader {
+public class CategoryHeader implements Serializable {
     private String categoryGuid;
     private String name;
     private String parentCategoryGuid;

@@ -16,6 +16,7 @@
  */
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /*
@@ -23,7 +24,7 @@ import java.util.Set;
  * @author sunhaoning
  * @date 2018/10/20 13:58
  */
-public class RelationEntity {
+public class RelationEntity implements Serializable  {
     private String categoryName;
     private String categoryGuid;
     private Set<RelationInfo> relations;
@@ -73,7 +74,7 @@ public class RelationEntity {
         }
     }
 
-    public static class RelationInfo {
+    public static class RelationInfo implements Serializable {
         private String guid;
         private String tableName;
         private String dbName;

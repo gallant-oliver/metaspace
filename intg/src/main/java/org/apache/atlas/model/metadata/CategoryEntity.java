@@ -19,6 +19,7 @@ package org.apache.atlas.model.metadata;
 import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /*
@@ -26,7 +27,7 @@ import java.util.Set;
  * @author sunhaoning
  * @date 2018/10/24 11:03
  */
-public class CategoryEntity {
+public class CategoryEntity implements Serializable {
 
     private String guid;
     private String qualifiedName;

@@ -1,6 +1,8 @@
 package org.apache.atlas.model.metadata;
 
-public class TablePermission {
+import java.io.Serializable;
+
+public class TablePermission implements Serializable {
     //更改表结构，创建分区
     private boolean ALTER ;
     //删除表，或分区

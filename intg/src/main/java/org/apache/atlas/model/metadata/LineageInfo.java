@@ -16,6 +16,7 @@
  */
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -25,7 +26,7 @@ import java.util.Set;
  * @author sunhaoning
  * @date 2018/10/18 9:44
  */
-public class LineageInfo {
+public class LineageInfo implements Serializable {
 
     private String guid;
     private Integer lineageDepth;
@@ -64,7 +65,7 @@ public class LineageInfo {
         this.relations = relations;
     }
 
-    public static class LineageEntity {
+    public static class LineageEntity implements Serializable {
 
         private String typeName;
         private String guid;
@@ -160,7 +161,7 @@ public class LineageInfo {
     }
 
 
-    public static class LineageRelation {
+    public static class LineageRelation implements Serializable {
         private String fromEntityId;
         private String toEntityId;
         private String relationshipId;

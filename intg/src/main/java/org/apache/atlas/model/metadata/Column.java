@@ -13,7 +13,9 @@
 
 package org.apache.atlas.model.metadata;
 
-public class Column {
+import java.io.Serializable;
+
+public class Column implements Serializable {
     private String columnId;
     private String columnName;
     private String tableId;
