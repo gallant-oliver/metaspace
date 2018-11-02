@@ -81,7 +81,8 @@ public class MetaDataService {
     @Autowired
     private  GlossaryService glossaryService;
 
-    public Table getTableInfoById(String guid) throws AtlasBaseException {
+    @Cacheable(value = "tableCache", key = "#guid", condition = "#refreshCache==false")
+    public Table getTableInfoById(String guid, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
@@ -96,6 +97,11 @@ public class MetaDataService {
         if(entity.getTypeName().contains("table")) {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
+            //判断是否为虚拟表
+            if(table.getTableName().contains("values__tmp__table"))
+                table.setVirtualTable(true);
+            else
+                table.setVirtualTable(false);
             //创建人
             table.setOwner(getEntityAttribute(entity, "owner"));
             //创建时间
@@ -163,7 +169,7 @@ public class MetaDataService {
         }
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(guid);
-        List<Column> columns = getColumnInfoById(columnQuery);
+        List<Column> columns = getColumnInfoById(columnQuery, true);
         table.setColumns(columns);
         return table;
     }
@@ -241,7 +247,8 @@ public class MetaDataService {
         return relations;
     }
 
-    public List<Column> getColumnInfoById(ColumnQuery query) throws AtlasBaseException {
+    @Cacheable(value = "columnCache", key = "#query.guid", condition = "#refreshCache==false")
+    public List<Column> getColumnInfoById(ColumnQuery query, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getColumnInfoById({})", query);
         }
@@ -321,9 +328,9 @@ public class MetaDataService {
         return columns;
     }
 
-    @Cacheable(value = "lineageCache")
+    @Cacheable(value = "lineageCache", key = "#guid", condition = "#refreshCache==false")
     public LineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
-                                       int depth) throws AtlasBaseException {
+                                       int depth, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableLineage({}, {}, {})", guid, direction, depth);
         }
@@ -436,7 +443,8 @@ public class MetaDataService {
         lineageEntity.setTableUpdateTime(formatDateStr);
         //dbName
         AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
-        lineageEntity.setDbName(relatedObject.getDisplayText());
+        if(Objects.nonNull(relatedObject))
+            lineageEntity.setDbName(relatedObject.getDisplayText());
         return lineageEntity;
     }
 
@@ -491,6 +499,7 @@ public class MetaDataService {
         return max;
     }
 
+    @CacheEvict(value = "categoryCache", allEntries=true)
     public CategoryEntity createMetadataCategory(CategoryEntity category) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.createMetadataCategory({})", category);
@@ -524,15 +533,15 @@ public class MetaDataService {
         category.setGuid(tmpCategory.getGuid());
         category.setAnchor(tmpCategory.getAnchor());
 
-        getCategories("ASC");
+        getCategories("ASC", true);
         return category;
     }
 
+    @CacheEvict(value = "categoryCache", allEntries=true)
     public CategoryEntity updateMetadataCategory(CategoryEntity category) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.createMetadataCategory({})", category);
         }
-        //cacheDirs.clear();
         String guid = category.getGuid();
         AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(guid);
         String historyName = glossaryCategory.getName();
@@ -554,7 +563,7 @@ public class MetaDataService {
         return category;
     }
 
-
+    @CacheEvict(value = "categoryCache", allEntries=true)
     public void deleteGlossaryCategory(String categoryGuid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.deleteGlossaryCategory({})", categoryGuid);
@@ -574,8 +583,7 @@ public class MetaDataService {
             }
         }
         glossaryService.deleteCategory(categoryGuid);
-
-        getCategories("ASC");
+        getCategories("ASC", true);
     }
 
     @CacheEvict(value = "relationCache", key = "#categoryGuid")
@@ -586,7 +594,6 @@ public class MetaDataService {
 
         AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
         Set<AtlasRelatedTermHeader> terms = category.getTerms();
-
         AtlasGlossaryTerm glossaryTerm = null;
         if(Objects.isNull(terms) || terms.size()==0) {
             //根据categoryGuid获取Category
@@ -594,11 +601,9 @@ public class MetaDataService {
             String categoryName = glossaryCategory.getName();
             //根据Category获取GlossaryHeader
             AtlasGlossaryHeader glossaryHeader = glossaryCategory.getAnchor();
-
             //获取Glossary得到Name
             AtlasGlossary glossary = glossaryService.getGlossary(glossaryHeader.getGlossaryGuid());
             glossaryHeader.setDisplayText(glossary.getName());
-
             //创建Term
             glossaryTerm = new AtlasGlossaryTerm();
             glossaryTerm.setName(categoryName + "-Term");
@@ -739,13 +744,10 @@ public class MetaDataService {
         return children;
     }
 
-    @Cacheable(value = "categoryCache")
-    public Set<CategoryHeader> getCategories(String sort) throws AtlasBaseException {
-        /*if(cacheDirs.size() !=0) {
-            return cacheDirs;
-        }*/
+    @Cacheable(value = "categoryCache", condition = "#refreshCache==false")
+    public Set<CategoryHeader> getCategories(String sort, Boolean refreshCache) throws AtlasBaseException {
         Set<CategoryHeader> categoryHeaders = new HashSet<CategoryHeader>();
-        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1, 0, toSortOrder(sort));
+        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(1, 0, toSortOrder(sort));
         if(Objects.nonNull(glossaries) && glossaries.size()!=0) {
             AtlasGlossary baseGlosary = glossaries.get(0);
             Set<AtlasRelatedCategoryHeader> categories = baseGlosary.getCategories();
@@ -767,6 +769,7 @@ public class MetaDataService {
         return categoryHeaders;
     }
 
+    @CacheEvict(value = "tableCache", key = "#tableEdit.guid")
     public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
@@ -779,6 +782,7 @@ public class MetaDataService {
         HiveJdbcUtils.execute(sql, dbName);
     }
 
+    @CacheEvict(value = "columnCache", allEntries = true)
     public void updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
         if(Objects.isNull(columnEdits))
             throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "parameters is none");
@@ -868,5 +872,11 @@ public class MetaDataService {
             }
         }
         return ret;
+    }
+
+    @CacheEvict(value = {"tableCache", "columnCache", "relationCache", "lineageCache", "categoryCache",
+                         "databaseCache", "tablePageCache", "columnPageCache"}, allEntries = true)
+    public void refreshCache() throws AtlasBaseException {
+
     }
 }

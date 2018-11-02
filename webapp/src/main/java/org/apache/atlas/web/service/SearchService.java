@@ -15,6 +15,8 @@ import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+
 import javax.ws.rs.QueryParam;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -32,6 +34,7 @@ public class SearchService {
     @Autowired
     private AtlasEntityStore entitiesStore;
 
+    @Cacheable(value = "databaseCache")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
@@ -77,6 +80,7 @@ public class SearchService {
         return pageResult;
     }
 
+    @Cacheable(value = "tablePageCache")
     public PageResult<Table> getTablePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Table> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
@@ -109,6 +113,7 @@ public class SearchService {
         return pageResult;
     }
 
+    @Cacheable(value = "columnPageCache")
     public PageResult<Column> getColumnPageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Column> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();

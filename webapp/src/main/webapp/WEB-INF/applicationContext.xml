@@ -25,9 +25,21 @@
 	http://www.springframework.org/schema/aop
 	http://www.springframework.org/schema/aop/spring-aop.xsd">
 
-        <cache:annotation-driven/>
+        <!-- 启用缓存注解功能，这个是必须的，否则注解不会生效，另外，该注解一定要声明在spring主配置文件中才会生效 -->
+        <cache:annotation-driven cache-manager="cacheManager"/>
 
-        <!-- 定义缓存管理 -->
+        <!-- cacheManager工厂类，指定ehcache.xml的位置 -->
+        <bean id="ehcacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+                <property name="configLocation" value="/WEB-INF/ehcache-setting.xml" />
+        </bean>
+        <!-- 声明cacheManager -->
+        <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+                <property name="cacheManager" ref="ehcacheManagerFactory"/>
+        </bean>
+
+        <!--<cache:annotation-driven/>-->
+
+        <!--&lt;!&ndash; 定义缓存管理 &ndash;&gt;
         <bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
                 <property name="caches">
                         <set>
@@ -35,11 +47,32 @@
                                         <property name="name" value="default"/>
                                 </bean>
                                 <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
-                                        <property name="name" value="accountCache"/>
+                                        <property name="name" value="tableCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="columnCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="relationCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="lineageCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="categoryCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="databaseCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="tablePageCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="columnPageCache"/>
                                 </bean>
                         </set>
                 </property>
-        </bean>
+        </bean>-->
 
 
         <context:annotation-config/>

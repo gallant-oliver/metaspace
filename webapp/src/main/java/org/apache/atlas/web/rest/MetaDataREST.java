@@ -12,6 +12,7 @@
 // ======================================================================
 package org.apache.atlas.web.rest;
 
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
@@ -33,6 +34,8 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -66,7 +69,7 @@ public class MetaDataREST {
     @Path("/search/database")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getAllDatabase(Parameters parameters, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -188,13 +191,13 @@ public class MetaDataREST {
     @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
+    public Table getTableInfoById(@PathParam("guid") String guid, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableInfoById()");
             }
-            return metadataService.getTableInfoById(guid);
+            return metadataService.getTableInfoById(guid,refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -211,14 +214,14 @@ public class MetaDataREST {
     @Path("/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Column> getColumnInfoById(ColumnQuery query) throws AtlasBaseException {
+    public List<Column> getColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", query.getGuid());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnInfoById");
             }
-            return metadataService.getColumnInfoById(query);
+            return metadataService.getColumnInfoById(query, refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -239,14 +242,15 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public LineageInfo getTableLineage(@PathParam("guid") String guid,
                                        @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
-                                       @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
+                                       @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
+                                       @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableLineage");
             }
-            return metadataService.getTableLineage(guid, direction, depth);
+            return metadataService.getTableLineage(guid, direction, depth, refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -447,13 +451,14 @@ public class MetaDataREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryHeader> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public Set<CategoryHeader> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,
+                                             @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            return metadataService.getCategories(sort);
+            return metadataService.getCategories(sort, refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -522,7 +527,17 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+    }
 
+    @GET
+    @Path("/refreshcache")
+    public Response refreshCache() throws AtlasBaseException {
+        try {
+            metadataService.refreshCache();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+        }
+        return Response.status(200).entity("success").build();
     }
 
 }
