@@ -72,10 +72,10 @@ public class SSOFilter implements Filter {
             String infoURL = conf.getString("sso.info.url");
             if(loginURL==null||validateURL==null||infoURL==null||loginURL.equals("")|validateURL.equals("")|infoURL.equals("")){
                 LOG.warn("loginURL/validateURL/infoURL use default conf");
-//                sso.login.url=https://sso-internal.gridsumdissector.com/login?service=
+//                sso.login.url=https://sso-internal.gridsumdissector.com/login
 //                sso.validate.url=https://sso-internal.gridsumdissector.com/api/v2/validate
 //                sso.info.url=https://sso-internal.gridsumdissector.com/api/v2/info
-                loginURL="https://sso-internal.gridsumdissector.com/login?service=";
+                loginURL="https://sso-internal.gridsumdissector.com/login";
                 logoutURL="https://sso-internal.gridsumdissector.com/api/v2/logout";
                 validateURL="https://sso-internal.gridsumdissector.com/api/v2/validate";
                 infoURL="https://sso-internal.gridsumdissector.com/api/v2/info";
@@ -118,7 +118,7 @@ public class SSOFilter implements Filter {
                     cookie.setPath("/");
                     httpServletResponse.addCookie(cookie);
                     httpServletRequest.getSession().removeAttribute("user");
-                    httpServletResponse.sendRedirect(loginURL + welcome);
+                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
                 }
             } else if (httpServletRequest.getParameter("ticket") != null) {
                 String ticket = httpServletRequest.getParameter("ticket");
@@ -130,7 +130,7 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
-                    httpServletResponse.sendRedirect(loginURL + welcome);
+                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
@@ -146,7 +146,7 @@ public class SSOFilter implements Filter {
                     }
                 }
             } else {
-                httpServletResponse.sendRedirect(loginURL + welcome);
+                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
             }
         } catch (Exception e) {
             LOG.error(e.toString());
