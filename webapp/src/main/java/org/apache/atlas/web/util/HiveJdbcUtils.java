@@ -46,6 +46,7 @@ public class HiveJdbcUtils {
     private static String hivePrincipal="";
     private static String kerberosAdmin="";
     private static String kerberosKeytab="";
+    private static boolean kerberosEnable=false;
 
 
     static {
@@ -53,18 +54,20 @@ public class HiveJdbcUtils {
             Class.forName(hivedriverClassName);
             Configuration conf = ApplicationProperties.get();
             hiveUrl = conf.getString("metaspace.hive.url");
-            if(conf.getString("metaspace.kerberos.enable").equals("true")) {
+
+            //默认kerberos关闭
+            kerberosEnable=!(conf.getString("metaspace.kerberos.enable")==null||(!conf.getString("metaspace.kerberos.enable").equals("true")));
+            if(kerberosEnable) {
                 if(
-                        conf.getString("metaspace.kerberos.admin")  ==null|
-                        conf.getString("metaspace.kerberos.keytab")  ==null|
-                        conf.getString("metaspace.hive.principal")  ==null|
-                        conf.getString("metaspace.kerberos.admin")  .equals("")|
-                        conf.getString("metaspace.kerberos.keytab")  .equals("")|
+                        conf.getString("metaspace.kerberos.admin")  ==null||
+                        conf.getString("metaspace.kerberos.keytab")  ==null||
+                        conf.getString("metaspace.hive.principal")  ==null||
+                        conf.getString("metaspace.kerberos.admin")  .equals("")||
+                        conf.getString("metaspace.kerberos.keytab")  .equals("")||
                         conf.getString("metaspace.hive.principal")  .equals("")
                 ){
                     LOG.error("kerberos info incomplete");
                 }else {
-
                     org.apache.hadoop.conf.Configuration configuration = new
                             org.apache.hadoop.conf.Configuration();
                     configuration.set("hadoop.security.authentication", "Kerberos");

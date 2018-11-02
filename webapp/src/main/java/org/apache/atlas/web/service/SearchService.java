@@ -184,8 +184,13 @@ public class SearchService {
 
     public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException {
         BuildTableSql buildTableSql = new BuildTableSql();
-        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(tableId);
-        AtlasEntity entity = info.getEntity();
+//        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(tableId);
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        List<String> relationshipAttributes = new ArrayList<>();
+        relationshipAttributes.add("db");
+        AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
+
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         if (name == "") {
             System.out.println("该id不存在");

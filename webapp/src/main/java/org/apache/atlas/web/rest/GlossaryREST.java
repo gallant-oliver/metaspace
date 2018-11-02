@@ -27,7 +27,7 @@ import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.apache.atlas.model.metadata.BrotherCategory;
+//import org.apache.atlas.model.metadata.BrotherCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections.MapUtils;

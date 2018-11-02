@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -66,25 +67,44 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         try {
             String loginURL = conf.getString("sso.login.url");
+            String logoutURL = conf.getString("sso.logout.url");
             String validateURL = conf.getString("sso.validate.url");
             String infoURL = conf.getString("sso.info.url");
-            if(loginURL==null|validateURL==null|infoURL==null|loginURL.equals("")|validateURL.equals("")|infoURL.equals("")){
-                throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS);
+            if(loginURL==null||validateURL==null||infoURL==null||loginURL.equals("")|validateURL.equals("")|infoURL.equals("")){
+                LOG.warn("loginURL/validateURL/infoURL use default conf");
+//                sso.login.url=https://sso-internal.gridsumdissector.com/login?service=
+//                sso.validate.url=https://sso-internal.gridsumdissector.com/api/v2/validate
+//                sso.info.url=https://sso-internal.gridsumdissector.com/api/v2/info
+                loginURL="https://sso-internal.gridsumdissector.com/login?service=";
+                logoutURL="https://sso-internal.gridsumdissector.com/api/v2/logout";
+                validateURL="https://sso-internal.gridsumdissector.com/api/v2/validate";
+                infoURL="https://sso-internal.gridsumdissector.com/api/v2/info";
             }
-        Enumeration<String> attributeNames = httpServletRequest.getSession().getAttributeNames();
-        while(attributeNames.hasMoreElements()){
-            String s = attributeNames.nextElement();
-        }
-
             String requestURL = httpServletRequest.getRequestURL().toString();
             String[] split = requestURL.split("/");
             String welcome = split[0]+"//"+split[2];
+            Cookie[] cookies = httpServletRequest.getCookies();
+            Map<String,Cookie> cookieMap =new HashMap();
+            if(cookies!=null){
+                for (Cookie cookie : cookies) {
+                    cookieMap.put(cookie.getName(),cookie);
+                }
+            }
             if(requestURL.contains("/css/")||requestURL.contains("/img/")||requestURL.contains("/libs/") ||requestURL.contains("/js/")){
                 filterChain.doFilter(request, response);
+            }else if(requestURL.contains("/user/logout")){
+                if(cookieMap.containsKey("metaspace-ticket")){
+                    Cookie cookie = cookieMap.get("metaspace-ticket");
+                    String ticket = cookie.getValue() == null ? "" : cookie.getValue();
+                    HashMap<String, String> header = new HashMap<>();
+                    header.put("ticket", ticket);
+                    SSLClient.doDelete(logoutURL, header);
+                }
+                filterChain.doFilter(request, response);
             }
-                else if (httpServletRequest.getSession().getAttribute("user") != null) {
-                Map user = (Map) httpServletRequest.getSession().getAttribute("user");
-                String ticket = user == null ? "" : user.get("Ticket").toString();
+                else if (cookieMap.containsKey("metaspace-ticket")) {
+                Cookie cookie = cookieMap.get("metaspace-ticket");
+                String ticket = cookie.getValue() == null ? "" : cookie.getValue();
                 HashMap<String, String> header = new HashMap<>();
                 header.put("ticket", ticket);
                 String s = SSLClient.doGet(infoURL, header);
@@ -94,6 +114,9 @@ public class SSOFilter implements Filter {
                 if (message != null & (message.toString().equals("Success"))){
                     filterChain.doFilter(request, response);
                 }else{
+                    cookie.setMaxAge(0);
+                    cookie.setPath("/");
+                    httpServletResponse.addCookie(cookie);
                     httpServletRequest.getSession().removeAttribute("user");
                     httpServletResponse.sendRedirect(loginURL + welcome);
                 }
@@ -107,11 +130,16 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
+                    httpServletResponse.sendRedirect(loginURL + welcome);
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
                         HttpSession session = httpServletRequest.getSession();
                         session.setAttribute("user", data);
+                        Cookie cookie = new Cookie("metaspace-ticket",data.get("Ticket").toString());
+                        cookie.setPath("/");
+                        cookie.setMaxAge(-1);
+                        httpServletResponse.addCookie(cookie);
                         httpServletResponse.sendRedirect(requestURL);
                     } else {
                         LOG.warn("用户信息获取失败");
@@ -120,8 +148,8 @@ public class SSOFilter implements Filter {
             } else {
                 httpServletResponse.sendRedirect(loginURL + welcome);
             }
-        } catch (AtlasBaseException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            LOG.error(e.toString());
         } finally {
             Map user = (Map) httpServletRequest.getSession().getAttribute("user");
             String username = user == null ? "" : user.get("LoginEmail").toString();

@@ -22,6 +22,7 @@ import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -171,5 +172,33 @@ public class SSLClient {
         }
         return null;
     }
+    /**
+     * delete
+     * @return
+     */
+    public static String doDelete(String url, Map<String,String> map) {
+        try {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpDelete request = new HttpDelete(url);
+            Set<Map.Entry<String, String>> entries = map.entrySet();
+            for (Map.Entry<String, String> entry : entries) {
+                request.setHeader(entry.getKey(),entry.getValue());
+            }
 
+            HttpResponse response = client.execute(request);
+
+            /**请求发送成功，并得到响应**/
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                /**读取服务器返回过来的json字符串数据**/
+                String strResult = EntityUtils.toString(response.getEntity());
+
+                return strResult;
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

@@ -13,6 +13,7 @@
 
 package org.apache.atlas.web.util;
 
+import org.apache.atlas.ApplicationProperties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -22,6 +23,7 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,23 +34,40 @@ public class HdfsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsUtils.class);
     private static FileSystem fs;
+    private static boolean kerberosEnable=false;
+    private static String hdfsConf="/etc/hadoop/conf";
+
 
     static {
         try {
-            Configuration conf = new Configuration();
-            String confLocation = System.getProperty("atlas.conf");
-            if (confLocation == null) {
-                confLocation = HdfsUtils.class.getResource("/").getPath();
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            hdfsConf = conf.getString("metaspace.hdfs.conf")==null?hdfsConf:conf.getString("metaspace.hdfs.conf");
+            //默认kerberos关闭
+            kerberosEnable=!(conf.getString("metaspace.kerberos.enable")==null||(!conf.getString("metaspace.kerberos.enable").equals("true")));
+            Configuration configuration = new Configuration();
+            configuration.addResource(new Path(hdfsConf,"core-site.xml"));
+            configuration.addResource(new Path(hdfsConf,"hdfs-site.xml"));
+            if(kerberosEnable) {
+                if(
+                        conf.getString("metaspace.kerberos.admin")  ==null||
+                        conf.getString("metaspace.kerberos.keytab")  ==null||
+                        conf.getString("metaspace.kerberos.admin")  .equals("")||
+                        conf.getString("metaspace.kerberos.keytab")  .equals("")
+                ){
+                    LOG.error("kerberos info incomplete");
+                }else {
+                    configuration.set("hadoop.security.authentication", "Kerberos");
+                    UserGroupInformation.setConfiguration(configuration);
+                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
+                }
+            }else{
+                configuration.set("HADOOP_USER_NAME","metaspace");
             }
-
-            conf.addResource(new Path(confLocation, "core-site.xml"));
-            fs = FileSystem.get(conf);
-        } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
-            throw new RuntimeException("hdfs filesystem init error" + e.getMessage());
+            fs = FileSystem.get(configuration);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
-
 
     public static FileStatus[] listStatus(String filePath) throws Exception {
         return fs.listStatus(new Path(filePath));
