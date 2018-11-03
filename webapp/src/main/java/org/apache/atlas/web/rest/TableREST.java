@@ -77,6 +77,7 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
+        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
         HiveJdbcUtils.execute(sql);
         String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
         Table ret = new Table(tablId);
@@ -89,9 +90,13 @@ public class TableREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table sqlCreate(TableSql sql) throws Exception {
-        HiveJdbcUtils.execute(sql.getSql());
         String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
-        String tableId = tableService.tableId(split[0], split[1]);
+        String database = split[0];
+        String tableName = split[1];
+
+        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
+        HiveJdbcUtils.execute(sql.getSql());
+        String tableId = tableService.tableId(database, tableName);
         Table ret = new Table(tableId);
         return ret;
     }
