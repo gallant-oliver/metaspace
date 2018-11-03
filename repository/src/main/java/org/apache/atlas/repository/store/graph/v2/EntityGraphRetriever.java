@@ -421,8 +421,6 @@ public final class EntityGraphRetriever {
                 entityExtInfo.addReferredEntity(guid, entity);
             }
             entity.setTypeName(getTypeName(entityVertex));
-
-
             AtlasType objType = typeRegistry.getType(entity.getTypeName());
             if (!(objType instanceof AtlasStructType)) {
                 throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, entity.getTypeName());
@@ -431,7 +429,6 @@ public final class EntityGraphRetriever {
             AtlasStructType structType = (AtlasStructType) objType;
 
             for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
-                String name = attribute.getName();
                 if(attributes.contains(attribute.getName())) {
                     Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
                     entity.setAttribute(attribute.getName(), attrValue);
@@ -440,14 +437,12 @@ public final class EntityGraphRetriever {
 
             AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
             for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
-                String name = attribute.getName();
                 if(relationshipAttributes.contains(attribute.getName())) {
                     Object attrValue = mapVertexToRelationshipAttribute(entityVertex, entityType, attribute);
                     entity.setRelationshipAttribute(attribute.getName(), attrValue);
                 }
             }
         }
-
         return entity;
     }
 
