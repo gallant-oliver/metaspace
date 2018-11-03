@@ -38,7 +38,7 @@ public class SearchService {
     @Autowired
     EntityDiscoveryService entityDiscoveryService;
 
-    @Cacheable(value = "databaseCache")
+    @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
@@ -84,7 +84,7 @@ public class SearchService {
         return pageResult;
     }
 
-    @Cacheable(value = "tablePageCache")
+    @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Table> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
@@ -123,7 +123,7 @@ public class SearchService {
         return pageResult;
     }
 
-    @Cacheable(value = "columnPageCache")
+    @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Column> getColumnPageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Column> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
