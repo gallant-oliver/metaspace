@@ -453,14 +453,14 @@ public class GlossaryService {
             LOG.debug("==> GlossaryService.deleteTerm({})", termGuid);
         }
         if (Objects.isNull(termGuid)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "termGuid is null/empty");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
         }
 
         AtlasGlossaryTerm storeObject = dataAccess.load(getAtlasGlossaryTermSkeleton(termGuid));
 
         // Term can't be deleted if it is assigned to any entity
         if (CollectionUtils.isNotEmpty(storeObject.getAssignedEntities())) {
-            throw new AtlasBaseException(AtlasErrorCode.TERM_HAS_ENTITY_ASSOCIATION, storeObject.getGuid(), String.valueOf(storeObject.getAssignedEntities().size()));
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下仍存在关联关系，请取消全部关联后删除目录");
         }
 
         // Remove term from Glossary
@@ -561,16 +561,16 @@ public class GlossaryService {
         }
 
         if (Objects.isNull(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GlossaryCategory definition missing");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建目录失败");
         }
         if (Objects.isNull(glossaryCategory.getAnchor())) {
-            throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ANCHOR);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建目录失败");
         }
         if (StringUtils.isEmpty(glossaryCategory.getName())) {
-            throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_QUALIFIED_NAME_CANT_BE_DERIVED);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
         }
-        if (isNameInvalid(glossaryCategory.getName())){
-            throw new AtlasBaseException(AtlasErrorCode.INVALID_DISPLAY_NAME);
+        if (isNameInvalid(glossaryCategory.getName())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的目录名");
         } else {
             // Derive the qualifiedName
             String anchorGlossaryGuid = glossaryCategory.getAnchor().getGlossaryGuid();
@@ -587,7 +587,7 @@ public class GlossaryService {
         // This might fail for the case when the category's qualifiedName has been updated during a hierarchy change
         // and the duplicate request comes in with old name
         if (categoryExists(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名称目录");
         }
 
         AtlasGlossaryCategory storeObject = dataAccess.save(glossaryCategory);
@@ -602,7 +602,7 @@ public class GlossaryService {
             glossaryCategory.setQualifiedName(storeObject.getQualifiedName());
 
             if (categoryExists(glossaryCategory)) {
-                throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名称目录");
             }
 
             storeObject = dataAccess.save(glossaryCategory);
@@ -683,15 +683,15 @@ public class GlossaryService {
         }
 
         if (Objects.isNull(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GlossaryCategory is null/empty");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录更新失败");
         }
 
         if (StringUtils.isEmpty(glossaryCategory.getName())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "DisplayName can't be null/empty");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
         }
 
         if (isNameInvalid(glossaryCategory.getName())) {
-            throw new AtlasBaseException(AtlasErrorCode.INVALID_DISPLAY_NAME);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的目录名");
         }
 
         AtlasGlossaryCategory storeObject = dataAccess.load(glossaryCategory);
@@ -717,7 +717,7 @@ public class GlossaryService {
                 glossaryCategory.setQualifiedName(storeObject.getQualifiedName());
 
                 if (categoryExists(glossaryCategory)) {
-                    throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名称目录");
                 }
 
                 storeObject = dataAccess.save(glossaryCategory);

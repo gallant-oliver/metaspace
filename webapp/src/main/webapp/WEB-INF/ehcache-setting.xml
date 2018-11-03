@@ -53,6 +53,14 @@
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
 
+  <cache name="tableRelationCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
   <cache name="databaseCache"
          maxElementsInMemory="1000"
          eternal="false"

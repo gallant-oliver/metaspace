@@ -79,7 +79,7 @@ public class RelationEntity implements Serializable  {
         private String tableName;
         private String dbName;
         private String path;
-        private String realationGuid;
+        private String relationshipGuid;
 
         public String getGuid() {
             return guid;
@@ -113,12 +113,12 @@ public class RelationEntity implements Serializable  {
             this.path = path;
         }
 
-        public String getRealationGuid() {
-            return realationGuid;
+        public String getRelationshipGuid() {
+            return relationshipGuid;
         }
 
-        public void setRealationGuid(String realationGuid) {
-            this.realationGuid = realationGuid;
+        public void setRelationshipGuid(String relationshipGuid) {
+            this.relationshipGuid = relationshipGuid;
         }
     }
 

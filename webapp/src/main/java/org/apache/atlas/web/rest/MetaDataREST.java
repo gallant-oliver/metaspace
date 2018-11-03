@@ -82,7 +82,6 @@ public class MetaDataREST {
         }
     }
 
-
     /**
      * 根据搜索条件返回表
      *
@@ -105,7 +104,6 @@ public class MetaDataREST {
         }
     }
 
-
     /**
      * 根据搜索条件返回行
      *
@@ -127,7 +125,6 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
-
 
     /**
      * 数据预览
@@ -176,7 +173,6 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
-
     }
 
 
@@ -334,7 +330,7 @@ public class MetaDataREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}")
-    public void deleteGlossaryCategory(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
+    public Response deleteGlossaryCategory(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
@@ -345,6 +341,7 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -366,6 +363,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTermToEntities(" + categoryGuid + ")");
             }
             return metadataService.assignTermToEntities(categoryGuid, relatedObjectIds);
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -427,7 +426,7 @@ public class MetaDataREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}/assignedEntities")
-    public void removeRelationAssignmentFromEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
+    public Response removeRelationAssignmentFromEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
@@ -438,6 +437,7 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -473,7 +473,7 @@ public class MetaDataREST {
     @Path("/update/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
+    public Response updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -483,6 +483,7 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -494,7 +495,7 @@ public class MetaDataREST {
     @Path("/update/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
+    public Response updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -504,6 +505,7 @@ public class MetaDataREST {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -524,11 +526,18 @@ public class MetaDataREST {
             }
             String filterName = relationQuery.getFilterTableName();
             return metadataService.getQueryTables(filterName);
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
+    /**
+     * 清除缓存
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/refreshcache")
     public Response refreshCache() throws AtlasBaseException {

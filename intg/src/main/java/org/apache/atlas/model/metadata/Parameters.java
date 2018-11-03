@@ -12,7 +12,10 @@
 // ======================================================================
 
 package org.apache.atlas.model.metadata;
-public class Parameters {
+
+import java.io.Serializable;
+
+public class Parameters implements Serializable {
 
     private String query;
     private int offset;

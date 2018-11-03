@@ -2,6 +2,7 @@ package org.apache.atlas.web.service;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
+import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -10,6 +11,7 @@ import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.model.result.BuildTableSql;
 import org.apache.atlas.model.result.PageResult;
 import org.apache.atlas.model.result.TableShow;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.rest.EntityREST;
@@ -33,8 +35,10 @@ public class SearchService {
     private EntityREST entityREST;
     @Autowired
     private AtlasEntityStore entitiesStore;
+    @Autowired
+    EntityDiscoveryService entityDiscoveryService;
 
-    @Cacheable(value = "databaseCache")
+    @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
@@ -80,10 +84,11 @@ public class SearchService {
         return pageResult;
     }
 
-    @Cacheable(value = "tablePageCache")
+    @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Table> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
+
         List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_table", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
         if (hiveTables == null) {
             throw new AtlasBaseException(AtlasErrorCode.EMPTY_RESULTS, parameters.getQuery());
@@ -93,8 +98,13 @@ public class SearchService {
             Table table = new Table();
             table.setTableId(nameId.get(1).toString());
             table.setTableName(nameId.get(0).toString());
-            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(table.getTableId(), true);
-            AtlasEntity tableEntity = tableInfo.getEntity();
+//            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(table.getTableId(), true);
+//            AtlasEntity tableEntity = tableInfo.getEntity();
+            List<String> attributes = new ArrayList<>();
+            attributes.add("name");
+            List<String> re = new ArrayList<>();
+            re.add("db");
+            AtlasEntity tableEntity = entitiesStore.getByIdWithAttributes(table.getTableId(), attributes, re).getEntity();
             Map<String, Object> tableAttributes = tableEntity.getAttributes();
             String tableDescription = tableAttributes.get("description") == null ? "null" : tableAttributes.get("description").toString();
             table.setDescription(tableDescription);
@@ -113,7 +123,7 @@ public class SearchService {
         return pageResult;
     }
 
-    @Cacheable(value = "columnPageCache")
+    @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Column> getColumnPageResult(Parameters parameters) throws AtlasBaseException {
         PageResult<Column> pageResult = new PageResult<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
@@ -189,7 +199,6 @@ public class SearchService {
 
     public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException {
         BuildTableSql buildTableSql = new BuildTableSql();
-//        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(tableId);
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
         List<String> relationshipAttributes = new ArrayList<>();

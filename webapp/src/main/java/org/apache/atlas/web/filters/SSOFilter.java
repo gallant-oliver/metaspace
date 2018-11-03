@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -70,7 +71,7 @@ public class SSOFilter implements Filter {
             String logoutURL = conf.getString("sso.logout.url");
             String validateURL = conf.getString("sso.validate.url");
             String infoURL = conf.getString("sso.info.url");
-            if(loginURL==null||validateURL==null||infoURL==null||loginURL.equals("")|validateURL.equals("")|infoURL.equals("")){
+            if(loginURL==null||logoutURL==null||validateURL==null||infoURL==null||loginURL.equals("")||logoutURL.equals("")||validateURL.equals("")||infoURL.equals("")){
                 LOG.warn("loginURL/validateURL/infoURL use default conf");
 //                sso.login.url=https://sso-internal.gridsumdissector.com/login
 //                sso.validate.url=https://sso-internal.gridsumdissector.com/api/v2/validate
@@ -118,7 +119,8 @@ public class SSOFilter implements Filter {
                     cookie.setPath("/");
                     httpServletResponse.addCookie(cookie);
                     httpServletRequest.getSession().removeAttribute("user");
-                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                    loginSkip(httpServletResponse, loginURL);
                 }
             } else if (httpServletRequest.getParameter("ticket") != null) {
                 String ticket = httpServletRequest.getParameter("ticket");
@@ -130,7 +132,8 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
-                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                    loginSkip(httpServletResponse, loginURL);
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
@@ -146,7 +149,8 @@ public class SSOFilter implements Filter {
                     }
                 }
             } else {
-                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+//                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                loginSkip(httpServletResponse, loginURL);
             }
         } catch (Exception e) {
             LOG.error(e.toString());
@@ -157,6 +161,18 @@ public class SSOFilter implements Filter {
             AuditLog auditLog = new AuditLog(username, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             AUDIT_LOG.info(auditLog.toString());
         }
+    }
+
+    private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
+        httpServletResponse.setStatus(401);
+        httpServletResponse.setCharacterEncoding("UTF-8");
+        httpServletResponse.setContentType("text/html;charset=utf-8");
+        PrintWriter writer = httpServletResponse.getWriter();
+        HashMap<String,String> hashMap = new HashMap();
+        hashMap.put("error","请检查用户登陆状态");
+        hashMap.put("loginUrl",loginURL);
+        String j =  new Gson().toJson(hashMap);
+        writer.print(j);
     }
 
 
