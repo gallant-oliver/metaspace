@@ -40,6 +40,10 @@ public class AtlasGlossaryCategory extends AtlasGlossaryBaseObject {
     // Terms associated with this category
     private Set<AtlasRelatedTermHeader> terms;
 
+    private String upBrothCategoryGuid;
+
+    private String downBrothCategoryGuid;
+
     public AtlasGlossaryCategory() {
     }
 
@@ -49,6 +53,8 @@ public class AtlasGlossaryCategory extends AtlasGlossaryBaseObject {
         this.parentCategory = other.parentCategory;
         this.childrenCategories = other.childrenCategories;
         this.terms = other.terms;
+        this.upBrothCategoryGuid = other.upBrothCategoryGuid;
+        this.downBrothCategoryGuid = other.downBrothCategoryGuid;
     }
 
     public AtlasGlossaryHeader getAnchor() {
@@ -81,6 +87,22 @@ public class AtlasGlossaryCategory extends AtlasGlossaryBaseObject {
 
     public void setTerms(final Set<AtlasRelatedTermHeader> terms) {
         this.terms = terms;
+    }
+
+    public String getUpBrothCategoryGuid() {
+        return upBrothCategoryGuid;
+    }
+
+    public void setUpBrothCategoryGuid(String upBrothCategoryGuid) {
+        this.upBrothCategoryGuid = upBrothCategoryGuid;
+    }
+
+    public String getDownBrothCategoryGuid() {
+        return downBrothCategoryGuid;
+    }
+
+    public void setDownBrothCategoryGuid(String downBrothCategoryGuid) {
+        this.downBrothCategoryGuid = downBrothCategoryGuid;
     }
 
     @JsonIgnore
