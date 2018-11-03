@@ -30,10 +30,25 @@ public class AdminREST {
     private HttpServletRequest httpServletRequest;
     @Context
     private HttpServletResponse httpServletResponse;
+
+    @GET
+    @Path("/info")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map loginInfo() throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "AdminREST.loginInfo()");
+            }
+            Map user = (Map) httpServletRequest.getSession().getAttribute("user");
+            return user;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
     @GET
     @Path("/logout")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public String loginOut() throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -41,10 +56,10 @@ public class AdminREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "AdminREST.loginOut()");
             }
             Cookie[] cookies = httpServletRequest.getCookies();
-            Map<String,Cookie> cookieMap =new HashMap();
-            if(cookies!=null){
+            Map<String, Cookie> cookieMap = new HashMap();
+            if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    cookieMap.put(cookie.getName(),cookie);
+                    cookieMap.put(cookie.getName(), cookie);
                 }
             }
             Cookie cookie = cookieMap.get("metaspace-ticket");
@@ -52,10 +67,10 @@ public class AdminREST {
             cookie.setPath("/");
             httpServletResponse.addCookie(cookie);
             httpServletRequest.getSession().removeAttribute("user");
-            return "sucess";
-        } catch (Exception e){
+            return "success";
+        } catch (Exception e) {
             return "fail";
-        }finally {
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }
