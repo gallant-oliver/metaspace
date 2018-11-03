@@ -20,6 +20,7 @@ import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.model.DateType;
 import org.apache.atlas.model.table.TableStat;
 import org.apache.atlas.model.table.TableStatRequest;
+import org.apache.atlas.repository.util.HbaseUtils;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.PageUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -61,25 +62,9 @@ public class TableStatService {
     private static final Logger LOG = LoggerFactory.getLogger(TableStatService.class);
     private static final String TABLE_STAT = "table_stat";
 
-    private static Configuration conf = HBaseConfiguration.create();
-
-    static {
-        try {
-            String hbaseUrl = ApplicationProperties.get().getString("atlas.graph.storage.hostname");
-            conf.set("hbase.zookeeper.quorum", hbaseUrl);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Connection getConn() throws IOException {
-        Connection conn = ConnectionFactory.createConnection(conf);
-        return conn;
-    }
-
     public void add(List<TableStat> tableStatList) throws Exception {
         Gson gson = new Gson();
-        Table table = getConn().getTable(TableName.valueOf("table_stat"));
+        Table table = HbaseUtils.getConn().getTable(TableName.valueOf("table_stat"));
         tableStatList.forEach(stat -> {
             try {
                 String rowKey = (stat.getTableId() + stat.getDateType() + stat.getDate()).replace("-", "");
@@ -144,7 +129,7 @@ public class TableStatService {
 
     public Pair<Integer, List<TableStat>> query(TableStatRequest request) throws Exception {
 
-        HTable table = new HTable(conf, TABLE_STAT);
+        HTable table = new HTable(HbaseUtils.getConf(), TABLE_STAT);
         Scan scan = new Scan();
         scan.addFamily("info".getBytes());
 
