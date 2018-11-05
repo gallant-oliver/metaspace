@@ -66,10 +66,6 @@ public class SSOFilter implements Filter {
 
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*"); //允许访问所有域
-        httpServletResponse.setHeader("Access-Control-Allow-Credentials", "true");
-        httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,PUT,DELETE,POST");
-        httpServletResponse.setHeader("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,token,X-Requested-With");
         try {
             String loginURL = conf.getString("sso.login.url");
             String logoutURL = conf.getString("sso.logout.url");
