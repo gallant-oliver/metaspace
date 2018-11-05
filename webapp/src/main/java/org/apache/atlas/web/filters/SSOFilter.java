@@ -91,7 +91,7 @@ public class SSOFilter implements Filter {
                     cookieMap.put(cookie.getName(),cookie);
                 }
             }
-            if(requestURL.contains("/css/")||requestURL.contains("/img/")||requestURL.contains("/libs/") ||requestURL.contains("/js/")){
+            if(!requestURL.contains("/api/metaspace")){
                 filterChain.doFilter(request, response);
             }else if(requestURL.contains("/user/logout")){
                 if(cookieMap.containsKey("metaspace-ticket")){
@@ -120,7 +120,7 @@ public class SSOFilter implements Filter {
                     httpServletResponse.addCookie(cookie);
                     httpServletRequest.getSession().removeAttribute("user");
 //                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL);
+                    loginSkip(httpServletResponse, loginURL+"?service="+ welcome);
                 }
             } else if (httpServletRequest.getParameter("ticket") != null) {
                 String ticket = httpServletRequest.getParameter("ticket");
@@ -132,8 +132,8 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
-//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL);
+                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+//                    loginSkip(httpServletResponse, loginURL+"?service="+ welcome);
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
@@ -149,8 +149,7 @@ public class SSOFilter implements Filter {
                     }
                 }
             } else {
-//                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                loginSkip(httpServletResponse, loginURL);
+                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
             }
         } catch (Exception e) {
             LOG.error(e.toString());
