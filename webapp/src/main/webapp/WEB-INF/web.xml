@@ -38,7 +38,7 @@
 
   <servlet-mapping>
     <servlet-name>jersey-servlet</servlet-name>
-    <url-pattern>/api/atlas/*</url-pattern>
+    <url-pattern>/api/metaspace/*</url-pattern>
   </servlet-mapping>
 
   <filter>
