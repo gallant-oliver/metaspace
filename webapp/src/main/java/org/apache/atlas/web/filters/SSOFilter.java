@@ -91,7 +91,7 @@ public class SSOFilter implements Filter {
                     cookieMap.put(cookie.getName(),cookie);
                 }
             }
-            if(!requestURL.contains("/api/atlas")){
+            if(!requestURL.contains("/api/metaspace")){
                 filterChain.doFilter(request, response);
             }else if(requestURL.contains("/user/logout")){
                 if(cookieMap.containsKey("metaspace-ticket")){
