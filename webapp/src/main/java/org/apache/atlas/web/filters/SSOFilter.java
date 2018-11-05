@@ -91,65 +91,69 @@ public class SSOFilter implements Filter {
                     cookieMap.put(cookie.getName(),cookie);
                 }
             }
-            if(!requestURL.contains("/api/metaspace")&&httpServletRequest.getParameter("ticket") == null){
-                filterChain.doFilter(request, response);
-            }else if(requestURL.contains("/user/logout")){
-                if(cookieMap.containsKey("metaspace-ticket")){
+            if(cookieMap.containsKey("metaspace-ticket")){
+                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+            }else {
+                if (!requestURL.contains("/api/metaspace") && httpServletRequest.getParameter("ticket") == null) {
+                    filterChain.doFilter(request, response);
+                } else if (requestURL.contains("/user/logout")) {
+                    if (cookieMap.containsKey("metaspace-ticket")) {
+                        Cookie cookie = cookieMap.get("metaspace-ticket");
+                        String ticket = cookie.getValue() == null ? "" : cookie.getValue();
+                        HashMap<String, String> header = new HashMap<>();
+                        header.put("ticket", ticket);
+                        SSLClient.doDelete(logoutURL, header);
+                    }
+                    filterChain.doFilter(request, response);
+                } else if (cookieMap.containsKey("metaspace-ticket")) {
                     Cookie cookie = cookieMap.get("metaspace-ticket");
                     String ticket = cookie.getValue() == null ? "" : cookie.getValue();
                     HashMap<String, String> header = new HashMap<>();
                     header.put("ticket", ticket);
-                    SSLClient.doDelete(logoutURL, header);
-                }
-                filterChain.doFilter(request, response);
-            }
-                else if (cookieMap.containsKey("metaspace-ticket")) {
-                Cookie cookie = cookieMap.get("metaspace-ticket");
-                String ticket = cookie.getValue() == null ? "" : cookie.getValue();
-                HashMap<String, String> header = new HashMap<>();
-                header.put("ticket", ticket);
-                String s = SSLClient.doGet(infoURL, header);
-                Gson gson = new Gson();
-                JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                Object message = jsonObject.get("message");
-                if (message != null & (message.toString().equals("Success"))){
-                    filterChain.doFilter(request, response);
-                }else{
-                    cookie.setMaxAge(0);
-                    cookie.setPath("/");
-                    httpServletResponse.addCookie(cookie);
-                    httpServletRequest.getSession().removeAttribute("user");
-//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL+"?service="+ welcome);
-                }
-            } else if (httpServletRequest.getParameter("ticket") != null) {
-                String ticket = httpServletRequest.getParameter("ticket");
-                HashMap<String, String> header = new HashMap<>();
-                header.put("s-ticket", ticket);
-                String s = SSLClient.doGet(validateURL, header);
-                Gson gson = new Gson();
-                JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                Object message = jsonObject.get("message");
-                if (message == null | (!message.toString().equals("Success"))) {
-                    LOG.warn("用户信息获取失败");
-//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL+"?service="+ welcome);
-                } else {
-                    Map data = (Map) jsonObject.get("data");
-                    if (data != null) {
-                        HttpSession session = httpServletRequest.getSession();
-                        session.setAttribute("user", data);
-                        Cookie cookie = new Cookie("metaspace-ticket",data.get("Ticket").toString());
-                        cookie.setPath("/");
-                        cookie.setMaxAge(-1);
-                        httpServletResponse.addCookie(cookie);
-                        httpServletResponse.sendRedirect(requestURL);
+                    String s = SSLClient.doGet(infoURL, header);
+                    Gson gson = new Gson();
+                    JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+                    Object message = jsonObject.get("message");
+                    if (message != null & (message.toString().equals("Success"))) {
+                        filterChain.doFilter(request, response);
                     } else {
-                        LOG.warn("用户信息获取失败");
+                        cookie.setMaxAge(0);
+                        cookie.setPath("/");
+                        httpServletResponse.addCookie(cookie);
+                        httpServletRequest.getSession().removeAttribute("user");
+//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                        loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
                     }
+                } else if (httpServletRequest.getParameter("ticket") != null) {
+                    String ticket = httpServletRequest.getParameter("ticket");
+                    HashMap<String, String> header = new HashMap<>();
+                    header.put("s-ticket", ticket);
+                    String s = SSLClient.doGet(validateURL, header);
+                    Gson gson = new Gson();
+                    JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+                    Object message = jsonObject.get("message");
+                    if (message == null | (!message.toString().equals("Success"))) {
+                        LOG.warn("用户信息获取失败");
+//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                        loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                    } else {
+                        Map data = (Map) jsonObject.get("data");
+                        if (data != null) {
+                            HttpSession session = httpServletRequest.getSession();
+                            session.setAttribute("user", data);
+                            Cookie cookie = new Cookie("metaspace-ticket", data.get("Ticket").toString());
+                            cookie.setPath("/");
+                            cookie.setMaxAge(-1);
+                            httpServletResponse.addCookie(cookie);
+                            httpServletResponse.sendRedirect(requestURL);
+                        } else {
+                            LOG.warn("用户信息获取失败");
+                        }
+                    }
+                } else {
+//                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+                    loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
                 }
-            } else {
-                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
             }
         } catch (Exception e) {
             LOG.error(e.toString());
