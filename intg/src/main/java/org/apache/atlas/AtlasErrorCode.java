@@ -187,6 +187,7 @@ public enum AtlasErrorCode {
     GLOSSARY_CATEGORY_ALREADY_EXISTS(409, "METASPACE-409-00-00A", "Glossary category with qualifiedName {0} already exists"),
 
     // All internal errors go here
+    INTERNAL_UNKNOWN_ERROR(500, "METASPACE-500-00-000", "服务器内部错误"),
     INTERNAL_ERROR(500, "METASPACE-500-00-001", "Internal server error {0}"),
     INDEX_CREATION_FAILED(500, "METASPACE-500-00-002", "Index creation failed for {0}"),
     INDEX_ROLLBACK_FAILED(500, "METASPACE-500-00-003", "Index rollback failed for {0}"),
