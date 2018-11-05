@@ -89,7 +89,7 @@ public class TableStatREST {
         TableStatRequest request = new TableStatRequest(tableId, DateType.DAY.getLiteral(), DateUtils.yesterday(), DateUtils.yesterday(), 0, 10);
         List<TableStat> statList = tableStatService.query(request).getRight();
         TableStat tableStat = new TableStat();
-        if (statList != null) {
+        if (statList != null && !statList.isEmpty()) {
             tableStat = statList.get(0);
         }
         return tableStat;

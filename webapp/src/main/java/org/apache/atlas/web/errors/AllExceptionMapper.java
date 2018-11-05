@@ -18,6 +18,11 @@
 
 package org.apache.atlas.web.errors;
 
+import static org.apache.atlas.AtlasErrorCode.INTERNAL_UNKNOWN_ERROR;
+
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.type.AtlasType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -25,16 +30,19 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Exception mapper for Jersey.
+ *
  * @param <E>
  */
 @Provider
 @Component
 public class AllExceptionMapper implements ExceptionMapper<Exception> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AllExceptionMapper.class);
 
     @Override
     public Response toResponse(Exception exception) {
@@ -42,9 +50,21 @@ public class AllExceptionMapper implements ExceptionMapper<Exception> {
 
         // Log the response and use the error codes from the Exception
         ExceptionMapperUtil.logException(id, exception);
-        return Response
-                .serverError()
-                .entity(ExceptionMapperUtil.formatErrorMessage(id, exception))
-                .build();
+        return buildExceptionResponse(exception);
     }
+
+    protected Response buildExceptionResponse(Exception exception) {
+
+        Map<String, String> errorJsonMap = new LinkedHashMap<>();
+        errorJsonMap.put("errorCode", INTERNAL_UNKNOWN_ERROR.getErrorCode());
+        errorJsonMap.put("errorMessage", exception.getMessage());
+
+        if (exception.getCause() != null) {
+            errorJsonMap.put("errorCause", exception.getCause().getMessage());
+        }
+        Response.ResponseBuilder responseBuilder = Response.status(500);
+        responseBuilder.entity(AtlasType.toJson(errorJsonMap));
+        return responseBuilder.build();
+    }
+
 }

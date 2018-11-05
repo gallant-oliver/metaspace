@@ -47,7 +47,11 @@ public class SSOFilter implements Filter {
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private final Long startTime = System.currentTimeMillis();
     private final Date date = new Date();
-    Configuration conf;
+    private Configuration conf;
+    private String loginURL;
+    private String logoutURL;
+    private String validateURL;
+    private String infoURL;
 
 
     @Override
@@ -55,6 +59,17 @@ public class SSOFilter implements Filter {
         LOG.info("SSOFilter initialization started");
         try {
             conf = ApplicationProperties.get();
+             loginURL = conf.getString("sso.login.url");
+             logoutURL = conf.getString("sso.logout.url");
+             validateURL = conf.getString("sso.validate.url");
+             infoURL = conf.getString("sso.info.url");
+            if(loginURL==null||logoutURL==null||validateURL==null||infoURL==null||loginURL.equals("")||logoutURL.equals("")||validateURL.equals("")||infoURL.equals("")){
+                LOG.warn("loginURL/validateURL/infoURL use default conf");
+                loginURL="https://sso-internal.gridsumdissector.com/login";
+                logoutURL="https://sso-internal.gridsumdissector.com/api/v2/logout";
+                validateURL="https://sso-internal.gridsumdissector.com/api/v2/validate";
+                infoURL="https://sso-internal.gridsumdissector.com/api/v2/info";
+            }
         } catch (AtlasException e) {
             e.printStackTrace();
         }
@@ -67,20 +82,7 @@ public class SSOFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         try {
-            String loginURL = conf.getString("sso.login.url");
-            String logoutURL = conf.getString("sso.logout.url");
-            String validateURL = conf.getString("sso.validate.url");
-            String infoURL = conf.getString("sso.info.url");
-            if(loginURL==null||logoutURL==null||validateURL==null||infoURL==null||loginURL.equals("")||logoutURL.equals("")||validateURL.equals("")||infoURL.equals("")){
-                LOG.warn("loginURL/validateURL/infoURL use default conf");
-//                sso.login.url=https://sso-internal.gridsumdissector.com/login
-//                sso.validate.url=https://sso-internal.gridsumdissector.com/api/v2/validate
-//                sso.info.url=https://sso-internal.gridsumdissector.com/api/v2/info
-                loginURL="https://sso-internal.gridsumdissector.com/login";
-                logoutURL="https://sso-internal.gridsumdissector.com/api/v2/logout";
-                validateURL="https://sso-internal.gridsumdissector.com/api/v2/validate";
-                infoURL="https://sso-internal.gridsumdissector.com/api/v2/info";
-            }
+
             String requestURL = httpServletRequest.getRequestURL().toString();
             String[] split = requestURL.split("/");
             String welcome = split[0]+"//"+split[2];
@@ -91,38 +93,7 @@ public class SSOFilter implements Filter {
                     cookieMap.put(cookie.getName(),cookie);
                 }
             }
-            if(requestURL.contains("/css/")||requestURL.contains("/img/")||requestURL.contains("/libs/") ||requestURL.contains("/js/")){
-                filterChain.doFilter(request, response);
-            }else if(requestURL.contains("/user/logout")){
-                if(cookieMap.containsKey("metaspace-ticket")){
-                    Cookie cookie = cookieMap.get("metaspace-ticket");
-                    String ticket = cookie.getValue() == null ? "" : cookie.getValue();
-                    HashMap<String, String> header = new HashMap<>();
-                    header.put("ticket", ticket);
-                    SSLClient.doDelete(logoutURL, header);
-                }
-                filterChain.doFilter(request, response);
-            }
-                else if (cookieMap.containsKey("metaspace-ticket")) {
-                Cookie cookie = cookieMap.get("metaspace-ticket");
-                String ticket = cookie.getValue() == null ? "" : cookie.getValue();
-                HashMap<String, String> header = new HashMap<>();
-                header.put("ticket", ticket);
-                String s = SSLClient.doGet(infoURL, header);
-                Gson gson = new Gson();
-                JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                Object message = jsonObject.get("message");
-                if (message != null & (message.toString().equals("Success"))){
-                    filterChain.doFilter(request, response);
-                }else{
-                    cookie.setMaxAge(0);
-                    cookie.setPath("/");
-                    httpServletResponse.addCookie(cookie);
-                    httpServletRequest.getSession().removeAttribute("user");
-//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL);
-                }
-            } else if (httpServletRequest.getParameter("ticket") != null) {
+            if(httpServletRequest.getParameter("ticket") != null){
                 String ticket = httpServletRequest.getParameter("ticket");
                 HashMap<String, String> header = new HashMap<>();
                 header.put("s-ticket", ticket);
@@ -132,26 +103,66 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
-//                    httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                    loginSkip(httpServletResponse, loginURL);
+                    loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
-                        HttpSession session = httpServletRequest.getSession();
-                        session.setAttribute("user", data);
-                        Cookie cookie = new Cookie("metaspace-ticket",data.get("Ticket").toString());
+                        Cookie cookie = new Cookie("metaspace-ticket", data.get("Ticket").toString());
                         cookie.setPath("/");
                         cookie.setMaxAge(-1);
                         httpServletResponse.addCookie(cookie);
                         httpServletResponse.sendRedirect(requestURL);
                     } else {
+                        loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
                         LOG.warn("用户信息获取失败");
                     }
                 }
-            } else {
-//                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
-                loginSkip(httpServletResponse, loginURL);
+            }else if(cookieMap.containsKey("metaspace-ticket")){
+                if(requestURL.contains("/api/metaspace")){
+                    if (requestURL.contains("/user/logout")) {
+                        if (cookieMap.containsKey("metaspace-ticket")) {
+                            Cookie cookie = cookieMap.get("metaspace-ticket");
+                            String ticket = cookie.getValue() == null ? "" : cookie.getValue();
+                            HashMap<String, String> header = new HashMap<>();
+                            header.put("ticket", ticket);
+                            SSLClient.doDelete(logoutURL, header);
+                        }
+                        filterChain.doFilter(request, response);
+                    } else if (cookieMap.containsKey("metaspace-ticket")) {
+                        Cookie cookie = cookieMap.get("metaspace-ticket");
+                        String ticket = cookie.getValue() == null ? "" : cookie.getValue();
+                        HashMap<String, String> header = new HashMap<>();
+                        header.put("ticket", ticket);
+                        String s = SSLClient.doGet(infoURL, header);
+                        Gson gson = new Gson();
+                        JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+                        Object message = jsonObject.get("message");
+                        Map data = (Map) jsonObject.get("data");
+                        if (message != null & (message.toString().equals("Success"))) {
+                            if (data != null) {
+                                HttpSession session = httpServletRequest.getSession();
+                                session.setAttribute("user", data);
+                                filterChain.doFilter(request, response);
+                            } else {
+                                LOG.warn("用户信息获取失败");
+                                loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                            }
+                        } else {
+                            cookie.setMaxAge(0);
+                            cookie.setPath("/");
+                            httpServletResponse.addCookie(cookie);
+                            httpServletRequest.getSession().removeAttribute("user");
+                            loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                        }
+                    }
+                } else{
+                    filterChain.doFilter(request, response);
+                }
+            }else{
+                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
             }
+
+
         } catch (Exception e) {
             LOG.error(e.toString());
         } finally {
