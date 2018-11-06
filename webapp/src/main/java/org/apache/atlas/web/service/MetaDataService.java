@@ -106,6 +106,8 @@ public class MetaDataService {
                     table.setVirtualTable(true);
                 else
                     table.setVirtualTable(false);
+                //状态
+                table.setStatus(entity.getStatus().name());
                 //创建人
                 table.setOwner(getEntityAttribute(entity, "owner"));
                 //创建时间

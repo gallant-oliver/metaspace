@@ -20,6 +20,7 @@ public class Database implements Serializable {
     private String databaseId;
     private String databaseName;
     private String databaseDescription;
+    private String status;
     private List tableList;
     public String getDatabaseDescription() {
         return databaseDescription;
@@ -50,5 +51,13 @@ public class Database implements Serializable {
 
     public void setTableList(List tableList) {
         this.tableList = tableList;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

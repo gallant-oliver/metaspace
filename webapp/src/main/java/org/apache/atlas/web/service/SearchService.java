@@ -55,9 +55,11 @@ public class SearchService {
             AtlasEntity.AtlasEntityWithExtInfo databaseInfo = entityREST.getById(databaseGuid, true);
             Map<String, Object> databaseAttr = databaseInfo.getEntity().getAttributes();
             String databaseDescription = databaseAttr.get("description") == null ? "null" : databaseAttr.get("description").toString();
+            String dbStatus = databaseInfo.getEntity().getStatus().name();
             database.setDatabaseId(databaseGuid);
             database.setDatabaseName(databaseName);
             database.setDatabaseDescription(databaseDescription);
+            database.setStatus(dbStatus);
             Map<String, Object> databaseRelationshipAttribute = databaseInfo.getEntity().getRelationshipAttributes();
             List<AtlasRelatedObjectId> databaseAtlasRelatedObjectIds = (List) databaseRelationshipAttribute.get("tables");
             for (AtlasRelatedObjectId databaseAtlasRelatedObjectId : databaseAtlasRelatedObjectIds) {
@@ -68,6 +70,8 @@ public class SearchService {
                 table.setTableName(databaseAtlasRelatedObjectId.getDisplayText());
                 AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(table.getTableId(), true);
                 Map<String, Object> tableAttributes = tableInfo.getEntity().getAttributes();
+                String tableStatus = tableInfo.getEntity().getStatus().name();
+                table.setStatus(tableStatus);
                 String tableDescription = tableAttributes.get("comment") == null ? "null" : tableAttributes.get("comment").toString();
                 table.setDescription(tableDescription);
                 tables.add(table);
