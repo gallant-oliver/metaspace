@@ -19,7 +19,6 @@ import com.gridsum.gdp.library.commons.utils.FileUtils;
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
 import org.apache.atlas.annotation.AtlasService;
-import org.apache.atlas.model.metadata.Column;
 import org.apache.atlas.web.common.filetable.ColumnExt;
 import org.apache.atlas.web.common.filetable.CsvEncode;
 import org.apache.atlas.web.common.filetable.CsvHeader;
@@ -30,7 +29,7 @@ import org.apache.atlas.web.common.filetable.UploadConfig;
 import org.apache.atlas.web.common.filetable.UploadFileInfo;
 import org.apache.atlas.web.common.filetable.UploadPreview;
 import org.apache.atlas.web.config.FiletableConfig;
-import org.apache.atlas.web.model.UploadJobInfo;
+import org.apache.atlas.web.model.filetable.UploadJobInfo;
 import org.apache.atlas.web.util.ExcelUtils;
 import org.apache.atlas.web.util.StringUtils;
 import org.apache.avro.Schema;
@@ -45,17 +44,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-
-import javax.inject.Singleton;
 
 
 @AtlasService
@@ -84,7 +79,7 @@ public class UploadJobService {
         File uploadFile = new File(filePath);
         while (uploadFile.exists()) {//确保文件名不重名
             jobId = UUID.randomUUID().toString().replace("-", "");
-            filePath = StringUtils.obtainFileType(jobId);
+            filePath = StringUtils.obtainFilePath(jobId);
             uploadFile = new File(filePath);
         }
         try {
@@ -186,7 +181,7 @@ public class UploadJobService {
         List<String> tableHeads = ExcelUtils.readTableHeads(sheet, headers.size());//读取表头信息（修改时间：20170503 修改人：俞青云）
         UploadPreview preview = new UploadPreview();
         preview.setIncludeHeader(includeHeader);
-        preview.setHeaders(headers.getColumnList());
+        preview.setHeaders(headers.getColumnExtList());
         preview.setRows(previewValues);
         preview.setSize(ExcelUtils.getDatasSize(sheet, includeHeader));
         preview.setTableHeads(tableHeads);

@@ -11,7 +11,7 @@
 //
 // ======================================================================
 
-package org.apache.atlas.web.model;
+package org.apache.atlas.web.model.filetable;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;

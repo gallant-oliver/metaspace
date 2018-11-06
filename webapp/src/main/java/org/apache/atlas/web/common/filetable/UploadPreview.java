@@ -41,7 +41,7 @@ public class UploadPreview  {
     private boolean includeHeader;
     @XmlElementWrapper(name = "headers")
     @XmlElement(name = "header")
-    private List<Column> headers;
+    private List<ColumnExt> headers;
     @XmlElement
     private Integer size;
     @XmlElement(name = "rows")
@@ -82,11 +82,11 @@ public class UploadPreview  {
         return this;
     }
 
-    public List<Column> getHeaders() {
+    public List<ColumnExt> getHeaders() {
         return headers;
     }
 
-    public UploadPreview setHeaders(List<Column> headers) {
+    public UploadPreview setHeaders(List<ColumnExt> headers) {
         this.headers = headers;
         return this;
     }

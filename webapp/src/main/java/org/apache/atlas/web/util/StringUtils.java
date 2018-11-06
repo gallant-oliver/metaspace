@@ -23,7 +23,7 @@ public class StringUtils {
     }
 
     public static String obtainFilePath(String jobId) {
-        return FiletableConfig.getUploadMaxFileSize() + jobId + ".upload";
+        return FiletableConfig.getUploadPath() + jobId + ".upload";
     }
 
     public static String obtainFileType(String fileName) {

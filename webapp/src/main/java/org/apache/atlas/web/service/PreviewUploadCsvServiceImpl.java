@@ -10,7 +10,7 @@ import org.apache.atlas.web.common.filetable.FileType;
 import org.apache.atlas.web.common.filetable.UploadConfig;
 import org.apache.atlas.web.common.filetable.UploadFileCache;
 import org.apache.atlas.web.common.filetable.UploadPreview;
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.Workbook;
 import org.apache.atlas.web.util.ExcelUtils;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class PreviewUploadCsvServiceImpl implements PreviewUploadService{
         try{
             UploadFileCache uploadFileCache=UploadFileCache.create();
             Workbook workbook=uploadFileCache.get(jobId);
-            List<List<String>> sheet=new ArrayList<List<String>>(workbook.getSheet("csv"));
+            List<List<String>> sheet=new ArrayList<>(workbook.getSheet("csv"));
             List<String> headInfo=sheet.get(0);
             boolean isIncludeHead=false;
             if(uploadConfig!=null){
@@ -84,7 +84,7 @@ public class PreviewUploadCsvServiceImpl implements PreviewUploadService{
             }
             CsvHeader csvHeader= ExcelUtils.readerExcelHeader(headInfo, isIncludeHead);//生成表头信息
             UploadPreview preview=new UploadPreview();
-            preview.setHeaders(csvHeader.getColumnList());
+            preview.setHeaders(csvHeader.getColumnExtList());
             preview.setFieldDelimiter(workbook.getFieldDelimiter());
             preview.setFileEncode(workbook.getFileEncode());
             preview.setIncludeHeader(false);

@@ -14,8 +14,13 @@
 
 package org.apache.atlas.web.common.filetable;
 
-import com.gridsum.gdp.library.commons.data.schema.Column;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
 
+import com.gridsum.gdp.library.commons.data.type.DataType;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -24,18 +29,65 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-/**
- * Created by sunmingqi on 2016/12/21.
- */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-public class ColumnExt extends Column {
+public class ColumnExt {
     /**
      * 表的列 在数据文件中对应列的index
      */
     @XmlElement
+    private String name;
+    @XmlElement
+    private String comment="";
+    @XmlElement
+    private DataType type;
+    @XmlElement
+    private String typeStr;
+    @XmlElement
+    private Integer ordinal;
+    @XmlElement
     private Integer sourceIndex;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public DataType getType() {
+        return type;
+    }
+
+    public void setType(DataType type) {
+        this.type = type;
+    }
+
+    public String getTypeStr() {
+        return typeStr;
+    }
+
+    public void setTypeStr(String typeStr) {
+        this.typeStr = typeStr;
+    }
+
+    public Integer getOrdinal() {
+        return ordinal;
+    }
+
+    public void setOrdinal(Integer ordinal) {
+        this.ordinal = ordinal;
+    }
 
     public Integer getSourceIndex() {
         return sourceIndex;
@@ -43,16 +95,6 @@ public class ColumnExt extends Column {
 
     public void setSourceIndex(Integer sourceIndex) {
         this.sourceIndex = sourceIndex;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
     }
 }
 

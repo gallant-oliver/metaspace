@@ -1,6 +1,6 @@
 package org.apache.atlas.web.common.filetable;
 
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.Workbook;
 
 import java.util.HashMap;
 

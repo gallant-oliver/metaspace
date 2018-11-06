@@ -1,4 +1,4 @@
-package org.apache.atlas.web.model;
+package org.apache.atlas.web.model.filetable;
 
 import org.apache.atlas.web.common.filetable.FileType;
 

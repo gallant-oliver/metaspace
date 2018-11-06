@@ -13,10 +13,13 @@
 
 package org.apache.atlas.web.rest;
 
+import com.google.common.base.Strings;
 import com.google.common.base.VerifyException;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.common.filetable.ColumnExt;
 import org.apache.atlas.web.common.filetable.Constants;
 import org.apache.atlas.web.common.filetable.CsvEncode;
 import org.apache.atlas.web.common.filetable.FileType;
@@ -26,12 +29,14 @@ import org.apache.atlas.web.common.filetable.UploadFileCache;
 import org.apache.atlas.web.common.filetable.UploadFileInfo;
 import org.apache.atlas.web.common.filetable.UploadPreview;
 import org.apache.atlas.web.config.FiletableConfig;
-import org.apache.atlas.web.model.UploadConfigRequestBody;
-import org.apache.atlas.web.model.UploadResponseBody;
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.TaskInfo;
+import org.apache.atlas.web.model.filetable.TaskResponseBody;
+import org.apache.atlas.web.model.filetable.UploadConfigRequestBody;
+import org.apache.atlas.web.model.filetable.UploadJobInfo;
+import org.apache.atlas.web.model.filetable.UploadResponseBody;
+import org.apache.atlas.web.model.filetable.Workbook;
 import org.apache.atlas.web.service.PreviewUploadService;
 import org.apache.atlas.web.service.UploadJobService;
-import org.apache.atlas.web.util.HdfsUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.StringUtils;
 import org.apache.commons.fileupload.FileItem;
@@ -41,7 +46,6 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -49,8 +53,6 @@ import org.springframework.web.util.WebUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,16 +61,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
 @Path("file/table")
 @Singleton
@@ -93,6 +91,7 @@ public class FileTableREST {
     @Path("/upload")
     @Consumes({MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN, "text/csv",
                "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response upload() {
         LOGGER.info("Upload Start...");
 
@@ -227,6 +226,52 @@ public class FileTableREST {
             throw new RuntimeException(csvException);
         }
     }
+
+
+    /**
+     * 生成数据上传任务
+     * 从提交的请求中得到任务配置，目标表schema，以及column的mapping关系
+     * 从临时目录中读取数据，根据配置生成parquet文件
+     * 加载parquet文件到临时表
+     * 把数据加载到目标表的hdfs中
+     *
+     * @param json
+     * @return
+     */
+    @POST
+    @Path("submit")
+    public Response upload(UploadConfigRequestBody requestBody) throws AtlasBaseException {
+
+        LOGGER.info("upload requestBody[{}]", ToStringBuilder.reflectionToString(requestBody.getUploadConfig()));
+        List<ColumnExt> columns = requestBody.getUploadConfig().getColumns();
+        for (ColumnExt column : columns) {
+            LOGGER.debug("upload column[{}]", ToStringBuilder.reflectionToString(column));
+        }
+
+        UploadConfig uploadConfig = requestBody.getUploadConfig();
+        if (Strings.isNullOrEmpty(uploadConfig.getTableName())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "table must have value");
+        }
+        if (uploadConfig.getFileType() == null) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "fileType must have value");
+        }
+        if (uploadConfig.getActionType() == null) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "actionType must have value");
+        }
+        if ((FileType.XLSX.equals(uploadConfig.getFileType()) || FileType.XLS.equals(uploadConfig.getFileType())) && uploadConfig.getSheetName() == null) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "sheetName must have value");
+        }
+        if (!Constants.SQL_TABLE_OR_COLUMN_NAME_PATTERN.matcher(uploadConfig.getTableName()).matches()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表名只能由字母下划线组成:" + uploadConfig.getTableName());
+        }
+
+        TaskResponseBody taskResponseBody = new TaskResponseBody();
+        UploadJobInfo jobInfo = jobService.newUploadJobInfo(requestBody.getRequestId(), uploadConfig);
+        TaskInfo taskInfo = jobInfo.getTaskInfo();
+        taskResponseBody.setTasks(Lists.newArrayList(taskInfo));
+        return Response.ok(taskResponseBody).build();
+    }
+
 
 }
 

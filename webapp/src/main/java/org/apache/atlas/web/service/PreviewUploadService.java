@@ -3,7 +3,7 @@ package org.apache.atlas.web.service;
 import edu.npu.fastexcel.ExcelException;
 import org.apache.atlas.web.common.filetable.UploadConfig;
 import org.apache.atlas.web.common.filetable.UploadPreview;
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

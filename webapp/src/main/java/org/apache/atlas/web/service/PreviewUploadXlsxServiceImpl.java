@@ -7,7 +7,7 @@ import org.apache.atlas.web.common.filetable.FileType;
 import org.apache.atlas.web.common.filetable.UploadConfig;
 import org.apache.atlas.web.common.filetable.UploadFileCache;
 import org.apache.atlas.web.common.filetable.UploadPreview;
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.Workbook;
 import org.apache.atlas.web.util.CollectionUtil;
 import org.apache.atlas.web.util.ExcelUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -89,7 +89,7 @@ public class PreviewUploadXlsxServiceImpl implements PreviewUploadService {
             CsvHeader csvHeader = ExcelUtils.readerExcelHeader(headInfo, isIncludeHeader);//生成表头信息
             UploadPreview preview = new UploadPreview();
             preview.setIncludeHeader(isIncludeHeader);
-            preview.setHeaders(csvHeader.getColumnList());
+            preview.setHeaders(csvHeader.getColumnExtList());
             preview.setTableHeads(headInfo);
             preview.setRows(previewSheet);
             preview.setSize(sheet.size());

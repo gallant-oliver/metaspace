@@ -23,7 +23,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.gridsum.gdp.library.commons.data.schema.Column;
 import com.gridsum.gdp.library.commons.data.type.DataType;
 import com.gridsum.gdp.library.commons.exception.VerifyException;
 import com.gridsum.gdp.library.commons.utils.StringUtils;
@@ -32,7 +31,7 @@ public class CsvHeader {
     
     public static final String UTF8_BOM = "\uFEFF";
 
-    final Pattern SQL_TABLE_OR_COLUMN_NAME_PATTERN = Pattern.compile("[a-z_]\\w*");
+    final Pattern SQL_TABLE_OR_ColumnExt_NAME_PATTERN = Pattern.compile("[a-z_]\\w*");
     public static String removeUTF8BOM(String s) {
         if (Strings.isNullOrEmpty(s)) {
             return "";
@@ -64,28 +63,28 @@ public class CsvHeader {
         return s;
     }
 
-    private final Column[] columns;
+    private final ColumnExt[] ColumnExts;
 
     public CsvHeader(String... headers) {
         this(headers, null);
     }
 
-    public static void valid(Column[] columns) {
-        List<Column> nonUniqueColumns = findNonUnique(columns);
-        if (nonUniqueColumns.size() > 0) {
+    public static void valid(ColumnExt[] ColumnExts) {
+        List<ColumnExt> nonUniqueColumnExts = findNonUnique(ColumnExts);
+        if (nonUniqueColumnExts.size() > 0) {
             StringBuilder sb = new StringBuilder();
-            for (Column column : nonUniqueColumns) {
-                sb.append(",").append(column.getName());
+            for (ColumnExt ColumnExt : nonUniqueColumnExts) {
+                sb.append(",").append(ColumnExt.getName());
             }
             throw new VerifyException("列[" + sb.substring(1) + "]存在重复！");
         }
     }
 
-    public static List<Column> findNonUnique(Column[] columns) {
-        List<Column> lists = Lists.newArrayList();
-        Map<Column, Integer> map = Maps.newHashMap();
-        for (int i = 0; i < columns.length; i++) {
-            Column key = columns[i];
+    public static List<ColumnExt> findNonUnique(ColumnExt[] ColumnExts) {
+        List<ColumnExt> lists = Lists.newArrayList();
+        Map<ColumnExt, Integer> map = Maps.newHashMap();
+        for (int i = 0; i < ColumnExts.length; i++) {
+            ColumnExt key = ColumnExts[i];
             Integer count = map.get(key);
             if (count != null) {
                 map.put(key, count + 1);
@@ -93,10 +92,10 @@ public class CsvHeader {
                 map.put(key, 1);
             }
         }
-        for (Column column : map.keySet()) {
-            Integer count = map.get(column);
+        for (ColumnExt ColumnExt : map.keySet()) {
+            Integer count = map.get(ColumnExt);
             if (count > 1) {
-                lists.add(column);
+                lists.add(ColumnExt);
             }
         }
         return lists;
@@ -110,7 +109,7 @@ public class CsvHeader {
      */
     public CsvHeader(String[] headers, String[] comments) {
         Preconditions.checkArgument(headers != null && headers.length > 0, "Headers should not be null or empty.");
-        columns = new Column[headers.length];
+        ColumnExts = new ColumnExt[headers.length];
         if (comments == null) {
             withoutComment(headers);
         } else {
@@ -118,24 +117,24 @@ public class CsvHeader {
         }
         // 2016.12.08
         // Do not check header
-        //valid(columns);
+        //valid(ColumnExts);
     }
 
     private void withoutComment(String[] headers) {
         for (int i = 0; i < headers.length; i++) {
             String header = removeUTF8BOM(headers[i]);
-            Column column = new Column();
-            column.setType(DataType.STRING);
+            ColumnExt ColumnExt = new ColumnExt();
+            ColumnExt.setType(DataType.STRING);
 
             // 2016.12.13 header大写转小写
             header = header.toLowerCase();
-            if (SQL_TABLE_OR_COLUMN_NAME_PATTERN.matcher(header).matches()) {
-                column.setName(Ascii.toLowerCase(header));
+            if (SQL_TABLE_OR_ColumnExt_NAME_PATTERN.matcher(header).matches()) {
+                ColumnExt.setName(Ascii.toLowerCase(header));
             } else {
-                column.setName("column" + i);
-                column.setComment(header);
+                ColumnExt.setName("ColumnExt" + i);
+                ColumnExt.setComment(header);
             }
-            columns[i] = column;
+            ColumnExts[i] = ColumnExt;
         }
     }
 
@@ -145,78 +144,78 @@ public class CsvHeader {
         }
         for (int i = 0; i < comments.length; i++) {
             String header = removeUTF8BOM(comments[i]);
-            Column column = new Column();
-            column.setType(DataType.STRING);
+            ColumnExt ColumnExt = new ColumnExt();
+            ColumnExt.setType(DataType.STRING);
 
             // 2016.12.13 header大写转小写
             header = header.toLowerCase();
-            if (SQL_TABLE_OR_COLUMN_NAME_PATTERN.matcher(header).matches()) {
-                column.setName(Ascii.toLowerCase(header));
+            if (SQL_TABLE_OR_ColumnExt_NAME_PATTERN.matcher(header).matches()) {
+                ColumnExt.setName(Ascii.toLowerCase(header));
             } else {
-                column.setName("column" + i);
-                column.setComment(header);
+                ColumnExt.setName("ColumnExt" + i);
+                ColumnExt.setComment(header);
             }
             if (!Strings.isNullOrEmpty(comments[i])) {
-                column.setComment(removeUTF8BOM(comments[i]));
+                ColumnExt.setComment(removeUTF8BOM(comments[i]));
             }
-            columns[i] = column;
+            ColumnExts[i] = ColumnExt;
         }
     }
 
 
     public CsvHeader(List<ColumnExt> headers) {
-        Preconditions.checkArgument(!Iterables.isEmpty(headers), "columns should not be null or empty.");
-        columns = new Column[headers.size()];
+        Preconditions.checkArgument(!Iterables.isEmpty(headers), "ColumnExts should not be null or empty.");
+        ColumnExts = new ColumnExt[headers.size()];
         for (int i = 0; i < headers.size(); i++) {
-            Column column = headers.get(i);
-            String header = column.getName();
-            if (SQL_TABLE_OR_COLUMN_NAME_PATTERN.matcher(header).matches()) {
-                column.setName(Ascii.toLowerCase(header));
+            ColumnExt ColumnExt = headers.get(i);
+            String header = ColumnExt.getName();
+            if (SQL_TABLE_OR_ColumnExt_NAME_PATTERN.matcher(header).matches()) {
+                ColumnExt.setName(Ascii.toLowerCase(header));
             } else {
-                column.setName("column" + i);
-                if (Strings.isNullOrEmpty(column.getComment())) {
-                    column.setComment(header);
+                ColumnExt.setName("Column" + i);
+                if (Strings.isNullOrEmpty(ColumnExt.getComment())) {
+                    ColumnExt.setComment(header);
                 } else {
-                    column.setComment(column.getComment() + "[" + header + "]");
+                    ColumnExt.setComment(ColumnExt.getComment() + "[" + header + "]");
                 }
             }
-            columns[i] = column;
+            ColumnExts[i] = ColumnExt;
         }
         // 2016.12.08
         // Do not check header
-        //valid(columns);
+        //valid(ColumnExts);
     }
 
     public String[] getHeaders() {
-        String[] headers = new String[columns.length];
-        for (int i = 0; i < columns.length; i++) {
-            String header = columns[i].getName();
+        String[] headers = new String[ColumnExts.length];
+        for (int i = 0; i < ColumnExts.length; i++) {
+            String header = ColumnExts[i].getName();
             headers[i] = header;
         }
         return headers;
     }
 
     public int size() {
-        return columns.length;
+        return ColumnExts.length;
     }
 
     public List<String> getHeaderList() {
-        List<String> headers = Lists.newArrayListWithCapacity(columns.length);
-        for (int i = 0; i < columns.length; i++) {
-            String header = columns[i].getName();
+        List<String> headers = Lists.newArrayListWithCapacity(ColumnExts.length);
+        for (int i = 0; i < ColumnExts.length; i++) {
+            String header = ColumnExts[i].getName();
             headers.add(header);
         }
         return headers;
     }
 
-    public Column[] getColumns() {
-        return columns;
+    public ColumnExt[] getColumnExts() {
+        return ColumnExts;
     }
 
-    public List<Column> getColumnList() {
-        List<Column> headers = Lists.newArrayListWithCapacity(columns.length);
-        for (Column column : columns) {
-            headers.add(column);
+    public List<ColumnExt> getColumnExtList() {
+        List<ColumnExt> headers = Lists.newArrayListWithCapacity(ColumnExts.length);
+        for (ColumnExt ColumnExt : ColumnExts) {
+            headers.add(ColumnExt);
         }
         return headers;
     }

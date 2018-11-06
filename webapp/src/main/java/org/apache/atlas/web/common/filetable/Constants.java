@@ -1,6 +1,10 @@
 package org.apache.atlas.web.common.filetable;
 
+import com.gridsum.gdp.library.commons.data.type.DatabaseEngine;
+
 import org.apache.commons.lang.time.FastDateFormat;
+
+import java.util.regex.Pattern;
 
 public interface Constants {
 
@@ -21,7 +25,7 @@ public interface Constants {
     int UPLOAD_OUT_TIME = 1800000;// 上传超时时间，默认30分钟
     int UPLOAD_CLEAN_TIME = 5;// 线程运行间隔，分钟
 
-     int PARQUET_BLOCK_SIZE = 268435456;
+    int PARQUET_BLOCK_SIZE = 268435456;
     int PARQUET_PAGE_SIZE = 65536;
     int PARQUET_DICTIONARY_PAGE_SIZE = 1048576;
     boolean PARQUET_ENABLE_DICTIONARY = true;
@@ -40,4 +44,11 @@ public interface Constants {
     String UPDATE_TIME_COLUMN_NAME = "__update__time__";
 
     String HIVE_WAREHOUSE_BASE_DIR = "/user/hive/warehouse/";
+
+    String SYSTEM_USER = "openbi";
+    String DEFAULT_DATASOURCE_ID = "hive-data";
+    int CONNECTION_TIMEOUT_SECOND = 0;
+    int CONNECTION_MAX_RETRY_TIME = 3;
+    Pattern SQL_TABLE_OR_COLUMN_NAME_PATTERN = Pattern.compile("[a-z_]\\w*");
+
 }

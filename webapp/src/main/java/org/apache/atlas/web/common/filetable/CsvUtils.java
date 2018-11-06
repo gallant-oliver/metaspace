@@ -20,7 +20,7 @@ import com.gridsum.gdp.library.commons.utils.FileUtils;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import org.apache.atlas.web.model.Workbook;
+import org.apache.atlas.web.model.filetable.Workbook;
 import org.apache.atlas.web.util.FileUtil;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -164,7 +164,7 @@ public final class CsvUtils {
         CSVFormat csvFormat = csvFormatPredefined.format().withIgnoreEmptyLines();
 
         try (CSVParser parser = new CSVParser(fileReader, csvFormat)) {
-            preview.setHeaders(csvHeader.getColumnList());
+            preview.setHeaders(csvHeader.getColumnExtList());
             preview.setFieldDelimiter(csvFormatPredefined.name());
             preview.setFileEncode(fileEncode);
             preview.setIncludeHeader(includeHeader);

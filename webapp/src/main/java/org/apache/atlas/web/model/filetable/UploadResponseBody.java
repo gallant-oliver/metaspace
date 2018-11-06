@@ -11,27 +11,30 @@
 //
 // ======================================================================
 
-package org.apache.atlas.web.model;
+package org.apache.atlas.web.model.filetable;
 
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.atlas.web.common.filetable.UploadPreview;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 
+@JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @XmlRootElement
-@XmlAccessorType(XmlAccessType.NONE)
-@XmlType
-@JsonPropertyOrder({"requestId", "uploadPreview"})
+@XmlAccessorType(XmlAccessType.PROPERTY)
 public class UploadResponseBody {
-    @XmlElement
+
     private String requestId;
-    @XmlElement
     private UploadPreview uploadPreview;
 
     public String getRequestId() {

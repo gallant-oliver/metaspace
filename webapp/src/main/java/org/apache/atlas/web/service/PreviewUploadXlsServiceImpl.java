@@ -20,9 +20,9 @@ import java.util.List;
 
 public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
     @Override
-    public org.apache.atlas.web.model.Workbook parser(String filePath) throws IOException, ExcelException {
+    public org.apache.atlas.web.model.filetable.Workbook parser(String filePath) throws IOException, ExcelException {
         Workbook workbook = FastExcel.createReadableWorkbook(new File(filePath));
-        org.apache.atlas.web.model.Workbook gWorkbook = new org.apache.atlas.web.model.Workbook();
+        org.apache.atlas.web.model.filetable.Workbook gWorkbook = new org.apache.atlas.web.model.filetable.Workbook();
         try {
             workbook.open();
             if (workbook != null) {
@@ -98,7 +98,7 @@ public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
     private UploadPreview getUploadPreview(String jobId, UploadConfig uploadConfig, int size) {
         try {
             UploadFileCache uploadFileCache = UploadFileCache.create();
-            org.apache.atlas.web.model.Workbook workbook = uploadFileCache.get(jobId);
+            org.apache.atlas.web.model.filetable.Workbook workbook = uploadFileCache.get(jobId);
             String sheetName = null;
             if (uploadConfig != null) {
                 sheetName = uploadConfig.getSheetName();
@@ -128,7 +128,7 @@ public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
             CsvHeader csvHeader = ExcelUtils.readerExcelHeader(headInfo, isIncludeHeader);//生成表头信息
             UploadPreview preview = new UploadPreview();
             preview.setIncludeHeader(isIncludeHeader);
-            preview.setHeaders(csvHeader.getColumnList());
+            preview.setHeaders(csvHeader.getColumnExtList());
             preview.setTableHeads(headInfo);
             preview.setRows(previewSheet);
             preview.setSize(sheet.size());
