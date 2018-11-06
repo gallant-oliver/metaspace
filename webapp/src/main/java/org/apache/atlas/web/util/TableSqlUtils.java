@@ -48,7 +48,7 @@ public class TableSqlUtils {
             }
             if (isPartition && partitionFields != null) {
                 if (partitionFields == null || partitionFields.isEmpty()) {
-                    throw new AtlasBaseException(AtlasErrorCode.INVALID_HIVE_SQL, "分区表没有分区字段");
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "分区表没有分区字段");
                 }
                 String partitionFieldsLiteral = Joiner.on(",").join(partitionFields);
                 sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
