@@ -78,6 +78,9 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
+        if (HiveJdbcUtils.tableExists(request.getDatabase(), request.getTableName())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + request.getDatabase() + "." + request.getTableName() + " 已存在");
+        }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
         HiveJdbcUtils.execute(sql);
         String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
@@ -94,6 +97,9 @@ public class TableREST {
         String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
         String database = split[0];
         String tableName = split[1];
+        if (HiveJdbcUtils.tableExists(database, tableName)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
+        }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
         HiveJdbcUtils.execute(sql.getSql());
         String tableId = tableService.tableId(database, tableName);
