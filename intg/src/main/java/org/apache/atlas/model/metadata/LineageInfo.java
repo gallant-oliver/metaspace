@@ -77,6 +77,7 @@ public class LineageInfo implements Serializable {
         private long downStreamLevelNum;
         private String tableUpdateTime;
         private String displayText;
+        private Boolean process;
 
 
         public String getTypeName() {
@@ -157,6 +158,14 @@ public class LineageInfo implements Serializable {
 
         public void setDisplayText(String displayText) {
             this.displayText = displayText;
+        }
+
+        public Boolean getProcess() {
+            return process;
+        }
+
+        public void setProcess(Boolean process) {
+            this.process = process;
         }
     }
 
