@@ -674,7 +674,7 @@ public class MetaDataService {
         return ret.getAssignedEntities();
     }
 
-    @CacheEvict(value = "relationCache", key = "#categoryGuid")
+    @CacheEvict(value = {"relationCache","tableRelationCache"}, key = "#categoryGuid")
     public void removeRelationAssignmentFromEntities(String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.removeRelationAssignmentFromEntities({}, {})", categoryGuid, relatedObjectIds);
