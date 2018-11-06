@@ -49,8 +49,6 @@ public class SSOFilter implements Filter {
     private final Date date = new Date();
     private Configuration conf;
     private String loginURL;
-    private String logoutURL;
-    private String validateURL;
     private String infoURL;
 
 
@@ -60,9 +58,9 @@ public class SSOFilter implements Filter {
         try {
             conf = ApplicationProperties.get();
             loginURL = conf.getString("sso.login.url");
-            validateURL = conf.getString("sso.validate.url");
-            if (loginURL == null || validateURL == null || loginURL.equals("") || validateURL.equals("")) {
-                LOG.warn("loginURL/validateURL/infoURL config error");
+            infoURL = conf.getString("sso.info.url");
+            if (loginURL == null || infoURL == null || loginURL.equals("") || infoURL.equals("")) {
+                LOG.warn("loginURL/infoURL config error");
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.logout.url");
             }
         } catch (Exception e) {
@@ -82,8 +80,8 @@ public class SSOFilter implements Filter {
                 String ticket = httpServletRequest.getHeader("X-SSO-FullticketId");
                 if (ticket != null && ticket != "") {
                     HashMap<String, String> header = new HashMap<>();
-                    header.put("s-ticket", ticket);
-                    String s = SSLClient.doGet(validateURL, header);
+                    header.put("ticket", ticket);
+                    String s = SSLClient.doGet(infoURL, header);
                     Gson gson = new Gson();
                     JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                     Object message = jsonObject.get("message");
