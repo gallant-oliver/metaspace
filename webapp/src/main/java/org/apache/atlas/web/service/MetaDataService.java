@@ -126,14 +126,9 @@ public class MetaDataService {
                         table.setLocation(getEntityAttribute(sdEntity, "location"));
                         //格式
                         String inputFormat = getEntityAttribute(sdEntity, "inputFormat");
-                        if(inputFormat.contains("TextInputFormat")) {
-                            table.setFormat("TextFile");
-                        } else if(inputFormat.contains("SequenceFileInputFormat")) {
-                            table.setFormat("SequenceFile");
-                        } else if(inputFormat.contains("RCFileInputFormat")) {
-                            table.setFormat("RCFile");
-                        } else if(inputFormat.contains("OrcInputFormat")) {
-                            table.setFormat("ORCFile");
+                        if(Objects.nonNull(inputFormat)) {
+                            String[] fullFormat = inputFormat.split("\\.");
+                            table.setFormat(fullFormat[fullFormat.length-1]);
                         }
                     }
                 }
@@ -179,7 +174,6 @@ public class MetaDataService {
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
-
     }
 
     public AtlasEntity getEntityById(String guid) throws AtlasBaseException {
@@ -888,7 +882,7 @@ public class MetaDataService {
                             AtlasRelatedObjectId object = relatedIterator.next();
                             String name  = object.getDisplayText();
                             AtlasEntity.Status status = object.getEntityStatus();
-                            if(tableName.equals(name) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                            if(tableName.equals(name)) {
                                 RelationEntity.RelationInfo info = new RelationEntity.RelationInfo();
                                 info.setGuid(object.getGuid());
                                 info.setRelationshipGuid(object.getRelationshipGuid());
