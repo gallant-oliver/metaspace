@@ -561,28 +561,24 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.createMetadataCategory({})", category);
         }
-        try {
-            String guid = category.getGuid();
-            AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(guid);
-            String historyName = glossaryCategory.getName();
-            glossaryCategory.setName(category.getName());
-            glossaryCategory.setLongDescription(category.getDescription());
-            glossaryCategory.setShortDescription(category.getDescription());
-            String qualifiedName = glossaryCategory.getQualifiedName().replaceFirst(historyName, category.getName());
-            glossaryCategory.setQualifiedName(qualifiedName);
-            glossaryCategory = glossaryService.updateCategory_V2(glossaryCategory);
+        String guid = category.getGuid();
+        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(guid);
+        String historyName = glossaryCategory.getName();
+        glossaryCategory.setName(category.getName());
+        glossaryCategory.setLongDescription(category.getDescription());
+        glossaryCategory.setShortDescription(category.getDescription());
+        String qualifiedName = glossaryCategory.getQualifiedName().replaceFirst(historyName, category.getName());
+        glossaryCategory.setQualifiedName(qualifiedName);
+        glossaryCategory = glossaryService.updateCategory_V2(glossaryCategory);
 
-            if(Objects.nonNull(glossaryCategory.getAnchor()))
-                category.setAnchor(glossaryCategory.getAnchor());
-            if(Objects.nonNull(glossaryCategory.getParentCategory()))
-                category.setParentCategory(glossaryCategory.getParentCategory());
-            if(Objects.nonNull(glossaryCategory.getChildrenCategories()))
-                category.setChildrenCategories(glossaryCategory.getChildrenCategories());
-            category.setQualifiedName(glossaryCategory.getQualifiedName());
-            return category;
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改目录失败");
-        }
+        if(Objects.nonNull(glossaryCategory.getAnchor()))
+            category.setAnchor(glossaryCategory.getAnchor());
+        if(Objects.nonNull(glossaryCategory.getParentCategory()))
+            category.setParentCategory(glossaryCategory.getParentCategory());
+        if(Objects.nonNull(glossaryCategory.getChildrenCategories()))
+            category.setChildrenCategories(glossaryCategory.getChildrenCategories());
+        category.setQualifiedName(glossaryCategory.getQualifiedName());
+        return category;
     }
 
     @CacheEvict(value = "categoryCache", allEntries=true)

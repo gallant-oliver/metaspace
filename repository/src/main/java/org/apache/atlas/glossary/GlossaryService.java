@@ -742,18 +742,18 @@ public class GlossaryService {
         }
 
         if (Objects.isNull(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GlossaryCategory is null/empty");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录信息异常，无法修改目录");
         }
 
         if (StringUtils.isEmpty(glossaryCategory.getName())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "DisplayName can't be null/empty");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
         }
 
         if (isNameInvalid(glossaryCategory.getName())) {
-            throw new AtlasBaseException(AtlasErrorCode.INVALID_DISPLAY_NAME);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的目录名");
         }
         if (categoryExists(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录下存在相同目录名，修改失败");
         }
 
         AtlasGlossaryCategory storeObject = dataAccess.load(glossaryCategory);
@@ -782,7 +782,7 @@ public class GlossaryService {
                 glossaryCategory.setQualifiedName(storeObject.getQualifiedName());
 
                 if (categoryExists(glossaryCategory)) {
-                    throw new AtlasBaseException(AtlasErrorCode.GLOSSARY_CATEGORY_ALREADY_EXISTS, glossaryCategory.getQualifiedName());
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录下存在相同目录名，修改失败");
                 }
 
                 storeObject = dataAccess.save(glossaryCategory);
