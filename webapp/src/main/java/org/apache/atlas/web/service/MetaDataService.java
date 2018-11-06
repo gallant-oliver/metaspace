@@ -681,7 +681,7 @@ public class MetaDataService {
                 glossaryService.removeTermFromEntities(termGuid, relatedObjectIds);
             }
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除关联失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联失败");
         }
     }
 
