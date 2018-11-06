@@ -153,9 +153,6 @@ public enum AtlasErrorCode {
     INVALID_TIMEBOUNDRY_DATERANGE(400, "METASPACE-400-00-87D", "Invalid dateRange: startTime {0} must be before endTime {1}"),
     PROPAGATED_CLASSIFICATION_REMOVAL_NOT_SUPPORTED(400, "METASPACE-400-00-87E", "Removal of classification {0}, which is propagated from entity {1}, is not supported"),
 
-    INVALID_HIVE_SQL(400, "METASPACE-400-00-88", "无效的hiveSql：{0}"),
-
-
     UNAUTHORIZED_ACCESS(403, "METASPACE-403-00-001", "{0} is not authorized to perform {1}"),
 
     // All Not found enums go here
