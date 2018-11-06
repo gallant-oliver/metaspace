@@ -28,61 +28,59 @@ import java.util.List;
 public class TableSqlUtils {
 
     public static String format(TableForm tableForm) throws AtlasBaseException {
-        try {
-            String database = tableForm.getDatabase();
-            String tableName = tableForm.getTableName();
-            String comment = tableForm.getComment();
-            String expireDate = tableForm.getExpireDate();
-            boolean isPartition = tableForm.isPartition();
-            List<Field> partitionFields = tableForm.getPartitionFields();
-            String storedFormat = tableForm.getStoredFormat();
-            String hdfsPath = tableForm.getHdfsPath();
-            String fieldsTerminated = tableForm.getFieldsTerminated();
-            String lineTerminated = tableForm.getLineTerminated();
-            TableType tableTypeEnum = TableType.of(tableForm.getTableType());
-            String fieldsLiteral = Joiner.on(",").join(tableForm.getFields());
+        String database = tableForm.getDatabase();
+        String tableName = tableForm.getTableName();
+        String comment = tableForm.getComment();
+        String expireDate = tableForm.getExpireDate();
+        boolean isPartition = tableForm.isPartition();
+        List<Field> partitionFields = tableForm.getPartitionFields();
+        String storedFormat = tableForm.getStoredFormat();
+        String hdfsPath = tableForm.getHdfsPath();
+        String fieldsTerminated = tableForm.getFieldsTerminated();
+        String lineTerminated = tableForm.getLineTerminated();
+        TableType tableTypeEnum = TableType.of(tableForm.getTableType());
+        String fieldsLiteral = Joiner.on(",").join(tableForm.getFields());
 
-            StringBuffer sqlFormat = new StringBuffer("CREATE %s TABLE %s.%s (%s)");
-            if (StringUtils.isNotBlank(comment)) {
-                sqlFormat.append(" COMMENT '" + comment + "'");
+        StringBuffer sqlFormat = new StringBuffer("CREATE %s TABLE %s.%s (%s)");
+        if (StringUtils.isNotBlank(comment)) {
+            sqlFormat.append(" COMMENT '" + comment + "'");
+        }
+        if (isPartition) {
+            if (partitionFields == null || partitionFields.isEmpty()) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "分区表没有分区字段");
             }
-            if (isPartition && partitionFields != null) {
-                if (partitionFields == null || partitionFields.isEmpty()) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "分区表没有分区字段");
-                }
-                String partitionFieldsLiteral = Joiner.on(",").join(partitionFields);
-                sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
-            }
-
-            if (tableTypeEnum.isExternal()) {
-                if (StringUtils.isNotBlank(fieldsTerminated) || StringUtils.isNotBlank(lineTerminated)) {
-                    sqlFormat.append(" ROW FORMAT DELIMITED");
-                }
-                if (StringUtils.isNotBlank(fieldsTerminated)) {
-                    sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
-                }
-                if (StringUtils.isNotBlank(lineTerminated)) {
-                    sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
-                }
-            }
-
-            if (StringUtils.isNotBlank(storedFormat)) {
-                storedFormat = storedFormat.toUpperCase();
-                StorageFormat.of(storedFormat);
-                sqlFormat.append(" STORED AS " + storedFormat);
-            }
-
-            if (tableTypeEnum.isExternal()) {
-                sqlFormat.append(" LOCATION '" + hdfsPath + "'");
-            }
-
-            String sql = String.format(sqlFormat.toString(), tableTypeEnum.getLiteral(),
-                                       database, tableName, fieldsLiteral);
-            return sql;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
+            String partitionFieldsLiteral = Joiner.on(",").join(partitionFields);
+            sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
         }
 
+        if (tableTypeEnum.isExternal()) {
+            if (StringUtils.isNotBlank(fieldsTerminated) || StringUtils.isNotBlank(lineTerminated)) {
+                sqlFormat.append(" ROW FORMAT DELIMITED");
+            }
+            if (StringUtils.isNotBlank(fieldsTerminated)) {
+                sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
+            }
+            if (StringUtils.isNotBlank(lineTerminated)) {
+                sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
+            }
+        }
+
+        if (StringUtils.isNotBlank(storedFormat)) {
+            storedFormat = storedFormat.toUpperCase();
+            StorageFormat.of(storedFormat);
+            sqlFormat.append(" STORED AS " + storedFormat);
+        }
+
+        if (tableTypeEnum.isExternal()) {
+            if (StringUtils.isBlank(hdfsPath)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "外部表HDFS路径不能为空!");
+            }
+            sqlFormat.append(" LOCATION '" + hdfsPath + "'");
+        }
+
+        String sql = String.format(sqlFormat.toString(), tableTypeEnum.getLiteral(),
+                                   database, tableName, fieldsLiteral);
+        return sql;
     }
 
 
