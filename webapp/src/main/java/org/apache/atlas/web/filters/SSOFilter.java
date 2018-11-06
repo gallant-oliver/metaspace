@@ -117,8 +117,8 @@ public class SSOFilter implements Filter {
                         LOG.warn("用户信息获取失败");
                     }
                 }
-            }else if(cookieMap.containsKey("metaspace-ticket")){
-                if(requestURL.contains("/api/metaspace")){
+            }else if(requestURL.contains("/api/metaspace")){
+                if(cookieMap.containsKey("metaspace-ticket")){
                     if (requestURL.contains("/user/logout")) {
                         if (cookieMap.containsKey("metaspace-ticket")) {
                             Cookie cookie = cookieMap.get("metaspace-ticket");
@@ -156,10 +156,10 @@ public class SSOFilter implements Filter {
                         }
                     }
                 } else{
-                    filterChain.doFilter(request, response);
+                    loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
                 }
-            }else{
-                httpServletResponse.sendRedirect(loginURL +"?service="+ welcome);
+            }else {
+                filterChain.doFilter(request, response);
             }
 
 
