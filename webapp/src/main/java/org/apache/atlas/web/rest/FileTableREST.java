@@ -200,13 +200,13 @@ public class FileTableREST {
     @Path("preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response preview(UploadConfigRequestBody requestBody) {
+    public Response preview(UploadConfigRequestBody requestBody) throws AtlasBaseException {
 
         UploadConfig uploadConfig = requestBody.getUploadConfig();
         String jobId = requestBody.getRequestId();
         String filePath = StringUtils.obtainFilePath(jobId);
         if (uploadConfig.getFileType() == null) {
-            throw new com.gridsum.gdp.library.commons.exception.VerifyException("fileType is not null!");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "fileType is not null!");
         }
         if (FileType.ZIP.equals(uploadConfig.getFileType()) || FileType.CSV.equals(uploadConfig.getFileType())) {
             CsvEncode.of(uploadConfig.getFileEncode()); //为了检测编码是否在允许范围内
