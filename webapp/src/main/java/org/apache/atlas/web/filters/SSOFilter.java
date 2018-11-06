@@ -64,11 +64,7 @@ public class SSOFilter implements Filter {
              validateURL = conf.getString("sso.validate.url");
              infoURL = conf.getString("sso.info.url");
             if(loginURL==null||logoutURL==null||validateURL==null||infoURL==null||loginURL.equals("")||logoutURL.equals("")||validateURL.equals("")||infoURL.equals("")){
-                LOG.warn("loginURL/validateURL/infoURL use default conf");
-                loginURL="https://sso-internal.gridsumdissector.com/login";
-                logoutURL="https://sso-internal.gridsumdissector.com/api/v2/logout";
-                validateURL="https://sso-internal.gridsumdissector.com/api/v2/validate";
-                infoURL="https://sso-internal.gridsumdissector.com/api/v2/info";
+                LOG.warn("loginURL/validateURL/infoURL config error");
             }
         } catch (AtlasException e) {
             e.printStackTrace();
@@ -103,7 +99,7 @@ public class SSOFilter implements Filter {
                 Object message = jsonObject.get("message");
                 if (message == null | (!message.toString().equals("Success"))) {
                     LOG.warn("用户信息获取失败");
-                    loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                    loginSkip(httpServletResponse, loginURL );
                 } else {
                     Map data = (Map) jsonObject.get("data");
                     if (data != null) {
@@ -113,7 +109,7 @@ public class SSOFilter implements Filter {
                         httpServletResponse.addCookie(cookie);
                         httpServletResponse.sendRedirect(requestURL);
                     } else {
-                        loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                        loginSkip(httpServletResponse, loginURL );
                         LOG.warn("用户信息获取失败");
                     }
                 }
@@ -145,18 +141,18 @@ public class SSOFilter implements Filter {
                                 filterChain.doFilter(request, response);
                             } else {
                                 LOG.warn("用户信息获取失败");
-                                loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                                loginSkip(httpServletResponse, loginURL );
                             }
                         } else {
                             cookie.setMaxAge(0);
                             cookie.setPath("/");
                             httpServletResponse.addCookie(cookie);
                             httpServletRequest.getSession().removeAttribute("user");
-                            loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                            loginSkip(httpServletResponse, loginURL );
                         }
                     }
                 } else{
-                    loginSkip(httpServletResponse, loginURL + "?service=" + welcome);
+                    loginSkip(httpServletResponse, loginURL );
                 }
             }else {
                 filterChain.doFilter(request, response);
