@@ -18,7 +18,6 @@ package org.apache.atlas.web.service;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -177,7 +176,7 @@ public class MetaDataService {
             List<Column> columns = getColumnInfoById(columnQuery, true);
             table.setColumns(columns);
             return table;
-        } catch (Exception e) {
+        } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
 
@@ -446,9 +445,14 @@ public class MetaDataService {
         //guid
         if(Objects.nonNull(atlasEntity.getGuid()))
             lineageEntity.setGuid(atlasEntity.getGuid());
+        lineageEntity.setProcess(false);
         //typeName
-        if(Objects.nonNull(atlasEntity.getTypeName()))
+        if(Objects.nonNull(atlasEntity.getTypeName())) {
             lineageEntity.setTypeName(atlasEntity.getTypeName());
+            if(atlasEntity.getTypeName().contains("process")) {
+                lineageEntity.setProcess(true);
+            }
+        }
         //tableName
         if(atlasEntity.hasAttribute("name") && Objects.nonNull(atlasEntity.getAttribute("name")))
             lineageEntity.setTableName(atlasEntity.getAttribute("name").toString());
