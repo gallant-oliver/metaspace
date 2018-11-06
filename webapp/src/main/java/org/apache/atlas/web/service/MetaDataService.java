@@ -453,6 +453,8 @@ public class MetaDataService {
                 lineageEntity.setProcess(true);
             }
         }
+        lineageEntity.setStatus(atlasEntity.getStatus().name());
+
         //tableName
         if(atlasEntity.hasAttribute("name") && Objects.nonNull(atlasEntity.getAttribute("name")))
             lineageEntity.setTableName(atlasEntity.getAttribute("name").toString());

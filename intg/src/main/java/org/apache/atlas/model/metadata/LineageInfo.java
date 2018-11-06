@@ -78,6 +78,7 @@ public class LineageInfo implements Serializable {
         private String tableUpdateTime;
         private String displayText;
         private Boolean process;
+        private String status;
 
 
         public String getTypeName() {
@@ -166,6 +167,14 @@ public class LineageInfo implements Serializable {
 
         public void setProcess(Boolean process) {
             this.process = process;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 
