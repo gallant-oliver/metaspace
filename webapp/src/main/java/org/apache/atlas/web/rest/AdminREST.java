@@ -1,12 +1,17 @@
 package org.apache.atlas.web.rest;
 
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.Database;
 import org.apache.atlas.model.metadata.Parameters;
 import org.apache.atlas.model.result.PageResult;
+import org.apache.atlas.util.SSLClient;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.service.SearchService;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.configuration.Configuration;
 import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,27 +54,21 @@ public class AdminREST {
 
     @GET
     @Path("/logout")
-    public String loginOut() throws AtlasBaseException {
+    public String loginOut() throws AtlasBaseException, AtlasException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "AdminREST.loginOut()");
             }
-            Cookie[] cookies = httpServletRequest.getCookies();
-            Map<String, Cookie> cookieMap = new HashMap();
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    cookieMap.put(cookie.getName(), cookie);
-                }
+            Configuration conf = ApplicationProperties.get();
+            String logoutURL = conf.getString("sso.logout.url");
+            if (logoutURL == null || logoutURL.equals("") ) {
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.logout.url");
             }
-            Cookie cookie = cookieMap.get("metaspace-ticket");
-            cookie.setMaxAge(0);
-            cookie.setPath("/");
-            httpServletResponse.addCookie(cookie);
-            httpServletRequest.getSession().removeAttribute("user");
+            HashMap<String, String> header = new HashMap<>();
+            header.put("ticket", httpServletRequest.getHeader("X-SSO-FullticketId"));
+            SSLClient.doDelete(logoutURL, header);
             return "success";
-        } catch (Exception e) {
-            return "fail";
         } finally {
             AtlasPerfTracer.log(perf);
         }
