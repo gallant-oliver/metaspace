@@ -184,7 +184,7 @@ public class SearchService {
         while (resultSet.next()) {
             Map<String, String> map = new HashMap<>();
             for (String column : columns) {
-                String s = resultSet.getObject(column).toString();
+                String s = resultSet.getObject(column)==null?"NULL":resultSet.getObject(column).toString();
                 map.put(column, s);
             }
             resultList.add(map);
