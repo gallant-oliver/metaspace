@@ -16,12 +16,10 @@ package org.apache.atlas.model.table;
 public enum StorageFormat {
 
     AVRO("AVRO"),
-    JSONFILE("JSONFILE"),
     PARQUET("PARQUET"),
     TEXTFILE("TEXTFILE"),
     SEQUENCEFILE("SEQUENCEFILE"),
     ORC("ORC");
-
 
     private String literal;
 
@@ -33,8 +31,6 @@ public enum StorageFormat {
         switch (storageFormat) {
             case "AVRO":
                 return AVRO;
-            case "JSONFILE":
-                return JSONFILE;
             case "PARQUET":
                 return PARQUET;
             case "TEXTFILE":
