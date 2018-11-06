@@ -47,16 +47,21 @@ public class TableSqlUtils {
                 sqlFormat.append(" COMMENT '" + comment + "'");
             }
             if (isPartition && partitionFields != null) {
+                if (partitionFields == null || partitionFields.isEmpty()) {
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_HIVE_SQL, "分区表没有分区字段");
+                }
                 String partitionFieldsLiteral = Joiner.on(",").join(partitionFields);
                 sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
             }
 
             if (tableTypeEnum.isExternal()) {
-                sqlFormat.append(" ROW FORMAT DELIMITED");
+                if (StringUtils.isNotBlank(fieldsTerminated) || StringUtils.isNotBlank(lineTerminated)) {
+                    sqlFormat.append(" ROW FORMAT DELIMITED");
+                }
                 if (StringUtils.isNotBlank(fieldsTerminated)) {
                     sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
                 }
-                if (StringUtils.isNotBlank(fieldsTerminated)) {
+                if (StringUtils.isNotBlank(lineTerminated)) {
                     sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
                 }
             }

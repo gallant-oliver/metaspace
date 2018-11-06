@@ -18,6 +18,7 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.dialect.postgresql.visitor.PGSchemaStatVisitor;
 import com.alibaba.druid.stat.*;
 import com.alibaba.druid.util.JdbcConstants;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
@@ -77,6 +78,9 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
+        if (HiveJdbcUtils.tableExists(request.getDatabase(), request.getTableName())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + request.getDatabase() + "." + request.getTableName() + " 已存在");
+        }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
         HiveJdbcUtils.execute(sql);
         String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
@@ -93,7 +97,9 @@ public class TableREST {
         String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
         String database = split[0];
         String tableName = split[1];
-
+        if (HiveJdbcUtils.tableExists(database, tableName)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
+        }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
         HiveJdbcUtils.execute(sql.getSql());
         String tableId = tableService.tableId(database, tableName);
@@ -113,7 +119,10 @@ public class TableREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Response sqlFormat(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
-        String formatedSql = SQLUtils.formatHive(sql).replaceAll("STORE", "STORED");
+        String formatedSql = SQLUtils.formatHive(sql);
+        if (formatedSql.contains("STORE") && !formatedSql.contains("STORED")) {//druid's bug
+            formatedSql = formatedSql.replace("STORE", "STORED");
+        }
         return Response.status(200).entity(formatedSql).build();
     }
 
