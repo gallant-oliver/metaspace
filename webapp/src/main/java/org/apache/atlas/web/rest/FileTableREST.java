@@ -15,6 +15,8 @@ package org.apache.atlas.web.rest;
 
 import com.google.common.base.VerifyException;
 import com.google.common.collect.Maps;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.common.filetable.Constants;
 import org.apache.atlas.web.common.filetable.CsvEncode;
 import org.apache.atlas.web.common.filetable.FileType;
@@ -29,6 +31,7 @@ import org.apache.atlas.web.model.UploadResponseBody;
 import org.apache.atlas.web.model.Workbook;
 import org.apache.atlas.web.service.PreviewUploadService;
 import org.apache.atlas.web.service.UploadJobService;
+import org.apache.atlas.web.util.HdfsUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.StringUtils;
 import org.apache.commons.fileupload.FileItem;
@@ -38,6 +41,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -45,21 +49,28 @@ import org.springframework.web.util.WebUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
-@Path("filetable")
+@Path("file/table")
 @Singleton
 @Service
 public class FileTableREST {
@@ -69,8 +80,9 @@ public class FileTableREST {
     @Context
     protected HttpServletRequest request;
 
-    @Context
+    @Inject
     private UploadJobService uploadJobService;
+
 
     /**
      * 上传本地数据文件到OpenBI，文件大小不超过100兆
@@ -78,7 +90,7 @@ public class FileTableREST {
      * 返回前100行预览数据
      */
     @POST
-    @Path("upload")
+    @Path("/upload")
     @Consumes({MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN, "text/csv",
                "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
     public Response upload() {
@@ -156,11 +168,13 @@ public class FileTableREST {
                 LOGGER.info("Body Upload");
                 FileUtils.copyInputStreamToFile(request.getInputStream(), tmpFile);
                 String contentDisposition = request.getHeader("content-disposition");
-                fileName = StringUtils.obtainFileName(contentDisposition).toLowerCase();
+                fileName = StringUtils.obtainFileName(contentDisposition);
+                if (null == fileName) {
+                    throw new VerifyException("get the uploaded file name failed.");
+                }
+                fileName = fileName.toLowerCase();
             }
-            if (null == fileName) {
-                throw new VerifyException("get the uploaded file name failed.");
-            }
+
             if (!tmpFile.exists()) {
                 throw new RuntimeException("File not exist: " + tmpFile.getAbsolutePath());
             }
@@ -183,7 +197,7 @@ public class FileTableREST {
      * @return
      */
     @POST
-    @Path("upload/preview")
+    @Path("preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response preview(UploadConfigRequestBody requestBody) {

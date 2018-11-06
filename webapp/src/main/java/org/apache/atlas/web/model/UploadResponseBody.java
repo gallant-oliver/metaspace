@@ -23,10 +23,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-@JsonPropertyOrder({"requestId", "uploadPreview", "createTime"})
+@JsonPropertyOrder({"requestId", "uploadPreview"})
 public class UploadResponseBody {
     @XmlElement
     private String requestId;
@@ -52,3 +53,4 @@ public class UploadResponseBody {
     }
 
 }
+

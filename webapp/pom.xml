@@ -87,6 +87,12 @@
         <groupId>com.gridsum.gdp.library</groupId>
         <artifactId>gdp-library-commons</artifactId>
         <version>${gdp.commons.version}</version>
+        <exclusions>
+          <exclusion>
+            <artifactId>guava</artifactId>
+            <groupId>com.google.guava</groupId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.poi</groupId>

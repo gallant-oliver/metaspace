@@ -32,8 +32,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-@JsonPropertyOrder({"includeHeader", "fieldDelimiter", "fileEncode", "size", "headers", "rows", "fileType", "sheets"})
-public class UploadPreview extends GenericData {
+public class UploadPreview  {
     @XmlElement
     private String fieldDelimiter;
     @XmlElement
@@ -143,13 +142,5 @@ public class UploadPreview extends GenericData {
         this.previewInfo = previewInfo;
     }
 
-    @Override
-    public UploadPreview set(String fieldName, Object value) {
-        return (UploadPreview) super.set(fieldName, value);
-    }
 
-    @Override
-    public UploadPreview clone() {
-        return (UploadPreview) super.clone();
-    }
 }

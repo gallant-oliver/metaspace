@@ -18,6 +18,7 @@ import com.gridsum.gdp.library.commons.utils.FileUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.model.metadata.Column;
 import org.apache.atlas.web.common.filetable.ColumnExt;
 import org.apache.atlas.web.common.filetable.CsvEncode;
@@ -57,8 +58,7 @@ import java.util.UUID;
 import javax.inject.Singleton;
 
 
-@Singleton
-@Component
+@AtlasService
 public class UploadJobService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadJobService.class);

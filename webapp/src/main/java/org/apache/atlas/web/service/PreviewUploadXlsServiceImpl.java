@@ -77,9 +77,9 @@ public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
     }
 
     private List<List<String>> obtainTableBody(Sheet sheet) throws ExcelException {
-        List<List<String>> tempLists = new ArrayList<List<String>>();
+        List<List<String>> tempLists = new ArrayList<>();
         for (int i = sheet.getFirstRow(); i < sheet.getLastRow(); i++) {
-            List<String> tempList = new ArrayList<String>();
+            List<String> tempList = new ArrayList<>();
             for (int j = sheet.getFirstColumn(); j < sheet.getLastColumn(); j++) {
                 String cell = sheet.getCell(i, j);
                 if (cell == null) {

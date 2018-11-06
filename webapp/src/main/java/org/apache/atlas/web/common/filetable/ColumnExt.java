@@ -16,6 +16,8 @@ package org.apache.atlas.web.common.filetable;
 
 import com.gridsum.gdp.library.commons.data.schema.Column;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
