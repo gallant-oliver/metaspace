@@ -102,6 +102,7 @@ public enum AtlasErrorCode {
     SAVED_SEARCH_CHANGE_USER(400, "METASPACE-400-00-056", "saved-search {0} can not be moved from user {1} to {2}"),
     INVALID_QUERY_PARAM_LENGTH(400, "METASPACE-400-00-057", "Length of query param {0} exceeds the limit"),
     INVALID_QUERY_LENGTH(400, "METASPACE-400-00-058", "Invalid query length, update {0} to change the limit"),
+
     // DSL related error codes
     INVALID_DSL_QUERY(400, "METASPACE-400-00-059", "Invalid DSL query: {0} | Reason: {1}. Please refer to METASPACE DSL grammar for more information"),
     INVALID_DSL_GROUPBY(400, "METASPACE-400-00-05A", "DSL Semantic Error - GroupBy attribute {0} is non-primitive"),
@@ -151,6 +152,9 @@ public enum AtlasErrorCode {
     INVALID_TIMEBOUNDRY_END_TIME(400, "METASPACE-400-00-87C", "Invalid endTime {0}"),
     INVALID_TIMEBOUNDRY_DATERANGE(400, "METASPACE-400-00-87D", "Invalid dateRange: startTime {0} must be before endTime {1}"),
     PROPAGATED_CLASSIFICATION_REMOVAL_NOT_SUPPORTED(400, "METASPACE-400-00-87E", "Removal of classification {0}, which is propagated from entity {1}, is not supported"),
+
+    INVALID_HIVE_SQL(400, "METASPACE-400-00-88", "无效的hiveSql：{0}"),
+
 
     UNAUTHORIZED_ACCESS(403, "METASPACE-403-00-001", "{0} is not authorized to perform {1}"),
 
