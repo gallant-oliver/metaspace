@@ -77,7 +77,12 @@ public class SSOFilter implements Filter {
         try {
             String requestURL = httpServletRequest.getRequestURL().toString();
             if (requestURL.contains("/api/metaspace")) {
-                String ticket = httpServletRequest.getHeader("X-SSO-FullticketId");
+                String ticket ;
+                if(httpServletRequest.getParameterMap().containsKey("X-SSO-FullticketId")){
+                    ticket=httpServletRequest.getParameter("X-SSO-FullticketId");
+                }else{
+                    ticket = httpServletRequest.getHeader("X-SSO-FullticketId");
+                }
                 if (ticket != null && ticket != "") {
                     HashMap<String, String> header = new HashMap<>();
                     header.put("ticket", ticket);
