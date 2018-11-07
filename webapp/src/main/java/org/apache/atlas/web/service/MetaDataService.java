@@ -49,6 +49,7 @@ import org.apache.atlas.model.metadata.TablePermission;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -850,7 +851,7 @@ public class MetaDataService {
             AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
             String dbName = relatedObject.getDisplayText();
             String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
-            HiveJdbcUtils.execute(sql, dbName);
+            HiveJdbcUtils.execute(sql, dbName, AdminUtils.getUserName());
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改表信息失败");
         }
@@ -872,7 +873,7 @@ public class MetaDataService {
                 String type = columnEdit.getType();
                 String description = columnEdit.getDescription();
                 String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
-                HiveJdbcUtils.execute(sql, dbName);
+                HiveJdbcUtils.execute(sql, dbName,AdminUtils.getUserName());
             }
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改字段信息失败");
