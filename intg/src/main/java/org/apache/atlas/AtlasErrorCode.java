@@ -209,10 +209,8 @@ public enum AtlasErrorCode {
     HIVE_HOOK(500, "METASPACE-500-00-010", "HiveHook: {0}"),
     HIVE_HOOK_METASTORE_BRIDGE(500, "METASPACE-500-00-011", "HiveHookMetaStoreBridge: {0}"),
     DATA_ACCESS_LOAD_FAILED(500, "METASPACE-500-00-013", "Load failed: {0}"),
-    ENTITY_NOTIFICATION_FAILED(500, "METASPACE-500-00-014", "Notification failed for operation: {0} : {1}");
-
-    //new error
-//    SSO_URL_CHECK_FAILD(501,"METASPACE-501-00-1","SSO url config is fail: {0}");
+    ENTITY_NOTIFICATION_FAILED(500, "METASPACE-500-00-014", "Notification failed for operation: {0} : {1}"),
+    CONF_LOAD_ERROE(506, "METASPACE-506-00-001", "服务器配置错误: {0}");
 
     private String errorCode;
     private String errorMessage;

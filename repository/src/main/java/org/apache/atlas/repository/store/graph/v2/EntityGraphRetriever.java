@@ -420,6 +420,8 @@ public final class EntityGraphRetriever {
             if (entityExtInfo != null) {
                 entityExtInfo.addReferredEntity(guid, entity);
             }
+
+            mapSystemAttributes(entityVertex, entity);
             entity.setTypeName(getTypeName(entityVertex));
             AtlasType objType = typeRegistry.getType(entity.getTypeName());
             if (!(objType instanceof AtlasStructType)) {

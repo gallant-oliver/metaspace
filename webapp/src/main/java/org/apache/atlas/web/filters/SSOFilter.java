@@ -49,8 +49,6 @@ public class SSOFilter implements Filter {
     private final Date date = new Date();
     private Configuration conf;
     private String loginURL;
-    private String logoutURL;
-    private String validateURL;
     private String infoURL;
 
 
@@ -59,14 +57,13 @@ public class SSOFilter implements Filter {
         LOG.info("SSOFilter initialization started");
         try {
             conf = ApplicationProperties.get();
-             loginURL = conf.getString("sso.login.url");
-             logoutURL = conf.getString("sso.logout.url");
-             validateURL = conf.getString("sso.validate.url");
-             infoURL = conf.getString("sso.info.url");
-            if(loginURL==null||logoutURL==null||validateURL==null||infoURL==null||loginURL.equals("")||logoutURL.equals("")||validateURL.equals("")||infoURL.equals("")){
-                LOG.warn("loginURL/validateURL/infoURL config error");
+            loginURL = conf.getString("sso.login.url");
+            infoURL = conf.getString("sso.info.url");
+            if (loginURL == null || infoURL == null || loginURL.equals("") || infoURL.equals("")) {
+                LOG.warn("loginURL/infoURL config error");
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.logout.url");
             }
-        } catch (AtlasException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -78,87 +75,41 @@ public class SSOFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         try {
-
             String requestURL = httpServletRequest.getRequestURL().toString();
-            String[] split = requestURL.split("/");
-            String welcome = split[0]+"//"+split[2];
-            Cookie[] cookies = httpServletRequest.getCookies();
-            Map<String,Cookie> cookieMap =new HashMap();
-            if(cookies!=null){
-                for (Cookie cookie : cookies) {
-                    cookieMap.put(cookie.getName(),cookie);
+            if (requestURL.contains("/api/metaspace")) {
+                String ticket ;
+                if(httpServletRequest.getHeader("X-SSO-FullticketId")==null||httpServletRequest.getHeader("X-SSO-FullticketId")==""){
+                    ticket=httpServletRequest.getParameter("X-SSO-FullticketId");
+                }else{
+                    ticket = httpServletRequest.getHeader("X-SSO-FullticketId");
                 }
-            }
-            if(httpServletRequest.getParameter("ticket") != null){
-                String ticket = httpServletRequest.getParameter("ticket");
-                HashMap<String, String> header = new HashMap<>();
-                header.put("s-ticket", ticket);
-                String s = SSLClient.doGet(validateURL, header);
-                Gson gson = new Gson();
-                JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                Object message = jsonObject.get("message");
-                if (message == null | (!message.toString().equals("Success"))) {
-                    LOG.warn("用户信息获取失败");
-                    loginSkip(httpServletResponse, loginURL );
-                } else {
-                    Map data = (Map) jsonObject.get("data");
-                    if (data != null) {
-                        Cookie cookie = new Cookie("metaspace-ticket", data.get("Ticket").toString());
-                        cookie.setPath("/");
-                        cookie.setMaxAge(-1);
-                        httpServletResponse.addCookie(cookie);
-                        httpServletResponse.sendRedirect(requestURL);
-                    } else {
-                        loginSkip(httpServletResponse, loginURL );
+                if (ticket != null && ticket != "") {
+                    HashMap<String, String> header = new HashMap<>();
+                    header.put("ticket", ticket);
+                    String s = SSLClient.doGet(infoURL, header);
+                    Gson gson = new Gson();
+                    JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+                    Object message = jsonObject.get("message");
+                    if (message == null || (!message.toString().equals("Success"))) {
                         LOG.warn("用户信息获取失败");
-                    }
-                }
-            }else if(requestURL.contains("/api/metaspace")){
-                if(cookieMap.containsKey("metaspace-ticket")){
-                    if (requestURL.contains("/user/logout")) {
-                        if (cookieMap.containsKey("metaspace-ticket")) {
-                            Cookie cookie = cookieMap.get("metaspace-ticket");
-                            String ticket = cookie.getValue() == null ? "" : cookie.getValue();
-                            HashMap<String, String> header = new HashMap<>();
-                            header.put("ticket", ticket);
-                            SSLClient.doDelete(logoutURL, header);
-                        }
-                        filterChain.doFilter(request, response);
-                    } else if (cookieMap.containsKey("metaspace-ticket")) {
-                        Cookie cookie = cookieMap.get("metaspace-ticket");
-                        String ticket = cookie.getValue() == null ? "" : cookie.getValue();
-                        HashMap<String, String> header = new HashMap<>();
-                        header.put("ticket", ticket);
-                        String s = SSLClient.doGet(infoURL, header);
-                        Gson gson = new Gson();
-                        JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                        Object message = jsonObject.get("message");
+                        loginSkip(httpServletResponse, loginURL);
+                    } else {
                         Map data = (Map) jsonObject.get("data");
-                        if (message != null & (message.toString().equals("Success"))) {
-                            if (data != null) {
-                                HttpSession session = httpServletRequest.getSession();
-                                session.setAttribute("user", data);
-                                filterChain.doFilter(request, response);
-                            } else {
-                                LOG.warn("用户信息获取失败");
-                                loginSkip(httpServletResponse, loginURL );
-                            }
+                        if (data != null) {
+                            HttpSession session = httpServletRequest.getSession();
+                            session.setAttribute("user", data);
+                            filterChain.doFilter(request, response);
                         } else {
-                            cookie.setMaxAge(0);
-                            cookie.setPath("/");
-                            httpServletResponse.addCookie(cookie);
-                            httpServletRequest.getSession().removeAttribute("user");
-                            loginSkip(httpServletResponse, loginURL );
+                            loginSkip(httpServletResponse, loginURL);
+                            LOG.warn("用户信息获取失败");
                         }
                     }
-                } else{
-                    loginSkip(httpServletResponse, loginURL );
+                } else {
+                    loginSkip(httpServletResponse, loginURL);
                 }
-            }else {
+            }else{
                 filterChain.doFilter(request, response);
             }
-
-
         } catch (Exception e) {
             LOG.error(e.toString());
         } finally {
@@ -175,10 +126,10 @@ public class SSOFilter implements Filter {
         httpServletResponse.setCharacterEncoding("UTF-8");
         httpServletResponse.setContentType("text/html;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();
-        HashMap<String,String> hashMap = new HashMap();
-        hashMap.put("error","请检查用户登陆状态");
-        hashMap.put("loginUrl",loginURL);
-        String j =  new Gson().toJson(hashMap);
+        HashMap<String, String> hashMap = new HashMap();
+        hashMap.put("error", "请检查用户登陆状态");
+        hashMap.put("data", loginURL+"?service=");
+        String j = new Gson().toJson(hashMap);
         writer.print(j);
     }
 

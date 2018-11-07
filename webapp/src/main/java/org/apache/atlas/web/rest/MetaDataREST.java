@@ -13,6 +13,7 @@
 package org.apache.atlas.web.rest;
 
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
@@ -161,7 +162,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
         AtlasPerfTracer perf = null;
-        if(tableId==null|tableId.equals("")){
+        if(tableId==null|tableId.equals("")) {
             //表id为空
 
         }        try {

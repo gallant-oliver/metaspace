@@ -59,8 +59,6 @@ public class FileREST {
 
     private static final Logger log = LoggerFactory.getLogger(FileREST.class);
 
-    @Inject
-    private FileService fileService;
 
     /**
      * 上传文件到指定路径
@@ -127,7 +125,7 @@ public class FileREST {
         ParamChecker.checkPaging(request.getOffset(), request.getLimit());
         QueryParams params = QueryParams.getNormalizedParams(request.getLimit(), request.getOffset());
 
-        Pair<Integer, List<FileStatus>> pair = fileService.listStatus(request.getFilePath(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), request.getOrderBy(), request.getSortType());
+        Pair<Integer, List<FileStatus>> pair = FileService.listStatus(request.getFilePath(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), request.getOrderBy(), request.getSortType());
         List<File> list = pair.getRight().stream()
                 .map(f -> {
                     String type = f.isDirectory() ? "Directory" : "File";
@@ -153,7 +151,7 @@ public class FileREST {
 
         ParamChecker.checkPaging(request.getOffset(), request.getLimit());
         QueryParams params = QueryParams.getNormalizedParams(request.getLimit(), request.getOffset());
-        Pair<Integer, List<FileStatus>> pair = fileService.listFiles(request.getFileName(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), true, request.getOrderBy(), request.getSortType());
+        Pair<Integer, List<FileStatus>> pair = FileService.listFiles(request.getFileName(), request.getModifyDate(), request.getOwner(), params.offset(), params.limit(), true, request.getOrderBy(), request.getSortType());
 
         List<File> list = pair.getRight().stream()
                 .map(f -> {

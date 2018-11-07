@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 
-@Singleton
-@Component
 public class FileService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileService.class);

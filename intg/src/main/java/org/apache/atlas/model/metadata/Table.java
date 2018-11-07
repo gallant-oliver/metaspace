@@ -45,6 +45,7 @@ public class Table  implements Serializable {
     private String topic;
     private String type;
     private Boolean virtualTable;
+    private String status;
 
     public List<String> getRelations() {
         return relations;
@@ -207,5 +208,13 @@ public class Table  implements Serializable {
 
     public void setVirtualTable(Boolean virtualTable) {
         this.virtualTable = virtualTable;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

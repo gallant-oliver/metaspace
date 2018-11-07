@@ -55,9 +55,11 @@ public class SearchService {
             AtlasEntity.AtlasEntityWithExtInfo databaseInfo = entityREST.getById(databaseGuid, true);
             Map<String, Object> databaseAttr = databaseInfo.getEntity().getAttributes();
             String databaseDescription = databaseAttr.get("description") == null ? "null" : databaseAttr.get("description").toString();
+            String dbStatus = databaseInfo.getEntity().getStatus().name();
             database.setDatabaseId(databaseGuid);
             database.setDatabaseName(databaseName);
             database.setDatabaseDescription(databaseDescription);
+            database.setStatus(dbStatus);
             Map<String, Object> databaseRelationshipAttribute = databaseInfo.getEntity().getRelationshipAttributes();
             List<AtlasRelatedObjectId> databaseAtlasRelatedObjectIds = (List) databaseRelationshipAttribute.get("tables");
             for (AtlasRelatedObjectId databaseAtlasRelatedObjectId : databaseAtlasRelatedObjectIds) {
@@ -68,7 +70,9 @@ public class SearchService {
                 table.setTableName(databaseAtlasRelatedObjectId.getDisplayText());
                 AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(table.getTableId(), true);
                 Map<String, Object> tableAttributes = tableInfo.getEntity().getAttributes();
-                String tableDescription = tableAttributes.get("description") == null ? "null" : tableAttributes.get("description").toString();
+                String tableStatus = tableInfo.getEntity().getStatus().name();
+                table.setStatus(tableStatus);
+                String tableDescription = tableAttributes.get("comment") == null ? "null" : tableAttributes.get("comment").toString();
                 table.setDescription(tableDescription);
                 tables.add(table);
             }
@@ -105,8 +109,9 @@ public class SearchService {
             List<String> re = new ArrayList<>();
             re.add("db");
             AtlasEntity tableEntity = entitiesStore.getByIdWithAttributes(table.getTableId(), attributes, re).getEntity();
+            table.setStatus(tableEntity.getStatus().name());
             Map<String, Object> tableAttributes = tableEntity.getAttributes();
-            String tableDescription = tableAttributes.get("description") == null ? "null" : tableAttributes.get("description").toString();
+            String tableDescription = tableAttributes.get("comment") == null ? "null" : tableAttributes.get("comment").toString();
             table.setDescription(tableDescription);
             Map<String, Object> relationshipAttributes = tableEntity.getRelationshipAttributes();
             AtlasRelatedObjectId db = (AtlasRelatedObjectId) relationshipAttributes.get("db");
@@ -138,6 +143,7 @@ public class SearchService {
             column.setColumnName(nameId.get(0).toString());
             AtlasEntity.AtlasEntityWithExtInfo columnInfo = entityREST.getById(column.getColumnId(), true);
             AtlasEntity columnEntity = columnInfo.getEntity();
+            column.setStatus(columnEntity.getStatus().name());
             Map<String, Object> relationshipAttributes = columnEntity.getRelationshipAttributes();
             AtlasRelatedObjectId table = (AtlasRelatedObjectId) relationshipAttributes.get("table");
             column.setTableId(table.getGuid());

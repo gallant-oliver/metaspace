@@ -23,7 +23,7 @@ import java.util.TimeZone;
 public class DateUtils {
 
 
-    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyy-MM");
     private static final DateTimeFormatter YEAR = DateTimeFormatter.ofPattern("yyyy");
 
