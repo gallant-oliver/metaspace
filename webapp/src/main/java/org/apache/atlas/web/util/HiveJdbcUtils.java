@@ -84,9 +84,17 @@ public class HiveJdbcUtils {
     private static String getJdbc(String user,String db){
         String jdbcUrl;
         if(kerberosEnable){
-            jdbcUrl=hiveUrl+"/"+db+hivePrincipal+";hive.server2.proxy.user="+user;
+            if(!db.equals("")) {
+                jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            }else {
+                jdbcUrl = hiveUrl  + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            }
         }else{
-            jdbcUrl=hiveUrl+db;
+            if(!db.equals("")) {
+                jdbcUrl = hiveUrl + "/" + db ;
+            }else {
+                jdbcUrl = hiveUrl;
+            }
         }
         return jdbcUrl;
     }
