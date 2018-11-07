@@ -46,7 +46,9 @@ import org.apache.atlas.model.metadata.RelationEntity;
 import org.apache.atlas.model.metadata.Table;
 import org.apache.atlas.model.metadata.TableEdit;
 import org.apache.atlas.model.metadata.TablePermission;
+import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +82,8 @@ public class MetaDataService {
     private AtlasLineageService atlasLineageService;
     @Autowired
     private  GlossaryService glossaryService;
+    @Autowired
+    AtlasTypeDefStore typeDefStore;
 
     @Cacheable(value = "tableCache", key = "#guid", condition = "#refreshCache==false")
     public Table getTableInfoById(String guid, Boolean refreshCache) throws AtlasBaseException {
@@ -90,11 +94,16 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
 
+
         Table table  = new Table();
         table.setTableId(guid);
         try {
             //获取entity
             AtlasEntity entity = getEntityById(guid);
+
+
+
+
             if(Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
@@ -445,12 +454,21 @@ public class MetaDataService {
             lineageEntity.setGuid(atlasEntity.getGuid());
         lineageEntity.setProcess(false);
         //typeName
-        if(Objects.nonNull(atlasEntity.getTypeName())) {
+        lineageEntity.setTypeName(atlasEntity.getTypeName());
+        AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
+        Set<String> types = entityDef.getSuperTypes();
+        Iterator<String> typeIterator = types.iterator();
+        if(typeIterator.hasNext()) {
+            String type = typeIterator.next();
+            if(type.contains("Process"))
+                lineageEntity.setProcess(true);
+        }
+        /*if(Objects.nonNull(atlasEntity.getTypeName())) {
             lineageEntity.setTypeName(atlasEntity.getTypeName());
             if(atlasEntity.getTypeName().contains("process")) {
                 lineageEntity.setProcess(true);
             }
-        }
+        }*/
         lineageEntity.setStatus(atlasEntity.getStatus().name());
 
         //tableName
