@@ -11,6 +11,6 @@ public class AdminUtils {
     public static String getUserName(){
         Map<String,String> user = (Map)httpServletRequest.getSession().getAttribute("user");
         String userName = user.get("LoginEmail").split("@")[0];
-        return userName;
+        return "kafka";
     }
 }
