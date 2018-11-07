@@ -45,6 +45,7 @@ public interface Constants {
 
     String HIVE_WAREHOUSE_BASE_DIR = "/user/hive/warehouse/";
 
+    public static final DatabaseEngine DEFAULT_DATABASE_ENGINE = DatabaseEngine.Hive;
     String SYSTEM_USER = "openbi";
     String DEFAULT_DATASOURCE_ID = "hive-data";
     int CONNECTION_TIMEOUT_SECOND = 0;

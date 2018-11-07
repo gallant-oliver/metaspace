@@ -27,12 +27,14 @@ public class FiletableConfig {
     public static final long GB = 1073741824L;
     private static Long uploadMaxFileSize;
     private static String uploadPath;
+    private static String uploadHdfsPath;
 
     static {
         try {
             Configuration conf = ApplicationProperties.get();
             uploadMaxFileSize = conf.getLong("metaspace.filetable.upload.maxFileSize", 100 * MB);
             uploadPath = conf.getString("metaspace.filetable.uploadPath", System.getProperty("java.io.tmpdir"));
+            uploadHdfsPath = conf.getString("metaspace.filetable.uploadHdfsPath", System.getProperty("java.io.tmpdir"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -44,5 +46,9 @@ public class FiletableConfig {
 
     public static String getUploadPath() {
         return uploadPath;
+    }
+
+    public static String getUploadHdfsPath() {
+        return uploadHdfsPath;
     }
 }

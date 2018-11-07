@@ -15,6 +15,7 @@ package org.apache.atlas.web.service;
 
 import com.gridsum.gdp.library.commons.exception.VerifyException;
 import com.gridsum.gdp.library.commons.utils.FileUtils;
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
@@ -69,7 +70,7 @@ public class UploadJobService {
      * @return
      */
     public UploadFileInfo uploadFile(File tempFile) {
-        String jobId = UUID.randomUUID().toString().replace("-", "");
+        String jobId = UUIDUtils.alphaUUID();
         String filePath = StringUtils.obtainFilePath(jobId);
         try {
             org.apache.commons.io.FileUtils.forceMkdir(new File(FiletableConfig.getUploadPath()));
@@ -77,8 +78,9 @@ public class UploadJobService {
             throw new RuntimeException(e);
         }
         File uploadFile = new File(filePath);
-        while (uploadFile.exists()) {//确保文件名不重名
-            jobId = UUID.randomUUID().toString().replace("-", "");
+        //确保文件名不重名
+        while (uploadFile.exists()) {
+            jobId = UUIDUtils.alphaUUID();
             filePath = StringUtils.obtainFilePath(jobId);
             uploadFile = new File(filePath);
         }
@@ -178,7 +180,8 @@ public class UploadJobService {
             headers = ExcelUtils.readExcelHerder(sheet, includeHeader);
         }
         List<List<String>> previewValues = ExcelUtils.readExcelDatas(sheet, size, headers.size(), includeHeader);
-        List<String> tableHeads = ExcelUtils.readTableHeads(sheet, headers.size());//读取表头信息（修改时间：20170503 修改人：俞青云）
+        //读取表头信息
+        List<String> tableHeads = ExcelUtils.readTableHeads(sheet, headers.size());
         UploadPreview preview = new UploadPreview();
         preview.setIncludeHeader(includeHeader);
         preview.setHeaders(headers.getColumnExtList());
@@ -255,9 +258,10 @@ public class UploadJobService {
     private UploadPreview previewExcelForXLSX(String jobId, UploadConfig uploadConfig, final int size) throws Exception {
         String filePath = getPath(jobId);
         ExcelReader reader = new ExcelReader() {
+            @Override
             public void getRows(int sheetIndex, int curRow, List<String> rowList) {
                 if (rowList != null && !rowList.isEmpty() && this.getPreviewRows().size() < size) {
-                    List<String> tempList = new ArrayList<String>(rowList);
+                    List<String> tempList = new ArrayList<>(rowList);
                     this.add(tempList);
                 }
                 if (rowList != null && !rowList.isEmpty()) {
@@ -292,16 +296,7 @@ public class UploadJobService {
 
     public UploadJobInfo createUploadJob(UploadJobInfo uploadJobInfo) {
         Preconditions.checkNotNull(uploadJobInfo, "uploadJobInfo should not be null");
-        //        try (SqlSession session = this.sessionFactory.get()) {
-        //            UploadJobDao uploadJobDao = session.getMapper(UploadJobDao.class);
-        //            TaskDao taskDao = session.getMapper(TaskDao.class);
-        //            uploadJobDao.insert(uploadJobInfo);
-        //            LOGGER.info("uploadJobDao.insert [{}]", uploadJobInfo);
-        //            taskDao.insert(uploadJobInfo.getTaskInfo());
-        //            LOGGER.info("taskDao.insert [{}]", uploadJobInfo.getTaskInfo());
-        //            session.commit();
-        //            return uploadJobInfo;
-        //        }
+
         return null;
     }
 
@@ -310,7 +305,7 @@ public class UploadJobService {
         CsvHeader.valid(uploadConfig.getColumns().toArray(new ColumnExt[uploadConfig.getColumns().size()]));
         JSONObject schemaJson = new JSONObject();
         try {
-            schemaJson.put("namespace", "com.gridsum.datahub." + uploadConfig.getDatabase());
+            schemaJson.put("namespace", "com.gridsum.metaspace." + uploadConfig.getDatabase());
             schemaJson.put("name", uploadConfig.getTableName());
             schemaJson.put("type", "record");
             JSONArray fields = new JSONArray();

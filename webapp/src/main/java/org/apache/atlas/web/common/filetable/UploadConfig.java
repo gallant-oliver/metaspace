@@ -28,10 +28,8 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-@JsonPropertyOrder({"tableName", "includeHeaders", "fieldDelimiter", "fileEncode", "columns", "sheetName", "fileType"})
 public class UploadConfig {
-    @XmlElement
-    private String databaseId;
+
     @XmlElement
     private String database;
     @XmlElement
@@ -61,8 +59,7 @@ public class UploadConfig {
             return false;
         }
         UploadConfig that = (UploadConfig) o;
-        return Objects.equal(databaseId, that.databaseId) &&
-               Objects.equal(database, that.database) &&
+        return Objects.equal(database, that.database) &&
                Objects.equal(tableName, that.tableName) &&
                Objects.equal(fieldDelimiter, that.fieldDelimiter) &&
                Objects.equal(fileEncode, that.fileEncode) &&
@@ -71,7 +68,7 @@ public class UploadConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(databaseId, database, tableName, fieldDelimiter, fileEncode, columns);
+        return Objects.hashCode(database, tableName, fieldDelimiter, fileEncode, columns);
     }
 
     public boolean isIncludeHeaders() {
@@ -81,14 +78,6 @@ public class UploadConfig {
     public UploadConfig setIncludeHeaders(boolean includeHeaders) {
         this.includeHeaders = includeHeaders;
         return this;
-    }
-
-    public String getDatabaseId() {
-        return databaseId;
-    }
-
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
     }
 
     public String getDatabase() {

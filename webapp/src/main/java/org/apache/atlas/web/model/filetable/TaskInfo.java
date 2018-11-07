@@ -13,15 +13,12 @@
 
 package org.apache.atlas.web.model.filetable;
 
-import com.gridsum.gdp.library.commons.data.generic.GenericData;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.Service;
 
-import java.sql.Timestamp;
 import java.util.Comparator;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -33,10 +30,10 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-@JsonPropertyOrder({"taskId", "uid", "state", "progress", "error", "initialized", "lastExecuteTime", "createTime"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @JsonIgnoreProperties({"jobId", "ignoreCase"})
-public class TaskInfo extends GenericData implements Comparator<TaskInfo>, Comparable<TaskInfo> {
+public class TaskInfo {
 
     @XmlElement
     private String taskId;
@@ -44,24 +41,20 @@ public class TaskInfo extends GenericData implements Comparator<TaskInfo>, Compa
     @XmlElement
     private String uid;
     @XmlElement
-    private Service.State state;
+    private String state;
     @XmlElement
     private Float progress;
-    @XmlElement(nillable = true)
-    private String error;
-    @XmlElement
-    private boolean initialized = false;
-    @XmlElement
-    private Timestamp lastExecuteTime;
-    @XmlElement(nillable = true)
-    private Timestamp createTime;
 
-    public boolean isInitialized() {
-        return initialized;
+
+    public TaskInfo() {
     }
 
-    public void setInitialized(boolean initialized) {
-        this.initialized = initialized;
+    public TaskInfo(String taskId, String jobId, String uid, String state, Float progress) {
+        this.taskId = taskId;
+        this.jobId = jobId;
+        this.uid = uid;
+        this.state = state;
+        this.progress = progress;
     }
 
     public String getUid() {
@@ -88,11 +81,11 @@ public class TaskInfo extends GenericData implements Comparator<TaskInfo>, Compa
         this.jobId = jobId;
     }
 
-    public Service.State getState() {
+    public String getState() {
         return state;
     }
 
-    public void setState(Service.State state) {
+    public void setState(String state) {
         this.state = state;
     }
 
@@ -104,30 +97,6 @@ public class TaskInfo extends GenericData implements Comparator<TaskInfo>, Compa
         this.progress = progress;
     }
 
-    public String getError() {
-        return error;
-    }
-
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    public Timestamp getLastExecuteTime() {
-        return lastExecuteTime;
-    }
-
-    public void setLastExecuteTime(Timestamp lastExecuteTime) {
-        this.lastExecuteTime = lastExecuteTime;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Timestamp createTime) {
-        this.createTime = createTime;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -137,34 +106,16 @@ public class TaskInfo extends GenericData implements Comparator<TaskInfo>, Compa
             return false;
         }
         TaskInfo taskInfo = (TaskInfo) o;
-        return Objects.equal(initialized, taskInfo.initialized) &&
-               Objects.equal(taskId, taskInfo.taskId) &&
+        return Objects.equal(taskId, taskInfo.taskId) &&
                Objects.equal(jobId, taskInfo.jobId) &&
                Objects.equal(uid, taskInfo.uid) &&
-               Objects.equal(state, taskInfo.state) &&
-               Objects.equal(error, taskInfo.error) &&
-               Objects.equal(lastExecuteTime, taskInfo.lastExecuteTime) &&
-               Objects.equal(createTime, taskInfo.createTime);
+               Objects.equal(state, taskInfo.state);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(taskId, jobId, uid, state, error, initialized, lastExecuteTime, createTime);
+        return Objects.hashCode(taskId, jobId, uid, state);
     }
 
-    @Override
-    public int compareTo(TaskInfo o) {
-        if (createTime == null) {
-            return -1;
-        }
-        return createTime.compareTo(o.createTime);
-    }
 
-    @Override
-    public int compare(TaskInfo o1, TaskInfo o2) {
-        if (o1 == null) {
-            return -1;
-        }
-        return o1.createTime.compareTo(o2.createTime);
-    }
 }

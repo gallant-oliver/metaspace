@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
+@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @XmlType
 public class ColumnExt {
     /**

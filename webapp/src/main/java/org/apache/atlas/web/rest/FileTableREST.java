@@ -30,13 +30,14 @@ import org.apache.atlas.web.common.filetable.UploadFileInfo;
 import org.apache.atlas.web.common.filetable.UploadPreview;
 import org.apache.atlas.web.config.FiletableConfig;
 import org.apache.atlas.web.model.filetable.TaskInfo;
-import org.apache.atlas.web.model.filetable.TaskResponseBody;
 import org.apache.atlas.web.model.filetable.UploadConfigRequestBody;
 import org.apache.atlas.web.model.filetable.UploadJobInfo;
 import org.apache.atlas.web.model.filetable.UploadResponseBody;
 import org.apache.atlas.web.model.filetable.Workbook;
+import org.apache.atlas.web.service.filetable.JobService;
 import org.apache.atlas.web.service.PreviewUploadService;
 import org.apache.atlas.web.service.UploadJobService;
+import org.apache.atlas.web.service.filetable.TaskService;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.StringUtils;
 import org.apache.commons.fileupload.FileItem;
@@ -49,10 +50,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.WebUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +62,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -81,6 +84,12 @@ public class FileTableREST {
     @Inject
     private UploadJobService uploadJobService;
 
+    @Inject
+    private JobService jobService;
+
+    @Inject
+    private TaskService taskService;
+
 
     /**
      * 上传本地数据文件到OpenBI，文件大小不超过100兆
@@ -95,7 +104,8 @@ public class FileTableREST {
     public Response upload() {
         LOGGER.info("Upload Start...");
 
-        UploadFileInfo uploadFileInfo = null;// 返回jobid和filePath
+        // 返回jobid和filePath
+        UploadFileInfo uploadFileInfo = null;
         try {
             // 转存请求内容到服务tmp目录
             Map<String, java.io.File> fileMap = dumpRequestContent2ServerTmpDir(request);
@@ -117,7 +127,8 @@ public class FileTableREST {
             uploadFileCache.put(uploadFileInfo.getJobId(), workbook);
             LOGGER.info(uploadFileCache.toString());
 
-            UploadPreview preview = previewUploadService.previewUpload(uploadFileInfo.getJobId(), Constants.PREVIEW_SIZE);//生成预览信息
+            //生成预览信息
+            UploadPreview preview = previewUploadService.previewUpload(uploadFileInfo.getJobId(), Constants.PREVIEW_SIZE);
             UploadResponseBody response = new UploadResponseBody();
             response.setRequestId(uploadFileInfo.getJobId());
             response.setUploadPreview(preview);
@@ -142,7 +153,8 @@ public class FileTableREST {
         LOGGER.info("Store uploaded file to temp file.");
 
         Map<String, java.io.File> fileMap = Maps.newHashMap();
-        java.io.File tmpFile = null; //必须使用临时文件存储，输入流不能被使用1次以上
+        //必须使用临时文件存储，输入流不能被使用1次以上
+        java.io.File tmpFile = null;
         try {
             tmpFile = java.io.File.createTempFile("data_", "_upload");
             // 最大文件100M
@@ -196,7 +208,7 @@ public class FileTableREST {
      * @return
      */
     @POST
-    @Path("preview")
+    @Path("/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response preview(UploadConfigRequestBody requestBody) throws AtlasBaseException {
@@ -208,7 +220,8 @@ public class FileTableREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "fileType is not null!");
         }
         if (FileType.ZIP.equals(uploadConfig.getFileType()) || FileType.CSV.equals(uploadConfig.getFileType())) {
-            CsvEncode.of(uploadConfig.getFileEncode()); //为了检测编码是否在允许范围内
+            //为了检测编码是否在允许范围内
+            CsvEncode.of(uploadConfig.getFileEncode());
         }
         try {
             UploadPreview preview = PreviewUploadFactory.create(uploadConfig.getFileType().name()).previewUpload(jobId, uploadConfig, Constants.PREVIEW_SIZE);
@@ -239,8 +252,9 @@ public class FileTableREST {
      * @return
      */
     @POST
-    @Path("submit")
-    public Response upload(UploadConfigRequestBody requestBody) throws AtlasBaseException {
+    @Path("/submit")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TaskInfo upload(UploadConfigRequestBody requestBody) throws AtlasBaseException, SQLException {
 
         LOGGER.info("upload requestBody[{}]", ToStringBuilder.reflectionToString(requestBody.getUploadConfig()));
         List<ColumnExt> columns = requestBody.getUploadConfig().getColumns();
@@ -258,18 +272,32 @@ public class FileTableREST {
         if (uploadConfig.getActionType() == null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "actionType must have value");
         }
-        if ((FileType.XLSX.equals(uploadConfig.getFileType()) || FileType.XLS.equals(uploadConfig.getFileType())) && uploadConfig.getSheetName() == null) {
+        boolean sheetNamesIsNull = (FileType.XLSX.equals(uploadConfig.getFileType()) || FileType.XLS.equals(uploadConfig.getFileType()))
+                                  && uploadConfig.getSheetName() == null;
+        if (sheetNamesIsNull) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "sheetName must have value");
         }
         if (!Constants.SQL_TABLE_OR_COLUMN_NAME_PATTERN.matcher(uploadConfig.getTableName()).matches()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表名只能由字母下划线组成:" + uploadConfig.getTableName());
         }
 
-        TaskResponseBody taskResponseBody = new TaskResponseBody();
         UploadJobInfo jobInfo = jobService.newUploadJobInfo(requestBody.getRequestId(), uploadConfig);
         TaskInfo taskInfo = jobInfo.getTaskInfo();
-        taskResponseBody.setTasks(Lists.newArrayList(taskInfo));
-        return Response.ok(taskResponseBody).build();
+        return taskInfo;
+    }
+
+    @GET
+    @Path("/state/{taskId}")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TaskInfo state(@PathParam("taskId") String taskId) throws AtlasBaseException, IOException {
+        if (org.apache.commons.lang3.StringUtils.isBlank(taskId)) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMS, "taskId is null");
+        }
+        TaskInfo taskInfo = taskService.getByTaskId(taskId);
+        if (com.google.common.util.concurrent.Service.State.TERMINATED.equals(taskInfo.getState())) {
+            taskInfo.setProgress(1.0f);
+        }
+        return taskInfo;
     }
 
 

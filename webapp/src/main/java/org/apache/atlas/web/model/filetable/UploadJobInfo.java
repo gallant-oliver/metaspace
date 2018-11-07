@@ -21,7 +21,7 @@ import org.apache.atlas.web.common.filetable.FileType;
 
 import java.util.List;
 
-public class UploadJobInfo {
+public class UploadJobInfo extends AbstractJobInfo {
 
     /**
      * 目标数据库,一般是用户自己的数据库

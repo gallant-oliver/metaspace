@@ -77,7 +77,6 @@ public class TableStatREST {
 
     @GET
     @Path("/schedule")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public void schedule() throws Exception {
         atlasScheduler.insertTableMetadataStat();
     }
