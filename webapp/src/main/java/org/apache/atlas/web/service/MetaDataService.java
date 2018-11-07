@@ -101,9 +101,6 @@ public class MetaDataService {
             //获取entity
             AtlasEntity entity = getEntityById(guid);
 
-
-
-
             if(Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
@@ -762,7 +759,7 @@ public class MetaDataService {
                         List<String> relationshipAttributes = new ArrayList<>();
                         relationshipAttributes.add("db");
                         AtlasEntity entity = entitiesStore.getByIdWithAttributes(relatedObjectGuid, attributes, relationshipAttributes).getEntity();
-
+                        String status = entity.getStatus().name();
                         //AtlasEntity entity = getEntityById(relatedObjectGuid);
                         //表名称
                         String tableName = getEntityAttribute(entity, "name");
@@ -774,6 +771,7 @@ public class MetaDataService {
                         relationInfo.setTableName(tableName);
                         relationInfo.setDbName(dbName);
                         relationInfo.setPath(pathStr + tableName);
+                        relationInfo.setStatus(status);
                         relationInfo.setRelationshipGuid(relatedObject.getRelationshipGuid());
                         relationInfos.add(relationInfo);
                     }

@@ -80,6 +80,7 @@ public class RelationEntity implements Serializable  {
         private String dbName;
         private String path;
         private String relationshipGuid;
+        private String status;
 
         public String getGuid() {
             return guid;
@@ -119,6 +120,14 @@ public class RelationEntity implements Serializable  {
 
         public void setRelationshipGuid(String relationshipGuid) {
             this.relationshipGuid = relationshipGuid;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 
