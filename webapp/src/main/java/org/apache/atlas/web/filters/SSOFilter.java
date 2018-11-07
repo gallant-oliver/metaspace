@@ -113,10 +113,8 @@ public class SSOFilter implements Filter {
         } catch (Exception e) {
             LOG.error(e.toString());
         } finally {
-            Map user = (Map) httpServletRequest.getSession().getAttribute("user");
-            String username = user == null ? "" : user.get("LoginEmail").toString();
             long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog(username, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             AUDIT_LOG.info(auditLog.toString());
         }
     }
@@ -148,7 +146,6 @@ public class SSOFilter implements Filter {
     public static class AuditLog {
         private static final char FIELD_SEP = '|';
 
-        private final String userName;
         private final String fromAddress;
         private final String requestMethod;
         private final String requestUrl;
@@ -156,8 +153,8 @@ public class SSOFilter implements Filter {
         private int httpStatus;
         private long timeTaken;
 
-        public AuditLog(String userName, String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
-            this.userName = userName;
+        public AuditLog( String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
+
             this.fromAddress = fromAddress;
             this.requestMethod = requestMethod;
             this.requestUrl = requestUrl;
@@ -171,7 +168,6 @@ public class SSOFilter implements Filter {
             StringBuilder sb = new StringBuilder();
 
             sb.append(DateTimeHelper.formatDateUTC(requestTime))
-                    .append(FIELD_SEP).append(userName)
                     .append(FIELD_SEP).append(fromAddress)
                     .append(FIELD_SEP).append(requestMethod)
                     .append(FIELD_SEP).append(requestUrl)
