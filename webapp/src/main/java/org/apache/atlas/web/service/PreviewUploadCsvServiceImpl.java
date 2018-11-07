@@ -77,12 +77,14 @@ public class PreviewUploadCsvServiceImpl implements PreviewUploadService{
                 sheet.remove(0);
             }
             List<List<String>> previewSheet;
-            if(sheet.size()>size){//生成预览数据，如果超过size则只输出size条数据
+            //生成预览数据，如果超过size则只输出size条数据
+            if(sheet.size()>size){
                 previewSheet=sheet.subList(0,size);
             }else{
                 previewSheet=sheet;
             }
-            CsvHeader csvHeader= ExcelUtils.readerExcelHeader(headInfo, isIncludeHead);//生成表头信息
+            //生成表头信息
+            CsvHeader csvHeader= ExcelUtils.readerExcelHeader(headInfo, isIncludeHead);
             UploadPreview preview=new UploadPreview();
             preview.setHeaders(csvHeader.getColumnExtList());
             preview.setFieldDelimiter(workbook.getFieldDelimiter());

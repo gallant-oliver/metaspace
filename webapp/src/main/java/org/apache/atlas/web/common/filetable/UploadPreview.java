@@ -19,6 +19,7 @@ import com.gridsum.gdp.library.commons.data.response.RowsXmlAdapter;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -32,11 +33,11 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType
-public class UploadPreview  {
+public class UploadPreview {
     @XmlElement
-    private String fieldDelimiter;
+    private String fieldDelimiter = "";
     @XmlElement
-    private String fileEncode;
+    private String fileEncode = "";
     @XmlElement
     private boolean includeHeader;
     @XmlElementWrapper(name = "headers")
@@ -50,9 +51,9 @@ public class UploadPreview  {
     @XmlElement
     private FileType fileType;
     @XmlElement
-    private List<String> sheets;
+    private List<String> sheets = new ArrayList<>();
     @XmlElement
-    private String previewInfo;
+    private String previewInfo = "";
     @XmlElement
     private List<String> tableHeads;
 

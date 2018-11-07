@@ -113,19 +113,22 @@ public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
             List<List<String>> sheet = new ArrayList<>(workbook.getSheet(index));
             List<String> headInfo = sheet.get(0);
             boolean isIncludeHeader = false;
-            if (uploadConfig != null) {//uploadConfig为null则说明是第一次预览
+            //uploadConfig为null则说明是第一次预览
+            if (uploadConfig != null) {
                 isIncludeHeader = uploadConfig.isIncludeHeaders();
             }
             if (isIncludeHeader) {
                 sheet.remove(0);
             }
             List<List<String>> previewSheet = null;
-            if (sheet.size() > size) {//生成预览数据，如果超过size则只输出size条数据
+            //生成预览数据，如果超过size则只输出size条数据
+            if (sheet.size() > size) {
                 previewSheet = sheet.subList(0, size);
             } else {
                 previewSheet = sheet;
             }
-            CsvHeader csvHeader = ExcelUtils.readerExcelHeader(headInfo, isIncludeHeader);//生成表头信息
+            //生成表头信息
+            CsvHeader csvHeader = ExcelUtils.readerExcelHeader(headInfo, isIncludeHeader);
             UploadPreview preview = new UploadPreview();
             preview.setIncludeHeader(isIncludeHeader);
             preview.setHeaders(csvHeader.getColumnExtList());

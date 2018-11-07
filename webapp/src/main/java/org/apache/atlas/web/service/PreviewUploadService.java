@@ -26,8 +26,6 @@ public interface PreviewUploadService {
      * 获取预览数据
      * @param
      * @return
-     * @author Qingyun Yu
-     * @date 2017..
      */
     UploadPreview previewUpload(String filePath, int size) throws ExcelException, Exception;
 

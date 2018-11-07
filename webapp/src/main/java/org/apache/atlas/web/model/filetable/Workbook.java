@@ -8,12 +8,19 @@ import java.util.List;
 import java.util.Map;
 
 public class Workbook {
+
     private String fieldDelimiter;
     private String fileEncode;
     private FileType fileType;
     private List<String> sheetNames;
-    private Map<String, List<List<String>>> sheets;//excel通过sheetName缓存表
-    private long createTime = 0;//文件存入缓存时间
+    /**
+     * excel通过sheetName缓存表
+     */
+    private Map<String, List<List<String>>> sheets;
+    /**
+     * 文件存入缓存时间
+     */
+    private long createTime = 0;
 
     public List<String> getSheetNames() {
         return sheetNames;

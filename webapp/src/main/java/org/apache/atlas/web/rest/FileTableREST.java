@@ -101,7 +101,7 @@ public class FileTableREST {
     @Consumes({MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN, "text/csv",
                "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response upload() {
+    public UploadResponseBody upload() {
         LOGGER.info("Upload Start...");
 
         // 返回jobid和filePath
@@ -135,7 +135,7 @@ public class FileTableREST {
 
             LOGGER.info("Upload End...");
 
-            return Response.ok(response).build();
+            return response;
         } catch (Exception csvException) {
             UploadFileCache uploadFileCache = UploadFileCache.create();
             uploadFileCache.remove(uploadFileInfo.getJobId());
@@ -211,7 +211,7 @@ public class FileTableREST {
     @Path("/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response preview(UploadConfigRequestBody requestBody) throws AtlasBaseException {
+    public UploadResponseBody preview(UploadConfigRequestBody requestBody) throws AtlasBaseException {
 
         UploadConfig uploadConfig = requestBody.getUploadConfig();
         String jobId = requestBody.getRequestId();
@@ -229,7 +229,7 @@ public class FileTableREST {
             response.setRequestId(requestBody.getRequestId());
             response.setUploadPreview(preview);
             LOGGER.info("UploadPreview:[{}]", ToStringBuilder.reflectionToString(preview));
-            return Response.ok(response).build();
+            return response;
         } catch (Exception csvException) {
             UploadFileCache uploadFileCache = UploadFileCache.create();
             uploadFileCache.remove(jobId);

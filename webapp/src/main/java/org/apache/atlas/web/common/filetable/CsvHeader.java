@@ -115,7 +115,6 @@ public class CsvHeader {
         } else {
             withComment(headers, comments);
         }
-        // 2016.12.08
         // Do not check header
         //valid(ColumnExts);
     }
@@ -126,12 +125,11 @@ public class CsvHeader {
             ColumnExt ColumnExt = new ColumnExt();
             ColumnExt.setType(DataType.STRING);
 
-            // 2016.12.13 header大写转小写
             header = header.toLowerCase();
             if (SQL_TABLE_OR_ColumnExt_NAME_PATTERN.matcher(header).matches()) {
                 ColumnExt.setName(Ascii.toLowerCase(header));
             } else {
-                ColumnExt.setName("ColumnExt" + i);
+                ColumnExt.setName("column" + i);
                 ColumnExt.setComment(header);
             }
             ColumnExts[i] = ColumnExt;
@@ -147,12 +145,11 @@ public class CsvHeader {
             ColumnExt ColumnExt = new ColumnExt();
             ColumnExt.setType(DataType.STRING);
 
-            // 2016.12.13 header大写转小写
             header = header.toLowerCase();
             if (SQL_TABLE_OR_ColumnExt_NAME_PATTERN.matcher(header).matches()) {
                 ColumnExt.setName(Ascii.toLowerCase(header));
             } else {
-                ColumnExt.setName("ColumnExt" + i);
+                ColumnExt.setName("column" + i);
                 ColumnExt.setComment(header);
             }
             if (!Strings.isNullOrEmpty(comments[i])) {
@@ -181,7 +178,6 @@ public class CsvHeader {
             }
             ColumnExts[i] = ColumnExt;
         }
-        // 2016.12.08
         // Do not check header
         //valid(ColumnExts);
     }
