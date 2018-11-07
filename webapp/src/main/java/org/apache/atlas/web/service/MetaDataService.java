@@ -499,11 +499,22 @@ public class MetaDataService {
     }
 
     public Set<AtlasLineageInfo.LineageRelation> getInDirectRelationNode(String guid, Set<AtlasLineageInfo.LineageRelation> relations) {
-        Set<AtlasLineageInfo.LineageRelation> directRelations = new HashSet<>();
+        String processGuid = null;
         for(Iterator it = relations.iterator(); it.hasNext();) {
             AtlasLineageInfo.LineageRelation relation = (AtlasLineageInfo.LineageRelation)it.next();
             if(relation.getToEntityId().equals(guid)) {
-                directRelations.add(relation);
+                processGuid = relation.getFromEntityId();
+                break;
+            }
+        }
+
+        Set<AtlasLineageInfo.LineageRelation> directRelations = new HashSet<>();
+        if(Objects.nonNull(processGuid) && processGuid.length()!=0) {
+            for (Iterator it = relations.iterator(); it.hasNext(); ) {
+                AtlasLineageInfo.LineageRelation relation = (AtlasLineageInfo.LineageRelation) it.next();
+                if (relation.getToEntityId().equals(processGuid)) {
+                    directRelations.add(relation);
+                }
             }
         }
         return directRelations;
@@ -620,6 +631,11 @@ public class MetaDataService {
     }
 
     public void getCategoryChildrenTerms(String categoryGuid, Set<String> deleteChildrenRelatedTerms)throws AtlasBaseException {
+        AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
+        Set<AtlasRelatedCategoryHeader> childrenCategories = category.getChildrenCategories();
+        if(Objects.nonNull(childrenCategories) && childrenCategories.size()>0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下仍存在子目录，请删除其子目录");
+
         //获取关联Term
         List<AtlasRelatedTermHeader> terms = glossaryService.getCategoryTerms(categoryGuid, 0, -1, SortOrder.ASCENDING);
         for (AtlasRelatedTermHeader term : terms) {
@@ -631,15 +647,14 @@ public class MetaDataService {
             }
             deleteChildrenRelatedTerms.add(termGuid);
         }
-        AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
-        Set<AtlasRelatedCategoryHeader> childrenCategories = category.getChildrenCategories();
-        if(Objects.nonNull(childrenCategories)) {
+
+        /*if(Objects.nonNull(childrenCategories)) {
             Iterator<AtlasRelatedCategoryHeader> iterator = childrenCategories.iterator();
             while(iterator.hasNext()) {
                 String chidGuid = iterator.next().getCategoryGuid();
                 getCategoryChildrenTerms(chidGuid, deleteChildrenRelatedTerms);
             }
-        }
+        }*/
     }
 
     @CacheEvict(value = {"relationCache", "tableRelationCache"}, allEntries = true)

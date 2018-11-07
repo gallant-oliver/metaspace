@@ -13,6 +13,7 @@
 package org.apache.atlas.web.rest;
 
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
@@ -390,6 +391,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
             return metadataService.getCategoryRelations(categoryGuid,refreshCache);
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -414,6 +417,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryChildren(" + categoryGuid + ")");
             }
             return metadataService.getCategoryChildren(categoryGuid);
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取子目录失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
