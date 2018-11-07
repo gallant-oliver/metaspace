@@ -281,6 +281,8 @@ public class MetaDataService {
                     column.setTableId(guid);
                     //tableName
                     column.setTableName(getEntityAttribute(entity, "name"));
+                    //status
+                    column.setStatus(entity.getStatus().name());
                     //databaseId && dataBaseName
                     AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                     column.setDatabaseId(relatedDB.getGuid());

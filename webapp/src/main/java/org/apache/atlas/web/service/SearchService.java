@@ -109,6 +109,7 @@ public class SearchService {
             List<String> re = new ArrayList<>();
             re.add("db");
             AtlasEntity tableEntity = entitiesStore.getByIdWithAttributes(table.getTableId(), attributes, re).getEntity();
+            table.setStatus(tableEntity.getStatus().name());
             Map<String, Object> tableAttributes = tableEntity.getAttributes();
             String tableDescription = tableAttributes.get("comment") == null ? "null" : tableAttributes.get("comment").toString();
             table.setDescription(tableDescription);
@@ -142,6 +143,7 @@ public class SearchService {
             column.setColumnName(nameId.get(0).toString());
             AtlasEntity.AtlasEntityWithExtInfo columnInfo = entityREST.getById(column.getColumnId(), true);
             AtlasEntity columnEntity = columnInfo.getEntity();
+            column.setStatus(columnEntity.getStatus().name());
             Map<String, Object> relationshipAttributes = columnEntity.getRelationshipAttributes();
             AtlasRelatedObjectId table = (AtlasRelatedObjectId) relationshipAttributes.get("table");
             column.setTableId(table.getGuid());

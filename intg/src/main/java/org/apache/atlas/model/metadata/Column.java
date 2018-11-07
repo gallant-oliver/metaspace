@@ -25,6 +25,7 @@ public class Column implements Serializable {
     private String type;
     private String description;
     private Boolean isPartitionKey;
+    private String status;
     public String getTableId() {
         return tableId;
     }
@@ -95,5 +96,13 @@ public class Column implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
