@@ -71,8 +71,8 @@ public class HiveJdbcUtils {
                     org.apache.hadoop.conf.Configuration configuration = new
                             org.apache.hadoop.conf.Configuration();
                     configuration.set("hadoop.security.authentication", "Kerberos");
-//                    UserGroupInformation.setConfiguration(configuration);
-//                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
+                    UserGroupInformation.setConfiguration(configuration);
+                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
                     hivePrincipal = ";principal=" + conf.getString("metaspace.hive.principal");
                 }
             }
