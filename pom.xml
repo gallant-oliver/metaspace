@@ -716,6 +716,13 @@
         <testng.version>6.9.4</testng.version>
         <joda-time.version>2.10</joda-time.version>
         <jersey-spring.version>1.19.4</jersey-spring.version>
+        <gdp.commons.version>1.1.2</gdp.commons.version>
+        <apache.poi.version>3.15</apache.poi.version>
+        <commons-csv.version>1.2</commons-csv.version>
+        <cdh.version>cdh5.4.2</cdh.version>
+        <cdh.hadoop.version>2.6.0-${cdh.version}</cdh.hadoop.version>
+        <cdh.parquet.version>1.5.0-${cdh.version}</cdh.parquet.version>
+        <cdh.avro.version>1.7.6-${cdh.version}</cdh.avro.version>
     </properties>
 
     <modules>
@@ -752,6 +759,14 @@
 
         <module>distro</module>
     </modules>
+
+    <distributionManagement>
+      <repository>
+        <id>gridsum</id>
+        <name>GridSum Release Repository</name>
+        <url>http://maven.gridsum.com:8081/nexus/content/repositories/gridsum-releases</url>
+      </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>

@@ -25,6 +25,7 @@ import org.apache.atlas.model.result.TableShow;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.service.MetaDataService;
 import org.apache.atlas.web.service.SearchService;
+import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -553,6 +554,21 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
         }
         return Response.status(200).entity("success").build();
+    }
+
+
+    @GET
+    @Path("/databases")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<String> databases() throws AtlasBaseException {
+        return HiveJdbcUtils.databases();
+    }
+
+    @GET
+    @Path("/tableExists")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean table(@QueryParam("database") String database, @QueryParam("tableName") String tableName) throws AtlasBaseException, SQLException {
+        return HiveJdbcUtils.tableExists(database, tableName);
     }
 
 }

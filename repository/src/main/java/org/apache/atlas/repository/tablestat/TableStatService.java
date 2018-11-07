@@ -64,31 +64,31 @@ public class TableStatService {
 
     public void add(List<TableStat> tableStatList) throws Exception {
         Gson gson = new Gson();
-        Table table = HbaseUtils.getConn().getTable(TableName.valueOf("table_stat"));
-        tableStatList.forEach(stat -> {
-            try {
-                String rowKey = (stat.getTableId() + stat.getDateType() + stat.getDate()).replace("-", "");
+        try (Table table = HbaseUtils.getConn().getTable(TableName.valueOf(TABLE_STAT))) {
+            tableStatList.forEach(stat -> {
+                try {
+                    String rowKey = (stat.getTableId() + stat.getDateType() + stat.getDate()).replace("-", "");
 
-                Put put = new Put(Bytes.toBytes(rowKey));
-                put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("tableName"), Bytes.toBytes(stat.getTableName()));
+                    Put put = new Put(Bytes.toBytes(rowKey));
+                    put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("tableName"), Bytes.toBytes(stat.getTableName()));
 
-                put.add("info".getBytes(), "tableId".getBytes(), stat.getTableId().getBytes());
-                put.add("info".getBytes(), "tableName".getBytes(), stat.getTableName().getBytes());
-                put.add("info".getBytes(), "date".getBytes(), stat.getDate().getBytes());
-                put.add("info".getBytes(), "dateType".getBytes(), stat.getDateType().getBytes());
-                put.add("info".getBytes(), "fieldNum".getBytes(), stat.getFieldNum().toString().getBytes());
-                put.add("info".getBytes(), "fileNum".getBytes(), stat.getFileNum().toString().getBytes());
-                put.add("info".getBytes(), "dataVolume".getBytes(), stat.getDataVolume().getBytes());
-                put.add("info".getBytes(), "dataVolumeBytes".getBytes(), stat.getDataVolumeBytes().toString().getBytes());
-                put.add("info".getBytes(), "dataIncrement".getBytes(), stat.getDataIncrement().getBytes());
-                String sourceTable = gson.toJson(stat.getSourceTable());
-                put.add("info".getBytes(), "sourceTable".getBytes(), sourceTable.getBytes());
-                table.put(put);
-            } catch (Exception e) {
-                LOG.error(e.getMessage(), e);
-            }
-        });
-        table.close();
+                    put.addColumn("info".getBytes(), "tableId".getBytes(), stat.getTableId().getBytes());
+                    put.addColumn("info".getBytes(), "tableName".getBytes(), stat.getTableName().getBytes());
+                    put.addColumn("info".getBytes(), "date".getBytes(), stat.getDate().getBytes());
+                    put.addColumn("info".getBytes(), "dateType".getBytes(), stat.getDateType().getBytes());
+                    put.addColumn("info".getBytes(), "fieldNum".getBytes(), stat.getFieldNum().toString().getBytes());
+                    put.addColumn("info".getBytes(), "fileNum".getBytes(), stat.getFileNum().toString().getBytes());
+                    put.addColumn("info".getBytes(), "dataVolume".getBytes(), stat.getDataVolume().getBytes());
+                    put.addColumn("info".getBytes(), "dataVolumeBytes".getBytes(), stat.getDataVolumeBytes().toString().getBytes());
+                    put.addColumn("info".getBytes(), "dataIncrement".getBytes(), stat.getDataIncrement().getBytes());
+                    String sourceTable = gson.toJson(stat.getSourceTable());
+                    put.addColumn("info".getBytes(), "sourceTable".getBytes(), sourceTable.getBytes());
+                    table.put(put);
+                } catch (Exception e) {
+                    LOG.error(e.getMessage(), e);
+                }
+            });
+        }
     }
 
     /**
@@ -128,41 +128,42 @@ public class TableStatService {
     }
 
     public Pair<Integer, List<TableStat>> query(TableStatRequest request) throws Exception {
+        try (Connection conn = HbaseUtils.getConn()) {
+            Table table = conn.getTable(TableName.valueOf(TABLE_STAT));
+            Scan scan = new Scan();
+            scan.addFamily("info".getBytes());
 
-        HTable table = new HTable(HbaseUtils.getConf(), TABLE_STAT);
-        Scan scan = new Scan();
-        scan.addFamily("info".getBytes());
+            String startRowKey = (request.getTableId() + request.getDateType() + request.getFromDate()).replace("-", "");
+            String endRowKey = (request.getTableId() + request.getDateType() + request.getEndDate()).replace("-", "");
+            scan.setStartRow(startRowKey.getBytes());
+            scan.setStopRow(endRowKey.getBytes());
+            ResultScanner scanner = table.getScanner(scan);
 
-        String startRowKey = (request.getTableId() + request.getDateType() + request.getFromDate()).replace("-", "");
-        String endRowKey = (request.getTableId() + request.getDateType() + request.getEndDate()).replace("-", "");
-        scan.setStartRow(startRowKey.getBytes());
-        scan.setStopRow(endRowKey.getBytes());
-        ResultScanner scanner = table.getScanner(scan);
+            Gson gson = new Gson();
+            List<TableStat> tableStatList = new ArrayList<>();
+            for (Result result : scanner) {
+                NavigableMap<byte[], byte[]> row = result.getFamilyMap("info".getBytes());
+                String tableId = row.get("tableId".getBytes()) == null ? "" : new String(row.get("tableId".getBytes()));
+                String tableName = row.get("tableName".getBytes()) == null ? "" : new String(row.get("tableName".getBytes()));
+                String date = row.get("date".getBytes()) == null ? "" : new String(row.get("date".getBytes()));
+                String dateType = row.get("dateType".getBytes()) == null ? "" : new String(row.get("dateType".getBytes()));
+                int fieldNum = row.get("fieldNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fieldNum".getBytes())));
+                int fileNum = row.get("fileNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fileNum".getBytes())));
+                long recordNum = row.get("recordNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("recordNum".getBytes())));
+                String dataVolume = row.get("dataVolume".getBytes()) == null ? "" : new String(row.get("dataVolume".getBytes()));
+                long dataVolumeBytes = row.get("dataVolumeBytes".getBytes()) == null ? 0L : Long.valueOf(new String(row.get("dataVolumeBytes".getBytes())));
+                String dataIncrement = row.get("dataIncrement".getBytes()) == null ? "" : new String(row.get("dataIncrement".getBytes()));
+                String sourceTable = row.get("sourceTable".getBytes()) == null ? "" : new String(row.get("sourceTable".getBytes()));
+                List<org.apache.atlas.model.table.Table> sourceTableList = gson.fromJson(sourceTable, new TypeToken<List<org.apache.atlas.model.table.Table>>() {
+                }.getType());
+                TableStat stat = new TableStat(tableId, tableName, date, dateType, fieldNum, fileNum, recordNum, dataVolume, dataVolumeBytes, dataIncrement, sourceTableList);
+                tableStatList.add(stat);
+            }
+            table.close();
+            List<TableStat> pageList = PageUtils.pageList(tableStatList.iterator(), request.getOffset(), request.getLimit());
 
-        Gson gson = new Gson();
-        List<TableStat> tableStatList = new ArrayList<>();
-        for (Result result : scanner) {
-            NavigableMap<byte[], byte[]> row = result.getFamilyMap("info".getBytes());
-            String tableId = row.get("tableId".getBytes()) == null ? "" : new String(row.get("tableId".getBytes()));
-            String tableName = row.get("tableName".getBytes()) == null ? "" : new String(row.get("tableName".getBytes()));
-            String date = row.get("date".getBytes()) == null ? "" : new String(row.get("date".getBytes()));
-            String dateType = row.get("dateType".getBytes()) == null ? "" : new String(row.get("dateType".getBytes()));
-            int fieldNum = row.get("fieldNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fieldNum".getBytes())));
-            int fileNum = row.get("fileNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fileNum".getBytes())));
-            long recordNum = row.get("recordNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("recordNum".getBytes())));
-            String dataVolume = row.get("dataVolume".getBytes()) == null ? "" : new String(row.get("dataVolume".getBytes()));
-            long dataVolumeBytes = row.get("dataVolumeBytes".getBytes()) == null ? 0L : Long.valueOf(new String(row.get("dataVolumeBytes".getBytes())));
-            String dataIncrement = row.get("dataIncrement".getBytes()) == null ? "" : new String(row.get("dataIncrement".getBytes()));
-            String sourceTable = row.get("sourceTable".getBytes()) == null ? "" : new String(row.get("sourceTable".getBytes()));
-            List<org.apache.atlas.model.table.Table> sourceTableList = gson.fromJson(sourceTable, new TypeToken<List<org.apache.atlas.model.table.Table>>() {
-            }.getType());
-            TableStat stat = new TableStat(tableId, tableName, date, dateType, fieldNum, fileNum, recordNum, dataVolume, dataVolumeBytes, dataIncrement, sourceTableList);
-            tableStatList.add(stat);
+            return Pair.of(tableStatList.size(), pageList);
         }
-        table.close();
-        List<TableStat> pageList = PageUtils.pageList(tableStatList.iterator(), request.getOffset(), request.getLimit());
-
-        return Pair.of(tableStatList.size(), pageList);
     }
 
 }

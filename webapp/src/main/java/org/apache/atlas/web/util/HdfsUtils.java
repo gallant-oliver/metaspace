@@ -34,6 +34,7 @@ public class HdfsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsUtils.class);
     private static FileSystem fs;
+    private static Configuration configuration = new Configuration();
     private static boolean kerberosEnable=false;
     private static String hdfsConf="/etc/hadoop/conf";
 
@@ -44,7 +45,7 @@ public class HdfsUtils {
             hdfsConf = conf.getString("metaspace.hdfs.conf")==null?hdfsConf:conf.getString("metaspace.hdfs.conf");
             //默认kerberos关闭
             kerberosEnable=!(conf.getString("metaspace.kerberos.enable")==null||(!conf.getString("metaspace.kerberos.enable").equals("true")));
-            Configuration configuration = new Configuration();
+
             configuration.addResource(new Path(hdfsConf,"core-site.xml"));
             configuration.addResource(new Path(hdfsConf,"hdfs-site.xml"));
             if(kerberosEnable) {
@@ -67,6 +68,14 @@ public class HdfsUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Configuration conf(){
+        return configuration;
+    }
+
+    public static FileSystem fs(){
+        return fs;
     }
 
     public static FileStatus[] listStatus(String filePath) throws Exception {

@@ -73,6 +73,52 @@
     </profiles>
 
     <dependencies>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-csv</artifactId>
+        <version>${commons-csv.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.apexes.fastexcel</groupId>
+        <artifactId>fastexcel</artifactId>
+        <version>0.5.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.gridsum.gdp.library</groupId>
+        <artifactId>gdp-library-commons</artifactId>
+        <version>${gdp.commons.version}</version>
+        <exclusions>
+          <exclusion>
+            <artifactId>guava</artifactId>
+            <groupId>com.google.guava</groupId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>${apache.poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>${apache.poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>${cdh.avro.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>parquet-avro</artifactId>
+        <version>${cdh.parquet.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>parquet-column</artifactId>
+        <version>${cdh.parquet.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>net.sf.ehcache</groupId>

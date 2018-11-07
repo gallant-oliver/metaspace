@@ -34,6 +34,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -89,15 +91,34 @@ public class HiveJdbcUtils {
         }
     }
 
+
+    public static List<String> databases() throws AtlasBaseException {
+        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+            List<String> ret = new ArrayList<>();
+            ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
+            while (resultSet.next()) {
+                ret.add(resultSet.getString(1));
+            }
+            return ret;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public static TableMetadata metadata(String dbAndtableName) {
+        String[] split = dbAndtableName.split(".");
+        return metadata(split[0], split[1]);
+    }
+
     /**
      * 表数据量大小，单位bytes
      *
      * @param
      * @return
      */
-    public static TableMetadata metadata(String tableName) {
+    public static TableMetadata metadata(String db, String tableName) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+        try (Connection conn = getConnection(db)) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
