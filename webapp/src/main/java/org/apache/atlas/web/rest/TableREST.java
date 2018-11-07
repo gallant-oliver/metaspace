@@ -28,6 +28,7 @@ import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.model.table.TableSql;
 import org.apache.atlas.repository.table.TableService;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.TableSqlUtils;
@@ -78,11 +79,11 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
-        if (HiveJdbcUtils.tableExists(request.getDatabase(), request.getTableName())) {
+        if (HiveJdbcUtils.tableExists(request.getDatabase(), request.getTableName(), AdminUtils.getUserName())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + request.getDatabase() + "." + request.getTableName() + " 已存在");
         }
-        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
-        HiveJdbcUtils.execute(sql);
+        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase(),AdminUtils.getUserName());
+        HiveJdbcUtils.execute(sql,AdminUtils.getUserName());
         String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
         Table ret = new Table(tablId);
         return ret;
@@ -97,11 +98,11 @@ public class TableREST {
         String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
         String database = split[0];
         String tableName = split[1];
-        if (HiveJdbcUtils.tableExists(database, tableName)) {
+        if (HiveJdbcUtils.tableExists(database, tableName,AdminUtils.getUserName())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
         }
-        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
-        HiveJdbcUtils.execute(sql.getSql());
+        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database,AdminUtils.getUserName());
+        HiveJdbcUtils.execute(sql.getSql(),AdminUtils.getUserName());
         String tableId = tableService.tableId(database, tableName);
         Table ret = new Table(tableId);
         return ret;

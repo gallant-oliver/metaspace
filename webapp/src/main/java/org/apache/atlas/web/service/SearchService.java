@@ -15,6 +15,7 @@ import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.rest.EntityREST;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -179,7 +180,7 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from " + name + " limit " + guidCount.getCount();
-        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText);
+        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText, AdminUtils.getUserName());
         List<String> columns = new ArrayList<>();
         ResultSetMetaData metaData = resultSet.getMetaData();
         List<Map<String, String>> resultList = new ArrayList<>();
@@ -221,7 +222,7 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText);
+        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText,AdminUtils.getUserName());
         StringBuffer stringBuffer = new StringBuffer();
         while (resultSet.next()) {
             Object object = resultSet.getObject(1);

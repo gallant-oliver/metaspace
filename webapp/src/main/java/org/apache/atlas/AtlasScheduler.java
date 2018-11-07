@@ -28,6 +28,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.tablestat.TableStatService;
 import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +102,7 @@ public class AtlasScheduler {
                     log.info("add tableStat start {} ,index at {}/{}", qualifiedName, i, tables.size());
                     tableStat.setTableName(displayName);
 
-                    TableMetadata metadata = HiveJdbcUtils.metadata(tableName);
+                    TableMetadata metadata = HiveJdbcUtils.metadata(tableName, AdminUtils.getUserName());
                     //表数据量
                     long totalSize = metadata.getTotalSize();
                     tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));

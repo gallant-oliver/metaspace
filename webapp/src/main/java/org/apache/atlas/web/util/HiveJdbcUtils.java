@@ -60,12 +60,12 @@ public class HiveJdbcUtils {
             if (kerberosEnable) {
                 if (
                         conf.getString("metaspace.kerberos.admin") == null ||
-                        conf.getString("metaspace.kerberos.keytab") == null ||
-                        conf.getString("metaspace.hive.principal") == null ||
-                        conf.getString("metaspace.kerberos.admin").equals("") ||
-                        conf.getString("metaspace.kerberos.keytab").equals("") ||
-                        conf.getString("metaspace.hive.principal").equals("")
-                        ) {
+                                conf.getString("metaspace.kerberos.keytab") == null ||
+                                conf.getString("metaspace.hive.principal") == null ||
+                                conf.getString("metaspace.kerberos.admin").equals("") ||
+                                conf.getString("metaspace.kerberos.keytab").equals("") ||
+                                conf.getString("metaspace.hive.principal").equals("")
+                ) {
                     LOG.error("kerberos info incomplete");
                 } else {
                     org.apache.hadoop.conf.Configuration configuration = new
@@ -81,8 +81,18 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static void execute(String sql) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+    private static String getJdbc(String user){
+        String jdbcUrl;
+        if(kerberosEnable){
+            jdbcUrl=hiveUrl+hivePrincipal+";hive.server2.proxy.user="+user;
+        }else{
+            jdbcUrl=hiveUrl;
+        }
+        return jdbcUrl;
+    }
+    public static void execute(String sql,String user) throws AtlasBaseException {
+
+        try (Connection conn = DriverManager.getConnection(getJdbc(user))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -95,9 +105,9 @@ public class HiveJdbcUtils {
      * @param
      * @return
      */
-    public static TableMetadata metadata(String tableName) {
+    public static TableMetadata metadata(String tableName,String user) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+        try (Connection conn = DriverManager.getConnection(getJdbc(user))) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
@@ -123,9 +133,9 @@ public class HiveJdbcUtils {
 
     }
 
-    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException {
+    public static ResultSet selectBySQL(String sql, String db,String user) throws AtlasBaseException {
         try {
-            Connection conn = getConnection(db);
+            Connection conn = getConnection(db,user);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (Exception e) {
@@ -133,21 +143,21 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection((hiveUrl + "/" + db + ";").replace(";", hivePrincipal))) {
+    public static void execute(String sql, String db,String user) throws AtlasBaseException {
+        try (Connection conn = DriverManager.getConnection(getJdbc(user))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
-    public static boolean tableExists(String db, String tableName) throws AtlasBaseException, SQLException {
-        ResultSet resultSet = selectBySQL("show tables in " + db + " like '" + tableName + "'", db);
+    public static boolean tableExists(String db, String tableName,String user) throws AtlasBaseException, SQLException {
+        ResultSet resultSet = selectBySQL("show tables in " + db + " like '" + tableName + "'", db,user);
         return resultSet.next();
     }
 
-    private static Connection getConnection(String db) throws SQLException {
-        return DriverManager.getConnection((hiveUrl + "/" + db + ";").replace(";", hivePrincipal));
+    private static Connection getConnection(String db,String user) throws SQLException {
+        return DriverManager.getConnection(getJdbc(user));
     }
 
 }
