@@ -739,7 +739,6 @@
         <module>shaded/hbase-server-shaded</module>
         <module>repository</module>
         <module>authorization</module>
-        <module>dashboardv2</module>
         <module>webapp</module>
         <module>docs</module>
 
