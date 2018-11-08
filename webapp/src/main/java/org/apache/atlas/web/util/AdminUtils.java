@@ -1,15 +1,14 @@
 package org.apache.atlas.web.util;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Context;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.Map;
 
 public class AdminUtils {
-    @Context
-    private static HttpServletRequest httpServletRequest;
     public static String getUserName(){
-        Map<String,String> user = (Map)httpServletRequest.getSession().getAttribute("user");
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        Map<String,String> user = (Map)request.getSession().getAttribute("user");
         String userName = user.get("LoginEmail").split("@")[0];
         return userName;
     }
