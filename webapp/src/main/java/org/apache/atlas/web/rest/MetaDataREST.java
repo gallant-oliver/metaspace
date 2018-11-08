@@ -51,7 +51,7 @@ public class MetaDataREST {
     @Context
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
-    private static final String DEFAULT_DEPTH = "3";
+    private static final String DEFAULT_DEPTH = "-1";
 
 
     private final MetaDataService metadataService;
