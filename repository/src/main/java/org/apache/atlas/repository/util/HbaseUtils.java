@@ -15,33 +15,58 @@ package org.apache.atlas.repository.util;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class HbaseUtils {
-
-
-    private static Configuration conf = HBaseConfiguration.create();
+    private static final Logger LOG = LoggerFactory.getLogger(HbaseUtils.class);
+    private static boolean kerberosEnable=false;
+    private static String hbaseConf ="/etc/hbase/conf";
+    private static Configuration configuration = HBaseConfiguration.create();
 
     static {
         try {
-            String hbaseUrl = ApplicationProperties.get().getString("atlas.graph.storage.hostname");
-            conf.set("hbase.zookeeper.quorum", hbaseUrl);
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            hbaseConf = conf.getString("metaspace.hbase.conf")==null? hbaseConf :conf.getString("metaspace.hbase.conf");
+            //默认kerberos关闭
+            kerberosEnable=!(conf.getString("metaspace.kerberos.enable")==null||(!conf.getString("metaspace.kerberos.enable").equals("true")));
+            configuration.addResource(new Path(hbaseConf,"hbase-site.xml"));
+            if(kerberosEnable) {
+                if(
+                        conf.getString("metaspace.kerberos.admin")  ==null||
+                                conf.getString("metaspace.kerberos.keytab")  ==null||
+                                conf.getString("metaspace.kerberos.admin")  .equals("")||
+                                conf.getString("metaspace.kerberos.keytab")  .equals("")
+                ){
+                    LOG.error("kerberos info incomplete");
+                }else {
+                    configuration.set("hadoop.security.authentication", "Kerberos");
+                    UserGroupInformation.setConfiguration(configuration);
+                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
+                }
+            }else{
+                configuration.set("HADOOP_USER_NAME","metaspace");
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Connection getConn() throws IOException {
-        Connection conn = ConnectionFactory.createConnection(conf);
+        Connection conn = ConnectionFactory.createConnection(configuration);
         return conn;
     }
 
     public static Configuration getConf() throws IOException {
-        return conf;
+        return configuration;
     }
 
 

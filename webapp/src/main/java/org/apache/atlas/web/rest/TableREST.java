@@ -28,6 +28,7 @@ import org.apache.atlas.model.table.Table;
 import org.apache.atlas.model.table.TableForm;
 import org.apache.atlas.model.table.TableSql;
 import org.apache.atlas.repository.table.TableService;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.atlas.web.util.TableSqlUtils;

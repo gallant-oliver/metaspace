@@ -28,6 +28,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.tablestat.TableStatService;
 import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

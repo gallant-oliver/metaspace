@@ -46,9 +46,8 @@ public class HiveJdbcUtils {
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
     private static String hiveUrl = "";
     private static String hivePrincipal = "";
-    private static String kerberosAdmin = "";
-    private static String kerberosKeytab = "";
     private static boolean kerberosEnable = false;
+    private static String user = "";
 
 
     static {
@@ -62,12 +61,12 @@ public class HiveJdbcUtils {
             if (kerberosEnable) {
                 if (
                         conf.getString("metaspace.kerberos.admin") == null ||
-                        conf.getString("metaspace.kerberos.keytab") == null ||
-                        conf.getString("metaspace.hive.principal") == null ||
-                        conf.getString("metaspace.kerberos.admin").equals("") ||
-                        conf.getString("metaspace.kerberos.keytab").equals("") ||
-                        conf.getString("metaspace.hive.principal").equals("")
-                        ) {
+                                conf.getString("metaspace.kerberos.keytab") == null ||
+                                conf.getString("metaspace.hive.principal") == null ||
+                                conf.getString("metaspace.kerberos.admin").equals("") ||
+                                conf.getString("metaspace.kerberos.keytab").equals("") ||
+                                conf.getString("metaspace.hive.principal").equals("")
+                ) {
                     LOG.error("kerberos info incomplete");
                 } else {
                     org.apache.hadoop.conf.Configuration configuration = new
@@ -83,8 +82,28 @@ public class HiveJdbcUtils {
         }
     }
 
+    private static String getJdbc(String db) {
+        user = AdminUtils.getUserName();
+        String jdbcUrl;
+        if (kerberosEnable) {
+            if (!db.equals("")) {
+                jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            } else {
+                jdbcUrl = hiveUrl + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            }
+        } else {
+            if (!db.equals("")) {
+                jdbcUrl = hiveUrl + "/" + db;
+            } else {
+                jdbcUrl = hiveUrl;
+            }
+        }
+        return jdbcUrl;
+    }
+
     public static void execute(String sql) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+
+        try (Connection conn = DriverManager.getConnection(getJdbc(""))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -93,7 +112,7 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection((hiveUrl + ";").replace(";", hivePrincipal))) {
+        try (Connection conn = DriverManager.getConnection(getJdbc(""))) {
             List<String> ret = new ArrayList<>();
             ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
             while (resultSet.next()) {
@@ -116,9 +135,10 @@ public class HiveJdbcUtils {
      * @param
      * @return
      */
-    public static TableMetadata metadata(String db, String tableName) {
+
+    public static TableMetadata metadata(String tableName, String db) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = getConnection(db)) {
+        try (Connection conn = DriverManager.getConnection(getJdbc(db))) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
@@ -155,7 +175,7 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection((hiveUrl + "/" + db + ";").replace(";", hivePrincipal))) {
+        try (Connection conn = DriverManager.getConnection(getJdbc(db))) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -168,7 +188,7 @@ public class HiveJdbcUtils {
     }
 
     private static Connection getConnection(String db) throws SQLException {
-        return DriverManager.getConnection((hiveUrl + "/" + db + ";").replace(";", hivePrincipal));
+        return DriverManager.getConnection(getJdbc(db));
     }
 
 }
