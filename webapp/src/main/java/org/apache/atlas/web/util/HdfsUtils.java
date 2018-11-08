@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PrivilegedExceptionAction;
 
 public class HdfsUtils {
 
@@ -37,6 +38,7 @@ public class HdfsUtils {
     private static Configuration configuration = new Configuration();
     private static boolean kerberosEnable=false;
     private static String hdfsConf="/etc/hadoop/conf";
+    private static String user="";
 
 
     static {
@@ -61,10 +63,7 @@ public class HdfsUtils {
                     UserGroupInformation.setConfiguration(configuration);
                     UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
                 }
-            }else{
-                configuration.set("HADOOP_USER_NAME","metaspace");
             }
-            fs = FileSystem.get(configuration);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -74,31 +73,112 @@ public class HdfsUtils {
         return configuration;
     }
 
-    public static FileSystem fs(){
-        return fs;
-    }
 
     public static FileStatus[] listStatus(String filePath) throws Exception {
-        return fs.listStatus(new Path(filePath));
+        FileStatus[] fileStatuses;
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+            fileStatuses=  proxyUser.doAs(new PrivilegedExceptionAction<FileStatus[]>() {
+
+                public FileStatus[] run() throws Exception {
+                    fs = FileSystem.get(configuration);
+
+                    return fs.listStatus(new Path(filePath));
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+            fileStatuses = fs.listStatus(new Path(filePath));
+        }
+        return fileStatuses;
     }
 
     public static RemoteIterator<LocatedFileStatus> listFiles(String fileName, boolean recursive) throws Exception {
-        return fs.listFiles(new Path("/"), recursive);
+        RemoteIterator<LocatedFileStatus> result;
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+            result=  proxyUser.doAs(new PrivilegedExceptionAction<RemoteIterator<LocatedFileStatus>>() {
+
+                public RemoteIterator<LocatedFileStatus> run() throws Exception {
+                    fs = FileSystem.get(configuration);
+
+                    return fs.listFiles(new Path("/"), recursive);
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+            result = fs.listFiles(new Path("/"), recursive);
+        }
+        return result;
     }
 
-    public static boolean exist(String filePath) throws IOException {
-        boolean exists = fs.exists(new Path(filePath));
-        return exists;
+    public static boolean exist(String filePath) throws IOException, InterruptedException {
+        boolean result;
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+            result=  proxyUser.doAs(new PrivilegedExceptionAction<Boolean>() {
+
+                public Boolean run() throws Exception {
+                    fs = FileSystem.get(configuration);
+
+                    return fs.exists(new Path(filePath));
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+            result = fs.exists(new Path(filePath));
+        }
+        return result;
+
     }
 
-    public static void uploadFile(InputStream inputStream, String filePath) throws IOException {
-        FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));
-        IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
+    public static void uploadFile(InputStream inputStream, String filePath) throws IOException, InterruptedException {
+
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+             proxyUser.doAs(new PrivilegedExceptionAction<Void>() {
+
+                public Void run() throws Exception {
+                    fs = FileSystem.get(configuration);
+                    FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));
+                    IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
+                    return null;
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+            FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));
+            IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
+        }
     }
 
-    public static InputStream downloadFile(String filePath) throws IOException {
-        FSDataInputStream fsDataInputStream = fs.open(new Path(filePath));
-        return fsDataInputStream;
+    public static InputStream downloadFile(String filePath) throws IOException, InterruptedException {
+        FSDataInputStream result;
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+            result=  proxyUser.doAs(new PrivilegedExceptionAction<FSDataInputStream>() {
+
+                public FSDataInputStream run() throws Exception {
+                    fs = FileSystem.get(configuration);
+
+                    return fs.open(new Path(filePath));
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+            result = fs.open(new Path(filePath));
+        }
+        return result;
     }
 
 }
