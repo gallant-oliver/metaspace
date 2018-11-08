@@ -87,21 +87,11 @@ public class HiveJdbcUtils {
         Connection connection;
         String jdbcUrl;
         if (kerberosEnable) {
-            if (!db.equals("")) {
                 jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
                  connection = DriverManager.getConnection(jdbcUrl);
-            } else {
-                jdbcUrl = hiveUrl + hivePrincipal + ";hive.server2.proxy.user=" + user;
-                connection = DriverManager.getConnection(jdbcUrl);
-            }
         } else {
-            if (!db.equals("")) {
                 jdbcUrl = hiveUrl + "/" + db;
                 connection = DriverManager.getConnection(jdbcUrl,user,"");
-            } else {
-                jdbcUrl = hiveUrl;
-                connection = DriverManager.getConnection(jdbcUrl,user,"");
-            }
         }
         return connection;
     }
