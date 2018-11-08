@@ -82,28 +82,33 @@ public class HiveJdbcUtils {
         }
     }
 
-    private static String getJdbc(String db) {
+    private static Connection getConnection(String db) throws SQLException {
         user = AdminUtils.getUserName();
+        Connection connection;
         String jdbcUrl;
         if (kerberosEnable) {
             if (!db.equals("")) {
                 jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+                 connection = DriverManager.getConnection(jdbcUrl);
             } else {
                 jdbcUrl = hiveUrl + hivePrincipal + ";hive.server2.proxy.user=" + user;
+                connection = DriverManager.getConnection(jdbcUrl);
             }
         } else {
             if (!db.equals("")) {
                 jdbcUrl = hiveUrl + "/" + db;
+                connection = DriverManager.getConnection(jdbcUrl,user,"");
             } else {
                 jdbcUrl = hiveUrl;
+                connection = DriverManager.getConnection(jdbcUrl,user,"");
             }
         }
-        return jdbcUrl;
+        return connection;
     }
 
     public static void execute(String sql) throws AtlasBaseException {
 
-        try (Connection conn = DriverManager.getConnection(getJdbc(""))) {
+        try (Connection conn = getConnection("")) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -112,7 +117,7 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(getJdbc(""))) {
+        try (Connection conn = getConnection("")) {
             List<String> ret = new ArrayList<>();
             ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
             while (resultSet.next()) {
@@ -138,7 +143,7 @@ public class HiveJdbcUtils {
 
     public static TableMetadata metadata(String tableName, String db) {
         TableMetadata ret = new TableMetadata();
-        try (Connection conn = DriverManager.getConnection(getJdbc(db))) {
+        try (Connection conn = getConnection(db)) {
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
             while (rs.next()) {
@@ -175,7 +180,7 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = DriverManager.getConnection(getJdbc(db))) {
+        try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -187,8 +192,6 @@ public class HiveJdbcUtils {
         return resultSet.next();
     }
 
-    private static Connection getConnection(String db) throws SQLException {
-        return DriverManager.getConnection(getJdbc(db));
-    }
+
 
 }

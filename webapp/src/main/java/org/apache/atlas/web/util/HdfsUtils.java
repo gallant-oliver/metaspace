@@ -68,117 +68,51 @@ public class HdfsUtils {
             throw new RuntimeException(e);
         }
     }
+    private static FileSystem getFs() throws IOException, InterruptedException {
+        user=AdminUtils.getUserName();
+        if(kerberosEnable) {
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+            proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 
+                public FileSystem run() throws Exception {
+                    return FileSystem.get(configuration);
+                }
+            });
+        }else {
+            configuration.set("HADOOP_USER_NAME",user);
+            fs = FileSystem.get(configuration);
+        }
+        return fs;
+    }
+    public static FileSystem fs() throws IOException, InterruptedException {
+        return getFs();
+    }
     public static Configuration conf(){
         return configuration;
     }
 
 
     public static FileStatus[] listStatus(String filePath) throws Exception {
-        FileStatus[] fileStatuses;
-        user=AdminUtils.getUserName();
-        if(kerberosEnable) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            fileStatuses=  proxyUser.doAs(new PrivilegedExceptionAction<FileStatus[]>() {
-
-                public FileStatus[] run() throws Exception {
-                    fs = FileSystem.get(configuration);
-
-                    return fs.listStatus(new Path(filePath));
-                }
-            });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
-            fs = FileSystem.get(configuration);
-            fileStatuses = fs.listStatus(new Path(filePath));
-        }
-        return fileStatuses;
+        return getFs().listStatus(new Path(filePath));
     }
 
     public static RemoteIterator<LocatedFileStatus> listFiles(String fileName, boolean recursive) throws Exception {
-        RemoteIterator<LocatedFileStatus> result;
-        user=AdminUtils.getUserName();
-        if(kerberosEnable) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            result=  proxyUser.doAs(new PrivilegedExceptionAction<RemoteIterator<LocatedFileStatus>>() {
-
-                public RemoteIterator<LocatedFileStatus> run() throws Exception {
-                    fs = FileSystem.get(configuration);
-
-                    return fs.listFiles(new Path("/"), recursive);
-                }
-            });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
-            fs = FileSystem.get(configuration);
-            result = fs.listFiles(new Path("/"), recursive);
-        }
-        return result;
+        return getFs().listFiles(new Path("/"), recursive);
     }
 
     public static boolean exist(String filePath) throws IOException, InterruptedException {
-        boolean result;
-        user=AdminUtils.getUserName();
-        if(kerberosEnable) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            result=  proxyUser.doAs(new PrivilegedExceptionAction<Boolean>() {
-
-                public Boolean run() throws Exception {
-                    fs = FileSystem.get(configuration);
-
-                    return fs.exists(new Path(filePath));
-                }
-            });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
-            fs = FileSystem.get(configuration);
-            result = fs.exists(new Path(filePath));
-        }
-        return result;
-
+        boolean exists = getFs().exists(new Path(filePath));
+        return exists;
     }
 
     public static void uploadFile(InputStream inputStream, String filePath) throws IOException, InterruptedException {
-
-        user=AdminUtils.getUserName();
-        if(kerberosEnable) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-             proxyUser.doAs(new PrivilegedExceptionAction<Void>() {
-
-                public Void run() throws Exception {
-                    fs = FileSystem.get(configuration);
-                    FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));
-                    IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
-                    return null;
-                }
-            });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
-            fs = FileSystem.get(configuration);
-            FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));
-            IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
-        }
+        FSDataOutputStream fsDataOutputStream = getFs().create(new Path(filePath));
+        IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
     }
 
     public static InputStream downloadFile(String filePath) throws IOException, InterruptedException {
-        FSDataInputStream result;
-        user=AdminUtils.getUserName();
-        if(kerberosEnable) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            result=  proxyUser.doAs(new PrivilegedExceptionAction<FSDataInputStream>() {
-
-                public FSDataInputStream run() throws Exception {
-                    fs = FileSystem.get(configuration);
-
-                    return fs.open(new Path(filePath));
-                }
-            });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
-            fs = FileSystem.get(configuration);
-            result = fs.open(new Path(filePath));
-        }
-        return result;
+        FSDataInputStream fsDataInputStream = getFs().open(new Path(filePath));
+        return fsDataInputStream;
     }
 
 }
