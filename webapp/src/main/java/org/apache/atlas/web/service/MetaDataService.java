@@ -49,7 +49,6 @@ import org.apache.atlas.model.metadata.TablePermission;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -421,7 +420,7 @@ public class MetaDataService {
                     lineageEntity.setDirectDownStreamNum(directDownStreamNum);
                     //上游表层数
                     long upStreamLevelNum = getMaxDepth("in", lineageEntity.getGuid(), fullRelations);
-                    lineageEntity.setUpStreamLevelNum((upStreamLevelNum - 1) / 2);
+                    lineageEntity.setUpStreamLevelNum(upStreamLevelNum - 1);
                     //下游表层数
                     long downStreamLevelNum = getMaxDepth("out", lineageEntity.getGuid(), fullRelations);
                     lineageEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
@@ -456,17 +455,11 @@ public class MetaDataService {
         AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
         Set<String> types = entityDef.getSuperTypes();
         Iterator<String> typeIterator = types.iterator();
-        if(typeIterator.hasNext()) {
+        if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
             String type = typeIterator.next();
             if(type.contains("Process"))
                 lineageEntity.setProcess(true);
         }
-        /*if(Objects.nonNull(atlasEntity.getTypeName())) {
-            lineageEntity.setTypeName(atlasEntity.getTypeName());
-            if(atlasEntity.getTypeName().contains("process")) {
-                lineageEntity.setProcess(true);
-            }
-        }*/
         lineageEntity.setStatus(atlasEntity.getStatus().name());
 
         //tableName
