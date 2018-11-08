@@ -99,8 +99,12 @@ public class FileREST {
         StreamingOutput fileStream = new StreamingOutput() {
             @Override
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                InputStream inputStream = HdfsUtils.downloadFile(filePath);
-                IOUtils.copyBytes(inputStream, outputStream, 4096, true);
+                try {
+                    InputStream inputStream = HdfsUtils.downloadFile(filePath);
+                    IOUtils.copyBytes(inputStream, outputStream, 4096, true);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         };
         return Response

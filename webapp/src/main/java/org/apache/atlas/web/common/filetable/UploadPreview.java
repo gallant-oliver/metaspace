@@ -13,11 +13,8 @@
 
 package org.apache.atlas.web.common.filetable;
 
-import com.gridsum.gdp.library.commons.data.generic.GenericData;
-import com.gridsum.gdp.library.commons.data.schema.Column;
-import com.gridsum.gdp.library.commons.data.response.RowsXmlAdapter;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.gridsum.gdp.library.commons.data.response.RowsXmlAdapter;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -13,8 +13,6 @@
 package org.apache.atlas.web.rest;
 
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
@@ -53,7 +51,7 @@ public class MetaDataREST {
     @Context
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
-    private static final String DEFAULT_DEPTH = "3";
+    private static final String DEFAULT_DEPTH = "-1";
 
 
     private final MetaDataService metadataService;

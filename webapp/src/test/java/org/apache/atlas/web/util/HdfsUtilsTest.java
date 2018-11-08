@@ -41,7 +41,8 @@ public class HdfsUtilsTest {
     }
 
     @Test
-    public void testUploadFile() throws IOException {
+    public void testUploadFile() throws IOException, InterruptedException {
+
         InputStream inputStream = new FileInputStream(new java.io.File("./pom.xml"));
         HdfsUtils.uploadFile(inputStream, "/tmp/pom.xml");
     }
