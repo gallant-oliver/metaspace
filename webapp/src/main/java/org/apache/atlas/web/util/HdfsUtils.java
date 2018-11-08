@@ -72,7 +72,7 @@ public class HdfsUtils {
         user=AdminUtils.getUserName();
         if(kerberosEnable) {
             UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
+             fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 
                 public FileSystem run() throws Exception {
                     return FileSystem.get(configuration);
