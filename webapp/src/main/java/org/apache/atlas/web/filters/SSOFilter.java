@@ -112,7 +112,11 @@ public class SSOFilter implements Filter {
             }
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            loginSkip(httpServletResponse, loginURL);
+            try {
+                throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR);
+            } catch (AtlasBaseException e1) {
+                e1.printStackTrace();
+            }
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
