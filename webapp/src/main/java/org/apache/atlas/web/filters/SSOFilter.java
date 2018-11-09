@@ -89,8 +89,8 @@ public class SSOFilter implements Filter {
                     String s = SSLClient.doGet(infoURL, header);
                     Gson gson = new Gson();
                     JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                    Object errorCode = jsonObject.get("errorCode");
-                    if (errorCode == null || (!errorCode.toString().equals("0"))) {
+                    Object message = jsonObject.get("message");
+                    if (message == null || (!message.toString().equals("Success"))) {
                         LOG.warn("用户信息获取失败");
                         loginSkip(httpServletResponse, loginURL);
                     } else {
