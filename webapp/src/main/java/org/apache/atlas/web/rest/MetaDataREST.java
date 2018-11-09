@@ -144,6 +144,8 @@ public class MetaDataREST {
             }
             TableShow tableShow = searchService.getTableShow(guidCount);
             return tableShow;
+        } catch (AtlasBaseException e) {
+            throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -171,6 +173,8 @@ public class MetaDataREST {
             }
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
+        } catch (AtlasBaseException e) {
+            throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
         } finally {
             AtlasPerfTracer.log(perf);
         }
