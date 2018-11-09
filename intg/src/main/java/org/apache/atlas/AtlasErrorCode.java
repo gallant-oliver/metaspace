@@ -174,8 +174,8 @@ public enum AtlasErrorCode {
     RELATIONSHIPDEF_END_TYPE_NAME_NOT_FOUND(404, "METASPACE-404-00-00E", "RelationshipDef {0} endDef typename {0} cannot be found"),
     RELATIONSHIP_ALREADY_DELETED(404, "METASPACE-404-00-00F", " 试图删除已删除的关系:{0}"),
     INVALID_ENTITY_GUID_FOR_CLASSIFICATION_UPDATE(404, "METASPACE-404-00-010", " 不允许更新分类的实体id"),
-    INSTANCE_GUID_NOT_DATASET(404, "METASPACE-404-00-011", " 给定实例guid{0}不是数据集"),
-    INSTANCE_GUID_DELETED(404, "METASPACE-404-00-012", " 给定实例guid{0}已被删除"),
+    INSTANCE_GUID_NOT_DATASET(404, "METASPACE-404-00-011", " 给定实例ID{0}不是数据集"),
+    INSTANCE_GUID_DELETED(404, "METASPACE-404-00-012", " 给定实例ID{0}已被删除"),
     NO_PROPAGATED_CLASSIFICATIONS_FOUND_FOR_ENTITY(404, "METASPACE-404-00-013", " 没有与实体关联的传播分类:{0}"),
 
     // All data conflict errors go here

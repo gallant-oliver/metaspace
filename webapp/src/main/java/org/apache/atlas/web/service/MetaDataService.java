@@ -18,6 +18,7 @@ package org.apache.atlas.web.service;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -222,6 +223,8 @@ public class MetaDataService {
 
             //遍历，得到每一个关联关系
             for(AtlasRelatedObjectId objectId: relatedObjectIds) {
+                if(objectId.getRelationshipStatus().name().equals("DELETED"))
+                    continue;
                 relationDirs.add(tableName);
                 String termGuid = objectId.getGuid();
                 //获取Term
@@ -442,6 +445,15 @@ public class MetaDataService {
             return lineageEntity;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘深度详情失败");
+        }
+    }
+
+
+    public void getColumnLineage(String guid, AtlasLineageInfo.LineageDirection direction,
+                                 int depth) throws AtlasBaseException {
+        AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
+        if(Objects.isNull(lineageInfo)) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
         }
     }
 
