@@ -61,7 +61,7 @@ public class SSOFilter implements Filter {
             infoURL = conf.getString("sso.info.url");
             if (loginURL == null || infoURL == null || loginURL.equals("") || infoURL.equals("")) {
                 LOG.warn("loginURL/infoURL config error");
-                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.logout.url");
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.login.url,sso.info.url");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,8 +89,8 @@ public class SSOFilter implements Filter {
                     String s = SSLClient.doGet(infoURL, header);
                     Gson gson = new Gson();
                     JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                    Object message = jsonObject.get("message");
-                    if (message == null || (!message.toString().equals("Success"))) {
+                    Object errorCode = jsonObject.get("errorCode");
+                    if (errorCode == null || (!errorCode.toString().equals("0"))) {
                         LOG.warn("用户信息获取失败");
                         loginSkip(httpServletResponse, loginURL);
                     } else {
@@ -111,7 +111,8 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
             }
         } catch (Exception e) {
-            LOG.error(e.toString());
+            LOG.error(e.getMessage());
+            loginSkip(httpServletResponse, loginURL);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
