@@ -409,9 +409,6 @@ atlas.graph.index.search.solr.wait-searcher=true
             <resource>
                 <directory>src/bin</directory>
                 <filtering>true</filtering>
-                <includes>
-                    <include>**/*.py</include>
-                </includes>
                 <targetPath>bin</targetPath>
             </resource>
             <resource>
