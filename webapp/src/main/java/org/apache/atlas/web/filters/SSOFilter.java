@@ -61,7 +61,7 @@ public class SSOFilter implements Filter {
             infoURL = conf.getString("sso.info.url");
             if (loginURL == null || infoURL == null || loginURL.equals("") || infoURL.equals("")) {
                 LOG.warn("loginURL/infoURL config error");
-                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.logout.url");
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.login.url,sso.info.url");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -111,7 +111,12 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
             }
         } catch (Exception e) {
-            LOG.error(e.toString());
+            LOG.error(e.getMessage());
+            try {
+                throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR);
+            } catch (AtlasBaseException e1) {
+                e1.printStackTrace();
+            }
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
