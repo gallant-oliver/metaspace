@@ -111,12 +111,15 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            try {
-                throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR);
-            } catch (AtlasBaseException e1) {
-                e1.printStackTrace();
-            }
+            LOG.error(e.getMessage(),e);
+            httpServletResponse.setStatus(500);
+            httpServletResponse.setCharacterEncoding("UTF-8");
+            httpServletResponse.setContentType("text/html;charset=utf-8");
+            PrintWriter writer = httpServletResponse.getWriter();
+            HashMap<String, String> hashMap = new HashMap();
+            hashMap.put("error", "sso配置错误");
+            String j = new Gson().toJson(hashMap);
+            writer.print(j);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
