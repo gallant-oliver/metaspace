@@ -120,7 +120,7 @@ public class HiveJdbcUtils {
     }
 
     public static TableMetadata metadata(String dbAndtableName) {
-        String[] split = dbAndtableName.split(".");
+        String[] split = dbAndtableName.split("\\.");
         return metadata(split[0], split[1]);
     }
 
