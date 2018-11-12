@@ -92,15 +92,16 @@ public class TableStatService {
     }
 
     /**
-     * 昨天，上月，去年的数据量
+     * 指定日期当天，当月，当年的数据量
      *
      * @param tableId
+     * @param date
      * @return
      */
-    public Map<String, Long> lastDataVolumn(String tableId) throws Exception {
-        TableStatRequest dayRequest = new TableStatRequest(tableId, DateType.DAY.getLiteral(), DateUtils.yesterday(), DateUtils.yesterday(), 0, 1);
-        TableStatRequest monthRequest = new TableStatRequest(tableId, DateType.MONTH.getLiteral(), DateUtils.lastMonth(), DateUtils.lastMonth(), 0, 1);
-        TableStatRequest yearRequest = new TableStatRequest(tableId, DateType.YEAR.getLiteral(), DateUtils.lastYear(), DateUtils.lastYear(), 0, 1);
+    public Map<String, Long> lastDataVolumn(String tableId, String date) throws Exception {
+        TableStatRequest dayRequest = new TableStatRequest(tableId, DateType.DAY.getLiteral(), date, date, 0, 1);
+        TableStatRequest monthRequest = new TableStatRequest(tableId, DateType.MONTH.getLiteral(), DateUtils.month(date), DateUtils.month(date), 0, 1);
+        TableStatRequest yearRequest = new TableStatRequest(tableId, DateType.YEAR.getLiteral(), DateUtils.year(date), DateUtils.year(date), 0, 1);
 
         Map<String, Long> ret = new HashMap<>();
 

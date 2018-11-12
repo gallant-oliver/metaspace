@@ -40,6 +40,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -75,10 +76,29 @@ public class TableStatREST {
     @Inject
     private AtlasScheduler atlasScheduler;
 
+    @Autowired
+    private DiscoveryREST discoveryREST;
+
     @GET
     @Path("/schedule")
     public void schedule() throws Exception {
         atlasScheduler.insertTableMetadataStat();
+    }
+
+    @GET
+    @Path("/schedule/{date}")
+    public void scheduleDay(@PathParam("date") String date) throws Exception {
+        atlasScheduler.insertTableMetadataStat(date);
+    }
+
+    @GET
+    @Path("/schedule/{date}/{tableName}")
+    public void schedule(@PathParam("date") String date, @PathParam("tableName") String tableName) throws Exception {
+        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + tableName + "*' where __state = 'ACTIVE' select __guid orderby __timestamp", "hive_table", "", 0, 1000).getAttributes().getValues();
+        for (List<Object> table : hiveTables) {
+            String tableId = table.get(0).toString();
+            atlasScheduler.insertTableMetadataStat(date, tableId);
+        }
     }
 
     @GET

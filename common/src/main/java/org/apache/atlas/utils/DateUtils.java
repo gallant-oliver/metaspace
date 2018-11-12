@@ -55,6 +55,20 @@ public class DateUtils {
         return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now().minusDays(1));
     }
 
+    /**
+     * @param date yyyy-MM-dd
+     * @return
+     */
+    public static String month(String date) {
+        String[] split = date.split("-");
+        return split[0] + "-" + split[1];
+    }
+
+    public static String year(String date) {
+        return date.split("-")[0];
+    }
+
+
     public static String currentMonth() {
         return MONTH.format(LocalDate.now());
     }
