@@ -20,7 +20,8 @@ function createTable {
      echo "Table <$1> created successfully." 
     else 
      echo "Table <$1> is not created." 
-    fi 
+    fi
+    grant 'METASPACE', 'RWCA', 'table_stat'
 } 
 
 
