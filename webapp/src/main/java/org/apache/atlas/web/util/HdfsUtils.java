@@ -69,8 +69,15 @@ public class HdfsUtils {
         }
     }
     private static FileSystem getFs() throws IOException, InterruptedException {
+
         user=AdminUtils.getUserName();
         if(kerberosEnable) {
+            //自动续约
+            if (UserGroupInformation.isLoginKeytabBased()) {
+                UserGroupInformation.getLoginUser().reloginFromKeytab();
+            } else if (UserGroupInformation.isLoginTicketBased()) {
+                UserGroupInformation.getLoginUser().reloginFromTicketCache();
+            }
             UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
              fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 

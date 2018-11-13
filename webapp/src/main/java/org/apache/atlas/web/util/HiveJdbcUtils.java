@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
@@ -83,16 +84,22 @@ public class HiveJdbcUtils {
         }
     }
 
-    private static Connection getConnection(String db) throws SQLException {
+    private static Connection getConnection(String db) throws SQLException, IOException {
         user = AdminUtils.getUserName();
         Connection connection;
         String jdbcUrl;
         if (kerberosEnable) {
-                jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
-                 connection = DriverManager.getConnection(jdbcUrl);
+            //自动续约
+            if (UserGroupInformation.isLoginKeytabBased()) {
+                UserGroupInformation.getLoginUser().reloginFromKeytab();
+            } else if (UserGroupInformation.isLoginTicketBased()) {
+                UserGroupInformation.getLoginUser().reloginFromTicketCache();
+            }
+            jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            connection = DriverManager.getConnection(jdbcUrl);
         } else {
-                jdbcUrl = hiveUrl + "/" + db;
-                connection = DriverManager.getConnection(jdbcUrl,user,"");
+            jdbcUrl = hiveUrl + "/" + db;
+            connection = DriverManager.getConnection(jdbcUrl, user, "");
         }
         return connection;
     }
@@ -182,7 +189,6 @@ public class HiveJdbcUtils {
         ResultSet resultSet = selectBySQL("show tables in " + db + " like '" + tableName + "'", db);
         return resultSet.next();
     }
-
 
 
 }
