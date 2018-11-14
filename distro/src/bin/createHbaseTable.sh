@@ -14,7 +14,7 @@ function createTable {
     echo "Creating the Table <$1>" 
 
     echo "create '$1', $2" | hbase shell > log 2>&1
-    echo " grant 'METASPACE', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
+    echo "grant 'METASPACE', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
 
     cat log | grep -q '0 row(s) in' 
 
