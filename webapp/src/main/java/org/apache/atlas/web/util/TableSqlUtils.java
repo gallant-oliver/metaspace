@@ -54,17 +54,17 @@ public class TableSqlUtils {
                 sqlFormat.append(" PARTITIONED BY (" + partitionFieldsLiteral + ")");
             }
 
-            if (tableTypeEnum.isExternal()) {
-                if (StringUtils.isNotBlank(fieldsTerminated) || StringUtils.isNotBlank(lineTerminated)) {
-                    sqlFormat.append(" ROW FORMAT DELIMITED");
-                }
-                if (StringUtils.isNotBlank(fieldsTerminated)) {
-                    sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
-                }
-                if (StringUtils.isNotBlank(lineTerminated)) {
-                    sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
-                }
+
+            if (StringUtils.isNotBlank(fieldsTerminated) || StringUtils.isNotBlank(lineTerminated)) {
+                sqlFormat.append(" ROW FORMAT DELIMITED");
             }
+            if (StringUtils.isNotBlank(fieldsTerminated)) {
+                sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
+            }
+            if (StringUtils.isNotBlank(lineTerminated)) {
+                sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
+            }
+
 
             if (StringUtils.isNotBlank(storedFormat)) {
                 storedFormat = storedFormat.toUpperCase();
@@ -84,6 +84,4 @@ public class TableSqlUtils {
         }
 
     }
-
-
 }
