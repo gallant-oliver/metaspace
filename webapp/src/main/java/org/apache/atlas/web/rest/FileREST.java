@@ -24,6 +24,7 @@ import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.ParamChecker;
 import org.apache.atlas.web.service.FileService;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HdfsUtils;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,6 +79,12 @@ public class FileREST {
         if (!override && HdfsUtils.exist(filePath)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件已存在: " + filePath);
         }
+
+        String dir = filePath.substring(0, filePath.lastIndexOf("/"));
+
+        if(!HdfsUtils.canAccess(dir,"w")){
+            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, filePath, "上传文件");
+        }
         try {
             HdfsUtils.uploadFile(fileInputStream, filePath);
         } catch (Exception e) {
@@ -95,6 +102,11 @@ public class FileREST {
         if (!HdfsUtils.exist(filePath)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件不存在: " + filePath);
         }
+
+        if(!HdfsUtils.canAccess(filePath,"r")){
+            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, filePath, "下载文件");
+        }
+
         String filename = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
         StreamingOutput fileStream = new StreamingOutput() {
             @Override

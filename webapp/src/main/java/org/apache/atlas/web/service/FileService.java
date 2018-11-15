@@ -16,6 +16,7 @@ package org.apache.atlas.web.service;
 import com.google.common.collect.Lists;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.PageUtils;
+import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HdfsUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -128,8 +129,20 @@ public class FileService {
     }
 
 
+    /**
+     * 搜索或列出文件或文件夹
+     * @param file
+     * @param fileName
+     * @param modificationDate
+     * @param owner
+     * @return
+     */
     private static boolean match(FileStatus file, String fileName, String modificationDate, String owner) {
 
+
+        if(!HdfsUtils.canAccess(file.getPath().toUri().getPath(),"r")){
+            return false;
+        }
         if (StringUtils.isNotBlank(fileName)) {
             boolean fileNameMatch = file.getPath().getName().contains(fileName);
             if (!fileNameMatch) {

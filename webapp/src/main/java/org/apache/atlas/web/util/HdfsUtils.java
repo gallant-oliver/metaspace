@@ -14,14 +14,20 @@
 package org.apache.atlas.web.util;
 
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.fs.permission.AclStatus;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -70,7 +76,7 @@ public class HdfsUtils {
     }
     private static FileSystem getFs() throws IOException, InterruptedException {
 
-        user=AdminUtils.getUserName();
+        user = AdminUtils.getUserName();
         if(kerberosEnable) {
             //自动续约
             if (UserGroupInformation.isLoginKeytabBased()) {
@@ -120,6 +126,29 @@ public class HdfsUtils {
     public static InputStream downloadFile(String filePath) throws IOException, InterruptedException {
         FSDataInputStream fsDataInputStream = getFs().open(new Path(filePath));
         return fsDataInputStream;
+    }
+    /**
+     *
+     * @param accessUser
+     * @param filePath
+     * @param tag r 或 w
+     * @return
+     */
+    public static boolean canAccess(String accessUser, String filePath, String tag)  {
+        try {
+            FileStatus status = getFs().getFileStatus(new Path(filePath));
+            String owner = status.getOwner();
+            String permission = status.getPermission().toString().substring(3);
+            boolean canAccess = accessUser.equals(owner) || permission.contains(tag);
+            return canAccess;
+        }catch (Exception e){
+            LOG.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean canAccess(String filePath, String tag)  {
+        return canAccess(AdminUtils.getUserName(), filePath, tag);
     }
 
 }
