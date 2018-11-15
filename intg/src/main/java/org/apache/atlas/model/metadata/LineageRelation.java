@@ -16,16 +16,18 @@
  */
 package org.apache.atlas.model.metadata;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2018/10/18 9:36
  */
-public class LineageRelation {
+public class LineageRelation implements Serializable {
 
     private String fromEntityId;
     private String toEntityId;
-    private String relationshiId;
+    private String relationshipId;
 
     public String getFromEntityId() {
         return fromEntityId;
@@ -43,11 +45,11 @@ public class LineageRelation {
         this.toEntityId = toEntityId;
     }
 
-    public String getRelationshiId() {
-        return relationshiId;
+    public String getRelationshipId() {
+        return relationshipId;
     }
 
-    public void setRelationshiId(String relationshiId) {
-        this.relationshiId = relationshiId;
+    public void setRelationshipId(String relationshipId) {
+        this.relationshipId = relationshipId;
     }
 }

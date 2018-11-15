@@ -241,10 +241,10 @@ public class MetaDataREST {
     @Path("/table/lineage/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageInfo getTableLineage(@PathParam("guid") String guid,
-                                       @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
-                                       @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
-                                       @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public TableLineageInfo getTableLineage(@PathParam("guid") String guid,
+                                            @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
+                                            @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
+                                            @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
@@ -268,7 +268,7 @@ public class MetaDataREST {
     @Path("/table/lineage/depth/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageInfo.LineageEntity getLineageInfo(@PathParam("guid") String guid) throws AtlasBaseException {
+    public TableLineageInfo.LineageEntity getLineageInfo(@PathParam("guid") String guid) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
@@ -276,6 +276,27 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
             }
             return metadataService.getLineageInfo(guid);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    @GET
+    @Path("/column/lineage/{guid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ColumnLineageInfo getColumnLineage(@PathParam("guid") String guid,
+                                             @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
+                                             @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
+                                             @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnLineage");
+            }
+            return metadataService.getColumnLineage(guid, direction, depth, refreshCache);
         } finally {
             AtlasPerfTracer.log(perf);
         }

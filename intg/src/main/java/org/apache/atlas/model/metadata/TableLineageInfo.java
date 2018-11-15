@@ -26,7 +26,7 @@ import java.util.Set;
  * @author sunhaoning
  * @date 2018/10/18 9:44
  */
-public class LineageInfo implements Serializable {
+public class TableLineageInfo implements Serializable {
 
     private String guid;
     private Integer lineageDepth;
@@ -176,10 +176,11 @@ public class LineageInfo implements Serializable {
         public void setStatus(String status) {
             this.status = status;
         }
+
     }
 
 
-    public static class LineageRelation implements Serializable {
+    /*public static class LineageRelation implements Serializable {
         private String fromEntityId;
         private String toEntityId;
         private String relationshipId;
@@ -215,7 +216,7 @@ public class LineageInfo implements Serializable {
         public void setRelationshipId(final String relationshipId) {
             this.relationshipId = relationshipId;
         }
-    }
+    }*/
 
 
 

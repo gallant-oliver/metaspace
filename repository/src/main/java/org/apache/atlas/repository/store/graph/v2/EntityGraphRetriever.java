@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -430,18 +431,22 @@ public final class EntityGraphRetriever {
 
             AtlasStructType structType = (AtlasStructType) objType;
 
-            for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
-                if(attributes.contains(attribute.getName())) {
-                    Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
-                    entity.setAttribute(attribute.getName(), attrValue);
+            if(Objects.nonNull(attributes)) {
+                for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
+                    if (attributes.contains(attribute.getName())) {
+                        Object attrValue = mapVertexToAttribute(entityVertex, attribute, entityExtInfo, isMinExtInfo);
+                        entity.setAttribute(attribute.getName(), attrValue);
+                    }
                 }
             }
 
-            AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
-            for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
-                if(relationshipAttributes.contains(attribute.getName())) {
-                    Object attrValue = mapVertexToRelationshipAttribute(entityVertex, entityType, attribute);
-                    entity.setRelationshipAttribute(attribute.getName(), attrValue);
+            if(Objects.nonNull(relationshipAttributes)) {
+                AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
+                for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
+                    if (relationshipAttributes.contains(attribute.getName())) {
+                        Object attrValue = mapVertexToRelationshipAttribute(entityVertex, entityType, attribute);
+                        entity.setRelationshipAttribute(attribute.getName(), attrValue);
+                    }
                 }
             }
         }
