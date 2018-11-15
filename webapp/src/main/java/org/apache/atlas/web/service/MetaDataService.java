@@ -333,13 +333,13 @@ public class MetaDataService {
                 String type = filter.getType();
                 String description = filter.getDescription();
                 if(Objects.nonNull(columnName) && !columnName.equals("")) {
-                    columns = columns.stream().filter(col -> col.getColumnName().equals(filter.getColumnName())).collect(Collectors.toList());
+                    columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
                 }
                 if(Objects.nonNull(type) && !type.equals("")) {
-                    columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
+                    columns = columns.stream().filter(col -> col.getType().contains(type)).collect(Collectors.toList());
                 }
                 if(Objects.nonNull(description) && !description.equals("")) {
-                    columns = columns.stream().filter(col -> col.getDescription().equals(description)).collect(Collectors.toList());
+                    columns = columns.stream().filter(col -> col.getDescription().contains(description)).collect(Collectors.toList());
                 }
             }
             return columns;
