@@ -1035,7 +1035,7 @@ public class MetaDataService {
                                     for(int i=pathList.size()-1; i>=0; i--) {
                                         pathStr += pathList.get(i) + "/";
                                     }
-                                    pathStr += tableName;
+                                    pathStr += name;
                                     info.setPath(pathStr);
                                 }
                                 relationInfoList.add(info);
