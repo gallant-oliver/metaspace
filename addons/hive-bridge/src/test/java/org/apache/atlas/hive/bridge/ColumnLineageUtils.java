@@ -105,7 +105,7 @@ public class ColumnLineageUtils {
                     if (retGetBaseCols instanceof Collection) {
                         ret = (Collection) retGetBaseCols;
                     } else {
-                        LOG.warn("{}: unexpected return type from LineageInfo.Dependency.getBaseCols(), expected type {}",
+                        LOG.warn("{}: unexpected return type from TableLineageInfo.Dependency.getBaseCols(), expected type {}",
                                 retGetBaseCols.getClass().getName(), "Collection");
                     }
                 }
