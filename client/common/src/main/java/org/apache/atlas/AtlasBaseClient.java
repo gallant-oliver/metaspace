@@ -63,7 +63,7 @@ import java.util.Map;
 import static org.apache.atlas.security.SecurityProperties.TLS_ENABLED;
 
 public abstract class AtlasBaseClient {
-    public static final String BASE_URI = "api/atlas/";
+    public static final String BASE_URI = "api/metaspace/";
     public static final String TYPES = "types";
     public static final String ADMIN_VERSION = "admin/version";
     public static final String ADMIN_STATUS = "admin/status";
