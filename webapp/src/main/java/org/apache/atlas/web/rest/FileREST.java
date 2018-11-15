@@ -27,6 +27,7 @@ import org.apache.atlas.web.service.FileService;
 import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HdfsUtils;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.atlas.web.util.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.io.IOUtils;
@@ -81,7 +82,9 @@ public class FileREST {
         }
 
         String dir = filePath.substring(0, filePath.lastIndexOf("/"));
-
+        if(org.apache.commons.lang3.StringUtils.isBlank(dir)){
+            dir = "/";
+        }
         if(!HdfsUtils.canAccess(dir,"w")){
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, filePath, "上传文件");
         }
