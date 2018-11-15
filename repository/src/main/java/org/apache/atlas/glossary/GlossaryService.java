@@ -752,11 +752,18 @@ public class GlossaryService {
         if (isNameInvalid(glossaryCategory.getName())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的目录名");
         }
-        if (categoryExists(glossaryCategory)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录下存在相同目录名，修改失败");
-        }
 
         AtlasGlossaryCategory storeObject = dataAccess.load(glossaryCategory);
+
+        if(StringUtils.equals(storeObject.getName(), glossaryCategory.getName()) && StringUtils.equals(storeObject.getLongDescription(), glossaryCategory.getLongDescription()))
+            return storeObject;
+
+        if(!StringUtils.equals(storeObject.getName(), glossaryCategory.getName()))
+            if (categoryExists(glossaryCategory)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录下存在相同目录名，修改失败");
+            }
+
+
 
 
 
