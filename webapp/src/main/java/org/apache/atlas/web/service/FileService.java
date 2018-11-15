@@ -145,7 +145,7 @@ public class FileService {
         }
 
         if (StringUtils.isNotBlank(owner)) {
-            boolean ownerMatch = file.getOwner().equals(owner);
+            boolean ownerMatch = file.getOwner().contains(owner);
             if (!ownerMatch) {
                 return false;
             }
