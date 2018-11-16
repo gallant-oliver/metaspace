@@ -52,6 +52,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.web.util.HiveJdbcUtils;
+import org.apache.atlas.web.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1039,7 +1040,8 @@ public class MetaDataService {
                                     pathStr += name;
                                     info.setPath(pathStr);
                                 }
-                                relationInfoList.add(info);
+                                if(Objects.nonNull(info.getCategoryGuid()))
+                                    relationInfoList.add(info);
                             }
                         }
                     }
