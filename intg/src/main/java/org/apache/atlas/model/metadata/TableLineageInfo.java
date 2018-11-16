@@ -29,9 +29,8 @@ import java.util.Set;
 public class TableLineageInfo implements Serializable {
 
     private String guid;
-    private Integer lineageDepth;
     private List<LineageEntity> guidEntityMap;
-    private Set<LineageRelation> relations;
+    private Set<LineageTrace> relations;
 
     public String getGuid() {
         return guid;
@@ -39,14 +38,6 @@ public class TableLineageInfo implements Serializable {
 
     public void setGuid(String guid) {
         this.guid = guid;
-    }
-
-    public Integer getLineageDepth() {
-        return lineageDepth;
-    }
-
-    public void setLineageDepth(Integer lineageDepth) {
-        this.lineageDepth = lineageDepth;
     }
 
     public List<LineageEntity> getEntities() {
@@ -57,11 +48,11 @@ public class TableLineageInfo implements Serializable {
         this.guidEntityMap = guidEntityMap;
     }
 
-    public Set<LineageRelation> getRelations() {
+    public Set<LineageTrace> getRelations() {
         return relations;
     }
 
-    public void setRelations(Set<LineageRelation> relations) {
+    public void setRelations(Set<LineageTrace> relations) {
         this.relations = relations;
     }
 
@@ -71,15 +62,9 @@ public class TableLineageInfo implements Serializable {
         private String guid;
         private String tableName;
         private String dbName;
-        private long directUpStreamNum;
-        private long directDownStreamNum;
-        private long upStreamLevelNum;
-        private long downStreamLevelNum;
-        private String tableUpdateTime;
         private String displayText;
         private Boolean process;
         private String status;
-
 
         public String getTypeName() {
             return typeName;
@@ -113,46 +98,6 @@ public class TableLineageInfo implements Serializable {
             this.dbName = dbName;
         }
 
-        public long getDirectUpStreamNum() {
-            return directUpStreamNum;
-        }
-
-        public void setDirectUpStreamNum(long directUpStreamNum) {
-            this.directUpStreamNum = directUpStreamNum;
-        }
-
-        public long getDirectDownStreamNum() {
-            return directDownStreamNum;
-        }
-
-        public void setDirectDownStreamNum(long directDownStreamNum) {
-            this.directDownStreamNum = directDownStreamNum;
-        }
-
-        public long getUpStreamLevelNum() {
-            return upStreamLevelNum;
-        }
-
-        public void setUpStreamLevelNum(long upStreamLevelNum) {
-            this.upStreamLevelNum = upStreamLevelNum;
-        }
-
-        public long getDownStreamLevelNum() {
-            return downStreamLevelNum;
-        }
-
-        public void setDownStreamLevelNum(long downStreamLevelNum) {
-            this.downStreamLevelNum = downStreamLevelNum;
-        }
-
-        public String getTableUpdateTime() {
-            return tableUpdateTime;
-        }
-
-        public void setTableUpdateTime(String tableUpdateTime) {
-            this.tableUpdateTime = tableUpdateTime;
-        }
-
         public String getDisplayText() {
             return displayText;
         }
@@ -176,48 +121,5 @@ public class TableLineageInfo implements Serializable {
         public void setStatus(String status) {
             this.status = status;
         }
-
     }
-
-
-    /*public static class LineageRelation implements Serializable {
-        private String fromEntityId;
-        private String toEntityId;
-        private String relationshipId;
-
-        public LineageRelation() { }
-
-        public LineageRelation(String fromEntityId, String toEntityId, final String relationshipId) {
-            this.fromEntityId = fromEntityId;
-            this.toEntityId   = toEntityId;
-            this.relationshipId = relationshipId;
-        }
-
-        public String getFromEntityId() {
-            return fromEntityId;
-        }
-
-        public void setFromEntityId(String fromEntityId) {
-            this.fromEntityId = fromEntityId;
-        }
-
-        public String getToEntityId() {
-            return toEntityId;
-        }
-
-        public void setToEntityId(String toEntityId) {
-            this.toEntityId = toEntityId;
-        }
-
-        public String getRelationshipId() {
-            return relationshipId;
-        }
-
-        public void setRelationshipId(final String relationshipId) {
-            this.relationshipId = relationshipId;
-        }
-    }*/
-
-
-
 }
