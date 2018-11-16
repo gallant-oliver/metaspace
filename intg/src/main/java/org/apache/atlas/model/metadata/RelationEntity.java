@@ -81,6 +81,7 @@ public class RelationEntity implements Serializable  {
         private String path;
         private String relationshipGuid;
         private String status;
+        private String categoryGuid;
 
         public String getGuid() {
             return guid;
@@ -128,6 +129,14 @@ public class RelationEntity implements Serializable  {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        public String getCategoryGuid() {
+            return categoryGuid;
+        }
+
+        public void setCategoryGuid(String categoryGuid) {
+            this.categoryGuid = categoryGuid;
         }
     }
 

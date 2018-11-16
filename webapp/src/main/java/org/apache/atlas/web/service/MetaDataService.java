@@ -52,6 +52,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.web.util.HiveJdbcUtils;
+import org.apache.atlas.web.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -748,7 +749,7 @@ public class MetaDataService {
         }*/
     }
 
-    @CacheEvict(value = {"relationCache", "tableRelationCache"}, allEntries = true)
+    @CacheEvict(value = {"relationCache"}, allEntries = true)
     public Set<AtlasRelatedObjectId> assignTermToEntities(String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.assignTermToEntities({}, {})", categoryGuid, relatedObjectIds);
@@ -791,7 +792,7 @@ public class MetaDataService {
         return ret.getAssignedEntities();
     }
 
-    @CacheEvict(value = {"relationCache","tableRelationCache"}, key = "#categoryGuid")
+    @CacheEvict(value = {"relationCache"}, key = "#categoryGuid")
     public void removeRelationAssignmentFromEntities(String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.removeRelationAssignmentFromEntities({}, {})", categoryGuid, relatedObjectIds);
@@ -858,6 +859,7 @@ public class MetaDataService {
                     while (relatedIterator.hasNext()) {
                         AtlasRelatedObjectId relatedObject = relatedIterator.next();
                         RelationEntity.RelationInfo relationInfo = new RelationEntity.RelationInfo();
+                        relationInfo.setCategoryGuid(categoryGuid);
                         String relatedObjectGuid = relatedObject.getGuid();
                         //获取entity
                         List<String> attributes = new ArrayList<>();
@@ -984,7 +986,6 @@ public class MetaDataService {
 
     }
 
-    @Cacheable(value = "tableRelationCache", key = "#tableName")
     public List<RelationEntity.RelationInfo> getQueryTables(String tableName) throws AtlasBaseException {
         List<RelationEntity.RelationInfo> relationInfoList = new ArrayList<>();
         List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1,0, SortOrder.ASCENDING);
@@ -1019,6 +1020,7 @@ public class MetaDataService {
                                 if(Objects.nonNull(categoriesHeader) && categoriesHeader.size()!=0) {
                                     AtlasTermCategorizationHeader categoryHeader = categoriesHeader.iterator().next();
                                     String  categoryGuid = categoryHeader.getCategoryGuid();
+                                    info.setCategoryGuid(categoryGuid);
                                     AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
 
                                     //迭代获取父级目录信息
@@ -1038,7 +1040,8 @@ public class MetaDataService {
                                     pathStr += name;
                                     info.setPath(pathStr);
                                 }
-                                relationInfoList.add(info);
+                                if(Objects.nonNull(info.getCategoryGuid()))
+                                    relationInfoList.add(info);
                             }
                         }
                     }
@@ -1058,7 +1061,7 @@ public class MetaDataService {
         return ret;
     }
 
-    @CacheEvict(value = {"tableCache", "columnCache", "relationCache", "lineageCache", "categoryCache", "tableRelationCache",
+    @CacheEvict(value = {"tableCache", "columnCache", "relationCache", "lineageCache", "categoryCache",
                          "databaseCache", "tablePageCache", "columnPageCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
