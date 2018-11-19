@@ -177,6 +177,7 @@ public class AtlasScheduler {
         long totalSize = metadata.getTotalSize();
         tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
         tableStat.setDataVolumeBytes(totalSize);
+        tableStat.setDataVolumeKb(BytesUtils.kb(totalSize));
         //文件个数
         int fieldNum = metadata.getNumFiles();
         tableStat.setFileNum(fieldNum);
@@ -226,6 +227,7 @@ public class AtlasScheduler {
         tableStat.setDateType(DateType.DAY.getLiteral());
         long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
         tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
+        tableStat.setDataIncrementKb(BytesUtils.kb(dayIncrement));
         tableStat.setDate(date);
         tableStatList.add(tableStat);
 

@@ -81,6 +81,8 @@ public class TableStatService {
                     put.addColumn("info".getBytes(), "dataVolume".getBytes(), stat.getDataVolume().getBytes());
                     put.addColumn("info".getBytes(), "dataVolumeBytes".getBytes(), stat.getDataVolumeBytes().toString().getBytes());
                     put.addColumn("info".getBytes(), "dataIncrement".getBytes(), stat.getDataIncrement().getBytes());
+                    put.addColumn("info".getBytes(), "dataVolumeKb".getBytes(), stat.getDataVolumeKb().getBytes());
+                    put.addColumn("info".getBytes(), "dataIncrementKb".getBytes(), stat.getDataIncrementKb().getBytes());
                     String sourceTable = gson.toJson(stat.getSourceTable());
                     put.addColumn("info".getBytes(), "sourceTable".getBytes(), sourceTable.getBytes());
                     table.put(put);
@@ -155,9 +157,11 @@ public class TableStatService {
                 long dataVolumeBytes = row.get("dataVolumeBytes".getBytes()) == null ? 0L : Long.valueOf(new String(row.get("dataVolumeBytes".getBytes())));
                 String dataIncrement = row.get("dataIncrement".getBytes()) == null ? "" : new String(row.get("dataIncrement".getBytes()));
                 String sourceTable = row.get("sourceTable".getBytes()) == null ? "" : new String(row.get("sourceTable".getBytes()));
+                String dataVolumeKb = row.get("dataVolumeKb".getBytes()) == null ? "" : new String(row.get("dataVolumeKb".getBytes()));
+                String dataIncrementKb = row.get("dataIncrementKb".getBytes()) == null ? "" : new String(row.get("dataIncrementKb".getBytes()));
                 List<org.apache.atlas.model.table.Table> sourceTableList = gson.fromJson(sourceTable, new TypeToken<List<org.apache.atlas.model.table.Table>>() {
                 }.getType());
-                TableStat stat = new TableStat(tableId, tableName, date, dateType, fieldNum, fileNum, recordNum, dataVolume, dataVolumeBytes, dataIncrement, sourceTableList);
+                TableStat stat = new TableStat(tableId, tableName, date, dateType, fieldNum, fileNum, recordNum, dataVolume, dataVolumeBytes, dataIncrement, dataVolumeKb, dataIncrementKb, sourceTableList);
                 tableStatList.add(stat);
             }
             table.close();

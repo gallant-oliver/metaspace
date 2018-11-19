@@ -47,12 +47,14 @@ public class TableStat implements Cloneable {
     private String dataVolume;
     private Long dataVolumeBytes;
     private String dataIncrement;
+    private String dataVolumeKb;
+    private String dataIncrementKb;
     private List<Table> sourceTable = new ArrayList<>();
 
     public TableStat() {
     }
 
-    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, List<Table> sourceTable) {
+    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, String dataVolumeKb, String dataIncrementKb, List<Table> sourceTable) {
         this.tableId = tableId;
         this.tableName = tableName;
         this.date = date;
@@ -63,24 +65,9 @@ public class TableStat implements Cloneable {
         this.dataVolume = dataVolume;
         this.dataVolumeBytes = dataVolumeBytes;
         this.dataIncrement = dataIncrement;
+        this.dataVolumeKb = dataVolumeKb;
+        this.dataIncrementKb = dataIncrementKb;
         this.sourceTable = sourceTable;
-    }
-
-    @Override
-    public String toString() {
-        return "TableStat{" +
-               "tableId='" + tableId + '\'' +
-               ", tableName='" + tableName + '\'' +
-               ", date='" + date + '\'' +
-               ", dateType='" + dateType + '\'' +
-               ", fieldNum=" + fieldNum +
-               ", fileNum=" + fileNum +
-               ", recordNum=" + recordNum +
-               ", dataVolume='" + dataVolume + '\'' +
-               ", dataVolumeBytes=" + dataVolumeBytes +
-               ", dataIncrement='" + dataIncrement + '\'' +
-               ", sourceTable=" + sourceTable +
-               '}';
     }
 
     public String getTableId() {
@@ -161,6 +148,22 @@ public class TableStat implements Cloneable {
 
     public void setDataIncrement(String dataIncrement) {
         this.dataIncrement = dataIncrement;
+    }
+
+    public String getDataVolumeKb() {
+        return dataVolumeKb;
+    }
+
+    public void setDataVolumeKb(String dataVolumeKb) {
+        this.dataVolumeKb = dataVolumeKb;
+    }
+
+    public String getDataIncrementKb() {
+        return dataIncrementKb;
+    }
+
+    public void setDataIncrementKb(String dataIncrementKb) {
+        this.dataIncrementKb = dataIncrementKb;
     }
 
     public List<Table> getSourceTable() {

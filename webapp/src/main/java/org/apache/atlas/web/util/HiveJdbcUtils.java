@@ -22,6 +22,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,6 @@ public class HiveJdbcUtils {
     private static String hiveUrl = "";
     private static String hivePrincipal = "";
     private static boolean kerberosEnable = false;
-    private static String user = "";
 
 
     static {
@@ -85,7 +85,10 @@ public class HiveJdbcUtils {
     }
 
     private static Connection getConnection(String db) throws SQLException, IOException {
-        user = AdminUtils.getUserName();
+        String user = AdminUtils.getUserName();
+        if(StringUtils.isBlank(user)){
+            user = "hive";
+        }
         Connection connection;
         String jdbcUrl;
         if (kerberosEnable) {

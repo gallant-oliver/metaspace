@@ -2,6 +2,7 @@ package org.apache.atlas.web.util;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.testng.annotations.Test;
 
@@ -47,5 +48,8 @@ public class HdfsUtilsTest {
         HdfsUtils.uploadFile(inputStream, "/tmp/pom.xml");
     }
 
+    public static void main(String[] args) {
+
+    }
 
 }
