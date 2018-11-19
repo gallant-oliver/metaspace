@@ -117,7 +117,7 @@ public class SSOFilter implements Filter {
             httpServletResponse.setContentType("text/html;charset=utf-8");
             PrintWriter writer = httpServletResponse.getWriter();
             HashMap<String, String> hashMap = new HashMap();
-            hashMap.put("error", "sso配置错误");
+            hashMap.put("error", "sso异常");
             String j = new Gson().toJson(hashMap);
             writer.print(j);
         } finally {
