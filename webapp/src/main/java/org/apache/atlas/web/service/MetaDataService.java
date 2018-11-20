@@ -347,8 +347,6 @@ public class MetaDataService {
     }
 
 
-
-    @Cacheable(value = "lineageCache", key = "#guid", condition = "#refreshCache==false")
     public TableLineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
                                             int depth, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -391,7 +389,7 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, 1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
@@ -471,10 +469,7 @@ public class MetaDataService {
                 info.setGuid(guid);
                 //relations
                 Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
-                if(Objects.isNull(info.getRelations()) || info.getRelations().size()==0)
-                    info.setRelations(lineageRelations);
-                else
-                    info.getRelations().addAll(lineageRelations);
+
                 //entities
                 List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
                 ColumnLineageInfo.LineageEntity lineageEntity = null;
@@ -494,6 +489,10 @@ public class MetaDataService {
                     lineageEntities.add(lineageEntity);
                 }
                 reOrderRelation(lineageEntities, lineageRelations);
+                if(Objects.isNull(info.getRelations()) || info.getRelations().size()==0)
+                    info.setRelations(lineageRelations);
+                else
+                    info.getRelations().addAll(lineageRelations);
                 if(Objects.isNull(info.getEntities()) || info.getEntities().size()==0)
                     info.setEntities(lineageEntities);
                 else
@@ -1142,7 +1141,7 @@ public class MetaDataService {
         return ret;
     }
 
-    @CacheEvict(value = {"tableCache", "columnCache", "relationCache", "lineageCache", "categoryCache", "tableRelationCache",
+    @CacheEvict(value = {"tableCache", "columnCache", "relationCache", "categoryCache", "tableRelationCache",
                          "databaseCache", "tablePageCache", "columnPageCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
