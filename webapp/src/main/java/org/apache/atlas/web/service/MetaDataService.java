@@ -96,8 +96,6 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
-
-
         Table table  = new Table();
         table.setTableId(guid);
         try {
@@ -453,38 +451,58 @@ public class MetaDataService {
     public ColumnLineageInfo getColumnLineage(String guid, AtlasLineageInfo.LineageDirection direction,
                                  int depth, Boolean refreshCache) throws AtlasBaseException {
         try {
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
-            if(Objects.isNull(lineageInfo)) {
-                throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取字段血缘关系失败");
-            }
+
+            ArrayList<AtlasObjectId> columns = null;
             ColumnLineageInfo info = new ColumnLineageInfo();
-            Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
-            //guid
-            info.setGuid(guid);
-            //relations
-            Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
-            info.setRelations(lineageRelations);
-            //entities
-            List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
-            ColumnLineageInfo.LineageEntity lineageEntity = null;
-            for(String key: entities.keySet()) {
-                lineageEntity = new ColumnLineageInfo.LineageEntity();
-                AtlasEntityHeader atlasEntity = entities.get(key);
-                //判断process类型
-                AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
-                Set<String> types = entityDef.getSuperTypes();
-                Iterator<String> typeIterator = types.iterator();
-                if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
-                    String type = typeIterator.next();
-                    if(type.contains("Process"))
-                        continue;
-                }
-                getColumnEntityInfo(key, lineageEntity, atlasEntity);
-                lineageEntities.add(lineageEntity);
+            AtlasEntity tableEntity = entitiesStore.getById(guid).getEntity();
+            if(Objects.nonNull(tableEntity) && tableEntity.hasAttribute("columns")) {
+                columns = (ArrayList<AtlasObjectId>)tableEntity.getAttribute("columns");
             }
-            reOrderRelation(lineageEntities, lineageRelations);
-            info.setEntities(lineageEntities);
-            info.setRelations(lineageRelations);
+
+            for(int i=0; i<columns.size(); i++) {
+                String columnGuid = columns.get(i).getGuid();
+                AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(columnGuid, direction, depth);
+                if(Objects.isNull(lineageInfo)) {
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取字段血缘关系失败");
+                }
+
+                Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
+                //guid
+                info.setGuid(guid);
+                //relations
+                Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
+                if(Objects.isNull(info.getRelations()) || info.getRelations().size()==0)
+                    info.setRelations(lineageRelations);
+                else
+                    info.getRelations().addAll(lineageRelations);
+                //entities
+                List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+                ColumnLineageInfo.LineageEntity lineageEntity = null;
+                for(String key: entities.keySet()) {
+                    lineageEntity = new ColumnLineageInfo.LineageEntity();
+                    AtlasEntityHeader atlasEntity = entities.get(key);
+                    //判断process类型
+                    AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
+                    Set<String> types = entityDef.getSuperTypes();
+                    Iterator<String> typeIterator = types.iterator();
+                    if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
+                        String type = typeIterator.next();
+                        if(type.contains("Process"))
+                            continue;
+                    }
+                    getColumnEntityInfo(key, lineageEntity, atlasEntity);
+                    lineageEntities.add(lineageEntity);
+                }
+                reOrderRelation(lineageEntities, lineageRelations);
+                if(Objects.isNull(info.getEntities()) || info.getEntities().size()==0)
+                    info.setEntities(lineageEntities);
+                else
+                    info.getEntities().addAll(lineageEntities);
+                //info.setEntities(lineageEntities);
+                //info.setRelations(lineageRelations);
+            }
+
+
             return info;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
@@ -529,7 +547,7 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, 1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);

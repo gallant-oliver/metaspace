@@ -45,7 +45,7 @@ import java.util.Set;
 @Singleton
 @Service
 public class MetaDataREST {
-    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.DiscoveryREST");
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.MetaDataREST");
     @Autowired
     private SearchService searchService;
     @Context
