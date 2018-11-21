@@ -141,8 +141,7 @@ public class HiveJdbcUtils {
      * @param
      * @return
      */
-
-    public static TableMetadata metadata(String tableName, String db) {
+    public static TableMetadata metadata(String db, String tableName) {
         TableMetadata ret = new TableMetadata();
         try (Connection conn = getConnection(db)) {
             Statement stmt = conn.createStatement();
