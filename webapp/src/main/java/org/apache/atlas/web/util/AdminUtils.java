@@ -12,16 +12,14 @@ public class AdminUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(AdminUtils.class);
 
-    public static String getUserName(){
-        try {
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            Map<String,String> user = (Map)request.getSession().getAttribute("user");
+    public static String getUserName() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        Map<String, String> user = (Map) request.getSession().getAttribute("user");
+        if (user != null) {
             String userName = user.get("LoginEmail").split("@")[0];
             return userName;
-        }catch (Exception e){
-            LOG.error(e.getMessage(), e);
+        } else {
             return "";
         }
-
     }
 }
