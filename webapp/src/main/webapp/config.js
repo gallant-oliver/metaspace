@@ -1,6 +1,6 @@
 window.systemConfigs = {
   // 当前系统的logo
-  "TITLE": "MetaSpace",
+  "TITLE": "数据治理",
 
   // 当前系统的版本号
   "VERSION": "v1.0.0",
