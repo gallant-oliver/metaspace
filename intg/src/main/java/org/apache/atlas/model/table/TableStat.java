@@ -47,14 +47,19 @@ public class TableStat implements Cloneable {
     private String dataVolume;
     private Long dataVolumeBytes;
     private String dataIncrement;
-    private String dataVolumeKb;
-    private String dataIncrementKb;
+    private Long dataIncrementBytes;
+
+    private Double dataVolumeNum;
+    private String dataVolumeNumUnit;
+
+    private Double dataIncrementNum;
+    private String dataIncrementNumUnit;
     private List<Table> sourceTable = new ArrayList<>();
 
     public TableStat() {
     }
 
-    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, String dataVolumeKb, String dataIncrementKb, List<Table> sourceTable) {
+    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, Long dataIncrementBytes, List<Table> sourceTable) {
         this.tableId = tableId;
         this.tableName = tableName;
         this.date = date;
@@ -65,8 +70,7 @@ public class TableStat implements Cloneable {
         this.dataVolume = dataVolume;
         this.dataVolumeBytes = dataVolumeBytes;
         this.dataIncrement = dataIncrement;
-        this.dataVolumeKb = dataVolumeKb;
-        this.dataIncrementKb = dataIncrementKb;
+        this.dataIncrementBytes = dataIncrementBytes;
         this.sourceTable = sourceTable;
     }
 
@@ -150,20 +154,36 @@ public class TableStat implements Cloneable {
         this.dataIncrement = dataIncrement;
     }
 
-    public String getDataVolumeKb() {
-        return dataVolumeKb;
+    public Double getDataVolumeNum() {
+        return dataVolumeNum;
     }
 
-    public void setDataVolumeKb(String dataVolumeKb) {
-        this.dataVolumeKb = dataVolumeKb;
+    public void setDataVolumeNum(Double dataVolumeNum) {
+        this.dataVolumeNum = dataVolumeNum;
     }
 
-    public String getDataIncrementKb() {
-        return dataIncrementKb;
+    public String getDataVolumeNumUnit() {
+        return dataVolumeNumUnit;
     }
 
-    public void setDataIncrementKb(String dataIncrementKb) {
-        this.dataIncrementKb = dataIncrementKb;
+    public void setDataVolumeNumUnit(String dataVolumeNumUnit) {
+        this.dataVolumeNumUnit = dataVolumeNumUnit;
+    }
+
+    public Double getDataIncrementNum() {
+        return dataIncrementNum;
+    }
+
+    public void setDataIncrementNum(Double dataIncrementNum) {
+        this.dataIncrementNum = dataIncrementNum;
+    }
+
+    public String getDataIncrementNumUnit() {
+        return dataIncrementNumUnit;
+    }
+
+    public void setDataIncrementNumUnit(String dataIncrementNumUnit) {
+        this.dataIncrementNumUnit = dataIncrementNumUnit;
     }
 
     public List<Table> getSourceTable() {
@@ -172,6 +192,35 @@ public class TableStat implements Cloneable {
 
     public void setSourceTable(List<Table> sourceTable) {
         this.sourceTable = sourceTable;
+    }
+
+    public Long getDataIncrementBytes() {
+        return dataIncrementBytes;
+    }
+
+    public void setDataIncrementBytes(Long dataIncrementBytes) {
+        this.dataIncrementBytes = dataIncrementBytes;
+    }
+
+    @Override
+    public String toString() {
+        return "TableStat{" +
+               "tableId='" + tableId + '\'' +
+               ", tableName='" + tableName + '\'' +
+               ", date='" + date + '\'' +
+               ", dateType='" + dateType + '\'' +
+               ", fieldNum=" + fieldNum +
+               ", fileNum=" + fileNum +
+               ", recordNum=" + recordNum +
+               ", dataVolume='" + dataVolume + '\'' +
+               ", dataVolumeBytes=" + dataVolumeBytes +
+               ", dataIncrement='" + dataIncrement + '\'' +
+               ", dataVolumeNum=" + dataVolumeNum +
+               ", dataVolumeNumUnit='" + dataVolumeNumUnit + '\'' +
+               ", dataIncrementNum=" + dataIncrementNum +
+               ", dataIncrementNumUnit='" + dataIncrementNumUnit + '\'' +
+               ", sourceTable=" + sourceTable +
+               '}';
     }
 
     @Override
