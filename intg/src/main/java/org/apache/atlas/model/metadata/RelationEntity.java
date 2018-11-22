@@ -53,26 +53,6 @@ public class RelationEntity implements Serializable  {
         this.relations = relatios;
     }
 
-    public static class ChildCatetory {
-        String guid;
-        String name;
-
-        public String getGuid() {
-            return guid;
-        }
-
-        public void setGuid(String guid) {
-            this.guid = guid;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
 
     public static class RelationInfo implements Serializable {
         private String guid;
@@ -81,6 +61,7 @@ public class RelationEntity implements Serializable  {
         private String path;
         private String relationshipGuid;
         private String status;
+        private String categoryGuid;
 
         public String getGuid() {
             return guid;
@@ -128,6 +109,14 @@ public class RelationEntity implements Serializable  {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        public String getCategoryGuid() {
+            return categoryGuid;
+        }
+
+        public void setCategoryGuid(String categoryGuid) {
+            this.categoryGuid = categoryGuid;
         }
     }
 

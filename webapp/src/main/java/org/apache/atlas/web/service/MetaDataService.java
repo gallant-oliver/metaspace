@@ -962,12 +962,12 @@ public class MetaDataService {
         children.setCategoryName(glossaryCategory.getName());
         //获取当前Category的子Category
         Set<AtlasRelatedCategoryHeader> childrenCategories =glossaryCategory.getChildrenCategories();
-        Set<RelationEntity.ChildCatetory> childs = new HashSet<>();
+        Set<CategoryChildren.ChildCatetory> childs = new HashSet<>();
         if(Objects.nonNull(childrenCategories)) {
             Iterator<AtlasRelatedCategoryHeader> it = childrenCategories.iterator();
             while(it.hasNext()) {
                 AtlasRelatedCategoryHeader atlasRelatedCategory = it.next();
-                RelationEntity.ChildCatetory childCatetory = new RelationEntity.ChildCatetory();
+                CategoryChildren.ChildCatetory childCatetory = new CategoryChildren.ChildCatetory();
                 childCatetory.setGuid(atlasRelatedCategory.getCategoryGuid());
                 childCatetory.setName(atlasRelatedCategory.getDisplayText());
                 childs.add(childCatetory);

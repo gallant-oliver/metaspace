@@ -37,6 +37,8 @@ public class CategoryEntity implements Serializable {
     private String upBrothCategoryGuid;
     private String downBrothCategoryGuid;
 
+    private String parentCategoryGuid;
+    private Set<String> childrenCategoriesGuid;
 
     // Category hierarchy links
     private AtlasRelatedCategoryHeader parentCategory;
@@ -112,5 +114,21 @@ public class CategoryEntity implements Serializable {
 
     public void setChildrenCategories(Set<AtlasRelatedCategoryHeader> childrenCategories) {
         this.childrenCategories = childrenCategories;
+    }
+
+    public String getParentCategoryGuid() {
+        return parentCategoryGuid;
+    }
+
+    public void setParentCategoryGuid(String parentCategoryGuid) {
+        this.parentCategoryGuid = parentCategoryGuid;
+    }
+
+    public Set<String> getChildrenCategoriesGuid() {
+        return childrenCategoriesGuid;
+    }
+
+    public void setChildrenCategoriesGuid(Set<String> childrenCategoriesGuid) {
+        this.childrenCategoriesGuid = childrenCategoriesGuid;
     }
 }
