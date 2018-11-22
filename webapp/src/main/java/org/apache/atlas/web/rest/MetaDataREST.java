@@ -45,7 +45,7 @@ import java.util.Set;
 @Singleton
 @Service
 public class MetaDataREST {
-    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.DiscoveryREST");
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.MetaDataREST");
     @Autowired
     private SearchService searchService;
     @Context
@@ -268,20 +268,28 @@ public class MetaDataREST {
     @Path("/table/lineage/depth/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TableLineageInfo.LineageEntity getLineageInfo(@PathParam("guid") String guid) throws AtlasBaseException {
+    public LineageDepthInfo getTableLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
             }
-            return metadataService.getLineageInfo(guid);
+            return metadataService.getTableLineageDepthInfo(guid);
         } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
-
+    /**
+     * 获取字段血缘
+     * @param guid
+     * @param direction
+     * @param depth
+     * @param refreshCache
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/column/lineage/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -297,6 +305,31 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnLineage");
             }
             return metadataService.getColumnLineage(guid, direction, depth, refreshCache);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    /**
+     * 字段血缘深度详情
+     *
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/column/lineage/depth/{guid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public LineageDepthInfo getColumnLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
+            }
+            return metadataService.getColumnLineageDepthInfo(guid);
         } finally {
             AtlasPerfTracer.log(perf);
         }

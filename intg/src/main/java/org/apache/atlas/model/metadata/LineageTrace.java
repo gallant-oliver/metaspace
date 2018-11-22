@@ -23,7 +23,7 @@ import java.io.Serializable;
  * @author sunhaoning
  * @date 2018/10/18 9:36
  */
-public class LineageRelation implements Serializable {
+public class LineageTrace implements Serializable {
 
     private String fromEntityId;
     private String toEntityId;

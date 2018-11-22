@@ -29,7 +29,7 @@ import java.io.IOException;
 public class HbaseUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HbaseUtils.class);
     private static boolean kerberosEnable = false;
-    private static String hbaseConf = "/etc/hbase/conf";
+    private static String hbaseConf = "G:\\gridsum\\projects\\atlas\\deploy\\conf";
     private static Configuration configuration = HBaseConfiguration.create();
 
     static {

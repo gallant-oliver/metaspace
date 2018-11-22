@@ -28,9 +28,8 @@ import java.util.Set;
 public class ColumnLineageInfo implements Serializable {
 
     private String guid;
-    private Integer lineageDepth;
     private List<LineageEntity> guidEntityMap;
-    private Set<LineageRelation> relations;
+    private Set<LineageTrace> relations;
 
     public String getGuid() {
         return guid;
@@ -38,14 +37,6 @@ public class ColumnLineageInfo implements Serializable {
 
     public void setGuid(String guid) {
         this.guid = guid;
-    }
-
-    public Integer getLineageDepth() {
-        return lineageDepth;
-    }
-
-    public void setLineageDepth(Integer lineageDepth) {
-        this.lineageDepth = lineageDepth;
     }
 
     public List<LineageEntity> getEntities() {
@@ -56,38 +47,21 @@ public class ColumnLineageInfo implements Serializable {
         this.guidEntityMap = guidEntityMap;
     }
 
-    public Set<LineageRelation> getRelations() {
+    public Set<LineageTrace> getRelations() {
         return relations;
     }
 
-    public void setRelations(Set<LineageRelation> relations) {
+    public void setRelations(Set<LineageTrace> relations) {
         this.relations = relations;
     }
 
     public static class LineageEntity implements Serializable {
-
-        private String typeName;
         private String guid;
+        private String tableGuid;
         private String tableName;
+        private String dbGuid;
         private String dbName;
-        private long directUpStreamNum;
-        private long directDownStreamNum;
-        private long upStreamLevelNum;
-        private long downStreamLevelNum;
-        private String columnUpdateTime;
-        private String displayText;
-        private Boolean process;
-        private String status;
         private String columnName;
-
-
-        public String getTypeName() {
-            return typeName;
-        }
-
-        public void setTypeName(String typeName) {
-            this.typeName = typeName;
-        }
 
         public String getGuid() {
             return guid;
@@ -113,76 +87,28 @@ public class ColumnLineageInfo implements Serializable {
             this.dbName = dbName;
         }
 
-        public long getDirectUpStreamNum() {
-            return directUpStreamNum;
-        }
-
-        public void setDirectUpStreamNum(long directUpStreamNum) {
-            this.directUpStreamNum = directUpStreamNum;
-        }
-
-        public long getDirectDownStreamNum() {
-            return directDownStreamNum;
-        }
-
-        public void setDirectDownStreamNum(long directDownStreamNum) {
-            this.directDownStreamNum = directDownStreamNum;
-        }
-
-        public long getUpStreamLevelNum() {
-            return upStreamLevelNum;
-        }
-
-        public void setUpStreamLevelNum(long upStreamLevelNum) {
-            this.upStreamLevelNum = upStreamLevelNum;
-        }
-
-        public long getDownStreamLevelNum() {
-            return downStreamLevelNum;
-        }
-
-        public void setDownStreamLevelNum(long downStreamLevelNum) {
-            this.downStreamLevelNum = downStreamLevelNum;
-        }
-
-        public String getColumnUpdateTime() {
-            return columnUpdateTime;
-        }
-
-        public void setColumnUpdateTime(String columnUpdateTime) {
-            this.columnUpdateTime = columnUpdateTime;
-        }
-
-        public String getDisplayText() {
-            return displayText;
-        }
-
-        public void setDisplayText(String displayText) {
-            this.displayText = displayText;
-        }
-
-        public Boolean getProcess() {
-            return process;
-        }
-
-        public void setProcess(Boolean process) {
-            this.process = process;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
         public String getColumnName() {
             return columnName;
         }
 
         public void setColumnName(String columnName) {
             this.columnName = columnName;
+        }
+
+        public String getTableGuid() {
+            return tableGuid;
+        }
+
+        public void setTableGuid(String tableGuid) {
+            this.tableGuid = tableGuid;
+        }
+
+        public String getDbGuid() {
+            return dbGuid;
+        }
+
+        public void setDbGuid(String dbGuid) {
+            this.dbGuid = dbGuid;
         }
     }
 }
