@@ -486,13 +486,13 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public int assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+        //Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
-            return dataManageService.assignTablesToCategory(categoryGuid, relations);
+                return dataManageService.assignTablesToCategory(categoryGuid, relations);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         } finally {
@@ -588,7 +588,7 @@ public class MetaDataREST {
 
     @DELETE
     @Path("/category/{categoryGuid}/assignedEntities")
-    public Response removeRelationAssignmentFromTables(@PathParam("categoryGuid") String categoryGuid, List<String> relationshipList) throws AtlasBaseException {
+    public Response removeRelationAssignmentFromTables(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relationshipList) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
