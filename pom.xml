@@ -74,10 +74,10 @@
     </mailingLists>
 
     <scm>
-        <connection>git@gitlab.gridsum.com:gdp/dev/metaspace.git</connection>
-        <developerConnection>git@gitlab.gridsum.com:gdp/dev/metaspace.git</developerConnection>
-        <tag>dev</tag>
-        <url>https://gitlab.gridsum.com/gdp/dev/metaspace.git</url>
+        <connection>scm:git:git://git.apache.org/atlas.git</connection>
+        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/atlas.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/apache/atlas.git</url>
     </scm>
 
     <developers>
