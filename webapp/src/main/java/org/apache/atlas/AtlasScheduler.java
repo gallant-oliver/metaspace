@@ -177,7 +177,6 @@ public class AtlasScheduler {
         long totalSize = metadata.getTotalSize();
         tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
         tableStat.setDataVolumeBytes(totalSize);
-        tableStat.setDataVolumeKb(BytesUtils.kb(totalSize));
         //文件个数
         int fieldNum = metadata.getNumFiles();
         tableStat.setFileNum(fieldNum);
@@ -226,14 +225,15 @@ public class AtlasScheduler {
         Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, DateUtils.yesterday());
         tableStat.setDateType(DateType.DAY.getLiteral());
         long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
+        tableStat.setDataIncrementBytes(dayIncrement);
         tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
-        tableStat.setDataIncrementKb(BytesUtils.kb(dayIncrement));
         tableStat.setDate(date);
         tableStatList.add(tableStat);
 
         TableStat tableStatMonth = (TableStat) tableStat.clone();
         tableStatMonth.setDateType(DateType.MONTH.getLiteral());
         long monthIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("month");
+        tableStatMonth.setDataIncrementBytes(monthIncrement);
         tableStatMonth.setDataIncrement(BytesUtils.humanReadableByteCount(monthIncrement));
         tableStatMonth.setDate(DateUtils.month(date));
         tableStatList.add(tableStatMonth);
@@ -241,6 +241,7 @@ public class AtlasScheduler {
         TableStat tableStatYear = (TableStat) tableStat.clone();
         tableStatYear.setDateType(DateType.YEAR.getLiteral());
         long yearIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("year");
+        tableStatYear.setDataIncrementBytes(yearIncrement);
         tableStatYear.setDataIncrement(BytesUtils.humanReadableByteCount(yearIncrement));
         tableStatYear.setDate(DateUtils.year(date));
         tableStatList.add(tableStatYear);

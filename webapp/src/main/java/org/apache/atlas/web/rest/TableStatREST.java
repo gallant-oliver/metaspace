@@ -13,6 +13,8 @@
 
 package org.apache.atlas.web.rest;
 
+import static org.apache.atlas.utils.BytesUtils.byteCountByUnit;
+
 import org.apache.atlas.AtlasScheduler;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -44,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +125,43 @@ public class TableStatREST {
     public PageList<TableStat> history(TableStatRequest request) throws Exception {
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
         List<TableStat> statList = tableStatService.query(request).getRight();
+        addDataNumAndUnit(statList);
         return new PageList<>(request.getOffset(), pair.getLeft(), statList);
+    }
+
+    /**
+     * 前端折线图需要，统一单位
+     * @param statList
+     */
+    private void addDataNumAndUnit(List<TableStat> statList) {
+
+        statList.sort(new Comparator<TableStat>() {
+            @Override
+            public int compare(TableStat o1, TableStat o2) {
+                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ?  -1 : 1;
+            }
+        });
+        String unit = statList.get(0).getDataVolume().split(" ")[1];
+        statList.forEach(tableStat ->{
+            Double dataVolumeBytes = byteCountByUnit(tableStat.getDataVolumeBytes(), unit);
+            tableStat.setDataVolumeNum(dataVolumeBytes);
+            tableStat.setDataVolumeNumUnit(unit);
+        });
+
+        //dataIncrement
+        statList.sort(new Comparator<TableStat>() {
+            @Override
+            public int compare(TableStat o1, TableStat o2) {
+                return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ?  -1 : 1;
+            }
+        });
+        String unit2 = statList.get(0).getDataIncrement().split(" ")[1];
+        statList.forEach(tableStat ->{
+            Double dataIncrementBytes = byteCountByUnit(tableStat.getDataIncrementBytes(), unit2);
+            tableStat.setDataIncrementNum(dataIncrementBytes);
+            tableStat.setDataIncrementNumUnit(unit2);
+        });
+
     }
 
     @POST

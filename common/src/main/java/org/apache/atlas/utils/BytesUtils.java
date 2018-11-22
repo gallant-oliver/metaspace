@@ -13,12 +13,18 @@
 
 package org.apache.atlas.utils;
 
+import org.apache.atlas.model.table.TableStat;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class BytesUtils {
 
     private static final int UNIT = 1024;
+    private static String[] units = new String[]{"KB", "MB", "GB", "TB", "PB", "EB"};
 
     public static String humanReadableByteCount(long bytes) {
         if (bytes < UNIT) {
@@ -29,10 +35,18 @@ public class BytesUtils {
         return String.format("%.2f %sB", bytes / Math.pow(UNIT, exp), pre);
     }
 
-    public static String kb(long bytes) {
-        int exp = (int) (Math.log(bytes) / Math.log(UNIT));
-        return String.format("%.2f", bytes / Math.pow(UNIT, 1));
+    public static Double byteCountByUnit(long bytes, String unit) {
+        if ("B".equals(unit)) {
+            return Double.valueOf(String.valueOf(bytes));
+        }
+        int exp = 1;
+        for (int i = 0; i < units.length; i++) {
+            if (units[i].equals(unit)) {
+                exp += i;
+                break;
+            }
+        }
+        return Double.valueOf(String.format("%.2f", bytes / Math.pow(UNIT, exp)));
     }
-
 
 }
