@@ -531,14 +531,10 @@ public class MetaDataService {
                             fromNode.setToEntityId(toNode.getToEntityId());
                         }
                     }
-                    break;
                 }
             }
         }
-        Iterator<LineageTrace> removeIterator = removeNode.iterator();
-        while (removeIterator.hasNext()) {
-            lineageRelations.remove(removeIterator.next());
-        }
+        removeNode.stream().forEach(node -> lineageRelations.remove(node));
     }
 
     public LineageDepthInfo getColumnLineageDepthInfo(String guid) throws AtlasBaseException {
