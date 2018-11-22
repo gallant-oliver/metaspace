@@ -90,7 +90,8 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
         JanusGraphManagement mgmt = null;
 
         try {
-            mgmt = AtlasJanusGraphDatabase.getGraphInstance().openManagement();
+
+        mgmt = AtlasJanusGraphDatabase.getGraphInstance().openManagement();
 
             Iterable<PropertyKey> keys = mgmt.getRelationTypes(PropertyKey.class);
 
