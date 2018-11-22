@@ -125,7 +125,9 @@ public class TableStatREST {
     public PageList<TableStat> history(TableStatRequest request) throws Exception {
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
         List<TableStat> statList = tableStatService.query(request).getRight();
-        addDataNumAndUnit(statList);
+        if(!statList.isEmpty()){
+            addDataNumAndUnit(statList);
+        }
         return new PageList<>(request.getOffset(), pair.getLeft(), statList);
     }
 
