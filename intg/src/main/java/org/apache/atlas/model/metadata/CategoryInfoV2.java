@@ -26,7 +26,7 @@ public class CategoryInfoV2 {
     private String guid;
     private String name;
     private String description;
-    private String direct;
+    private String direction;
     private String parentCategoryGuid;
 
     public String getGuid() {
@@ -53,12 +53,12 @@ public class CategoryInfoV2 {
         this.description = description;
     }
 
-    public String getDirect() {
-        return direct;
+    public String getDirection() {
+        return direction;
     }
 
-    public void setDirect(String direct) {
-        this.direct = direct;
+    public void setDirection(String direction) {
+        this.direction = direction;
     }
 
     public String getParentCategoryGuid() {

@@ -119,7 +119,7 @@ public class DataManageService {
             }
         } else {
             //同级目录
-            if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirect(), "up")) {
+            if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "up")) {
                 entity.setDownBrotherCategoryGuid(currentCategoryGuid);
                 String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                 if (Objects.nonNull(upBrotherGuid)) {
@@ -127,7 +127,7 @@ public class DataManageService {
                     dao.updateDownBrothCatalogGuid(upBrotherGuid, newCategoryGuid);
                 }
                 dao.updateUpBrothCatalogGuid(currentCategoryGuid, newCategoryGuid);
-            } else if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirect(), "down")) {
+            } else if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
                 entity.setUpBrotherCategoryGuid(info.getGuid());
                 String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                 if (Objects.nonNull(downBrotherGuid)) {
