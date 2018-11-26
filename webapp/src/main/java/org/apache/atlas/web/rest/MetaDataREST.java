@@ -338,7 +338,6 @@ public class MetaDataREST {
         }
     }
 
-
     /*@POST
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -377,7 +376,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
 
     /*@POST
     @Path("/update/category")
@@ -530,14 +528,14 @@ public class MetaDataREST {
     @Path("/category/relations/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RelationEntity getCategoryRelations(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid,RelationQuery relationQuery) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid);
+            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
         } finally {
@@ -586,14 +584,19 @@ public class MetaDataREST {
         return Response.status(200).entity("success").build();
     }*/
 
+    /**
+     * 删除关联关系
+     * @param relationshipList
+     * @return
+     * @throws AtlasBaseException
+     */
     @DELETE
-    @Path("/category/{categoryGuid}/assignedEntities")
-    public Response removeRelationAssignmentFromTables(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relationshipList) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+    @Path("/category/relation")
+    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + categoryGuid + ")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
             }
             dataManageService.removeRelationAssignmentFromTables(relationshipList);
         } finally {
@@ -631,7 +634,7 @@ public class MetaDataREST {
     @Path("/table/relations/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {

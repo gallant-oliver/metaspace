@@ -24,8 +24,8 @@ package org.apache.atlas.model.metadata;
 public class RelationQuery {
     private String categoryGuid;
     private String filterTableName;
-    private Integer offset;
-    private Integer limit;
+    private int offset;
+    private int limit;
 
     public String getCategoryGuid() {
         return categoryGuid;
@@ -43,19 +43,19 @@ public class RelationQuery {
         this.filterTableName = filterTableName;
     }
 
-    public Integer getOffset() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setOffset(Integer offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 
-    public Integer getLimit() {
+    public int getLimit() {
         return limit;
     }
 
-    public void setLimit(Integer limit) {
+    public void setLimit(int limit) {
         this.limit = limit;
     }
 }
