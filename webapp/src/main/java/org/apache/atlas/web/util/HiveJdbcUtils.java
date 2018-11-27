@@ -86,9 +86,29 @@ public class HiveJdbcUtils {
 
     private static Connection getConnection(String db) throws SQLException, IOException {
         String user = AdminUtils.getUserName();
-        if(StringUtils.isBlank(user)){
-            user = "hive";
+        Connection connection;
+        String jdbcUrl;
+        if (kerberosEnable) {
+            //自动续约
+            if (UserGroupInformation.isLoginKeytabBased()) {
+                UserGroupInformation.getLoginUser().reloginFromKeytab();
+            } else if (UserGroupInformation.isLoginTicketBased()) {
+                UserGroupInformation.getLoginUser().reloginFromTicketCache();
+            }
+            jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+            connection = DriverManager.getConnection(jdbcUrl);
+        } else {
+            jdbcUrl = hiveUrl + "/" + db;
+            connection = DriverManager.getConnection(jdbcUrl, user, "");
         }
+        return connection;
+    }
+
+    /**
+     * 系统调度
+     */
+    private static Connection getSystemConnection(String db) throws SQLException, IOException {
+        String user = "hive";
         Connection connection;
         String jdbcUrl;
         if (kerberosEnable) {
@@ -167,6 +187,36 @@ public class HiveJdbcUtils {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public static TableMetadata systemMetadata(String dbAndtableName) {
+        String[] split = dbAndtableName.split("\\.");
+        String db = split[0];
+        String tableName = split[1];
+        TableMetadata ret = new TableMetadata();
+        try (Connection conn = getSystemConnection(db)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
+            while (rs.next()) {
+                String key = rs.getString("prpt_name");
+                String value = rs.getString("prpt_value");
+                if ("totalSize".equals(key)) {
+                    ret.setTotalSize(Long.valueOf(value));
+                }
+                if ("numFiles".equals(key)) {
+                    ret.setNumFiles(Integer.valueOf(value));
+                }
+                if ("numRows".equals(key)) {
+                    ret.setNumRows(Long.valueOf(value));
+                }
+            }
+            return ret;
+        } catch (SQLException e) {
+            LOG.debug(e.getMessage(), e);
+            return ret;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException {

@@ -172,7 +172,7 @@ public class AtlasScheduler {
 
         tableStat.setTableName(displayName);
 
-        TableMetadata metadata = HiveJdbcUtils.metadata(tableName);
+        TableMetadata metadata = HiveJdbcUtils.systemMetadata(tableName);
         //表数据量
         long totalSize = metadata.getTotalSize();
         tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
