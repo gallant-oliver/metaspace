@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
 import java.util.Map;
 
 public class AdminUtils {
@@ -13,12 +14,13 @@ public class AdminUtils {
     private static final Logger LOG = LoggerFactory.getLogger(AdminUtils.class);
 
     public static String getUserName() {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        Map<String, String> user = (Map) request.getSession().getAttribute("user");
-        if (user != null) {
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            Map<String, String> user = (Map) request.getSession().getAttribute("user");
             String userName = user.get("LoginEmail").split("@")[0];
             return userName;
-        } else {
+        } catch (Exception e) {
+            LOG.debug("从session获取用户失败", e);
             return "";
         }
     }
