@@ -474,12 +474,11 @@ public class MetaDataService {
                 info.setGuid(guid);
                 //relations
                 Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
-
                 //entities
                 List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
-                ColumnLineageInfo.LineageEntity lineageEntity = null;
+
                 for(String key: entities.keySet()) {
-                    lineageEntity = new ColumnLineageInfo.LineageEntity();
+
                     AtlasEntityHeader atlasEntity = entities.get(key);
                     //判断process类型
                     AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
@@ -490,7 +489,7 @@ public class MetaDataService {
                         if(type.contains("Process"))
                             continue;
                     }
-                    getColumnEntityInfo(key, lineageEntity, atlasEntity);
+                    ColumnLineageInfo.LineageEntity lineageEntity = getColumnEntityInfo(key, atlasEntity);
                     lineageEntities.add(lineageEntity);
                 }
                 reOrderRelation(lineageEntities, lineageRelations);
@@ -503,14 +502,36 @@ public class MetaDataService {
                     info.setEntities(lineageEntities);
                 else
                     info.getEntities().addAll(lineageEntities);
-                //info.setEntities(lineageEntities);
-                //info.setRelations(lineageRelations);
             }
-
-
+            getAllTableLineageColumns(info.getEntities());
             return info;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    public void getAllTableLineageColumns(List<ColumnLineageInfo.LineageEntity> entities) throws AtlasBaseException {
+        Set<String> tables = new HashSet<>();
+        for(ColumnLineageInfo.LineageEntity entity : entities) {
+            String tableGuid = entity.getTableGuid();
+            if(Objects.nonNull(tableGuid))
+                tables.add(tableGuid);
+        }
+        entities.clear();
+        Iterator<String> iterator = tables.iterator();
+        while(iterator.hasNext()) {
+            String guid = iterator.next();
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
+
+            Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
+            for(String key: referredEntities.keySet()) {
+                AtlasEntity referredEntity = referredEntities.get(key);
+                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                    AtlasEntityHeader header = entitiesStore.getHeaderById(referredEntity.getGuid());
+                    ColumnLineageInfo.LineageEntity lineageEntity = getColumnEntityInfo(key, header);
+                    entities.add(lineageEntity);
+                }
+            }
         }
     }
 
@@ -531,10 +552,6 @@ public class MetaDataService {
                 }
             }
         }
-
-        /*lineageEntities.remove(removeEntity);
-        lineageRelations.removeAll(removeNode);*/
-
         removeNode.stream().forEach(node -> lineageRelations.remove(node));
         removeEntity.stream().forEach(node -> lineageEntities.remove(node));
     }
@@ -665,7 +682,8 @@ public class MetaDataService {
         return lineageEntity;
     }
 
-    public ColumnLineageInfo.LineageEntity getColumnEntityInfo(String guid, ColumnLineageInfo.LineageEntity lineageEntity, AtlasEntityHeader atlasEntity) throws AtlasBaseException{
+    public ColumnLineageInfo.LineageEntity getColumnEntityInfo(String guid, AtlasEntityHeader atlasEntity) throws AtlasBaseException{
+        ColumnLineageInfo.LineageEntity lineageEntity = new ColumnLineageInfo.LineageEntity();
         //guid
         if(Objects.nonNull(atlasEntity.getGuid()))
             lineageEntity.setGuid(atlasEntity.getGuid());
