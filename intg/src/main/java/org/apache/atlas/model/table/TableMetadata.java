@@ -21,6 +21,9 @@ public class TableMetadata {
     private int numFiles;
     private long totalSize;
 
+    public TableMetadata() {
+    }
+
     public TableMetadata(int numFiles, long totalSize) {
         this.numFiles = numFiles;
         this.totalSize = totalSize;

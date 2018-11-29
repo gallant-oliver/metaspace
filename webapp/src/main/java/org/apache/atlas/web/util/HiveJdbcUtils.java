@@ -164,13 +164,17 @@ public class HiveJdbcUtils {
         String db = split[0];
         String tableName = split[1];
         String location = location(db, tableName);
-        ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
-        rs.next();
-        String text = rs.getString(1);
-        String[] s = text.replaceAll("\\s+", "-").split("-");
-        String totalSize = s[2];
-        String numFiles = s[3];
-        return new TableMetadata(Integer.valueOf(numFiles), Long.valueOf(totalSize));
+        if(location != null){
+            ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
+            rs.next();
+            String text = rs.getString(1);
+            String[] s = text.replaceAll("\\s+", "-").split("-");
+            String numFiles = s[2];
+            String totalSize = s[3];
+            return new TableMetadata(Integer.valueOf(numFiles), Long.valueOf(totalSize));
+        }else{//view
+            return new TableMetadata();
+        }
     }
 
 
@@ -182,7 +186,9 @@ public class HiveJdbcUtils {
                 return text.replaceAll("'","");
             }
         }
-        throw new RuntimeException("没有获取到表的location: " + db + "." + tableName);
+        LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
+//        throw new RuntimeException("没有获取到表的location: " + db + "." + tableName);
+        return null;
     }
 
     public static ResultSet systemSelectBySQL(String sql, String db) throws AtlasBaseException {
