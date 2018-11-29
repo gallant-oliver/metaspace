@@ -723,17 +723,17 @@ public class MetaDataService {
     }
 
     public Set<AtlasLineageInfo.LineageRelation> getInDirectRelationNode(String guid, Set<AtlasLineageInfo.LineageRelation> relations) {
-        String processGuid = null;
+        Set<String> processGuids = new HashSet<>();
         for(Iterator it = relations.iterator(); it.hasNext();) {
             AtlasLineageInfo.LineageRelation relation = (AtlasLineageInfo.LineageRelation)it.next();
             if(relation.getToEntityId().equals(guid)) {
-                processGuid = relation.getFromEntityId();
-                break;
+                processGuids.add(relation.getFromEntityId());
             }
         }
 
         Set<AtlasLineageInfo.LineageRelation> directRelations = new HashSet<>();
-        if(Objects.nonNull(processGuid) && processGuid.length()!=0) {
+        for(Iterator proIter = processGuids.iterator(); proIter.hasNext(); ) {
+            String processGuid = (String) proIter.next();
             for (Iterator it = relations.iterator(); it.hasNext(); ) {
                 AtlasLineageInfo.LineageRelation relation = (AtlasLineageInfo.LineageRelation) it.next();
                 if (relation.getToEntityId().equals(processGuid)) {
