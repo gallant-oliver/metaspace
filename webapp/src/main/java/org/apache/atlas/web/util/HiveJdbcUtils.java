@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HiveJdbcUtils {
 
@@ -63,12 +65,12 @@ public class HiveJdbcUtils {
             if (kerberosEnable) {
                 if (
                         conf.getString("metaspace.kerberos.admin") == null ||
-                                conf.getString("metaspace.kerberos.keytab") == null ||
-                                conf.getString("metaspace.hive.principal") == null ||
-                                conf.getString("metaspace.kerberos.admin").equals("") ||
-                                conf.getString("metaspace.kerberos.keytab").equals("") ||
-                                conf.getString("metaspace.hive.principal").equals("")
-                ) {
+                        conf.getString("metaspace.kerberos.keytab") == null ||
+                        conf.getString("metaspace.hive.principal") == null ||
+                        conf.getString("metaspace.kerberos.admin").equals("") ||
+                        conf.getString("metaspace.kerberos.keytab").equals("") ||
+                        conf.getString("metaspace.hive.principal").equals("")
+                        ) {
                     LOG.error("kerberos info incomplete");
                 } else {
                     org.apache.hadoop.conf.Configuration configuration = new
@@ -150,72 +152,46 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static TableMetadata metadata(String dbAndtableName) {
-        String[] split = dbAndtableName.split("\\.");
-        return metadata(split[0], split[1]);
-    }
-
     /**
      * 表数据量大小，单位bytes
+     * 文件个数
      *
      * @param
      * @return
      */
-    public static TableMetadata metadata(String db, String tableName) {
-        TableMetadata ret = new TableMetadata();
-        try (Connection conn = getConnection(db)) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
-            while (rs.next()) {
-                String key = rs.getString("prpt_name");
-                String value = rs.getString("prpt_value");
-                if ("totalSize".equals(key)) {
-                    ret.setTotalSize(Long.valueOf(value));
-                }
-                if ("numFiles".equals(key)) {
-                    ret.setNumFiles(Integer.valueOf(value));
-                }
-                if ("numRows".equals(key)) {
-                    ret.setNumRows(Long.valueOf(value));
-                }
-            }
-            return ret;
-        } catch (SQLException e) {
-            LOG.debug(e.getMessage(), e);
-            return ret;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    public static TableMetadata systemMetadata(String dbAndtableName) {
+    public static TableMetadata systemMetadata(String dbAndtableName) throws Exception {
         String[] split = dbAndtableName.split("\\.");
         String db = split[0];
         String tableName = split[1];
-        TableMetadata ret = new TableMetadata();
-        try (Connection conn = getSystemConnection(db)) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("show tblproperties " + tableName);
-            while (rs.next()) {
-                String key = rs.getString("prpt_name");
-                String value = rs.getString("prpt_value");
-                if ("totalSize".equals(key)) {
-                    ret.setTotalSize(Long.valueOf(value));
-                }
-                if ("numFiles".equals(key)) {
-                    ret.setNumFiles(Integer.valueOf(value));
-                }
-                if ("numRows".equals(key)) {
-                    ret.setNumRows(Long.valueOf(value));
-                }
+        String location = location(db, tableName);
+        ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
+        rs.next();
+        String text = rs.getString(1);
+        String[] s = text.replaceAll("\\s+", "-").split("-");
+        String totalSize = s[2];
+        String numFiles = s[3];
+        return new TableMetadata(Integer.valueOf(numFiles), Long.valueOf(totalSize));
+    }
+
+
+    private static String location(String db, String tableName) throws AtlasBaseException, SQLException {
+        ResultSet rs = systemSelectBySQL("SHOW CREATE TABLE " + tableName, db);
+        while (rs.next()) {
+            String text = rs.getString(1);
+            if (text.contains("hdfs://")) {
+                return text.replaceAll("'","");
             }
-            return ret;
-        } catch (SQLException e) {
-            LOG.debug(e.getMessage(), e);
-            return ret;
+        }
+        throw new RuntimeException("没有获取到表的location: " + db + "." + tableName);
+    }
+
+    public static ResultSet systemSelectBySQL(String sql, String db) throws AtlasBaseException {
+        try {
+            Connection conn = getSystemConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 

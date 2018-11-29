@@ -19,8 +19,12 @@ package org.apache.atlas.model.table;
 public class TableMetadata {
 
     private int numFiles;
-    private long numRows;
     private long totalSize;
+
+    public TableMetadata(int numFiles, long totalSize) {
+        this.numFiles = numFiles;
+        this.totalSize = totalSize;
+    }
 
     public int getNumFiles() {
         return numFiles;
@@ -30,14 +34,6 @@ public class TableMetadata {
         this.numFiles = numFiles;
     }
 
-    public long getNumRows() {
-        return numRows;
-    }
-
-    public void setNumRows(long numRows) {
-        this.numRows = numRows;
-    }
-
     public long getTotalSize() {
         return totalSize;
     }
@@ -45,4 +41,5 @@ public class TableMetadata {
     public void setTotalSize(long totalSize) {
         this.totalSize = totalSize;
     }
+
 }

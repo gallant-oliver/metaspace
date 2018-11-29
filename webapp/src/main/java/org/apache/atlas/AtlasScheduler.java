@@ -180,9 +180,6 @@ public class AtlasScheduler {
         //文件个数
         int fieldNum = metadata.getNumFiles();
         tableStat.setFileNum(fieldNum);
-        //数据行数
-        long recordNum = metadata.getNumRows();
-        tableStat.setRecordNum(recordNum);
 
         //数据来源表
         AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3);
