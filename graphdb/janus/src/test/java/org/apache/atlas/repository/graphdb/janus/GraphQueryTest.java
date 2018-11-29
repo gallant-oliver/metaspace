@@ -46,7 +46,6 @@ import com.google.common.collect.Collections2;
 @Test
 public class GraphQueryTest extends AbstractGraphDatabaseTest {
 
-
     @Test
     public <V, E> void testQueryThatCannotRunInMemory() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
