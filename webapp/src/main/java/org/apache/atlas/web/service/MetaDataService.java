@@ -490,6 +490,7 @@ public class MetaDataService {
                     lineageEntities.add(lineageEntity);
                 }
                 reOrderRelation(lineageEntities, lineageRelations);
+                removeTableEntityAndRelation(lineageEntities, lineageRelations);
                 if(Objects.isNull(info.getRelations()) || info.getRelations().size()==0)
                     info.setRelations(lineageRelations);
                 else
@@ -509,18 +510,48 @@ public class MetaDataService {
         }
     }
 
+    public void removeTableEntityAndRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException{
+        Set<LineageTrace> removeNode = new HashSet<>();
+        Set<ColumnLineageInfo.LineageEntity> removeEntity = new HashSet<>();
+        for(ColumnLineageInfo.LineageEntity entity: lineageEntities) {
+            String guid = entity.getGuid();
+            AtlasEntityHeader header = entitiesStore.getHeaderById(guid);
+            String typeName = header.getTypeName();
+            if(typeName.contains("table")) {
+                removeEntity.add(entity);
+                Iterator<LineageTrace> iterator = lineageRelations.iterator();
+                while(iterator.hasNext()) {
+                    LineageTrace node = iterator.next();
+                    if(node.getFromEntityId().equals(guid))
+                        removeNode.add(node);
+                }
+            }
+        }
+
+        /*lineageEntities.remove(removeEntity);
+        lineageRelations.removeAll(removeNode);*/
+
+        removeNode.stream().forEach(node -> lineageRelations.remove(node));
+        removeEntity.stream().forEach(node -> lineageEntities.remove(node));
+    }
+
     /**
      * 去除Process节点
      * @param lineageEntities
      * @param lineageRelations
      */
-    public void reOrderRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) {
+    public void reOrderRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException {
         Set<LineageTrace> removeNode = new HashSet<>();
         for(ColumnLineageInfo.LineageEntity entity: lineageEntities) {
             String fromGuid = entity.getGuid();
+            AtlasEntityHeader header = entitiesStore.getHeaderById(fromGuid);
+            String typeName = header.getTypeName();
+
             Iterator<LineageTrace> fromIterator = lineageRelations.iterator();
             while(fromIterator.hasNext()) {
                 LineageTrace fromNode = fromIterator.next();
+                if(typeName.contains("table"))
+                    removeNode.add(fromNode);
                 if(fromNode.getFromEntityId().equals(fromGuid)) {
                     String toGuid = fromNode.getToEntityId();
                     Iterator<LineageTrace> toIterator = lineageRelations.iterator();
