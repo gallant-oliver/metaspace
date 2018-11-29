@@ -284,14 +284,14 @@ public class MetaDataService {
             Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
             for(String key: referredEntities.keySet()) {
                 AtlasEntity referredEntity = referredEntities.get(key);
-                if(referredEntity.getTypeName().contains("column")) {
+                if(referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
                     column = new Column();
                     //tableId
                     column.setTableId(guid);
                     //tableName
                     column.setTableName(getEntityAttribute(entity, "name"));
                     //status
-                    column.setStatus(entity.getStatus().name());
+                    column.setStatus(referredEntity.getStatus().name());
                     //databaseId && dataBaseName
                     AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                     column.setDatabaseId(relatedDB.getGuid());
@@ -306,6 +306,7 @@ public class MetaDataService {
                             }
                         }
                     }
+
                     Map<String,Object> attributes = referredEntity.getAttributes();
                     if(attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
                         column.setColumnName(attributes.get("name").toString());
@@ -460,6 +461,9 @@ public class MetaDataService {
 
             for(int i=0; i<columns.size(); i++) {
                 String columnGuid = columns.get(i).getGuid();
+                AtlasEntityHeader header = entitiesStore.getHeaderById(columnGuid);
+                if(header.getStatus().equals(AtlasEntity.Status.DELETED))
+                    continue;
                 AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(columnGuid, direction, depth);
                 if(Objects.isNull(lineageInfo)) {
                     throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取字段血缘关系失败");
