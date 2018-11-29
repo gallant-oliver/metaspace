@@ -29,7 +29,6 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.tablestat.TableStatService;
 import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
-import org.apache.atlas.web.util.AdminUtils;
 import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -70,7 +71,7 @@ public class AtlasScheduler {
     @Scheduled(cron = "0 0 23 * * ?")   //每天晚上11点
     public void insertTableMetadataStat() throws Exception {
         log.info("scheduler start");
-        List<AtlasEntityHeader> tables = allTable();
+        List<AtlasEntityHeader> tables = allActiveTable();
         String date = DateUtils.today();
         List<TableStat> tableStatList = buildTableStatList(tables, date);
         tableStatService.add(tableStatList);
@@ -85,7 +86,7 @@ public class AtlasScheduler {
      */
     public void insertTableMetadataStat(String date) throws Exception {
         log.info("scheduler start");
-        List<AtlasEntityHeader> tables = allTable();
+        List<AtlasEntityHeader> tables = allActiveTable();
         List<TableStat> tableStatList = buildTableStatList(tables, date);
         tableStatService.add(tableStatList);
         log.info("scheduler end");
@@ -137,13 +138,19 @@ public class AtlasScheduler {
      * @return
      * @throws AtlasBaseException
      */
-    private List<AtlasEntityHeader> allTable() throws AtlasBaseException {
+    private List<AtlasEntityHeader> allActiveTable() throws AtlasBaseException {
         SearchParameters parameters = new SearchParameters();
         parameters.setTypeName("hive_table");
         parameters.setOffset(0);
         parameters.setLimit(10000);
         AtlasSearchResult atlasSearchResult = atlasDiscoveryService.searchWithParameters(parameters);
-        return atlasSearchResult.getEntities();
+        List<AtlasEntityHeader> ret = atlasSearchResult.getEntities().stream().filter(new Predicate<AtlasEntityHeader>() {
+            @Override
+            public boolean test(AtlasEntityHeader entity) {
+                return entity.getStatus() == AtlasEntity.Status.ACTIVE;
+            }
+        }).collect(Collectors.toList());
+        return ret;
     }
 
 
