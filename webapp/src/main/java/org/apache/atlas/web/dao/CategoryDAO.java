@@ -41,7 +41,7 @@ public interface CategoryDAO {
     public Set<CategoryEntityV2> getAll();
 
     @Select("select * from table_category where guid=#{guid}")
-    public CategoryEntityV2 query(@Param("guid") String categoryGuid);
+    public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid);
 
     @Select("select count(*) from table_category where qualifiedName=#{qualifiedName}")
     public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);

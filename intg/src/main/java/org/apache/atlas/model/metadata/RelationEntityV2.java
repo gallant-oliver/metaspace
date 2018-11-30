@@ -25,7 +25,6 @@ public class RelationEntityV2 {
 
     private String relationshipGuid;
     private String categoryGuid;
-    private String categoryName;
     private String tableName;
     private String dbName;
     private String tableGuid;
@@ -34,10 +33,9 @@ public class RelationEntityV2 {
 
     public RelationEntityV2() { }
 
-    public RelationEntityV2(String relationshipGuid, String categoryGuid, String categoryName, String tableName, String dbName, String tableGuid, String path, String status) {
+    public RelationEntityV2(String relationshipGuid, String categoryGuid, String tableName, String dbName, String tableGuid, String path, String status) {
         this.relationshipGuid = relationshipGuid;
         this.categoryGuid = categoryGuid;
-        this.categoryName = categoryName;
         this.tableName = tableName;
         this.dbName = dbName;
         this.tableGuid = tableGuid;
@@ -59,14 +57,6 @@ public class RelationEntityV2 {
 
     public void setCategoryGuid(String categoryGuid) {
         this.categoryGuid = categoryGuid;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
     }
 
     public String getTableName() {

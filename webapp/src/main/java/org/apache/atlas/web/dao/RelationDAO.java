@@ -30,8 +30,8 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,categoryName,tableName,dbName,tableGuid,path,status)" +
-            "values(#{relationshipGuid},#{categoryGuid},#{categoryName},#{tableName},#{dbName},#{tableGuid},#{path},#{status})")
+    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,path,status)" +
+            "values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{path},#{status})")
     public int add(RelationEntityV2 entity);
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")

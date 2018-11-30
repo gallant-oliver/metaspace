@@ -364,17 +364,16 @@ public class MetaDataREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryEntityV2 createCategory(CategoryInfoV2 categoryInfo) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
-            dataManageService.createCategory(categoryInfo);
+            return dataManageService.createCategory(categoryInfo);
         } finally {
             AtlasPerfTracer.log(perf);
         }
-        return Response.status(200).entity("success").build();
     }
 
     /*@POST
@@ -403,7 +402,7 @@ public class MetaDataREST {
     @Path("/update/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public int updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public CategoryEntityV2 updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -483,19 +482,20 @@ public class MetaDataREST {
     @Path("/category/{categoryGuid}/assignedEntities")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public int assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
+    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         //Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
-                return dataManageService.assignTablesToCategory(categoryGuid, relations);
+            dataManageService.assignTablesToCategory(categoryGuid, relations);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /*@GET

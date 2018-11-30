@@ -60,7 +60,7 @@ public class DataManageService {
     }
 
     @Transactional
-    public int createCategory(CategoryInfoV2 info) throws Exception {
+    public CategoryEntityV2 createCategory(CategoryInfoV2 info) throws Exception {
         String currentCategoryGuid = info.getGuid();
         CategoryEntityV2 entity = new CategoryEntityV2();
         StringBuffer qualifiedName = new StringBuffer();
@@ -81,12 +81,14 @@ public class DataManageService {
             //qualifiedName
             qualifiedName.append(name);
             entity.setQualifiedName(qualifiedName.toString());
-            return dao.add(entity);
+            dao.add(entity);
+
+            return dao.queryByGuid(newCategoryGuid);
         }
 
         String newCatelogparentGuid = info.getParentCategoryGuid();
         //获取当前catalog
-        CategoryEntityV2 currentEntity = dao.query(currentCategoryGuid);
+        CategoryEntityV2 currentEntity = dao.queryByGuid(currentCategoryGuid);
         String parentQualifiedName = null;
         //创建子目录
         if( Objects.nonNull(newCatelogparentGuid)) {
@@ -97,7 +99,7 @@ public class DataManageService {
             String currentCatalogParentGuid = currentEntity.getParentCategoryGuid();
             if(Objects.nonNull(currentCatalogParentGuid)) {
                 entity.setParentCategoryGuid(currentCatalogParentGuid);
-                CategoryEntityV2 currentCatalogParentEntity = dao.query(currentCatalogParentGuid);
+                CategoryEntityV2 currentCatalogParentEntity = dao.queryByGuid(currentCatalogParentGuid);
                 parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
             }
         }
@@ -137,7 +139,8 @@ public class DataManageService {
                 dao.updateDownBrothCatalogGuid(currentCategoryGuid, newCategoryGuid);
             }
         }
-        return dao.add(entity);
+        dao.add(entity);
+        return dao.queryByGuid(newCategoryGuid);
     }
 
     @Transactional
@@ -150,7 +153,7 @@ public class DataManageService {
         if(relationNum > 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
         }
-        CategoryEntityV2 currentCatalog = dao.query(guid);
+        CategoryEntityV2 currentCatalog = dao.queryByGuid(guid);
         String upBrothCatalogGuid = currentCatalog.getUpBrotherCategoryGuid();
         String downBrothCatalogGuid = currentCatalog.getDownBrotherCategoryGuid();
         if(Objects.nonNull(upBrothCatalogGuid)) {
@@ -162,13 +165,13 @@ public class DataManageService {
         return dao.delete(guid);
     }
 
-    public int updateCategory(CategoryInfoV2 info) throws AtlasBaseException {
+    public CategoryEntityV2 updateCategory(CategoryInfoV2 info) throws AtlasBaseException {
         String guid = info.getGuid();
         String name = info.getName();
         if(Objects.isNull(name)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
         }
-        CategoryEntityV2 currentEntity = dao.query(guid);
+        CategoryEntityV2 currentEntity = dao.queryByGuid(guid);
         String parentQualifiedName = null;
         StringBuffer qualifiedName = new StringBuffer();
         if(Objects.nonNull(currentEntity.getParentCategoryGuid()))
@@ -177,7 +180,7 @@ public class DataManageService {
             qualifiedName.append(parentQualifiedName + ".");
         qualifiedName.append(name);
         int count = dao.queryQualifiedNameNum(qualifiedName.toString());
-        if(count > 0) {
+        if(count > 0 && !currentEntity.getName().equals(info.getName())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
         }
         CategoryEntity entity = new CategoryEntity();
@@ -185,7 +188,9 @@ public class DataManageService {
         entity.setName(info.getName());
         entity.setQualifiedName(qualifiedName.toString());
         entity.setDescription(info.getDescription());
-        return dao.updateCatalogInfo(entity);
+        dao.updateCatalogInfo(entity);
+
+        return dao.queryByGuid(guid);
     }
 
     @Transactional
