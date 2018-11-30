@@ -520,7 +520,7 @@ public class MetaDataService {
                 else
                     info.getEntities().addAll(lineageEntities);
             }
-            getAllTableLineageColumns(info.getEntities());
+            //getAllTableLineageColumns(info.getEntities());
             return info;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
