@@ -350,7 +350,7 @@ public class MetaDataService {
 
 
     public TableLineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
-                                            int depth, Boolean refreshCache) throws AtlasBaseException {
+                                            int depth) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableLineage({}, {}, {})", guid, direction, depth);
         }
@@ -384,7 +384,6 @@ public class MetaDataService {
         }
     }
 
-    //@Cacheable(value = "lineageDepthCache", key = "#guid")
     public LineageDepthInfo getTableLineageDepthInfo(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getLineageInfo({})", guid);
@@ -411,9 +410,9 @@ public class MetaDataService {
                     AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
                     lineageDepthEntity.setDbName(relatedObject.getDisplayText());
 
-                    AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+                    //AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
                     //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
-                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity, fullLineageInfo);
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
             }
             return lineageDepthEntity;
@@ -440,14 +439,13 @@ public class MetaDataService {
         return lineageDepthEntity;
     }
 
-    public LineageDepthInfo getLineageDepthV2(LineageDepthInfo lineageDepthEntity,AtlasLineageInfo fullLineageInfo) throws AtlasBaseException {
-        Set<AtlasLineageInfo.LineageRelation> fullRelations = fullLineageInfo.getRelations();
+    public LineageDepthInfo getLineageDepthV2(LineageDepthInfo lineageDepthEntity) throws AtlasBaseException {
         String guid = lineageDepthEntity.getGuid();
         //直接上游表数量
-        long directUpStreamNum = getInDirectRelationNode(guid, fullRelations).size();
+        long directUpStreamNum = atlasLineageService.getEntityDirectNum(guid, AtlasLineageInfo.LineageDirection.INPUT);
         lineageDepthEntity.setDirectUpStreamNum(directUpStreamNum);
         //直接下游表数量
-        long directDownStreamNum = getOutDirectRelationNode(guid, fullRelations).size();
+        long directDownStreamNum = atlasLineageService.getEntityDirectNum(guid, AtlasLineageInfo.LineageDirection.OUTPUT);
         lineageDepthEntity.setDirectDownStreamNum(directDownStreamNum);
         //上游表层数
         long upStreamLevelNum = atlasLineageService.getLineageDepth(guid, AtlasLineageInfo.LineageDirection.INPUT);
@@ -641,9 +639,9 @@ public class MetaDataService {
                             lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                         }
                     }
-                    AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+                    //AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
                     //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
-                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity, fullLineageInfo);
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
             }
             return lineageDepthEntity;

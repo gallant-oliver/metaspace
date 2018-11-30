@@ -259,7 +259,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableLineage");
             }
-            return metadataService.getTableLineage(guid, direction, depth, refreshCache);
+            return metadataService.getTableLineage(guid, direction, depth);
         } finally {
             AtlasPerfTracer.log(perf);
         }

@@ -90,11 +90,17 @@ public class AtlasGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
 
             case OUTPUT_LINEAGE_DEPTH:
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.inputs'),repeat(inE('__Process.inputs').outV().outE('__Process.outputs').inV()" +
-                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max()";
+                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
 
             case INPUT_LINEAGE_DEPTH:
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.outputs'),repeat(inE('__Process.outputs').outV().outE('__Process.inputs').inV()" +
-                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max()";
+                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
+
+            case DIRECT_PARENT_ENTITY_NUM:
+                return "g.withSack(0).V().has('__guid','%s').inE('__Process.outputs').outV().outE('__Process.inputs').inV().count().toList()";
+
+            case DIRECT_CHILDREN_ENTITY_NUM:
+                return "g.withSack(0).V().has('__guid','%s').inE('__Process.inputs').outV().outE('__Process.outputs').inV().count().toList()";
         }
         return super.getQuery(gremlinQuery);
     }

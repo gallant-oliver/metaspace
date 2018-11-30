@@ -58,6 +58,8 @@ public abstract class AtlasGremlinQueryProvider {
 
         INPUT_LINEAGE_DEPTH,
         OUTPUT_LINEAGE_DEPTH,
+        DIRECT_PARENT_ENTITY_NUM,
+        DIRECT_CHILDREN_ENTITY_NUM,
 
         // Discovery Queries
         BASIC_SEARCH_TYPE_FILTER,

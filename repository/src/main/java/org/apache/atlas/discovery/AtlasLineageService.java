@@ -50,4 +50,6 @@ public interface AtlasLineageService {
     SchemaDetails getSchemaForHiveTableByGuid(String guid) throws AtlasBaseException;
 
     Integer getLineageDepth(String guid, LineageDirection direction) throws AtlasBaseException;
+
+    Integer getEntityDirectNum(String entityGuid, LineageDirection direction) throws AtlasBaseException;
 }

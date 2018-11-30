@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -286,8 +287,11 @@ public class EntityLineageService implements AtlasLineageService {
     @GraphTransaction
     public Integer getLineageDepth(String guid, LineageDirection direction) throws AtlasBaseException {
         String lineageQuery = getLineageDepthQuery(guid, direction);
-        Integer depth = (Integer) graph.executeGremlinScript(lineageQuery, false);
-        return depth;
+        List depthList = (List) graph.executeGremlinScript(lineageQuery, false);
+        if(Objects.nonNull(depthList) && depthList.size()>0)
+            return Integer.parseInt(depthList.get(0).toString());
+        else
+            return 0;
     }
     private String getLineageDepthQuery(String entityGuid, LineageDirection direction) {
         String lineageQuery = null;
@@ -301,6 +305,29 @@ public class EntityLineageService implements AtlasLineageService {
             lineageQuery = String.format(query, entityGuid);
         }
         return lineageQuery;
+    }
 
+    @Override
+    @GraphTransaction
+    public Integer getEntityDirectNum(String guid, LineageDirection direction) throws AtlasBaseException {
+        String lineageQuery = getEntityDirectNumQuery(guid, direction);
+        List depthList = (List) graph.executeGremlinScript(lineageQuery, false);
+        if(Objects.nonNull(depthList) && depthList.size()>0)
+            return Integer.parseInt(depthList.get(0).toString());
+        else
+            return 0;
+    }
+    private String getEntityDirectNumQuery(String entityGuid, LineageDirection direction) {
+        String lineageQuery = null;
+
+        if (direction.equals(LineageDirection.INPUT)) {
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.DIRECT_PARENT_ENTITY_NUM);
+            lineageQuery = String.format(query, entityGuid);
+
+        } else if (direction.equals(LineageDirection.OUTPUT)) {
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.DIRECT_CHILDREN_ENTITY_NUM);
+            lineageQuery = String.format(query, entityGuid);
+        }
+        return lineageQuery;
     }
 }
