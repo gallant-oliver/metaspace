@@ -55,6 +55,10 @@ public class DateUtils {
         return DateTimeFormatter.ISO_LOCAL_DATE.format(LocalDate.now().minusDays(1));
     }
 
+    public static String yesterday(String date) {
+        return DateTimeFormatter.ISO_LOCAL_DATE.format(parseLocalDate(date).minusDays(1));
+    }
+
     /**
      * @param date yyyy-MM-dd
      * @return

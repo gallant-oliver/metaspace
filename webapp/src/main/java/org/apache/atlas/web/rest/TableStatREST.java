@@ -97,7 +97,11 @@ public class TableStatREST {
     @GET
     @Path("/schedule/{date}/{tableName}")
     public void schedule(@PathParam("date") String date, @PathParam("tableName") String tableName) throws Exception {
-        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + tableName + "*' where __state = 'ACTIVE' select __guid orderby __timestamp", "hive_table", "", 0, 1000).getAttributes().getValues();
+        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + tableName + "*' where __state = 'ACTIVE' select __guid orderby __timestamp", "hive_table", "", 1000, 0).getAttributes().getValues();
+
+        if (hiveTables.isEmpty()) {
+            log.info("没有找到表{}", tableName);
+        }
         for (List<Object> table : hiveTables) {
             String tableId = table.get(0).toString();
             atlasScheduler.insertTableMetadataStat(date, tableId);
@@ -125,7 +129,7 @@ public class TableStatREST {
     public PageList<TableStat> history(TableStatRequest request) throws Exception {
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
         List<TableStat> statList = tableStatService.query(request).getRight();
-        if(!statList.isEmpty()){
+        if (!statList.isEmpty()) {
             addDataNumAndUnit(statList);
         }
         return new PageList<>(request.getOffset(), pair.getLeft(), statList);
@@ -133,6 +137,7 @@ public class TableStatREST {
 
     /**
      * 前端折线图需要，统一单位
+     *
      * @param statList
      */
     private void addDataNumAndUnit(List<TableStat> statList) {
@@ -140,11 +145,11 @@ public class TableStatREST {
         statList.sort(new Comparator<TableStat>() {
             @Override
             public int compare(TableStat o1, TableStat o2) {
-                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ?  -1 : 1;
+                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ? -1 : 1;
             }
         });
         String unit = statList.get(0).getDataVolume().split(" ")[1];
-        statList.forEach(tableStat ->{
+        statList.forEach(tableStat -> {
             Double dataVolumeBytes = byteCountByUnit(tableStat.getDataVolumeBytes(), unit);
             tableStat.setDataVolumeNum(dataVolumeBytes);
             tableStat.setDataVolumeNumUnit(unit);
@@ -154,11 +159,11 @@ public class TableStatREST {
         statList.sort(new Comparator<TableStat>() {
             @Override
             public int compare(TableStat o1, TableStat o2) {
-                return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ?  -1 : 1;
+                return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ? -1 : 1;
             }
         });
         String unit2 = statList.get(0).getDataIncrement().split(" ")[1];
-        statList.forEach(tableStat ->{
+        statList.forEach(tableStat -> {
             Double dataIncrementBytes = byteCountByUnit(tableStat.getDataIncrementBytes(), unit2);
             tableStat.setDataIncrementNum(dataIncrementBytes);
             tableStat.setDataIncrementNumUnit(unit2);

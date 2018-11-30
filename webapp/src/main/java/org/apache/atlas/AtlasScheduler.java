@@ -73,8 +73,7 @@ public class AtlasScheduler {
         log.info("scheduler start");
         List<AtlasEntityHeader> tables = allActiveTable();
         String date = DateUtils.today();
-        List<TableStat> tableStatList = buildTableStatList(tables, date);
-        tableStatService.add(tableStatList);
+        insertTableStatList(tables, date);
         log.info("scheduler end");
     }
 
@@ -87,8 +86,7 @@ public class AtlasScheduler {
     public void insertTableMetadataStat(String date) throws Exception {
         log.info("scheduler start");
         List<AtlasEntityHeader> tables = allActiveTable();
-        List<TableStat> tableStatList = buildTableStatList(tables, date);
-        tableStatService.add(tableStatList);
+        insertTableStatList(tables, date);
         log.info("scheduler end");
     }
 
@@ -100,21 +98,21 @@ public class AtlasScheduler {
      * @throws Exception
      */
     public void insertTableMetadataStat(String date, String tableId) throws Exception {
-        log.info("scheduler start");
+        log.info("scheduler start:{},{}", date, tableId);
         List<TableStat> tableStatList = buildTableStat(tableId, date);
         tableStatService.add(tableStatList);
-        log.info("scheduler end");
+        log.info("scheduler end:{},{}", date, tableId);
     }
 
 
     /**
      * 构建指定日期所有元数据表
+     *
      * @param tables
      * @param date
      * @return
      */
-    private List<TableStat> buildTableStatList(List<AtlasEntityHeader> tables, String date) {
-        List<TableStat> tableStatList = new ArrayList<>();
+    private void insertTableStatList(List<AtlasEntityHeader> tables, String date) {
         if (tables != null && !tables.isEmpty()) {
             log.info("table amount {}", tables.size());
             for (int i = 0; i < tables.size(); i++) {
@@ -123,18 +121,20 @@ public class AtlasScheduler {
                 String tableName = tables.get(i).getDisplayText();
                 try {
                     log.info("add tableStat start {} ,index at {}/{}", tableName, i, totalCnt);
-                    tableStatList.addAll(buildTableStat(tableId, date));
+                    List<TableStat> statList = buildTableStat(tableId, date);
+                    tableStatService.add(statList);
                     log.info("add tableStat done {} ,index at {}/{}", tableName, i, totalCnt);
                 } catch (Exception e) {
-                    log.error(e.getMessage(), e);
+                    log.info("add tableStat failed {} ,index at {}/{}", tableName, i, totalCnt);
+                    log.warn(e.getMessage(), e);
                 }
             }
         }
-        return tableStatList;
     }
 
     /**
      * 所有元数据表
+     *
      * @return
      * @throws AtlasBaseException
      */
@@ -226,12 +226,13 @@ public class AtlasScheduler {
         }
 
         //数据增量
-        Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, DateUtils.yesterday());
+        Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, DateUtils.yesterday(date));
         tableStat.setDateType(DateType.DAY.getLiteral());
         long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
         tableStat.setDataIncrementBytes(dayIncrement);
         tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
         tableStat.setDate(date);
+        log.info("day tableStat={}",tableStat);
         tableStatList.add(tableStat);
 
         TableStat tableStatMonth = (TableStat) tableStat.clone();
@@ -241,6 +242,7 @@ public class AtlasScheduler {
         tableStatMonth.setDataIncrement(BytesUtils.humanReadableByteCount(monthIncrement));
         tableStatMonth.setDate(DateUtils.month(date));
         tableStatList.add(tableStatMonth);
+        log.info("month tableStat={}",tableStat);
 
         TableStat tableStatYear = (TableStat) tableStat.clone();
         tableStatYear.setDateType(DateType.YEAR.getLiteral());
@@ -249,6 +251,7 @@ public class AtlasScheduler {
         tableStatYear.setDataIncrement(BytesUtils.humanReadableByteCount(yearIncrement));
         tableStatYear.setDate(DateUtils.year(date));
         tableStatList.add(tableStatYear);
+        log.info("year tableStat={}",tableStat);
         return tableStatList;
     }
 
