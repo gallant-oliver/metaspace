@@ -152,7 +152,6 @@ public class HiveJdbcUtils {
         }
     }
 
-
     private static String location(String db, String tableName) throws AtlasBaseException, SQLException {
         ResultSet rs = systemSelectBySQL("SHOW CREATE TABLE " + tableName, db);
         while (rs.next()) {

@@ -87,6 +87,14 @@ public class AtlasGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
                                            "inE().has('__state', 'ACTIVE').has('tagPropagation', within('TWO_TO_ONE', 'BOTH')).has('_r__guid', neq(guidRelationshipToExclude))" +
                                                 ".not(has('blockedPropagatedClassifications', org.janusgraph.core.attribute.Text.textContains(classificationId))).outV())" +
                             ".dedup().where(without('src')).simplePath()).emit().toList();";
+
+            case OUTPUT_LINEAGE_DEPTH:
+                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.inputs'),repeat(inE('__Process.inputs').outV().outE('__Process.outputs').inV()" +
+                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max()";
+
+            case INPUT_LINEAGE_DEPTH:
+                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.outputs'),repeat(inE('__Process.outputs').outV().outE('__Process.inputs').inV()" +
+                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max()";
         }
         return super.getQuery(gremlinQuery);
     }

@@ -412,7 +412,8 @@ public class MetaDataService {
                     lineageDepthEntity.setDbName(relatedObject.getDisplayText());
 
                     AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
-                    lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
+                    //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity, fullLineageInfo);
                 }
             }
             return lineageDepthEntity;
@@ -436,6 +437,24 @@ public class MetaDataService {
         //下游表层数
         long downStreamLevelNum = getMaxDepth("out", guid, fullRelations);
         lineageDepthEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
+        return lineageDepthEntity;
+    }
+
+    public LineageDepthInfo getLineageDepthV2(LineageDepthInfo lineageDepthEntity,AtlasLineageInfo fullLineageInfo) throws AtlasBaseException {
+        Set<AtlasLineageInfo.LineageRelation> fullRelations = fullLineageInfo.getRelations();
+        String guid = lineageDepthEntity.getGuid();
+        //直接上游表数量
+        long directUpStreamNum = getInDirectRelationNode(guid, fullRelations).size();
+        lineageDepthEntity.setDirectUpStreamNum(directUpStreamNum);
+        //直接下游表数量
+        long directDownStreamNum = getOutDirectRelationNode(guid, fullRelations).size();
+        lineageDepthEntity.setDirectDownStreamNum(directDownStreamNum);
+        //上游表层数
+        long upStreamLevelNum = atlasLineageService.getLineageDepth(guid, AtlasLineageInfo.LineageDirection.INPUT);
+        lineageDepthEntity.setUpStreamLevelNum(upStreamLevelNum);
+        //下游表层数
+        long downStreamLevelNum = atlasLineageService.getLineageDepth(guid, AtlasLineageInfo.LineageDirection.OUTPUT);
+        lineageDepthEntity.setDownStreamLevelNum(downStreamLevelNum);
         return lineageDepthEntity;
     }
 
@@ -623,7 +642,8 @@ public class MetaDataService {
                         }
                     }
                     AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
-                    lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
+                    //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity, fullLineageInfo);
                 }
             }
             return lineageDepthEntity;
