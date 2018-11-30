@@ -13,6 +13,7 @@ gen### Java template
 
 # Log file
 *.log
+logs/
 
 # BlueJ files
 *.ctxt
@@ -2151,3 +2152,55 @@ webapp/target/atlas-webapp-1.0.0/js/views/graph/LineageLayoutView.js
 logs/log.log.2018-11-08.19
 logs/log.log.2018-11-09.13
 logs/log.log.2018-11-09.11
+webapp/target/atlas-webapp-1.0.0/static/js/manifest.e08a13c1.js
+webapp/target/atlas-webapp-1.0.0/static/js/main.e7d9a4b6.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/4.765dd4c7.js
+webapp/target/atlas-webapp-1.0.0/static/js/10.614e71d9.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/10.614e71d9.js
+webapp/target/atlas-webapp-1.0.0/static/js/1.eb6e9579.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/1.eb6e9579.js
+webapp/target/atlas-webapp-1.0.0/static/js/0.57964eb5.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/0.57964eb5.js
+webapp/target/atlas-webapp-1.0.0/static/images/iconfont.c8db14c56c7da70680c9be8346cff2c6.svg
+webapp/target/atlas-webapp-1.0.0/static/images/icon-table-select.cdeea46a019d3e6c6f8860651803ab81.png
+webapp/target/atlas-webapp-1.0.0/static/images/icon-table-delete.7ea3c0f006854ca275e349fece8c8197.png
+webapp/target/atlas-webapp-1.0.0/static/images/icon-table-active.f5aafc19a58a2ab74b0b75bd39abd05b.png
+webapp/target/atlas-webapp-1.0.0/static/images/element-icons.6f0a76321d30f3c8120915e57f7bd77e.ttf
+webapp/target/atlas-webapp-1.0.0/static/images/500.c28c309d60c178ea6d3c11533605f1e3.gif
+webapp/target/atlas-webapp-1.0.0/static/images/404.a57b6f31fa77c50f14d756711dea4158.png
+webapp/target/atlas-webapp-1.0.0/static/css/main.3d7330e3.css
+webapp/target/atlas-webapp-1.0.0/images/icon1-1.svg
+webapp/target/atlas-webapp-1.0.0/images/icon-table.png
+webapp/target/atlas-webapp-1.0.0/images/icon-table-select.png
+webapp/target/atlas-webapp-1.0.0/images/icon-table-delete.png
+webapp/target/atlas-webapp-1.0.0/images/icon-table-active.png
+webapp/target/atlas-webapp-1.0.0/images/icon-gear.png
+webapp/target/atlas-webapp-1.0.0/images/icon-gear-delete.png
+webapp/target/atlas-webapp-1.0.0/images/icon-gear-active.png
+webapp/target/atlas-webapp-1.0.0/images/bg.jpg
+webapp/target/atlas-webapp-1.0.0/images/500.gif
+webapp/target/atlas-webapp-1.0.0/images/404.png
+webapp/target/atlas-webapp-1.0.0/config.js
+logs/log.log.2018-11-27.17
+logs/log.log.2018-11-22.14
+webapp/target/atlas-webapp-1.0.0/static/js/vendor.fa5c3e72.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/vendor.fa5c3e72.js
+webapp/target/atlas-webapp-1.0.0/static/js/manifest.e08a13c1.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/main.e7d9a4b6.js
+webapp/target/atlas-webapp-1.0.0/static/js/9.5395040c.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/9.5395040c.js
+webapp/target/atlas-webapp-1.0.0/static/js/8.55c2581b.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/8.55c2581b.js
+webapp/target/atlas-webapp-1.0.0/static/js/7.d0f0214b.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/7.d0f0214b.js
+webapp/target/atlas-webapp-1.0.0/static/js/6.a1c7c3bc.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/6.a1c7c3bc.js
+webapp/target/atlas-webapp-1.0.0/static/js/5.59f455c4.js.map
+webapp/target/atlas-webapp-1.0.0/static/js/5.59f455c4.js
+webapp/target/atlas-webapp-1.0.0/static/js/4.765dd4c7.js.map
+webapp/target/atlas-webapp-1.0.0/static/images/icon-gear.10e911a833c793b0d660aa1c012d0853.png
+webapp/target/atlas-webapp-1.0.0/static/images/icon-gear-delete.d32169c43e18ab62f2c2e3eb586a5105.png
+webapp/target/atlas-webapp-1.0.0/static/images/icon-gear-active.99b48cacb7cb1e2b70564275652fb8f0.png
+logs/log.log.2018-11-29.16
+logs/log.log.2018-11-29.15
+logs/log.log.2018-11-27.18

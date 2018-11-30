@@ -15,28 +15,22 @@
 package org.apache.atlas.web.filters;
 
 import com.google.gson.Gson;
-import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.util.SSLClient;
+import org.apache.atlas.SSOConfig;
 import org.apache.atlas.web.util.DateTimeHelper;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.configuration.Configuration;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,25 +41,13 @@ public class SSOFilter implements Filter {
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private final Long startTime = System.currentTimeMillis();
     private final Date date = new Date();
-    private Configuration conf;
-    private String loginURL;
-    private String infoURL;
+    private String loginURL= SSOConfig.getLoginURL();
+    private String infoURL= SSOConfig.getInfoURL();
 
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        LOG.info("SSOFilter initialization started");
-        try {
-            conf = ApplicationProperties.get();
-            loginURL = conf.getString("sso.login.url");
-            infoURL = conf.getString("sso.info.url");
-            if (loginURL == null || infoURL == null || loginURL.equals("") || infoURL.equals("")) {
-                LOG.warn("loginURL/infoURL config error");
-                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE,"sso.login.url,sso.info.url");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
     }
 
     @Override

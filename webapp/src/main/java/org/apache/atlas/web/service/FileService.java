@@ -14,6 +14,7 @@
 package org.apache.atlas.web.service;
 
 import com.google.common.collect.Lists;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.DateUtils;
 import org.apache.atlas.utils.PageUtils;
 import org.apache.atlas.web.util.AdminUtils;
@@ -55,7 +56,13 @@ public class FileService {
     public static Pair<Integer, List<FileStatus>> listStatus(String filePath, String modificationDate, String owner, int offset, int limit,
                                                              String orderBy, String sortBy) throws Exception {
         List<FileStatus> list = Arrays.stream(HdfsUtils.listStatus(filePath))
-                .filter(fileStatus -> match(fileStatus, null, modificationDate, owner))
+                .filter(fileStatus -> {
+                    try {
+                        return match(fileStatus, null, modificationDate, owner);
+                    } catch (AtlasBaseException e) {
+                        throw new RuntimeException();
+                    }
+                })
                 .collect(Collectors.toList());
         List<FileStatus> all = Lists.newArrayList(list.iterator());
         if (StringUtils.isNotBlank(orderBy)) {
@@ -137,7 +144,7 @@ public class FileService {
      * @param owner
      * @return
      */
-    private static boolean match(FileStatus file, String fileName, String modificationDate, String owner) {
+    private static boolean match(FileStatus file, String fileName, String modificationDate, String owner) throws AtlasBaseException {
 
 
         if(!HdfsUtils.canAccess(file.getPath().toUri().getPath(),"r")){

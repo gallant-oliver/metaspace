@@ -254,7 +254,7 @@ public class FileTableREST {
     @POST
     @Path("/submit")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TaskInfo upload(UploadConfigRequestBody requestBody) throws AtlasBaseException, SQLException {
+    public TaskInfo upload(UploadConfigRequestBody requestBody) throws AtlasBaseException, SQLException, IOException {
 
         LOGGER.info("upload requestBody[{}]", ToStringBuilder.reflectionToString(requestBody.getUploadConfig()));
         List<ColumnExt> columns = requestBody.getUploadConfig().getColumns();

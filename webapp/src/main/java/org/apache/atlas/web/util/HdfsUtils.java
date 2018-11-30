@@ -14,20 +14,17 @@
 package org.apache.atlas.web.util;
 
 import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.KerberosConfig;
+import org.apache.atlas.MetaspaceConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.fs.permission.AclStatus;
-import org.apache.hadoop.fs.permission.FsAction;
-import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -40,44 +37,25 @@ import java.security.PrivilegedExceptionAction;
 public class HdfsUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsUtils.class);
-    private static FileSystem fs;
     private static Configuration configuration = new Configuration();
-    private static boolean kerberosEnable=false;
-    private static String hdfsConf="/etc/hadoop/conf";
-    private static String user="";
-
-
+    private static String user = "";
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            hdfsConf = conf.getString("metaspace.hdfs.conf")==null?hdfsConf:conf.getString("metaspace.hdfs.conf");
-            //默认kerberos关闭
-            kerberosEnable=!(conf.getString("metaspace.kerberos.enable")==null||(!conf.getString("metaspace.kerberos.enable").equals("true")));
-
-            configuration.addResource(new Path(hdfsConf,"core-site.xml"));
-            configuration.addResource(new Path(hdfsConf,"hdfs-site.xml"));
-            if(kerberosEnable) {
-                if(
-                        conf.getString("metaspace.kerberos.admin")  ==null||
-                        conf.getString("metaspace.kerberos.keytab")  ==null||
-                        conf.getString("metaspace.kerberos.admin")  .equals("")||
-                        conf.getString("metaspace.kerberos.keytab")  .equals("")
-                ){
-                    LOG.error("kerberos info incomplete");
-                }else {
+            configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "core-site.xml"));
+            configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "hdfs-site.xml"));
+            if (KerberosConfig.isKerberosEnable()) {
                     configuration.set("hadoop.security.authentication", "Kerberos");
                     UserGroupInformation.setConfiguration(configuration);
-                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
-                }
+                    UserGroupInformation.loginUserFromKeytab(KerberosConfig.getMetaspaceAdmin(), KerberosConfig.getMetaspaceKeytab());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    private static FileSystem getFs() throws IOException, InterruptedException {
-
+    private static FileSystem getFs() throws IOException, InterruptedException, AtlasBaseException {
         user = AdminUtils.getUserName();
-        if(kerberosEnable) {
+        FileSystem fs;
+        if (KerberosConfig.isKerberosEnable()) {
             //自动续约
             if (UserGroupInformation.isLoginKeytabBased()) {
                 UserGroupInformation.getLoginUser().reloginFromKeytab();
@@ -85,22 +63,24 @@ public class HdfsUtils {
                 UserGroupInformation.getLoginUser().reloginFromTicketCache();
             }
             UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-             fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
+            fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 
                 public FileSystem run() throws Exception {
                     return FileSystem.get(configuration);
                 }
             });
-        }else {
-            configuration.set("HADOOP_USER_NAME",user);
+        } else {
+            configuration.set("HADOOP_USER_NAME", user);
             fs = FileSystem.get(configuration);
         }
         return fs;
     }
-    public static FileSystem fs() throws IOException, InterruptedException {
+
+    public static FileSystem fs() throws IOException, InterruptedException, AtlasBaseException {
         return getFs();
     }
-    public static Configuration conf(){
+
+    public static Configuration conf() {
         return configuration;
     }
 
@@ -113,41 +93,41 @@ public class HdfsUtils {
         return getFs().listFiles(new Path("/"), recursive);
     }
 
-    public static boolean exist(String filePath) throws IOException, InterruptedException {
+    public static boolean exist(String filePath) throws IOException, InterruptedException, AtlasBaseException {
         boolean exists = getFs().exists(new Path(filePath));
         return exists;
     }
 
-    public static void uploadFile(InputStream inputStream, String filePath) throws IOException, InterruptedException {
+    public static void uploadFile(InputStream inputStream, String filePath) throws IOException, InterruptedException, AtlasBaseException {
         FSDataOutputStream fsDataOutputStream = getFs().create(new Path(filePath));
         IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
     }
 
-    public static InputStream downloadFile(String filePath) throws IOException, InterruptedException {
+    public static InputStream downloadFile(String filePath) throws IOException, InterruptedException, AtlasBaseException {
         FSDataInputStream fsDataInputStream = getFs().open(new Path(filePath));
         return fsDataInputStream;
     }
+
     /**
-     *
      * @param accessUser
      * @param filePath
-     * @param tag r 或 w
+     * @param tag        r 或 w
      * @return
      */
-    public static boolean canAccess(String accessUser, String filePath, String tag)  {
+    public static boolean canAccess(String accessUser, String filePath, String tag) {
         try {
             FileStatus status = getFs().getFileStatus(new Path(filePath));
             String owner = status.getOwner();
             String permission = status.getPermission().toString().substring(3);
             boolean canAccess = accessUser.equals(owner) || permission.contains(tag);
             return canAccess;
-        }catch (Exception e){
+        } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public static boolean canAccess(String filePath, String tag)  {
+    public static boolean canAccess(String filePath, String tag) throws AtlasBaseException {
         return canAccess(AdminUtils.getUserName(), filePath, tag);
     }
 

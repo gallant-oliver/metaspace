@@ -117,7 +117,7 @@ public class FileREST {
                 try {
                     InputStream inputStream = HdfsUtils.downloadFile(filePath);
                     IOUtils.copyBytes(inputStream, outputStream, 4096, true);
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

@@ -48,7 +48,7 @@ public class JobService {
     @Autowired
     private TaskService taskService;
 
-    public UploadJobInfo newUploadJobInfo(String jobId, UploadConfig uploadConfig) throws AtlasBaseException, SQLException {
+    public UploadJobInfo newUploadJobInfo(String jobId, UploadConfig uploadConfig) throws AtlasBaseException, SQLException, IOException {
         // 从提交的请求中得到任务配置，目标表schema，以及column的mapping关系
         UploadJobInfo uploadJobInfo = toUploadJobInfo(jobId, uploadConfig);
         uploadJobInfo.setJobId(jobId);
@@ -110,7 +110,7 @@ public class JobService {
      * @param databaseName
      * @param tableName
      */
-    private void checkTable(String databaseName, String tableName) throws AtlasBaseException, SQLException {
+    private void checkTable(String databaseName, String tableName) throws AtlasBaseException, SQLException, IOException {
         boolean existsTable = HiveJdbcUtils.tableExists(databaseName, tableName);
         if (existsTable) {
             throw new AtlasBaseException("表 " + databaseName + "." + tableName + " 已存在");
@@ -125,7 +125,7 @@ public class JobService {
      * @param databaseName
      * @param tableName
      */
-    private void checkTable(String databaseName, String tableName, ActionType actionType) throws AtlasBaseException, SQLException {
+    private void checkTable(String databaseName, String tableName, ActionType actionType) throws AtlasBaseException, SQLException, IOException {
         boolean existsTable = HiveJdbcUtils.tableExists(databaseName, tableName);
         if (existsTable && ActionType.INSERT.equals(actionType)) {
             throw new AtlasBaseException("表 " + databaseName + "." + tableName + " 已存在");

@@ -13,58 +13,34 @@
 
 package org.apache.atlas.web.rest;
 
-import static org.apache.atlas.utils.BytesUtils.byteCountByUnit;
-
 import org.apache.atlas.AtlasScheduler;
-import org.apache.atlas.discovery.AtlasDiscoveryService;
-import org.apache.atlas.discovery.AtlasLineageService;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.DateType;
 import org.apache.atlas.model.PageList;
-import org.apache.atlas.model.discovery.AtlasSearchResult;
-import org.apache.atlas.model.discovery.SearchParameters;
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.table.Table;
-import org.apache.atlas.model.table.TableMetadata;
 import org.apache.atlas.model.table.TableSourceCount;
 import org.apache.atlas.model.table.TableStat;
 import org.apache.atlas.model.table.TableStatRequest;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.tablestat.TableStatService;
-import org.apache.atlas.utils.BytesUtils;
 import org.apache.atlas.utils.DateUtils;
-import org.apache.atlas.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import static org.apache.atlas.utils.BytesUtils.byteCountByUnit;
 
 @Path("table/stat")
 @Singleton
@@ -125,7 +101,7 @@ public class TableStatREST {
     public PageList<TableStat> history(TableStatRequest request) throws Exception {
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
         List<TableStat> statList = tableStatService.query(request).getRight();
-        if(!statList.isEmpty()){
+        if (!statList.isEmpty()) {
             addDataNumAndUnit(statList);
         }
         return new PageList<>(request.getOffset(), pair.getLeft(), statList);
@@ -133,6 +109,7 @@ public class TableStatREST {
 
     /**
      * 前端折线图需要，统一单位
+     *
      * @param statList
      */
     private void addDataNumAndUnit(List<TableStat> statList) {
@@ -140,11 +117,11 @@ public class TableStatREST {
         statList.sort(new Comparator<TableStat>() {
             @Override
             public int compare(TableStat o1, TableStat o2) {
-                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ?  -1 : 1;
+                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ? -1 : 1;
             }
         });
         String unit = statList.get(0).getDataVolume().split(" ")[1];
-        statList.forEach(tableStat ->{
+        statList.forEach(tableStat -> {
             Double dataVolumeBytes = byteCountByUnit(tableStat.getDataVolumeBytes(), unit);
             tableStat.setDataVolumeNum(dataVolumeBytes);
             tableStat.setDataVolumeNumUnit(unit);
@@ -154,11 +131,11 @@ public class TableStatREST {
         statList.sort(new Comparator<TableStat>() {
             @Override
             public int compare(TableStat o1, TableStat o2) {
-                return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ?  -1 : 1;
+                return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ? -1 : 1;
             }
         });
         String unit2 = statList.get(0).getDataIncrement().split(" ")[1];
-        statList.forEach(tableStat ->{
+        statList.forEach(tableStat -> {
             Double dataIncrementBytes = byteCountByUnit(tableStat.getDataIncrementBytes(), unit2);
             tableStat.setDataIncrementNum(dataIncrementBytes);
             tableStat.setDataIncrementNumUnit(unit2);
