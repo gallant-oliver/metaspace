@@ -26,12 +26,20 @@ import static org.testng.Assert.assertTrue;
 public class DateUtilsTest {
 
     @Test
-    public void testInDay() {
-        long now = LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli();
-        String today = DateUtils.formatDateString(LocalDate.now());
-        String yesterday = DateUtils.formatDateString(LocalDate.now().minusDays(1));
+    public void test() {
+        String date = "2018-11-30";
+        String month = "2018-11";
+        String year = "2018";
 
-        assertTrue(DateUtils.inDay(today, now));
-        assertFalse(DateUtils.inDay(yesterday, now));
+        Assert.assertEquals("2018-11-29", DateUtils.yesterday(date));
+        Assert.assertEquals("2018-10", DateUtils.lastMonth(date));
+        Assert.assertEquals("2017", DateUtils.lastYear(date));
+
+        Assert.assertEquals("2018-12-01", DateUtils.nextDay(date));
+        Assert.assertEquals("2018-12", DateUtils.nextMonth(month));
+        Assert.assertEquals("2019", DateUtils.nextYear(year));
     }
+
+
+
 }

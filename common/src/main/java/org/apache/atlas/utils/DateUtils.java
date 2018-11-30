@@ -16,6 +16,8 @@ package org.apache.atlas.utils;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
@@ -59,10 +61,6 @@ public class DateUtils {
         return DateTimeFormatter.ISO_LOCAL_DATE.format(parseLocalDate(date).minusDays(1));
     }
 
-    /**
-     * @param date yyyy-MM-dd
-     * @return
-     */
     public static String month(String date) {
         String[] split = date.split("-");
         return split[0] + "-" + split[1];
@@ -70,6 +68,50 @@ public class DateUtils {
 
     public static String year(String date) {
         return date.split("-")[0];
+    }
+
+    /**
+     * @param date yyyy-MM-dd
+     * @return
+     */
+    public static String lastMonth(String date) {
+        String lastMonthDate = formatDateString(parseLocalDate(date).minusMonths(1));
+        String[] split = lastMonthDate.split("-");
+        return split[0] + "-" + split[1];
+    }
+
+
+    public static String lastYear(String date) {
+        String lastYearDate = formatDateString(parseLocalDate(date).minusYears(1));
+        String[] split = lastYearDate.split("-");
+        return split[0];
+    }
+
+    public static String nextDay(String date) {
+        String nextDay = formatDateString(parseLocalDate(date).plusDays(1));
+        return nextDay;
+    }
+
+    /**
+     *
+     * @param yyyy-MM
+     * @return
+     */
+    public static String nextMonth(String month) {
+        String lastMonthDate = formatMonthString(parseLocalMonth(month).plusMonths(1));
+        String[] split = lastMonthDate.split("-");
+        return split[0] + "-" + split[1];
+    }
+
+    /**
+     *
+     * @param yyyy
+     * @return
+     */
+    public static String nextYear(String year) {
+        String lastYearDate = formatYearString(parseLocalYear(year).plusYears(1));
+        String[] split = lastYearDate.split("-");
+        return split[0];
     }
 
 
@@ -93,8 +135,24 @@ public class DateUtils {
         return LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
     }
 
+    public static YearMonth parseLocalMonth(String monthString) {
+        return YearMonth.parse(monthString, MONTH);
+    }
+
+    public static Year parseLocalYear(String yearString) {
+        return Year.parse(yearString, YEAR);
+    }
+
     public static String formatDateString(LocalDate localDate) {
         return DateTimeFormatter.ISO_LOCAL_DATE.format(localDate);
+    }
+
+    public static String formatMonthString(YearMonth localMonth) {
+        return MONTH.format(localMonth);
+    }
+
+    public static String formatYearString(Year localYear) {
+        return YEAR.format(localYear);
     }
 
     public static String formatDateTime(long timestamp) {

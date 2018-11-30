@@ -93,16 +93,16 @@ public class TableStatService {
     }
 
     /**
-     * 指定日期当天，当月，当年的数据量
+     * 日期昨天，上月，去年的数据量
      *
      * @param tableId
      * @param date
      * @return
      */
     public Map<String, Long> lastDataVolumn(String tableId, String date) throws Exception {
-        TableStatRequest dayRequest = new TableStatRequest(tableId, DateType.DAY.getLiteral(), date, date, 0, 1);
-        TableStatRequest monthRequest = new TableStatRequest(tableId, DateType.MONTH.getLiteral(), DateUtils.month(date), DateUtils.month(date), 0, 1);
-        TableStatRequest yearRequest = new TableStatRequest(tableId, DateType.YEAR.getLiteral(), DateUtils.year(date), DateUtils.year(date), 0, 1);
+        TableStatRequest dayRequest = new TableStatRequest(tableId, DateType.DAY.getLiteral(), DateUtils.yesterday(date), DateUtils.yesterday(date), 0, 1);
+        TableStatRequest monthRequest = new TableStatRequest(tableId, DateType.MONTH.getLiteral(), DateUtils.lastMonth(date), DateUtils.lastMonth(date), 0, 1);
+        TableStatRequest yearRequest = new TableStatRequest(tableId, DateType.YEAR.getLiteral(), DateUtils.lastYear(date), DateUtils.lastYear(date), 0, 1);
 
         Map<String, Long> ret = new HashMap<>();
 
@@ -136,7 +136,9 @@ public class TableStatService {
             scan.addFamily("info".getBytes());
 
             String startRowKey = (request.getTableId() + request.getDateType() + request.getFromDate()).replace("-", "");
-            String endRowKey = (request.getTableId() + request.getDateType() + request.getEndDate()).replace("-", "");
+            //因为hbase查询不包含endKey,所以日期往后顺推
+            String convertedEndDate = convertedEndDate(request.getDateType(), request.getEndDate());
+            String endRowKey = (request.getTableId() + request.getDateType() + convertedEndDate).replace("-", "");
             scan.setStartRow(startRowKey.getBytes());
             scan.setStopRow(endRowKey.getBytes());
             ResultScanner scanner = table.getScanner(scan);
@@ -166,6 +168,18 @@ public class TableStatService {
             List<TableStat> pageList = PageUtils.pageList(tableStatList.iterator(), request.getOffset(), request.getLimit());
 
             return Pair.of(tableStatList.size(), pageList);
+        }
+    }
+
+    private String convertedEndDate(String dateType, String endDate) {
+        if (DateType.DAY.getLiteral().equals(dateType)) {
+            return DateUtils.nextDay(endDate);
+        } else if (DateType.MONTH.getLiteral().equals(dateType)) {
+            return DateUtils.nextMonth(endDate);
+        } else if (DateType.YEAR.getLiteral().equals(dateType)) {
+            return DateUtils.nextYear(endDate);
+        } else {
+            throw new RuntimeException("无效的dateType: " + dateType);
         }
     }
 
