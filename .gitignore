@@ -10,7 +10,9 @@ out
 gen### Java template
 # Compiled class file
 *.class
-
+distro/target
+logs/
+webapp/target
 # Log file
 *.log
 

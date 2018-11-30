@@ -270,8 +270,6 @@ public class EntityLineageService implements AtlasLineageService {
         return lineageQuery;
     }
 
-
-
     private String generateLineageQuery(String entityGuid, int depth, String incomingFrom, String outgoingTo) {
         String lineageQuery;
         if (depth < 1) {
@@ -282,5 +280,27 @@ public class EntityLineageService implements AtlasLineageService {
             lineageQuery = String.format(query, entityGuid, incomingFrom, outgoingTo, depth);
         }
         return lineageQuery;
+    }
+
+    @Override
+    @GraphTransaction
+    public Integer getLineageDepth(String guid, LineageDirection direction) throws AtlasBaseException {
+        String lineageQuery = getLineageDepthQuery(guid, direction);
+        Integer depth = (Integer) graph.executeGremlinScript(lineageQuery, false);
+        return depth;
+    }
+    private String getLineageDepthQuery(String entityGuid, LineageDirection direction) {
+        String lineageQuery = null;
+
+        if (direction.equals(LineageDirection.INPUT)) {
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.INPUT_LINEAGE_DEPTH);
+            lineageQuery = String.format(query, entityGuid);
+
+        } else if (direction.equals(LineageDirection.OUTPUT)) {
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.OUTPUT_LINEAGE_DEPTH);
+            lineageQuery = String.format(query, entityGuid);
+        }
+        return lineageQuery;
+
     }
 }
