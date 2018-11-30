@@ -1,5 +1,6 @@
 package org.apache.atlas.web.util;
 
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -42,7 +43,7 @@ public class HdfsUtilsTest {
     }
 
     @Test
-    public void testUploadFile() throws IOException, InterruptedException {
+    public void testUploadFile() throws IOException, InterruptedException, AtlasBaseException {
 
         InputStream inputStream = new FileInputStream(new java.io.File("./pom.xml"));
         HdfsUtils.uploadFile(inputStream, "/tmp/pom.xml");

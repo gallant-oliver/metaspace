@@ -13,9 +13,9 @@
 
 package org.apache.atlas.repository.util;
 
-import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.KerberosConfig;
+import org.apache.atlas.MetaspaceConfig;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
@@ -28,30 +28,18 @@ import java.io.IOException;
 
 public class HbaseUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HbaseUtils.class);
-    private static boolean kerberosEnable = false;
-    private static String hbaseConf = "G:\\gridsum\\projects\\atlas\\deploy\\conf";
+    private static String hbaseConf;
     private static Configuration configuration = HBaseConfiguration.create();
 
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            hbaseConf = conf.getString("metaspace.hbase.conf") == null ? hbaseConf : conf.getString("metaspace.hbase.conf");
-            //默认kerberos关闭
-            kerberosEnable = !(conf.getString("metaspace.kerberos.enable") == null || (!conf.getString("metaspace.kerberos.enable").equals("true")));
+
+            hbaseConf = MetaspaceConfig.getHbaseConf();
             configuration.addResource(new Path(hbaseConf, "hbase-site.xml"));
-            if (kerberosEnable) {
-                if (
-                        conf.getString("metaspace.kerberos.admin") == null ||
-                                conf.getString("metaspace.kerberos.keytab") == null ||
-                                conf.getString("metaspace.kerberos.admin").equals("") ||
-                                conf.getString("metaspace.kerberos.keytab").equals("")
-                ) {
-                    LOG.error("kerberos info incomplete");
-                } else {
-                    configuration.set("hadoop.security.authentication", "Kerberos");
-                    UserGroupInformation.setConfiguration(configuration);
-                    UserGroupInformation.loginUserFromKeytab(conf.getString("metaspace.kerberos.admin"), conf.getString("metaspace.kerberos.keytab"));
-                }
+            if (KerberosConfig.isKerberosEnable()) {
+                configuration.set("hadoop.security.authentication", "Kerberos");
+                UserGroupInformation.setConfiguration(configuration);
+                UserGroupInformation.loginUserFromKeytab(KerberosConfig.getMetaspaceAdmin(), KerberosConfig.getMetaspaceKeytab());
             } else {
                 configuration.set("HADOOP_USER_NAME", "metaspace");
             }
@@ -62,7 +50,7 @@ public class HbaseUtils {
 
     public static Connection getConn() throws IOException {
         Connection conn;
-        if (kerberosEnable) {
+        if (KerberosConfig.isKerberosEnable()) {
             //自动续约
             if (UserGroupInformation.isLoginKeytabBased()) {
                 UserGroupInformation.getLoginUser().reloginFromKeytab();

@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 
 import javax.ws.rs.QueryParam;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -166,7 +167,7 @@ public class SearchService {
         return pageResult;
     }
 
-    public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException {
+    public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
         TableShow tableShow = new TableShow();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
         AtlasEntity entity = info.getEntity();
@@ -204,7 +205,7 @@ public class SearchService {
         return tableShow;
     }
 
-    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException {
+    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException, IOException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");

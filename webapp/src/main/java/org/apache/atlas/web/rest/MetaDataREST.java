@@ -37,6 +37,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -145,6 +146,8 @@ public class MetaDataREST {
             TableShow tableShow = searchService.getTableShow(guidCount);
             return tableShow;
         } catch (AtlasBaseException e) {
+            throw  e;
+        } catch (IOException e) {
             throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
         } finally {
             AtlasPerfTracer.log(perf);
@@ -161,12 +164,13 @@ public class MetaDataREST {
     @Path("/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException, TException, SQLException {
+    public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         if(tableId==null|tableId.equals("")) {
             //表id为空
 
-        }        try {
+        }
+        try {
 
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
@@ -174,7 +178,11 @@ public class MetaDataREST {
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
         } catch (AtlasBaseException e) {
-            throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            throw  e;
+        }catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"hive查询异常");
+        } catch (IOException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"图数据查询异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -623,7 +631,7 @@ public class MetaDataREST {
     @GET
     @Path("/tableExists")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean table(@QueryParam("database") String database, @QueryParam("tableName") String tableName) throws AtlasBaseException, SQLException {
+    public boolean table(@QueryParam("database") String database, @QueryParam("tableName") String tableName) throws AtlasBaseException, SQLException, IOException {
         return HiveJdbcUtils.tableExists(database, tableName);
     }
 

@@ -150,14 +150,14 @@ public class UploadJob extends AnalysisJob {
         return createParquetFile();
     }
 
-    private void removeParquetFileProxy(String username) throws IOException, InterruptedException {
+    private void removeParquetFileProxy(String username) throws IOException, InterruptedException, AtlasBaseException {
         //todo kerberos
         FileSystem fileSystem = HdfsUtils.fs();
         Path parquetFilePath = new Path(getParquetFileDir());
         fileSystem.delete(parquetFilePath, true);
     }
 
-    private void moveParquetFileProxy(String username, final Path src, final Path dest) throws IOException, InterruptedException {
+    private void moveParquetFileProxy(String username, final Path src, final Path dest) throws IOException, InterruptedException, AtlasBaseException {
         //todo kerberos
         FileSystem fs = HdfsUtils.fs();
         fs.rename(src, dest);
