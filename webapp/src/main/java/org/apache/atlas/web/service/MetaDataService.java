@@ -566,7 +566,6 @@ public class MetaDataService {
         ColumnLineageInfo.LineageEntity entity = null;
         List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
         for(String tableGuid : tables) {
-
             AtlasEntity tableEntity = entitiesStore.getById(tableGuid).getEntity();
             String tableName = (String) tableEntity.getAttribute("name");
             AtlasRelatedObjectId db = (AtlasRelatedObjectId)tableEntity.getRelationshipAttribute("db");
@@ -580,7 +579,7 @@ public class MetaDataService {
                 entity.setGuid(column.getGuid());
                 entity.setDbGuid(dbGuid);
                 entity.setDbName(dbName);
-                entity.setTableGuid(guid);
+                entity.setTableGuid(tableGuid);
                 entity.setTableName(tableName);
                 lineageEntities.add(entity);
             }
