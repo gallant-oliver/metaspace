@@ -13,6 +13,7 @@
 
 package org.apache.atlas.repository.tablestat;
 
+import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.apache.atlas.ApplicationProperties;
@@ -50,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -164,6 +166,12 @@ public class TableStatService {
                 TableStat stat = new TableStat(tableId, tableName, date, dateType, fieldNum, fileNum, recordNum, dataVolume, dataVolumeBytes, dataIncrement, dataIncrementBytes, sourceTableList);
                 tableStatList.add(stat);
             }
+            tableStatList.sort(new Comparator<TableStat>() {
+                @Override
+                public int compare(TableStat o1, TableStat o2) {
+                    return o1.getDate().compareTo(o2.getDate());
+                }
+            });
             table.close();
             List<TableStat> pageList = PageUtils.pageList(tableStatList.iterator(), request.getOffset(), request.getLimit());
 

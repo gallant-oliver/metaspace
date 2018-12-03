@@ -13,6 +13,7 @@
 
 package org.apache.atlas.web.rest;
 
+import com.google.common.collect.Lists;
 import org.apache.atlas.AtlasScheduler;
 import org.apache.atlas.model.DateType;
 import org.apache.atlas.model.PageList;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -104,7 +106,7 @@ public class TableStatREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageList<TableStat> history(TableStatRequest request) throws Exception {
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
-        List<TableStat> statList = tableStatService.query(request).getRight();
+        List<TableStat> statList = pair.getRight();
         if (!statList.isEmpty()) {
             addDataNumAndUnit(statList);
         }
@@ -118,13 +120,7 @@ public class TableStatREST {
      */
     private void addDataNumAndUnit(List<TableStat> statList) {
 
-        statList.sort(new Comparator<TableStat>() {
-            @Override
-            public int compare(TableStat o1, TableStat o2) {
-                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ? -1 : 1;
-            }
-        });
-        String unit = statList.get(0).getDataVolume().split(" ")[1];
+        String unit = dataVolumeMaxUnit(statList);
         statList.forEach(tableStat -> {
             Double dataVolumeBytes = byteCountByUnit(tableStat.getDataVolumeBytes(), unit);
             tableStat.setDataVolumeNum(dataVolumeBytes);
@@ -132,19 +128,37 @@ public class TableStatREST {
         });
 
         //dataIncrement
-        statList.sort(new Comparator<TableStat>() {
+        String dataIncrementUnit = dataVolumeMaxUnit(statList);
+        statList.forEach(tableStat -> {
+            Double dataIncrementBytes = byteCountByUnit(tableStat.getDataIncrementBytes(), dataIncrementUnit);
+            tableStat.setDataIncrementNum(dataIncrementBytes);
+            tableStat.setDataIncrementNumUnit(dataIncrementUnit);
+        });
+
+    }
+
+    private String dataIncrementMaxUnit(List<TableStat> statList) {
+        ArrayList<TableStat> copy = Lists.newArrayList(statList);
+
+        copy.sort(new Comparator<TableStat>() {
             @Override
             public int compare(TableStat o1, TableStat o2) {
                 return o1.getDataIncrementBytes() > o2.getDataIncrementBytes() ? -1 : 1;
             }
         });
-        String unit2 = statList.get(0).getDataIncrement().split(" ")[1];
-        statList.forEach(tableStat -> {
-            Double dataIncrementBytes = byteCountByUnit(tableStat.getDataIncrementBytes(), unit2);
-            tableStat.setDataIncrementNum(dataIncrementBytes);
-            tableStat.setDataIncrementNumUnit(unit2);
-        });
+        return copy.get(0).getDataIncrement().split(" ")[1];
+    }
 
+    private String dataVolumeMaxUnit(List<TableStat> statList) {
+        ArrayList<TableStat> copy = Lists.newArrayList(statList);
+
+        copy.sort(new Comparator<TableStat>() {
+            @Override
+            public int compare(TableStat o1, TableStat o2) {
+                return o1.getDataVolumeBytes() > o2.getDataVolumeBytes() ? -1 : 1;
+            }
+        });
+        return copy.get(0).getDataVolume().split(" ")[1];
     }
 
     @POST
@@ -155,7 +169,7 @@ public class TableStatREST {
 
         List<TableSourceCount> ret = new ArrayList<>();
         Pair<Integer, List<TableStat>> pair = tableStatService.query(request);
-        List<TableStat> statList = tableStatService.query(request).getRight();
+        List<TableStat> statList = pair.getRight();
         Map<String, Long> counted = statList.stream().flatMap(stat -> {
             List<Table> sourceTableList = stat.getSourceTable();
             return sourceTableList.stream().map(sourceTable -> sourceTable.getDatabase() + "." + sourceTable.getTableName());
