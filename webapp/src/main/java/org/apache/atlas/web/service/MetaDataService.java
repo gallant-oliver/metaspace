@@ -355,7 +355,7 @@ public class MetaDataService {
             LOG.debug("==> MetaDataService.getTableLineage({}, {}, {})", guid, direction, depth);
         }
         try {
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth, true);
             if(Objects.isNull(lineageInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
             }
@@ -390,7 +390,7 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1, true);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
@@ -468,7 +468,6 @@ public class MetaDataService {
     public ColumnLineageInfo getColumnLineage(String guid, AtlasLineageInfo.LineageDirection direction,
                                  int depth, Boolean refreshCache) throws AtlasBaseException {
         try {
-
             ArrayList<AtlasObjectId> columns = null;
             ColumnLineageInfo info = new ColumnLineageInfo();
             AtlasEntity tableEntity = entitiesStore.getById(guid).getEntity();
@@ -481,7 +480,7 @@ public class MetaDataService {
                 AtlasEntityHeader header = entitiesStore.getHeaderById(columnGuid);
                 if(header.getStatus().equals(AtlasEntity.Status.DELETED))
                     continue;
-                AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(columnGuid, direction, depth);
+                AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(columnGuid, direction, depth, false);
                 if(Objects.isNull(lineageInfo)) {
                     throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取字段血缘关系失败");
                 }
@@ -525,6 +524,63 @@ public class MetaDataService {
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
+    }
+
+
+
+
+
+
+    public ColumnLineageInfo getColumnLineageV2(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
+
+        AtlasLineageInfo tableLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth, true);
+        Map<String, AtlasEntityHeader> headers  = tableLineageInfo.getGuidEntityMap();
+        Set<String> tables = new HashSet<>();
+        for(String key: headers.keySet()) {
+            AtlasEntityHeader atlasEntity = headers.get(key);
+            //判断process类型
+            AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
+            Set<String> types = entityDef.getSuperTypes();
+            Iterator<String> typeIterator = types.iterator();
+            if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
+                String type = typeIterator.next();
+                if(type.contains("Process"))
+                    continue;
+                tables.add(key);
+            }
+        }
+        ColumnLineageInfo.LineageEntity entity = null;
+        List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+        for(String tableGuid : tables) {
+
+            AtlasEntity tableEntity = entitiesStore.getById(tableGuid).getEntity();
+            String tableName = (String) tableEntity.getAttribute("name");
+            AtlasRelatedObjectId db = (AtlasRelatedObjectId)tableEntity.getRelationshipAttribute("db");
+            String dbName = db.getDisplayText();
+            String dbGuid = db.getGuid();
+            List<AtlasRelatedObjectId> columns = (List<AtlasRelatedObjectId>)tableEntity.getRelationshipAttribute("columns");
+            for(int i=0, size=columns.size(); i<size; i++) {
+                AtlasRelatedObjectId column = columns.get(i);
+                entity = new ColumnLineageInfo.LineageEntity();
+                entity.setColumnName(column.getDisplayText());
+                entity.setGuid(column.getGuid());
+                entity.setDbGuid(dbGuid);
+                entity.setDbName(dbName);
+                entity.setTableGuid(guid);
+                entity.setTableName(tableName);
+                lineageEntities.add(entity);
+            }
+        }
+        AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth, false);
+        Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
+        ColumnLineageInfo info = new ColumnLineageInfo();
+        //guid
+        info.setGuid(guid);
+        reOrderRelation(lineageEntities, lineageRelations);
+        removeTableEntityAndRelation(lineageEntities, lineageRelations);
+        info.setEntities(lineageEntities);
+        info.setRelations(lineageRelations);
+        return info;
     }
 
     public void getAllTableLineageColumns(List<ColumnLineageInfo.LineageEntity> entities) throws AtlasBaseException {
@@ -612,7 +668,7 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1, true);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);

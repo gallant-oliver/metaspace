@@ -88,19 +88,19 @@ public class AtlasGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
                                                 ".not(has('blockedPropagatedClassifications', org.janusgraph.core.attribute.Text.textContains(classificationId))).outV())" +
                             ".dedup().where(without('src')).simplePath()).emit().toList();";
 
-            case OUTPUT_LINEAGE_DEPTH:
-                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.inputs'),repeat(inE('__Process.inputs').outV().outE('__Process.outputs').inV()" +
+            case LINEAGE_DEPTH:
+                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
                        ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
 
-            case INPUT_LINEAGE_DEPTH:
-                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('__Process.outputs'),repeat(inE('__Process.outputs').outV().outE('__Process.inputs').inV()" +
-                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
+            case DIRECT_ENTITY_NUM:
+                return "g.withSack(0).V().has('__guid','%s').inE('%s').outV().outE('%s').inV().count().toList()";
 
-            case DIRECT_PARENT_ENTITY_NUM:
-                return "g.withSack(0).V().has('__guid','%s').inE('__Process.outputs').outV().outE('__Process.inputs').inV().count().toList()";
 
-            case DIRECT_CHILDREN_ENTITY_NUM:
-                return "g.withSack(0).V().has('__guid','%s').inE('__Process.inputs').outV().outE('__Process.outputs').inV().count().toList()";
+            case FULL_COLUMN_LINEAGE:
+                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).emit().select('e1', 'e2').toList()";
+
+            case PARTIAL_COLUMN_LINEAGE:
+                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e1', 'e2').toList()";
         }
         return super.getQuery(gremlinQuery);
     }

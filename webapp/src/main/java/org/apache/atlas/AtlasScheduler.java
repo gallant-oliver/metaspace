@@ -189,7 +189,7 @@ public class AtlasScheduler {
         tableStat.setFileNum(fieldNum);
 
         //数据来源表
-        AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3);
+        AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3, true);
         Map<String, List<String>> toFromGuidMap = new HashMap<>();
         lineage.getRelations().stream().forEach(relation -> {
             String key = relation.getToEntityId();

@@ -86,7 +86,7 @@ public class LineageResource {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "LineageResource.inputsGraph(" + guid + ")");
             }
 
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.INPUT, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.INPUT, -1, true);
             ret.setRequestId(Servlets.getRequestId());
             ret.setResults(LineageUtils.toLineageStruct(lineageInfo, typeRegistry));
 
@@ -129,7 +129,7 @@ public class LineageResource {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "LineageResource.outputsGraph(" + guid + ")");
             }
 
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.OUTPUT, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.OUTPUT, -1, true);
             ret.setRequestId(Servlets.getRequestId());
             ret.setResults(LineageUtils.toLineageStruct(lineageInfo, typeRegistry));
 

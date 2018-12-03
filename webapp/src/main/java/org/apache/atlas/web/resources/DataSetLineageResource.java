@@ -100,7 +100,7 @@ public class DataSetLineageResource {
 
             String guid = getGuid(tableName);
 
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.INPUT, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.INPUT, -1, true);
             ret.setTableName(tableName);
             ret.setRequestId(Servlets.getRequestId());
             ret.setResults(LineageUtils.toLineageStruct(lineageInfo, typeRegistry));
@@ -144,7 +144,7 @@ public class DataSetLineageResource {
 
             String guid = getGuid(tableName);
 
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.OUTPUT, -1);
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, LineageDirection.OUTPUT, -1, true);
             ret.setTableName(tableName);
             ret.setRequestId(Servlets.getRequestId());
             ret.setResults(LineageUtils.toLineageStruct(lineageInfo, typeRegistry));

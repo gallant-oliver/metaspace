@@ -644,7 +644,7 @@ public class ClassificationPropagationTest {
         entitiesMap.put(US_ORDERS_TABLE, "70268a81-f145-4a37-ae39-b09daa85a928");
         entitiesMap.put(ORDERS_PROCESS, "da016ad9-456a-4c99-895a-fa00f2de49ba");
 
-        lineageInfo = lineageService.getAtlasLineageInfo(entitiesMap.get(HDFS_PATH_EMPLOYEES), LineageDirection.BOTH, 3);
+        lineageInfo = lineageService.getAtlasLineageInfo(entitiesMap.get(HDFS_PATH_EMPLOYEES), LineageDirection.BOTH, 3, true);
     }
 
     private AtlasEntity getEntity(String entityName) throws AtlasBaseException {

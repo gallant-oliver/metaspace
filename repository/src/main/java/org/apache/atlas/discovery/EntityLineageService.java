@@ -87,7 +87,7 @@ public class EntityLineageService implements AtlasLineageService {
 
     @Override
     @GraphTransaction
-    public AtlasLineageInfo getAtlasLineageInfo(String guid, LineageDirection direction, int depth) throws AtlasBaseException {
+    public AtlasLineageInfo getAtlasLineageInfo(String guid, LineageDirection direction, int depth, boolean isTable) throws AtlasBaseException {
         AtlasLineageInfo lineageInfo;
 
         AtlasEntityHeader entity = entityRetriever.toAtlasEntityHeaderWithClassifications(guid);
@@ -102,11 +102,11 @@ public class EntityLineageService implements AtlasLineageService {
 
         if (direction != null) {
             if (direction.equals(LineageDirection.INPUT)) {
-                lineageInfo = getLineageInfo(guid, LineageDirection.INPUT, depth);
+                lineageInfo = getLineageInfo(guid, LineageDirection.INPUT, depth, isTable);
             } else if (direction.equals(LineageDirection.OUTPUT)) {
-                lineageInfo = getLineageInfo(guid, LineageDirection.OUTPUT, depth);
+                lineageInfo = getLineageInfo(guid, LineageDirection.OUTPUT, depth, isTable);
             } else if (direction.equals(LineageDirection.BOTH)) {
-                lineageInfo = getBothLineageInfo(guid, depth);
+                lineageInfo = getBothLineageInfo(guid, depth, isTable);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", direction.toString());
             }
@@ -186,10 +186,11 @@ public class EntityLineageService implements AtlasLineageService {
     }
 
 
-    private AtlasLineageInfo getLineageInfo(String guid, LineageDirection direction, int depth) throws AtlasBaseException {
+    private AtlasLineageInfo getLineageInfo(String guid, LineageDirection direction, int depth, boolean isTable) throws AtlasBaseException {
         Map<String, AtlasEntityHeader> entities     = new HashMap<>();
         Set<LineageRelation>           relations    = new HashSet<>();
-        String                         lineageQuery = getLineageQuery(guid, direction, depth);
+        String                         lineageQuery =  getLineageQuery(guid, direction, depth, isTable);
+
 
         List edgeMapList = (List) graph.executeGremlinScript(lineageQuery, false);
 
@@ -246,9 +247,9 @@ public class EntityLineageService implements AtlasLineageService {
         }
     }
 
-    private AtlasLineageInfo getBothLineageInfo(String guid, int depth) throws AtlasBaseException {
-        AtlasLineageInfo inputLineage  = getLineageInfo(guid, LineageDirection.INPUT, depth);
-        AtlasLineageInfo outputLineage = getLineageInfo(guid, LineageDirection.OUTPUT, depth);
+    private AtlasLineageInfo getBothLineageInfo(String guid, int depth, boolean isTable) throws AtlasBaseException {
+        AtlasLineageInfo inputLineage  = getLineageInfo(guid, LineageDirection.INPUT, depth, isTable);
+        AtlasLineageInfo outputLineage = getLineageInfo(guid, LineageDirection.OUTPUT, depth, isTable);
         AtlasLineageInfo ret           = inputLineage;
 
         ret.getRelations().addAll(outputLineage.getRelations());
@@ -258,14 +259,23 @@ public class EntityLineageService implements AtlasLineageService {
         return ret;
     }
 
-    private String getLineageQuery(String entityGuid, LineageDirection direction, int depth) {
+    private String getLineageQuery(String entityGuid, LineageDirection direction, int depth, boolean isTable) {
         String lineageQuery = null;
 
-        if (direction.equals(LineageDirection.INPUT)) {
-            lineageQuery = generateLineageQuery(entityGuid, depth, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
+        if(isTable) {
+            if (direction.equals(LineageDirection.INPUT)) {
+                lineageQuery = generateLineageQuery(entityGuid, depth, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
 
-        } else if (direction.equals(LineageDirection.OUTPUT)) {
-            lineageQuery = generateLineageQuery(entityGuid, depth, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+            } else if (direction.equals(LineageDirection.OUTPUT)) {
+                lineageQuery = generateLineageQuery(entityGuid, depth, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+            }
+        } else {
+            if (direction.equals(LineageDirection.INPUT)) {
+                lineageQuery = generateColumnLineageQuery(entityGuid, depth, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
+
+            } else if (direction.equals(LineageDirection.OUTPUT)) {
+                lineageQuery = generateColumnLineageQuery(entityGuid, depth, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+            }
         }
 
         return lineageQuery;
@@ -297,12 +307,12 @@ public class EntityLineageService implements AtlasLineageService {
         String lineageQuery = null;
 
         if (direction.equals(LineageDirection.INPUT)) {
-            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.INPUT_LINEAGE_DEPTH);
-            lineageQuery = String.format(query, entityGuid);
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.LINEAGE_DEPTH);
+            lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
 
         } else if (direction.equals(LineageDirection.OUTPUT)) {
-            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.OUTPUT_LINEAGE_DEPTH);
-            lineageQuery = String.format(query, entityGuid);
+            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.LINEAGE_DEPTH);
+            lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
         }
         return lineageQuery;
     }
@@ -319,14 +329,25 @@ public class EntityLineageService implements AtlasLineageService {
     }
     private String getEntityDirectNumQuery(String entityGuid, LineageDirection direction) {
         String lineageQuery = null;
-
+        String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.DIRECT_ENTITY_NUM);
         if (direction.equals(LineageDirection.INPUT)) {
-            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.DIRECT_PARENT_ENTITY_NUM);
-            lineageQuery = String.format(query, entityGuid);
+
+            lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
 
         } else if (direction.equals(LineageDirection.OUTPUT)) {
-            String query  = gremlinQueryProvider.getQuery(AtlasGremlinQuery.DIRECT_CHILDREN_ENTITY_NUM);
-            lineageQuery = String.format(query, entityGuid);
+            lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+        }
+        return lineageQuery;
+    }
+
+    private String generateColumnLineageQuery(String entityGuid, int depth, String incomingFrom, String outgoingTo) {
+        String lineageQuery;
+        if (depth < 1) {
+            String query = gremlinQueryProvider.getQuery(AtlasGremlinQuery.FULL_COLUMN_LINEAGE);
+            lineageQuery = String.format(query, entityGuid, incomingFrom, outgoingTo);
+        } else {
+            String query = gremlinQueryProvider.getQuery(AtlasGremlinQuery.PARTIAL_COLUMN_LINEAGE);
+            lineageQuery = String.format(query, entityGuid, incomingFrom, outgoingTo, depth);
         }
         return lineageQuery;
     }
