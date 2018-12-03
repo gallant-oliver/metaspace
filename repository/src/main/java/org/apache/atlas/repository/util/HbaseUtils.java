@@ -13,14 +13,12 @@
 
 package org.apache.atlas.repository.util;
 
-import org.apache.atlas.KerberosConfig;
 import org.apache.atlas.MetaspaceConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,16 +31,9 @@ public class HbaseUtils {
 
     static {
         try {
-
             hbaseConf = MetaspaceConfig.getHbaseConf();
             configuration.addResource(new Path(hbaseConf, "hbase-site.xml"));
-            if (KerberosConfig.isKerberosEnable()) {
-                configuration.set("hadoop.security.authentication", "Kerberos");
-                UserGroupInformation.setConfiguration(configuration);
-                UserGroupInformation.loginUserFromKeytab(KerberosConfig.getMetaspaceAdmin(), KerberosConfig.getMetaspaceKeytab());
-            } else {
-                configuration.set("HADOOP_USER_NAME", "metaspace");
-            }
+            configuration.set("HADOOP_USER_NAME", "metaspace");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -50,17 +41,7 @@ public class HbaseUtils {
 
     public static Connection getConn() throws IOException {
         Connection conn;
-        if (KerberosConfig.isKerberosEnable()) {
-            //自动续约
-            if (UserGroupInformation.isLoginKeytabBased()) {
-                UserGroupInformation.getLoginUser().reloginFromKeytab();
-            } else if (UserGroupInformation.isLoginTicketBased()) {
-                UserGroupInformation.getLoginUser().reloginFromTicketCache();
-            }
-            conn = ConnectionFactory.createConnection(configuration);
-        } else {
-            conn = ConnectionFactory.createConnection(configuration);
-        }
+        conn = ConnectionFactory.createConnection(configuration);
         return conn;
     }
 
