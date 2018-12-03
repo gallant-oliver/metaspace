@@ -20,8 +20,6 @@ import org.apache.atlas.MetaspaceConfig;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.table.TableMetadata;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,15 +44,8 @@ public class HiveJdbcUtils {
     static {
         try {
             Class.forName(hivedriverClassName);
-
             hiveUrl = MetaspaceConfig.getHiveUrl();
-            if (KerberosConfig.isKerberosEnable()) {
-                Configuration configuration = new Configuration();
-                configuration.set("hadoop.security.authentication", "Kerberos");
-                UserGroupInformation.setConfiguration(configuration);
-                UserGroupInformation.loginUserFromKeytab(KerberosConfig.getMetaspaceAdmin(), KerberosConfig.getMetaspaceKeytab());
-                hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
-            }
+            hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -66,12 +57,6 @@ public class HiveJdbcUtils {
         String user = AdminUtils.getUserName();
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
-            //自动续约
-            if (UserGroupInformation.isLoginKeytabBased()) {
-                UserGroupInformation.getLoginUser().reloginFromKeytab();
-            } else if (UserGroupInformation.isLoginTicketBased()) {
-                UserGroupInformation.getLoginUser().reloginFromTicketCache();
-            }
             jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
@@ -89,12 +74,6 @@ public class HiveJdbcUtils {
         Connection connection;
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
-            //自动续约
-            if (UserGroupInformation.isLoginKeytabBased()) {
-                UserGroupInformation.getLoginUser().reloginFromKeytab();
-            } else if (UserGroupInformation.isLoginTicketBased()) {
-                UserGroupInformation.getLoginUser().reloginFromTicketCache();
-            }
             jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {

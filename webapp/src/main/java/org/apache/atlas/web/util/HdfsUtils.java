@@ -40,28 +40,13 @@ public class HdfsUtils {
     private static Configuration configuration = new Configuration();
     private static String user = "";
     static {
-        try {
             configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "core-site.xml"));
             configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "hdfs-site.xml"));
-            if (KerberosConfig.isKerberosEnable()) {
-                    configuration.set("hadoop.security.authentication", "Kerberos");
-                    UserGroupInformation.setConfiguration(configuration);
-                    UserGroupInformation.loginUserFromKeytab(KerberosConfig.getMetaspaceAdmin(), KerberosConfig.getMetaspaceKeytab());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
     private static FileSystem getFs() throws IOException, InterruptedException, AtlasBaseException {
         user = AdminUtils.getUserName();
         FileSystem fs;
         if (KerberosConfig.isKerberosEnable()) {
-            //自动续约
-            if (UserGroupInformation.isLoginKeytabBased()) {
-                UserGroupInformation.getLoginUser().reloginFromKeytab();
-            } else if (UserGroupInformation.isLoginTicketBased()) {
-                UserGroupInformation.getLoginUser().reloginFromTicketCache();
-            }
             UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
             fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 

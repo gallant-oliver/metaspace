@@ -63,6 +63,10 @@
     <listener-class>org.apache.atlas.web.setup.KerberosAwareListener</listener-class>
   </listener>
 
+  <listener>
+    <listener-class>org.apache.atlas.web.listeners.KerberosReloginListener</listener-class>
+  </listener>
+
 
   <session-config>
     <session-timeout>60</session-timeout>
