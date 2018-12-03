@@ -375,7 +375,8 @@ public class MetaDataService {
                 getTableEntityInfo(key, lineageEntity, entities, atlasEntity);
                 lineageEntities.add(lineageEntity);
             }
-            info.setEntities(lineageEntities);
+            List<TableLineageInfo.LineageEntity> avtiveEntities = lineageEntities.stream().filter(entity -> entity.getStatus().equals("ACTIVE")).collect(Collectors.toList());
+            info.setEntities(avtiveEntities);
             info.setRelations(lineageRelations);
             System.out.println();
             return info;
