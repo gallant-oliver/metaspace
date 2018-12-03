@@ -369,14 +369,27 @@ public class MetaDataService {
             //entities
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             TableLineageInfo.LineageEntity lineageEntity = null;
+            Set<String> deletedTableSet = new HashSet<>();
             for(String key: entities.keySet()) {
                 lineageEntity = new TableLineageInfo.LineageEntity();
                 AtlasEntityHeader atlasEntity = entities.get(key);
+                if(atlasEntity.getStatus().equals(AtlasEntity.Status.DELETED)) {
+                    deletedTableSet.add(key);
+                    continue;
+                }
                 getTableEntityInfo(key, lineageEntity, entities, atlasEntity);
                 lineageEntities.add(lineageEntity);
             }
-            List<TableLineageInfo.LineageEntity> avtiveEntities = lineageEntities.stream().filter(entity -> entity.getStatus().equals("ACTIVE")).collect(Collectors.toList());
-            info.setEntities(avtiveEntities);
+            Set<LineageTrace> removeNode = new HashSet<>();
+            deletedTableSet.forEach(key -> {
+                for(Iterator<LineageTrace> iterator = lineageRelations.iterator(); iterator.hasNext();) {
+                    LineageTrace trace = iterator.next();
+                    if(trace.getFromEntityId().equals(key) || trace.getToEntityId().equals(key))
+                        removeNode.add(trace);
+                }
+            });
+            removeNode.stream().forEach(node -> lineageRelations.remove(node));
+            info.setEntities(lineageEntities);
             info.setRelations(lineageRelations);
             System.out.println();
             return info;
