@@ -368,26 +368,12 @@ public class MetaDataService {
             //entities
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             TableLineageInfo.LineageEntity lineageEntity = null;
-            //Set<String> deletedTableSet = new HashSet<>();
             for(String key: entities.keySet()) {
                 lineageEntity = new TableLineageInfo.LineageEntity();
                 AtlasEntityHeader atlasEntity = entities.get(key);
-                /*if(atlasEntity.getStatus().equals(AtlasEntity.Status.DELETED)) {
-                    deletedTableSet.add(key);
-                    continue;
-                }*/
                 getTableEntityInfo(key, lineageEntity, entities, atlasEntity);
                 lineageEntities.add(lineageEntity);
             }
-            /*Set<LineageTrace> removeNode = new HashSet<>();
-            deletedTableSet.forEach(key -> {
-                for(Iterator<LineageTrace> iterator = lineageRelations.iterator(); iterator.hasNext();) {
-                    LineageTrace trace = iterator.next();
-                    if(trace.getFromEntityId().equals(key) || trace.getToEntityId().equals(key))
-                        removeNode.add(trace);
-                }
-            });
-            removeNode.stream().forEach(node -> lineageRelations.remove(node));*/
             info.setEntities(lineageEntities);
             info.setRelations(lineageRelations);
             System.out.println();
@@ -540,29 +526,8 @@ public class MetaDataService {
     }
 
 
-
-
-
-
     public ColumnLineageInfo getColumnLineageV2(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
-
-        //AtlasLineageInfo tableLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth, true);
         List<String> tables = atlasLineageService.getColumnRelatedTable(guid, direction, depth);
-        /*Map<String, AtlasEntityHeader> headers  = tableLineageInfo.getGuidEntityMap();
-        Set<String> tables = new HashSet<>();
-        for(String key: headers.keySet()) {
-            AtlasEntityHeader atlasEntity = headers.get(key);
-            //判断process类型
-            AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
-            Set<String> types = entityDef.getSuperTypes();
-            Iterator<String> typeIterator = types.iterator();
-            if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
-                String type = typeIterator.next();
-                if(type.contains("Process"))
-                    continue;
-                tables.add(key);
-            }
-        }*/
         tables.add(guid);
         ColumnLineageInfo.LineageEntity entity = null;
         List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
@@ -582,6 +547,7 @@ public class MetaDataService {
                 entity.setDbName(dbName);
                 entity.setTableGuid(tableGuid);
                 entity.setTableName(tableName);
+                entity.setStatus(column.getEntityStatus().name());
                 lineageEntities.add(entity);
             }
         }
@@ -590,36 +556,11 @@ public class MetaDataService {
         ColumnLineageInfo info = new ColumnLineageInfo();
         //guid
         info.setGuid(guid);
-        reOrderRelation(lineageEntities, lineageRelations);
+        Set<LineageTrace> resultRelations = reOrderRelation(lineageEntities, lineageRelations);
         removeTableEntityAndRelation(lineageEntities, lineageRelations);
         info.setEntities(lineageEntities);
-        info.setRelations(lineageRelations);
+        info.setRelations(resultRelations);
         return info;
-    }
-
-    public void getAllTableLineageColumns(List<ColumnLineageInfo.LineageEntity> entities) throws AtlasBaseException {
-        Set<String> tables = new HashSet<>();
-        for(ColumnLineageInfo.LineageEntity entity : entities) {
-            String tableGuid = entity.getTableGuid();
-            if(Objects.nonNull(tableGuid))
-                tables.add(tableGuid);
-        }
-        entities.clear();
-        Iterator<String> iterator = tables.iterator();
-        while(iterator.hasNext()) {
-            String guid = iterator.next();
-            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
-
-            Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
-            for(String key: referredEntities.keySet()) {
-                AtlasEntity referredEntity = referredEntities.get(key);
-                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                    AtlasEntityHeader header = entitiesStore.getHeaderById(referredEntity.getGuid());
-                    ColumnLineageInfo.LineageEntity lineageEntity = getColumnEntityInfo(key, header);
-                    entities.add(lineageEntity);
-                }
-            }
-        }
     }
 
     public void removeTableEntityAndRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException{
@@ -648,32 +589,30 @@ public class MetaDataService {
      * @param lineageEntities
      * @param lineageRelations
      */
-    public void reOrderRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException {
-        Set<LineageTrace> removeNode = new HashSet<>();
+    public Set<LineageTrace> reOrderRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException {
+        Set<LineageTrace> resultRelation = new HashSet<>();
+        LineageTrace trace = null;
         for(ColumnLineageInfo.LineageEntity entity: lineageEntities) {
             String fromGuid = entity.getGuid();
-            AtlasEntityHeader header = entitiesStore.getHeaderById(fromGuid);
-            String typeName = header.getTypeName();
-
             Iterator<LineageTrace> fromIterator = lineageRelations.iterator();
             while(fromIterator.hasNext()) {
                 LineageTrace fromNode = fromIterator.next();
-                if(typeName.contains("table"))
-                    removeNode.add(fromNode);
                 if(fromNode.getFromEntityId().equals(fromGuid)) {
                     String toGuid = fromNode.getToEntityId();
                     Iterator<LineageTrace> toIterator = lineageRelations.iterator();
                     while(toIterator.hasNext()) {
                         LineageTrace toNode = toIterator.next();
                         if(toNode.getFromEntityId().equals(toGuid)) {
-                            removeNode.add(toNode);
-                            fromNode.setToEntityId(toNode.getToEntityId());
+                            trace = new LineageTrace();
+                            trace.setFromEntityId(fromGuid);
+                            trace.setToEntityId(toNode.getToEntityId());
+                            resultRelation.add(trace);
                         }
                     }
                 }
             }
         }
-        removeNode.stream().forEach(node -> lineageRelations.remove(node));
+        return resultRelation;
     }
 
     public LineageDepthInfo getColumnLineageDepthInfo(String guid) throws AtlasBaseException {
@@ -731,7 +670,6 @@ public class MetaDataService {
             relation = new LineageTrace();
             relation.setFromEntityId(atlasRelation.getFromEntityId());
             relation.setToEntityId(atlasRelation.getToEntityId());
-            relation.setRelationshipId(atlasRelation.getRelationshipId());
             lineageRelations.add(relation);
         }
         return lineageRelations;

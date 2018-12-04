@@ -27,7 +27,6 @@ public class LineageTrace implements Serializable {
 
     private String fromEntityId;
     private String toEntityId;
-    private String relationshipId;
 
     public String getFromEntityId() {
         return fromEntityId;
@@ -43,13 +42,5 @@ public class LineageTrace implements Serializable {
 
     public void setToEntityId(String toEntityId) {
         this.toEntityId = toEntityId;
-    }
-
-    public String getRelationshipId() {
-        return relationshipId;
-    }
-
-    public void setRelationshipId(String relationshipId) {
-        this.relationshipId = relationshipId;
     }
 }

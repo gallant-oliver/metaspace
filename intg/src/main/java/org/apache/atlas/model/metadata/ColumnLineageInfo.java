@@ -62,6 +62,7 @@ public class ColumnLineageInfo implements Serializable {
         private String dbGuid;
         private String dbName;
         private String columnName;
+        private String status;
 
         public String getGuid() {
             return guid;
@@ -109,6 +110,14 @@ public class ColumnLineageInfo implements Serializable {
 
         public void setDbGuid(String dbGuid) {
             this.dbGuid = dbGuid;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 }
