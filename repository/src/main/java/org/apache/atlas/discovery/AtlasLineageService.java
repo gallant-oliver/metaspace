@@ -24,6 +24,9 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.lineage.AtlasLineageInfo.LineageDirection;
 import org.apache.atlas.v1.model.lineage.SchemaResponse.SchemaDetails;
 
+import java.util.List;
+import java.util.Set;
+
 public interface AtlasLineageService {
     /**
      * @param entityGuid unique ID of the entity
@@ -52,5 +55,7 @@ public interface AtlasLineageService {
     Integer getLineageDepth(String guid, LineageDirection direction) throws AtlasBaseException;
 
     Integer getEntityDirectNum(String entityGuid, LineageDirection direction) throws AtlasBaseException;
+
+    List<String> getColumnRelatedTable(String guid, LineageDirection direction, int depth) throws AtlasBaseException;
 
 }

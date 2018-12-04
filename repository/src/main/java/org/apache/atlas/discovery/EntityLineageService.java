@@ -113,9 +113,69 @@ public class EntityLineageService implements AtlasLineageService {
         } else {
             throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", null);
         }
-
         return lineageInfo;
     }
+
+    @Override
+    @GraphTransaction
+    public List<String> getColumnRelatedTable(String guid, LineageDirection direction, int depth) throws AtlasBaseException {
+        List<String> columnRelatedTable = null;
+        if (direction != null) {
+            if (direction.equals(LineageDirection.INPUT)) {
+                columnRelatedTable = getColumnRelatedTableInfo(guid, LineageDirection.INPUT, depth);
+            } else if (direction.equals(LineageDirection.OUTPUT)) {
+                columnRelatedTable = getColumnRelatedTableInfo(guid, LineageDirection.OUTPUT, depth);
+            } else if (direction.equals(LineageDirection.BOTH)) {
+                columnRelatedTable = getBothColumnRelatedTable(guid, depth);
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", direction.toString());
+            }
+        } else {
+            throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", null);
+        }
+        return columnRelatedTable;
+    }
+
+    private List<String> getBothColumnRelatedTable(String guid, int depth) throws AtlasBaseException {
+        List<String> inputRelatedTable  = new ArrayList<>(getColumnRelatedTableInfo(guid, LineageDirection.INPUT, depth));
+        List<String> outputRelatedTable = new ArrayList<>(getColumnRelatedTableInfo(guid, LineageDirection.OUTPUT, depth));
+
+        inputRelatedTable.addAll(outputRelatedTable);
+
+        return inputRelatedTable;
+    }
+
+    public List<String> getColumnRelatedTableInfo(String guid, LineageDirection direction, int depth) throws AtlasBaseException {
+        String                         lineageQuery =  getColumnRelatedTableQuery(guid, direction, depth);
+
+        List vertexSet = (List) graph.executeGremlinScript(lineageQuery, false);
+        return vertexSet;
+    }
+
+    public String getColumnRelatedTableQuery(String entityGuid, LineageDirection direction, int depth) {
+        String columnRelatedTableQuery = null;
+        if (direction.equals(LineageDirection.INPUT)) {
+            columnRelatedTableQuery = generateColumnRelatedTableQuery(entityGuid, depth, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
+
+        } else if (direction.equals(LineageDirection.OUTPUT)) {
+            columnRelatedTableQuery = generateColumnRelatedTableQuery(entityGuid, depth, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+        }
+        return columnRelatedTableQuery;
+    }
+
+    private String generateColumnRelatedTableQuery(String entityGuid, int depth, String incomingFrom, String outgoingTo) {
+        String columnRelatedTableQuery;
+        if (depth < 1) {
+            String query = gremlinQueryProvider.getQuery(AtlasGremlinQuery.FULL_COLUMN_RELATED_TABLE);
+            columnRelatedTableQuery = String.format(query, entityGuid, incomingFrom, outgoingTo);
+        } else {
+            String query = gremlinQueryProvider.getQuery(AtlasGremlinQuery.PARTIAL_COLUMN_RELATED_TABLE);
+            columnRelatedTableQuery = String.format(query, entityGuid, incomingFrom, outgoingTo, depth);
+        }
+        return columnRelatedTableQuery;
+    }
+
+
 
     @Override
     @GraphTransaction
@@ -187,13 +247,16 @@ public class EntityLineageService implements AtlasLineageService {
 
 
     private AtlasLineageInfo getLineageInfo(String guid, LineageDirection direction, int depth, boolean isTable) throws AtlasBaseException {
-        Map<String, AtlasEntityHeader> entities     = new HashMap<>();
-        Set<LineageRelation>           relations    = new HashSet<>();
         String                         lineageQuery =  getLineageQuery(guid, direction, depth, isTable);
-
 
         List edgeMapList = (List) graph.executeGremlinScript(lineageQuery, false);
 
+        return formattedGraphData(edgeMapList, guid, direction, depth);
+    }
+
+    public AtlasLineageInfo formattedGraphData(List edgeMapList, String guid, LineageDirection direction, int depth) throws AtlasBaseException {
+        Map<String, AtlasEntityHeader> entities     = new HashMap<>();
+        Set<LineageRelation>           relations    = new HashSet<>();
         if (CollectionUtils.isNotEmpty(edgeMapList)) {
             for (Object edgeMap : edgeMapList) {
                 if (edgeMap instanceof Map) {
@@ -218,7 +281,6 @@ public class EntityLineageService implements AtlasLineageService {
                 }
             }
         }
-
         return new AtlasLineageInfo(guid, entities, relations, direction, depth);
     }
 
