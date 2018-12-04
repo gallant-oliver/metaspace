@@ -228,12 +228,15 @@ public class DataManageService {
         int offset = query.getOffset();
         PageResult<RelationEntityV2> pageResult = new PageResult<>();
         List<RelationEntityV2> relations =  null;
+        int totalNum = 0;
         if(query.getLimit() == -1) {
-            relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
-        }else{
+            relations = relationDao.queryRelation();
+            totalNum = relationDao.queryTotalNum();
+        } else {
             relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
+            totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
         }
-        int totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
+
         pageResult.setCount(relations.size());
         pageResult.setLists(relations);
         pageResult.setOffset(query.getOffset());
