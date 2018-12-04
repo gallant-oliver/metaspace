@@ -7,21 +7,21 @@ public class KerberosConfig {
     private static Configuration conf;
 
     private static boolean kerberosEnable = false;
-    private static String metaspaceAdmin;
-    private static String metaspaceKeytab;
+//    private static String metaspaceAdmin;
+//    private static String metaspaceKeytab;
     private static String hivePrincipal;
 
     public static boolean isKerberosEnable() {
         return kerberosEnable;
     }
 
-    public static String getMetaspaceAdmin() {
-        return metaspaceAdmin;
-    }
-
-    public static String getMetaspaceKeytab() {
-        return metaspaceKeytab;
-    }
+//    public static String getMetaspaceAdmin() {
+//        return metaspaceAdmin;
+//    }
+//
+//    public static String getMetaspaceKeytab() {
+//        return metaspaceKeytab;
+//    }
 
     public static String getHivePrincipal() {
         return hivePrincipal;
@@ -30,20 +30,20 @@ public class KerberosConfig {
     static {
         try {
             conf = ApplicationProperties.get();
-            String enable = conf.getString("metaspace.kerberos.enable");
+            String enable = conf.getString("atlas.authentication.method.kerberos");
             //默认关闭
             kerberosEnable = enable != null && enable.equals("true");
             if (kerberosEnable) {
-                metaspaceAdmin = conf.getString("metaspace.kerberos.admin");
-                metaspaceKeytab = conf.getString("metaspace.kerberos.keytab");
+//                metaspaceAdmin = conf.getString("metaspace.kerberos.admin");
+//                metaspaceKeytab = conf.getString("metaspace.kerberos.keytab");
                 hivePrincipal = conf.getString("metaspace.hive.principal");
 
-                if (metaspaceAdmin == null || metaspaceAdmin.equals("")) {
-                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.admin未正确配置");
-                }
-                if (metaspaceKeytab == null || metaspaceKeytab.equals("")) {
-                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.keytab未正确配置");
-                }
+//                if (metaspaceAdmin == null || metaspaceAdmin.equals("")) {
+//                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.admin未正确配置");
+//                }
+//                if (metaspaceKeytab == null || metaspaceKeytab.equals("")) {
+//                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.keytab未正确配置");
+//                }
                 if (hivePrincipal == null || hivePrincipal.equals("")) {
                     throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.principal未正确配置");
                 }
