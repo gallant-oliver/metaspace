@@ -227,7 +227,12 @@ public class DataManageService {
         int limit = query.getLimit();
         int offset = query.getOffset();
         PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> relations =  relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
+        List<RelationEntityV2> relations =  null;
+        if(query.getLimit() == -1) {
+            relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
+        }else{
+            relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
+        }
         int totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
         pageResult.setCount(relations.size());
         pageResult.setLists(relations);
