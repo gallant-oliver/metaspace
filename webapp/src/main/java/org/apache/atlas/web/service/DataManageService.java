@@ -230,8 +230,8 @@ public class DataManageService {
         List<RelationEntityV2> relations =  null;
         int totalNum = 0;
         if(query.getLimit() == -1) {
-            relations = relationDao.queryRelation();
-            totalNum = relationDao.queryTotalNum();
+            relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
+            totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
         } else {
             relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
             totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);

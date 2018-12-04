@@ -43,14 +43,12 @@ public interface RelationDAO {
     @Select("select * from table_relation where categoryGuid=#{categoryGuid} limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
-    @Select("select * from table_relation")
-    public List<RelationEntityV2> queryRelation();
+    @Select("select * from table_relation where categoryGuid=#{categoryGuid}")
+    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
-    @Select("select count(*) from table_relation")
-    public int queryTotalNum();
 
     @Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset);
