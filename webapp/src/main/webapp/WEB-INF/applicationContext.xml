@@ -31,7 +31,7 @@
 
 
 
-        <context:property-placeholder location="/WEB-INF/db.properties"/>
+        <context:property-placeholder location="file:#{systemProperties['atlas.conf']}/db.properties"/>
         <!--2 配置C3P0数据源 -->
         <bean id="datasource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
                 <!--驱动类名 -->
@@ -59,7 +59,6 @@
 
                 <property name="typeAliasesPackage" value="org.apache.atlas.model.metadata"></property>
 
-                <property name="mapperLocations" value="classpath*:com/zhangguo/bookstore/mapper/*Mapper.xml"></property>
         </bean>
 
         <!--4 自动扫描对象关系映射 -->
