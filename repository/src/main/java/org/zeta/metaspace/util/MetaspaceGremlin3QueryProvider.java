@@ -23,10 +23,10 @@ import org.apache.atlas.util.AtlasGremlin2QueryProvider;
  * @author sunhaoning
  * @date 2018/12/4 19:22
  */
-public class MetaspaceGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
+public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvider {
 
     @Override
-    public String getQuery(final AtlasGremlinQuery gremlinQuery) {
+    public String getQuery(final MetaspaceGremlinQuery gremlinQuery) {
         // In case any overrides are necessary, a specific switch case can be added here to
         // return Gremlin 3 specific query otherwise delegate to super.getQuery
         switch (gremlinQuery) {
@@ -50,6 +50,6 @@ public class MetaspaceGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
             case PARTIAL_COLUMN_RELATED_TABLE:
                 return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e2').inV().outE().inV().dedup().by('__guid').values('__guid').toList()";
         }
-        return super.getQuery(gremlinQuery);
+        return null;
     }
 }

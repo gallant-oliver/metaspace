@@ -24,9 +24,6 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.lineage.AtlasLineageInfo.LineageDirection;
 import org.apache.atlas.v1.model.lineage.SchemaResponse.SchemaDetails;
 
-import java.util.List;
-import java.util.Set;
-
 public interface AtlasLineageService {
     /**
      * @param entityGuid unique ID of the entity
@@ -34,7 +31,7 @@ public interface AtlasLineageService {
      * @param depth number of hops in lineage
      * @return AtlasLineageInfo
      */
-    AtlasLineageInfo getAtlasLineageInfo(String entityGuid, LineageDirection direction, int depth, boolean isTable) throws AtlasBaseException;
+    AtlasLineageInfo getAtlasLineageInfo(String entityGuid, LineageDirection direction, int depth) throws AtlasBaseException;
 
     /**
      * Return the schema for the given datasetName.
@@ -51,11 +48,5 @@ public interface AtlasLineageService {
      * @return Schema as JSON
      */
     SchemaDetails getSchemaForHiveTableByGuid(String guid) throws AtlasBaseException;
-
-    Integer getLineageDepth(String guid, LineageDirection direction) throws AtlasBaseException;
-
-    Integer getEntityDirectNum(String entityGuid, LineageDirection direction) throws AtlasBaseException;
-
-    List<String> getColumnRelatedTable(String guid, LineageDirection direction, int depth) throws AtlasBaseException;
 
 }

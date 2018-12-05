@@ -2,7 +2,7 @@ package org.apache.atlas.web.common.filetable;
 
 import com.gridsum.gdp.library.commons.exception.VerifyException;
 
-import org.apache.atlas.web.util.StringUtils;
+import org.zeta.metaspace.web.util.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;

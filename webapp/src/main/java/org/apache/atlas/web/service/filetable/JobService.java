@@ -13,11 +13,9 @@
 
 package org.apache.atlas.web.service.filetable;
 
-import com.gridsum.gdp.library.commons.utils.StringUtils;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.util.concurrent.Service;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.common.filetable.ActionType;
@@ -25,11 +23,11 @@ import org.apache.atlas.web.common.filetable.UploadConfig;
 import org.apache.atlas.web.common.filetable.job.UploadJob;
 import org.apache.atlas.web.model.filetable.TaskInfo;
 import org.apache.atlas.web.model.filetable.UploadJobInfo;
-import org.apache.atlas.web.service.UploadJobService;
-import org.apache.atlas.web.util.HiveJdbcUtils;
+import org.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zeta.metaspace.web.service.MetaDataService;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -43,7 +41,7 @@ public class JobService {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobService.class);
 
     @Autowired
-    private UploadJobService uploadJobService;
+    private MetaDataService.UploadJobService uploadJobService;
 
     @Autowired
     private TaskService taskService;

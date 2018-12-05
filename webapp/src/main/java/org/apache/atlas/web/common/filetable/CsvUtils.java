@@ -21,7 +21,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.atlas.web.model.filetable.Workbook;
-import org.apache.atlas.web.util.FileUtil;
+import org.zeta.metaspace.web.util.FileUtil;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;

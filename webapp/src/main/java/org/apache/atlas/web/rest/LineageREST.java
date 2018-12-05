@@ -90,7 +90,7 @@ public class LineageREST {
                                                                "," + depth + ")");
             }
 
-            return atlasLineageService.getAtlasLineageInfo(guid, direction, depth, true);
+            return atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
         } finally {
             AtlasPerfTracer.log(perf);
         }

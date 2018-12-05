@@ -18,6 +18,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.table.Field;
 import org.apache.atlas.model.table.TableForm;
 import org.testng.annotations.Test;
+import org.zeta.metaspace.web.util.TableSqlUtils;
 
 import static org.testng.Assert.assertEquals;
 

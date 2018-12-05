@@ -78,4 +78,5 @@
         <context:annotation-config/>
         <aop:config proxy-target-class="true"/>
         <context:component-scan base-package="org.apache.atlas" />
+        <context:component-scan base-package="org.zeta.metaspace" />
 </beans>

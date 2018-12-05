@@ -18,6 +18,7 @@ package org.zeta.metaspace.discovery;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -26,7 +27,10 @@ import java.util.List;
  * @author sunhaoning
  * @date 2018/12/4 19:30
  */
+
 public interface MetaspaceLineageService {
+
+    AtlasLineageInfo getColumnLineageInfo(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException;
 
     Integer getLineageDepth(String guid, AtlasLineageInfo.LineageDirection direction) throws AtlasBaseException;
 

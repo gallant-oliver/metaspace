@@ -88,26 +88,6 @@ public class AtlasGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
                                                 ".not(has('blockedPropagatedClassifications', org.janusgraph.core.attribute.Text.textContains(classificationId))).outV())" +
                             ".dedup().where(without('src')).simplePath()).emit().toList();";
 
-            case LINEAGE_DEPTH:
-                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
-                       ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
-
-            case DIRECT_ENTITY_NUM:
-                return "g.withSack(0).V().has('__guid','%s').inE('%s').outV().outE('%s').inV().count().toList()";
-
-
-            case FULL_COLUMN_LINEAGE:
-                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).emit().select('e1', 'e2').toList()";
-
-            case PARTIAL_COLUMN_LINEAGE:
-                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e1', 'e2').toList()";
-
-
-            case FULL_COLUMN_RELATED_TABLE:
-                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).emit().select('e2').inV().outE().inV().dedup().by('__guid').values('__guid').toList()";
-
-            case PARTIAL_COLUMN_RELATED_TABLE:
-                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e2').inV().outE().inV().dedup().by('__guid').values('__guid').toList()";
         }
         return super.getQuery(gremlinQuery);
     }

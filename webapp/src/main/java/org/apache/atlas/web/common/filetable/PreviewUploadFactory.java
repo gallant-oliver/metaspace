@@ -1,10 +1,10 @@
 package org.apache.atlas.web.common.filetable;
 
 
-import org.apache.atlas.web.service.PreviewUploadCsvServiceImpl;
-import org.apache.atlas.web.service.PreviewUploadService;
-import org.apache.atlas.web.service.PreviewUploadXlsServiceImpl;
-import org.apache.atlas.web.service.PreviewUploadXlsxServiceImpl;
+import org.zeta.metaspace.web.service.PreviewUploadCsvServiceImpl;
+import org.zeta.metaspace.web.service.PreviewUploadService;
+import org.zeta.metaspace.web.service.PreviewUploadXlsServiceImpl;
+import org.zeta.metaspace.web.service.PreviewUploadXlsxServiceImpl;
 
 public class PreviewUploadFactory {
 
