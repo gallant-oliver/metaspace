@@ -214,10 +214,11 @@ public class DataManageService {
         return relationDao.add(relationEntity);
     }
 
+    @Transactional
     public int removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) {
         if(Objects.nonNull(relationshipList)) {
             for (RelationEntityV2 relationship : relationshipList) {
-                return relationDao.delete(relationship.getRelationshipGuid());
+                relationDao.delete(relationship.getRelationshipGuid());
             }
         }
         return 1;
