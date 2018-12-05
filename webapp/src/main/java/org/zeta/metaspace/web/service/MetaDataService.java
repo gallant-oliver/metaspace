@@ -571,6 +571,8 @@ public class MetaDataService {
             AtlasRelatedObjectId db = (AtlasRelatedObjectId)tableEntity.getRelationshipAttribute("db");
             String dbName = db.getDisplayText();
             String dbGuid = db.getGuid();
+            String dbStatus = db.getEntityStatus().name();
+            String tableStatus = tableEntity.getStatus().name();
             List<AtlasRelatedObjectId> columns = (List<AtlasRelatedObjectId>)tableEntity.getRelationshipAttribute("columns");
             for(int i=0, size=columns.size(); i<size; i++) {
                 AtlasRelatedObjectId column = columns.get(i);
@@ -581,7 +583,9 @@ public class MetaDataService {
                 entity.setDbName(dbName);
                 entity.setTableGuid(tableGuid);
                 entity.setTableName(tableName);
-                entity.setStatus(column.getEntityStatus().name());
+                entity.setDbStatus(dbStatus);
+                entity.setTableStatus(tableStatus);
+                entity.setColumnStatus(column.getEntityStatus().name());
                 lineageEntities.add(entity);
             }
         }
@@ -1082,12 +1086,12 @@ public class MetaDataService {
         children.setCategoryName(glossaryCategory.getName());
         //获取当前Category的子Category
         Set<AtlasRelatedCategoryHeader> childrenCategories =glossaryCategory.getChildrenCategories();
-        Set<RelationEntity.ChildCatetory> childs = new HashSet<>();
+        Set<CategoryChildren.ChildCatetory> childs = new HashSet<>();
         if(Objects.nonNull(childrenCategories)) {
             Iterator<AtlasRelatedCategoryHeader> it = childrenCategories.iterator();
             while(it.hasNext()) {
                 AtlasRelatedCategoryHeader atlasRelatedCategory = it.next();
-                RelationEntity.ChildCatetory childCatetory = new RelationEntity.ChildCatetory();
+                CategoryChildren.ChildCatetory childCatetory = new CategoryChildren.ChildCatetory();
                 childCatetory.setGuid(atlasRelatedCategory.getCategoryGuid());
                 childCatetory.setName(atlasRelatedCategory.getDisplayText());
                 childs.add(childCatetory);

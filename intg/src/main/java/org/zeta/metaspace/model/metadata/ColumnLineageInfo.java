@@ -62,7 +62,9 @@ public class ColumnLineageInfo implements Serializable {
         private String dbGuid;
         private String dbName;
         private String columnName;
-        private String status;
+        private String tableStatus;
+        private String dbStatus;
+        private String columnStatus;
 
         public String getGuid() {
             return guid;
@@ -112,12 +114,28 @@ public class ColumnLineageInfo implements Serializable {
             this.dbGuid = dbGuid;
         }
 
-        public String getStatus() {
-            return status;
+        public String getTableStatus() {
+            return tableStatus;
         }
 
-        public void setStatus(String status) {
-            this.status = status;
+        public void setTableStatus(String tableStatus) {
+            this.tableStatus = tableStatus;
+        }
+
+        public String getDbStatus() {
+            return dbStatus;
+        }
+
+        public void setDbStatus(String dbStatus) {
+            this.dbStatus = dbStatus;
+        }
+
+        public String getColumnStatus() {
+            return columnStatus;
+        }
+
+        public void setColumnStatus(String columnStatus) {
+            this.columnStatus = columnStatus;
         }
     }
 }

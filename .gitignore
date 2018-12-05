@@ -10,9 +10,14 @@ out
 gen### Java template
 # Compiled class file
 *.class
+<<<<<<< HEAD
 distro/target
 logs/
 webapp/target
+=======
+/distro/target
+/webapp/target
+>>>>>>> feature/data-manage
 # Log file
 *.log
 logs/

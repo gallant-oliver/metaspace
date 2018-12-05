@@ -15,6 +15,7 @@
        xmlns:cache="http://www.springframework.org/schema/cache"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 
 	http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -23,7 +24,66 @@
 	http://www.springframework.org/schema/context
 	http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/aop
-	http://www.springframework.org/schema/aop/spring-aop.xsd">
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+
+
+
+        <context:property-placeholder location="file:#{systemProperties['atlas.conf']}/db.properties"/>
+        <!--2 配置C3P0数据源 -->
+        <bean id="datasource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+                <!--驱动类名 -->
+                <property name="driverClass" value="${metaspace.database.driverClassName}" />
+                <!-- url -->
+                <property name="jdbcUrl" value="${metaspace.database.url}" />
+                <!-- 用户名 -->
+                <property name="user" value="${metaspace.database.username}" />
+                <!-- 密码 -->
+                <property name="password" value="${metaspace.database.password}" />
+                <!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数  -->
+                <property name="acquireIncrement" value="5"></property>
+                <!-- 初始连接池大小 -->
+                <property name="initialPoolSize" value="10"></property>
+                <!-- 连接池中连接最小个数 -->
+                <property name="minPoolSize" value="5"></property>
+                <!-- 连接池中连接最大个数 -->
+                <property name="maxPoolSize" value="20"></property>
+        </bean>
+
+        <!--3 会话工厂bean sqlSessionFactoryBean -->
+        <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+
+                <property name="dataSource" ref="datasource"></property>
+
+                <property name="typeAliasesPackage" value="org.apache.atlas.model.metadata"></property>
+
+        </bean>
+
+        <!--4 自动扫描对象关系映射 -->
+        <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+                <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
+                <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+                <!-- 指定要自动扫描接口的基础包，实现接口 -->
+                <property name="basePackage" value="org.apache.atlas.web.dao"></property>
+        </bean>
+
+        <!--5 声明式事务管理 -->
+        <!--定义事物管理器，由spring管理事务 -->
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+                <property name="dataSource" ref="datasource"></property>
+        </bean>
+        <!--支持注解驱动的事务管理，指定事务管理器 -->
+        <tx:annotation-driven transaction-manager="transactionManager"/>
+
+        <!--6 容器自动扫描IOC组件  -->
+        <!--<context:component-scan base-package="com.zhangguo.bookstore"></context:component-scan>-->
+
+        <!--7 aspectj支持自动代理实现AOP功能 -->
+        <aop:aspectj-autoproxy proxy-target-class="true"></aop:aspectj-autoproxy>
+
+
 
         <!-- 启用缓存注解功能，这个是必须的，否则注解不会生效，另外，该注解一定要声明在spring主配置文件中才会生效 -->
         <cache:annotation-driven cache-manager="cacheManager"/>

@@ -27,7 +27,7 @@ public class CategoryChildren {
 
     private String categoryName;
     private String categoryGuid;
-    private Set<RelationEntity.ChildCatetory> childCategory;
+    private Set<ChildCatetory> childCategory;
 
     public String getCategoryName() {
         return categoryName;
@@ -45,11 +45,32 @@ public class CategoryChildren {
         this.categoryGuid = categoryGuid;
     }
 
-    public Set<RelationEntity.ChildCatetory> getChildCategory() {
+    public Set<ChildCatetory> getChildCategory() {
         return childCategory;
     }
 
-    public void setChildCategory(Set<RelationEntity.ChildCatetory> childCategory) {
+    public void setChildCategory(Set<ChildCatetory> childCategory) {
         this.childCategory = childCategory;
+    }
+
+    public static class ChildCatetory {
+        String guid;
+        String name;
+
+        public String getGuid() {
+            return guid;
+        }
+
+        public void setGuid(String guid) {
+            this.guid = guid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }
