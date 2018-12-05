@@ -3,14 +3,14 @@ package org.zeta.metaspace.web.service;
 import com.gridsum.gdp.library.commons.utils.FileUtils;
 
 import edu.npu.fastexcel.ExcelException;
-import org.apache.atlas.web.common.filetable.CsvEncode;
-import org.apache.atlas.web.common.filetable.CsvHeader;
-import org.apache.atlas.web.common.filetable.CsvUtils;
-import org.apache.atlas.web.common.filetable.FileType;
-import org.apache.atlas.web.common.filetable.UploadConfig;
-import org.apache.atlas.web.common.filetable.UploadFileCache;
-import org.apache.atlas.web.common.filetable.UploadPreview;
-import org.apache.atlas.web.model.filetable.Workbook;
+import org.zeta.metaspace.web.common.filetable.CsvEncode;
+import org.zeta.metaspace.web.common.filetable.CsvHeader;
+import org.zeta.metaspace.web.common.filetable.CsvUtils;
+import org.zeta.metaspace.web.common.filetable.FileType;
+import org.zeta.metaspace.web.common.filetable.UploadConfig;
+import org.zeta.metaspace.web.common.filetable.UploadFileCache;
+import org.zeta.metaspace.web.common.filetable.UploadPreview;
+import org.zeta.metaspace.web.model.filetable.Workbook;
 import org.zeta.metaspace.web.util.ExcelUtils;
 
 import java.io.IOException;

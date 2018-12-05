@@ -15,10 +15,10 @@ package org.zeta.metaspace.web.util;
 
 
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.KerberosConfig;
-import org.apache.atlas.MetaspaceConfig;
+import org.zeta.metaspace.KerberosConfig;
+import org.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.table.TableMetadata;
+import org.zeta.metaspace.model.table.TableMetadata;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

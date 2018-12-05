@@ -59,10 +59,8 @@
     <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
   </listener>
 
-
-
   <listener>
-    <listener-class>org.apache.atlas.web.listeners.KerberosReloginListener</listener-class>
+    <listener-class>org.zeta.metaspace.web.listeners.KerberosReloginListener</listener-class>
   </listener>
 
 

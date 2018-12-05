@@ -14,8 +14,8 @@
 package org.zeta.metaspace.web.util;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.KerberosConfig;
-import org.apache.atlas.MetaspaceConfig;
+import org.zeta.metaspace.KerberosConfig;
+import org.zeta.metaspace.MetaspaceConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;

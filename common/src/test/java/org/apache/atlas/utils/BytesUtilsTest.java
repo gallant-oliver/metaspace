@@ -3,6 +3,7 @@ package org.apache.atlas.utils;
 import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
+import org.zeta.metaspace.utils.BytesUtils;
 
 // ======================================================================
 //

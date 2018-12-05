@@ -15,8 +15,8 @@ package org.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.utils.DateUtils;
-import org.apache.atlas.utils.PageUtils;
+import org.zeta.metaspace.utils.DateUtils;
+import org.zeta.metaspace.utils.PageUtils;
 import org.zeta.metaspace.web.util.HdfsUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;

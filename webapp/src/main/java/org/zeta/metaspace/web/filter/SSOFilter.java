@@ -15,8 +15,8 @@
 package org.zeta.metaspace.web.filter;
 
 import com.google.gson.Gson;
-import org.zeta.metaspace.util.SSLClient;
-import org.apache.atlas.SSOConfig;
+import org.zeta.metaspace.utils.SSLClient;
+import org.zeta.metaspace.SSOConfig;
 import org.apache.atlas.web.filters.AuditFilter;
 import org.apache.atlas.web.util.DateTimeHelper;
 import org.apache.atlas.web.util.Servlets;

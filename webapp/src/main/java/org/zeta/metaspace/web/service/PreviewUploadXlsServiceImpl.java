@@ -6,11 +6,11 @@ import edu.npu.fastexcel.ExcelException;
 import edu.npu.fastexcel.FastExcel;
 import edu.npu.fastexcel.Sheet;
 import edu.npu.fastexcel.Workbook;
-import org.apache.atlas.web.common.filetable.CsvHeader;
-import org.apache.atlas.web.common.filetable.FileType;
-import org.apache.atlas.web.common.filetable.UploadConfig;
-import org.apache.atlas.web.common.filetable.UploadFileCache;
-import org.apache.atlas.web.common.filetable.UploadPreview;
+import org.zeta.metaspace.web.common.filetable.CsvHeader;
+import org.zeta.metaspace.web.common.filetable.FileType;
+import org.zeta.metaspace.web.common.filetable.UploadConfig;
+import org.zeta.metaspace.web.common.filetable.UploadFileCache;
+import org.zeta.metaspace.web.common.filetable.UploadPreview;
 import org.zeta.metaspace.web.util.ExcelUtils;
 
 import java.io.File;
@@ -20,9 +20,9 @@ import java.util.List;
 
 public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
     @Override
-    public org.apache.atlas.web.model.filetable.Workbook parser(String filePath) throws IOException, ExcelException {
+    public org.zeta.metaspace.web.model.filetable.Workbook parser(String filePath) throws IOException, ExcelException {
         Workbook workbook = FastExcel.createReadableWorkbook(new File(filePath));
-        org.apache.atlas.web.model.filetable.Workbook gWorkbook = new org.apache.atlas.web.model.filetable.Workbook();
+        org.zeta.metaspace.web.model.filetable.Workbook gWorkbook = new org.zeta.metaspace.web.model.filetable.Workbook();
         try {
             workbook.open();
             if (workbook != null) {
@@ -98,7 +98,7 @@ public class PreviewUploadXlsServiceImpl implements PreviewUploadService {
     private UploadPreview getUploadPreview(String jobId, UploadConfig uploadConfig, int size) {
         try {
             UploadFileCache uploadFileCache = UploadFileCache.create();
-            org.apache.atlas.web.model.filetable.Workbook workbook = uploadFileCache.get(jobId);
+            org.zeta.metaspace.web.model.filetable.Workbook workbook = uploadFileCache.get(jobId);
             String sheetName = null;
             if (uploadConfig != null) {
                 sheetName = uploadConfig.getSheetName();

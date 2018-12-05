@@ -1,13 +1,13 @@
 package org.zeta.metaspace.web.service;
 
 import edu.npu.fastexcel.ExcelException;
-import org.apache.atlas.web.common.filetable.CsvHeader;
-import org.apache.atlas.web.common.filetable.ExcelReader;
-import org.apache.atlas.web.common.filetable.FileType;
-import org.apache.atlas.web.common.filetable.UploadConfig;
-import org.apache.atlas.web.common.filetable.UploadFileCache;
-import org.apache.atlas.web.common.filetable.UploadPreview;
-import org.apache.atlas.web.model.filetable.Workbook;
+import org.zeta.metaspace.web.common.filetable.CsvHeader;
+import org.zeta.metaspace.web.common.filetable.ExcelReader;
+import org.zeta.metaspace.web.common.filetable.FileType;
+import org.zeta.metaspace.web.common.filetable.UploadConfig;
+import org.zeta.metaspace.web.common.filetable.UploadFileCache;
+import org.zeta.metaspace.web.common.filetable.UploadPreview;
+import org.zeta.metaspace.web.model.filetable.Workbook;
 import org.zeta.metaspace.web.util.CollectionUtil;
 import org.zeta.metaspace.web.util.ExcelUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;

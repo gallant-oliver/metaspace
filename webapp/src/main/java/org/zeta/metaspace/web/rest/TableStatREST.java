@@ -15,14 +15,14 @@ package org.zeta.metaspace.web.rest;
 
 import com.google.common.collect.Lists;
 import org.zeta.metaspace.web.scheduler.MetaspaceScheduler;
-import org.apache.atlas.model.DateType;
-import org.apache.atlas.model.PageList;
-import org.apache.atlas.model.table.Table;
-import org.apache.atlas.model.table.TableSourceCount;
-import org.apache.atlas.model.table.TableStat;
-import org.apache.atlas.model.table.TableStatRequest;
-import org.apache.atlas.repository.tablestat.TableStatService;
-import org.apache.atlas.utils.DateUtils;
+import org.zeta.metaspace.model.DateType;
+import org.zeta.metaspace.model.PageList;
+import org.zeta.metaspace.model.table.Table;
+import org.zeta.metaspace.model.table.TableSourceCount;
+import org.zeta.metaspace.model.table.TableStat;
+import org.zeta.metaspace.model.table.TableStatRequest;
+import org.zeta.metaspace.repository.tablestat.TableStatService;
+import org.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,7 +43,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.apache.atlas.utils.BytesUtils.byteCountByUnit;
+import static org.zeta.metaspace.utils.BytesUtils.byteCountByUnit;
 
 @Path("table/stat")
 @Singleton

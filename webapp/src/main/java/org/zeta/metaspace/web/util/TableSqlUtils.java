@@ -16,10 +16,10 @@ package org.zeta.metaspace.web.util;
 import com.google.common.base.Joiner;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.table.Field;
-import org.apache.atlas.model.table.StorageFormat;
-import org.apache.atlas.model.table.TableForm;
-import org.apache.atlas.model.table.TableType;
+import org.zeta.metaspace.model.table.Field;
+import org.zeta.metaspace.model.table.StorageFormat;
+import org.zeta.metaspace.model.table.TableForm;
+import org.zeta.metaspace.model.table.TableType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
