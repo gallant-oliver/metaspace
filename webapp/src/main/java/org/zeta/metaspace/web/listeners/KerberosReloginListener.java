@@ -13,6 +13,7 @@
 package org.zeta.metaspace.web.listeners;
 
 import org.apache.atlas.web.listeners.LoginProcessor;
+import org.zeta.metaspace.KerberosConfig;
 import org.zeta.metaspace.web.timer.KerberosReloginTimer;
 import org.springframework.web.context.ContextLoaderListener;
 
@@ -24,9 +25,11 @@ public class KerberosReloginListener extends ContextLoaderListener {
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         LoginProcessor loginProcessor = new LoginProcessor();
         loginProcessor.login();
-        KerberosReloginTimer kerberosReloginTimer = new KerberosReloginTimer();
-        Timer timer = new Timer();
-        timer.schedule(kerberosReloginTimer, 60 * 60 * 1000, 60 * 60 * 1000);
+        if(KerberosConfig.isKerberosEnable()) {
+            KerberosReloginTimer kerberosReloginTimer = new KerberosReloginTimer();
+            Timer timer = new Timer();
+            timer.schedule(kerberosReloginTimer, 60 * 60 * 1000, 60 * 60 * 1000);
+        }
         super.contextInitialized(servletContextEvent);
     }
 
