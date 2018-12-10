@@ -14,8 +14,6 @@ function createTable {
     echo "Creating the Table <$1>" 
 
     echo "create '$1', $2" | hbase shell > log 2>&1
-    echo "grant 'METASPACE', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
-    echo "grant 'atlas', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
     cat log | grep -q '0 row(s) in' 
 
     if [ $? = 0 ]; then 
@@ -42,9 +40,11 @@ do
      cat log | grep -q 'Table '${table_name_info[0]}' does exist' 
 
      if [ $? = 0 ]; then 
-      tableExists ${table_name_info[0]} 
+      tableExists ${table_name_info[0]}
+      echo "grant 'atlas', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
      else 
-      createTable ${table_name_info[0]} ${table_name_info[1]} 
+      createTable ${table_name_info[0]} ${table_name_info[1]}
+      echo "grant 'atlas', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
      fi 
 done 
 

@@ -11,6 +11,7 @@ public class KerberosReloginTimer extends TimerTask {
     @Override
     public void run() {
         try {
+            Log.info("对username=" + UserGroupInformation.getLoginUser().getUserName()+"进行续约");
             if (UserGroupInformation.isLoginKeytabBased()) {
                 UserGroupInformation.getLoginUser().reloginFromKeytab();
             } else if (UserGroupInformation.isLoginTicketBased()) {
