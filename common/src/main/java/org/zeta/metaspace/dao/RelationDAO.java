@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/11/21 10:59
  */
-package org.apache.atlas.web.dao;
+package org.zeta.metaspace.dao;
 
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
@@ -36,30 +36,30 @@ public interface RelationDAO {
     public int add(RelationEntityV2 entity);
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
-    public int delete(@Param("relationshipGuid")String guid);
+    public int delete(@Param("relationshipGuid") String guid);
 
     @Select("select * from table_relation where categoryGuid=#{categoryGuid}")
-    public RelationEntityV2 query(@Param("categoryGuid")String categoryGuid);
+    public RelationEntityV2 query(@Param("categoryGuid") String categoryGuid);
 
     @Select("select * from table_relation where categoryGuid=#{categoryGuid} limit #{limit} offset #{offset}")
-    public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
+    public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("select * from table_relation where categoryGuid=#{categoryGuid}")
-    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
+    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
-    public int queryTotalNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
+    public int queryTotalNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
 
     @Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
-    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset);
+    public List<RelationEntityV2> queryByTableName(@Param("tableName") String tableName, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("select count(*) from table_relation where tableName like '%${tableName}%'")
-    public int queryTotalNumByName(@Param("tableName")String tableName);
+    public int queryTotalNumByName(@Param("tableName") String tableName);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
-    public int queryRelationNumByCatalogGuid(@Param("categoryGuid")String categoryGuid);
+    public int queryRelationNumByCatalogGuid(@Param("categoryGuid") String categoryGuid);
 
     @Update("update table_relation set status = #{status} where tableGuid=#{tableGuid}")
-    public int updateDatabaseStatus(@Param("tableGuid")String tableGuid,@Param("status")String status);
+    public int updateTableStatus(@Param("tableGuid") String tableGuid, @Param("status") String status);
 }
