@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/11/19 20:10
  */
-package org.apache.atlas.web.service;
+package org.zeta.metaspace.web.service;
 
 /*
  * @description
@@ -24,6 +24,7 @@ package org.apache.atlas.web.service;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -275,5 +276,15 @@ public class DataManageService {
         pageResult.setOffset(query.getOffset());
         pageResult.setSum(totalNum);
         return pageResult;
+    }
+
+    @Transactional
+    public void updateStatus(List<AtlasEntity> entities) {
+        for (AtlasEntity entity : entities) {
+            String guid = entity.getGuid();
+            String typeName = entity.getTypeName();
+            if(typeName.contains("table"))
+                relationDao.updateTableStatus(guid, "DELETED");
+        }
     }
 }

@@ -40,7 +40,7 @@ import org.zeta.metaspace.model.metadata.TableLineageInfo;
 import org.zeta.metaspace.web.service.MetaDataService;
 import org.zeta.metaspace.web.service.SearchService;
 import org.zeta.metaspace.web.util.HiveJdbcUtils;
-import org.apache.atlas.web.service.DataManageService;
+import org.zeta.metaspace.web.service.DataManageService;
 
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;

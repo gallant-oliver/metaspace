@@ -37,8 +37,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.zeta.metaspace.web.service.NotificationService;
+import org.zeta.metaspace.web.service.DataManageService;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -64,8 +65,8 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     private final AtlasTypeRegistry                              typeRegistry;
     private final EntityNotificationSender<EntityNotificationV2> notificationSender;
 
-    @Resource
-    NotificationService notificationService;
+    @Autowired
+    DataManageService dataManageService;
 
     @Inject
     public EntityNotificationListenerV2(AtlasTypeRegistry typeRegistry,
@@ -88,7 +89,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Override
     public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_DELETE);
-        notificationService.updateStatus(entities);
+        dataManageService.updateStatus(entities);
     }
 
     @Override
