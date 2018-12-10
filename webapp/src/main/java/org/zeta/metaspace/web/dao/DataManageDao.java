@@ -17,7 +17,7 @@
  * @date 2018/11/19 11:49
  *//*
 
-package org.apache.atlas.web.dao;
+package org.zeta.metaspace.web.dao;
 
 import com.google.gson.Gson;
 import org.apache.atlas.exception.AtlasBaseException;

@@ -32,13 +32,13 @@ import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.web.dao.RelationDAO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.zeta.metaspace.web.service.NotificationService;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.apache.atlas.repository.graph.GraphHelper.isInternalType;
@@ -66,7 +65,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     private final EntityNotificationSender<EntityNotificationV2> notificationSender;
 
     @Resource
-    RelationDAO relationDao;
+    NotificationService notificationService;
 
     @Inject
     public EntityNotificationListenerV2(AtlasTypeRegistry typeRegistry,
@@ -89,13 +88,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Override
     public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_DELETE);
-
-        for (AtlasEntity entity : entities) {
-            String guid = entity.getGuid();
-            String typeName = entity.getTypeName();
-            if(typeName.contains("table"))
-                relationDao.updateDatabaseStatus(guid, "DELETED");
-        }
+        notificationService.updateStatus(entities);
     }
 
     @Override

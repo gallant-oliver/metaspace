@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/11/19 19:54
  */
-package org.apache.atlas.web.dao;
+package org.zeta.metaspace.web.dao;
 
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.Delete;
