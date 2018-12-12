@@ -45,6 +45,9 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.zeta.metaspace.model.metadata.Database;
+import org.zeta.metaspace.model.metadata.Parameters;
+import org.zeta.metaspace.model.result.PageResult;
 import org.zeta.metaspace.web.common.filetable.ColumnExt;
 import org.zeta.metaspace.web.common.filetable.CsvEncode;
 import org.zeta.metaspace.web.common.filetable.CsvHeader;
@@ -1522,6 +1525,11 @@ public class MetaDataService {
             }
             return schemaJson.toString();
         }
+    }
 
+    public PageResult<Database> getAllDBAndTable(Parameters parameters) throws AtlasBaseException {
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        return metaspaceLineageService.getAllDBAndTable(limit, offset);
     }
 }

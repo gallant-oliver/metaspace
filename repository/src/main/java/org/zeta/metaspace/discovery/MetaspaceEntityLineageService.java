@@ -17,6 +17,8 @@
 package org.zeta.metaspace.discovery;
 
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
+import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
+import static org.apache.atlas.repository.graph.GraphHelper.getTypeName;
 
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasErrorCode;
@@ -26,6 +28,7 @@ import org.apache.atlas.authorize.AtlasEntityAccessRequest;
 import org.apache.atlas.authorize.AtlasPrivilege;
 import org.apache.atlas.discovery.EntityLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
@@ -34,17 +37,23 @@ import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
 import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.AtlasStructType;
+import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.zeta.metaspace.model.metadata.Database;
+import org.zeta.metaspace.model.metadata.Table;
+import org.zeta.metaspace.model.result.PageResult;
 import org.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import org.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -323,5 +332,99 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
             lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
         }
         return lineageQuery;
+    }
+
+    @Override
+    public PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
+        String dbQuery = String.format(query, offset,offset + limit);
+        List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
+        Iterator<Map<String,AtlasVertex>> results = vertexMap.iterator();
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("description");
+
+        PageResult<Database> pageResult = new PageResult<>();
+        List<Database> databases = new ArrayList<>();
+        pageResult.setOffset(offset);
+
+        List<Table> tables = null;
+        Boolean hasDB = null;
+        Database db = null;
+        while (results.hasNext()) {
+            hasDB = false;
+
+            Map<String,AtlasVertex> map = results.next();
+            AtlasVertex dbVertex = map.get("db");
+            AtlasVertex tableVertex = map.get("table");
+
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            String dbGuid = getGuid(dbVertex);
+
+            if(Objects.isNull(tableVertex)) {
+                db = new Database();
+                String dbName = dbEntity.getAttribute("name").toString();
+                String dbStatus = dbEntity.getStatus().name();
+                String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
+                db.setDatabaseId(dbGuid);
+                db.setDatabaseName(dbName);
+                db.setStatus(dbStatus);
+                db.setDatabaseDescription(dbDescription);
+                databases.add(db);
+                continue;
+            }
+
+            Table table = new Table();
+            AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+            AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+            String tableGuid = getGuid(tableVertex);
+            String tableName = tableEntity.getAttribute("name").toString();
+            String tableStatus = tableEntity.getStatus().name();
+            String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
+
+            table.setTableId(tableGuid);
+            table.setTableName(tableName);
+            table.setStatus(tableStatus);
+            table.setDescription(tableDescription);
+
+            for(Database database : databases) {
+                String dbName = database.getDatabaseName();
+                if(dbGuid.equals(database.getDatabaseId())) {
+                    hasDB = true;
+                    table.setDatabaseId(dbGuid);
+                    table.setDatabaseName(dbName);
+                    tables = database.getTableList();
+                    tables.add(table);
+                    break;
+                }
+            }
+
+            if(!hasDB) {
+                db = new Database();
+                String dbName = dbEntity.getAttribute("name").toString();
+                String dbStatus = dbEntity.getStatus().name();
+                String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
+                db.setDatabaseId(dbGuid);
+                db.setDatabaseName(dbName);
+                db.setStatus(dbStatus);
+                db.setDatabaseDescription(dbDescription);
+                tables = new ArrayList<>();
+                table.setDatabaseId(dbGuid);
+                table.setDatabaseName(dbName);
+                tables.add(table);
+                db.setTableList(tables);
+                databases.add(db);
+            }
+        }
+        pageResult.setLists(databases);
+        pageResult.setCount(databases.size());
+
+        String numQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM);
+        List num = (List) graph.executeGremlinScript(numQuery, false);
+        pageResult.setSum(Integer.parseInt(num.get(0).toString()));
+
+        return pageResult;
     }
 }

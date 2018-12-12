@@ -47,6 +47,13 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
 
             case PARTIAL_COLUMN_RELATED_TABLE:
                 return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e2').inV().outE().inV().dedup().by('__guid').values('__guid').toList()";
+
+            case FULL_DB_TABLE:
+                /*return "g.V().has('__typeName','hive_db').as('a').inE().outV().has('__typeName','hive_table').group().by(outE('__hive_table.db').inV()).toList()";*/
+                return "g.V().has('__typeName','hive_db').range(0,10).as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
+
+            case DB_TOTAL_NUM:
+                return "g.V().has('__typeName','hive_db').dedup().count().toList()";
         }
         return null;
     }

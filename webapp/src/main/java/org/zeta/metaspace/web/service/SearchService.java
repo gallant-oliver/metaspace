@@ -7,6 +7,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
+import org.zeta.metaspace.discovery.MetaspaceEntityLineageService;
 import org.zeta.metaspace.model.result.BuildTableSql;
 import org.zeta.metaspace.model.result.PageResult;
 import org.zeta.metaspace.model.result.TableShow;
@@ -40,10 +41,15 @@ public class SearchService {
     private AtlasEntityStore entitiesStore;
     @Autowired
     EntityDiscoveryService entityDiscoveryService;
+    @Autowired
+    MetaspaceEntityLineageService metaspaceEntityService;
 
     @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
-        PageResult<Database> pageResult = new PageResult<>();
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        return metaspaceEntityService.getAllDBAndTable(limit, offset);
+        /*PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
         List<List<Object>> hiveDbs = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_db", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
@@ -88,7 +94,7 @@ public class SearchService {
         pageResult.setCount(databases.size());
         pageResult.setLists(databases);
         pageResult.setSum(Integer.valueOf(values.toString()));
-        return pageResult;
+        return pageResult;*/
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")

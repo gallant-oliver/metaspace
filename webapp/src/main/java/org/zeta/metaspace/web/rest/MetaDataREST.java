@@ -103,6 +103,22 @@ public class MetaDataREST {
         }
     }
 
+    @POST
+    @Path("/search/database/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getAllDatabaseV2(Parameters parameters) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getAllDatabase()");
+            }
+            return metadataService.getAllDBAndTable(parameters);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
     /**
      * 根据搜索条件返回表
      *

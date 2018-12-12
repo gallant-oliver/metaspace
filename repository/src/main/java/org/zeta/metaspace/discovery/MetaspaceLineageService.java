@@ -19,6 +19,8 @@ package org.zeta.metaspace.discovery;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.springframework.stereotype.Service;
+import org.zeta.metaspace.model.metadata.Database;
+import org.zeta.metaspace.model.result.PageResult;
 
 import java.util.List;
 
@@ -37,4 +39,6 @@ public interface MetaspaceLineageService {
     Integer getEntityDirectNum(String entityGuid, AtlasLineageInfo.LineageDirection direction) throws AtlasBaseException;
 
     List<String> getColumnRelatedTable(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException;
+
+    PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException;
 }
