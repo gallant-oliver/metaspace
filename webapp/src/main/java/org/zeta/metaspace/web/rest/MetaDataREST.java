@@ -96,7 +96,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getAllDatabase(" + parameters + " )");
             }
-            PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);

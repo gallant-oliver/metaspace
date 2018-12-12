@@ -46,10 +46,7 @@ public class SearchService {
 
     @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
-        int limit = parameters.getLimit();
-        int offset = parameters.getOffset();
-        return metaspaceEntityService.getAllDBAndTable(limit, offset);
-        /*PageResult<Database> pageResult = new PageResult<>();
+        PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
         String s = parameters.getQuery() == null ? "" : parameters.getQuery();
         List<List<Object>> hiveDbs = discoveryREST.searchUsingDSL("name like '*" + s + "*' where __state = 'ACTIVE' select name,__guid orderby __timestamp", "hive_db", "", parameters.getLimit(), parameters.getOffset()).getAttributes().getValues();
@@ -94,7 +91,14 @@ public class SearchService {
         pageResult.setCount(databases.size());
         pageResult.setLists(databases);
         pageResult.setSum(Integer.valueOf(values.toString()));
-        return pageResult;*/
+        return pageResult;
+    }
+
+    @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
+    public PageResult<Database> getDatabasePageResultV2(Parameters parameters) throws AtlasBaseException {
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        return metaspaceEntityService.getAllDBAndTable(limit, offset);
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")

@@ -340,21 +340,20 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
         String dbQuery = String.format(query, offset,offset + limit);
         List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
         Iterator<Map<String,AtlasVertex>> results = vertexMap.iterator();
+
+
+        PageResult<Database> pageResult = new PageResult<>();
+        List<Database> databases = new ArrayList<>();
+        List<Table> tables = null;
+        Boolean hasRecoredDB = null;
+        Database db = null;
+
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
         attributes.add("comment");
         attributes.add("description");
-
-        PageResult<Database> pageResult = new PageResult<>();
-        List<Database> databases = new ArrayList<>();
-        pageResult.setOffset(offset);
-
-        List<Table> tables = null;
-        Boolean hasDB = null;
-        Database db = null;
         while (results.hasNext()) {
-            hasDB = false;
-
+            hasRecoredDB = false;
             Map<String,AtlasVertex> map = results.next();
             AtlasVertex dbVertex = map.get("db");
             AtlasVertex tableVertex = map.get("table");
@@ -363,47 +362,33 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
             AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
             String dbGuid = getGuid(dbVertex);
 
-            if(Objects.isNull(tableVertex)) {
-                db = new Database();
-                String dbName = dbEntity.getAttribute("name").toString();
-                String dbStatus = dbEntity.getStatus().name();
-                String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
-                db.setDatabaseId(dbGuid);
-                db.setDatabaseName(dbName);
-                db.setStatus(dbStatus);
-                db.setDatabaseDescription(dbDescription);
-                tables = new ArrayList<>();
-                db.setTableList(tables);
-                databases.add(db);
-                continue;
-            }
-
             Table table = new Table();
-            AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
-            AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
-            String tableGuid = getGuid(tableVertex);
-            String tableName = tableEntity.getAttribute("name").toString();
-            String tableStatus = tableEntity.getStatus().name();
-            String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
+            if(Objects.nonNull(tableVertex)) {
+                AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+                AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+                String tableGuid = getGuid(tableVertex);
+                String tableName = tableEntity.getAttribute("name").toString();
+                String tableStatus = tableEntity.getStatus().name();
+                String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
+                table.setTableId(tableGuid);
+                table.setTableName(tableName);
+                table.setStatus(tableStatus);
+                table.setDescription(tableDescription);
 
-            table.setTableId(tableGuid);
-            table.setTableName(tableName);
-            table.setStatus(tableStatus);
-            table.setDescription(tableDescription);
-
-            for(Database database : databases) {
-                String dbName = database.getDatabaseName();
-                if(dbGuid.equals(database.getDatabaseId())) {
-                    hasDB = true;
-                    table.setDatabaseId(dbGuid);
-                    table.setDatabaseName(dbName);
-                    tables = database.getTableList();
-                    tables.add(table);
-                    break;
+                for (Database database : databases) {
+                    String dbName = database.getDatabaseName();
+                    if (dbGuid.equals(database.getDatabaseId())) {
+                        hasRecoredDB = true;
+                        table.setDatabaseId(dbGuid);
+                        table.setDatabaseName(dbName);
+                        tables = database.getTableList();
+                        tables.add(table);
+                        break;
+                    }
                 }
             }
-
-            if(!hasDB) {
+            //没有记录当前DB信息
+            if(!hasRecoredDB) {
                 db = new Database();
                 String dbName = dbEntity.getAttribute("name").toString();
                 String dbStatus = dbEntity.getStatus().name();
@@ -413,20 +398,21 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
                 db.setStatus(dbStatus);
                 db.setDatabaseDescription(dbDescription);
                 tables = new ArrayList<>();
-                table.setDatabaseId(dbGuid);
-                table.setDatabaseName(dbName);
-                tables.add(table);
+                if(Objects.nonNull(tableVertex)) {
+                    table.setDatabaseId(dbGuid);
+                    table.setDatabaseName(dbName);
+                    tables.add(table);
+                }
                 db.setTableList(tables);
                 databases.add(db);
             }
         }
         pageResult.setLists(databases);
+        pageResult.setOffset(offset);
         pageResult.setCount(databases.size());
-
         String numQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM);
         List num = (List) graph.executeGremlinScript(numQuery, false);
         pageResult.setSum(Integer.parseInt(num.get(0).toString()));
-
         return pageResult;
     }
 }
