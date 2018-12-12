@@ -372,6 +372,8 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
                 db.setDatabaseName(dbName);
                 db.setStatus(dbStatus);
                 db.setDatabaseDescription(dbDescription);
+                tables = new ArrayList<>();
+                db.setTableList(tables);
                 databases.add(db);
                 continue;
             }
