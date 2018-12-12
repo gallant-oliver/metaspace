@@ -18,7 +18,6 @@ package org.zeta.metaspace.discovery;
 
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
-import static org.apache.atlas.repository.graph.GraphHelper.getTypeName;
 
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasErrorCode;
@@ -37,8 +36,6 @@ import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasStructType;
-import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -68,7 +65,7 @@ import javax.inject.Inject;
  */
 
 @Service
-public class MetaspaceEntityLineageService implements MetaspaceLineageService {
+public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntityLineageService.class);
 
@@ -81,7 +78,7 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
     private final AtlasTypeRegistry atlasTypeRegistry;
 
     @Inject
-    MetaspaceEntityLineageService(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph) {
+    MetaspaceGremlinQueryService(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph) {
         this.graph = atlasGraph;
         this.gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
         this.entityRetriever = new EntityGraphRetriever(typeRegistry);
@@ -414,5 +411,17 @@ public class MetaspaceEntityLineageService implements MetaspaceLineageService {
         List num = (List) graph.executeGremlinScript(numQuery, false);
         pageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return pageResult;
+    }
+
+    @Override
+    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
+        String guidQuery = String.format(dbName, tableName);
+        String guid = null;
+        List guidList = (List) graph.executeGremlinScript(guidQuery, false);
+        if(Objects.nonNull(guidList) && guidList.size()>0) {
+            guid = guidList.get(0).toString();
+        }
+        return guid;
     }
 }

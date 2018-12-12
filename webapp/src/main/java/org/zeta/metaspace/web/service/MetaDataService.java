@@ -78,7 +78,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.zeta.metaspace.discovery.MetaspaceLineageService;
+import org.zeta.metaspace.discovery.MetaspaceGremlinService;
 import org.zeta.metaspace.model.metadata.CategoryChildren;
 import org.zeta.metaspace.model.metadata.CategoryEntity;
 import org.zeta.metaspace.model.metadata.CategoryHeader;
@@ -124,7 +124,7 @@ public class MetaDataService {
     @Autowired
     AtlasTypeDefStore typeDefStore;
     @Autowired
-    MetaspaceLineageService metaspaceLineageService;
+    MetaspaceGremlinService metaspaceLineageService;
 
     @Cacheable(value = "tableCache", key = "#guid", condition = "#refreshCache==false")
     public Table getTableInfoById(String guid, Boolean refreshCache) throws AtlasBaseException {

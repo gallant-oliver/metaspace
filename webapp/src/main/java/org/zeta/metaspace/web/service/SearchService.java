@@ -7,7 +7,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.zeta.metaspace.discovery.MetaspaceEntityLineageService;
+import org.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import org.zeta.metaspace.model.result.BuildTableSql;
 import org.zeta.metaspace.model.result.PageResult;
 import org.zeta.metaspace.model.result.TableShow;
@@ -42,7 +42,7 @@ public class SearchService {
     @Autowired
     EntityDiscoveryService entityDiscoveryService;
     @Autowired
-    MetaspaceEntityLineageService metaspaceEntityService;
+    MetaspaceGremlinQueryService metaspaceEntityService;
 
     @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {

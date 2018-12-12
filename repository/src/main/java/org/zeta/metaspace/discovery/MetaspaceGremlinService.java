@@ -30,7 +30,7 @@ import java.util.List;
  * @date 2018/12/4 19:30
  */
 
-public interface MetaspaceLineageService {
+public interface MetaspaceGremlinService {
 
     AtlasLineageInfo getColumnLineageInfo(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException;
 
@@ -41,4 +41,6 @@ public interface MetaspaceLineageService {
     List<String> getColumnRelatedTable(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException;
 
     PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException;
+
+    String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException;
 }

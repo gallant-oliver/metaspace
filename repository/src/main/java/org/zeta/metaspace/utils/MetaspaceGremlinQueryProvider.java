@@ -42,7 +42,9 @@ public abstract class MetaspaceGremlinQueryProvider {
         PARTIAL_COLUMN_RELATED_TABLE,
 
         FULL_DB_TABLE,
-        DB_TOTAL_NUM
+        DB_TOTAL_NUM,
+
+        TABLE_GUID_QUERY
 
     }
 }
