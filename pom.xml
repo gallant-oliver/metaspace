@@ -635,7 +635,7 @@
 
         <hadoop.version>2.7.1</hadoop.version>
         <hbase.version>1.1.2</hbase.version>
-        <solr.version>5.5.1</solr.version>
+        <solr.version>7.4.0</solr.version>
         <kafka.version>1.0.0</kafka.version>
         <elasticsearch.version>5.6.4</elasticsearch.version>
         <kafka.scala.binary.version>2.11</kafka.scala.binary.version>

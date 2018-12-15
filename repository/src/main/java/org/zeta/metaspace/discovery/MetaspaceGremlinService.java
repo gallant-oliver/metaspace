@@ -18,8 +18,9 @@ package org.zeta.metaspace.discovery;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.springframework.stereotype.Service;
+import org.zeta.metaspace.model.metadata.Column;
 import org.zeta.metaspace.model.metadata.Database;
+import org.zeta.metaspace.model.metadata.Table;
 import org.zeta.metaspace.model.result.PageResult;
 
 import java.util.List;
@@ -43,4 +44,8 @@ public interface MetaspaceGremlinService {
     PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException;
 
     String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException;
+
+    PageResult<Table> getTableNameAndDbNameByQuery(String query,int offset,int limit) throws AtlasBaseException;
+
+    PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException;
 }

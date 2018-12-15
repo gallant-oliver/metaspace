@@ -140,6 +140,11 @@ public class SearchService {
         pageResult.setSum(Integer.valueOf(values.toString()));
         return pageResult;
     }
+    @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
+    public PageResult<Table> getTablePageResultV2(Parameters parameters) throws AtlasBaseException {
+
+        return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(),parameters.getLimit());
+    }
 
     @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Column> getColumnPageResult(Parameters parameters) throws AtlasBaseException {
@@ -177,7 +182,10 @@ public class SearchService {
         pageResult.setSum(Integer.valueOf(values.toString()));
         return pageResult;
     }
-
+    @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
+    public PageResult<Column> getColumnPageResultV2(Parameters parameters) throws AtlasBaseException {
+        return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(),parameters.getLimit());
+    }
     public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
         TableShow tableShow = new TableShow();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
