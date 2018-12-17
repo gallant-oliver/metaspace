@@ -15,10 +15,10 @@ package org.apache.atlas.web.util;
 
 import com.google.common.collect.Lists;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.zeta.metaspace.model.table.Field;
-import org.zeta.metaspace.model.table.TableForm;
+import io.zeta.metaspace.model.table.Field;
+import io.zeta.metaspace.model.table.TableForm;
 import org.testng.annotations.Test;
-import org.zeta.metaspace.web.util.TableSqlUtils;
+import io.zeta.metaspace.web.util.TableSqlUtils;
 
 import static org.testng.Assert.assertEquals;
 

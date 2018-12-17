@@ -4,7 +4,7 @@ import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.Lists;
 import org.testng.annotations.Test;
-import org.zeta.metaspace.utils.PageUtils;
+import io.zeta.metaspace.utils.PageUtils;
 
 import java.util.Iterator;
 import java.util.List;

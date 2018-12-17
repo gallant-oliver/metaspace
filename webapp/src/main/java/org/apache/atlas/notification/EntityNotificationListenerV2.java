@@ -39,9 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataManageService;
 
-import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
