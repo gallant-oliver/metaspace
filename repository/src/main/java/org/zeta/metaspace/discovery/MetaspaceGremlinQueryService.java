@@ -479,7 +479,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         PageResult<Column> columnPageResult = new PageResult<>();
         ArrayList<Column> columns = new ArrayList<>();
         String columnTableDBQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY);
-        List columnTableDBs2 = (List) graph.executeGremlinScript("g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*tm.*')).has('__guid').order().by('__timestamp').dedup().range(0,2).as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').as('db').select('column','table','db').toList()",false);
         List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(String.format(columnTableDBQuery, query, offset, offset + limit), false);
         for (Map<String, AtlasVertex> columnTableDB : columnTableDBs) {
             AtlasVertex columnVertex = columnTableDB.get("column");
