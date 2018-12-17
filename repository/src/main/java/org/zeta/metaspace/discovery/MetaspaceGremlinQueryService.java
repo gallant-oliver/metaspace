@@ -41,6 +41,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.zeta.metaspace.model.metadata.Column;
 import org.zeta.metaspace.model.metadata.Database;
 import org.zeta.metaspace.model.metadata.Table;
 import org.zeta.metaspace.model.result.PageResult;
@@ -69,7 +70,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntityLineageService.class);
 
-    private static final String PROCESS_INPUTS_EDGE  = "__Process.inputs";
+    private static final String PROCESS_INPUTS_EDGE = "__Process.inputs";
     private static final String PROCESS_OUTPUTS_EDGE = "__Process.outputs";
 
     private final AtlasGraph graph;
@@ -139,7 +140,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     private List<String> getBothColumnRelatedTable(String guid, int depth) throws AtlasBaseException {
-        List<String> inputRelatedTable  = new ArrayList<>(getColumnRelatedTableInfo(guid, AtlasLineageInfo.LineageDirection.INPUT, depth));
+        List<String> inputRelatedTable = new ArrayList<>(getColumnRelatedTableInfo(guid, AtlasLineageInfo.LineageDirection.INPUT, depth));
         List<String> outputRelatedTable = new ArrayList<>(getColumnRelatedTableInfo(guid, AtlasLineageInfo.LineageDirection.OUTPUT, depth));
 
         inputRelatedTable.addAll(outputRelatedTable);
@@ -147,7 +148,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     public List<String> getColumnRelatedTableInfo(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
-        String                         lineageQuery =  getColumnRelatedTableQuery(guid, direction, depth);
+        String lineageQuery = getColumnRelatedTableQuery(guid, direction, depth);
 
         List vertexSet = (List) graph.executeGremlinScript(lineageQuery, false);
         return vertexSet;
@@ -177,7 +178,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     public AtlasLineageInfo getLineageInfo(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
-        String                         lineageQuery =  getColumnLineageQuery(guid, direction, depth);
+        String lineageQuery = getColumnLineageQuery(guid, direction, depth);
 
         List edgeMapList = (List) graph.executeGremlinScript(lineageQuery, false);
 
@@ -185,14 +186,14 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     public AtlasLineageInfo formattedGraphData(List edgeMapList, String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
-        Map<String, AtlasEntityHeader> entities     = new HashMap<>();
-        Set<AtlasLineageInfo.LineageRelation> relations    = new HashSet<>();
+        Map<String, AtlasEntityHeader> entities = new HashMap<>();
+        Set<AtlasLineageInfo.LineageRelation> relations = new HashSet<>();
         if (CollectionUtils.isNotEmpty(edgeMapList)) {
             for (Object edgeMap : edgeMapList) {
                 if (edgeMap instanceof Map) {
                     for (final Object o : ((Map) edgeMap).entrySet()) {
                         final Map.Entry entry = (Map.Entry) o;
-                        Object          value = entry.getValue();
+                        Object value = entry.getValue();
 
                         if (value instanceof List) {
                             for (Object elem : (List) value) {
@@ -215,12 +216,12 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     private void processEdge(final AtlasEdge edge, final Map<String, AtlasEntityHeader> entities, final Set<AtlasLineageInfo.LineageRelation> relations) throws AtlasBaseException {
-        AtlasVertex inVertex     = edge.getInVertex();
-        AtlasVertex outVertex    = edge.getOutVertex();
-        String      inGuid       = AtlasGraphUtilsV2.getIdFromVertex(inVertex);
-        String      outGuid      = AtlasGraphUtilsV2.getIdFromVertex(outVertex);
-        String      relationGuid = AtlasGraphUtilsV2.getEncodedProperty(edge, RELATIONSHIP_GUID_PROPERTY_KEY, String.class);
-        boolean     isInputEdge  = edge.getLabel().equalsIgnoreCase(PROCESS_INPUTS_EDGE);
+        AtlasVertex inVertex = edge.getInVertex();
+        AtlasVertex outVertex = edge.getOutVertex();
+        String inGuid = AtlasGraphUtilsV2.getIdFromVertex(inVertex);
+        String outGuid = AtlasGraphUtilsV2.getIdFromVertex(outVertex);
+        String relationGuid = AtlasGraphUtilsV2.getEncodedProperty(edge, RELATIONSHIP_GUID_PROPERTY_KEY, String.class);
+        boolean isInputEdge = edge.getLabel().equalsIgnoreCase(PROCESS_INPUTS_EDGE);
 
         if (!entities.containsKey(inGuid)) {
             AtlasEntityHeader entityHeader = entityRetriever.toAtlasEntityHeader(inVertex);
@@ -240,9 +241,9 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     private AtlasLineageInfo getBothColumnLineageInfo(String guid, int depth) throws AtlasBaseException {
-        AtlasLineageInfo inputLineage  = getColumnLineageInfo(guid, AtlasLineageInfo.LineageDirection.INPUT, depth);
+        AtlasLineageInfo inputLineage = getColumnLineageInfo(guid, AtlasLineageInfo.LineageDirection.INPUT, depth);
         AtlasLineageInfo outputLineage = getColumnLineageInfo(guid, AtlasLineageInfo.LineageDirection.OUTPUT, depth);
-        AtlasLineageInfo ret           = inputLineage;
+        AtlasLineageInfo ret = inputLineage;
 
         ret.getRelations().addAll(outputLineage.getRelations());
         ret.getGuidEntityMap().putAll(outputLineage.getGuidEntityMap());
@@ -260,6 +261,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         return lineageQuery;
     }
+
     private String generateColumnLineageQuery(String entityGuid, int depth, String incomingFrom, String outgoingTo) {
         String lineageQuery;
         if (depth < 1) {
@@ -289,20 +291,21 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public Integer getLineageDepth(String guid, AtlasLineageInfo.LineageDirection direction) throws AtlasBaseException {
         String lineageQuery = getLineageDepthQuery(guid, direction);
         List depthList = (List) graph.executeGremlinScript(lineageQuery, false);
-        if(Objects.nonNull(depthList) && depthList.size() > 0)
+        if (Objects.nonNull(depthList) && depthList.size() > 0)
             return Integer.parseInt(depthList.get(0).toString());
         else
             return 0;
     }
+
     private String getLineageDepthQuery(String entityGuid, AtlasLineageInfo.LineageDirection direction) {
         String lineageQuery = null;
 
         if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
-            String query  = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
             lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
 
         } else if (direction.equals(AtlasLineageInfo.LineageDirection.OUTPUT)) {
-            String query  = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
             lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
         }
         return lineageQuery;
@@ -313,14 +316,15 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public Integer getEntityDirectNum(String guid, AtlasLineageInfo.LineageDirection direction) throws AtlasBaseException {
         String lineageQuery = getEntityDirectNumQuery(guid, direction);
         List depthList = (List) graph.executeGremlinScript(lineageQuery, false);
-        if(Objects.nonNull(depthList) && depthList.size()>0)
+        if (Objects.nonNull(depthList) && depthList.size() > 0)
             return Integer.parseInt(depthList.get(0).toString());
         else
             return 0;
     }
+
     private String getEntityDirectNumQuery(String entityGuid, AtlasLineageInfo.LineageDirection direction) {
         String lineageQuery = null;
-        String query  = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DIRECT_ENTITY_NUM);
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DIRECT_ENTITY_NUM);
         if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
 
             lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
@@ -334,9 +338,9 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     @Override
     public PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException {
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
-        String dbQuery = String.format(query, offset,offset + limit);
+        String dbQuery = String.format(query, offset, offset + limit);
         List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
-        Iterator<Map<String,AtlasVertex>> results = vertexMap.iterator();
+        Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
 
 
         PageResult<Database> pageResult = new PageResult<>();
@@ -351,7 +355,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         attributes.add("description");
         while (results.hasNext()) {
             hasRecoredDB = false;
-            Map<String,AtlasVertex> map = results.next();
+            Map<String, AtlasVertex> map = results.next();
             AtlasVertex dbVertex = map.get("db");
             AtlasVertex tableVertex = map.get("table");
 
@@ -360,7 +364,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             String dbGuid = getGuid(dbVertex);
 
             Table table = new Table();
-            if(Objects.nonNull(tableVertex)) {
+            if (Objects.nonNull(tableVertex)) {
                 AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
                 AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
                 String tableGuid = getGuid(tableVertex);
@@ -385,7 +389,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 }
             }
             //没有记录当前DB信息
-            if(!hasRecoredDB) {
+            if (!hasRecoredDB) {
                 db = new Database();
                 String dbName = dbEntity.getAttribute("name").toString();
                 String dbStatus = dbEntity.getStatus().name();
@@ -395,7 +399,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 db.setStatus(dbStatus);
                 db.setDatabaseDescription(dbDescription);
                 tables = new ArrayList<>();
-                if(Objects.nonNull(tableVertex)) {
+                if (Objects.nonNull(tableVertex)) {
                     table.setDatabaseId(dbGuid);
                     table.setDatabaseName(dbName);
                     tables.add(table);
@@ -416,12 +420,111 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     @Override
     public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
-        String guidQuery = String.format(dbName, tableName);
+        String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
         List guidList = (List) graph.executeGremlinScript(guidQuery, false);
-        if(Objects.nonNull(guidList) && guidList.size()>0) {
+        if (Objects.nonNull(guidList) && guidList.size() > 0) {
             guid = guidList.get(0).toString();
         }
         return guid;
     }
+
+
+    public PageResult<Table> getTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException {
+        PageResult<Table> tablePageResult = new PageResult<>();
+        ArrayList<Table> tables = new ArrayList<>();
+        String tableDBQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY);
+        List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(String.format(tableDBQuery, query, offset, offset + limit), false);
+        for (Map<String, AtlasVertex> tableDB : tableDBs) {
+            AtlasVertex tableVertex = tableDB.get("table");
+            AtlasVertex dbVertex = tableDB.get("db");
+            Table table = getTableByVertex(tableVertex, dbVertex);
+            tables.add(table);
+        }
+        tablePageResult.setLists(tables);
+        tablePageResult.setCount(tables.size());
+        tablePageResult.setOffset(offset);
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, query), false);
+        tablePageResult.setSum(counts.get(0));
+        return tablePageResult;
+    }
+
+    private Table getTableByVertex(AtlasVertex tableVertex, AtlasVertex dbVertex) throws AtlasBaseException {
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("description");
+        Table table = new Table();
+        if (Objects.nonNull(tableVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+            AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+            table.setTableId(tableEntity.getGuid());
+            table.setTableName(tableEntity.getAttribute("name").toString());
+            table.setStatus(tableEntity.getStatus().name());
+            table.setDescription(tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString());
+            ;
+        }
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            table.setDatabaseName(dbEntity.getAttribute("name").toString());
+            table.setDatabaseId(dbEntity.getGuid());
+        }
+        return table;
+    }
+
+    @Override
+    public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException {
+        PageResult<Column> columnPageResult = new PageResult<>();
+        ArrayList<Column> columns = new ArrayList<>();
+        String columnTableDBQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY);
+        List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(String.format(columnTableDBQuery, query, offset, offset + limit), false);
+        for (Map<String, AtlasVertex> columnTableDB : columnTableDBs) {
+            AtlasVertex columnVertex = columnTableDB.get("column");
+            AtlasVertex tableVertex = columnTableDB.get("table");
+            AtlasVertex dbVertex = columnTableDB.get("db");
+
+            Column column = getColumnByVertex(columnVertex,tableVertex, dbVertex);
+            columns.add(column);
+        }
+        columnPageResult.setLists(columns);
+        columnPageResult.setCount(columns.size());
+        columnPageResult.setOffset(offset);
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_COUNT_BY_QUERY);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, query), false);
+        columnPageResult.setSum(counts.get(0));
+        return columnPageResult;
+    }
+
+    private Column getColumnByVertex(AtlasVertex columnVertex, AtlasVertex tableVertex, AtlasVertex dbVertex) throws AtlasBaseException {
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("description");
+        Column column = new Column();
+        if (Objects.nonNull(columnVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo columnEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(columnVertex, attributes, null, true);
+            AtlasEntity columnEntity = columnEntityWithExtInfo.getEntity();
+            column.setColumnId(columnEntity.getGuid());
+            column.setColumnName(columnEntity.getAttribute("name").toString());
+            column.setStatus(columnEntity.getStatus().name());
+            column.setDescription(columnEntity.getAttribute("comment") == null ? "null" : columnEntity.getAttribute("comment").toString());
+            ;
+        }
+        if (Objects.nonNull(tableVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+            AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
+            column.setTableName(tableEntity.getAttribute("name").toString());
+            column.setTableId(tableEntity.getGuid());
+        }
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            column.setDatabaseName(dbEntity.getAttribute("name").toString());
+            column.setDatabaseId(dbEntity.getGuid());
+        }
+        return column;
+    }
 }
+
