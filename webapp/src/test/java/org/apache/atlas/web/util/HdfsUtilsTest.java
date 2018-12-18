@@ -4,7 +4,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.testng.annotations.Test;
-import org.zeta.metaspace.web.util.HdfsUtils;
+import io.zeta.metaspace.web.util.HdfsUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;

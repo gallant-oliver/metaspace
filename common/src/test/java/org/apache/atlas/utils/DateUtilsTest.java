@@ -15,7 +15,7 @@ package org.apache.atlas.utils;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import org.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.DateUtils;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;

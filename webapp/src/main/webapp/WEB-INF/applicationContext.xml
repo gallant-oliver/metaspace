@@ -57,7 +57,7 @@
 
                 <property name="dataSource" ref="datasource"></property>
 
-                <property name="typeAliasesPackage" value="org.apache.atlas.model.metadata"></property>
+                <property name="typeAliasesPackage" value="io.zeta.metaspace.model.metadata"></property>
 
         </bean>
 
@@ -66,7 +66,7 @@
                 <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
                 <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
                 <!-- 指定要自动扫描接口的基础包，实现接口 -->
-                <property name="basePackage" value="org.zeta.metaspace.web.dao"></property>
+                <property name="basePackage" value="io.zeta.metaspace.web.dao"></property>
         </bean>
 
         <!--5 声明式事务管理 -->
@@ -138,5 +138,5 @@
         <context:annotation-config/>
         <aop:config proxy-target-class="true"/>
         <context:component-scan base-package="org.apache.atlas" />
-        <context:component-scan base-package="org.zeta.metaspace" />
+        <context:component-scan base-package="io.zeta.metaspace" />
 </beans>

@@ -43,7 +43,7 @@
 
   <filter>
     <filter-name>AuditFilter</filter-name>
-    <filter-class>org.zeta.metaspace.web.filter.SSOFilter</filter-class>
+    <filter-class>io.zeta.metaspace.web.filter.SSOFilter</filter-class>
   </filter>
 
   <filter-mapping>
@@ -60,7 +60,7 @@
   </listener>
 
   <listener>
-    <listener-class>org.zeta.metaspace.web.listeners.KerberosReloginListener</listener-class>
+    <listener-class>io.zeta.metaspace.web.listeners.KerberosReloginListener</listener-class>
   </listener>
 
 
