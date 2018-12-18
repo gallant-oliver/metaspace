@@ -21,7 +21,7 @@ import io.zeta.metaspace.model.table.Table;
 import io.zeta.metaspace.model.table.TableSourceCount;
 import io.zeta.metaspace.model.table.TableStat;
 import io.zeta.metaspace.model.table.TableStatRequest;
-import io.zata.metaspace.repository.tablestat.TableStatService;
+import io.zeta.metaspace.repository.tablestat.TableStatService;
 import io.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.util.Servlets;

@@ -16,7 +16,7 @@ package io.zeta.metaspace.web.service.filetable;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.exception.AtlasBaseException;
-import io.zata.metaspace.repository.util.HbaseUtils;
+import io.zeta.metaspace.repository.util.HbaseUtils;
 import io.zeta.metaspace.web.model.filetable.TaskInfo;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;

@@ -11,7 +11,7 @@
 //
 // ======================================================================
 
-package io.zata.metaspace.repository.util;
+package io.zeta.metaspace.repository.util;
 
 import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.hadoop.conf.Configuration;

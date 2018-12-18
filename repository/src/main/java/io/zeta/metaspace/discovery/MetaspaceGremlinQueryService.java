@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/12/4 19:35
  */
-package io.zata.metaspace.discovery;
+package io.zeta.metaspace.discovery;
 
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
@@ -45,8 +45,8 @@ import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zata.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zata.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;

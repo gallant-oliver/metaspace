@@ -1,6 +1,6 @@
 package org.zeta.metaspace.repository.tablestat;
 
-import io.zata.metaspace.repository.tablestat.TableStatService;
+import io.zeta.metaspace.repository.tablestat.TableStatService;
 import io.zeta.metaspace.model.table.TableStat;
 import io.zeta.metaspace.model.table.TableStatRequest;
 import org.testng.annotations.Test;

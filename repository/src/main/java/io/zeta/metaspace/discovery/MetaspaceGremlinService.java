@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/12/4 19:30
  */
-package io.zata.metaspace.discovery;
+package io.zeta.metaspace.discovery;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;

@@ -11,7 +11,7 @@
 //
 // ======================================================================
 
-package io.zata.metaspace.repository.table;
+package io.zeta.metaspace.repository.table;
 
 
 import org.apache.atlas.AtlasErrorCode;

@@ -26,7 +26,7 @@ import io.zeta.metaspace.model.table.Table;
 import io.zeta.metaspace.model.table.TableMetadata;
 import io.zeta.metaspace.model.table.TableStat;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import io.zata.metaspace.repository.tablestat.TableStatService;
+import io.zeta.metaspace.repository.tablestat.TableStatService;
 import io.zeta.metaspace.utils.BytesUtils;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;

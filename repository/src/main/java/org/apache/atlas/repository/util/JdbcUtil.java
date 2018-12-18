@@ -19,7 +19,7 @@ package org.apache.atlas.repository.util;
 import org.apache.atlas.ApplicationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.zata.metaspace.repository.util.HbaseUtils;
+import io.zeta.metaspace.repository.util.HbaseUtils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -19,7 +19,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.Table;
 import io.zeta.metaspace.model.table.TableForm;
 import io.zeta.metaspace.model.table.TableSql;
-import io.zata.metaspace.repository.table.TableService;
+import io.zeta.metaspace.repository.table.TableService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import io.zeta.metaspace.web.util.TableSqlUtils;

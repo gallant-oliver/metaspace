@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2018/12/4 19:22
  */
-package io.zata.metaspace.utils;
+package io.zeta.metaspace.utils;
 
 /*
  * @description
