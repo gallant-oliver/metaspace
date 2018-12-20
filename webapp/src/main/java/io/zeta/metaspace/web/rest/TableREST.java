@@ -14,6 +14,8 @@
 package io.zeta.metaspace.web.rest;
 
 import com.alibaba.druid.sql.SQLUtils;
+import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.metadata.Database;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.Table;
@@ -34,6 +36,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Path("table")
 @Singleton
@@ -44,6 +47,8 @@ public class TableREST {
 
     @Inject
     private TableService tableService;
+    @Inject
+    private MetaspaceGremlinService metaspaceGremlinService;
 
     @POST
     @Path("/create/form")
@@ -56,7 +61,7 @@ public class TableREST {
         }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
         HiveJdbcUtils.execute(sql);
-        String tablId = tableService.tableId(request.getDatabase(), request.getTableName());
+        String tablId = metaspaceGremlinService.getGuidByDBAndTableName(request.getDatabase(), request.getTableName());
         Table ret = new Table(tablId);
         return ret;
     }
@@ -75,7 +80,7 @@ public class TableREST {
         }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
         HiveJdbcUtils.execute(sql.getSql());
-        String tableId = tableService.tableId(database, tableName);
+        String tableId = metaspaceGremlinService.getGuidByDBAndTableName(database, tableName);
         Table ret = new Table(tableId);
         return ret;
     }
