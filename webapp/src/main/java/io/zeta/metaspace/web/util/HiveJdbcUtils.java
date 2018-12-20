@@ -35,7 +35,6 @@ import java.util.List;
 public class HiveJdbcUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
-
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
     private static String hiveUrl = "";
     private static String hivePrincipal = "";
@@ -60,8 +59,8 @@ public class HiveJdbcUtils {
             jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
-            jdbcUrl = hiveUrl + "/" + db;
-            connection = DriverManager.getConnection(jdbcUrl, user, "");
+            jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
+            connection = DriverManager.getConnection(jdbcUrl);
         }
         return connection;
     }
