@@ -38,25 +38,23 @@ public class HdfsUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsUtils.class);
     private static Configuration configuration = new Configuration();
     private static String user = "";
+
     static {
-            configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "core-site.xml"));
-            configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "hdfs-site.xml"));
+        configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "core-site.xml"));
+        configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "hdfs-site.xml"));
     }
+
     private static FileSystem getFs() throws IOException, InterruptedException, AtlasBaseException {
         user = AdminUtils.getUserName();
         FileSystem fs;
-        if (KerberosConfig.isKerberosEnable()) {
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
-            fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
+        UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+        fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
 
-                public FileSystem run() throws Exception {
-                    return FileSystem.get(configuration);
-                }
-            });
-        } else {
-            configuration.set("HADOOP_USER_NAME", user);
-            fs = FileSystem.get(configuration);
-        }
+            public FileSystem run() throws Exception {
+                return FileSystem.get(configuration);
+            }
+        });
+
         return fs;
     }
 

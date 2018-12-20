@@ -31,4 +31,20 @@ public class AdminUtils {
         }
 
     }
+    public static String getSSOTicket() throws AtlasBaseException {
+        String SSOTicket=null;
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            SSOTicket =  request.getSession().getAttribute("SSOTicket").toString();
+
+            if(SSOTicket==null||SSOTicket.equals(""))
+                throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
+            return SSOTicket;
+        }catch (AtlasBaseException e){
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
+        }
+
+    }
 }

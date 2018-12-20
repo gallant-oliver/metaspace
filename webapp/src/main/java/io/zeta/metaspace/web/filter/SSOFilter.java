@@ -42,9 +42,9 @@ public class SSOFilter implements Filter {
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private final Long startTime = System.currentTimeMillis();
     private final Date date = new Date();
-    private String loginURL= SSOConfig.getLoginURL();
-    private String infoURL= SSOConfig.getInfoURL();
-
+    private String loginURL = SSOConfig.getLoginURL();
+    private String infoURL = SSOConfig.getInfoURL();
+    private String TICKET_KEY = "X-SSO-FullticketId";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -60,11 +60,9 @@ public class SSOFilter implements Filter {
         try {
             String requestURL = httpServletRequest.getRequestURL().toString();
             if (requestURL.contains("/api/metaspace")) {
-                String ticket ;
-                if(httpServletRequest.getHeader("X-SSO-FullticketId")==null||httpServletRequest.getHeader("X-SSO-FullticketId")==""){
-                    ticket=httpServletRequest.getParameter("X-SSO-FullticketId");
-                }else{
-                    ticket = httpServletRequest.getHeader("X-SSO-FullticketId");
+                String ticket = httpServletRequest.getHeader(TICKET_KEY);
+                if (ticket == null || ticket == "") {
+                    ticket = httpServletRequest.getParameter(TICKET_KEY);
                 }
                 if (ticket != null && ticket != "") {
                     HashMap<String, String> header = new HashMap<>();
@@ -81,6 +79,7 @@ public class SSOFilter implements Filter {
                         if (data != null) {
                             HttpSession session = httpServletRequest.getSession();
                             session.setAttribute("user", data);
+                            session.setAttribute("SSOTicket", ticket);
                             filterChain.doFilter(request, response);
                         } else {
                             loginSkip(httpServletResponse, loginURL);
@@ -90,11 +89,11 @@ public class SSOFilter implements Filter {
                 } else {
                     loginSkip(httpServletResponse, loginURL);
                 }
-            }else{
+            } else {
                 filterChain.doFilter(request, response);
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage(),e);
+            LOG.error(e.getMessage(), e);
             httpServletResponse.setStatus(500);
             httpServletResponse.setCharacterEncoding("UTF-8");
             httpServletResponse.setContentType("text/html;charset=utf-8");
@@ -105,7 +104,7 @@ public class SSOFilter implements Filter {
             writer.print(j);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog( httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            AuditLog auditLog = new AuditLog(httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             AUDIT_LOG.info(auditLog.toString());
         }
     }
@@ -117,7 +116,7 @@ public class SSOFilter implements Filter {
         PrintWriter writer = httpServletResponse.getWriter();
         HashMap<String, String> hashMap = new HashMap();
         hashMap.put("error", "请检查用户登陆状态");
-        hashMap.put("data", loginURL+"?service=");
+        hashMap.put("data", loginURL + "?service=");
         String j = new Gson().toJson(hashMap);
         writer.print(j);
     }
@@ -144,7 +143,7 @@ public class SSOFilter implements Filter {
         private int httpStatus;
         private long timeTaken;
 
-        public AuditLog( String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
+        public AuditLog(String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
 
             this.fromAddress = fromAddress;
             this.requestMethod = requestMethod;

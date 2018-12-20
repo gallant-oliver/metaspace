@@ -24,6 +24,7 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
 import org.apache.atlas.annotation.AtlasService;
@@ -208,14 +209,14 @@ public class MetaDataService {
                 table.setPartitionLife("");
                 //分类信息
                 table.setTopic("");
-                //权限
-                TablePermission permission = new TablePermission();
-                table.setTablePermission(permission);
             }
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(guid);
             List<Column> columns = getColumnInfoById(columnQuery, true);
             table.setColumns(columns);
+            //权限
+            TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(),table.getTableName(),table.getColumns());
+            table.setTablePermission(permission);
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
