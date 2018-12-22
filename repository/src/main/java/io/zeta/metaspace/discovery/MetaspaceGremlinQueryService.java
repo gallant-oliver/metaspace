@@ -419,7 +419,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     @Override
     public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
-        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_GUID_QUERY);
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
         List guidList = (List) graph.executeGremlinScript(guidQuery, false);
