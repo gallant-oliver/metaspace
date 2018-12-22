@@ -24,10 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,7 +92,8 @@ public class HiveJdbcUtils {
     public static List<String> databases() throws AtlasBaseException {
         try (Connection conn = getConnection("default")) {
             List<String> ret = new ArrayList<>();
-            ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
+            Statement statement = conn.createStatement();
+            ResultSet resultSet = statement.executeQuery("show databases");
             while (resultSet.next()) {
                 ret.add(resultSet.getString(1));
             }
