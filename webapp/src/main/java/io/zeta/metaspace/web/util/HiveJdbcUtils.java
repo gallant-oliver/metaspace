@@ -76,7 +76,7 @@ public class HiveJdbcUtils {
             jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
-            jdbcUrl = hiveUrl + "/" + db;
+            jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl, user, "");
         }
         return connection;
@@ -84,7 +84,7 @@ public class HiveJdbcUtils {
 
     public static void execute(String sql) throws AtlasBaseException {
 
-        try (Connection conn = getConnection("")) {
+        try (Connection conn = getConnection("default")) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
@@ -93,7 +93,7 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = getConnection("")) {
+        try (Connection conn = getConnection("default")) {
             List<String> ret = new ArrayList<>();
             ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
             while (resultSet.next()) {
