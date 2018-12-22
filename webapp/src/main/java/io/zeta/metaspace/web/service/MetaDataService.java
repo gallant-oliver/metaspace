@@ -1531,6 +1531,7 @@ public class MetaDataService {
     public PageResult<Database> getAllDBAndTable(Parameters parameters) throws AtlasBaseException {
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
-        return metaspaceLineageService.getAllDBAndTable(limit, offset);
+        String queryDb = parameters.getQuery();
+        return metaspaceLineageService.getAllDBAndTable(queryDb, limit, offset);
     }
 }
