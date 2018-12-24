@@ -60,6 +60,9 @@ public class SSOFilter implements Filter {
         try {
             String requestURL = httpServletRequest.getRequestURL().toString();
             if (requestURL.contains("/api/metaspace")) {
+                if (requestURL.contains("v2/entity/uniqueAttribute/type/")||requestURL.endsWith("api/metaspace/v2/entity/")){
+                    filterChain.doFilter(request, response);
+                }
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
                 if (ticket == null || ticket == "") {
                     ticket = httpServletRequest.getParameter(TICKET_KEY);
