@@ -41,16 +41,15 @@ do
 
      if [ $? = 0 ]; then 
       tableExists ${table_name_info[0]}
-      echo "grant 'atlas', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
      else 
       createTable ${table_name_info[0]} ${table_name_info[1]}
-      echo "grant 'atlas', 'RWCA', 'table_stat'" | hbase shell > log 2>&1
      fi 
-done 
-
+done
+## grant metaspace all privilege
+echo "grant 'metaspace', 'RWXCA'" | hbase shell > log 2>&1
 ## deleting the log file. 
 rm -rf log 
 echo "" 
-echo "done." 
+echo "done."
 
 exit
