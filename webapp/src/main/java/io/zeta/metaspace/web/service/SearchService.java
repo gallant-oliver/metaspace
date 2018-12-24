@@ -98,7 +98,8 @@ public class SearchService {
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters) throws AtlasBaseException {
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
-        return metaspaceEntityService.getAllDBAndTable(limit, offset);
+        String queryDb = parameters.getQuery();
+        return metaspaceEntityService.getAllDBAndTable(queryDb, limit, offset);
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")

@@ -54,7 +54,7 @@ public class TableService {
     /**
      * hive元数据同步有时间差
      */
-    public String tableId(String database, String tableName) throws Exception {
+/*    public String tableId(String database, String tableName) throws Exception {
         String tableId = null;
         for (int i = 0; i < 10; i++) {
             TimeUnit.SECONDS.sleep(1);
@@ -82,6 +82,6 @@ public class TableService {
             }
         }
         return tableId;
-    }
+    }*/
 
 }

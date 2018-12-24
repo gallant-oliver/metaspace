@@ -33,7 +33,6 @@ public class HbaseUtils {
         try {
             hbaseConf = MetaspaceConfig.getHbaseConf();
             configuration.addResource(new Path(hbaseConf, "hbase-site.xml"));
-            configuration.set("HADOOP_USER_NAME", "metaspace");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

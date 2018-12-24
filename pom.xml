@@ -633,7 +633,7 @@
         <jersey.version>1.19</jersey.version>
         <jsr.version>1.1</jsr.version>
 
-        <hadoop.version>2.7.1</hadoop.version>
+        <hadoop.version>2.9.1</hadoop.version>
         <hbase.version>1.1.2</hbase.version>
         <solr.version>7.4.0</solr.version>
         <kafka.version>1.0.0</kafka.version>
@@ -683,7 +683,7 @@
         <doxia.version>1.8</doxia.version>
         <dropwizard-metrics>3.2.2</dropwizard-metrics>
         <!-- hadoop.hdfs-client.version should same as hadoop version -->
-        <hadoop.hdfs-client.version>2.8.1</hadoop.hdfs-client.version>
+        <hadoop.hdfs-client.version>2.9.1</hadoop.hdfs-client.version>
 
         <!-- Storm dependencies -->
         <codehaus.woodstox.stax2-api.version>3.1.4</codehaus.woodstox.stax2-api.version>

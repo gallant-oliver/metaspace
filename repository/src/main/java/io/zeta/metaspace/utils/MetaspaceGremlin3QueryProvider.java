@@ -48,22 +48,29 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
             case PARTIAL_COLUMN_RELATED_TABLE:
                 return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e2').inV().outE().inV().dedup().by('__guid').values('__guid').toList()";
 
-            case FULL_DB_TABLE:
+            case DB_TABLE_BY_QUERY:
                 /*return "g.V().has('__typeName','hive_db').as('a').inE().outV().has('__typeName','hive_table').group().by(outE('__hive_table.db').inV()).toList()";*/
-                return "g.V().has('__typeName','hive_db').range(%s,%s).as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
+                return "g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').range(%s,%s).as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
+            case FULL_DB_TABLE:
+                return "g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
 
-            case DB_TOTAL_NUM:
-                return "g.V().has('__typeName','hive_db').dedup().count().toList()";
+            case DB_TOTAL_NUM_BY_QUERY:
+                return "g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
 
             case TABLE_GUID_QUERY:
-                return "g.V().has('__typeName','hive_db').has('Asset.name','%s').inE().outV().has('__typeName','hive_table').has('Asset.name','%s').values('__guid')";
+                return "g.V().has('__typeName','hive_db').has('Asset.name','%s').inE().outV().has('__typeName','hive_table').has('Asset.name','%s').values('__guid').toList()";
 
             case TABLE_DB_BY_QUERY:
-                return " g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s, %s).as('table').outE().inV().has('__typeName','hive_db').as('db').select('table','db').toList()";
+                return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s, %s).as('table').outE().inV().has('__typeName','hive_db').as('db').select('table','db').toList()";
+            case FULL_TABLE_DB:
+                return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('table').outE().inV().has('__typeName','hive_db').as('db').select('table','db').toList()";
+
             case TABLE_COUNT_BY_QUEERY:
                 return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList();";
             case COLUMN_TABLE_DB_BY_QUERY:
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s,%s).as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').as('db').select('column','table','db').toList()";
+            case FULL_COLUMN_TABLE_DB:
+                return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').as('db').select('column','table','db').toList()";
             case COLUMN_COUNT_BY_QUERY:
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
         }
