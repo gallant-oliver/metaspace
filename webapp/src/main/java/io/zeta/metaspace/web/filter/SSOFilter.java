@@ -18,7 +18,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.SSOConfig;
 import org.apache.atlas.web.filters.AuditFilter;
-import org.apache.atlas.web.util.DateTimeHelper;
+import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -40,8 +40,6 @@ import java.util.Map;
 public class SSOFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(AuditFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
-    private final Long startTime = System.currentTimeMillis();
-    private final Date date = new Date();
     private String loginURL = SSOConfig.getLoginURL();
     private String infoURL = SSOConfig.getInfoURL();
     private String TICKET_KEY = "X-SSO-FullticketId";
@@ -54,9 +52,11 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
-
+        Date date = new Date();
+        Long startTime = System.currentTimeMillis();
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        String userName = "unknown";
         try {
             String requestURL = httpServletRequest.getRequestURL().toString();
             if (requestURL.contains("/api/metaspace")) {
@@ -77,6 +77,7 @@ public class SSOFilter implements Filter {
                     } else {
                         Map data = (Map) jsonObject.get("data");
                         if (data != null) {
+                            userName = data.getOrDefault("LoginEmail", userName).toString();
                             HttpSession session = httpServletRequest.getSession();
                             session.setAttribute("user", data);
                             session.setAttribute("SSOTicket", ticket);
@@ -104,7 +105,7 @@ public class SSOFilter implements Filter {
             writer.print(j);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog(httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             AUDIT_LOG.info(auditLog.toString());
         }
     }
@@ -131,40 +132,5 @@ public class SSOFilter implements Filter {
     @Override
     public void destroy() {
         // do nothing
-    }
-
-    public static class AuditLog {
-        private static final char FIELD_SEP = '|';
-
-        private final String fromAddress;
-        private final String requestMethod;
-        private final String requestUrl;
-        private final Date requestTime;
-        private int httpStatus;
-        private long timeTaken;
-
-        public AuditLog(String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
-
-            this.fromAddress = fromAddress;
-            this.requestMethod = requestMethod;
-            this.requestUrl = requestUrl;
-            this.requestTime = requestTime;
-            this.httpStatus = httpStatus;
-            this.timeTaken = timeTaken;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append(DateTimeHelper.formatDateUTC(requestTime))
-                    .append(FIELD_SEP).append(fromAddress)
-                    .append(FIELD_SEP).append(requestMethod)
-                    .append(FIELD_SEP).append(requestUrl)
-                    .append(FIELD_SEP).append(httpStatus)
-                    .append(FIELD_SEP).append(timeTaken);
-
-            return sb.toString();
-        }
     }
 }
