@@ -15,9 +15,8 @@
 package io.zeta.metaspace.web.filter;
 
 import com.google.gson.Gson;
-import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.SSOConfig;
-import org.apache.atlas.web.filters.AuditFilter;
+import io.zeta.metaspace.utils.SSLClient;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
@@ -25,20 +24,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 
 @Component
 public class SSOFilter implements Filter {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private String loginURL = SSOConfig.getLoginURL();
     private String infoURL = SSOConfig.getInfoURL();
@@ -57,9 +62,9 @@ public class SSOFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
-        try {
-            String requestURL = httpServletRequest.getRequestURL().toString();
-            if (requestURL.contains("/api/metaspace")) {
+        String requestURL = httpServletRequest.getRequestURL().toString();
+        if (requestURL.contains("/api/metaspace")) {
+            try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
                 if (ticket == null || ticket == "") {
                     ticket = httpServletRequest.getParameter(TICKET_KEY);
@@ -90,24 +95,28 @@ public class SSOFilter implements Filter {
                 } else {
                     loginSkip(httpServletResponse, loginURL);
                 }
-            } else {
-                filterChain.doFilter(request, response);
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+                httpServletResponse.setStatus(500);
+                httpServletResponse.setCharacterEncoding("UTF-8");
+                httpServletResponse.setContentType("text/html;charset=utf-8");
+                PrintWriter writer = httpServletResponse.getWriter();
+                HashMap<String, String> hashMap = new HashMap();
+                hashMap.put("error", "sso异常");
+                String j = new Gson().toJson(hashMap);
+                writer.print(j);
+            } finally {
+                long timeTaken = System.currentTimeMillis() - startTime;
+                AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(Servlets.getRequestPayload(httpServletRequest));
+                }
+                AUDIT_LOG.info(auditLog.toString());
             }
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-            httpServletResponse.setStatus(500);
-            httpServletResponse.setCharacterEncoding("UTF-8");
-            httpServletResponse.setContentType("text/html;charset=utf-8");
-            PrintWriter writer = httpServletResponse.getWriter();
-            HashMap<String, String> hashMap = new HashMap();
-            hashMap.put("error", "sso异常");
-            String j = new Gson().toJson(hashMap);
-            writer.print(j);
-        } finally {
-            long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
-            AUDIT_LOG.info(auditLog.toString());
+        } else {
+            filterChain.doFilter(request, response);
         }
+
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
