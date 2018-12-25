@@ -412,7 +412,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         pageResult.setLists(databases);
         pageResult.setOffset(offset);
         pageResult.setCount(databases.size());
-        String numQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String numQuery = String.format(gremlinQuery, queryDb);
         List num = (List) graph.executeGremlinScript(numQuery, false);
         pageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return pageResult;
