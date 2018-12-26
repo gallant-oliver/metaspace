@@ -422,14 +422,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     @Override
     public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
-        int sleepSeconds = 2;
+        int[] sleepSeconds = new int[]{4,3,2};
+        int tryCount = 3;
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_GUID_QUERY);
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
-        TimeUnit.SECONDS.sleep(sleepSeconds);
-        List guidList = (List) graph.executeGremlinScript(guidQuery, false);
-        if (Objects.nonNull(guidList) && guidList.size() > 0) {
-            guid = guidList.get(0).toString();
+        while(Objects.isNull(guid) && tryCount-- > 0) {
+            TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
+            List guidList = (List) graph.executeGremlinScript(guidQuery, false);
+            if (Objects.nonNull(guidList) && guidList.size() > 0) {
+                guid = guidList.get(0).toString();
+            }
         }
         return guid;
     }
