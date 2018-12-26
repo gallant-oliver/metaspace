@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -420,13 +421,19 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     @Override
-    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
+    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
+        int[] sleepSeconds = new int[]{8,4,2};
+        int tryCount = 3;
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_GUID_QUERY);
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
-        List guidList = (List) graph.executeGremlinScript(guidQuery, false);
-        if (Objects.nonNull(guidList) && guidList.size() > 0) {
-            guid = guidList.get(0).toString();
+        while(Objects.isNull(guid) && tryCount >= 0) {
+            List guidList = (List) graph.executeGremlinScript(guidQuery, false);
+            if (Objects.nonNull(guidList) && guidList.size() > 0) {
+                guid = guidList.get(0).toString();
+            }
+            if(Objects.isNull(guid) && tryCount>0)
+                TimeUnit.SECONDS.sleep(sleepSeconds[--tryCount]);
         }
         return guid;
     }
