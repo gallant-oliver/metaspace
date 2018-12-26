@@ -6,7 +6,7 @@ window.systemConfigs = {
   "VERSION": "v1.0.0",
 
   // API的地址
-  "API_HOST": "http://10.201.50.209:21000/api/metaspace",
+  "API_HOST": "http://127.0.0.1:21000/api/metaspace",
 
   // SSO登录的地址
   "SSO_URL": "http://10.200.60.36:80",
