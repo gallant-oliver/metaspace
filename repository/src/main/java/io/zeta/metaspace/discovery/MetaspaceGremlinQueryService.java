@@ -428,11 +428,11 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
         while(Objects.isNull(guid) && tryCount-- > 0) {
+            TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
             List guidList = (List) graph.executeGremlinScript(guidQuery, false);
             if (Objects.nonNull(guidList) && guidList.size() > 0) {
                 guid = guidList.get(0).toString();
             }
-            TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
         }
         return guid;
     }
