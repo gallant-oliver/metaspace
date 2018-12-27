@@ -165,7 +165,7 @@ public class HiveJdbcUtils {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
         }
     }
 

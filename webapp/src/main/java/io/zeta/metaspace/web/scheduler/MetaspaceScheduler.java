@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.scheduler;
 
+import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -64,6 +65,9 @@ public class MetaspaceScheduler {
     @Inject
     private TableStatService tableStatService;
 
+    @Inject
+    MetaspaceGremlinQueryService metaspaceEntityService;
+
 
     public MetaspaceScheduler() {
     }
@@ -71,7 +75,8 @@ public class MetaspaceScheduler {
     @Scheduled(cron = "0 0 23 * * ?")   //每天晚上11点
     public void insertTableMetadataStat() throws Exception {
         log.info("scheduler start");
-        List<AtlasEntityHeader> tables = allActiveTable();
+        //List<AtlasEntityHeader> tables = allActiveTable();
+        List<AtlasEntityHeader> tables = allActiveTableV2();
         String date = DateUtils.today();
         insertTableStatList(tables, date);
         log.info("scheduler end");
@@ -150,6 +155,12 @@ public class MetaspaceScheduler {
                 return entity.getStatus() == AtlasEntity.Status.ACTIVE;
             }
         }).collect(Collectors.toList());
+        return ret;
+    }
+
+    private List<AtlasEntityHeader> allActiveTableV2() throws AtlasBaseException {
+        List<AtlasEntityHeader> allTables = metaspaceEntityService.getAllTables();
+        List<AtlasEntityHeader> ret = allTables.stream().filter(table -> table.getStatus() == AtlasEntity.Status.ACTIVE).collect(Collectors.toList());
         return ret;
     }
 

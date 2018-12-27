@@ -37,10 +37,6 @@ public class TableService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TableService.class);
 
-    @Inject
-    private AtlasDiscoveryService atlasDiscoveryService;
-
-
     public String databaseAndTable(String sql) throws Exception {
         Pattern pattern = Pattern.compile("CREATE[\\s\\S]*TABLE[\\s|\\sIF\\sNOT\\sEXISTS\\s]*([\\S]*\\.[\\S]*)");
         Matcher matcher = pattern.matcher(sql);
@@ -50,38 +46,4 @@ public class TableService {
 
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "sql格式不正确" + sql);
     }
-
-    /**
-     * hive元数据同步有时间差
-     */
-/*    public String tableId(String database, String tableName) throws Exception {
-        String tableId = null;
-        for (int i = 0; i < 10; i++) {
-            TimeUnit.SECONDS.sleep(1);
-            SearchParameters parameters = new SearchParameters();
-            parameters.setTypeName("hive_table");
-            parameters.setOffset(0);
-            parameters.setLimit(10000);
-            parameters.setQuery(tableName);
-            AtlasSearchResult atlasSearchResult = atlasDiscoveryService.searchWithParameters(parameters);
-            List<AtlasEntityHeader> tables = atlasSearchResult.getEntities();
-            if (tables != null && !tables.isEmpty()) {
-                Optional<AtlasEntityHeader> tableEntity = tables.stream().filter(table -> {
-                    String qualifiedName = (String) table.getAttribute("qualifiedName");
-                    String[] dbTable = qualifiedName.substring(0, qualifiedName.indexOf("@")).split("\\.");
-                    if (dbTable[0].equals(database) && dbTable[1].equals(tableName)) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }).findFirst();
-                if (tableEntity.isPresent()) {
-                    tableId = tableEntity.get().getGuid();
-                    break;
-                }
-            }
-        }
-        return tableId;
-    }*/
-
 }

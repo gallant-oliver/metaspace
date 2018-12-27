@@ -459,6 +459,16 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return tablePageResult;
     }
 
+    public List<AtlasEntityHeader> getAllTables() throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ALL_TABLE);
+        List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(query, false);
+        List<AtlasEntityHeader> resultList = new ArrayList<>(vertices.size());
+        for (AtlasVertex vertex : vertices) {
+            resultList.add(entityRetriever.toAtlasEntityHeader(vertex));
+        }
+        return resultList;
+    }
+
     private Table getTableByVertex(AtlasVertex tableVertex, AtlasVertex dbVertex) throws AtlasBaseException {
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
