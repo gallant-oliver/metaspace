@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+    license agreements. See the NOTICE file distributed with this work for additional 
+    information regarding copyright ownership. The ASF licenses this file to 
+    You under the Apache License, Version 2.0 (the "License"); you may not use 
+    this file except in compliance with the License. You may obtain a copy of 
+    the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+    by applicable law or agreed to in writing, software distributed under the 
+    License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+    OF ANY KIND, either express or implied. See the License for the specific 
+    language governing permissions and limitations under the License. -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/cache
+	http://www.springframework.org/schema/cache/spring-cache.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+
+
+
+        <context:property-placeholder location="file:#{systemProperties['atlas.conf']}/db.properties"/>
+        <!--2 配置C3P0数据源 -->
+        <bean id="datasource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+                <!--驱动类名 -->
+                <property name="driverClass" value="${metaspace.database.driverClassName}" />
+                <!-- url -->
+                <property name="jdbcUrl" value="${metaspace.database.url}" />
+                <!-- 用户名 -->
+                <property name="user" value="${metaspace.database.username}" />
+                <!-- 密码 -->
+                <property name="password" value="${metaspace.database.password}" />
+                <!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数  -->
+                <property name="acquireIncrement" value="5"></property>
+                <!-- 初始连接池大小 -->
+                <property name="initialPoolSize" value="10"></property>
+                <!-- 连接池中连接最小个数 -->
+                <property name="minPoolSize" value="5"></property>
+                <!-- 连接池中连接最大个数 -->
+                <property name="maxPoolSize" value="20"></property>
+        </bean>
+
+        <!--3 会话工厂bean sqlSessionFactoryBean -->
+        <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+
+                <property name="dataSource" ref="datasource"></property>
+
+                <property name="typeAliasesPackage" value="io.zeta.metaspace.model.metadata"></property>
+
+        </bean>
+
+        <!--4 自动扫描对象关系映射 -->
+        <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+                <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
+                <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+                <!-- 指定要自动扫描接口的基础包，实现接口 -->
+                <property name="basePackage" value="io.zeta.metaspace.web.dao"></property>
+        </bean>
+
+        <!--5 声明式事务管理 -->
+        <!--定义事物管理器，由spring管理事务 -->
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+                <property name="dataSource" ref="datasource"></property>
+        </bean>
+        <!--支持注解驱动的事务管理，指定事务管理器 -->
+        <tx:annotation-driven transaction-manager="transactionManager"/>
+
+        <!--6 容器自动扫描IOC组件  -->
+        <!--<context:component-scan base-package="com.zhangguo.bookstore"></context:component-scan>-->
+
+        <!--7 aspectj支持自动代理实现AOP功能 -->
+        <aop:aspectj-autoproxy proxy-target-class="true"></aop:aspectj-autoproxy>
+
+
+
+        <!-- 启用缓存注解功能，这个是必须的，否则注解不会生效，另外，该注解一定要声明在spring主配置文件中才会生效 -->
+        <cache:annotation-driven cache-manager="cacheManager"/>
+
+        <!-- cacheManager工厂类，指定ehcache.xml的位置 -->
+        <bean id="ehcacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+                <property name="configLocation" value="/WEB-INF/ehcache-setting.xml" />
+        </bean>
+        <!-- 声明cacheManager -->
+        <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+                <property name="cacheManager" ref="ehcacheManagerFactory"/>
+        </bean>
+
+        <!--<cache:annotation-driven/>-->
+
+        <!--&lt;!&ndash; 定义缓存管理 &ndash;&gt;
+        <bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
+                <property name="caches">
+                        <set>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="default"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="tableCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="columnCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="relationCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="lineageCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="categoryCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="databaseCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="tablePageCache"/>
+                                </bean>
+                                <bean class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean">
+                                        <property name="name" value="columnPageCache"/>
+                                </bean>
+                        </set>
+                </property>
+        </bean>-->
+
+
+        <context:annotation-config/>
+        <aop:config proxy-target-class="true"/>
+        <context:component-scan base-package="org.apache.atlas" />
+        <context:component-scan base-package="io.zeta.metaspace" />
+</beans>
