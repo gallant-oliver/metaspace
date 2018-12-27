@@ -43,7 +43,7 @@ public interface MetaspaceGremlinService {
 
     PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset) throws AtlasBaseException;
 
-    String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException;
+    String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException;
 
     PageResult<Table> getTableNameAndDbNameByQuery(String query,int offset,int limit) throws AtlasBaseException;
 

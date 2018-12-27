@@ -151,19 +151,21 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException, IOException, SQLException {
-
-        Connection conn = getConnection(db);
-        ResultSet resultSet = conn.createStatement().executeQuery(sql);
-        return resultSet;
-
+    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            Connection conn = getConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+        }
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
         }
     }
 

@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -412,20 +413,26 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         pageResult.setLists(databases);
         pageResult.setOffset(offset);
         pageResult.setCount(databases.size());
-        String numQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String numQuery = String.format(gremlinQuery, queryDb);
         List num = (List) graph.executeGremlinScript(numQuery, false);
         pageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return pageResult;
     }
 
     @Override
-    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
+    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
+        int[] sleepSeconds = new int[]{4,3,2};
+        int tryCount = 3;
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_GUID_QUERY);
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
-        List guidList = (List) graph.executeGremlinScript(guidQuery, false);
-        if (Objects.nonNull(guidList) && guidList.size() > 0) {
-            guid = guidList.get(0).toString();
+        while(Objects.isNull(guid) && tryCount-- > 0) {
+            TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
+            List guidList = (List) graph.executeGremlinScript(guidQuery, false);
+            if (Objects.nonNull(guidList) && guidList.size() > 0) {
+                guid = guidList.get(0).toString();
+            }
         }
         return guid;
     }
@@ -450,6 +457,16 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
         tablePageResult.setSum(counts.get(0));
         return tablePageResult;
+    }
+
+    public List<AtlasEntityHeader> getAllTables() throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ALL_TABLE);
+        List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(query, false);
+        List<AtlasEntityHeader> resultList = new ArrayList<>(vertices.size());
+        for (AtlasVertex vertex : vertices) {
+            resultList.add(entityRetriever.toAtlasEntityHeader(vertex));
+        }
+        return resultList;
     }
 
     private Table getTableByVertex(AtlasVertex tableVertex, AtlasVertex dbVertex) throws AtlasBaseException {

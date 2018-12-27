@@ -66,7 +66,6 @@ public class TableREST {
         return ret;
     }
 
-
     @POST
     @Path("/create/sql")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

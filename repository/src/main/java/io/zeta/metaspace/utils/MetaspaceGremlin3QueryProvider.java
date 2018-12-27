@@ -58,7 +58,7 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
                 return "g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
 
             case TABLE_GUID_QUERY:
-                return "g.V().has('__typeName','hive_db').has('Asset.name','%s').inE().outV().has('__typeName','hive_table').has('Asset.name','%s').values('__guid').toList()";
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name','%s').inE().outV().has('__typeName','hive_table').has('Asset.name','%s').values('__guid').toList()";
 
             case TABLE_DB_BY_QUERY:
                 return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s, %s).as('table').outE().inV().has('__typeName','hive_db').as('db').select('table','db').toList()";
@@ -73,6 +73,9 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').as('db').select('column','table','db').toList()";
             case COLUMN_COUNT_BY_QUERY:
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
+
+            case ALL_TABLE:
+                return "g.V().has('__typeName', 'hive_table').has('__guid').order().by('__timestamp').dedup().toList()";
         }
         return null;
     }

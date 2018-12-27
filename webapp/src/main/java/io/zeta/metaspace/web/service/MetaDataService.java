@@ -565,8 +565,10 @@ public class MetaDataService {
 
 
     public ColumnLineageInfo getColumnLineageV2(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
-        List<String> tables = metaspaceLineageService.getColumnRelatedTable(guid, direction, depth);
+        List<String> tables = new ArrayList<>();
         tables.add(guid);
+        List<String> relatedTables = metaspaceLineageService.getColumnRelatedTable(guid, direction, depth);
+        tables.addAll(relatedTables);
         ColumnLineageInfo.LineageEntity entity = null;
         List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
         for(String tableGuid : tables) {
