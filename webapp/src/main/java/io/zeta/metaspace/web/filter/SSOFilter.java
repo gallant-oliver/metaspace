@@ -63,60 +63,62 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("/api/metaspace")) {
-                if (requestURL.contains("v2/entity/uniqueAttribute/type/")||requestURL.endsWith("api/metaspace/v2/entity/")){
-                    filterChain.doFilter(request, response);
-                }
-                String ticket = httpServletRequest.getHeader(TICKET_KEY);
-                if (ticket == null || ticket == "") {
-                    ticket = httpServletRequest.getParameter(TICKET_KEY);
-                }
-                if (ticket != null && ticket != "") {
-                    HashMap<String, String> header = new HashMap<>();
-                    header.put("ticket", ticket);
-                    String s = SSLClient.doGet(infoURL, header);
-                    Gson gson = new Gson();
-                    JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                    Object message = jsonObject.get("message");
-                    if (message == null || (!message.toString().equals("Success"))) {
-                        LOG.warn("用户信息获取失败");
-                        loginSkip(httpServletResponse, loginURL);
-                    } else {
-                        Map data = (Map) jsonObject.get("data");
-                        if (data != null) {
-                            userName = data.getOrDefault("LoginEmail", userName).toString();
-                            HttpSession session = httpServletRequest.getSession();
-                            session.setAttribute("user", data);
-                            session.setAttribute("SSOTicket", ticket);
-                            filterChain.doFilter(request, response);
-                        } else {
-                            loginSkip(httpServletResponse, loginURL);
-                            LOG.warn("用户信息获取失败");
-                        }
-                    }
-                } else {
-                    loginSkip(httpServletResponse, loginURL);
-                }
-            } catch (Exception e) {
-                LOG.error(e.getMessage(), e);
-                httpServletResponse.setStatus(500);
-                httpServletResponse.setCharacterEncoding("UTF-8");
-                httpServletResponse.setContentType("text/html;charset=utf-8");
-                PrintWriter writer = httpServletResponse.getWriter();
-                HashMap<String, String> hashMap = new HashMap();
-                hashMap.put("error", "sso异常");
-                String j = new Gson().toJson(hashMap);
-                writer.print(j);
-            } finally {
-                long timeTaken = System.currentTimeMillis() - startTime;
-                AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(Servlets.getRequestPayload(httpServletRequest));
-                }
-                AUDIT_LOG.info(auditLog.toString());
-            }
-        } else {
+        if (!requestURL.contains("/api/metaspace")) {
             filterChain.doFilter(request, response);
+            return;
+        }
+        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        String ticket = httpServletRequest.getHeader(TICKET_KEY);
+        if (ticket == null || ticket == "") {
+            ticket = httpServletRequest.getParameter(TICKET_KEY);
+        }
+        if (ticket == null || ticket.equals("")) {
+            loginSkip(httpServletResponse, loginURL);
+            return;
+        }
+        try {
+            HashMap<String, String> header = new HashMap<>();
+            header.put("ticket", ticket);
+            String s = SSLClient.doGet(infoURL, header);
+            Gson gson = new Gson();
+            JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+            Object message = jsonObject.get("message");
+            if (message == null || (!message.toString().equals("Success"))) {
+                LOG.warn("用户信息获取失败");
+                loginSkip(httpServletResponse, loginURL);
+                return;
+            }
+            Map data = (Map) jsonObject.get("data");
+            if (data == null) {
+                loginSkip(httpServletResponse, loginURL);
+                LOG.warn("用户信息获取失败");
+                return;
+            }
+            userName = data.getOrDefault("LoginEmail", userName).toString();
+            HttpSession session = httpServletRequest.getSession();
+            session.setAttribute("user", data);
+            session.setAttribute("SSOTicket", ticket);
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+            httpServletResponse.setStatus(500);
+            httpServletResponse.setCharacterEncoding("UTF-8");
+            httpServletResponse.setContentType("text/html;charset=utf-8");
+            PrintWriter writer = httpServletResponse.getWriter();
+            HashMap<String, String> hashMap = new HashMap();
+            hashMap.put("error", "sso异常");
+            String j = new Gson().toJson(hashMap);
+            writer.print(j);
+        } finally {
+            long timeTaken = System.currentTimeMillis() - startTime;
+            AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(Servlets.getRequestPayload(httpServletRequest));
+            }
+            AUDIT_LOG.info(auditLog.toString());
         }
 
     }
