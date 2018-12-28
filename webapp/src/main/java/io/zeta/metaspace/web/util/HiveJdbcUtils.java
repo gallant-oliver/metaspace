@@ -24,10 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,7 +73,7 @@ public class HiveJdbcUtils {
             jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
-            jdbcUrl = hiveUrl + "/" + db;
+            jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
             connection = DriverManager.getConnection(jdbcUrl, user, "");
         }
         return connection;
@@ -84,7 +81,7 @@ public class HiveJdbcUtils {
 
     public static void execute(String sql) throws AtlasBaseException {
 
-        try (Connection conn = getConnection("")) {
+        try (Connection conn = getConnection("default")) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
@@ -93,9 +90,10 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = getConnection("")) {
+        try (Connection conn = getConnection("default")) {
             List<String> ret = new ArrayList<>();
-            ResultSet resultSet = conn.createStatement().executeQuery("show databases;");
+            Statement statement = conn.createStatement();
+            ResultSet resultSet = statement.executeQuery("show databases");
             while (resultSet.next()) {
                 ret.add(resultSet.getString(1));
             }
@@ -153,19 +151,21 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException, IOException, SQLException {
-
-        Connection conn = getConnection(db);
-        ResultSet resultSet = conn.createStatement().executeQuery(sql);
-        return resultSet;
-
+    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            Connection conn = getConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+        }
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
         }
     }
 

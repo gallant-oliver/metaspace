@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -336,12 +337,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     @Override
-    public PageResult<Database> getAllDBAndTable(int limit, int offset) throws AtlasBaseException {
-        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
-        String dbQuery = String.format(query, offset, offset + limit);
+    public PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset) throws AtlasBaseException {
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQeury);
+
+        String dbQuery = String.format(query, queryDb, offset, offset + limit);
         List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
         Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
-
 
         PageResult<Database> pageResult = new PageResult<>();
         List<Database> databases = new ArrayList<>();
@@ -411,30 +413,37 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         pageResult.setLists(databases);
         pageResult.setOffset(offset);
         pageResult.setCount(databases.size());
-        String numQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String numQuery = String.format(gremlinQuery, queryDb);
         List num = (List) graph.executeGremlinScript(numQuery, false);
         pageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return pageResult;
     }
 
     @Override
-    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException {
-        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE);
+    public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
+        int[] sleepSeconds = new int[]{4,3,2};
+        int tryCount = 3;
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_GUID_QUERY);
         String guidQuery = String.format(query, dbName, tableName);
         String guid = null;
-        List guidList = (List) graph.executeGremlinScript(guidQuery, false);
-        if (Objects.nonNull(guidList) && guidList.size() > 0) {
-            guid = guidList.get(0).toString();
+        while(Objects.isNull(guid) && tryCount-- > 0) {
+            TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
+            List guidList = (List) graph.executeGremlinScript(guidQuery, false);
+            if (Objects.nonNull(guidList) && guidList.size() > 0) {
+                guid = guidList.get(0).toString();
+            }
         }
         return guid;
     }
 
-
-    public PageResult<Table> getTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException {
+    public PageResult<Table> getTableNameAndDbNameByQuery(String queryTable, int offset, int limit) throws AtlasBaseException {
         PageResult<Table> tablePageResult = new PageResult<>();
         ArrayList<Table> tables = new ArrayList<>();
-        String tableDBQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY);
-        List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(String.format(tableDBQuery, query, offset, offset + limit), false);
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_DB: MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQuery);
+        String tableQuery = String.format(query, queryTable, offset, offset + limit);
+        List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
         for (Map<String, AtlasVertex> tableDB : tableDBs) {
             AtlasVertex tableVertex = tableDB.get("table");
             AtlasVertex dbVertex = tableDB.get("db");
@@ -445,9 +454,19 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         tablePageResult.setCount(tables.size());
         tablePageResult.setOffset(offset);
         String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
-        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, query), false);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
         tablePageResult.setSum(counts.get(0));
         return tablePageResult;
+    }
+
+    public List<AtlasEntityHeader> getAllTables() throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ALL_TABLE);
+        List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(query, false);
+        List<AtlasEntityHeader> resultList = new ArrayList<>(vertices.size());
+        for (AtlasVertex vertex : vertices) {
+            resultList.add(entityRetriever.toAtlasEntityHeader(vertex));
+        }
+        return resultList;
     }
 
     private Table getTableByVertex(AtlasVertex tableVertex, AtlasVertex dbVertex) throws AtlasBaseException {
@@ -463,7 +482,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             table.setTableName(tableEntity.getAttribute("name").toString());
             table.setStatus(tableEntity.getStatus().name());
             table.setDescription(tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString());
-            ;
         }
         if (Objects.nonNull(dbVertex)) {
             AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
@@ -475,11 +493,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     @Override
-    public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException {
+    public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String queryColumn, int offset, int limit) throws AtlasBaseException {
         PageResult<Column> columnPageResult = new PageResult<>();
         ArrayList<Column> columns = new ArrayList<>();
-        String columnTableDBQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY);
-        List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(String.format(columnTableDBQuery, query, offset, offset + limit), false);
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_COLUMN_TABLE_DB: MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQuery);
+        String columnQuery = String.format(query, queryColumn, offset, offset + limit);
+        List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(columnQuery, false);
         for (Map<String, AtlasVertex> columnTableDB : columnTableDBs) {
             AtlasVertex columnVertex = columnTableDB.get("column");
             AtlasVertex tableVertex = columnTableDB.get("table");
@@ -492,7 +512,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         columnPageResult.setCount(columns.size());
         columnPageResult.setOffset(offset);
         String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_COUNT_BY_QUERY);
-        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, query), false);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryColumn), false);
         columnPageResult.setSum(counts.get(0));
         return columnPageResult;
     }
