@@ -57,6 +57,8 @@ import org.janusgraph.core.SchemaViolationException;
 import org.janusgraph.core.schema.JanusGraphIndex;
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.diskstorage.BackendException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -80,6 +82,7 @@ import static org.apache.atlas.repository.Constants.INDEX_SEARCH_VERTEX_PREFIX_P
  */
 public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusEdge> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AtlasJanusGraph.class);
     private static Configuration APPLICATION_PROPERTIES = null;
 
     private final ConvertGremlinValueFunction GREMLIN_VALUE_CONVERSION_FUNCTION = new ConvertGremlinValueFunction();
@@ -437,7 +440,7 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
 
             bindings.put("graph", getGraph());
             bindings.put("g", getGraph().traversal());
-
+            LOG.info("gremlin query string: {}", gremlinQuery);
             Object result = scriptEngine.eval(gremlinQuery, bindings);
 
             return result;
