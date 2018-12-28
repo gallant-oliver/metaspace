@@ -1084,29 +1084,6 @@ public class MetaDataService {
         return relationEntity;
     }
 
-    public CategoryChildren getCategoryChildren(String categoryGuid) throws AtlasBaseException {
-        CategoryChildren children = new CategoryChildren();
-        //获取Category信息
-        AtlasGlossaryCategory glossaryCategory = glossaryService.getCategory(categoryGuid);
-        children.setCategoryGuid(glossaryCategory.getGuid());
-        children.setCategoryName(glossaryCategory.getName());
-        //获取当前Category的子Category
-        Set<AtlasRelatedCategoryHeader> childrenCategories =glossaryCategory.getChildrenCategories();
-        Set<CategoryChildren.ChildCatetory> childs = new HashSet<>();
-        if(Objects.nonNull(childrenCategories)) {
-            Iterator<AtlasRelatedCategoryHeader> it = childrenCategories.iterator();
-            while(it.hasNext()) {
-                AtlasRelatedCategoryHeader atlasRelatedCategory = it.next();
-                CategoryChildren.ChildCatetory childCatetory = new CategoryChildren.ChildCatetory();
-                childCatetory.setGuid(atlasRelatedCategory.getCategoryGuid());
-                childCatetory.setName(atlasRelatedCategory.getDisplayText());
-                childs.add(childCatetory);
-            }
-        }
-        children.setChildCategory(childs);
-        return children;
-    }
-
     @Cacheable(value = "categoryCache", condition = "#refreshCache==false")
     public Set<CategoryHeader> getCategories(String sort, Boolean refreshCache) throws AtlasBaseException {
         try {

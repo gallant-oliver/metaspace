@@ -429,6 +429,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         String guid = null;
         while(Objects.isNull(guid) && tryCount-- > 0) {
             TimeUnit.SECONDS.sleep(sleepSeconds[tryCount]);
+            graph.commit();
             List guidList = (List) graph.executeGremlinScript(guidQuery, false);
             if (Objects.nonNull(guidList) && guidList.size() > 0) {
                 guid = guidList.get(0).toString();
