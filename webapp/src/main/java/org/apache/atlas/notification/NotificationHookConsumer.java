@@ -52,7 +52,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.filters.AuditFilter;
-import org.apache.atlas.web.filters.AuditFilter.AuditLog;
+import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
 import org.apache.commons.configuration.Configuration;
 import org.apache.kafka.common.TopicPartition;

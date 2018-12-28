@@ -15,33 +15,36 @@
 package io.zeta.metaspace.web.filter;
 
 import com.google.gson.Gson;
-import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.SSOConfig;
-import org.apache.atlas.web.filters.AuditFilter;
-import org.apache.atlas.web.util.DateTimeHelper;
+import io.zeta.metaspace.utils.SSLClient;
+import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 
 @Component
 public class SSOFilter implements Filter {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
-    private final Long startTime = System.currentTimeMillis();
-    private final Date date = new Date();
     private String loginURL = SSOConfig.getLoginURL();
     private String infoURL = SSOConfig.getInfoURL();
     private String TICKET_KEY = "X-SSO-FullticketId";
@@ -54,47 +57,51 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
-
+        Date date = new Date();
+        Long startTime = System.currentTimeMillis();
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        String userName = "unknown";
+        String requestURL = httpServletRequest.getRequestURL().toString();
+        if (!requestURL.contains("/api/metaspace")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        String ticket = httpServletRequest.getHeader(TICKET_KEY);
+        if (ticket == null || ticket == "") {
+            ticket = httpServletRequest.getParameter(TICKET_KEY);
+        }
+        if (ticket == null || ticket.equals("")) {
+            loginSkip(httpServletResponse, loginURL);
+            return;
+        }
         try {
-            String requestURL = httpServletRequest.getRequestURL().toString();
-            if (requestURL.contains("/api/metaspace")) {
-                if (requestURL.contains("v2/entity/uniqueAttribute/type/")||requestURL.endsWith("api/metaspace/v2/entity/")){
-                    filterChain.doFilter(request, response);
-                }
-                String ticket = httpServletRequest.getHeader(TICKET_KEY);
-                if (ticket == null || ticket == "") {
-                    ticket = httpServletRequest.getParameter(TICKET_KEY);
-                }
-                if (ticket != null && ticket != "") {
-                    HashMap<String, String> header = new HashMap<>();
-                    header.put("ticket", ticket);
-                    String s = SSLClient.doGet(infoURL, header);
-                    Gson gson = new Gson();
-                    JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-                    Object message = jsonObject.get("message");
-                    if (message == null || (!message.toString().equals("Success"))) {
-                        LOG.warn("用户信息获取失败");
-                        loginSkip(httpServletResponse, loginURL);
-                    } else {
-                        Map data = (Map) jsonObject.get("data");
-                        if (data != null) {
-                            HttpSession session = httpServletRequest.getSession();
-                            session.setAttribute("user", data);
-                            session.setAttribute("SSOTicket", ticket);
-                            filterChain.doFilter(request, response);
-                        } else {
-                            loginSkip(httpServletResponse, loginURL);
-                            LOG.warn("用户信息获取失败");
-                        }
-                    }
-                } else {
-                    loginSkip(httpServletResponse, loginURL);
-                }
-            } else {
-                filterChain.doFilter(request, response);
+            HashMap<String, String> header = new HashMap<>();
+            header.put("ticket", ticket);
+            String s = SSLClient.doGet(infoURL, header);
+            Gson gson = new Gson();
+            JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
+            Object message = jsonObject.get("message");
+            if (message == null || (!message.toString().equals("Success"))) {
+                LOG.warn("用户信息获取失败");
+                loginSkip(httpServletResponse, loginURL);
+                return;
             }
+            Map data = (Map) jsonObject.get("data");
+            if (data == null) {
+                loginSkip(httpServletResponse, loginURL);
+                LOG.warn("用户信息获取失败");
+                return;
+            }
+            userName = data.getOrDefault("LoginEmail", userName).toString();
+            HttpSession session = httpServletRequest.getSession();
+            session.setAttribute("user", data);
+            session.setAttribute("SSOTicket", ticket);
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             httpServletResponse.setStatus(500);
@@ -107,9 +114,13 @@ public class SSOFilter implements Filter {
             writer.print(j);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog(httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(Servlets.getRequestPayload(httpServletRequest));
+            }
             AUDIT_LOG.info(auditLog.toString());
         }
+
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
@@ -134,40 +145,5 @@ public class SSOFilter implements Filter {
     @Override
     public void destroy() {
         // do nothing
-    }
-
-    public static class AuditLog {
-        private static final char FIELD_SEP = '|';
-
-        private final String fromAddress;
-        private final String requestMethod;
-        private final String requestUrl;
-        private final Date requestTime;
-        private int httpStatus;
-        private long timeTaken;
-
-        public AuditLog(String fromAddress, String requestMethod, String requestUrl, Date requestTime, int httpStatus, long timeTaken) {
-
-            this.fromAddress = fromAddress;
-            this.requestMethod = requestMethod;
-            this.requestUrl = requestUrl;
-            this.requestTime = requestTime;
-            this.httpStatus = httpStatus;
-            this.timeTaken = timeTaken;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append(DateTimeHelper.formatDateUTC(requestTime))
-                    .append(FIELD_SEP).append(fromAddress)
-                    .append(FIELD_SEP).append(requestMethod)
-                    .append(FIELD_SEP).append(requestUrl)
-                    .append(FIELD_SEP).append(httpStatus)
-                    .append(FIELD_SEP).append(timeTaken);
-
-            return sb.toString();
-        }
     }
 }
