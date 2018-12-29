@@ -24,25 +24,19 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.SortOrder;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.glossary.GlossaryService;
-import org.apache.atlas.model.glossary.AtlasGlossary;
-import org.apache.atlas.model.glossary.AtlasGlossaryCategory;
-import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
-import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
-import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
-import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
-import org.apache.atlas.model.glossary.relations.AtlasTermCategorizationHeader;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
@@ -73,6 +67,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,16 +75,12 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
-import io.zeta.metaspace.model.metadata.CategoryChildren;
-import io.zeta.metaspace.model.metadata.CategoryEntity;
-import io.zeta.metaspace.model.metadata.CategoryHeader;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnEdit;
 import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.LineageDepthInfo;
 import io.zeta.metaspace.model.metadata.LineageTrace;
-import io.zeta.metaspace.model.metadata.RelationEntity;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableEdit;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
@@ -97,6 +88,7 @@ import io.zeta.metaspace.model.metadata.TablePermission;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -106,6 +98,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.annotation.Resource;
 
 /*
  * @description
@@ -126,6 +120,8 @@ public class MetaDataService {
     AtlasTypeDefStore typeDefStore;
     @Autowired
     MetaspaceGremlinService metaspaceLineageService;
+    @Resource
+    RelationDAO relationDao;
 
     public Table getTableInfoById(String guid, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -247,54 +243,19 @@ public class MetaDataService {
     }
 
     public List<String> getRelationList(String guid) throws AtlasBaseException {
-        List<String> relations = new ArrayList<>();
-        //获取当前entity
-        AtlasEntity entityInfo = entitiesStore.getById(guid).getEntity();
-
-        List<String> relationDirs = new ArrayList<>();
-        String tableName = entityInfo.getAttribute("name").toString();
-
-        //获取RelationShip中的"meanings"属性
-        List<AtlasRelatedObjectId> relatedObjectIds = (ArrayList)entityInfo.getRelationshipAttribute("meanings");
-        if(Objects.nonNull(relatedObjectIds) && relatedObjectIds.size()!=0) {
-
-            //遍历，得到每一个关联关系
-            for(AtlasRelatedObjectId objectId: relatedObjectIds) {
-                if(objectId.getRelationshipStatus().name().equals("DELETED"))
-                    continue;
-                relationDirs.add(tableName);
-                String termGuid = objectId.getGuid();
-                //获取Term
-                AtlasGlossaryTerm term = glossaryService.getTerm(termGuid);
-                //获取与Term关联的CategoryHeather
-                Set<AtlasTermCategorizationHeader> termCategoryHeaders = term.getCategories();
-                if(Objects.nonNull(termCategoryHeaders)) {
-                    Iterator<AtlasTermCategorizationHeader> categories = termCategoryHeaders.iterator();
-                    if(categories.hasNext()) {
-                        AtlasTermCategorizationHeader categoryHeader = categories.next();
-                        //根据guid获取category
-                        String categoryGuid = categoryHeader.getCategoryGuid();
-                        AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
-                        //获取category的名字
-                        String categoryName = category.getName();
-                        relationDirs.add(categoryName);
-                        while(Objects.nonNull(category.getParentCategory())) {
-                            AtlasRelatedCategoryHeader parentCategoryHeader = category.getParentCategory();
-                            category = glossaryService.getCategory(parentCategoryHeader.getCategoryGuid());
-                            relationDirs.add(category.getName());
-                        }
-                    }
-                }
-                StringBuffer path = new StringBuffer();
-                for(int i=relationDirs.size()-1; i>0; i--) {
-                    path.append(relationDirs.get(i) + "/");
-                }
-                path.append(relationDirs.get(0));
-                relations.add(path.toString());
-                relationDirs.clear();
+        try {
+            List<RelationEntityV2> relationEntities = relationDao.queryRelationByTableGuid(guid);
+            List<String> relations = new ArrayList<>();
+            if (Objects.nonNull(relationEntities)) {
+                for (RelationEntityV2 entity : relationEntities)
+                    relations.add(entity.getPath());
             }
+            return relations;
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
-        return relations;
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
@@ -445,9 +406,6 @@ public class MetaDataService {
                     //dbName
                     AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
                     lineageDepthEntity.setDbName(relatedObject.getDisplayText());
-
-                    //AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
-                    //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
             }
@@ -555,7 +513,6 @@ public class MetaDataService {
                 else
                     info.getEntities().addAll(lineageEntities);
             }
-            //getAllTableLineageColumns(info.getEntities());
             return info;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
@@ -691,8 +648,6 @@ public class MetaDataService {
                             lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                         }
                     }
-                    //AtlasLineageInfo fullLineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
-                    //lineageDepthEntity = getLineageDepth(lineageDepthEntity, fullLineageInfo);
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
             }
@@ -882,81 +837,6 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改字段信息失败");
         }
 
-    }
-
-    public List<RelationEntity.RelationInfo> getQueryTables(String tableName) throws AtlasBaseException {
-        List<RelationEntity.RelationInfo> relationInfoList = new ArrayList<>();
-        List<AtlasGlossary> glossaries = glossaryService.getGlossaries(-1,0, SortOrder.ASCENDING);
-        if(Objects.nonNull(glossaries) && glossaries.size()!=0) {
-            AtlasGlossary glossary = glossaries.get(0);
-            Set<AtlasRelatedTermHeader> terms = glossary.getTerms();
-            if(Objects.nonNull(terms) && terms.size()!=0) {
-                Iterator<AtlasRelatedTermHeader> iterator = terms.iterator();
-                while (iterator.hasNext()) {
-                    AtlasRelatedTermHeader termHeader = iterator.next();
-                    String termGuid = termHeader.getTermGuid();
-                    AtlasGlossaryTerm term = glossaryService.getTerm(termGuid);
-                    Set<AtlasRelatedObjectId> relatedObjectIds = term.getAssignedEntities();
-                    if(Objects.nonNull(relatedObjectIds) && relatedObjectIds.size()!=0) {
-                        Iterator<AtlasRelatedObjectId> relatedIterator = relatedObjectIds.iterator();
-                        while(relatedIterator.hasNext()) {
-                            AtlasRelatedObjectId object = relatedIterator.next();
-                            String name  = object.getDisplayText();
-                            AtlasEntity.Status status = object.getEntityStatus();
-                            if(name.contains(tableName)) {
-                                RelationEntity.RelationInfo info = new RelationEntity.RelationInfo();
-                                info.setGuid(object.getGuid());
-                                info.setRelationshipGuid(object.getRelationshipGuid());
-                                info.setStatus(status.name());
-                                AtlasEntity entity = getEntityById(object.getGuid());
-                                //表名称
-                                info.setTableName(getEntityAttribute(entity, "name"));
-                                //库名称
-                                AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
-                                info.setDbName(relatedObject.getDisplayText());
-                                Set<AtlasTermCategorizationHeader> categoriesHeader  = term.getCategories();
-                                if(Objects.nonNull(categoriesHeader) && categoriesHeader.size()!=0) {
-                                    AtlasTermCategorizationHeader categoryHeader = categoriesHeader.iterator().next();
-                                    String  categoryGuid = categoryHeader.getCategoryGuid();
-                                    info.setCategoryGuid(categoryGuid);
-                                    AtlasGlossaryCategory category = glossaryService.getCategory(categoryGuid);
-
-                                    //迭代获取父级目录信息
-                                    AtlasRelatedCategoryHeader parent = category.getParentCategory();
-                                    List<String> pathList = new ArrayList<>();
-                                    pathList.add(category.getName());
-                                    while(Objects.nonNull(parent)) {
-                                        AtlasGlossaryCategory parentCategory = glossaryService.getCategory(parent.getCategoryGuid());
-                                        parent = parentCategory.getParentCategory();
-                                        pathList.add(parentCategory.getName());
-                                    }
-                                    //拼接路径
-                                    String pathStr = "";
-                                    for(int i=pathList.size()-1; i>=0; i--) {
-                                        pathStr += pathList.get(i) + "/";
-                                    }
-                                    pathStr += name;
-                                    info.setPath(pathStr);
-                                }
-                                if(Objects.nonNull(info.getCategoryGuid()))
-                                    relationInfoList.add(info);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return relationInfoList;
-    }
-
-    private SortOrder toSortOrder(final String sort) {
-        SortOrder ret = SortOrder.ASCENDING;
-        if (!"ASC".equals(sort)) {
-            if ("DESC".equals(sort)) {
-                ret = SortOrder.DESCENDING;
-            }
-        }
-        return ret;
     }
 
     @CacheEvict(value = { "columnCache",

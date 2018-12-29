@@ -23,6 +23,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /*
@@ -46,6 +47,9 @@ public interface RelationDAO {
 
     @Select("select * from table_relation where categoryGuid=#{categoryGuid}")
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
+
+    @Select("select * from table_relation where tableGuid=#{tableGuid}")
+    public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid")String tableGuid) throws SQLException;
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
