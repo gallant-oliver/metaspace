@@ -338,86 +338,91 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     @Override
     public PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset) throws AtlasBaseException {
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_QUERY);
-        String query = gremlinQueryProvider.getQuery(gremlinQeury);
+        try {
+            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_QUERY);
+            String query = gremlinQueryProvider.getQuery(gremlinQeury);
 
-        String dbQuery = String.format(query, queryDb, offset, offset + limit);
-        List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
-        Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
+            String dbQuery = String.format(query, queryDb, offset, offset + limit);
+            List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
+            Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
 
-        PageResult<Database> pageResult = new PageResult<>();
-        List<Database> databases = new ArrayList<>();
-        List<Table> tables = null;
-        Boolean hasRecoredDB = null;
-        Database db = null;
+            PageResult<Database> pageResult = new PageResult<>();
+            List<Database> databases = new ArrayList<>();
+            List<Table> tables = null;
+            Boolean hasRecoredDB = null;
+            Database db = null;
 
-        List<String> attributes = new ArrayList<>();
-        attributes.add("name");
-        attributes.add("comment");
-        attributes.add("description");
-        while (results.hasNext()) {
-            hasRecoredDB = false;
-            Map<String, AtlasVertex> map = results.next();
-            AtlasVertex dbVertex = map.get("db");
-            AtlasVertex tableVertex = map.get("table");
+            List<String> attributes = new ArrayList<>();
+            attributes.add("name");
+            attributes.add("comment");
+            attributes.add("description");
+            while (results.hasNext()) {
+                hasRecoredDB = false;
+                Map<String, AtlasVertex> map = results.next();
+                AtlasVertex dbVertex = map.get("db");
+                AtlasVertex tableVertex = map.get("table");
 
-            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
-            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-            String dbGuid = getGuid(dbVertex);
+                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+                AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                String dbGuid = getGuid(dbVertex);
 
-            Table table = new Table();
-            if (Objects.nonNull(tableVertex)) {
-                AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
-                AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
-                String tableGuid = getGuid(tableVertex);
-                String tableName = tableEntity.getAttribute("name").toString();
-                String tableStatus = tableEntity.getStatus().name();
-                String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
-                table.setTableId(tableGuid);
-                table.setTableName(tableName);
-                table.setStatus(tableStatus);
-                table.setDescription(tableDescription);
+                Table table = new Table();
+                if (Objects.nonNull(tableVertex)) {
+                    AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+                    AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+                    String tableGuid = getGuid(tableVertex);
+                    String tableName = tableEntity.getAttribute("name").toString();
+                    String tableStatus = tableEntity.getStatus().name();
+                    String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
+                    table.setTableId(tableGuid);
+                    table.setTableName(tableName);
+                    table.setStatus(tableStatus);
+                    table.setDescription(tableDescription);
 
-                for (Database database : databases) {
-                    String dbName = database.getDatabaseName();
-                    if (dbGuid.equals(database.getDatabaseId())) {
-                        hasRecoredDB = true;
-                        table.setDatabaseId(dbGuid);
-                        table.setDatabaseName(dbName);
-                        tables = database.getTableList();
-                        tables.add(table);
-                        break;
+                    for (Database database : databases) {
+                        String dbName = database.getDatabaseName();
+                        if (dbGuid.equals(database.getDatabaseId())) {
+                            hasRecoredDB = true;
+                            table.setDatabaseId(dbGuid);
+                            table.setDatabaseName(dbName);
+                            tables = database.getTableList();
+                            tables.add(table);
+                            break;
+                        }
                     }
                 }
-            }
-            //没有记录当前DB信息
-            if (!hasRecoredDB) {
-                db = new Database();
-                String dbName = dbEntity.getAttribute("name").toString();
-                String dbStatus = dbEntity.getStatus().name();
-                String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
-                db.setDatabaseId(dbGuid);
-                db.setDatabaseName(dbName);
-                db.setStatus(dbStatus);
-                db.setDatabaseDescription(dbDescription);
-                tables = new ArrayList<>();
-                if (Objects.nonNull(tableVertex)) {
-                    table.setDatabaseId(dbGuid);
-                    table.setDatabaseName(dbName);
-                    tables.add(table);
+                //没有记录当前DB信息
+                if (!hasRecoredDB) {
+                    db = new Database();
+                    String dbName = dbEntity.getAttribute("name").toString();
+                    String dbStatus = dbEntity.getStatus().name();
+                    String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
+                    db.setDatabaseId(dbGuid);
+                    db.setDatabaseName(dbName);
+                    db.setStatus(dbStatus);
+                    db.setDatabaseDescription(dbDescription);
+                    tables = new ArrayList<>();
+                    if (Objects.nonNull(tableVertex)) {
+                        table.setDatabaseId(dbGuid);
+                        table.setDatabaseName(dbName);
+                        tables.add(table);
+                    }
+                    db.setTableList(tables);
+                    databases.add(db);
                 }
-                db.setTableList(tables);
-                databases.add(db);
             }
+            pageResult.setLists(databases);
+            pageResult.setOffset(offset);
+            pageResult.setCount(databases.size());
+            String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+            String numQuery = String.format(gremlinQuery, queryDb);
+            List num = (List) graph.executeGremlinScript(numQuery, false);
+            pageResult.setSum(Integer.parseInt(num.get(0).toString()));
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误");
         }
-        pageResult.setLists(databases);
-        pageResult.setOffset(offset);
-        pageResult.setCount(databases.size());
-        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
-        String numQuery = String.format(gremlinQuery, queryDb);
-        List num = (List) graph.executeGremlinScript(numQuery, false);
-        pageResult.setSum(Integer.parseInt(num.get(0).toString()));
-        return pageResult;
+
     }
 
     @Override
