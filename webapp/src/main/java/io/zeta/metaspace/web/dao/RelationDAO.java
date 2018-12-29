@@ -23,6 +23,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /*
@@ -33,7 +34,7 @@ import java.util.List;
 public interface RelationDAO {
     @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,path,status)" +
             "values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{path},#{status})")
-    public int add(RelationEntityV2 entity);
+    public int add(RelationEntityV2 entity) throws SQLException;
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
     public int delete(@Param("relationshipGuid")String guid);

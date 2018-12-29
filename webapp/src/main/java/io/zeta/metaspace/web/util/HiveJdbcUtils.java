@@ -102,8 +102,10 @@ public class HiveJdbcUtils {
                 ret.add(resultSet.getString(1));
             }
             return ret;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表失败");
         }
     }
 
@@ -165,7 +167,7 @@ public class HiveJdbcUtils {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
 
@@ -173,7 +175,7 @@ public class HiveJdbcUtils {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
 
