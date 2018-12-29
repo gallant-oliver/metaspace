@@ -18,22 +18,22 @@ package io.zeta.metaspace.model.table;
  */
 public class TableMetadata {
 
-    private int numFiles;
+    private long numFiles;
     private long totalSize;
 
     public TableMetadata() {
     }
 
-    public TableMetadata(int numFiles, long totalSize) {
+    public TableMetadata(long numFiles, long totalSize) {
         this.numFiles = numFiles;
         this.totalSize = totalSize;
     }
 
-    public int getNumFiles() {
+    public long getNumFiles() {
         return numFiles;
     }
 
-    public void setNumFiles(int numFiles) {
+    public void setNumFiles(long numFiles) {
         this.numFiles = numFiles;
     }
 
