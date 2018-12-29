@@ -32,30 +32,34 @@ public class HivePermissionUtil {
             Map body = gson.fromJson(session, Map.class);
             Map data = (Map) body.get("data");
             List<Map> privileges = (List<Map>) data.get("privileges");
-            Map<Set<String>, Set<String>> allPrivileges = new HashMap<>();
-            for (Map privilege : privileges) {
-                Set allColumns = new HashSet((List)privilege.get("columns"));
-                Set privilegeContents =  new HashSet((List)privilege.get("privilegeContents"));
-                allPrivileges.put(allColumns,privilegeContents);
-            }
-            if(allPrivileges.containsKey(ALLCLOUMN)){
-                Set<String> set = allPrivileges.get(ALLCLOUMN);
-                if(set.contains("r")){
-                    tablePermission.setREAD(true);
+            if(privileges!=null) {
+                Map<Set<String>, Set<String>> allPrivileges = new HashMap<>();
+                for (Map privilege : privileges) {
+                    Set allColumns = new HashSet((List) privilege.get("columns"));
+                    Set privilegeContents = new HashSet((List) privilege.get("privilegeContents"));
+                    allPrivileges.put(allColumns, privilegeContents);
                 }
-                if(set.contains("w")){
-                    tablePermission.setWRITE(true);
+                if (allPrivileges.containsKey(ALLCLOUMN)) {
+                    Set<String> set = allPrivileges.get(ALLCLOUMN);
+                    if (set.contains("r")) {
+                        tablePermission.setREAD(true);
+                    }
+                    if (set.contains("w")) {
+                        tablePermission.setWRITE(true);
+                    }
+                } else if (allPrivileges.containsKey(ALLCLOUMN2)) {
+                    Set<String> set = allPrivileges.get(ALLCLOUMN2);
+                    if (set.contains("r")) {
+                        tablePermission.setREAD(true);
+                    }
+                    if (set.contains("w")) {
+                        tablePermission.setWRITE(true);
+                    }
+                } else {
+                    tablePermission.setREAD(false);
+                    tablePermission.setWRITE(false);
                 }
-            }else if(allPrivileges.containsKey(ALLCLOUMN2)){
-                Set<String> set = allPrivileges.get(ALLCLOUMN2);
-                if(set.contains("r")){
-                    tablePermission.setREAD(true);
-                }
-                if(set.contains("w")){
-                    tablePermission.setWRITE(true);
-                }
-            }
-            else{
+            }else{
                 tablePermission.setREAD(false);
                 tablePermission.setWRITE(false);
             }

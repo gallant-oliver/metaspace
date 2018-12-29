@@ -196,7 +196,7 @@ public class MetaspaceScheduler {
         tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
         tableStat.setDataVolumeBytes(totalSize);
         //文件个数
-        int fieldNum = metadata.getNumFiles();
+        long fieldNum = metadata.getNumFiles();
         tableStat.setFileNum(fieldNum);
 
         //数据来源表
