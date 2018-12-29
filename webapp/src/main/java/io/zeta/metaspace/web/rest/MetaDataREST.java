@@ -362,22 +362,6 @@ public class MetaDataREST {
         }
     }
 
-    /*@POST
-    @Path("/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntity createMetadataCategory(CategoryEntity category) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
-            }
-            return metadataService.createMetadataCategory(category);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
-
     /**
      * 添加目录 V2
      * @param categoryInfo
@@ -399,22 +383,6 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
-
-    /*@POST
-    @Path("/update/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntity updateMetadataCategory(CategoryEntity category) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
-            }
-            return metadataService.updateMetadataCategory(category);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
 
     /**
      * 修改目录信息 V2
@@ -438,22 +406,6 @@ public class MetaDataREST {
         }
     }
 
-    /*@DELETE
-    @Path("/category/{categoryGuid}")
-    public Response deleteGlossaryCategory(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteGlossaryCategory(" + categoryGuid + ")");
-            }
-            metadataService.deleteGlossaryCategory(categoryGuid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }*/
-
     /**
      * 删除目录 V2
      * @param categoryGuid
@@ -475,25 +427,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
-    /*@POST
-    @Path("/category/{categoryGuid}/assignedEntities")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<AtlasRelatedObjectId> assignTermToEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTermToEntities(" + categoryGuid + ")");
-            }
-            return metadataService.assignTermToEntities(categoryGuid, relatedObjectIds);
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
 
     /**
      * 添加关联
@@ -522,26 +455,6 @@ public class MetaDataREST {
         return Response.status(200).entity("success").build();
     }
 
-    /*@GET
-    @Path("/category/relations/{categoryGuid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RelationEntity getCategoryRelations(@PathParam("categoryGuid") String categoryGuid,
-                                               @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
-            }
-            return metadataService.getCategoryRelations(categoryGuid,refreshCache);
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
-
     /**
      * 获取关联关系
      * @param categoryGuid
@@ -568,47 +481,6 @@ public class MetaDataREST {
     }
 
     /**
-     * 获取子目录
-     * @param categoryGuid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/category/children/{categoryGuid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryChildren getCategoryChildren(@PathParam("categoryGuid") String categoryGuid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryChildren(" + categoryGuid + ")");
-            }
-            return metadataService.getCategoryChildren(categoryGuid);
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取子目录失败");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /*@DELETE
-    @Path("/category/{categoryGuid}/assignedEntities")
-    public Response removeRelationAssignmentFromEntities(@PathParam("categoryGuid") String categoryGuid, List<AtlasRelatedObjectId> relatedObjectIds) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + categoryGuid + ")");
-            }
-            metadataService.removeRelationAssignmentFromEntities(categoryGuid, relatedObjectIds);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }*/
-
-    /**
      * 删除关联关系
      * @param relationshipList
      * @return
@@ -628,25 +500,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
-    /*@POST
-    @Path("/table/relations/")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RelationEntity.RelationInfo> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
-            }
-            String filterName = relationQuery.getFilterTableName();
-            return metadataService.getQueryTables(filterName);
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索失败");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
 
     /**
      * 获取表关联
@@ -671,23 +524,6 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
-
-    /*@GET
-    @Path("/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryHeader> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,
-                                             @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
-            }
-            return metadataService.getCategories(sort, refreshCache);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
 
     /**
      * 获取全部目录
@@ -754,8 +590,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
-
 
     /**
      * 清除缓存
