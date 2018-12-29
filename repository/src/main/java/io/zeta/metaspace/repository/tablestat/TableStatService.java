@@ -137,7 +137,7 @@ public class TableStatService {
                 String date = row.get("date".getBytes()) == null ? "" : new String(row.get("date".getBytes()));
                 String dateType = row.get("dateType".getBytes()) == null ? "" : new String(row.get("dateType".getBytes()));
                 int fieldNum = row.get("fieldNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fieldNum".getBytes())));
-                int fileNum = row.get("fileNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fileNum".getBytes())));
+                long fileNum = row.get("fileNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("fileNum".getBytes())));
                 long recordNum = row.get("recordNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("recordNum".getBytes())));
                 String dataVolume = row.get("dataVolume".getBytes()) == null ? "" : new String(row.get("dataVolume".getBytes()));
                 long dataVolumeBytes = row.get("dataVolumeBytes".getBytes()) == null ? 0L : Long.valueOf(new String(row.get("dataVolumeBytes".getBytes())));
