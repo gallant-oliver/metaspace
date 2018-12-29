@@ -2,17 +2,21 @@
 元数据管理
  */
 /**
- * @api {post} /api/metaspace/metadata/search/database 元数据管理跳转
- * @apiName 元数据管理跳转
+ * @api {post} /api/metaspace/metadata/search/database
+ * @apiName 获取所有数据库
  * @apiGroup metadataManage
- * @apiDescription 发送请求时携带一个通用的"查询参数对象",该接口只用提供databaseOffset和databaseLimit两个属性
- 该接口会返回请求数量的数据库及其所有表的列表
- 点击加载更多的功能所需的数据由第一个接口一次全部返回，前端去分页，这样点击时加载更快。
- 放到后端做分页，由于该数据存放在hbase中并未排序，只是作为库对象的属性在存放，无法根据偏移量读取，只能先全部取出到内存，再根据创建时间排序，每次取对应偏移量的表信息返给前端，这样后台重复工作很多，效率很低。
- * @apiParam {String} tableOffset 偏移量
- * @apiParam {String} tableLimit 页面显示个数
+ * @apiDescription
+ * @apiParam {String} query 搜索关键词
+ * @apiParam {String} offset 偏移量
+ * @apiParam {String} limit 返回条数
  * @apiVersion 1.1.0
  * @apiUse AuthHeader
+ * @apiParamExample {json} Request:
+ *  {
+            "query":"",
+            "offset":0,
+            "limit":10
+            }
  * @apiSuccessExample {json} 返回示例:
  *     HTTP/1.1 200 OK
  *     {
@@ -345,7 +349,7 @@
  * @apiName 表查询
  * @apiGroup metadataManage
  * @apiDescription
- * @apiParam {String=null} [query] 表名
+ * @apiParam {String} [query] 表名
  * @apiParam {String} tableOffset 偏移量
  * @apiParam {String} tableLimit 页面显示个数
  * @apiVersion 1.1.0
@@ -419,7 +423,7 @@
  * @apiName 字段查询
  * @apiGroup metadataManage
  * @apiDescription
- * @apiParam {String=null} [query] 表名
+ * @apiParam {String} [query] 表名
  * @apiParam {String} tableOffset 偏移量
  * @apiParam {String} tableLimit 页面显示个数
  * @apiVersion 1.1.0
@@ -557,7 +561,7 @@
  * @api {post} /api/metaspace/metadata/table/preview 表详情_数据预览
  * @apiName 表详情_数据预览
  * @apiGroup metadataManage
- * @apiDescription
+ * @apiDescription 预览表中数据
  * @apiParam {String} guid 表id
  * @apiParam {Integer} count 偏移量
  * @apiVersion 1.1.0

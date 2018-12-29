@@ -15,6 +15,7 @@ package io.zeta.metaspace.repository.tablestat;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import io.zeta.metaspace.model.DateType;
 import io.zeta.metaspace.model.table.TableStat;
@@ -22,6 +23,7 @@ import io.zeta.metaspace.model.table.TableStatRequest;
 import io.zeta.metaspace.repository.util.HbaseUtils;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.PageUtils;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
@@ -137,7 +139,7 @@ public class TableStatService {
                 String date = row.get("date".getBytes()) == null ? "" : new String(row.get("date".getBytes()));
                 String dateType = row.get("dateType".getBytes()) == null ? "" : new String(row.get("dateType".getBytes()));
                 int fieldNum = row.get("fieldNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fieldNum".getBytes())));
-                int fileNum = row.get("fileNum".getBytes()) == null ? 0 : Integer.valueOf(new String(row.get("fileNum".getBytes())));
+                long fileNum = row.get("fileNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("fileNum".getBytes())));
                 long recordNum = row.get("recordNum".getBytes()) == null ? 0 : Long.valueOf(new String(row.get("recordNum".getBytes())));
                 String dataVolume = row.get("dataVolume".getBytes()) == null ? "" : new String(row.get("dataVolume".getBytes()));
                 long dataVolumeBytes = row.get("dataVolumeBytes".getBytes()) == null ? 0L : Long.valueOf(new String(row.get("dataVolumeBytes".getBytes())));
@@ -159,6 +161,8 @@ public class TableStatService {
             List<TableStat> pageList = PageUtils.pageList(tableStatList.iterator(), request.getOffset(), request.getLimit());
 
             return Pair.of(tableStatList.size(), pageList);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "HBase 异常");
         }
     }
 

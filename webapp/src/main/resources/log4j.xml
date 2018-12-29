@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n"/>
+        </layout>
+    </appender>
+
+    <logger name="org.apache.atlas">
+        <level value="info"/>
+    </logger>
+
+    <logger name="org.janusgraph">
+        <level value="warn"/>
+    </logger>
+
+    <logger name="org.springframework">
+        <level value="warn"/>
+    </logger>
+
+    <logger name="org.eclipse">
+        <level value="INFO"/>
+    </logger>
+
+    <logger name="com.sun.jersey">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- to avoid logs - The configuration log.flush.interval.messages = 1 was supplied but isn't a known config -->
+    <logger name="org.apache.kafka.common.config.AbstractConfig">
+        <level value="error"/>
+    </logger>
+
+    <logger name="AUDIT">
+        <level value="info"/>
+    </logger>
+
+    <logger name="METRICS">
+        <level value="debug"/>
+    </logger>
+
+    <logger name="FAILED">
+        <level value="info"/>
+    </logger>
+
+    <root>
+        <priority value="INFO"/>
+        <appender-ref ref="console"/>
+    </root>
+
+</log4j:configuration>

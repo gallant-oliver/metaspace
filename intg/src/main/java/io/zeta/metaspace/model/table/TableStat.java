@@ -40,7 +40,7 @@ public class TableStat implements Cloneable {
     private String date;
     private String dateType;
     private Integer fieldNum;
-    private Integer fileNum;
+    private Long fileNum;
     private Long recordNum;
     private String dataVolume;
     private Long dataVolumeBytes;
@@ -57,7 +57,7 @@ public class TableStat implements Cloneable {
     public TableStat() {
     }
 
-    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Integer fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, Long dataIncrementBytes, List<Table> sourceTable) {
+    public TableStat(String tableId, String tableName, String date, String dateType, Integer fieldNum, Long fileNum, Long recordNum, String dataVolume, Long dataVolumeBytes, String dataIncrement, Long dataIncrementBytes, List<Table> sourceTable) {
         this.tableId = tableId;
         this.tableName = tableName;
         this.date = date;
@@ -112,11 +112,11 @@ public class TableStat implements Cloneable {
         this.fieldNum = fieldNum;
     }
 
-    public Integer getFileNum() {
+    public Long getFileNum() {
         return fileNum;
     }
 
-    public void setFileNum(Integer fileNum) {
+    public void setFileNum(Long fileNum) {
         this.fileNum = fileNum;
     }
 

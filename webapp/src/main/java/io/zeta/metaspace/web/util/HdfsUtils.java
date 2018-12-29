@@ -57,7 +57,17 @@ public class HdfsUtils {
 
         return fs;
     }
+    public static FileSystem getSystemFs(String user) throws IOException, InterruptedException, AtlasBaseException {
+        FileSystem fs;
+        UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
+        fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
+            public FileSystem run() throws Exception {
+                return FileSystem.get(configuration);
+            }
+        });
 
+        return fs;
+    }
     public static FileSystem fs() throws IOException, InterruptedException, AtlasBaseException {
         return getFs();
     }

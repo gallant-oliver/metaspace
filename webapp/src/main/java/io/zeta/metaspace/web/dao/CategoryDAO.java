@@ -24,6 +24,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 
+import java.sql.SQLException;
 import java.util.Set;
 
 /*
@@ -41,7 +42,7 @@ public interface CategoryDAO {
     public Set<CategoryEntityV2> getAll();
 
     @Select("select * from table_category where guid=#{guid}")
-    public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid);
+    public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
     @Select("select count(*) from table_category where qualifiedName=#{qualifiedName}")
     public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);
@@ -65,5 +66,5 @@ public interface CategoryDAO {
     public int updateCatalogInfo(CategoryEntity category);
 
     @Delete("delete from table_category where guid=#{guid}")
-    public int delete(@Param("guid")String guid);
+    public int delete(@Param("guid")String guid) throws SQLException;
 }

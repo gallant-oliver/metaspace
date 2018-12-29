@@ -20,6 +20,10 @@ import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.TableMetadata;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.hadoop.fs.ContentSummary;
+import org.apache.hadoop.fs.FileChecksum;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,8 +102,10 @@ public class HiveJdbcUtils {
                 ret.add(resultSet.getString(1));
             }
             return ret;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表失败");
         }
     }
 
@@ -116,13 +122,17 @@ public class HiveJdbcUtils {
         String tableName = split[1];
         String location = location(db, tableName);
         if (location != null) {
-            ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
+/*          ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
             rs.next();
             String text = rs.getString(1);
             String[] s = text.replaceAll("\\s+", "-").split("-");
             String numFiles = s[2];
-            String totalSize = s[3];
-            return new TableMetadata(Integer.valueOf(numFiles), Long.valueOf(totalSize));
+            String totalSize = s[3];*/
+            FileSystem fs = HdfsUtils.getSystemFs("hive");
+            ContentSummary contentSummary = fs.getContentSummary(new Path(location));
+            long numFiles = contentSummary.getFileCount();
+            long totalSize = contentSummary.getLength();
+            return new TableMetadata(numFiles, Long.valueOf(totalSize));
         } else {//view
             return new TableMetadata();
         }
@@ -157,7 +167,7 @@ public class HiveJdbcUtils {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
 
@@ -165,7 +175,7 @@ public class HiveJdbcUtils {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive 异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
 

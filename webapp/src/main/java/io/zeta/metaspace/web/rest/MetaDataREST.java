@@ -43,9 +43,13 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.service.DataManageService;
 
 import org.apache.atlas.web.util.Servlets;
+import org.apache.ibatis.exceptions.PersistenceException;
+import org.mybatis.spring.MyBatisSystemException;
+import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -55,6 +59,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -337,7 +342,6 @@ public class MetaDataREST {
         }
     }
 
-
     /**
      * 字段血缘深度详情
      *
@@ -379,6 +383,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
             return dataManageService.createCategory(categoryInfo);
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -401,6 +407,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
             return dataManageService.updateCategory(categoryInfo);
+        }  catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -422,6 +430,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
             }
             dataManageService.deleteCategory(categoryGuid);
+        }  catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -440,15 +450,15 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
-        //Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
             dataManageService.assignTablesToCategory(categoryGuid, relations);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -473,8 +483,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
             return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -495,6 +505,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
             }
             dataManageService.removeRelationAssignmentFromTables(relationshipList);
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -518,9 +530,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
             }
             return dataManageService.getRelationsByTableName(relationQuery);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索失败");
-        } finally {
+        }  finally {
             AtlasPerfTracer.log(perf);
         }
     }
@@ -542,7 +552,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
             return dataManageService.getAll();
-        } finally {
+        }  finally {
             AtlasPerfTracer.log(perf);
         }
     }
@@ -563,6 +573,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
             }
             metadataService.updateTableDescription(tableEdit);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
