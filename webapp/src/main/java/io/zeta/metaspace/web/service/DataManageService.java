@@ -31,6 +31,7 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import org.apache.directory.api.util.Strings;
+import org.mybatis.spring.MyBatisSystemException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,8 +54,12 @@ public class DataManageService {
     @Autowired
     RelationDAO relationDao;
 
-    public Set<CategoryEntityV2> getAll() {
-        return dao.getAll();
+    public Set<CategoryEntityV2> getAll() throws AtlasBaseException {
+        try {
+            return dao.getAll();
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        }
     }
 
     @Transactional
@@ -112,10 +117,10 @@ public class DataManageService {
 
             //子目录
             if( Objects.nonNull(newCategoryParentGuid)) {
-                String lastChildguid = dao.queryLastChildCategory(currentCategoryGuid);
-                if (Objects.nonNull(lastChildguid)) {
-                    entity.setUpBrotherCategoryGuid(lastChildguid);
-                    dao.updateDownBrothCategoryGuid(lastChildguid, newCategoryGuid);
+                String lastChildGuid = dao.queryLastChildCategory(currentCategoryGuid);
+                if (Objects.nonNull(lastChildGuid)) {
+                    entity.setUpBrotherCategoryGuid(lastChildGuid);
+                    dao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid);
                 }
             } else {
                 //同级目录
@@ -124,17 +129,17 @@ public class DataManageService {
                     String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                     if (Objects.nonNull(upBrotherGuid)) {
                         entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                        dao.updateDownBrothCategoryGuid(upBrotherGuid, newCategoryGuid);
+                        dao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid);
                     }
-                    dao.updateUpBrothCategoryGuid(currentCategoryGuid, newCategoryGuid);
+                    dao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 } else if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
                     entity.setUpBrotherCategoryGuid(info.getGuid());
                     String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                     if (Objects.nonNull(downBrotherGuid)) {
                         entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                        dao.updateUpBrothCategoryGuid(downBrotherGuid, newCategoryGuid);
+                        dao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid);
                     }
-                    dao.updateDownBrothCategoryGuid(currentCategoryGuid, newCategoryGuid);
+                    dao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 }
             }
             dao.add(entity);
@@ -159,13 +164,13 @@ public class DataManageService {
             if (Objects.isNull(currentCatalog)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
             }
-            String upBrothCatalogGuid = currentCatalog.getUpBrotherCategoryGuid();
-            String downBrothCatalogGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (Objects.nonNull(upBrothCatalogGuid)) {
-                dao.updateDownBrothCategoryGuid(upBrothCatalogGuid, downBrothCatalogGuid);
+            String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
+            String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
+            if (Objects.nonNull(upBrotherCategoryGuid)) {
+                dao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid);
             }
-            if (Objects.nonNull(downBrothCatalogGuid)) {
-                dao.updateUpBrothCategoryGuid(downBrothCatalogGuid, upBrothCatalogGuid);
+            if (Objects.nonNull(downBrotherCategoryGuid)) {
+                dao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
             }
             return dao.delete(guid);
         } catch (SQLException e) {

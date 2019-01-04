@@ -57,10 +57,10 @@ public interface CategoryDAO {
     public String queryLastChildCategory(@Param("parentCategoryGuid")String guid);
 
     @Update("update table_category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
-    public int updateUpBrothCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
+    public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
 
     @Update("update table_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
-    public int updateDownBrothCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
+    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
 
     @Update("update table_category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
     public int updateCategoryInfo(CategoryEntity category);
