@@ -190,12 +190,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
-        if(tableId==null|tableId.equals("")) {
-            //表id为空
-
-        }
         try {
-
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
             }
@@ -212,7 +207,6 @@ public class MetaDataREST {
         }
     }
 
-
     /**
      * 获取表详情
      *
@@ -224,13 +218,13 @@ public class MetaDataREST {
     @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableInfoById()");
             }
-            return metadataService.getTableInfoById(guid,refreshCache);
+            return metadataService.getTableInfoById(guid);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -618,7 +612,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
 
     @GET
     @Path("/databases")
