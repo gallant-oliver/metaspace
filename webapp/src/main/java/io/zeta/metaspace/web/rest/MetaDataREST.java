@@ -23,7 +23,6 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import org.apache.atlas.utils.AtlasPerfTracer;
-import io.zeta.metaspace.model.metadata.CategoryChildren;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnEdit;
 import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
@@ -43,9 +42,7 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.service.DataManageService;
 
 import org.apache.atlas.web.util.Servlets;
-import org.apache.ibatis.exceptions.PersistenceException;
 import org.mybatis.spring.MyBatisSystemException;
-import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,7 +56,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -95,7 +91,7 @@ public class MetaDataREST {
     @Path("/search/database")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public PageResult<Database> getAllDatabase(Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -269,8 +265,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TableLineageInfo getTableLineage(@PathParam("guid") String guid,
                                             @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
-                                            @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
-                                            @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+                                            @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
@@ -312,7 +307,6 @@ public class MetaDataREST {
      * @param guid
      * @param direction
      * @param depth
-     * @param refreshCache
      * @return
      * @throws AtlasBaseException
      */
@@ -322,8 +316,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ColumnLineageInfo getColumnLineage(@PathParam("guid") String guid,
                                               @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
-                                              @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth,
-                                              @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+                                              @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         try {
@@ -517,7 +510,7 @@ public class MetaDataREST {
     @Path("/table/relations/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {

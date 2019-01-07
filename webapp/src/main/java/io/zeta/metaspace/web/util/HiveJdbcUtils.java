@@ -170,6 +170,9 @@ public class HiveJdbcUtils {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
+            if(e.getMessage().contains("Permission denied")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
