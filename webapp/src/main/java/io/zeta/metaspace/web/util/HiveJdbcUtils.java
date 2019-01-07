@@ -144,7 +144,7 @@ public class HiveJdbcUtils {
             String text = rs.getString(1);
             if (text.contains("hdfs://")) {
 
-                String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "");
+                String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(" ","");
                 LOG.info(db+"."+tableName+" location:"+s);
                 return s;
             }
