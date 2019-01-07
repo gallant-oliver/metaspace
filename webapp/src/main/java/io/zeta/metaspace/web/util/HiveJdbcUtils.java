@@ -143,7 +143,7 @@ public class HiveJdbcUtils {
         while (rs.next()) {
             String text = rs.getString(1);
             if (text.contains("hdfs://")) {
-                return text.replaceAll("'", "");
+                return text.replaceAll("'", "").replaceAll("hdfs://\\w+","");
             }
         }
         LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
