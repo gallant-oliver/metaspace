@@ -30,7 +30,6 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.glossary.GlossaryService;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
@@ -85,10 +84,10 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableEdit;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
 import io.zeta.metaspace.model.metadata.TablePermission;
+import org.stringtemplate.v4.ST;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -115,96 +114,75 @@ public class MetaDataService {
     @Autowired
     private AtlasLineageService atlasLineageService;
     @Autowired
-    private  GlossaryService glossaryService;
-    @Autowired
     AtlasTypeDefStore typeDefStore;
     @Autowired
     MetaspaceGremlinService metaspaceLineageService;
     @Resource
     RelationDAO relationDao;
 
-    public Table getTableInfoById(String guid, Boolean refreshCache) throws AtlasBaseException {
+    public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
-        Table table  = new Table();
-        table.setTableId(guid);
         try {
             //获取entity
             AtlasEntity entity = getEntityById(guid);
             if(Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
-            if(entity.getTypeName().contains("table")) {
-                //表名称
-                table.setTableName(getEntityAttribute(entity, "name"));
-                //判断是否为虚拟表
-                if(table.getTableName().contains("values__tmp__table"))
-                    table.setVirtualTable(true);
-                else
-                    table.setVirtualTable(false);
-                //状态
-                table.setStatus(entity.getStatus().name());
-                //创建人
-                table.setOwner(getEntityAttribute(entity, "owner"));
-                //创建时间
-                Object createTime = entity.getAttribute("createTime");
-                SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String formatDateStr = sdf.format(createTime);
-                table.setCreateTime(formatDateStr);
-                //描述
-                table.setDescription(getEntityAttribute(entity, "comment"));
+            //table
+            Table table = extractTableInfo(entity, guid);
+            return table;
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
+        }
+    }
 
-                if(entity.hasAttribute("sd") && Objects.nonNull(entity.getAttribute("sd"))) {
-                    Object obj = entity.getAttribute("sd");
-                    if(obj instanceof AtlasObjectId) {
-                        AtlasObjectId atlasObject = (AtlasObjectId)obj;
-                        String sdGuid = atlasObject.getGuid();
-                        AtlasEntity sdEntity = getEntityById(sdGuid);
-                        //位置
-                        table.setLocation(getEntityAttribute(sdEntity, "location"));
-                        //格式
-                        String inputFormat = getEntityAttribute(sdEntity, "inputFormat");
-                        if(Objects.nonNull(inputFormat)) {
-                            String[] fullFormat = inputFormat.split("\\.");
-                            table.setFormat(fullFormat[fullFormat.length-1]);
-                        }
-                    }
-                }
-                //类型
-                String tableType = getEntityAttribute(entity, "tableType");
-                if(tableType.contains("EXTERNAL")) {
-                    table.setType("EXTERNAL_TABLE");
-                } else {
-                    table.setType("INTERNAL_TABLE");
-                }
-                //是否为分区表
-                if(entity.hasAttribute("partitionKeys") && Objects.nonNull(entity.getAttribute("partitionKeys"))) {
-                    table.setPartitionTable(true);
-                } else {
-                    table.setPartitionTable(false);
-                }
-                //数据库名
-                AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
-                table.setDatabaseId(relatedObject.getGuid());
-                table.setDatabaseName(relatedObject.getDisplayText());
-                //所属业务
-                table.setBusiness("");
-                //表关联信息
-                List<String> relations = getRelationList(guid);
-                table.setRelations(relations);
-                //类别
-                table.setCategory("");
-                //表生命周期
-                table.setTableLife("");
-                //分区生命周期
-                table.setPartitionLife("");
-                //分类信息
-                table.setTopic("");
-            }
+    public Table extractTableInfo(AtlasEntity entity, String guid) throws AtlasBaseException {
+        Table table  = new Table();
+        table.setTableId(guid);
+        if(entity.getTypeName().contains("table")) {
+            //表名称
+            table.setTableName(getEntityAttribute(entity, "name"));
+            //判断是否为虚拟表
+            extractVirtualTable(entity, table);
+            //状态
+            table.setStatus(entity.getStatus().name());
+            //创建人
+            table.setOwner(getEntityAttribute(entity, "owner"));
+            //创建时间
+            Object createTime = entity.getAttribute("createTime");
+            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(createTime);
+            table.setCreateTime(formatDateStr);
+            //描述
+            table.setDescription(getEntityAttribute(entity, "comment"));
+            //sd
+            extractSdInfo(entity, table);
+            //类型
+            extractTypeInfo(entity, table);
+            //是否为分区表
+            extractPartitionInfo(entity, table);
+            //数据库名
+            AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+            table.setDatabaseId(relatedObject.getGuid());
+            table.setDatabaseName(relatedObject.getDisplayText());
+            //所属业务
+            table.setBusiness("");
+            //表关联信息
+            List<String> relations = getRelationList(guid);
+            table.setRelations(relations);
+            //类别
+            table.setCategory("");
+            //表生命周期
+            table.setTableLife("");
+            //分区生命周期
+            table.setPartitionLife("");
+            //分类信息
+            table.setTopic("");
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(guid);
             List<Column> columns = getColumnInfoById(columnQuery, true);
@@ -212,9 +190,51 @@ public class MetaDataService {
             //权限
             TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(),table.getTableName(),table.getColumns());
             table.setTablePermission(permission);
-            return table;
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
+        }
+        return table;
+    }
+
+    public void extractPartitionInfo(AtlasEntity entity, Table table) {
+        if(entity.hasAttribute("partitionKeys") && Objects.nonNull(entity.getAttribute("partitionKeys"))) {
+            table.setPartitionTable(true);
+        } else {
+            table.setPartitionTable(false);
+        }
+    }
+
+    public void extractVirtualTable(AtlasEntity entity, Table table) {
+        String tableName = getEntityAttribute(entity, "name");
+        if(tableName.contains("values__tmp__table"))
+            table.setVirtualTable(true);
+        else
+            table.setVirtualTable(false);
+    }
+
+    public void extractSdInfo(AtlasEntity entity, Table table) throws AtlasBaseException {
+        if(entity.hasAttribute("sd") && Objects.nonNull(entity.getAttribute("sd"))) {
+            Object obj = entity.getAttribute("sd");
+            if(obj instanceof AtlasObjectId) {
+                AtlasObjectId atlasObject = (AtlasObjectId)obj;
+                String sdGuid = atlasObject.getGuid();
+                AtlasEntity sdEntity = getEntityById(sdGuid);
+                //位置
+                table.setLocation(getEntityAttribute(sdEntity, "location"));
+                //格式
+                String inputFormat = getEntityAttribute(sdEntity, "inputFormat");
+                if(Objects.nonNull(inputFormat)) {
+                    String[] fullFormat = inputFormat.split("\\.");
+                    table.setFormat(fullFormat[fullFormat.length-1]);
+                }
+            }
+        }
+    }
+
+    public void extractTypeInfo(AtlasEntity entity, Table table) {
+        String tableType = getEntityAttribute(entity, "tableType");
+        if(tableType.contains("EXTERNAL")) {
+            table.setType("EXTERNAL_TABLE");
+        } else {
+            table.setType("INTERNAL_TABLE");
         }
     }
 
@@ -264,86 +284,105 @@ public class MetaDataService {
             LOG.debug("==> MetaDataService.getColumnInfoById({})", query);
         }
         String guid = query.getGuid();
-        List<Column> columns = new ArrayList<>();
-        Column column = null;
+        List<Column> columns = null;
         //获取entity
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
-            AtlasEntity entity = info.getEntity();
-
-            //获取PartitionKey的guid
-            List<AtlasObjectId> partitionKeys = null;
-            if(Objects.nonNull(entity.getAttribute("partitionKeys"))) {
-                Object partitionObjects = entity.getAttribute("partitionKeys");
-                if(partitionObjects  instanceof ArrayList<?>) {
-                    partitionKeys = (ArrayList<AtlasObjectId>)partitionObjects;
-                }
-            }
-            Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
-            for(String key: referredEntities.keySet()) {
-                AtlasEntity referredEntity = referredEntities.get(key);
-                if(referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                    column = new Column();
-                    //tableId
-                    column.setTableId(guid);
-                    //tableName
-                    column.setTableName(getEntityAttribute(entity, "name"));
-                    //status
-                    column.setStatus(referredEntity.getStatus().name());
-                    //databaseId && dataBaseName
-                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                    column.setDatabaseId(relatedDB.getGuid());
-                    column.setDatabaseName(relatedDB.getDisplayText());
-
-                    column.setColumnId(referredEntity.getGuid());
-                    column.setPartitionKey(false);
-                    if(partitionKeys != null) {
-                        for (int i = 0; i < partitionKeys.size(); i++) {
-                            if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
-                                column.setPartitionKey(true);
-                            }
-                        }
-                    }
-
-                    Map<String,Object> attributes = referredEntity.getAttributes();
-                    if(attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
-                        column.setColumnName(attributes.get("name").toString());
-                    } else {
-                        column.setColumnName("");
-                    }
-                    if(attributes.containsKey("type") && Objects.nonNull(attributes.get("type"))) {
-                        column.setType(attributes.get("type").toString());
-                    } else {
-                        column.setType("");
-                    }
-                    if(attributes.containsKey("comment") && Objects.nonNull(attributes.get("comment"))) {
-                        column.setDescription(attributes.get("comment").toString());
-                    } else {
-                        column.setDescription("");
-                    }
-                    columns.add(column);
-                }
-            }
-            //过滤
-            if(query.getColumnFilter() != null) {
-                ColumnQuery.ColumnFilter filter = query.getColumnFilter();
-                String columnName = filter.getColumnName();
-                String type = filter.getType();
-                String description = filter.getDescription();
-                if(Objects.nonNull(columnName) && !columnName.equals("")) {
-                    columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
-                }
-                if(Objects.nonNull(type) && !type.equals("")) {
-                    columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
-                }
-                if(Objects.nonNull(description) && !description.equals("")) {
-                    columns = columns.stream().filter(col -> col.getDescription().contains(description)).collect(Collectors.toList());
-                }
-            }
+            //columns
+            columns = extractColumnInfo(info, guid);
+            //filter
+            columns = filterColumn(query, columns);
             return columns;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到表字段信息");
         }
+    }
+    public List<Column> extractColumnInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid) {
+        Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
+        AtlasEntity entity = info.getEntity();
+        List<Column> columns = new ArrayList<>();
+        Column column = null;
+
+        List<AtlasObjectId> partitionKeys = extractPartitionKeyInfo(entity);
+        for(String key: referredEntities.keySet()) {
+            AtlasEntity referredEntity = referredEntities.get(key);
+            if(referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                column = new Column();
+                //tableId
+                column.setTableId(guid);
+                //tableName
+                column.setTableName(getEntityAttribute(entity, "name"));
+                //status
+                column.setStatus(referredEntity.getStatus().name());
+                //databaseId && dataBaseName
+                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                column.setDatabaseId(relatedDB.getGuid());
+                column.setDatabaseName(relatedDB.getDisplayText());
+
+                column.setColumnId(referredEntity.getGuid());
+                column.setPartitionKey(false);
+                if(partitionKeys != null) {
+                    for (int i = 0; i < partitionKeys.size(); i++) {
+                        if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
+                            column.setPartitionKey(true);
+                        }
+                    }
+                }
+                //attribute
+                extractAttributeInfo(referredEntity, column);
+                columns.add(column);
+            }
+        }
+        return columns;
+    }
+
+    public List<AtlasObjectId> extractPartitionKeyInfo(AtlasEntity entity) {
+        List<AtlasObjectId> partitionKeys = null;
+        if(Objects.nonNull(entity.getAttribute("partitionKeys"))) {
+            Object partitionObjects = entity.getAttribute("partitionKeys");
+            if(partitionObjects  instanceof ArrayList<?>) {
+                partitionKeys = (ArrayList<AtlasObjectId>)partitionObjects;
+            }
+        }
+        return partitionKeys;
+    }
+
+    public void extractAttributeInfo(AtlasEntity referredEntity, Column column) {
+        Map<String,Object> attributes = referredEntity.getAttributes();
+        if(attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
+            column.setColumnName(attributes.get("name").toString());
+        } else {
+            column.setColumnName("");
+        }
+        if(attributes.containsKey("type") && Objects.nonNull(attributes.get("type"))) {
+            column.setType(attributes.get("type").toString());
+        } else {
+            column.setType("");
+        }
+        if(attributes.containsKey("comment") && Objects.nonNull(attributes.get("comment"))) {
+            column.setDescription(attributes.get("comment").toString());
+        } else {
+            column.setDescription("");
+        }
+    }
+
+    public List<Column> filterColumn(ColumnQuery query, List<Column> columns) {
+        if(query.getColumnFilter() != null) {
+            ColumnQuery.ColumnFilter filter = query.getColumnFilter();
+            String columnName = filter.getColumnName();
+            String type = filter.getType();
+            String description = filter.getDescription();
+            if(Objects.nonNull(columnName) && !columnName.equals("")) {
+                columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
+            }
+            if(Objects.nonNull(type) && !type.equals("")) {
+                columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
+            }
+            if(Objects.nonNull(description) && !description.equals("")) {
+                columns = columns.stream().filter(col -> col.getDescription().contains(description)).collect(Collectors.toList());
+            }
+        }
+        return columns;
     }
 
     public TableLineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
@@ -415,24 +454,6 @@ public class MetaDataService {
         }
     }
 
-    public LineageDepthInfo getLineageDepth(LineageDepthInfo lineageDepthEntity,AtlasLineageInfo fullLineageInfo) {
-        Set<AtlasLineageInfo.LineageRelation> fullRelations = fullLineageInfo.getRelations();
-        String guid = lineageDepthEntity.getGuid();
-        //直接上游表数量
-        long directUpStreamNum = getInDirectRelationNode(guid, fullRelations).size();
-        lineageDepthEntity.setDirectUpStreamNum(directUpStreamNum);
-        //直接下游表数量
-        long directDownStreamNum = getOutDirectRelationNode(guid, fullRelations).size();
-        lineageDepthEntity.setDirectDownStreamNum(directDownStreamNum);
-        //上游表层数
-        long upStreamLevelNum = getMaxDepth("in", guid, fullRelations);
-        lineageDepthEntity.setUpStreamLevelNum(upStreamLevelNum - 1);
-        //下游表层数
-        long downStreamLevelNum = getMaxDepth("out", guid, fullRelations);
-        lineageDepthEntity.setDownStreamLevelNum((downStreamLevelNum - 1) / 2);
-        return lineageDepthEntity;
-    }
-
     public LineageDepthInfo getLineageDepthV2(LineageDepthInfo lineageDepthEntity) throws AtlasBaseException {
         String guid = lineageDepthEntity.getGuid();
         //直接上游表数量
@@ -455,71 +476,9 @@ public class MetaDataService {
      * @param guid
      * @param direction
      * @param depth
-     * @param refreshCache
      * @return
      * @throws AtlasBaseException
      */
-    public ColumnLineageInfo getColumnLineage(String guid, AtlasLineageInfo.LineageDirection direction,
-                                              int depth, Boolean refreshCache) throws AtlasBaseException {
-        try {
-            ArrayList<AtlasObjectId> columns = null;
-            ColumnLineageInfo info = new ColumnLineageInfo();
-            AtlasEntity tableEntity = entitiesStore.getById(guid).getEntity();
-            if(Objects.nonNull(tableEntity) && tableEntity.hasAttribute("columns")) {
-                columns = (ArrayList<AtlasObjectId>)tableEntity.getAttribute("columns");
-            }
-
-            for(int i=0; i<columns.size(); i++) {
-                String columnGuid = columns.get(i).getGuid();
-                AtlasEntityHeader header = entitiesStore.getHeaderById(columnGuid);
-                if(header.getStatus().equals(AtlasEntity.Status.DELETED))
-                    continue;
-                AtlasLineageInfo lineageInfo = metaspaceLineageService.getColumnLineageInfo(columnGuid, direction, depth);
-                if(Objects.isNull(lineageInfo)) {
-                    throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取字段血缘关系失败");
-                }
-
-                Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
-                //guid
-                info.setGuid(guid);
-                //relations
-                Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
-                //entities
-                List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
-
-                for(String key: entities.keySet()) {
-
-                    AtlasEntityHeader atlasEntity = entities.get(key);
-                    //判断process类型
-                    AtlasEntityDef entityDef = typeDefStore.getEntityDefByName(atlasEntity.getTypeName());
-                    Set<String> types = entityDef.getSuperTypes();
-                    Iterator<String> typeIterator = types.iterator();
-                    if(Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
-                        String type = typeIterator.next();
-                        if(type.contains("Process"))
-                            continue;
-                    }
-                    ColumnLineageInfo.LineageEntity lineageEntity = getColumnEntityInfo(key, atlasEntity);
-                    lineageEntities.add(lineageEntity);
-                }
-                reOrderRelation(lineageEntities, lineageRelations);
-                removeTableEntityAndRelation(lineageEntities, lineageRelations);
-                if(Objects.isNull(info.getRelations()) || info.getRelations().size()==0)
-                    info.setRelations(lineageRelations);
-                else
-                    info.getRelations().addAll(lineageRelations);
-                if(Objects.isNull(info.getEntities()) || info.getEntities().size()==0)
-                    info.setEntities(lineageEntities);
-                else
-                    info.getEntities().addAll(lineageEntities);
-            }
-            return info;
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
-        }
-    }
-
-
     public ColumnLineageInfo getColumnLineageV2(String guid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
         List<String> tables = new ArrayList<>();
         tables.add(guid);
@@ -706,35 +665,6 @@ public class MetaDataService {
         return lineageEntity;
     }
 
-    public ColumnLineageInfo.LineageEntity getColumnEntityInfo(String guid, AtlasEntityHeader atlasEntity) throws AtlasBaseException{
-        ColumnLineageInfo.LineageEntity lineageEntity = new ColumnLineageInfo.LineageEntity();
-        //guid
-        if(Objects.nonNull(atlasEntity.getGuid()))
-            lineageEntity.setGuid(atlasEntity.getGuid());
-        lineageEntity.setColumnName(atlasEntity.getDisplayText());
-
-        AtlasEntity atlasTableEntity = null;
-        AtlasEntity atlasColumnEntity = entitiesStore.getById(guid).getEntity();
-        AtlasRelatedObjectId relatedTable = (AtlasRelatedObjectId)atlasColumnEntity.getRelationshipAttribute("table");
-        if(Objects.nonNull(relatedTable)) {
-            atlasTableEntity = entitiesStore.getById(relatedTable.getGuid()).getEntity();
-            //tableGuid
-            lineageEntity.setTableGuid(relatedTable.getGuid());
-            //tableName
-            if (atlasTableEntity.hasAttribute("name") && Objects.nonNull(atlasTableEntity.getAttribute("name")))
-                lineageEntity.setTableName(atlasTableEntity.getAttribute("name").toString());
-
-            AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
-            if (Objects.nonNull(relatedObject)) {
-                //dbGuid
-                lineageEntity.setDbGuid(relatedObject.getGuid());
-                //dbName
-                lineageEntity.setDbName(relatedObject.getDisplayText());
-            }
-        }
-        return lineageEntity;
-    }
-
     public Set<AtlasLineageInfo.LineageRelation> getOutDirectRelationNode(String guid, Set<AtlasLineageInfo.LineageRelation> relations) {
         Set<AtlasLineageInfo.LineageRelation> directRelations = new HashSet<>();
         for(Iterator it = relations.iterator(); it.hasNext();) {
@@ -788,15 +718,6 @@ public class MetaDataService {
         return max + 1;
     }
 
-    public Long getMaxDepth(String direction, String guid, Set<AtlasLineageInfo.LineageRelation> relations) {
-        long max = 0;
-        if(direction.equals("out"))
-            max = getOutMaxDepth(guid, relations);
-        else if(direction.equals("in"))
-            max = getInMaxDepth(guid, relations);
-        return max;
-    }
-
     public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
@@ -813,7 +734,6 @@ public class MetaDataService {
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改表信息失败");
         }
-
     }
 
     @CacheEvict(value = "columnCache", allEntries = true)
@@ -836,7 +756,6 @@ public class MetaDataService {
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改字段信息失败");
         }
-
     }
 
     @CacheEvict(value = { "columnCache",
@@ -1112,12 +1031,5 @@ public class MetaDataService {
             }
             return schemaJson.toString();
         }
-    }
-
-    public PageResult<Database> getAllDBAndTable(Parameters parameters) throws AtlasBaseException {
-        int limit = parameters.getLimit();
-        int offset = parameters.getOffset();
-        String queryDb = parameters.getQuery();
-        return metaspaceLineageService.getAllDBAndTable(queryDb, limit, offset);
     }
 }

@@ -54,16 +54,16 @@ public interface CategoryDAO {
     public int queryChildrenNum(@Param("parentCategoryGuid")String guid);
 
     @Select("select guid from table_category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL")
-    public String queryLastChildCatalog(@Param("parentCategoryGuid")String guid);
+    public String queryLastChildCategory(@Param("parentCategoryGuid")String guid);
 
     @Update("update table_category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
-    public int updateUpBrothCatalogGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
+    public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
 
     @Update("update table_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
-    public int updateDownBrothCatalogGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
+    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
 
     @Update("update table_category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
-    public int updateCatalogInfo(CategoryEntity category);
+    public int updateCategoryInfo(CategoryEntity category);
 
     @Delete("delete from table_category where guid=#{guid}")
     public int delete(@Param("guid")String guid) throws SQLException;

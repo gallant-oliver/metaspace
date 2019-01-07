@@ -22,7 +22,6 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -32,34 +31,35 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import org.apache.directory.api.util.Strings;
-import org.apache.ibatis.exceptions.PersistenceException;
-import org.postgresql.util.PSQLException;
+import org.mybatis.spring.MyBatisSystemException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 
-import java.net.ConnectException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.annotation.Resource;
-
 @Service
 public class DataManageService {
 
-    @Resource
+    @Autowired
     CategoryDAO dao;
 
-    @Resource
+    @Autowired
     RelationDAO relationDao;
 
-    public Set<CategoryEntityV2> getAll() {
-        return dao.getAll();
+    public Set<CategoryEntityV2> getAll() throws AtlasBaseException {
+        try {
+            return dao.getAll();
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        }
     }
 
     @Transactional
@@ -86,16 +86,15 @@ public class DataManageService {
                 qualifiedName.append(name);
                 entity.setQualifiedName(qualifiedName.toString());
                 dao.add(entity);
-
                 return dao.queryByGuid(newCategoryGuid);
             }
 
-            String newCatelogparentGuid = info.getParentCategoryGuid();
+            String newCategoryParentGuid = info.getParentCategoryGuid();
             //获取当前catalog
             CategoryEntityV2 currentEntity = dao.queryByGuid(currentCategoryGuid);
             String parentQualifiedName = null;
             //创建子目录
-            if( Objects.nonNull(newCatelogparentGuid)) {
+            if( Objects.nonNull(newCategoryParentGuid)) {
                 entity.setParentCategoryGuid(currentCategoryGuid);
                 parentQualifiedName = currentEntity.getQualifiedName();
             } else {
@@ -117,11 +116,11 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
 
             //子目录
-            if( Objects.nonNull(newCatelogparentGuid)) {
-                String lastChildguid = dao.queryLastChildCatalog(currentCategoryGuid);
-                if (Objects.nonNull(lastChildguid)) {
-                    entity.setUpBrotherCategoryGuid(lastChildguid);
-                    dao.updateDownBrothCatalogGuid(lastChildguid, newCategoryGuid);
+            if( Objects.nonNull(newCategoryParentGuid)) {
+                String lastChildGuid = dao.queryLastChildCategory(currentCategoryGuid);
+                if (Objects.nonNull(lastChildGuid)) {
+                    entity.setUpBrotherCategoryGuid(lastChildGuid);
+                    dao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid);
                 }
             } else {
                 //同级目录
@@ -130,17 +129,17 @@ public class DataManageService {
                     String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                     if (Objects.nonNull(upBrotherGuid)) {
                         entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                        dao.updateDownBrothCatalogGuid(upBrotherGuid, newCategoryGuid);
+                        dao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid);
                     }
-                    dao.updateUpBrothCatalogGuid(currentCategoryGuid, newCategoryGuid);
+                    dao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 } else if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
                     entity.setUpBrotherCategoryGuid(info.getGuid());
                     String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                     if (Objects.nonNull(downBrotherGuid)) {
                         entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                        dao.updateUpBrothCatalogGuid(downBrotherGuid, newCategoryGuid);
+                        dao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid);
                     }
-                    dao.updateDownBrothCatalogGuid(currentCategoryGuid, newCategoryGuid);
+                    dao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 }
             }
             dao.add(entity);
@@ -165,18 +164,20 @@ public class DataManageService {
             if (Objects.isNull(currentCatalog)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
             }
-            String upBrothCatalogGuid = currentCatalog.getUpBrotherCategoryGuid();
-            String downBrothCatalogGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (Objects.nonNull(upBrothCatalogGuid)) {
-                dao.updateDownBrothCatalogGuid(upBrothCatalogGuid, downBrothCatalogGuid);
+            String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
+            String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
+            if (Objects.nonNull(upBrotherCategoryGuid)) {
+                dao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid);
             }
-            if (Objects.nonNull(downBrothCatalogGuid)) {
-                dao.updateUpBrothCatalogGuid(downBrothCatalogGuid, upBrothCatalogGuid);
+            if (Objects.nonNull(downBrotherCategoryGuid)) {
+                dao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
             }
             return dao.delete(guid);
-        } catch (SQLException e1) {
+        } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (Exception e2) {
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -205,7 +206,7 @@ public class DataManageService {
             entity.setName(info.getName());
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
-            dao.updateCatalogInfo(entity);
+            dao.updateCategoryInfo(entity);
 
             return dao.queryByGuid(guid);
         } catch (SQLException e) {
@@ -214,20 +215,18 @@ public class DataManageService {
     }
 
     @Transactional
-    public int assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
+    public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
             for (RelationEntityV2 relation : relations) {
                 relation.setCategoryGuid(categoryGuid);
                 addRelation(relation);
             }
-        } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw e;
         }
-        return 1;
     }
 
-
-    public int addRelation(RelationEntityV2 relationEntity) throws SQLException, AtlasBaseException {
+    public int addRelation(RelationEntityV2 relationEntity) throws AtlasBaseException {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
             relationEntity.setRelationshipGuid(relationshiGuid);
@@ -243,13 +242,16 @@ public class DataManageService {
     }
 
     @Transactional
-    public int removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) {
-        if(Objects.nonNull(relationshipList)) {
-            for (RelationEntityV2 relationship : relationshipList) {
-                relationDao.delete(relationship.getRelationshipGuid());
+    public void removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
+        try {
+            if (Objects.nonNull(relationshipList)) {
+                for (RelationEntityV2 relationship : relationshipList) {
+                    relationDao.delete(relationship.getRelationshipGuid());
+                }
             }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联出错");
         }
-        return 1;
     }
 
     public PageResult<RelationEntityV2> getRelationsByCategoryGuid(String categoryGuid, RelationQuery query) {
@@ -265,7 +267,6 @@ public class DataManageService {
             relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
             totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
         }
-
         pageResult.setCount(relations.size());
         pageResult.setLists(relations);
         pageResult.setOffset(query.getOffset());
