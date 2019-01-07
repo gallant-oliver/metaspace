@@ -128,7 +128,7 @@ public class HiveJdbcUtils {
             String[] s = text.replaceAll("\\s+", "-").split("-");
             String numFiles = s[2];
             String totalSize = s[3];*/
-            FileSystem fs = HdfsUtils.getSystemFs("hive");
+            FileSystem fs = HdfsUtils.getSystemFs("hdfs");
             ContentSummary contentSummary = fs.getContentSummary(new Path(location));
             long numFiles = contentSummary.getFileCount();
             long totalSize = contentSummary.getLength();
@@ -143,7 +143,10 @@ public class HiveJdbcUtils {
         while (rs.next()) {
             String text = rs.getString(1);
             if (text.contains("hdfs://")) {
-                return text.replaceAll("'", "").replaceAll("hdfs://\\w+","");
+
+                String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "");
+                LOG.info(db+"."+tableName+" location:"+s);
+                return s;
             }
         }
         LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
