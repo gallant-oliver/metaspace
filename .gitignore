@@ -12,3 +12,5 @@ deploy/
 *.iml
 
 
+webapp/src/main/webapp/static/.DS_Store
+webapp/src/main/webapp/.DS_Store
