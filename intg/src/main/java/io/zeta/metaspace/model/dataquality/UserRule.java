@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -30,8 +32,9 @@ public class UserRule {
     private String ruleColumnType;
     private int ruleCheckType;
     private int ruleCheckExpression;
-    private long ruleCheckThreshold;
+    private List<Double> ruleCheckThreshold;
     private String ruleCheckThresholdUnit;
+
 
     public String getRuleId() {
         return ruleId;
@@ -97,11 +100,11 @@ public class UserRule {
         this.ruleCheckExpression = ruleCheckExpression;
     }
 
-    public long getRuleCheckThreshold() {
+    public List<Double> getRuleCheckThreshold() {
         return ruleCheckThreshold;
     }
 
-    public void setRuleCheckThreshold(long ruleCheckThreshold) {
+    public void setRuleCheckThreshold(List<Double> ruleCheckThreshold) {
         this.ruleCheckThreshold = ruleCheckThreshold;
     }
 

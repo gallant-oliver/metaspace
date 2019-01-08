@@ -16,10 +16,142 @@
  */
 package io.zeta.metaspace.web.rest;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/1/7 20:49
- */
+import io.zeta.metaspace.model.dataquality.Report;
+import io.zeta.metaspace.model.dataquality.Template;
+import io.zeta.metaspace.model.result.DownloadUri;
+import io.zeta.metaspace.model.result.ReportResult;
+import io.zeta.metaspace.model.result.TableColumnRules;
+import io.zeta.metaspace.model.result.TemplateResult;
+import org.apache.atlas.web.util.Servlets;
+import org.springframework.stereotype.Service;
+
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import java.util.List;
+
+@Path("quality")
+@Singleton
+@Service
 public class DataQualityREST {
+    @Context
+    private HttpServletRequest httpServletRequest;
+
+    /**
+     * 添加模板
+     *
+     * @return String
+     */
+    @POST
+    @Path("/template")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addTemplate(Template template){
+        return "success";
+    }
+    /**
+     * 删除模板
+     *
+     * @return String
+     */
+    @DELETE
+    @Path("/template/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String deleteTemplate(@PathParam("templateId") String templateId){
+        return "success";
+    }
+    /**
+     * 修改模板
+     *
+     * @return String
+     */
+    @PUT
+    @Path("/template/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String putTemplate(@PathParam("templateId") String templateId,Template template){
+        return "success";
+    }
+    /**
+     * 查看（克隆）模板详情
+     *
+     * @return Template
+     */
+    @GET
+    @Path("/template/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Template getTemplate(@PathParam("templateId") String templateId){
+        return null;
+    }
+    /**
+     * 变更模板状态
+     *
+     * @return String
+     */
+    @PUT
+    @Path("/template/status/{templateId}/{templateStatus}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String putTemplateStatus(@PathParam("templateId") String templateId,@PathParam("templateStatus") int templateStatus){
+        return "success";
+    }
+    /**
+     * 获取数据质量模板统计信息列表
+     *
+     * @return List<TemplateResult>
+     */
+    @GET
+    @Path("/templates/{tableId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId){
+        return null;
+    }
+    /**
+     * 获取一个模板的所有报表
+     *
+     * @return List<ReportResult>
+     */
+    @GET
+    @Path("/reports/{templateId}/{offect}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ReportResult> getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit){
+        return null;
+    }
+    /**
+     * 获取报表详情
+     *
+     * @return Report
+     */
+    @GET
+    @Path("/report/{reportId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Report getReport(@PathParam("reportId") String reportId){
+        return null;
+    }
+    /**
+     * 根据生成方式获取规则
+     *
+     * @return TableColumnRules
+     */
+    @GET
+    @Path("/rules/{tableId}/{buildType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableColumnRules getRules(@PathParam("tableId") String tableId,@PathParam("buildType") String buildType){
+        return null;
+    }
+    /**
+     * 下载报表
+     *
+     * @return DownloadUri
+     */
+    @GET
+    @Path("/quality/reports")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DownloadUri downloadReports(List<String> reportIds){
+        return null;
+    }
 }

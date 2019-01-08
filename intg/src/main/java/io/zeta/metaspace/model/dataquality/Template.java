@@ -31,67 +31,13 @@ public class Template {
     private String periodCron;
     private String templateName;
     private List<UserRule> rules;
-    private String templateStatus;
-    private String startTime;
-    private int tableRulesNum;
-    private int columnRulesNum;
-    private int orangeAlerts;
-    private int redAlerts;
 
-    public List<UserRule> getRules() {
-        return rules;
+    public String getTableId() {
+        return tableId;
     }
 
-    public void setRules(List<UserRule> rules) {
-        this.rules = rules;
-    }
-
-    public String getTemplateStatus() {
-        return templateStatus;
-    }
-
-    public void setTemplateStatus(String templateStatus) {
-        this.templateStatus = templateStatus;
-    }
-
-    public int getTableRulesNum() {
-        return tableRulesNum;
-    }
-
-    public void setTableRulesNum(int tableRulesNum) {
-        this.tableRulesNum = tableRulesNum;
-    }
-
-    public int getColumnRulesNum() {
-        return columnRulesNum;
-    }
-
-    public void setColumnRulesNum(int columnRulesNum) {
-        this.columnRulesNum = columnRulesNum;
-    }
-
-    public int getOrangeAlerts() {
-        return orangeAlerts;
-    }
-
-    public void setOrangeAlerts(int orangeAlerts) {
-        this.orangeAlerts = orangeAlerts;
-    }
-
-    public int getRedAlerts() {
-        return redAlerts;
-    }
-
-    public void setRedAlerts(int redAlerts) {
-        this.redAlerts = redAlerts;
-    }
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public void setTemplateName(String templateName) {
-        this.templateName = templateName;
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
     }
 
     public String getTemplateId() {
@@ -100,14 +46,6 @@ public class Template {
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
-    }
-
-    public String getTableId() {
-        return tableId;
-    }
-
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
     }
 
     public int getBuildType() {
@@ -126,11 +64,19 @@ public class Template {
         this.periodCron = periodCron;
     }
 
-    public String getStartTime() {
-        return startTime;
+    public String getTemplateName() {
+        return templateName;
     }
 
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+
+    public List<UserRule> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<UserRule> rules) {
+        this.rules = rules;
     }
 }

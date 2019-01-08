@@ -10,9 +10,9 @@ public class Report {
         private String ruleColumnType;
         private int ruleCheckType;
         private int ruleCheckExpression;
-        private long ruleCheckThreshold;
+        private List<Double> ruleCheckThreshold;
         private String ruleCheckThresholdUnit;
-        private long reportRuleValue;
+        private Double reportRuleValue;
         private int reportRuleStatus;
 
         public String getRuleColumnType() {
@@ -63,28 +63,28 @@ public class Report {
             this.ruleCheckExpression = ruleCheckExpression;
         }
 
-        public long getRuleCheckThreshold() {
-            return ruleCheckThreshold;
-        }
-
-        public void setRuleCheckThreshold(long ruleCheckThreshold) {
-            this.ruleCheckThreshold = ruleCheckThreshold;
-        }
-
         public String getRuleCheckThresholdUnit() {
             return ruleCheckThresholdUnit;
         }
 
-        public void setRuleCheckThresholdUnit(String ruleCheckThresholdUnit) {
-            this.ruleCheckThresholdUnit = ruleCheckThresholdUnit;
+        public List<Double> getRuleCheckThreshold() {
+            return ruleCheckThreshold;
         }
 
-        public long getReportRuleValue() {
+        public void setRuleCheckThreshold(List<Double> ruleCheckThreshold) {
+            this.ruleCheckThreshold = ruleCheckThreshold;
+        }
+
+        public Double getReportRuleValue() {
             return reportRuleValue;
         }
 
-        public void setReportRuleValue(long reportRuleValue) {
+        public void setReportRuleValue(Double reportRuleValue) {
             this.reportRuleValue = reportRuleValue;
+        }
+
+        public void setRuleCheckThresholdUnit(String ruleCheckThresholdUnit) {
+            this.ruleCheckThresholdUnit = ruleCheckThresholdUnit;
         }
 
         public int getReportRuleStatus() {
@@ -121,7 +121,6 @@ public class Report {
     public void setReportName(String reportName) {
         this.reportName = reportName;
     }
-
 
     public String getTemplateName() {
         return templateName;
