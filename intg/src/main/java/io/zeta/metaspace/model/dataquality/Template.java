@@ -16,17 +16,83 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/1/7 21:03
  */
 public class Template {
-    private String templateId;
+
     private String tableId;
+    private String templateId;
     private int buildType;
     private String periodCron;
+    private String templateName;
+    private List<UserRule> rules;
+    private String templateStatus;
     private String startTime;
+    private int tableRulesNum;
+    private int columnRulesNum;
+    private int orangeAlerts;
+    private int redAlerts;
+
+    public List<UserRule> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<UserRule> rules) {
+        this.rules = rules;
+    }
+
+    public String getTemplateStatus() {
+        return templateStatus;
+    }
+
+    public void setTemplateStatus(String templateStatus) {
+        this.templateStatus = templateStatus;
+    }
+
+    public int getTableRulesNum() {
+        return tableRulesNum;
+    }
+
+    public void setTableRulesNum(int tableRulesNum) {
+        this.tableRulesNum = tableRulesNum;
+    }
+
+    public int getColumnRulesNum() {
+        return columnRulesNum;
+    }
+
+    public void setColumnRulesNum(int columnRulesNum) {
+        this.columnRulesNum = columnRulesNum;
+    }
+
+    public int getOrangeAlerts() {
+        return orangeAlerts;
+    }
+
+    public void setOrangeAlerts(int orangeAlerts) {
+        this.orangeAlerts = orangeAlerts;
+    }
+
+    public int getRedAlerts() {
+        return redAlerts;
+    }
+
+    public void setRedAlerts(int redAlerts) {
+        this.redAlerts = redAlerts;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
 
     public String getTemplateId() {
         return templateId;

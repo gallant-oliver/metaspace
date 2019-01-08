@@ -16,24 +16,26 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/1/7 20:54
  */
 public class SystemRule {
-    private String ruleId;
+    private String systemRuleId;
     private String ruleName;
     private String ruleInfo;
-    private String ruleAllowCheckType;
+    private List<Integer> ruleAllowCheckType;
     private String ruleCheckThresholdUnit;
 
-    public String getRuleId() {
-        return ruleId;
+    public String getSystemRuleId() {
+        return systemRuleId;
     }
 
-    public void setRuleId(String ruleId) {
-        this.ruleId = ruleId;
+    public void setSystemRuleId(String systemRuleId) {
+        this.systemRuleId = systemRuleId;
     }
 
     public String getRuleName() {
@@ -52,11 +54,11 @@ public class SystemRule {
         this.ruleInfo = ruleInfo;
     }
 
-    public String getRuleAllowCheckType() {
+    public List<Integer> getRuleAllowCheckType() {
         return ruleAllowCheckType;
     }
 
-    public void setRuleAllowCheckType(String ruleAllowCheckType) {
+    public void setRuleAllowCheckType(List<Integer> ruleAllowCheckType) {
         this.ruleAllowCheckType = ruleAllowCheckType;
     }
 

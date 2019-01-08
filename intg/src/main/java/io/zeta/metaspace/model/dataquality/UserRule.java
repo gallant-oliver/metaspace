@@ -23,12 +23,14 @@ package io.zeta.metaspace.model.dataquality;
  */
 public class UserRule {
     private String ruleId;
-    private String systemRuleId;
+    private String ruleName;
+    private String ruleInfo;
+    private int ruleType;
     private String ruleColumnName;
     private String ruleColumnType;
     private int ruleCheckType;
     private int ruleCheckExpression;
-    private String ruleCheckThreshold;
+    private long ruleCheckThreshold;
     private String ruleCheckThresholdUnit;
 
     public String getRuleId() {
@@ -39,12 +41,28 @@ public class UserRule {
         this.ruleId = ruleId;
     }
 
-    public String getSystemRuleId() {
-        return systemRuleId;
+    public String getRuleName() {
+        return ruleName;
     }
 
-    public void setSystemRuleId(String systemRuleId) {
-        this.systemRuleId = systemRuleId;
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
+    }
+
+    public String getRuleInfo() {
+        return ruleInfo;
+    }
+
+    public void setRuleInfo(String ruleInfo) {
+        this.ruleInfo = ruleInfo;
+    }
+
+    public int getRuleType() {
+        return ruleType;
+    }
+
+    public void setRuleType(int ruleType) {
+        this.ruleType = ruleType;
     }
 
     public String getRuleColumnName() {
@@ -79,11 +97,11 @@ public class UserRule {
         this.ruleCheckExpression = ruleCheckExpression;
     }
 
-    public String getRuleCheckThreshold() {
+    public long getRuleCheckThreshold() {
         return ruleCheckThreshold;
     }
 
-    public void setRuleCheckThreshold(String ruleCheckThreshold) {
+    public void setRuleCheckThreshold(long ruleCheckThreshold) {
         this.ruleCheckThreshold = ruleCheckThreshold;
     }
 
