@@ -67,7 +67,7 @@ public class SSOFilter implements Filter {
             filterChain.doFilter(request, response);
             return;
         }
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/")) {
+        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/")||requestURL.contains("/api/metaspace/admin/status")) {
             filterChain.doFilter(request, response);
             return;
         }
