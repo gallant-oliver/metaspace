@@ -30,6 +30,8 @@ public class Template {
     private int buildType;
     private String periodCron;
     private String templateName;
+    private int tableRuleNum;
+    private int columnRuleNum;
     private List<UserRule> rules;
 
     public String getTableId() {
@@ -70,6 +72,22 @@ public class Template {
 
     public void setTemplateName(String templateName) {
         this.templateName = templateName;
+    }
+
+    public int getTableRuleNum() {
+        return tableRuleNum;
+    }
+
+    public void setTableRuleNum(int tableRuleNum) {
+        this.tableRuleNum = tableRuleNum;
+    }
+
+    public int getColumnRuleNum() {
+        return columnRuleNum;
+    }
+
+    public void setColumnRuleNum(int columnRuleNum) {
+        this.columnRuleNum = columnRuleNum;
     }
 
     public List<UserRule> getRules() {

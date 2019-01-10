@@ -11,8 +11,7 @@ public class Report {
         private String ruleColumnType;
         private int ruleCheckType;
         private int ruleCheckExpression;
-        private Double ruleCheckThresholdStart;
-        private Double ruleCheckThresholdEnd;
+        private List<Double> ruleCheckThreshold;
         private String ruleCheckThresholdUnit;
         private Double reportRuleValue;
         private int reportRuleStatus;
@@ -77,20 +76,12 @@ public class Report {
             this.ruleInfo = ruleInfo;
         }
 
-        public Double getRuleCheckThresholdStart() {
-            return ruleCheckThresholdStart;
+        public List<Double> getRuleCheckThreshold() {
+            return ruleCheckThreshold;
         }
 
-        public void setRuleCheckThresholdStart(Double ruleCheckThresholdStart) {
-            this.ruleCheckThresholdStart = ruleCheckThresholdStart;
-        }
-
-        public Double getRuleCheckThresholdEnd() {
-            return ruleCheckThresholdEnd;
-        }
-
-        public void setRuleCheckThresholdEnd(Double ruleCheckThresholdEnd) {
-            this.ruleCheckThresholdEnd = ruleCheckThresholdEnd;
+        public void setRuleCheckThreshold(List<Double> ruleCheckThreshold) {
+            this.ruleCheckThreshold = ruleCheckThreshold;
         }
 
         public Double getReportRuleValue() {
