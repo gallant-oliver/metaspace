@@ -3,14 +3,16 @@ package io.zeta.metaspace.model.dataquality;
 import java.util.List;
 
 public class Report {
-    public static class ReportRule{
+    public static class ReportRule {
         private String ruleType;
         private String ruleName;
+        private String ruleInfo;
         private String ruleColumnName;
         private String ruleColumnType;
         private int ruleCheckType;
         private int ruleCheckExpression;
-        private List<Double> ruleCheckThreshold;
+        private Double ruleCheckThresholdStart;
+        private Double ruleCheckThresholdEnd;
         private String ruleCheckThresholdUnit;
         private Double reportRuleValue;
         private int reportRuleStatus;
@@ -67,12 +69,28 @@ public class Report {
             return ruleCheckThresholdUnit;
         }
 
-        public List<Double> getRuleCheckThreshold() {
-            return ruleCheckThreshold;
+        public String getRuleInfo() {
+            return ruleInfo;
         }
 
-        public void setRuleCheckThreshold(List<Double> ruleCheckThreshold) {
-            this.ruleCheckThreshold = ruleCheckThreshold;
+        public void setRuleInfo(String ruleInfo) {
+            this.ruleInfo = ruleInfo;
+        }
+
+        public Double getRuleCheckThresholdStart() {
+            return ruleCheckThresholdStart;
+        }
+
+        public void setRuleCheckThresholdStart(Double ruleCheckThresholdStart) {
+            this.ruleCheckThresholdStart = ruleCheckThresholdStart;
+        }
+
+        public Double getRuleCheckThresholdEnd() {
+            return ruleCheckThresholdEnd;
+        }
+
+        public void setRuleCheckThresholdEnd(Double ruleCheckThresholdEnd) {
+            this.ruleCheckThresholdEnd = ruleCheckThresholdEnd;
         }
 
         public Double getReportRuleValue() {

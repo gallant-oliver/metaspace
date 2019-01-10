@@ -16,8 +16,6 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
-import java.util.List;
-
 /*
  * @description
  * @author sunhaoning
@@ -32,8 +30,10 @@ public class UserRule {
     private String ruleColumnType;
     private int ruleCheckType;
     private int ruleCheckExpression;
-    private List<Double> ruleCheckThreshold;
+    private Double ruleCheckThresholdStart;
+    private Double ruleCheckThresholdEnd;
     private String ruleCheckThresholdUnit;
+    private String templateId;
 
 
     public String getRuleId() {
@@ -100,12 +100,20 @@ public class UserRule {
         this.ruleCheckExpression = ruleCheckExpression;
     }
 
-    public List<Double> getRuleCheckThreshold() {
-        return ruleCheckThreshold;
+    public Double getRuleCheckThresholdStart() {
+        return ruleCheckThresholdStart;
     }
 
-    public void setRuleCheckThreshold(List<Double> ruleCheckThreshold) {
-        this.ruleCheckThreshold = ruleCheckThreshold;
+    public void setRuleCheckThresholdStart(Double ruleCheckThresholdStart) {
+        this.ruleCheckThresholdStart = ruleCheckThresholdStart;
+    }
+
+    public Double getRuleCheckThresholdEnd() {
+        return ruleCheckThresholdEnd;
+    }
+
+    public void setRuleCheckThresholdEnd(Double ruleCheckThresholdEnd) {
+        this.ruleCheckThresholdEnd = ruleCheckThresholdEnd;
     }
 
     public String getRuleCheckThresholdUnit() {
@@ -114,5 +122,13 @@ public class UserRule {
 
     public void setRuleCheckThresholdUnit(String ruleCheckThresholdUnit) {
         this.ruleCheckThresholdUnit = ruleCheckThresholdUnit;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
     }
 }
