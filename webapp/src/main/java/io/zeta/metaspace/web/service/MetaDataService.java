@@ -58,8 +58,6 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.StringUtils;
 import org.apache.avro.Schema;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.NotOfficeXmlFileException;
-import org.apache.poi.openxml4j.exceptions.OLE2NotOfficeXmlFileException;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -376,7 +374,14 @@ public class MetaDataService {
                 columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
             }
             if(Objects.nonNull(type) && !type.equals("")) {
-                columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
+                columns = columns.stream().filter(col -> {
+                    if(col.getType().contains("(") && col.getType().contains(")")) {
+                        int lastIndex = col.getType().lastIndexOf("(");
+                        String typeStr = col.getType().substring(0, lastIndex);
+                        return typeStr.equals(type);
+                    }
+                    return col.getType().equals(type);
+                }).collect(Collectors.toList());
             }
             if(Objects.nonNull(description) && !description.equals("")) {
                 columns = columns.stream().filter(col -> col.getDescription().contains(description)).collect(Collectors.toList());
@@ -806,67 +811,6 @@ public class MetaDataService {
             twoTuple.setJobId(jobId);
 
             return twoTuple;
-        }
-
-        public UploadPreview previewUpload(String jobId, int size) {
-            String filePath = getPath(jobId);
-            try {
-                return previewExcelForXLSX(jobId, null, size);
-            } catch (OLE2NotOfficeXmlFileException e) {
-
-            } catch (NotOfficeXmlFileException e) {
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            Workbook workbook = ExcelUtils.isExcelFile(filePath);
-            if (workbook != null) {
-                Iterator<Sheet> iterator = workbook.iterator();
-                if (!iterator.hasNext()) {
-                    throw new VerifyException("至少有一个sheet！");
-                }
-                List<String> emptySheet = new ArrayList<>();
-                UploadPreview preview = null;
-                while (iterator.hasNext()) {
-                    Sheet sheet = iterator.next();
-                    try {
-                        UploadPreview tempResult = previewExcel(workbook, null, size, sheet.getSheetName(), true);
-                        if (preview == null) {
-                            preview = tempResult;
-                        }
-                    } catch (VerifyException e) {
-                        LOGGER.warn("previewExcel sheet[{}]: empty", sheet.getSheetName(), e);
-                        emptySheet.add(sheet.getSheetName());
-                    }
-                }
-                if (preview == null) {
-                    throw new VerifyException("至少有一行数据！");
-                }
-                if (!emptySheet.isEmpty()) {
-                    preview.getSheets().removeAll(emptySheet);
-                    StringBuffer stringBuffer = new StringBuffer("Excel文件中" + emptySheet.size() + "个sheet: ");
-                    for (String s : emptySheet) {
-                        stringBuffer.append(s + ",");
-                    }
-                    stringBuffer.deleteCharAt(stringBuffer.length() - 1);
-                    stringBuffer.append(" 没有数据，忽略");
-                    preview.setPreviewInfo(stringBuffer.toString());
-                }
-                return preview;
-            }
-            try {
-                String fileCode = FileUtils.fileCode(filePath);
-                if (fileCode == null) {
-                    fileCode = "UTF8";
-                }
-                CsvEncode csvEncode = CsvEncode.of(fileCode);
-                String delimiter = CsvUtils.detectDelimiter(filePath, csvEncode.name());
-                final boolean includeHeader = true;
-                final CsvHeader csvHeader = CsvUtils.detectCsvHeader(filePath, fileCode, delimiter, includeHeader);
-                return previewUpload(jobId, fileCode, delimiter, includeHeader, csvHeader, size);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
 
         /**
