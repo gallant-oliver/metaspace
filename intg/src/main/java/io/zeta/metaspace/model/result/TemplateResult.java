@@ -1,9 +1,5 @@
 package io.zeta.metaspace.model.result;
 
-import io.zeta.metaspace.model.dataquality.UserRule;
-
-import java.util.List;
-
 public class TemplateResult {
     private String templateId;
     private int buildType;

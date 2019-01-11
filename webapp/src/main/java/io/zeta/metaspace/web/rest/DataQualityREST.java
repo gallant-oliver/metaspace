@@ -22,8 +22,13 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
+import io.zeta.metaspace.web.service.DataQualityService;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +43,13 @@ public class DataQualityREST {
     @Context
     private HttpServletRequest httpServletRequest;
 
+    @Autowired
+    private final DataQualityService qualityService;
+
+    public DataQualityREST(DataQualityService qualityService) {
+        this.qualityService = qualityService;
+    }
+
     /**
      * 添加模板
      *
@@ -46,8 +58,17 @@ public class DataQualityREST {
     @POST
     @Path("/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String addTemplate(Template template){
-        return "success";
+    public String addTemplate(Template template) throws AtlasBaseException {
+        try {
+            qualityService.addTemplate(template);
+            return "success";
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw  e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+        }
     }
     /**
      * 删除模板
@@ -57,8 +78,17 @@ public class DataQualityREST {
     @DELETE
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String deleteTemplate(@PathParam("templateId") String templateId){
-        return "success";
+    public String deleteTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            qualityService.deleteTemplate(templateId);
+            return "success";
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw  e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+        }
     }
     /**
      * 修改模板
@@ -68,8 +98,17 @@ public class DataQualityREST {
     @PUT
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String putTemplate(@PathParam("templateId") String templateId,Template template){
-        return "success";
+    public String putTemplate(@PathParam("templateId") String templateId,Template template) throws AtlasBaseException {
+        try {
+            qualityService.updateTemplate(templateId, template);
+            return "success";
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw  e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+        }
     }
     /**
      * 查看（克隆）模板详情
@@ -80,8 +119,16 @@ public class DataQualityREST {
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Template getTemplate(@PathParam("templateId") String templateId){
-        return null;
+    public Template getTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            return qualityService.viewTemplate(templateId);
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw  e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+        }
     }
     /**
      * 变更模板状态
