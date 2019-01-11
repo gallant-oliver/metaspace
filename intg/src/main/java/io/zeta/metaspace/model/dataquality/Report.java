@@ -15,6 +15,15 @@ public class Report {
         private String ruleCheckThresholdUnit;
         private Double reportRuleValue;
         private int reportRuleStatus;
+        private int ruleResultId;
+
+        public int getRuleResultId() {
+            return ruleResultId;
+        }
+
+        public void setRuleResultId(int ruleResultId) {
+            this.ruleResultId = ruleResultId;
+        }
 
         public String getRuleColumnType() {
             return ruleColumnType;
