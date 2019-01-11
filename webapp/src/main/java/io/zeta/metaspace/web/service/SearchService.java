@@ -42,7 +42,7 @@ public class SearchService {
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
 
-    //@Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
+    @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters) throws AtlasBaseException {
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
