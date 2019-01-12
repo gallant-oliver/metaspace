@@ -4,11 +4,11 @@ import java.util.List;
 
 public class Report {
     public static class ReportRule {
-        private String ruleType;
+        private int ruleType;
         private String ruleName;
         private String ruleInfo;
         private String ruleColumnName;
-        private String ruleColumnType;
+        private int ruleColumnType;
         private int ruleCheckType;
         private int ruleCheckExpression;
         private List<Double> ruleCheckThreshold;
@@ -25,19 +25,19 @@ public class Report {
             this.ruleResultId = ruleResultId;
         }
 
-        public String getRuleColumnType() {
+        public int getRuleColumnType() {
             return ruleColumnType;
         }
 
-        public void setRuleColumnType(String ruleColumnType) {
+        public void setRuleColumnType(int ruleColumnType) {
             this.ruleColumnType = ruleColumnType;
         }
 
-        public String getRuleType() {
+        public int getRuleType() {
             return ruleType;
         }
 
-        public void setRuleType(String ruleType) {
+        public void setRuleType(int ruleType) {
             this.ruleType = ruleType;
         }
 
