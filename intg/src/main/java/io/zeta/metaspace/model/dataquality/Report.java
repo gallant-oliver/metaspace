@@ -8,28 +8,28 @@ public class Report {
         private String ruleName;
         private String ruleInfo;
         private String ruleColumnName;
-        private int ruleColumnType;
+        private String ruleColumnType;
         private int ruleCheckType;
         private int ruleCheckExpression;
         private List<Double> ruleCheckThreshold;
         private String ruleCheckThresholdUnit;
         private Double reportRuleValue;
         private int reportRuleStatus;
-        private int ruleResultId;
+        private String ruleResultId;
 
-        public int getRuleResultId() {
+        public String getRuleResultId() {
             return ruleResultId;
         }
 
-        public void setRuleResultId(int ruleResultId) {
+        public void setRuleResultId(String ruleResultId) {
             this.ruleResultId = ruleResultId;
         }
 
-        public int getRuleColumnType() {
+        public String getRuleColumnType() {
             return ruleColumnType;
         }
 
-        public void setRuleColumnType(int ruleColumnType) {
+        public void setRuleColumnType(String ruleColumnType) {
             this.ruleColumnType = ruleColumnType;
         }
 
