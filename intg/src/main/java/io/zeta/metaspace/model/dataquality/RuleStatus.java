@@ -12,21 +12,16 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/1/12 10:30
+ * @date 2019/1/12 11:49
  */
 package io.zeta.metaspace.model.dataquality;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/1/12 10:30
- */
-public enum buildType {
-    CYCLE(0,"周期生成") , ONCE(1,"单次生成");
+public enum RuleStatus {
+    NORMAL(0,"正常") , ORANGE(1,"橙色"), RED(2, "红色");
     public Integer code;
     public String desc;
 
-    buildType(Integer code, String desc) {
+    RuleStatus(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }

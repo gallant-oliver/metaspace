@@ -12,21 +12,21 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/1/12 11:02
+ * @date 2019/1/12 10:13
  */
 package io.zeta.metaspace.model.dataquality;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/1/12 11:02
+ * @date 2019/1/12 10:13
  */
-public enum  ruleType {
-    TABLE(0,"表") , COLUMN(1,"字段");
+public enum RuleCheckType {
+    FIX(0,"固定值") , FLU(1,"波动值");
     public Integer code;
     public String desc;
 
-    ruleType(Integer code, String desc) {
+    RuleCheckType(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }
