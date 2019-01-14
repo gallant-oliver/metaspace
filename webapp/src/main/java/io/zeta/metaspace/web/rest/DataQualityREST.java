@@ -26,14 +26,24 @@ import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import javax.annotation.Generated;
 import javax.inject.Singleton;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Path("quality")
@@ -42,6 +52,8 @@ import java.util.List;
 public class DataQualityREST {
     @Context
     private HttpServletRequest httpServletRequest;
+    @Context
+    private HttpServletResponse httpServletResponse;
 
     @Autowired
     private final DataQualityService qualityService;
@@ -195,10 +207,33 @@ public class DataQualityREST {
      * @return DownloadUri
      */
     @GET
-    @Path("/quality/reports")
+    @Path("/reports/{reportId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DownloadUri downloadReports(List<String> reportIds){
-        return null;
+    public DownloadUri downloadReports(@PathParam("reportId") String tableId) throws AtlasBaseException,IOException {
+        List<String> reportIds = new ArrayList<>();
+        reportIds.add(tableId);
+        try {
+            List<Workbook> wbs = qualityService.exportExcel(reportIds);
+            for(Workbook wb : wbs) {
+                //web浏览通过MIME类型判断文件是excel类型
+                httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+                httpServletResponse.setCharacterEncoding("utf-8");
+
+                // 对文件名进行处理。防止文件名乱码
+                String fileName = new String("文件名.xls".getBytes(),"ISO-8859-1");
+                // Content-disposition属性设置成以附件方式进行下载
+                httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+                OutputStream os = httpServletResponse.getOutputStream();
+                wb.write(os);
+                os.flush();
+                os.close();
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        } catch (IOException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
     }
 }

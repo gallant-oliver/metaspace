@@ -30,6 +30,8 @@ import org.springframework.scheduling.support.SimpleTriggerContext;
 import java.sql.SQLException;
 import java.util.List;
 
+import javax.ws.rs.DELETE;
+
 /*
  * @description
  * @author sunhaoning
@@ -37,51 +39,60 @@ import java.util.List;
  */
 public interface DataQualityDAO {
 
-    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName)" +
-            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName})")
+    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum)" +
+            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum})")
     public int insertTemplate(Template template) throws SQLException;
 
-    @Insert("insert into rule_user(ruleId,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,templateId)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
-            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId})")
+    @Insert("insert into template_userrule(ruleId,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
+            "ruleCheckThresholdUnit,templateId,dataType,ruleType)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
+            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType})")
     public int insertUserRule(UserRule rule) throws SQLException;
 
-    @Insert("insert into threshold(thresholdId,thresholdValue,ruleId)values(#{thresholdId},#{thresholdValue},#{ruleId})")
-    public int insertThreshold(@Param("thresholdId") String thresholdId,@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
+    @Insert("insert into template_userrule2threshold(thresholdValue,ruleId)values(#{thresholdValue},#{ruleId})")
+    public int insertThreshold(@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
 
     @Update("update template set templateStatus=#{templateStatus} where templateId=#{templateId}")
-    public int updateTemplateStatus(@Param("templateStatus") int templateStatus) throws SQLException;
+    public int updateTemplateStatus(@Param("templateStatus") int templateStatus, @Param("templateId") String templateId) throws SQLException;
 
-    @Update("update template set templateName=#{templateName},buildType=#{buildType},periodCron=#{periodCron} where templateId=#{templateId}")
+    @Update("update template set templateName=#{templateName},buildType=#{buildType},periodCron=#{periodCron}, " +
+            "tableRulesNum=#{tableRulesNum},columnRulesNum=#{columnRulesNum} where templateId=#{templateId}")
     public int updateTemplate(Template template) throws SQLException;
 
-    @Update("update rule_user set ruleName=#{ruleName},ruleInfo=#{ruleInfo},ruleColumnName=#{ruleColumnName},ruleColumnType=#{ruleColumnType}," +
+    @Update("update template_userrule set ruleName=#{ruleName},ruleInfo=#{ruleInfo},ruleColumnName=#{ruleColumnName},ruleColumnType=#{ruleColumnType}," +
             "ruleCheckType=#{ruleCheckType},ruleCheckExpression=#{ruleCheckExpression},ruleCheckThresholdUnit=#{ruleCheckThresholdUnit} where templateId=#{templateId}")
     public int updateUserRule(UserRule userRule) throws SQLException;
+
+    @Select("select ruleId from template_userrule where templateId=#{templateId}")
+    public List<String> queryRuleIdByTemplateId(@Param("templateId") String templateId) throws SQLException;
 
     @Delete("delete from template where templateId=#{templateId}")
     public int delTemplate(@Param("templateId") String templateId) throws SQLException;
 
-    @Delete("delete from rule_user where templateId=#{templateId}")
-    public int delRuleRelatedTemplate(@Param("templateId") String templateId) throws SQLException;
+    @Delete("delete from template_userrule where templateId=#{templateId}")
+    public int delRuleByTemplateId(@Param("templateId") String templateId) throws SQLException;
+
+    @Delete("delete from template_userrule2threshold where ruleId=#{ruleId}")
+    public int deleteThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
 
     @Select("select * from template where templateId=#{templateId}")
     public Template queryTemplateById(@Param("templateId") String templateId) throws SQLException;
 
-    @Select("select * from rule_user where templateId=#{templateId}")
+    @Select("select * from template_userrule where templateId=#{templateId}")
     public List<UserRule> queryUserRuleById(@Param("templateId") String templateId) throws SQLException;
 
+    @Select("select thresholdValue from template_userrule2threshold where ruleId=#{ruleId} order by thresholdValue asc")
+    public List<Double> queryThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
+
     @Insert("insert into report_ruleresult(ruleResultId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdStart,ruleCheckThresholdEnd,ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus)values(#{ruleResultId},#{reportId}," +
-            "#{ruleType},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType},#{ruleCheckType},#{ruleCheckExpression}," +
-            "#{ruleCheckThresholdUnit},#{reportRuleValue},#{reportRuleStatus})")
+            "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus)values(#{ruleResultId},#{reportId},#{ruleType},#{ruleName},#{ruleInfo},#{ruleColumnName}," +
+            "#{ruleColumnType},#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{reportRuleValue},#{reportRuleStatus})")
     public void insertRuleReport(Report.ReportRule rule) throws SQLException;
 
     @Select("select * from report where reportId=#{reportId}")
     public ReportResult getReportResult(@Param("reportId") String reportId);
 
-    @Select("select * from report_ruleresult where reportId=#{reportId}")
-    public List<Report> getReport(@Param("reportId") String reportId);
+    @Select("select * from report_userrule where reportId=#{reportId}")
+    public List<Report.ReportRule> getReport(@Param("reportId") String reportId);
 
     @Select("select * from report_ruleresult where reportId=(select reportId from report where templateId=#{templateId})")
     public List<Report> getReportByTemplateId(@Param("templateId") String templateId);

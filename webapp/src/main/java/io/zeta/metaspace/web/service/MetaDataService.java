@@ -427,7 +427,7 @@ public class MetaDataService {
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
-                if (atlasEntity.getTypeName().contains("table")) {
+                if (atlasEntity.getTypeName().contains("table") || atlasEntity.getTypeName().contains("hdfs")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasTableEntity = getEntityById(guid);
@@ -441,7 +441,8 @@ public class MetaDataService {
                     lineageDepthEntity.setUpdateTime(formatDateStr);
                     //dbName
                     AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
-                    lineageDepthEntity.setDbName(relatedObject.getDisplayText());
+                    if(Objects.nonNull(relatedObject))
+                        lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
             }
