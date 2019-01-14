@@ -23,17 +23,17 @@ public class TableColumnRules {
         this.columnsRules = columnsRules;
     }
     public static class SystemRule {
-        private String systemRuleId;
+        private int systemRuleId;
         private String ruleName;
         private String ruleInfo;
         private List<Integer> ruleAllowCheckType;
         private String ruleCheckThresholdUnit;
 
-        public String getSystemRuleId() {
+        public int getSystemRuleId() {
             return systemRuleId;
         }
 
-        public void setSystemRuleId(String systemRuleId) {
+        public void setSystemRuleId(int systemRuleId) {
             this.systemRuleId = systemRuleId;
         }
 
@@ -70,24 +70,33 @@ public class TableColumnRules {
         }
     }
     public static class ColumnsRule{
-        private String columnName;
-        private String columnType;
+        private String ruleColumnId;
+        private String ruleColumnName;
+        private String ruleColumnType;
         private List<SystemRule> columnRules;
 
-        public String getColumnName() {
-            return columnName;
+        public String getRuleColumnId() {
+            return ruleColumnId;
         }
 
-        public void setColumnName(String columnName) {
-            this.columnName = columnName;
+        public void setRuleColumnId(String ruleColumnId) {
+            this.ruleColumnId = ruleColumnId;
         }
 
-        public String getColumnType() {
-            return columnType;
+        public String getRuleColumnName() {
+            return ruleColumnName;
         }
 
-        public void setColumnType(String columnType) {
-            this.columnType = columnType;
+        public void setRuleColumnName(String ruleColumnName) {
+            this.ruleColumnName = ruleColumnName;
+        }
+
+        public String getRuleColumnType() {
+            return ruleColumnType;
+        }
+
+        public void setRuleColumnType(String ruleColumnType) {
+            this.ruleColumnType = ruleColumnType;
         }
 
         public List<SystemRule> getColumnRules() {
