@@ -35,6 +35,7 @@ public class UserRule {
     private List<Double> ruleCheckThreshold;
     private String ruleCheckThresholdUnit;
     private String templateId;
+    private String dataType;
 
 
     public String getRuleId() {
@@ -123,5 +124,13 @@ public class UserRule {
 
     public void setTemplateId(String templateId) {
         this.templateId = templateId;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
     }
 }
