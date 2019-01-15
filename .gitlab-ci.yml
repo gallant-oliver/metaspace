@@ -1,9 +1,15 @@
 image: repository.gridsum.com:8443/gridsum/java:8
+variables:
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository"
 before_script:
   - eval $(ssh-agent -s)
   - ssh-add <(echo "$SSH_PRIVATE_KEY")
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#缓存
+cache:
+  paths:
+    - ./.m2/repository
 # 定义 stages
 stages:
   - test
