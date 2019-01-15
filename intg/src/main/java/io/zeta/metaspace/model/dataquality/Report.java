@@ -15,14 +15,14 @@ public class Report {
         private String ruleCheckThresholdUnit;
         private Double reportRuleValue;
         private int reportRuleStatus;
-        private String ruleResultId;
+        private String ruleId;
 
         public String getRuleResultId() {
-            return ruleResultId;
+            return ruleId;
         }
 
-        public void setRuleResultId(String ruleResultId) {
-            this.ruleResultId = ruleResultId;
+        public void setRuleResultId(String ruleId) {
+            this.ruleId = ruleId;
         }
 
         public String getRuleColumnType() {

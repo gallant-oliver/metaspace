@@ -47,16 +47,16 @@ public enum RuleCheckType {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static RuleCheckType getRuleCheckTypeByCode(Integer code) {
+        RuleCheckType defaultRuleCheckType = RuleCheckType.FIX;
+        for(RuleCheckType rc : RuleCheckType.values()) {
+            if(rc.code == code)
+                return rc;
         }
-        return defaultExpression;
+        return defaultRuleCheckType;
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getRuleCheckTypeByCode(code).desc;
     }
 }

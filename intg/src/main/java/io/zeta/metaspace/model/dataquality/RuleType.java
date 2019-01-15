@@ -47,16 +47,16 @@ public enum RuleType {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static RuleType getRuleTypeByCode(Integer code) {
+        RuleType defaultRuleType = RuleType.TABLE;
+        for(RuleType rt : RuleType.values()) {
+            if(rt.code == code)
+                return rt;
         }
-        return defaultExpression;
+        return defaultRuleType;
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getRuleTypeByCode(code).desc;
     }
 }

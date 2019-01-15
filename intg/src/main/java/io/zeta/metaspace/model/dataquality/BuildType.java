@@ -47,16 +47,16 @@ public enum BuildType {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static BuildType getBuildTypeByCode(Integer code) {
+        BuildType defaultBuildType = BuildType.ONCE;
+        for(BuildType bt : BuildType.values()) {
+            if(bt.code == code)
+                return bt;
         }
-        return defaultExpression;
+        return defaultBuildType;
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getBuildTypeByCode(code).desc;
     }
 }

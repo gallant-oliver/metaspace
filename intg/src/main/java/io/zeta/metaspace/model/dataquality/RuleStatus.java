@@ -42,16 +42,16 @@ public enum RuleStatus {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static RuleStatus getRuleStatusByCode(Integer code) {
+        RuleStatus defaultStatus = RuleStatus.NORMAL;
+        for(RuleStatus rs : RuleStatus.values()) {
+            if(rs.code == code)
+                return rs;
         }
-        return defaultExpression;
+        return defaultStatus;
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getRuleStatusByCode(code).desc;
     }
 }
