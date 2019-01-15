@@ -17,11 +17,11 @@ public class Report {
         private int reportRuleStatus;
         private String ruleId;
 
-        public String getRuleResultId() {
+        public String getRuleId() {
             return ruleId;
         }
 
-        public void setRuleResultId(String ruleId) {
+        public void setRuleId(String ruleId) {
             this.ruleId = ruleId;
         }
 

@@ -46,7 +46,7 @@ public enum RuleType {
     public void setDesc(String desc) {
         this.desc = desc;
     }
-    
+
     public static RuleType getRuleTypeByCode(Integer code) {
         RuleType defaultRuleType = RuleType.TABLE;
         for(RuleType rt : RuleType.values()) {

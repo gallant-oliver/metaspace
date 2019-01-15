@@ -41,7 +41,7 @@ public class DataQualityV2Service {
         for (Report report : reports) {
             List<Report.ReportRule> reportRule = dataQualityV2DAO.getReportRule(reportId);
             for (Report.ReportRule rule : reportRule) {
-                String ruleResultId = rule.getRuleResultId();
+                String ruleResultId = rule.getRuleId();
                 List<Double> reportThresholdValue = dataQualityV2DAO.getReportThresholdValue(ruleResultId);
                 rule.setRuleCheckThreshold(reportThresholdValue);
             }
