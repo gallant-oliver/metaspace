@@ -23,19 +23,19 @@ package io.zeta.metaspace.model.dataquality;
  */
 public enum RuleType {
     TABLE(0,"表") , COLUMN(1,"字段");
-    public Integer code;
+    public int code;
     public String desc;
 
-    RuleType(Integer code, String desc) {
+    RuleType(int code, String desc) {
         this.code = code;
         this.desc = desc;
     }
 
-    public Integer getCode() {
+    public int getCode() {
         return code;
     }
 
-    public void setCode(Integer code) {
+    public void setCode(int code) {
         this.code = code;
     }
 
@@ -47,7 +47,7 @@ public enum RuleType {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
+    public static CheckExpression getExpressionByCode(int code) {
         CheckExpression defaultExpression = CheckExpression.EQU;
         for(CheckExpression ce : CheckExpression.values()) {
             if(ce.code == code)

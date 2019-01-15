@@ -23,18 +23,28 @@ public class TableColumnRules {
         this.columnsRules = columnsRules;
     }
     public static class SystemRule {
-        private int systemRuleId;
+        private int ruleId;
         private String ruleName;
         private String ruleInfo;
+        private int ruleType;
+
+        public int getRuleType() {
+            return ruleType;
+        }
+
+        public void setRuleType(int ruleType) {
+            this.ruleType = ruleType;
+        }
+
         private List<Integer> ruleAllowCheckType;
         private String ruleCheckThresholdUnit;
 
-        public int getSystemRuleId() {
-            return systemRuleId;
+        public int getRuleId() {
+            return ruleId;
         }
 
-        public void setSystemRuleId(int systemRuleId) {
-            this.systemRuleId = systemRuleId;
+        public void setRuleId(int ruleId) {
+            this.ruleId = ruleId;
         }
 
         public String getRuleName() {

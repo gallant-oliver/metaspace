@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.dataquality.DataType;
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.RuleType;
 import io.zeta.metaspace.model.metadata.Column;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -50,21 +52,55 @@ public class DataQualityV2Service {
 
     public TableColumnRules getRules(String tableId, int buildType) throws SQLException, AtlasBaseException {
         TableColumnRules tableColumnRules = new TableColumnRules();
+        List<TableColumnRules.ColumnsRule> columnsRules = new ArrayList<>();
+        List<TableColumnRules.SystemRule> tableSystemRules = dataQualityV2DAO.getTableSystemRules(RuleType.TABLE.code, buildType);
+        addCheckRules(tableSystemRules);
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(tableId);
         List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
-
-        List<TableColumnRules.SystemRule> systemRules = dataQualityV2DAO.getSystemRules(RuleType.TABLE.code);
-        for (TableColumnRules.SystemRule systemRule : systemRules) {
-            TableColumnRules.SystemRule tableRule = new TableColumnRules.SystemRule();
-            int systemRuleId = systemRule.getSystemRuleId();
-            List<Integer> buildtypes = dataQualityV2DAO.getBuildtypes(systemRuleId);
-            if (buildtypes.contains(buildType)) {
-                List<Integer> checktypes = dataQualityV2DAO.getChecktypes(systemRuleId);
-                systemRule.setRuleAllowCheckType(checktypes);
-            }
+        for (Column column : columns) {
+            TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
+            String columnId = column.getColumnId();
+            String columnName = column.getColumnName();
+            String type = column.getType();
+            columnsRule.setRuleColumnId(columnId);
+            columnsRule.setRuleColumnName(columnName);
+            columnsRule.setRuleColumnType(type);
+            DataType datatype = getDatatype(type);
+            List<TableColumnRules.SystemRule> columnSystemRules = dataQualityV2DAO.getColumnSystemRules(RuleType.COLUMN.code, datatype.getCode(), buildType);
+            addCheckRules(columnSystemRules);
+            columnsRule.setColumnRules(columnSystemRules);
+            columnsRules.add(columnsRule);
         }
+        tableColumnRules.setTableRules(tableSystemRules);
+        tableColumnRules.setColumnsRules(columnsRules);
         return tableColumnRules;
+}
+
+    private void addCheckRules(List<TableColumnRules.SystemRule> tableSystemRules) throws SQLException {
+        for (TableColumnRules.SystemRule tableSystemRule : tableSystemRules) {
+            int ruleId = tableSystemRule.getRuleId();
+            List<Integer> checktypes = dataQualityV2DAO.getChecktypes(ruleId);
+            tableSystemRule.setRuleAllowCheckType(checktypes);
+        }
+    }
+
+    private DataType getDatatype(String type) {
+        ArrayList<String> numeric = new ArrayList<>();
+        numeric.add("tinyint");
+        numeric.add("smallint");
+        numeric.add("int");
+        numeric.add("integer");
+        numeric.add("bigint");
+        numeric.add("float");
+        numeric.add("double");
+        numeric.add("double precision");
+        numeric.add("decimal");
+        numeric.add("numeric");
+        if (numeric.contains(type))
+            return DataType.NUMERIC;
+
+        return DataType.UNNUMERIC;
     }
 
 }

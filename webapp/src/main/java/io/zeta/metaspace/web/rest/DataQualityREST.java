@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.service.DataQualityService;
+import io.zeta.metaspace.web.service.DataQualityV2Service;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -56,11 +57,10 @@ public class DataQualityREST {
     private HttpServletResponse httpServletResponse;
 
     @Autowired
-    private final DataQualityService qualityService;
+    private  DataQualityService qualityService;
+    @Autowired
+    private DataQualityV2Service dataQualityV2Service;
 
-    public DataQualityREST(DataQualityService qualityService) {
-        this.qualityService = qualityService;
-    }
 
     /**
      * 添加模板
@@ -163,6 +163,11 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId){
+        try {
+            return dataQualityV2Service.getTemplates(tableId);
+        } catch (SQLException e) {
+
+        }
         return null;
     }
     /**
@@ -175,6 +180,13 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<ReportResult> getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit){
+        try {
+            List<ReportResult> reports = dataQualityV2Service.getReports(templateId, offect, limit);
+            return reports;
+        } catch (SQLException e) {
+
+
+        }
         return null;
     }
     /**
@@ -187,6 +199,12 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Report getReport(@PathParam("reportId") String reportId){
+        try {
+            Report report = dataQualityV2Service.getReport(reportId);
+            return report;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
     /**
@@ -198,7 +216,15 @@ public class DataQualityREST {
     @Path("/rules/{tableId}/{buildType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TableColumnRules getRules(@PathParam("tableId") String tableId,@PathParam("buildType") String buildType){
+    public TableColumnRules getRules(@PathParam("tableId") String tableId,@PathParam("buildType") int buildType){
+        try {
+            TableColumnRules rules = dataQualityV2Service.getRules(tableId, buildType);
+            return rules;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (AtlasBaseException e) {
+            e.printStackTrace();
+        }
         return null;
     }
     /**
