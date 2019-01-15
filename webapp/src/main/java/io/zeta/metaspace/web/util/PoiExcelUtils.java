@@ -21,6 +21,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +29,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -138,10 +143,32 @@ public class PoiExcelUtils {
             Cell cell = row0.createCell(i);
             cell.setCellValue(attributes.get(i).trim());
         }
+        fillData(sheet, data, 1);
+    }
+
+    public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, Map<String,List<List<String>>> dataMap) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        Row row0 = sheet.createRow(0);
+        for (int i = 0; i < attributes.size(); i++) {
+            Cell cell = row0.createCell(i);
+            cell.setCellValue(attributes.get(i).trim());
+        }
+        mergeRegion(sheet, dataMap);
+        if(Objects.nonNull(dataMap) && dataMap.size()>0) {
+            int startIndex = 1;
+            for(String key : dataMap.keySet()) {
+                List<List<String>> dataList = dataMap.get(key);
+                fillData(sheet, dataList, startIndex);
+                startIndex += dataList.size();
+            }
+        }
+    }
+
+    public static void fillData(Sheet sheet, List<List<String>> data, int startIndex) {
         if (CollectionUtils.isNotEmpty(data)) {
             for (int i = 0; i < data.size(); i++) {
                 List<String> rowInfo = data.get(i);
-                Row row = sheet.createRow(i + 1);
+                Row row = sheet.createRow(startIndex++);
                 // 添加数据
                 for (int j = 0; j < rowInfo.size(); j++) {
                     row.createCell(j).setCellValue(rowInfo.get(j));
@@ -173,9 +200,40 @@ public class PoiExcelUtils {
 
         if (workbook != null) {
             createSheet(workbook, tableSheetName, tableAttributes, tableData);
-            createSheet(workbook, columnSheetName, columnAttributes, columnData);
+
+            HashMap<String, List<List<String>>> dataMap = convertListToMap(columnData);
+            createSheet(workbook, columnSheetName, columnAttributes, dataMap);
+            //createSheet(workbook, columnSheetName, columnAttributes, columnData);
         }
         return workbook;
+    }
+
+    public static  void mergeRegion(Sheet sheet, Map<String,List<List<String>>> dataMap) {
+        int startMergeIndex = 1;
+        for(String key : dataMap.keySet()) {
+            List<List<String>> dataList = dataMap.get(key);
+            int size = dataList.size();
+            int endMergeIndex = startMergeIndex + size - 1;
+            if(startMergeIndex < endMergeIndex)
+                sheet.addMergedRegion(new CellRangeAddress(startMergeIndex, endMergeIndex, 0, 0));
+            startMergeIndex = endMergeIndex + 1;
+        }
+    }
+
+    public static HashMap<String, List<List<String>>> convertListToMap(List<List<String>> lists) {
+        HashMap<String, List<List<String>>> columnMap = new HashMap<>();
+        for(List<String> list: lists) {
+            String columnName = list.get(0);
+            if(columnMap.containsKey(columnName)) {
+                List<List<String>> columnList = columnMap.get(columnName);
+                columnList.add(list);
+            } else {
+                List<List<String>> columnList = new ArrayList<>();
+                columnList.add(list);
+                columnMap.put(columnName, columnList);
+            }
+        }
+        return columnMap;
     }
 
 

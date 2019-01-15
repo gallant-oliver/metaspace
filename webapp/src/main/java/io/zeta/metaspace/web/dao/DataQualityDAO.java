@@ -80,7 +80,7 @@ public interface DataQualityDAO {
     @Select("select * from template_userrule where templateId=#{templateId}")
     public List<UserRule> queryUserRuleById(@Param("templateId") String templateId) throws SQLException;
 
-    @Select("select thresholdValue from template_userrule2threshold where ruleId=#{ruleId} order by thresholdValue asc")
+    @Select("select report_threshold_value from report_userrule2threshold where ruleId=#{ruleId} order by report_threshold_value asc")
     public List<Double> queryThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
 
     @Insert("insert into report_ruleresult(ruleResultId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
@@ -93,6 +93,9 @@ public interface DataQualityDAO {
 
     @Select("select * from report_userrule where reportId=#{reportId}")
     public List<Report.ReportRule> getReport(@Param("reportId") String reportId);
+
+    @Select("select reportName from report where reportId=#{reportId}")
+    public String getReportName(@Param("reportId") String reportId);
 
     @Select("select * from report_ruleresult where reportId=(select reportId from report where templateId=#{templateId})")
     public List<Report> getReportByTemplateId(@Param("templateId") String templateId);

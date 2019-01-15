@@ -40,11 +40,15 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Path("quality")
 @Singleton
@@ -206,12 +210,19 @@ public class DataQualityREST {
      *
      * @return DownloadUri
      */
-    @GET
-    @Path("/reports/{reportId}")
+    @POST
+    @Path("/reports")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DownloadUri downloadReports(@PathParam("reportId") String tableId) throws AtlasBaseException,IOException {
-        List<String> reportIds = new ArrayList<>();
+    public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException,IOException {
+        String downloadId = UUID.randomUUID().toString();
+        String address = httpServletRequest.getRequestURL().toString();
+        String downURL = address + "/" + downloadId;
+        qualityService.getDownloadList(reportIds, downloadId);
+
+        DownloadUri uri = new DownloadUri();
+        uri.setDownloadUri(downURL);
+        /*List<String> reportIds = new ArrayList<>();
         reportIds.add(tableId);
         try {
             List<Workbook> wbs = qualityService.exportExcel(reportIds);
@@ -228,11 +239,37 @@ public class DataQualityREST {
                 wb.write(os);
                 os.flush();
                 os.close();
+            }*/
+        return uri;
+    }
+
+
+    @GET
+    @Path("/reports/{downloadId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
+        List<String> downloadList = qualityService.getDownloadList(null, downloadId);
+        try {
+            File zipFile = qualityService.exportExcel(downloadList);
+            FileInputStream in = new FileInputStream(zipFile);
+            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+            httpServletResponse.setCharacterEncoding("utf-8");
+            // 对文件名进行处理。防止文件名乱码
+            long time = System.currentTimeMillis();
+            String fileName = new String( new String(time + ".zip").getBytes(), "ISO-8859-1");
+            // Content-disposition属性设置成以附件方式进行下载
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+            OutputStream os = httpServletResponse.getOutputStream();
+            byte buffer[] = new byte[1024];
+            int len = 0;
+            while((len = in.read(buffer)) > 0) {
+                os.write(buffer, 0, len);
             }
-            return null;
-        } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
-        } catch (IOException e) {
+            in.close();
+            os.close();
+            zipFile.delete();
+        }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
