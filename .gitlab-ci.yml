@@ -10,6 +10,8 @@ before_script:
 cache:
   paths:
     - ./.m2/repository
+  # keep cache across branch
+  key: "$CI_BUILD_REF_NAME"
 # 定义 stages
 stages:
   - test
