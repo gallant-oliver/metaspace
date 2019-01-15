@@ -61,7 +61,8 @@ public class TableSqlUtils {
             if (StringUtils.isNotBlank(fieldsTerminated)) {
                 sqlFormat.append(" FIELDS TERMINATED BY '" + fieldsTerminated + "'");
             }
-            if (StringUtils.isNotBlank(lineTerminated)) {
+            //\n在java中会被当做空格，使用isNotBlank会返回false
+            if (StringUtils.isNotEmpty(lineTerminated)) {
                 sqlFormat.append(" LINES TERMINATED BY '" + lineTerminated + "'");
             }
 

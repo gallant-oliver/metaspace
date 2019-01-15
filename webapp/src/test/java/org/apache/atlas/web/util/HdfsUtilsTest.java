@@ -25,7 +25,6 @@ import java.util.Arrays;
 // ======================================================================
 public class HdfsUtilsTest {
 
-    @Test
     public void testListFiles() throws Exception {
         RemoteIterator<LocatedFileStatus> it = HdfsUtils.listFiles("pom.xml", true);
         while (it.hasNext()) {
@@ -33,14 +32,12 @@ public class HdfsUtilsTest {
         }
     }
 
-    @Test
     public void testListStatus() throws Exception {
         Arrays.stream(HdfsUtils.listStatus("/tmp")).forEach(fileStatus -> {
             System.out.println(fileStatus);
         });
     }
 
-    @Test
     public void testUploadFile() throws IOException, InterruptedException, AtlasBaseException {
 
         InputStream inputStream = new FileInputStream(new java.io.File("./pom.xml"));

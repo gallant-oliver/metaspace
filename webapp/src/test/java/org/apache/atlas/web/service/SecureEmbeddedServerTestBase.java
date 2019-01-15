@@ -143,7 +143,9 @@ public class SecureEmbeddedServerTestBase {
         } catch (IOException e) {
             Assert.assertTrue(e.getMessage().startsWith("No credential entry found for"));
         } finally {
-            secureEmbeddedServer.server.stop();
+            if (secureEmbeddedServer != null) {
+                secureEmbeddedServer.server.stop();
+            }
         }
 
     }

@@ -57,7 +57,7 @@ public class TableForm {
         this.expireDate = expireDate;
         this.fields = fields;
         this.isPartition = isPartition;
-        this.partitionFields = partitionFields;
+        this.partitionFields = partitionFileds;
         this.storedFormat = storedFormat;
         this.hdfsPath = hdfsPath;
         this.fieldsTerminated = fieldsTerminated;
