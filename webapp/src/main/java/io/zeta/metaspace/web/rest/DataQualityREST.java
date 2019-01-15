@@ -30,7 +30,9 @@ import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -291,7 +293,12 @@ public class DataQualityREST {
         List<String> downloadList = qualityService.getDownloadList(null, downloadId);
         try {
             File zipFile = qualityService.exportExcel(downloadList);
-            ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(FileUtils.readFileToByteArray(zipFile), HttpStatus.CREATED);
+            HttpHeaders headers = new HttpHeaders();//http头信息
+            long time = System.currentTimeMillis();
+            String downloadFileName = new String(new String(time + ".zip").getBytes("UTF-8"),"iso-8859-1");//设置编码
+            headers.setContentDispositionFormData("attachment", downloadFileName);
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(FileUtils.readFileToByteArray(zipFile),headers, HttpStatus.CREATED);
             zipFile.delete();
             return responseEntity;
         } catch (Exception e) {
