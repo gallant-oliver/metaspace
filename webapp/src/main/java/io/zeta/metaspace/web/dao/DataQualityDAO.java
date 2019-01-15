@@ -78,10 +78,13 @@ public interface DataQualityDAO {
     public Template queryTemplateById(@Param("templateId") String templateId) throws SQLException;
 
     @Select("select * from template_userrule where templateId=#{templateId}")
-    public List<UserRule> queryUserRuleById(@Param("templateId") String templateId) throws SQLException;
+    public List<UserRule> queryTemplateUserRuleById(@Param("templateId") String templateId) throws SQLException;
 
-    @Select("select report_threshold_value from report_userrule2threshold where ruleId=#{ruleId} order by report_threshold_value asc")
-    public List<Double> queryThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
+    @Select("select thresholdvalue from template_userrule2threshold where ruleId=#{ruleId} order by thresholdvalue asc")
+    public List<Double> queryTemplateThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
+
+    @Select("select thresholdvalue from report_userrule2threshold where ruleId=#{ruleId} order by thresholdvalue asc")
+    public List<Double> queryReportThresholdByRuleId(@Param("ruleId") String ruleId) throws SQLException;
 
     @Insert("insert into report_ruleresult(ruleResultId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
             "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus)values(#{ruleResultId},#{reportId},#{ruleType},#{ruleName},#{ruleInfo},#{ruleColumnName}," +

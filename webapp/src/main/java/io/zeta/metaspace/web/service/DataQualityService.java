@@ -157,10 +157,10 @@ public class DataQualityService {
     public Template viewTemplate(String templateId) throws AtlasBaseException {
         try {
             Template template = qualityDao.queryTemplateById(templateId);
-            List<UserRule> userRules = qualityDao.queryUserRuleById(templateId);
+            List<UserRule> userRules = qualityDao.queryTemplateUserRuleById(templateId);
             for(UserRule rule : userRules) {
                 String ruleId = rule.getRuleId();
-                List<Double> thresholds = qualityDao.queryThresholdByRuleId(ruleId);
+                List<Double> thresholds = qualityDao.queryTemplateThresholdByRuleId(ruleId);
                 rule.setRuleCheckThreshold(thresholds);
             }
             if(Objects.nonNull(userRules) && userRules.size()>0)
@@ -215,7 +215,7 @@ public class DataQualityService {
                     }
 
 
-                    String ruleId = rule.getRuleResultId();
+                    String ruleId = rule.getRuleId();
                     //规则名称
                     String ruleName = rule.getRuleName();
                     resultList.add(ruleName);
@@ -233,7 +233,7 @@ public class DataQualityService {
                     String ruleExpression = CheckExpression.getDescByCode(rule.getRuleCheckExpression());
                     resultList.add(ruleExpression);
                     //阈值大小
-                    List<Double> thresholds = qualityDao.queryThresholdByRuleId(ruleId);
+                    List<Double> thresholds = qualityDao.queryReportThresholdByRuleId(ruleId);
                     String thresholdUnit = rule.getRuleCheckThresholdUnit();
                     List<String> thresholdAndUnit = thresholds.stream().map(value -> value + thresholdUnit).collect(Collectors.toList());
                     String thresholdStr = StringUtils.join(thresholdAndUnit.toArray(), " ");
