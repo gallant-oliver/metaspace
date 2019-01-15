@@ -27,8 +27,11 @@ import io.zeta.metaspace.web.service.DataQualityV2Service;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.io.FileUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
@@ -61,7 +64,7 @@ public class DataQualityREST {
     private HttpServletResponse httpServletResponse;
 
     @Autowired
-    private  DataQualityService qualityService;
+    private DataQualityService qualityService;
     @Autowired
     private DataQualityV2Service dataQualityV2Service;
 
@@ -81,11 +84,12 @@ public class DataQualityREST {
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
         }
     }
+
     /**
      * 删除模板
      *
@@ -101,11 +105,12 @@ public class DataQualityREST {
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
         }
     }
+
     /**
      * 修改模板
      *
@@ -114,18 +119,19 @@ public class DataQualityREST {
     @PUT
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String putTemplate(@PathParam("templateId") String templateId,Template template) throws AtlasBaseException {
+    public String putTemplate(@PathParam("templateId") String templateId, Template template) throws AtlasBaseException {
         try {
             qualityService.updateTemplate(templateId, template);
             return "success";
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
         }
     }
+
     /**
      * 查看（克隆）模板详情
      *
@@ -141,11 +147,12 @@ public class DataQualityREST {
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
         }
     }
+
     /**
      * 变更模板状态
      *
@@ -154,9 +161,10 @@ public class DataQualityREST {
     @PUT
     @Path("/template/status/{templateId}/{templateStatus}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String putTemplateStatus(@PathParam("templateId") String templateId,@PathParam("templateStatus") int templateStatus){
+    public String putTemplateStatus(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) {
         return "success";
     }
+
     /**
      * 获取数据质量模板统计信息列表
      *
@@ -166,7 +174,7 @@ public class DataQualityREST {
     @Path("/templates/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId){
+    public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId) {
         try {
             return dataQualityV2Service.getTemplates(tableId);
         } catch (SQLException e) {
@@ -174,6 +182,7 @@ public class DataQualityREST {
         }
         return null;
     }
+
     /**
      * 获取一个模板的所有报表
      *
@@ -183,7 +192,7 @@ public class DataQualityREST {
     @Path("/reports/{templateId}/{offect}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<ReportResult> getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit){
+    public List<ReportResult> getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit) {
         try {
             List<ReportResult> reports = dataQualityV2Service.getReports(templateId, offect, limit);
             return reports;
@@ -193,6 +202,7 @@ public class DataQualityREST {
         }
         return null;
     }
+
     /**
      * 获取报表详情
      *
@@ -202,7 +212,7 @@ public class DataQualityREST {
     @Path("/report/{reportId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Report getReport(@PathParam("reportId") String reportId){
+    public Report getReport(@PathParam("reportId") String reportId) {
         try {
             Report report = dataQualityV2Service.getReport(reportId);
             return report;
@@ -211,6 +221,7 @@ public class DataQualityREST {
         }
         return null;
     }
+
     /**
      * 根据生成方式获取规则
      *
@@ -220,7 +231,7 @@ public class DataQualityREST {
     @Path("/rules/{tableId}/{buildType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TableColumnRules getRules(@PathParam("tableId") String tableId,@PathParam("buildType") int buildType){
+    public TableColumnRules getRules(@PathParam("tableId") String tableId, @PathParam("buildType") int buildType) {
         try {
             TableColumnRules rules = dataQualityV2Service.getRules(tableId, buildType);
             return rules;
@@ -231,6 +242,7 @@ public class DataQualityREST {
         }
         return null;
     }
+
     /**
      * 下载报表
      *
@@ -240,7 +252,7 @@ public class DataQualityREST {
     @Path("/reports")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException,IOException {
+    public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException, IOException {
         String downloadId = UUID.randomUUID().toString();
         String address = httpServletRequest.getRequestURL().toString();
         String downURL = address + "/" + downloadId;
@@ -274,29 +286,42 @@ public class DataQualityREST {
     @Path("/reports/{downloadId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
+
+    public ResponseEntity<byte[]> downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException, IOException, SQLException {
         List<String> downloadList = qualityService.getDownloadList(null, downloadId);
         try {
             File zipFile = qualityService.exportExcel(downloadList);
-            FileInputStream in = new FileInputStream(zipFile);
-            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
-            httpServletResponse.setCharacterEncoding("utf-8");
-            // 对文件名进行处理。防止文件名乱码
-            long time = System.currentTimeMillis();
-            String fileName = new String( new String(time + ".zip").getBytes(), "ISO-8859-1");
-            // Content-disposition属性设置成以附件方式进行下载
-            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-            OutputStream os = httpServletResponse.getOutputStream();
-            byte buffer[] = new byte[1024];
-            int len = 0;
-            while((len = in.read(buffer)) > 0) {
-                os.write(buffer, 0, len);
-            }
-            in.close();
-            os.close();
+            ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(FileUtils.readFileToByteArray(zipFile), HttpStatus.CREATED);
             zipFile.delete();
-        }  catch (Exception e) {
+            return responseEntity;
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
+
     }
+//    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
+//        List<String> downloadList = qualityService.getDownloadList(null, downloadId);
+//        try {
+//            File zipFile = qualityService.exportExcel(downloadList);
+//            FileInputStream in = new FileInputStream(zipFile);
+//            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+//            httpServletResponse.setCharacterEncoding("utf-8");
+//            // 对文件名进行处理。防止文件名乱码
+//            long time = System.currentTimeMillis();
+//            String fileName = new String( new String(time + ".zip").getBytes(), "ISO-8859-1");
+//            // Content-disposition属性设置成以附件方式进行下载
+//            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+//            OutputStream os = httpServletResponse.getOutputStream();
+//            byte buffer[] = new byte[1024];
+//            int len = 0;
+//            while((len = in.read(buffer)) > 0) {
+//                os.write(buffer, 0, len);
+//            }
+//            in.close();
+//            os.close();
+//            zipFile.delete();
+//        }  catch (Exception e) {
+//            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+//        }
+//    }
 }
