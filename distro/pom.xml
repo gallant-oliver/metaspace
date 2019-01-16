@@ -426,7 +426,7 @@ atlas.graph.index.search.solr.wait-searcher=true
                 <executions>
                     <execution>
                         <configuration>
-                            <skip>${skipTests}</skip>
+                            <skip>true</skip>
                             <executable>python</executable>
                             <workingDirectory>src/test/python</workingDirectory>
                             <arguments>
