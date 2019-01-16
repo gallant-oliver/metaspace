@@ -36,8 +36,10 @@ public class HbaseUtils {
             configuration.set("hbase.client.pause", "3000");
             configuration.set("hbase.client.retries.number", "3");
             configuration.set("hbase.rpc.timeout", "3000");
-            configuration.set("hbase.client.operation.timeout", "5000");
-            configuration.set("hbase.client.scanner.timeout.period", "5000");
+            configuration.set("hbase.client.operation.timeout", "30000");
+            configuration.set("hbase.client.scanner.timeout.period", "50000");
+            configuration.set("zookeeper.recovery.retry", "3");
+            configuration.set("zookeeper.recovery.retry.intervalmill", "200");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
