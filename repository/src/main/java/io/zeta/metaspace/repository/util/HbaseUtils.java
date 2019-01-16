@@ -33,6 +33,11 @@ public class HbaseUtils {
         try {
             hbaseConf = MetaspaceConfig.getHbaseConf();
             configuration.addResource(new Path(hbaseConf, "hbase-site.xml"));
+            configuration.set("hbase.client.pause", "3000");
+            configuration.set("hbase.client.retries.number", "3");
+            configuration.set("hbase.rpc.timeout", "3000");
+            configuration.set("hbase.client.operation.timeout", "5000");
+            configuration.set("hbase.client.scanner.timeout.period", "5000");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
