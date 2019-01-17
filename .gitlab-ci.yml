@@ -1,6 +1,7 @@
 image: repository.gridsum.com:8443/gridsum/java:8
 variables:
-  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository"
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.showDateTime=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
 before_script:
   - eval $(ssh-agent -s)
   - ssh-add <(echo "$SSH_PRIVATE_KEY")
@@ -21,7 +22,7 @@ test:
     - java
   stage: test
   script:
-  - "mvn clean test"
+  - "mvn $MAVEN_CLI_OPTS clean test"
 
 cleanup-build:
   stage: cleanup_build
