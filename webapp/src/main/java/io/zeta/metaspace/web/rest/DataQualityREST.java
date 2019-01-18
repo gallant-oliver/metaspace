@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -163,8 +164,13 @@ public class DataQualityREST {
     @PUT
     @Path("/template/status/{templateId}/{templateStatus}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String putTemplateStatus(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) {
-        return "success";
+    public String putTemplateStatus(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
+        try {
+            qualityService.updateTemplateStatus(templateId, templateStatus);
+            return "success";
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
     }
 
     /**
@@ -255,80 +261,39 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException, IOException {
-        String downloadId = UUID.randomUUID().toString();
-        String address = httpServletRequest.getRequestURL().toString();
-        String downURL = address + "/" + downloadId;
-        qualityService.getDownloadList(reportIds, downloadId);
-
-        DownloadUri uri = new DownloadUri();
-        uri.setDownloadUri(downURL);
-        /*List<String> reportIds = new ArrayList<>();
-        reportIds.add(tableId);
         try {
-            List<Workbook> wbs = qualityService.exportExcel(reportIds);
-            for(Workbook wb : wbs) {
-                //web浏览通过MIME类型判断文件是excel类型
-                httpServletResponse.setContentType("application/msexcel;charset=utf-8");
-                httpServletResponse.setCharacterEncoding("utf-8");
-
-                // 对文件名进行处理。防止文件名乱码
-                String fileName = new String("文件名.xls".getBytes(),"ISO-8859-1");
-                // Content-disposition属性设置成以附件方式进行下载
-                httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-                OutputStream os = httpServletResponse.getOutputStream();
-                wb.write(os);
-                os.flush();
-                os.close();
-            }*/
-        return uri;
+            String downloadId = UUID.randomUUID().toString();
+            String address = httpServletRequest.getRequestURL().toString();
+            String downURL = address + "/" + downloadId;
+            qualityService.getDownloadList(reportIds, downloadId);
+            DownloadUri uri = new DownloadUri();
+            uri.setDownloadUri(downURL);
+            return uri;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
     }
-
 
     @GET
     @Path("/reports/{downloadId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-
-    public ResponseEntity<byte[]> downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException, IOException, SQLException {
+    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
         List<String> downloadList = qualityService.getDownloadList(null, downloadId);
         try {
             File zipFile = qualityService.exportExcel(downloadList);
-            HttpHeaders headers = new HttpHeaders();//http头信息
+            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+            httpServletResponse.setCharacterEncoding("utf-8");
             long time = System.currentTimeMillis();
-            String downloadFileName = new String(new String(time + ".zip").getBytes("UTF-8"),"iso-8859-1");//设置编码
-            headers.setContentDispositionFormData("attachment", downloadFileName);
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            ResponseEntity<byte[]> responseEntity = new ResponseEntity<>(FileUtils.readFileToByteArray(zipFile),headers, HttpStatus.CREATED);
+            String fileName = new String( new String(time + ".zip").getBytes(), "ISO-8859-1");
+            // Content-disposition属性设置成以附件方式进行下载
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+            OutputStream os = httpServletResponse.getOutputStream();
+            os.write(FileUtils.readFileToByteArray(zipFile));
+            os.close();
             zipFile.delete();
-            return responseEntity;
-        } catch (Exception e) {
+        }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
-
     }
-//    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
-//        List<String> downloadList = qualityService.getDownloadList(null, downloadId);
-//        try {
-//            File zipFile = qualityService.exportExcel(downloadList);
-//            FileInputStream in = new FileInputStream(zipFile);
-//            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
-//            httpServletResponse.setCharacterEncoding("utf-8");
-//            // 对文件名进行处理。防止文件名乱码
-//            long time = System.currentTimeMillis();
-//            String fileName = new String( new String(time + ".zip").getBytes(), "ISO-8859-1");
-//            // Content-disposition属性设置成以附件方式进行下载
-//            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
-//            OutputStream os = httpServletResponse.getOutputStream();
-//            byte buffer[] = new byte[1024];
-//            int len = 0;
-//            while((len = in.read(buffer)) > 0) {
-//                os.write(buffer, 0, len);
-//            }
-//            in.close();
-//            os.close();
-//            zipFile.delete();
-//        }  catch (Exception e) {
-//            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
-//        }
-//    }
 }

@@ -174,6 +174,19 @@ public class HiveJdbcUtils {
         }
     }
 
+    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            Connection conn = getSystemConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            if(e.getMessage().contains("Permission denied")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
+    }
+
     public static void execute(String sql, String db) throws AtlasBaseException {
         try (Connection conn = getConnection(db)) {
             conn.createStatement().execute(sql);

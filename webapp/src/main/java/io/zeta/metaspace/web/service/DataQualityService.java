@@ -22,7 +22,6 @@ package io.zeta.metaspace.web.service;
  * @date 2019/1/8 19:41
  */
 
-import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.collect.HashBiMap;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
@@ -32,13 +31,13 @@ import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.dataquality.RuleStatus;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
+import io.zeta.metaspace.web.task.quartz.QuartJob;
+import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -46,7 +45,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -65,6 +63,9 @@ public class DataQualityService {
 
     @Autowired
     DataQualityDAO qualityDao;
+
+    @Autowired
+    QuartzManager quartzManager;
 
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
@@ -173,10 +174,19 @@ public class DataQualityService {
         }
     }
 
-    public void updateTemplateStatus(int templateStatus) throws AtlasBaseException {
+    public void updateTemplateStatus(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         if(templateStatus == 0) {
+            try {
+                List<UserRule> userRules = qualityDao.queryTemplateUserRuleById(templateId);
+                Template template = qualityDao.queryTemplateById(templateId);
+                String cron = template.getPeriodCron();
+                for(UserRule userRule: userRules) {
+                    quartzManager.addJob(userRule, QuartJob.class, cron);
+                }
+            } catch (SQLException e) {
 
+            }
         }
         //停止模板
         else if(templateStatus == 1) {
@@ -213,8 +223,6 @@ public class DataQualityService {
                     } else if (rule.getRuleType() == 0) {
                         tableData.add(resultList);
                     }
-
-
                     String ruleId = rule.getRuleId();
                     //规则名称
                     String ruleName = rule.getRuleName();
@@ -225,7 +233,6 @@ public class DataQualityService {
                     //规则说明
                     String ruleInfo = rule.getRuleInfo();
                     resultList.add(ruleInfo);
-
                     //校验方式
                     String ruleCheckType = RuleCheckType.getDescByCode(rule.getRuleCheckType());
                     resultList.add(ruleCheckType);
@@ -238,7 +245,6 @@ public class DataQualityService {
                     List<String> thresholdAndUnit = thresholds.stream().map(value -> value + thresholdUnit).collect(Collectors.toList());
                     String thresholdStr = StringUtils.join(thresholdAndUnit.toArray(), " ");
                     resultList.add(thresholdStr);
-
                     //结果值
                     Double ruleValue = rule.getReportRuleValue();
                     resultList.add(ruleValue.toString());
@@ -255,7 +261,6 @@ public class DataQualityService {
                 excelReport.setColumnData(columnData);
                 Workbook wb = PoiExcelUtils.createExcelFile(excelReport, "xlsx");
                 workbookMap.put(reportName, wb);
-                setStyle(wb);
             }
             List<File> files = convertBookToFile(workbookMap);
             File zipFile = getZipFile(files);
@@ -265,19 +270,7 @@ public class DataQualityService {
         }
     }
 
-    public void setStyle(Workbook wb) {
-        Font font = wb.createFont();
-        font.setFontHeightInPoints((short) 20); //字体高度
-        font.setColor(HSSFFont.COLOR_NORMAL); //字体颜色
-        font.setFontName("黑体"); //字体
-        font.setBoldweight(Font.BOLDWEIGHT_BOLD); //宽度
 
-        CellStyle cellStyle = wb.createCellStyle();
-        cellStyle.setFont(font);
-        cellStyle.setAlignment(CellStyle.ALIGN_CENTER); //水平布局：居中
-        cellStyle.setWrapText(true);
-
-    }
 
     public List<File> convertBookToFile(Map<String,Workbook> workbooks) throws IOException {
         List<File> files = new ArrayList<>();
@@ -295,18 +288,12 @@ public class DataQualityService {
 
     public File getZipFile(List<File> inputs) throws IOException  {
         File zipFile = new File("report.zip");
-        int len;
-        byte[] buf = new byte[1024];
         ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipFile));
         for (int i = 0; i < inputs.size(); i++) {
             File file = inputs.get(i);
-            FileInputStream in =new FileInputStream(file);
             zout.putNextEntry(new ZipEntry(file.getName()));
-            while ((len = in.read(buf)) > 0) {
-                zout.write(buf, 0, len);
-            }
+            zout.write(FileUtils.readFileToByteArray(file));
             zout.closeEntry();
-            in.close();
             file.delete();
         }
         zout.close();
