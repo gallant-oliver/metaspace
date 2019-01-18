@@ -21,16 +21,16 @@ public interface DataQualityV2DAO {
     public List<TemplateResult> getTemplateResults( String tableId) throws SQLException;
     @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
     public List<Report> getReport(String reportId) throws SQLException;
-    @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid from report_ruleresult where reportid = #{reportId}")
+    @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid from report_userrule where reportid = #{reportId}")
     public List<Report.ReportRule> getReportRule(String reportId) throws SQLException;
-    @Select("select report_threshold_value from report_threshold_value where ruleid = #{ruleId} order by report_threshold_value asc")
+    @Select("select thresholdvalue from report_userrule2threshold where ruleid = #{ruleId} order by thresholdvalue asc")
     public List<Double> getReportThresholdValue(String ruleId) throws SQLException;
     @Select("select reportid,reportname,orangealerts,redalerts,reportproducedate from report where templateid = #{templateId} order by reportproducedate desc limit #{limit} offset #{offset}")
     public List<ReportResult> getReports(@Param("templateId") String templateId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
-    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2datatype,rule2buildtype where systemrule.ruleid=rule2datatype.ruleid  and systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildtype} and datatype=#{datatype} and ruletype=#{ruletype}")
-    public List<TableColumnRules.SystemRule> getColumnSystemRules(int ruleType,int dataType,int buildType) throws SQLException;
-    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2buildtype where systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildtype} and ruletype=#{ruletype}")
-    public List<TableColumnRules.SystemRule> getTableSystemRules(int ruleType,int buildType) throws SQLException;
+    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2datatype,rule2buildtype where systemrule.ruleid=rule2datatype.ruleid  and systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and datatype=#{dataType} and ruletype=#{ruleType} order by ruleid")
+    public List<TableColumnRules.SystemRule> getColumnSystemRules(@Param("ruleType") int ruleType,@Param("dataType") int dataType,@Param("buildType") int buildType) throws SQLException;
+    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2buildtype where systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and ruletype=#{ruleType} order by ruleid")
+    public List<TableColumnRules.SystemRule> getTableSystemRules(@Param("ruleType") int ruleType,@Param("buildType") int buildType) throws SQLException;
     @Select("select checktype from rule2checktype where ruleid = #{ruleId}")
     public List<Integer> getChecktypes(int ruleId) throws SQLException;
 
