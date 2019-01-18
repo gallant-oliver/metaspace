@@ -36,6 +36,7 @@ public class UserRule {
     private String ruleCheckThresholdUnit;
     private String templateId;
     private String dataType;
+    private Integer systemRuleId;
 
 
     public String getRuleId() {
@@ -132,5 +133,13 @@ public class UserRule {
 
     public void setDataType(String dataType) {
         this.dataType = dataType;
+    }
+
+    public Integer getSystemRuleId() {
+        return systemRuleId;
+    }
+
+    public void setSystemRuleId(Integer systemRuleId) {
+        this.systemRuleId = systemRuleId;
     }
 }

@@ -102,4 +102,7 @@ public interface DataQualityDAO {
 
     @Select("select * from report_ruleresult where reportId=(select reportId from report where templateId=#{templateId})")
     public List<Report> getReportByTemplateId(@Param("templateId") String templateId);
+
+    @Select("select source from template where templateId=#{templateId}")
+    public String querySourceByTemplateId(@Param("templateId") String templateId);
 }
