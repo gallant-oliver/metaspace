@@ -28,6 +28,7 @@ public class UserRule {
     private String ruleName;
     private String ruleInfo;
     private int ruleType;
+    private String ruleColumnId;
     private String ruleColumnName;
     private String ruleColumnType;
     private int ruleCheckType;
@@ -37,6 +38,7 @@ public class UserRule {
     private String templateId;
     private String dataType;
     private Integer systemRuleId;
+    private String reportId;
 
 
     public String getRuleId() {
@@ -69,6 +71,14 @@ public class UserRule {
 
     public void setRuleType(int ruleType) {
         this.ruleType = ruleType;
+    }
+
+    public String getRuleColumnId() {
+        return ruleColumnId;
+    }
+
+    public void setRuleColumnId(String ruleColumnId) {
+        this.ruleColumnId = ruleColumnId;
     }
 
     public String getRuleColumnName() {
@@ -141,5 +151,13 @@ public class UserRule {
 
     public void setSystemRuleId(Integer systemRuleId) {
         this.systemRuleId = systemRuleId;
+    }
+
+    public String getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(String reportId) {
+        this.reportId = reportId;
     }
 }

@@ -32,6 +32,7 @@ public class Template {
     private String templateName;
     private int tableRulesNum;
     private int columnRulesNum;
+    private String source;
     private List<UserRule> rules;
 
     public String getTableId() {
@@ -88,6 +89,14 @@ public class Template {
 
     public void setColumnRulesNum(int columnRulesNum) {
         this.columnRulesNum = columnRulesNum;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public List<UserRule> getRules() {

@@ -29,6 +29,8 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -42,19 +44,20 @@ public class QuartzManager {
     private Scheduler scheduler;
     @Autowired
     private DataQualityDAO qualityDao;
-    public void addJob(UserRule rule, String jobName, String jobGroupName, String triggerName, String triggerGroupName,
+    public void addJob(String reportId, List<UserRule> rules, String jobName, String jobGroupName, String triggerName, String triggerGroupName,
                        Class jobClass, String cron) {
         try {
             //任务名，任务组，任务执行类
             JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
 
-            jobDetail.getJobDataMap().put("rule", rule);
+            jobDetail.getJobDataMap().put("reportId", reportId);
+            jobDetail.getJobDataMap().put("ruleList", rules);
             jobDetail.getJobDataMap().put("dao", qualityDao);
             //触发器
             TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
 
-            TriggerKey triggerKey = new TriggerKey(TRIGGER_NAME, TRIGGER_GROUP_NAME);
-            Trigger triger = scheduler.getTrigger(triggerKey);
+            /*TriggerKey triggerKey = new TriggerKey(TRIGGER_NAME, TRIGGER_GROUP_NAME);
+            Trigger triger = scheduler.getTrigger(triggerKey);*/
             //触发器名，触发器组
             triggerBuilder.withIdentity(triggerName, triggerGroupName);
             triggerBuilder.startNow();
@@ -74,13 +77,12 @@ public class QuartzManager {
         }
     }
 
-    public void addJob(UserRule rule, Class jobClass, String cron) {
-        String ruleId = rule.getRuleId();
-        String jobName = rule.getRuleName() + ruleId;
-        String jobGroupName = JOB_GROUP_NAME + ruleId;
-        String triggerName  = TRIGGER_NAME + ruleId;
-        String triggerGroupName = TRIGGER_GROUP_NAME + ruleId;
-        addJob(rule, jobName, jobGroupName, triggerName, triggerGroupName, jobClass, cron);
+    public void addJob(String reportId, List<UserRule> rules, Class jobClass, String cron) {
+        String jobName = reportId;
+        String jobGroupName = JOB_GROUP_NAME + reportId;
+        String triggerName  = TRIGGER_NAME + reportId;
+        String triggerGroupName = TRIGGER_GROUP_NAME + reportId;
+        addJob(reportId, rules, jobName, jobGroupName, triggerName, triggerGroupName, jobClass, cron);
     }
 
     /**

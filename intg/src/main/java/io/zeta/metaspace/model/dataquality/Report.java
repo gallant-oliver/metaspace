@@ -7,6 +7,7 @@ public class Report {
         private int ruleType;
         private String ruleName;
         private String ruleInfo;
+        private String ruleColumnId;
         private String ruleColumnName;
         private String ruleColumnType;
         private int ruleCheckType;
@@ -16,6 +17,8 @@ public class Report {
         private Double reportRuleValue;
         private int reportRuleStatus;
         private String ruleId;
+        private String templateRuleId;
+        private Double refValue;
 
         public String getRuleId() {
             return ruleId;
@@ -47,6 +50,14 @@ public class Report {
 
         public void setRuleName(String ruleName) {
             this.ruleName = ruleName;
+        }
+
+        public String getRuleColumnId() {
+            return ruleColumnId;
+        }
+
+        public void setRuleColumnId(String ruleColumnId) {
+            this.ruleColumnId = ruleColumnId;
         }
 
         public String getRuleColumnName() {
@@ -112,12 +123,29 @@ public class Report {
         public void setReportRuleStatus(int reportRuleStatus) {
             this.reportRuleStatus = reportRuleStatus;
         }
+
+        public String getTemplateRuleId() {
+            return templateRuleId;
+        }
+
+        public void setTemplateRuleId(String templateRuleId) {
+            this.templateRuleId = templateRuleId;
+        }
+
+        public Double getRefValue() {
+            return refValue;
+        }
+
+        public void setRefValue(Double refValue) {
+            this.refValue = refValue;
+        }
     }
     private String reportId;
     private String reportName;
     private String source;
+    private String templateId;
     private String templateName;
-    private String buildType;
+    private int buildType;
     private String periodCron;
     private String orangeAlerts;
     private String redAlerts;
@@ -136,6 +164,14 @@ public class Report {
         return reportName;
     }
 
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
     public void setReportName(String reportName) {
         this.reportName = reportName;
     }
@@ -148,11 +184,11 @@ public class Report {
         this.templateName = templateName;
     }
 
-    public String getBuildType() {
+    public int getBuildType() {
         return buildType;
     }
 
-    public void setBuildType(String buildType) {
+    public void setBuildType(int buildType) {
         this.buildType = buildType;
     }
 

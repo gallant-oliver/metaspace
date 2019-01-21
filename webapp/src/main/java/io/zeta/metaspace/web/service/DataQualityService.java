@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.service;
  * @date 2019/1/8 19:41
  */
 
+import io.zeta.metaspace.model.dataquality.BuildType;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
@@ -48,6 +49,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -174,6 +176,7 @@ public class DataQualityService {
         }
     }
 
+
     public void updateTemplateStatus(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         if(templateStatus == 0) {
@@ -181,11 +184,12 @@ public class DataQualityService {
                 List<UserRule> userRules = qualityDao.queryTemplateUserRuleById(templateId);
                 Template template = qualityDao.queryTemplateById(templateId);
                 String cron = template.getPeriodCron();
-                for(UserRule userRule: userRules) {
-                    quartzManager.addJob(userRule, QuartJob.class, cron);
-                }
-            } catch (SQLException e) {
 
+                String reportId = insertReport(template);
+                userRules.stream().forEach(rule -> rule.setReportId(reportId));
+                quartzManager.addJob(reportId, userRules, QuartJob.class, cron);
+            } catch (SQLException e) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
             }
         }
         //停止模板
@@ -195,6 +199,33 @@ public class DataQualityService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
         }
     }
+
+    public String insertReport(Template template) throws AtlasBaseException {
+        try {
+            String reportId = UUID.randomUUID().toString();
+            String templateName = template.getTemplateName();
+            long currentTime = System.currentTimeMillis();
+            String reportName = templateName + currentTime;
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String reportProduceDate = sdf.format(currentTime);
+            Report report = new Report();
+            report.setReportId(reportId);
+            report.setReportName(reportName);
+            report.setTemplateId(template.getTemplateId());
+            report.setTemplateName(templateName);
+            report.setPeriodCron(template.getPeriodCron());
+            report.setBuildType(template.getBuildType());
+            report.setSource(template.getSource());
+            report.setReportProduceDate(reportProduceDate);
+            qualityDao.insertReport(report);
+            return reportId;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+
+
 
     public File exportExcel(List<String> reportIds) throws AtlasBaseException {
 
