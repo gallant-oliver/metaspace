@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.task.init;
 
+import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import org.quartz.Scheduler;
 import org.quartz.ee.servlet.QuartzInitializerListener;
@@ -21,6 +22,7 @@ import java.util.Properties;
 public class SchedulerConfig {
     @Autowired
     private ApplicationContext applicationContext;
+
     @Bean
     public SpringBeanJobFactory springBeanJobFactory() {
         AutoWiringSpringBeanJobFactory jobFactory = new AutoWiringSpringBeanJobFactory();
@@ -31,6 +33,7 @@ public class SchedulerConfig {
     public SchedulerFactoryBean schedulerFactoryBean() throws IOException {
         SchedulerFactoryBean factory = new SchedulerFactoryBean();
         factory.setQuartzProperties(quartzProperties());
+        factory.setJobFactory(springBeanJobFactory());
         return factory;
     }
 
@@ -58,7 +61,6 @@ public class SchedulerConfig {
     @Bean(name = "Scheduler")
     public Scheduler scheduler() throws IOException {
         SchedulerFactoryBean schedulerFactoryBean = schedulerFactoryBean();
-        schedulerFactoryBean.setJobFactory(springBeanJobFactory());
         return schedulerFactoryBean.getScheduler();
     }
 
