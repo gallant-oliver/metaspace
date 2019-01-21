@@ -57,7 +57,9 @@ public class SchedulerConfig {
      */
     @Bean(name = "Scheduler")
     public Scheduler scheduler() throws IOException {
-        return schedulerFactoryBean().getScheduler();
+        SchedulerFactoryBean schedulerFactoryBean = schedulerFactoryBean();
+        schedulerFactoryBean.setJobFactory(springBeanJobFactory());
+        return schedulerFactoryBean.getScheduler();
     }
 
     @Bean
