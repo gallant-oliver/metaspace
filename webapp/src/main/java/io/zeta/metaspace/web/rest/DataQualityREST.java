@@ -67,7 +67,7 @@ public class DataQualityREST {
     private HttpServletResponse httpServletResponse;
 
     @Autowired
-    private DataQualityService qualityService;
+    private DataQualityService dataQualityService;
     @Autowired
     private DataQualityV2Service dataQualityV2Service;
 
@@ -82,7 +82,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String addTemplate(Template template) throws AtlasBaseException {
         try {
-            qualityService.addTemplate(template);
+            dataQualityService.addTemplate(template);
             return "success";
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -103,7 +103,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String deleteTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
-            qualityService.deleteTemplate(templateId);
+            dataQualityService.deleteTemplate(templateId);
             return "success";
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -124,7 +124,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String putTemplate(@PathParam("templateId") String templateId, Template template) throws AtlasBaseException {
         try {
-            qualityService.updateTemplate(templateId, template);
+            dataQualityService.updateTemplate(templateId, template);
             return "success";
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -146,7 +146,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Template getTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
-            return qualityService.viewTemplate(templateId);
+            return dataQualityService.viewTemplate(templateId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
@@ -166,7 +166,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String putTemplateStatus(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
         try {
-            qualityService.updateTemplateStatus(templateId, templateStatus);
+            dataQualityService.updateTemplateStatus(templateId, templateStatus);
             return "success";
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
@@ -265,7 +265,7 @@ public class DataQualityREST {
             String downloadId = UUID.randomUUID().toString();
             String address = httpServletRequest.getRequestURL().toString();
             String downURL = address + "/" + downloadId;
-            qualityService.getDownloadList(reportIds, downloadId);
+            dataQualityService.getDownloadList(reportIds, downloadId);
             DownloadUri uri = new DownloadUri();
             uri.setDownloadUri(downURL);
             return uri;
@@ -279,9 +279,9 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
-        List<String> downloadList = qualityService.getDownloadList(null, downloadId);
+        List<String> downloadList = dataQualityService.getDownloadList(null, downloadId);
         try {
-            File zipFile = qualityService.exportExcel(downloadList);
+            File zipFile = dataQualityService.exportExcel(downloadList);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             long time = System.currentTimeMillis();

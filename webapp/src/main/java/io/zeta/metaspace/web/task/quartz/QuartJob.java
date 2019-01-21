@@ -31,6 +31,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.ResultSet;
 import java.util.List;
@@ -44,9 +45,8 @@ import java.util.UUID;
 
 public class QuartJob implements Job {
     private static final Logger LOG = LoggerFactory.getLogger(QuartJob.class);
-
-    DataQualityDAO qualityDao;
-
+    @Autowired
+    private DataQualityDAO qualityDao;
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
     @Override
@@ -57,7 +57,6 @@ public class QuartJob implements Job {
             JobDataMap dataMap = jobExecutionContext.getJobDetail().getJobDataMap();
             String reportId = (String)dataMap.get("reportId");
             List<UserRule> rules = (List<UserRule>) dataMap.get("ruleList");
-            qualityDao = (DataQualityDAO) dataMap.get("dao");
             for(UserRule rule: rules) {
                 runExactJob(rule);
             }

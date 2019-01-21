@@ -23,7 +23,7 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/1/7 20:58
  */
-public class UserRule {
+public class UserRule implements java.io.Serializable{
     private String ruleId;
     private String ruleName;
     private String ruleInfo;

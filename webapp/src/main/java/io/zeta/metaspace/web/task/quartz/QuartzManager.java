@@ -28,6 +28,8 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 
 import java.util.List;
 
@@ -40,10 +42,9 @@ public class QuartzManager {
     private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     private static String TRIGGER_NAME = "METASPACE_TRIGGER";
     private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
-    @Autowired
+    @Autowired @Qualifier("Scheduler")
     private Scheduler scheduler;
-    @Autowired
-    private DataQualityDAO qualityDao;
+
     public void addJob(String reportId, List<UserRule> rules, String jobName, String jobGroupName, String triggerName, String triggerGroupName,
                        Class jobClass, String cron) {
         try {
@@ -52,7 +53,6 @@ public class QuartzManager {
 
             jobDetail.getJobDataMap().put("reportId", reportId);
             jobDetail.getJobDataMap().put("ruleList", rules);
-            jobDetail.getJobDataMap().put("dao", qualityDao);
             //触发器
             TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
 
