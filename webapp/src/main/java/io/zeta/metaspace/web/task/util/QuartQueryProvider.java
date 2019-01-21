@@ -30,7 +30,20 @@ public class QuartQueryProvider {
             case TABLE_ROW_NUM:
                 return "select count(*) from %s";
             case AVG_VALUE:
+            case AVG_VALUE_CHANGE:
                 return "select avg(%s) from %s";
+            case TOTAL_VALUE:
+                return "select sum(%s) from %s";
+            case MIN_VALUE:
+                return "select min(%s) from %s";
+            case MAX_VALUE:
+                return "select max(%s) from %s";
+            case UNIQUE_VALUE_NUM:
+                return "SELECT count(*) from %s where %s in (SELECT %s from %s GROUP BY %s HAVING count(*)=1)";
+            case EMPTY_VALUE_NUM:
+                return "SELECT count(*) from %s WHERE %s is NULL";
+            case DUP_VALUE_NUM:
+                return "SELECT count(*) from %s where %s in (SELECT %s from %s GROUP BY %s HAVING count(*)>1)";
         }
         return null;
     }

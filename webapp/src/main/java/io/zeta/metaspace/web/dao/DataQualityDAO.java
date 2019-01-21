@@ -112,7 +112,7 @@ public interface DataQualityDAO {
     public String querySourceByTemplateId(@Param("templateId") String templateId);
 
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
-    public int getLastTableRowNum(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
+    public double getLastTableRowNum(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
     public long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
