@@ -59,7 +59,6 @@ public class QuartJob implements Job {
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         JobDataMap dataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-        qualityDao = (DataQualityDAO)dataMap.get("dao");
         List<UserRule> rules = (List<UserRule>) dataMap.get("ruleList");
         String reportId = (String) dataMap.get("reportId");
         for(UserRule rule: rules) {
