@@ -23,6 +23,7 @@ import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.map.HashedMap;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.PublicKey;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -350,7 +352,7 @@ public class QuartJob implements Job {
      * @param template
      * @return
      */
-    public String insertReport(Template template) {
+    public Report insertReport(Template template) {
         String reportId = UUID.randomUUID().toString();
         String templateName = template.getTemplateName();
         long currentTime = System.currentTimeMillis();
@@ -366,8 +368,8 @@ public class QuartJob implements Job {
         report.setBuildType(template.getBuildType());
         report.setSource(template.getSource());
         report.setReportProduceDate(reportProduceDate);
-        qualityDao.insertReport(report);
-        return reportId;
+
+        return report;
     }
 
     /**
@@ -502,29 +504,37 @@ public class QuartJob implements Job {
      * @param template
      * @param resultMap
      */
-    @Transactional(rollbackFor=Exception.class)
+
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
-            String reportId = insertReport(template);
+            List<Report.ReportRule> list=new ArrayList<>();
+            Report report = insertReport(template);
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
-
-                //规则报告状态
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
-                qualityDao.insertRuleReport(reportId, reportRule);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
-                List<Double> thresholds = ruleCheckThreshold;
-                for (Double threshold : thresholds) {
-                    qualityDao.insertReportThreshold(threshold, reportRule.getRuleId());
-                }
+                reportRule.setRuleCheckThreshold(ruleCheckThreshold);
+                list.add(reportRule);
             }
-            qualityDao.updateAlerts(reportId);
+            addReportByDao(report,list);
         } catch (Exception e) {
             throw new RuntimeException();
         }
     }
+    @Transactional(rollbackFor=Exception.class)
+    public void addReportByDao(Report report, List<Report.ReportRule> list ) throws SQLException {
+        qualityDao.insertReport(report);
+        for (Report.ReportRule reportRule : list) {
+            qualityDao.insertRuleReport(report.getReportId(), reportRule);
+            for (Double threshold : reportRule.getRuleCheckThreshold()) {
+                qualityDao.insertReportThreshold(threshold, reportRule.getRuleId());
+            }
+        }
+        qualityDao.updateAlerts(report.getReportId());
+    }
+
 }
