@@ -48,12 +48,12 @@ public enum RuleCheckType {
     }
 
     public static RuleCheckType getRuleCheckTypeByCode(Integer code) {
-        RuleCheckType defaultRuleCheckType = RuleCheckType.FIX;
+//        RuleCheckType defaultRuleCheckType = RuleCheckType.FIX;
         for(RuleCheckType rc : RuleCheckType.values()) {
             if(rc.code == code)
                 return rc;
         }
-        return defaultRuleCheckType;
+        throw  new RuntimeException();
     }
 
     public static String getDescByCode(Integer code) {

@@ -416,7 +416,7 @@ public class QuartJob implements Job {
      * @param resultValue
      * @return
      */
-    public RuleStatus getReportRuleStatus(double resultValue, UserRule rule) {
+    public RuleStatus getReportRuleStatus(double resultValue, UserRule rule) throws RuntimeException {
         RuleStatus ruleStatus = null;
         try {
 
@@ -476,7 +476,7 @@ public class QuartJob implements Job {
                 }
                 case FLU: {
                     Double o = ruleCheckThreshold.get(0);
-                    Double r = ruleCheckThreshold.get(0);
+                    Double r = ruleCheckThreshold.get(1);
                     if (resultValue <= o) {
                         ruleStatus = RuleStatus.NORMAL;
                     } else if (resultValue > o && resultValue <= r) {
@@ -503,7 +503,7 @@ public class QuartJob implements Job {
      * @param resultMap
      */
     @Transactional(rollbackFor=Exception.class)
-    public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) {
+    public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
             String reportId = insertReport(template);
             for (UserRule rule : resultMap.keySet()) {
@@ -524,7 +524,7 @@ public class QuartJob implements Job {
             }
             qualityDao.updateAlerts(reportId);
         } catch (Exception e) {
-
+            throw new RuntimeException();
         }
     }
 }
