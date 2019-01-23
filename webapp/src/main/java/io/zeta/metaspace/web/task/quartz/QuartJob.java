@@ -67,10 +67,7 @@ public class QuartJob implements Job {
         JobKey key = jobExecutionContext.getTrigger().getJobKey();
         Template template = qualityDao.getTemplateByJob(key.getName());
         try {
-
-
             String templateId = template.getTemplateId();
-
             rules = qualityDao.queryTemplateUserRuleById(templateId);
         } catch (SQLException e) {
 
@@ -79,9 +76,13 @@ public class QuartJob implements Job {
         for(UserRule rule: rules) {
             int retryCount = 0;
             try {
+                List<Double> thresholds = qualityDao.queryTemplateThresholdByRuleId(rule.getRuleId());
+                rule.setRuleCheckThreshold(thresholds);
                 retryCount++;
                 runJob(rule);
-            } catch (Exception e) {
+            } catch (SQLException e) {
+
+            }catch (Exception e) {
                 JobExecutionException execError = new JobExecutionException(e);
                 if (retryCount <= RETRY) {
                     execError.setRefireImmediately(true);
@@ -432,6 +433,11 @@ public class QuartJob implements Job {
                 int status = getReportRuleStatus(resultValue, reportRule);
                 reportRule.setReportRuleStatus(status);
                 qualityDao.insertRuleReport(reportId, reportRule);
+
+                List<Double> thresholds = rule.getRuleCheckThreshold();
+                for(Double threshold : thresholds) {
+                    qualityDao.insertReportThreshold(threshold, reportRule.getRuleId());
+                }
             }
             qualityDao.updateAlerts(reportId);
         } catch (Exception e) {

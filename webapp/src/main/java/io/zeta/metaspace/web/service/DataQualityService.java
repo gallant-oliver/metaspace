@@ -120,7 +120,7 @@ public class DataQualityService {
                 //threshold
                 List<Double> thresholds = rule.getRuleCheckThreshold();
                 for (Double threshold : thresholds) {
-                    qualityDao.insertThreshold(threshold, ruleId);
+                    qualityDao.insertTemplateThreshold(threshold, ruleId);
                 }
             }
             template.setTableRulesNum(tableRuleNum);

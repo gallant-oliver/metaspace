@@ -25,7 +25,6 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.springframework.scheduling.support.SimpleTriggerContext;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -49,7 +48,10 @@ public interface DataQualityDAO {
     public int insertUserRule(UserRule rule) throws SQLException;
 
     @Insert("insert into template_userrule2threshold(thresholdValue,ruleId)values(#{thresholdValue},#{ruleId})")
-    public int insertThreshold(@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
+    public int insertTemplateThreshold(@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
+
+    @Insert("insert into report_userrule2threshold(thresholdValue,ruleId)values(#{thresholdValue},#{ruleId})")
+    public int insertReportThreshold(@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
 
     @Update("update template set templateStatus=#{templateStatus} where templateId=#{templateId}")
     public int updateTemplateStatus(@Param("templateStatus") int templateStatus, @Param("templateId") String templateId) throws SQLException;
@@ -117,7 +119,7 @@ public interface DataQualityDAO {
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
     public long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
-    @Insert("update report set (orangeAlerts,redAlerts) = ((select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
+    @Update("update report set (orangeAlerts,redAlerts) = ((select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
             "(select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=2)) where reportid=#{reportId}")
     public int updateAlerts(@Param("reportid") String reportid);
 
