@@ -502,7 +502,7 @@ public class QuartJob implements Job {
      * @param template
      * @param resultMap
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) {
         try {
             String reportId = insertReport(template);

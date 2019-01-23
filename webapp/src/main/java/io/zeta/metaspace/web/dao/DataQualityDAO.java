@@ -121,7 +121,7 @@ public interface DataQualityDAO {
 
     @Update("update report set (orangeAlerts,redAlerts) = ((select case when count(*)=null then 0 else count(*) end as re from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
             "(select case when count(*)=null then 0 else count(*) end as re from report_userrule where reportid=#{reportId} and reportRuleStatus=2)) where reportid=#{reportId}")
-    public int updateAlerts(@Param("reportid") String reportid);
+    public int updateAlerts(@Param("reportId") String reportId);
 
     @Select("select periodCron from template where templateId=#{templateId}")
     public String getCronByTemplateId(@Param("templateId") String templateId);
