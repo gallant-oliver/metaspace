@@ -1,0 +1,39 @@
+image: repository.gridsum.com:8443/gridsum/java:8
+variables:
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.showDateTime=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+before_script:
+  - eval $(ssh-agent -s)
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#缓存
+cache:
+  paths:
+    - ./.m2/repository
+# 定义 stages
+stages:
+  - test
+  - cleanup
+  - cleanup_build
+# 定义 job
+test:
+  tags:
+    - java
+  stage: test
+  script:
+  - "mvn $MAVEN_CLI_OPTS clean test"
+
+cleanup-build:
+  stage: cleanup_build
+  script:
+  - 'mvn clean'
+  when: on_failure
+
+
+cleanup:
+  stage: cleanup
+  script:
+  - 'mvn clean'
+  when: always
+

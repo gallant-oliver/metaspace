@@ -88,7 +88,11 @@ public class HiveJdbcUtils {
         try (Connection conn = getConnection("default")) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
+            String stackTrace = ExceptionUtils.getStackTrace(e);
+            if (stackTrace.contains("Permission denied: user=hive, access=WRITE"))
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,hive没有权限在此路径新建离线表");
+                else
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,请检查表单信息和hive服务");
         }
     }
 
@@ -128,7 +132,7 @@ public class HiveJdbcUtils {
             String[] s = text.replaceAll("\\s+", "-").split("-");
             String numFiles = s[2];
             String totalSize = s[3];*/
-            FileSystem fs = HdfsUtils.getSystemFs("hive");
+            FileSystem fs = HdfsUtils.getSystemFs("hdfs");
             ContentSummary contentSummary = fs.getContentSummary(new Path(location));
             long numFiles = contentSummary.getFileCount();
             long totalSize = contentSummary.getLength();
@@ -143,7 +147,10 @@ public class HiveJdbcUtils {
         while (rs.next()) {
             String text = rs.getString(1);
             if (text.contains("hdfs://")) {
-                return text.replaceAll("'", "");
+
+                String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(" ","");
+                LOG.info(db+"."+tableName+" location:"+s);
+                return s;
             }
         }
         LOG.warn(db + "." + tableName + " location is not found, may be it's view.");

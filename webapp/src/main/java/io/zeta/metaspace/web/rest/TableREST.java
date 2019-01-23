@@ -61,7 +61,7 @@ public class TableREST {
         }
         HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
         HiveJdbcUtils.execute(sql);
-        String tablId = metaspaceGremlinService.getGuidByDBAndTableName(request.getDatabase(), request.getTableName());
+        String tablId = metaspaceGremlinService.getGuidByDBAndTableName(request.getDatabase(), request.getTableName().toLowerCase());
         Table ret = new Table(tablId);
         return ret;
     }

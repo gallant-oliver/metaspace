@@ -373,7 +373,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     String tableGuid = getGuid(tableVertex);
                     String tableName = tableEntity.getAttribute("name").toString();
                     String tableStatus = tableEntity.getStatus().name();
-                    String tableDescription = tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString();
+                    String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();
                     table.setTableId(tableGuid);
                     table.setTableName(tableName);
                     table.setStatus(tableStatus);
@@ -396,7 +396,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     db = new Database();
                     String dbName = dbEntity.getAttribute("name").toString();
                     String dbStatus = dbEntity.getStatus().name();
-                    String dbDescription = dbEntity.getAttribute("description") == null ? "null" : dbEntity.getAttribute("description").toString();
+                    String dbDescription = dbEntity.getAttribute("description") == null ? "-" : dbEntity.getAttribute("description").toString();
                     db.setDatabaseId(dbGuid);
                     db.setDatabaseName(dbName);
                     db.setStatus(dbStatus);
