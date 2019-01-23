@@ -60,10 +60,8 @@ public class DataQualityV2Service {
         List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
         for (Column column : columns) {
             TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
-            String columnId = column.getColumnId();
             String columnName = column.getColumnName();
             String type = column.getType();
-            columnsRule.setRuleColumnId(columnId);
             columnsRule.setRuleColumnName(columnName);
             columnsRule.setRuleColumnType(type);
             DataType datatype = getDatatype(type);
