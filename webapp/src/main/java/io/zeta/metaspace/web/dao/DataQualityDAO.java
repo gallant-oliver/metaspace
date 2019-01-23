@@ -94,8 +94,8 @@ public interface DataQualityDAO {
     public int insertReport(Report report);
 
     @Insert("insert into report_userrule(ruleId,templateRuleId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,reportRuleValue,refValue)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
-            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.refValue})")
+            "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus,refValue)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
+            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.reportRuleStatus},#{rule.refValue})")
     public void insertRuleReport(@Param("reportId")String reportId, @Param("rule")Report.ReportRule rule) throws SQLException;
 
     @Select("select * from report where reportId=#{reportId}")
@@ -119,8 +119,8 @@ public interface DataQualityDAO {
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
     public long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
-    @Update("update report set (orangeAlerts,redAlerts) = ((select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
-            "(select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=2)) where reportid=#{reportId}")
+    @Update("update report set (orangeAlerts,redAlerts) = ((select case when count(*)=null then 0 else count(*) end as re from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
+            "(select case when count(*)=null then 0 else count(*) end as re from report_userrule where reportid=#{reportId} and reportRuleStatus=2)) where reportid=#{reportId}")
     public int updateAlerts(@Param("reportid") String reportid);
 
     @Select("select periodCron from template where templateId=#{templateId}")
