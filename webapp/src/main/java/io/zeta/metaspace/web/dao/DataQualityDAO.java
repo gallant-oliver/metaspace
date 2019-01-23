@@ -91,8 +91,8 @@ public interface DataQualityDAO {
             "#{reportName},#{templateId},#{templateName},#{periodCron},#{source},#{buildType},#{reportProduceDate})")
     public int insertReport(Report report);
 
-    @Insert("insert into report_userrule(ruleId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,reportRuleValue,refValue)values(#{rule.ruleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
+    @Insert("insert into report_userrule(ruleId,templateRuleId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
+            "ruleCheckThresholdUnit,reportRuleValue,refValue)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
             "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.refValue})")
     public void insertRuleReport(@Param("reportId")String reportId, @Param("rule")Report.ReportRule rule) throws SQLException;
 
@@ -111,8 +111,8 @@ public interface DataQualityDAO {
     @Select("select source from template where templateId=#{templateId}")
     public String querySourceByTemplateId(@Param("templateId") String templateId);
 
-    @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
-    public double getLastTableRowNum(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
+    @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1  offset 1)")
+    public Double getLastTableRowNum(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
     public long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
@@ -120,4 +120,13 @@ public interface DataQualityDAO {
     @Insert("update report set (orangeAlerts,redAlerts) = ((select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=1)," +
             "(select count(*) from report_userrule where reportid=#{reportId} and reportRuleStatus=2)) where reportid=#{reportId}")
     public int updateAlerts(@Param("reportid") String reportid);
+
+    @Select("select periodCron from template where templateId=#{templateId}")
+    public String getCronByTemplateId(@Param("templateId") String templateId);
+
+    @Insert("insert into template2qrtz_job(templateId,qrtz_job)values(#{templateId},#{qrtz_job})")
+    public int insertTemplate2Qrtz_Trigger(@Param("templateId") String templateId, @Param("qrtz_job") String qrtz_job);
+
+    @Select("select * from template where templateId = (select templateId from template2qrtz_job where qrtz_job=#{qrtz_job})")
+    public Template getTemplateByJob(@Param("qrtz_job") String qrtz_job);
 }

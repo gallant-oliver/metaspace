@@ -63,11 +63,17 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class DataQualityService {
 
+    private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
+    private static String TRIGGER_NAME = "METASPACE_TRIGGER";
+    private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+
     @Autowired
     DataQualityDAO qualityDao;
 
     @Autowired
     QuartzManager quartzManager;
+
+
 
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
@@ -181,14 +187,14 @@ public class DataQualityService {
         //启动模板
         if(templateStatus == 0) {
             try {
-                List<UserRule> userRules = qualityDao.queryTemplateUserRuleById(templateId);
-                Template template = qualityDao.queryTemplateById(templateId);
-                String cron = template.getPeriodCron();
-
-                String reportId = insertReport(template);
-                userRules.stream().forEach(rule -> rule.setReportId(reportId));
-                quartzManager.addJob(reportId, userRules, QuartJob.class, cron);
-            } catch (SQLException e) {
+                String jobName = String.valueOf(System.currentTimeMillis());
+                String jobGroupName = JOB_GROUP_NAME + jobName;
+                String triggerName  = TRIGGER_NAME + jobName;
+                String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
+                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
+                String cron = qualityDao.getCronByTemplateId(templateId);
+                quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName,QuartJob.class, cron);
+            } catch (Exception e) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
             }
         }
@@ -200,29 +206,7 @@ public class DataQualityService {
         }
     }
 
-    public String insertReport(Template template) throws AtlasBaseException {
-        try {
-            String reportId = UUID.randomUUID().toString();
-            String templateName = template.getTemplateName();
-            long currentTime = System.currentTimeMillis();
-            String reportName = templateName + currentTime;
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String reportProduceDate = sdf.format(currentTime);
-            Report report = new Report();
-            report.setReportId(reportId);
-            report.setReportName(reportName);
-            report.setTemplateId(template.getTemplateId());
-            report.setTemplateName(templateName);
-            report.setPeriodCron(template.getPeriodCron());
-            report.setBuildType(template.getBuildType());
-            report.setSource(template.getSource());
-            report.setReportProduceDate(reportProduceDate);
-            qualityDao.insertReport(report);
-            return reportId;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
-        }
-    }
+
 
 
 

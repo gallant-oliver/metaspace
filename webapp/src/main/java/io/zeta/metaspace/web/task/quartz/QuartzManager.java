@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.task.quartz;
 
+import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import org.quartz.CronScheduleBuilder;
@@ -39,25 +40,17 @@ import java.util.List;
  * @date 2019/1/17 10:22
  */
 public class QuartzManager {
-    private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
-    private static String TRIGGER_NAME = "METASPACE_TRIGGER";
-    private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+
     @Autowired @Qualifier("Scheduler")
     private Scheduler scheduler;
 
-    public void addJob(String reportId, List<UserRule> rules, String jobName, String jobGroupName, String triggerName, String triggerGroupName,
+    public void addJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName,
                        Class jobClass, String cron) {
         try {
             //任务名，任务组，任务执行类
             JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
-
-            jobDetail.getJobDataMap().put("reportId", reportId);
-            jobDetail.getJobDataMap().put("ruleList", rules);
             //触发器
             TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
-
-            /*TriggerKey triggerKey = new TriggerKey(TRIGGER_NAME, TRIGGER_GROUP_NAME);
-            Trigger triger = scheduler.getTrigger(triggerKey);*/
             //触发器名，触发器组
             triggerBuilder.withIdentity(triggerName, triggerGroupName);
             triggerBuilder.startNow();
@@ -67,7 +60,6 @@ public class QuartzManager {
             CronTrigger trigger = (CronTrigger)triggerBuilder.build();
             //调度器设置JobDetail和Trigger
             scheduler.scheduleJob(jobDetail, trigger);
-
             //启动
             if(!scheduler.isShutdown()) {
                 scheduler.start();
@@ -75,14 +67,6 @@ public class QuartzManager {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void addJob(String reportId, List<UserRule> rules, Class jobClass, String cron) {
-        String jobName = reportId;
-        String jobGroupName = JOB_GROUP_NAME + reportId;
-        String triggerName  = TRIGGER_NAME + reportId;
-        String triggerGroupName = TRIGGER_GROUP_NAME + reportId;
-        addJob(reportId, rules, jobName, jobGroupName, triggerName, triggerGroupName, jobClass, cron);
     }
 
     /**

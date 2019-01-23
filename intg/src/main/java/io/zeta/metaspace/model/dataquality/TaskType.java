@@ -49,8 +49,8 @@ public enum TaskType {
     DUP_VALUE_NUM(26,"字段重复值个数"),
 
     UNIQUE_VALUE_NUM_RATIO(27,"字段唯一值个数/总行数"),
-    EMPTY_VALUE_NUM_RATIO(28,"字段空值个数变化率"),
-    DUP_VALUE_NUM_RATIO(29,"字段重复值个数变化率");
+    EMPTY_VALUE_NUM_RATIO(28,"字段空值个数/总行数"),
+    DUP_VALUE_NUM_RATIO(29,"字段重复值个数/总行数");
 
     public int code;
     public String desc;
