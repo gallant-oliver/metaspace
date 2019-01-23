@@ -178,17 +178,28 @@ public class QuartJob implements Job {
             String sql = null;
             if(columnRule) {
                 String columnName = rule.getRuleColumnName();
-                if(jobType.equals(TaskType.UNIQUE_VALUE_NUM) || jobType.equals(TaskType.UNIQUE_VALUE_NUM_CHANGE)
-            || jobType.equals(TaskType.UNIQUE_VALUE_NUM_CHANGE) || jobType.equals(TaskType.UNIQUE_VALUE_NUM_RATIO)) {
-                    sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
-                } else if(jobType.equals(TaskType.DUP_VALUE_NUM) || jobType.equals(TaskType.DUP_VALUE_NUM_CHANGE)
-                          || jobType.equals(TaskType.DUP_VALUE_NUM_CHANGE_RATIO) || jobType.equals(TaskType.DUP_VALUE_NUM_RATIO)) {
-                    sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
-                }else if(jobType.equals(TaskType.EMPTY_VALUE_NUM) || jobType.equals(TaskType.EMPTY_VALUE_NUM_CHANGE) ||
-                jobType.equals(TaskType.EMPTY_VALUE_NUM_CHANGE_RATIO) || jobType.equals(TaskType.EMPTY_VALUE_NUM_RATIO)) {
-                    sql = String.format(query, tableName, columnName);
-                } else {
-                    sql = String.format(query, columnName, tableName);
+                switch (jobType) {
+                    case UNIQUE_VALUE_NUM:
+                    case UNIQUE_VALUE_NUM_CHANGE:
+                    case UNIQUE_VALUE_NUM_CHANGE_RATIO:
+                    case UNIQUE_VALUE_NUM_RATIO:
+                        sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
+                        break;
+                    case DUP_VALUE_NUM:
+                    case DUP_VALUE_NUM_CHANGE:
+                    case DUP_VALUE_NUM_CHANGE_RATIO:
+                    case DUP_VALUE_NUM_RATIO:
+                        sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
+                        break;
+                    case EMPTY_VALUE_NUM:
+                    case EMPTY_VALUE_NUM_CHANGE:
+                    case EMPTY_VALUE_NUM_CHANGE_RATIO:
+                    case EMPTY_VALUE_NUM_RATIO:
+                        sql = String.format(query, tableName, columnName);
+                        break;
+                    default:
+                        sql = String.format(query, columnName, tableName);
+                        break;
                 }
             } else {
                 sql = String.format(query, tableName);
