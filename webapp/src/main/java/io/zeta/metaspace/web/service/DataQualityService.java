@@ -185,9 +185,11 @@ public class DataQualityService {
 
     public void updateTemplateStatus(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
-        if(templateStatus == 0) {
+        if(templateStatus == 1) {
             try {
-                String jobName = String.valueOf(System.currentTimeMillis());
+                String currentTime = String.valueOf(System.currentTimeMillis());
+                qualityDao.updateTemplateStartTime(templateId, currentTime);
+                String jobName = currentTime;
                 String jobGroupName = JOB_GROUP_NAME + jobName;
                 String triggerName  = TRIGGER_NAME + jobName;
                 String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
@@ -199,7 +201,7 @@ public class DataQualityService {
             }
         }
         //停止模板
-        else if(templateStatus == 1) {
+        else if(templateStatus == 0) {
 
         } else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
