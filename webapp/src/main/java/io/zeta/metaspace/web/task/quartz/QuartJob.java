@@ -16,10 +16,7 @@
  */
 package io.zeta.metaspace.web.task.quartz;
 
-import io.zeta.metaspace.model.dataquality.Report;
-import io.zeta.metaspace.model.dataquality.TaskType;
-import io.zeta.metaspace.model.dataquality.Template;
-import io.zeta.metaspace.model.dataquality.UserRule;
+import io.zeta.metaspace.model.dataquality.*;
 import io.zeta.metaspace.model.table.TableMetadata;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
@@ -38,12 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /*
  * @description
@@ -73,7 +65,7 @@ public class QuartJob implements Job {
 
         }
 
-        for(UserRule rule: rules) {
+        for (UserRule rule : rules) {
             int retryCount = 0;
             try {
                 List<Double> thresholds = qualityDao.queryTemplateThresholdByRuleId(rule.getRuleId());
@@ -82,7 +74,7 @@ public class QuartJob implements Job {
                 runJob(rule);
             } catch (SQLException e) {
 
-            }catch (Exception e) {
+            } catch (Exception e) {
                 JobExecutionException execError = new JobExecutionException(e);
                 if (retryCount <= RETRY) {
                     execError.setRefireImmediately(true);
@@ -153,6 +145,7 @@ public class QuartJob implements Job {
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(rule);
+
             }
         } catch (Exception e) {
 
@@ -170,8 +163,9 @@ public class QuartJob implements Job {
             TaskType jobType = TaskType.getTaskByCode(rule.getSystemRuleId());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
-            if(columnRule) {
+            if (columnRule) {
                 String columnName = rule.getRuleColumnName();
+
                 switch (jobType) {
                     case UNIQUE_VALUE_NUM:
                     case UNIQUE_VALUE_NUM_CHANGE:
@@ -204,7 +198,7 @@ public class QuartJob implements Job {
                 Object object = resultSet.getObject(1);
                 resultValue = Double.valueOf(object.toString());
             }
-            if(record) {
+            if (record) {
                 List<Double> values = new ArrayList<>();
                 values.add(resultValue);
                 values.add(resultValue);
@@ -215,17 +209,18 @@ public class QuartJob implements Job {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
     //规则值变化
     public double ruleResultValueChange(UserRule rule, boolean record, boolean columnRule) throws AtlasBaseException {
         try {
-            double nowValue =  ruleResultValue(rule, false, columnRule);
+            double nowValue = ruleResultValue(rule, false, columnRule);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
 
             Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
-            lastValue = (Objects.isNull(lastValue))?0:lastValue;
-            Double valueChange  = nowValue - lastValue;
-            if(record) {
+            lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
+            Double valueChange = nowValue - lastValue;
+            if (record) {
                 recordDataMap(rule, nowValue, valueChange);
             }
             return valueChange;
@@ -233,6 +228,7 @@ public class QuartJob implements Job {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
     //表行数变化率
     public Double ruleResultChangeRatio(UserRule rule, boolean record, boolean columnRule) throws AtlasBaseException {
         try {
@@ -240,12 +236,12 @@ public class QuartJob implements Job {
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
             Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
-            lastValue = (Objects.isNull(lastValue))?0:lastValue;
+            lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
             Double ratio = 0.0;
-            if(lastValue != 0) {
-                ratio = ruleValueChange/lastValue;
+            if (lastValue != 0) {
+                ratio = ruleValueChange / lastValue;
             }
-            if(record) {
+            if (record) {
                 recordDataMap(rule, ruleValueChange + lastValue, ratio);
             }
             return ratio;
@@ -262,14 +258,15 @@ public class QuartJob implements Job {
             TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
             //表数据量
             long totalSize = metadata.getTotalSize();
-            if(record) {
-                recordDataMap(rule, (double) totalSize, (double)totalSize);
+            if (record) {
+                recordDataMap(rule, (double) totalSize, (double) totalSize);
             }
             return totalSize;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
     //表大小变化
     public long tableSizeChange(UserRule rule, boolean record) throws AtlasBaseException {
         try {
@@ -278,14 +275,15 @@ public class QuartJob implements Job {
             String templateRuleId = rule.getRuleId();
             long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             long sizeChange = tableSize - lastValue;
-            if(record) {
-                recordDataMap(rule, (double)tableSize, (double)sizeChange);
+            if (record) {
+                recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
             return sizeChange;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
     //表大小变化率
     public double tableSizeChangeRatio(UserRule rule, boolean record) throws AtlasBaseException {
         long tableSizeChange = tableSizeChange(rule, record);
@@ -293,10 +291,10 @@ public class QuartJob implements Job {
         String templateRuleId = rule.getRuleId();
         double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
         double ratio = 0;
-        if(lastValue != 0) {
-            ratio = tableSizeChange/lastValue;
+        if (lastValue != 0) {
+            ratio = tableSizeChange / lastValue;
         }
-        if(record) {
+        if (record) {
             recordDataMap(rule, tableSizeChange + lastValue, ratio);
         }
         return ratio;
@@ -320,8 +318,8 @@ public class QuartJob implements Job {
                 totalNum = Double.valueOf(object.toString());
             }
             double ratio = 0;
-            if(totalNum != 0) {
-                ratio = nowNum/totalNum;
+            if (totalNum != 0) {
+                ratio = nowNum / totalNum;
             }
             List<Double> values = new ArrayList<>();
             values.add(ratio);
@@ -334,6 +332,7 @@ public class QuartJob implements Job {
 
     /**
      * 记录规则结果
+     *
      * @param rule
      * @param refValue
      * @param resultValue
@@ -347,10 +346,11 @@ public class QuartJob implements Job {
 
     /**
      * 生成报告
+     *
      * @param template
      * @return
      */
-    public String insertReport(Template template)  {
+    public String insertReport(Template template) {
         String reportId = UUID.randomUUID().toString();
         String templateName = template.getTemplateName();
         long currentTime = System.currentTimeMillis();
@@ -369,8 +369,10 @@ public class QuartJob implements Job {
         qualityDao.insertReport(report);
         return reportId;
     }
+
     /**
      * 填充规则结果model
+     *
      * @param rule
      * @param refValue
      * @param resultValue
@@ -410,37 +412,113 @@ public class QuartJob implements Job {
 
     /**
      * 通过规则计算规则所处状态
+     *
      * @param resultValue
-     * @param reportRule
      * @return
      */
-    public int getReportRuleStatus(double resultValue, Report.ReportRule reportRule) {
-        int status = 0;
+    public RuleStatus getReportRuleStatus(double resultValue, UserRule rule) {
+        RuleStatus ruleStatus = null;
+        try {
 
-        return status;
+            int ruleCheckType = rule.getRuleCheckType();
+            RuleCheckType ruleCheckTypeByCode = RuleCheckType.getRuleCheckTypeByCode(ruleCheckType);
+            List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
+            switch (ruleCheckTypeByCode) {
+                case FIX: {
+                    CheckExpression expressionByCode = CheckExpression.getExpressionByCode(rule.getRuleCheckExpression());
+                    switch (expressionByCode) {
+                        case EQU: {
+                            if (resultValue == ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+                        case NEQ: {
+                            if (resultValue != ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+                        case GTR: {
+                            if (resultValue > ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+                        case GER: {
+                            if (resultValue >= ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+                        case LSS: {
+                            if (resultValue < ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+                        case LEQ: {
+                            if (resultValue <= ruleCheckThreshold.get(0))
+                                ruleStatus = RuleStatus.NORMAL;
+                            else
+                                ruleStatus = RuleStatus.RED;
+                            break;
+                        }
+
+
+                    }
+                    break;
+                }
+                case FLU: {
+                    Double o = ruleCheckThreshold.get(0);
+                    Double r = ruleCheckThreshold.get(0);
+                    if (resultValue <= o) {
+                        ruleStatus = RuleStatus.NORMAL;
+                    } else if (resultValue > o && resultValue <= r) {
+                        ruleStatus = RuleStatus.ORANGE;
+                    } else {
+                        ruleStatus = RuleStatus.RED;
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            LOG.info(String.valueOf(e.getStackTrace()));
+        }
+        if (ruleStatus == null) throw new RuntimeException();
+        return ruleStatus;
+
+
     }
 
     /**
      * 报告规则结果入库并更新报告告警
+     *
      * @param template
      * @param resultMap
      */
     @Transactional
-    public void updateReportResult(Template template,Map<UserRule, List<Double>> resultMap) {
+    public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) {
         try {
             String reportId = insertReport(template);
-            for(UserRule rule : resultMap.keySet()) {
+            for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
-                //规则报告状态
-                int status = getReportRuleStatus(resultValue, reportRule);
-                reportRule.setReportRuleStatus(status);
-                qualityDao.insertRuleReport(reportId, reportRule);
 
-                List<Double> thresholds = rule.getRuleCheckThreshold();
-                for(Double threshold : thresholds) {
+                //规则报告状态
+                RuleStatus status = getReportRuleStatus(resultValue, rule);
+                reportRule.setReportRuleStatus(status.getCode());
+                qualityDao.insertRuleReport(reportId, reportRule);
+                List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
+                List<Double> thresholds = ruleCheckThreshold;
+                for (Double threshold : thresholds) {
                     qualityDao.insertReportThreshold(threshold, reportRule.getRuleId());
                 }
             }
