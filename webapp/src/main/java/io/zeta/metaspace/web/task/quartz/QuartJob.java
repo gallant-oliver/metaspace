@@ -110,7 +110,6 @@ public class QuartJob implements Job {
                     ruleResultChangeRatio(rule, true, false);
                     break;
 
-
                 case TABLE_SIZE:
                     tableSize(rule, true);
                     break;
@@ -120,7 +119,6 @@ public class QuartJob implements Job {
                 case TABLE_SIZE_CHANGE_RATIO:
                     tableSizeChangeRatio(rule, true);
                     break;
-
 
                 case AVG_VALUE:
                 case TOTAL_VALUE:
@@ -151,14 +149,10 @@ public class QuartJob implements Job {
                 case DUP_VALUE_NUM_CHANGE_RATIO:
                     ruleResultChangeRatio(rule, true, true);
 
-
                 case UNIQUE_VALUE_NUM_RATIO:
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(rule);
-
-
-
             }
         } catch (Exception e) {
 
