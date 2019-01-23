@@ -373,7 +373,14 @@ public class MetaDataService {
                 columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
             }
             if(Objects.nonNull(type) && !type.equals("")) {
-                columns = columns.stream().filter(col -> col.getType().equals(type)).collect(Collectors.toList());
+                columns = columns.stream().filter(col -> {
+                    if(col.getType().contains("(") && col.getType().contains(")")) {
+                        int lastIndex = col.getType().lastIndexOf("(");
+                        String typeStr = col.getType().substring(0, lastIndex);
+                        return typeStr.equals(type);
+                    }
+                    return col.getType().equals(type);
+                }).collect(Collectors.toList());
             }
             if(Objects.nonNull(description) && !description.equals("")) {
                 columns = columns.stream().filter(col -> col.getDescription().contains(description)).collect(Collectors.toList());

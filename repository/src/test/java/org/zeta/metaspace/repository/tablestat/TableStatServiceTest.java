@@ -23,7 +23,7 @@ public class TableStatServiceTest {
 
     private TableStatService service = new TableStatService();
 
-    @Test
+    @Test(enabled = false)
     public void testQuery() throws Exception {
         String tableId = "1ae96c73ee8c4034a20e3990c2d0df8e";
         TableStatRequest request = new TableStatRequest(tableId, "1", "2018-01-01", "2018-02-01", 0, 10);
