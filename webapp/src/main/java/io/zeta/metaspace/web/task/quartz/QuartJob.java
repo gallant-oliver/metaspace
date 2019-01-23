@@ -402,8 +402,6 @@ public class QuartJob implements Job {
         reportRule.setRuleCheckExpression(rule.getRuleCheckExpression());
         //ruleCheckThresholdUnit
         reportRule.setRuleCheckThresholdUnit(rule.getRuleCheckThresholdUnit());
-        //ruleColumnId
-        reportRule.setRuleColumnId(rule.getRuleColumnId());
         //templateRuleId
         reportRule.setTemplateRuleId(rule.getRuleId());
         //refValue

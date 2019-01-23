@@ -23,12 +23,11 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/1/7 20:58
  */
-public class UserRule implements java.io.Serializable{
+public class UserRule implements java.io.Serializable {
     private String ruleId;
     private String ruleName;
     private String ruleInfo;
     private int ruleType;
-    private String ruleColumnId;
     private String ruleColumnName;
     private String ruleColumnType;
     private int ruleCheckType;
@@ -37,7 +36,7 @@ public class UserRule implements java.io.Serializable{
     private String ruleCheckThresholdUnit;
     private String templateId;
     private String dataType;
-    private Integer systemRuleId;
+    private int systemRuleId;
     private String reportId;
 
 
@@ -71,14 +70,6 @@ public class UserRule implements java.io.Serializable{
 
     public void setRuleType(int ruleType) {
         this.ruleType = ruleType;
-    }
-
-    public String getRuleColumnId() {
-        return ruleColumnId;
-    }
-
-    public void setRuleColumnId(String ruleColumnId) {
-        this.ruleColumnId = ruleColumnId;
     }
 
     public String getRuleColumnName() {
@@ -145,11 +136,11 @@ public class UserRule implements java.io.Serializable{
         this.dataType = dataType;
     }
 
-    public Integer getSystemRuleId() {
+    public int getSystemRuleId() {
         return systemRuleId;
     }
 
-    public void setSystemRuleId(Integer systemRuleId) {
+    public void setSystemRuleId(int systemRuleId) {
         this.systemRuleId = systemRuleId;
     }
 

@@ -38,13 +38,13 @@ import javax.ws.rs.DELETE;
  */
 public interface DataQualityDAO {
 
-    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum)" +
-            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum})")
+    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source)" +
+            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum},#{source})")
     public int insertTemplate(Template template) throws SQLException;
 
     @Insert("insert into template_userrule(ruleId,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,templateId,dataType,ruleType)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
-            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType})")
+            "ruleCheckThresholdUnit,templateId,dataType,ruleType,systemRuleId)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
+            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType},#{systemRuleId})")
     public int insertUserRule(UserRule rule) throws SQLException;
 
     @Insert("update template set startTime=#{startTime} where templateId=#{templateId}")
