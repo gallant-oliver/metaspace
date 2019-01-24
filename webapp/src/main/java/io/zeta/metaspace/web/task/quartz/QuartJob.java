@@ -150,7 +150,7 @@ public class QuartJob implements Job {
 
             }
         } catch (Exception e) {
-
+            throw new RuntimeException();
         }
     }
 
@@ -208,7 +208,7 @@ public class QuartJob implements Job {
             }
             return resultValue;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new RuntimeException();
         }
     }
 
@@ -255,6 +255,7 @@ public class QuartJob implements Job {
     //表大小
     public long tableSize(UserRule rule, boolean record) throws AtlasBaseException {
         try {
+
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
             TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
@@ -525,6 +526,8 @@ public class QuartJob implements Job {
     }
     @Transactional(rollbackFor=Exception.class)
     public void addReportByDao(Report report, List<Report.ReportRule> list ) throws SQLException {
+        if(list.size() == 0)
+            return;
         qualityDao.insertReport(report);
         for (Report.ReportRule reportRule : list) {
             qualityDao.insertRuleReport(report.getReportId(), reportRule);

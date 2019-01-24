@@ -47,6 +47,9 @@ public interface DataQualityDAO {
             "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType},#{systemRuleId})")
     public int insertUserRule(UserRule rule) throws SQLException;
 
+    @Insert("update template set startTime=#{startTime} where templateId=#{templateId}")
+    public int updateTemplateStartTime(@Param("templateId") String templateId, @Param("startTime") String startTime);
+
     @Insert("insert into template_userrule2threshold(thresholdValue,ruleId)values(#{thresholdValue},#{ruleId})")
     public int insertTemplateThreshold(@Param("thresholdValue") double thresholdValue,@Param("ruleId") String ruleId) throws SQLException;
 

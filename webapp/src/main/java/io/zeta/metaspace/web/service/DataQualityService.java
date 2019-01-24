@@ -182,12 +182,14 @@ public class DataQualityService {
         }
     }
 
-
     public void updateTemplateStatus(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
-        if(templateStatus == 0) {
+        if(templateStatus == 1) {
             try {
-                String jobName = String.valueOf(System.currentTimeMillis());
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String currentTime = sdf.format(System.currentTimeMillis());
+                qualityDao.updateTemplateStartTime(templateId, currentTime);
+                String jobName = currentTime;
                 String jobGroupName = JOB_GROUP_NAME + jobName;
                 String triggerName  = TRIGGER_NAME + jobName;
                 String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
@@ -199,7 +201,7 @@ public class DataQualityService {
             }
         }
         //停止模板
-        else if(templateStatus == 1) {
+        else if(templateStatus == 0) {
 
         } else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
@@ -217,12 +219,14 @@ public class DataQualityService {
         String tableSheetName = "TableRuleSheet";
         String columnSheetName = "ColumnRuleSheet";
         List<String> tableAttributes = getTableAttributesHeader();
-        List<List<String>> tableData = new ArrayList<>();
+        List<List<String>> tableData;
         List<String> columnAttributes = getColumnAttributesHeader();
-        List<List<String>> columnData = new ArrayList<>();
+        List<List<String>> columnData;
         ExcelReport excelReport = null;
         try {
             for (String reportId : reportIds) {
+                tableData = new ArrayList<>();
+                columnData = new ArrayList<>();
                 String reportName = qualityDao.getReportName(reportId);
                 List<Report.ReportRule> reportRules = qualityDao.getReport(reportId);
                 List<String> resultList = null;
