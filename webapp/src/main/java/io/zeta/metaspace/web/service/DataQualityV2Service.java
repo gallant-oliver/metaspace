@@ -5,6 +5,7 @@ import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.RuleType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
@@ -60,6 +61,8 @@ public class DataQualityV2Service {
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(tableId);
         List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
+        Table tableInfoById = metadataService.getTableInfoById(tableId);
+        tableColumnRules.setSource(tableInfoById.getDatabaseName()+"."+tableInfoById.getTableName());
         for (Column column : columns) {
             TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
             String columnName = column.getColumnName();
@@ -74,6 +77,7 @@ public class DataQualityV2Service {
         }
         tableColumnRules.setTableRules(tableSystemRules);
         tableColumnRules.setColumnsRules(columnsRules);
+
         return tableColumnRules;
 }
 
