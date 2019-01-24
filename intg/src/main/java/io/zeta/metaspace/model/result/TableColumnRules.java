@@ -4,6 +4,16 @@ package io.zeta.metaspace.model.result;
 import java.util.List;
 
 public class TableColumnRules {
+    private String source;
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
     private List<SystemRule> tableRules;
     private List<ColumnsRule> columnsRules;
 

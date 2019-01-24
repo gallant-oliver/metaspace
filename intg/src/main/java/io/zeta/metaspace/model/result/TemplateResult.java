@@ -13,6 +13,15 @@ public class TemplateResult {
     private int redAlerts;
     private String reportId;
     private String reportName;
+    private int alert;
+
+    public int getAlert() {
+        return alert;
+    }
+
+    public void setAlert(int alert) {
+        this.alert = alert;
+    }
 
     public String getTemplateId() {
         return templateId;

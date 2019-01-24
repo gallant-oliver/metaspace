@@ -5,10 +5,12 @@ import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.RuleType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.dao.DataQualityV2DAO;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,18 +38,19 @@ public class DataQualityV2Service {
         return reports;
     }
 
-    public Report getReport(String reportId) throws SQLException {
+    public Report getReport(String reportId) throws SQLException, AtlasBaseException {
         List<Report> reports = dataQualityV2DAO.getReport(reportId);
-        for (Report report : reports) {
-            List<Report.ReportRule> reportRule = dataQualityV2DAO.getReportRule(reportId);
+        if(reports.size()==0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该报表不存在");
+        Report report = reports.get(0);
+        List<Report.ReportRule> reportRule = dataQualityV2DAO.getReportRule(reportId);
             for (Report.ReportRule rule : reportRule) {
                 String ruleResultId = rule.getRuleId();
                 List<Double> reportThresholdValue = dataQualityV2DAO.getReportThresholdValue(ruleResultId);
                 rule.setRuleCheckThreshold(reportThresholdValue);
             }
-            report.setRules(reportRule);
-        }
-        return reports.get(0);
+        report.setRules(reportRule);
+
+        return report;
     }
 
     public TableColumnRules getRules(String tableId, int buildType) throws SQLException, AtlasBaseException {
@@ -58,6 +61,8 @@ public class DataQualityV2Service {
         ColumnQuery columnQuery = new ColumnQuery();
         columnQuery.setGuid(tableId);
         List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
+        Table tableInfoById = metadataService.getTableInfoById(tableId);
+        tableColumnRules.setSource(tableInfoById.getDatabaseName()+"."+tableInfoById.getTableName());
         for (Column column : columns) {
             TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
             String columnName = column.getColumnName();
@@ -72,6 +77,7 @@ public class DataQualityV2Service {
         }
         tableColumnRules.setTableRules(tableSystemRules);
         tableColumnRules.setColumnsRules(columnsRules);
+
         return tableColumnRules;
 }
 
