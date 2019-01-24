@@ -220,14 +220,16 @@ public class DataQualityREST {
     @Path("/report/{reportId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Report getReport(@PathParam("reportId") String reportId) {
+    public Report getReport(@PathParam("reportId") String reportId) throws AtlasBaseException {
         try {
             Report report = dataQualityV2Service.getReport(reportId);
             return report;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"sql异常");
+        } catch (AtlasBaseException e){
+            throw e;
         }
-        return null;
+
     }
 
     /**

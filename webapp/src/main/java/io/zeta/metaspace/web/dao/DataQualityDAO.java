@@ -60,10 +60,6 @@ public interface DataQualityDAO {
             "tableRulesNum=#{tableRulesNum},columnRulesNum=#{columnRulesNum} where templateId=#{templateId}")
     public int updateTemplate(Template template) throws SQLException;
 
-    @Update("update template_userrule set ruleName=#{ruleName},ruleInfo=#{ruleInfo},ruleColumnName=#{ruleColumnName},ruleColumnType=#{ruleColumnType}," +
-            "ruleCheckType=#{ruleCheckType},ruleCheckExpression=#{ruleCheckExpression},ruleCheckThresholdUnit=#{ruleCheckThresholdUnit} where templateId=#{templateId}")
-    public int updateUserRule(UserRule userRule) throws SQLException;
-
     @Select("select ruleId from template_userrule where templateId=#{templateId}")
     public List<String> queryRuleIdByTemplateId(@Param("templateId") String templateId) throws SQLException;
 
