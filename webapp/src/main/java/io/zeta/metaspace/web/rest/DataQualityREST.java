@@ -55,6 +55,7 @@ import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("quality")
@@ -200,9 +201,9 @@ public class DataQualityREST {
     @Path("/reports/{templateId}/{offect}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<ReportResult> getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit) {
+    public Map getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit) {
         try {
-            List<ReportResult> reports = dataQualityV2Service.getReports(templateId, offect, limit);
+            Map reports = dataQualityV2Service.getReports(templateId, offect, limit);
             return reports;
         } catch (SQLException e) {
 

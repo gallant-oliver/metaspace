@@ -5,7 +5,7 @@ public class TemplateResult {
     private int buildType;
     private String periodCron;
     private String templateName;
-    private String templateStatus;
+    private int templateStatus;
     private String startTime;
     private int tableRulesNum;
     private int columnRulesNum;
@@ -55,11 +55,11 @@ public class TemplateResult {
         this.templateName = templateName;
     }
 
-    public String getTemplateStatus() {
+    public int getTemplateStatus() {
         return templateStatus;
     }
 
-    public void setTemplateStatus(String templateStatus) {
+    public void setTemplateStatus(int templateStatus) {
         this.templateStatus = templateStatus;
     }
 

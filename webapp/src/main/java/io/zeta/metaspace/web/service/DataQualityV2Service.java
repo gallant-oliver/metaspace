@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DataQualityV2Service {
@@ -33,9 +35,13 @@ public class DataQualityV2Service {
 
     ;
 
-    public List<ReportResult> getReports(String templateId, int offect, int limit) throws SQLException {
+    public Map getReports(String templateId, int offect, int limit) throws SQLException {
+        Map<String, Object> map = new HashMap<>();
         List<ReportResult> reports = dataQualityV2DAO.getReports(templateId, offect, limit);
-        return reports;
+        long count = dataQualityV2DAO.getCount(templateId);
+        map.put("reports",reports);
+        map.put("total",count);
+        return map;
     }
 
     public Report getReport(String reportId) throws SQLException, AtlasBaseException {
