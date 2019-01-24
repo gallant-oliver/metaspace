@@ -296,4 +296,15 @@ public class DataQualityREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
+    @PUT
+    @Path("/report/alert/{reportId}/{status}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public void updateAlertStatus(@PathParam("reportId") String reportId,@PathParam("status") int status) throws AtlasBaseException {
+        try {
+            dataQualityService.updateAlertStatus(reportId, status);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
 }

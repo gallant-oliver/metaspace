@@ -22,7 +22,6 @@ package io.zeta.metaspace.web.service;
  * @date 2019/1/8 19:41
  */
 
-import io.zeta.metaspace.model.dataquality.BuildType;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
@@ -343,5 +342,13 @@ public class DataQualityService {
         if(Objects.nonNull(downLoadList))
             return downLoadList;
         return new ArrayList<>();
+    }
+
+    public int updateAlertStatus(String reportId, int status)  {
+        try {
+            return qualityDao.updateAlertStatus(reportId, status);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
