@@ -263,7 +263,7 @@ public class DataQualityREST {
     @Path("/reports")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException, IOException {
+    public String getDownloadURL(List<String> reportIds) throws AtlasBaseException {
         try {
             String downloadId = UUID.randomUUID().toString();
             String address = httpServletRequest.getRequestURL().toString();
@@ -271,7 +271,7 @@ public class DataQualityREST {
             dataQualityService.getDownloadList(reportIds, downloadId);
             DownloadUri uri = new DownloadUri();
             uri.setDownloadUri(downURL);
-            return uri;
+            return downURL;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
