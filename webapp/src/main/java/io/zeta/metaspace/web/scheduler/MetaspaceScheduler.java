@@ -118,6 +118,7 @@ public class MetaspaceScheduler {
      * @return
      */
     private void insertTableStatList(List<AtlasEntityHeader> tables, String date) {
+        log.info("start insert into table_stat");
         if (tables != null && !tables.isEmpty()) {
             log.info("table amount {}", tables.size());
             for (int i = 0; i < tables.size(); i++) {
@@ -134,6 +135,8 @@ public class MetaspaceScheduler {
                     log.warn(e.getMessage(), e);
                 }
             }
+        }else {
+            log.warn("tables is null");
         }
     }
 
@@ -161,6 +164,7 @@ public class MetaspaceScheduler {
     private List<AtlasEntityHeader> allActiveTableV2() throws AtlasBaseException {
         List<AtlasEntityHeader> allTables = metaspaceEntityService.getAllTables();
         List<AtlasEntityHeader> ret = allTables.stream().filter(table -> table.getStatus() == AtlasEntity.Status.ACTIVE).collect(Collectors.toList());
+        log.info("found {} tables,filter surplus {} tables ", allTables.size(),ret.size());
         return ret;
     }
 
