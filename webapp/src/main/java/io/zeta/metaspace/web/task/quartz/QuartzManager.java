@@ -19,12 +19,15 @@ package io.zeta.metaspace.web.task.quartz;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
+
+import org.apache.commons.lang.StringUtils;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
@@ -32,7 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /*
  * @description
@@ -54,10 +59,19 @@ public class QuartzManager {
             //触发器名，触发器组
             triggerBuilder.withIdentity(triggerName, triggerGroupName);
             triggerBuilder.startNow();
+            Trigger trigger = null;
             //触发器时间设定
-            triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cron));
+            if( Objects.isNull(cron) || StringUtils.isEmpty(cron)) {
+
+                trigger = triggerBuilder.newTrigger()
+                        .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(0))//重复执行的次数，因为加入任务的时候马上执行了，所以不需要重复，否则会多一次。
+                        .build();
+            } else {
+                triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cron));
+                trigger = triggerBuilder.build();
+            }
             //创建Trigger对象
-            CronTrigger trigger = (CronTrigger)triggerBuilder.build();
+            //CronTrigger trigger = (CronTrigger)triggerBuilder.build();
             //调度器设置JobDetail和Trigger
             scheduler.scheduleJob(jobDetail, trigger);
             //启动

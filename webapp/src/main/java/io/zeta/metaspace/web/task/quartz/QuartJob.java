@@ -155,7 +155,7 @@ public class QuartJob implements Job {
     }
 
     //规则值计算
-    public double ruleResultValue(UserRule rule, boolean record, boolean columnRule) throws AtlasBaseException {
+    public double ruleResultValue(UserRule rule, boolean record, boolean columnRule) throws SQLException {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
@@ -207,7 +207,9 @@ public class QuartJob implements Job {
                 resultMap.put(rule, values);
             }
             return resultValue;
-        } catch (Exception e) {
+        } catch (SQLException e) {
+            throw e;
+        }catch (Exception e) {
             throw new RuntimeException();
         }
     }
