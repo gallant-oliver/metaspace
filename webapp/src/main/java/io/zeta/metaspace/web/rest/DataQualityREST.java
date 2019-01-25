@@ -273,7 +273,7 @@ public class DataQualityREST {
             uri.setDownloadUri(downURL);
             return downURL;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
