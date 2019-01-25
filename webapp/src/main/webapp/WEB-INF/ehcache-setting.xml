@@ -53,4 +53,12 @@
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
 
+  <cache name="downloadCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
 </ehcache>
