@@ -37,8 +37,8 @@ public class TaskService {
 
 
     public void updateTaskProgress(String taskId, Float progress) {
-        try (Connection conn = HbaseUtils.getConn()) {
-            Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));
+        try (Connection conn = HbaseUtils.getConn();
+             Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));) {
             Put put = new Put(taskId.getBytes());
             put.addColumn("info".getBytes(), "progress".getBytes(), String.valueOf(progress).getBytes());
             table.put(put);
@@ -48,8 +48,8 @@ public class TaskService {
     }
 
     public void updateState(String taskId, String state) {
-        try (Connection conn = HbaseUtils.getConn()) {
-            Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));
+        try (Connection conn = HbaseUtils.getConn();
+             Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));) {
             Put put = new Put(taskId.getBytes());
             put.addColumn("info".getBytes(), "state".getBytes(), state.getBytes());
             table.put(put);
@@ -60,8 +60,8 @@ public class TaskService {
 
 
     public TaskInfo getByTaskId(String taskId) {
-        try (Connection conn = HbaseUtils.getConn()) {
-            Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));
+        try (Connection conn = HbaseUtils.getConn();
+             Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));) {
             Get get = new Get(taskId.getBytes());
             Result result = table.get(get);
             NavigableMap<byte[], byte[]> row = result.getFamilyMap("info".getBytes());
@@ -79,8 +79,8 @@ public class TaskService {
     }
 
     public void createUploadTask(TaskInfo taskInfo) {
-        try (Connection conn = HbaseUtils.getConn()) {
-            Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));
+        try (Connection conn = HbaseUtils.getConn();
+             Table table = conn.getTable(TableName.valueOf(TASK_TABLE_NAME));) {
             Put put = new Put(taskInfo.getTaskId().getBytes());
             put.addColumn("info".getBytes(), "jobId".getBytes(), taskInfo.getJobId().getBytes());
             put.addColumn("info".getBytes(), "taskId".getBytes(), taskInfo.getTaskId().getBytes());
