@@ -119,7 +119,7 @@ public class DataQualityService {
                 //threshold
                 List<Double> thresholds = rule.getRuleCheckThreshold();
                 for (Double threshold : thresholds) {
-                    qualityDao.insertTemplateThreshold(threshold, ruleId);
+                    qualityDao.insertTemplateRuleThreshold(threshold, ruleId);
                 }
             }
             template.setTableRulesNum(tableRuleNum);
@@ -185,6 +185,7 @@ public class DataQualityService {
         //启动模板
         if(templateStatus == 1) {
             try {
+               qualityDao.updateTemplateStatus(1, templateId);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String currentTime = sdf.format(System.currentTimeMillis());
                 qualityDao.updateTemplateStartTime(templateId, currentTime);
@@ -206,11 +207,6 @@ public class DataQualityService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
         }
     }
-
-
-
-
-
 
     public File exportExcel(List<String> reportIds) throws AtlasBaseException {
 
