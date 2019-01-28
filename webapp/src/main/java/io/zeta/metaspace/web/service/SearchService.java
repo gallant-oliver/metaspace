@@ -1,35 +1,27 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.result.BuildTableSql;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
-import io.zeta.metaspace.model.result.BuildTableSql;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.TableShow;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.GuidCount;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.Table;
-
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @AtlasService
 public class SearchService {
@@ -52,14 +44,15 @@ public class SearchService {
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResultV2(Parameters parameters) throws AtlasBaseException {
-        return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(),parameters.getLimit());
+        return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
     }
 
 
     @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Column> getColumnPageResultV2(Parameters parameters) throws AtlasBaseException {
-        return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(),parameters.getLimit());
+        return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
     }
+
     public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
         TableShow tableShow = new TableShow();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
@@ -74,28 +67,32 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from " + name + " limit " + guidCount.getCount();
-        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText);
-        List<String> columns = new ArrayList<>();
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        List<Map<String, String>> resultList = new ArrayList<>();
-        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-            String columnName = metaData.getColumnName(i);
-            columns.add(columnName);
-        }
-        while (resultSet.next()) {
-            Map<String, String> map = new HashMap<>();
-            for (String column : columns) {
-                String s = resultSet.getObject(column)==null?"NULL":resultSet.getObject(column).toString();
-                map.put(column, s);
+        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            List<String> columns = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<Map<String, String>> resultList = new ArrayList<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                columns.add(columnName);
             }
-            resultList.add(map);
+            while (resultSet.next()) {
+                Map<String, String> map = new HashMap<>();
+                for (String column : columns) {
+                    String s = resultSet.getObject(column) == null ? "NULL" : resultSet.getObject(column).toString();
+                    map.put(column, s);
+                }
+                resultList.add(map);
+            }
+            tableShow.setTableId(guidCount.getGuid());
+            tableShow.setColumnNames(columns);
+            tableShow.setLines(resultList);
+            return tableShow;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据");
         }
-        resultSet.close();
-        tableShow.setTableId(guidCount.getGuid());
-        tableShow.setColumnNames(columns);
-        tableShow.setLines(resultList);
-        resultSet.close();
-        return tableShow;
+
+
     }
 
     public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException, IOException {
@@ -104,7 +101,7 @@ public class SearchService {
         attributes.add("name");
         List<String> relationshipAttributes = new ArrayList<>();
         relationshipAttributes.add("db");
-        if(Objects.isNull(tableId) || tableId.isEmpty()) {
+        if (Objects.isNull(tableId) || tableId.isEmpty()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
@@ -119,15 +116,20 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        ResultSet resultSet = HiveJdbcUtils.selectBySQL(sql, dbDisplayText);
-        StringBuffer stringBuffer = new StringBuffer();
-        while (resultSet.next()) {
-            Object object = resultSet.getObject(1);
-            stringBuffer.append(object.toString());
+        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            StringBuffer stringBuffer = new StringBuffer();
+            while (resultSet.next()) {
+                Object object = resultSet.getObject(1);
+                stringBuffer.append(object.toString());
+            }
+            buildTableSql.setSql(stringBuffer.toString());
+            buildTableSql.setTableId(tableId);
+            return buildTableSql;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
-        buildTableSql.setSql(stringBuffer.toString());
-        buildTableSql.setTableId(tableId);
-        resultSet.close();
-        return buildTableSql;
+
+
     }
 }

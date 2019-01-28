@@ -51,7 +51,7 @@ public class HiveJdbcUtils {
         }
     }
 
-    private static Connection getConnection(String db) throws SQLException, IOException, AtlasBaseException {
+    public static Connection getConnection(String db) throws SQLException, IOException, AtlasBaseException {
 
         Connection connection = null;
         String user = AdminUtils.getUserName();
@@ -69,17 +69,18 @@ public class HiveJdbcUtils {
     /**
      * 系统调度
      */
+    static Connection connection;
     private static Connection getSystemConnection(String db) throws SQLException, IOException {
-        String user = "hive";
-        Connection connection;
-        String jdbcUrl;
-        if (KerberosConfig.isKerberosEnable()) {
-            jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
-        } else {
-            jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
-            connection = DriverManager.getConnection(jdbcUrl, user, "");
-        }
+            String user = "hive";
+
+            String jdbcUrl;
+            if (KerberosConfig.isKerberosEnable()) {
+                jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+                connection = DriverManager.getConnection(jdbcUrl);
+            } else {
+                jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
+                connection = DriverManager.getConnection(jdbcUrl, user, "");
+            }
         return connection;
     }
 
@@ -126,59 +127,36 @@ public class HiveJdbcUtils {
         String tableName = split[1];
         String location = location(db, tableName);
         if (location != null) {
-/*          ResultSet rs = systemSelectBySQL("dfs -count " + location, db);
-            rs.next();
-            String text = rs.getString(1);
-            String[] s = text.replaceAll("\\s+", "-").split("-");
-            String numFiles = s[2];
-            String totalSize = s[3];*/
-            FileSystem fs = HdfsUtils.getSystemFs("hdfs");
-            ContentSummary contentSummary = fs.getContentSummary(new Path(location));
-            long numFiles = contentSummary.getFileCount();
-            long totalSize = contentSummary.getLength();
-            return new TableMetadata(numFiles, Long.valueOf(totalSize));
+            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs");){
+                ContentSummary contentSummary = fs.getContentSummary(new Path(location));
+                long numFiles = contentSummary.getFileCount();
+                long totalSize = contentSummary.getLength();
+                return new TableMetadata(numFiles, Long.valueOf(totalSize));
+            }catch (Exception e){
+                LOG.warn(String.valueOf(e.getStackTrace()));
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+            }
         } else {//view
             return new TableMetadata();
         }
     }
 
-    private static String location(String db, String tableName) throws AtlasBaseException, SQLException {
-        ResultSet rs = systemSelectBySQL("SHOW CREATE TABLE " + tableName, db);
-        while (rs.next()) {
-            String text = rs.getString(1);
-            if (text.contains("hdfs://")) {
+    private static String location(String db, String tableName) {
+        try(Connection conn = getSystemConnection(db);
+            ResultSet rs = conn.createStatement().executeQuery("SHOW CREATE TABLE " + tableName)) {
+            while (rs.next()) {
+                String text = rs.getString(1);
+                if (text.contains("hdfs://")) {
 
-                String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(" ","");
-                LOG.info(db+"."+tableName+" location:"+s);
-                return s;
+                    String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(":\\d+","").replaceAll(" ", "");
+                    LOG.info(db + "." + tableName + " location:" + s);
+                    return s;
+                }
             }
-        }
-        LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
-//        throw new RuntimeException("没有获取到表的location: " + db + "." + tableName);
-        return null;
-    }
-
-    public static ResultSet systemSelectBySQL(String sql, String db) throws AtlasBaseException {
-        try {
-            Connection conn = getSystemConnection(db);
-            ResultSet resultSet = conn.createStatement().executeQuery(sql);
-            return resultSet;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
         }
-    }
-
-    public static ResultSet selectBySQL(String sql, String db) throws AtlasBaseException, IOException {
-        try {
-            Connection conn = getConnection(db);
-            ResultSet resultSet = conn.createStatement().executeQuery(sql);
-            return resultSet;
-        } catch (SQLException e) {
-            if(e.getMessage().contains("Permission denied")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-            }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
-        }
+        return null;
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
@@ -189,10 +167,15 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static boolean tableExists(String db, String tableName) throws AtlasBaseException, SQLException, IOException {
-        ResultSet resultSet = selectBySQL("show tables in " + db + " like '" + tableName + "'", db);
-        return resultSet.next();
+    public static boolean tableExists(String db, String tableName) throws AtlasBaseException {
+        try(Connection conn = getConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery("show tables in " + db + " like '" + tableName + "'")){
+            boolean next = resultSet.next();
+            resultSet.close();
+            return next;
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
     }
-
-
 }
