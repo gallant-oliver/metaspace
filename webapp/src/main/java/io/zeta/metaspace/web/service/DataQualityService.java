@@ -187,9 +187,10 @@ public class DataQualityService {
             try {
                qualityDao.updateTemplateStatus(1, templateId);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String currentTime = sdf.format(System.currentTimeMillis());
-                qualityDao.updateTemplateStartTime(templateId, currentTime);
-                String jobName = currentTime;
+                long currentTime = System.currentTimeMillis();
+                String currentTimeFormat = sdf.format(currentTime);
+                qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
+                String jobName = String.valueOf(currentTime);
                 String jobGroupName = JOB_GROUP_NAME + jobName;
                 String triggerName  = TRIGGER_NAME + jobName;
                 String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
