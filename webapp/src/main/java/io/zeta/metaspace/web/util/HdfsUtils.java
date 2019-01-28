@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.util;
 
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.KerberosConfig;
 import io.zeta.metaspace.MetaspaceConfig;
@@ -44,7 +45,7 @@ public class HdfsUtils {
         configuration.addResource(new Path(MetaspaceConfig.getHdfsConf(), "hdfs-site.xml"));
     }
 
-    private static FileSystem getFs() throws IOException, InterruptedException, AtlasBaseException {
+    public static FileSystem getFs() throws IOException, InterruptedException, AtlasBaseException {
         user = AdminUtils.getUserName();
         FileSystem fs;
         UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
@@ -57,7 +58,8 @@ public class HdfsUtils {
 
         return fs;
     }
-    public static FileSystem getSystemFs(String user) throws IOException, InterruptedException, AtlasBaseException {
+
+    public static FileSystem getSystemFs(String user) throws IOException, InterruptedException {
         FileSystem fs;
         UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(user, UserGroupInformation.getLoginUser());
         fs = proxyUser.doAs(new PrivilegedExceptionAction<FileSystem>() {
@@ -65,12 +67,9 @@ public class HdfsUtils {
                 return FileSystem.get(configuration);
             }
         });
-
         return fs;
     }
-    public static FileSystem fs() throws IOException, InterruptedException, AtlasBaseException {
-        return getFs();
-    }
+
 
     public static Configuration conf() {
         return configuration;
@@ -78,26 +77,46 @@ public class HdfsUtils {
 
 
     public static FileStatus[] listStatus(String filePath) throws Exception {
-        return getFs().listStatus(new Path(filePath));
+
+        try (FileSystem fs = getFs();) {
+            return fs.listStatus(new Path(filePath));
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     public static RemoteIterator<LocatedFileStatus> listFiles(String fileName, boolean recursive) throws Exception {
-        return getFs().listFiles(new Path("/"), recursive);
+        try (FileSystem fs = getFs();) {
+            return fs.listFiles(new Path("/"), recursive);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     public static boolean exist(String filePath) throws IOException, InterruptedException, AtlasBaseException {
-        boolean exists = getFs().exists(new Path(filePath));
-        return exists;
+        try (FileSystem fs = getFs();) {
+            return fs.exists(new Path(filePath));
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     public static void uploadFile(InputStream inputStream, String filePath) throws IOException, InterruptedException, AtlasBaseException {
-        FSDataOutputStream fsDataOutputStream = getFs().create(new Path(filePath));
-        IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
+        try (FileSystem fs = getFs();
+             FSDataOutputStream fsDataOutputStream = fs.create(new Path(filePath));) {
+            IOUtils.copyBytes(inputStream, fsDataOutputStream, 4096, true);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
+
     }
 
     public static InputStream downloadFile(String filePath) throws IOException, InterruptedException, AtlasBaseException {
-        FSDataInputStream fsDataInputStream = getFs().open(new Path(filePath));
-        return fsDataInputStream;
+        try (FileSystem fs = getFs()) {
+            return fs.open(new Path(filePath));
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     /**
@@ -107,8 +126,9 @@ public class HdfsUtils {
      * @return
      */
     public static boolean canAccess(String accessUser, String filePath, String tag) {
-        try {
-            FileStatus status = getFs().getFileStatus(new Path(filePath));
+
+        try (FileSystem fs = getFs();){
+            FileStatus status = fs.getFileStatus(new Path(filePath));
             String owner = status.getOwner();
             String permission = status.getPermission().toString().substring(3);
             boolean canAccess = accessUser.equals(owner) || permission.contains(tag);

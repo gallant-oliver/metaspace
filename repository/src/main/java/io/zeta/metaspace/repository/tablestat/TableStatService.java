@@ -51,7 +51,9 @@ public class TableStatService {
 
     public void add(List<TableStat> tableStatList) throws Exception {
         Gson gson = new Gson();
-        try (Table table = HbaseUtils.getConn().getTable(TableName.valueOf(TABLE_STAT))) {
+
+        try (Connection conn = HbaseUtils.getConn();
+             Table table =conn.getTable(TableName.valueOf(TABLE_STAT))) {
             tableStatList.forEach(stat -> {
                 try {
                     String rowKey = (stat.getTableId() + stat.getDateType() + stat.getDate()).replace("-", "");
@@ -117,19 +119,18 @@ public class TableStatService {
     }
 
     public Pair<Integer, List<TableStat>> query(TableStatRequest request) throws Exception {
-        try (Connection conn = HbaseUtils.getConn()) {
-            Table table = conn.getTable(TableName.valueOf(TABLE_STAT));
-            Scan scan = new Scan();
-            scan.addFamily("info".getBytes());
-
-            String startRowKey = (request.getTableId() + request.getDateType() + request.getFromDate()).replace("-", "");
-            //因为hbase查询不包含endKey,所以日期往后顺推
-            String convertedEndDate = convertedEndDate(request.getDateType(), request.getEndDate());
-            String endRowKey = (request.getTableId() + request.getDateType() + convertedEndDate).replace("-", "");
-            scan.setStartRow(startRowKey.getBytes());
-            scan.setStopRow(endRowKey.getBytes());
-            ResultScanner scanner = table.getScanner(scan);
-
+        Scan scan = new Scan();
+        scan.addFamily("info".getBytes());
+        String startRowKey = (request.getTableId() + request.getDateType() + request.getFromDate()).replace("-", "");
+        //因为hbase查询不包含endKey,所以日期往后顺推
+        String convertedEndDate = convertedEndDate(request.getDateType(), request.getEndDate());
+        String endRowKey = (request.getTableId() + request.getDateType() + convertedEndDate).replace("-", "");
+        scan.setStartRow(startRowKey.getBytes());
+        scan.setStopRow(endRowKey.getBytes());
+        try (Connection conn = HbaseUtils.getConn();
+             Table table = conn.getTable(TableName.valueOf(TABLE_STAT));
+             ResultScanner scanner = table.getScanner(scan);
+        ) {
             Gson gson = new Gson();
             List<TableStat> tableStatList = new ArrayList<>();
             for (Result result : scanner) {
