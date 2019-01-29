@@ -23,6 +23,8 @@ import io.zeta.metaspace.model.table.TableStat;
 import io.zeta.metaspace.model.table.TableStatRequest;
 import io.zeta.metaspace.repository.tablestat.TableStatService;
 import io.zeta.metaspace.utils.DateUtils;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.rest.DiscoveryREST;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.tuple.Pair;
@@ -71,6 +73,16 @@ public class TableStatREST {
     @Path("/schedule/{date}")
     public void scheduleDay(@PathParam("date") String date) throws Exception {
         metaspaceScheduler.insertTableMetadataStat(date);
+    }
+    @GET
+    @Path("/schedule/today/{tableId}")
+    public String scheduleToday(@PathParam("tableId") String tableId) throws Exception {
+        try {
+            metaspaceScheduler.insertTableMetadataStat(DateUtils.yesterday(), tableId);
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"生成统计信息失败");
+        }
+        return "success";
     }
 
     @GET
