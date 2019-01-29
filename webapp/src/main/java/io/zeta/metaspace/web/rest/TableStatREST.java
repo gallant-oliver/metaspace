@@ -68,7 +68,6 @@ public class TableStatREST {
     public void schedule() throws Exception {
         metaspaceScheduler.insertTableMetadataStat();
     }
-
     @GET
     @Path("/schedule/{date}")
     public void scheduleDay(@PathParam("date") String date) throws Exception {
@@ -83,20 +82,6 @@ public class TableStatREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"生成统计信息失败");
         }
         return "success";
-    }
-
-    @GET
-    @Path("/schedule/{date}/{tableName}")
-    public void schedule(@PathParam("date") String date, @PathParam("tableName") String tableName) throws Exception {
-        List<List<Object>> hiveTables = discoveryREST.searchUsingDSL("name like '*" + tableName + "*' where __state = 'ACTIVE' select __guid orderby __timestamp", "hive_table", "", 1000, 0).getAttributes().getValues();
-
-        if (hiveTables.isEmpty()) {
-            log.info("没有找到表{}", tableName);
-        }
-        for (List<Object> table : hiveTables) {
-            String tableId = table.get(0).toString();
-            metaspaceScheduler.insertTableMetadataStat(date, tableId);
-        }
     }
 
     @GET
