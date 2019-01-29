@@ -185,7 +185,7 @@ public class DataQualityService {
         //启动模板
         if(templateStatus == 1) {
             try {
-               qualityDao.updateTemplateStatus(1, templateId);
+               qualityDao.updateTemplateStatus(templateStatus, templateId);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 long currentTime = System.currentTimeMillis();
                 String currentTimeFormat = sdf.format(currentTime);

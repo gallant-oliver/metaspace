@@ -343,6 +343,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             String query = gremlinQueryProvider.getQuery(gremlinQeury);
 
             String dbQuery = String.format(query, queryDb, offset, offset + limit);
+            graph.commit();
+            graph.wait();
             List vertexMap = (List) graph.executeGremlinScript(dbQuery, false);
             Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
 
