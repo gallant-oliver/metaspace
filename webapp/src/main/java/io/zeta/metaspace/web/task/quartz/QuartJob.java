@@ -491,7 +491,7 @@ public class QuartJob implements Job {
                 }
             }
         } catch (Exception e) {
-            LOG.info(String.valueOf(e.getStackTrace()));
+            LOG.info(e.getMessage(),e);
         }
         if (ruleStatus == null) throw new RuntimeException();
         return ruleStatus;
