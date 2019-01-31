@@ -127,7 +127,7 @@ public class HiveJdbcUtils {
         String tableName = split[1];
         String location = location(db, tableName);
         if (location != null) {
-            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs");){
+            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
                 ContentSummary contentSummary = fs.getContentSummary(new Path(location));
                 long numFiles = contentSummary.getFileCount();
                 long totalSize = contentSummary.getLength();

@@ -35,9 +35,9 @@ public class DataQualityV2Service {
 
     ;
 
-    public Map getReports(String templateId, int offect, int limit) throws SQLException {
+    public Map getReports(String templateId, int offset, int limit) throws SQLException {
         Map<String, Object> map = new HashMap<>();
-        List<ReportResult> reports = dataQualityV2DAO.getReports(templateId, offect, limit);
+        List<ReportResult> reports = dataQualityV2DAO.getReports(templateId, offset, limit);
         long count = dataQualityV2DAO.getCount(templateId);
         map.put("reports",reports);
         map.put("total",count);

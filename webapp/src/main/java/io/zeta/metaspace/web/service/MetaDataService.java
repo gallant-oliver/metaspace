@@ -764,7 +764,7 @@ public class MetaDataService {
     }
 
     @CacheEvict(value = { "columnCache",
-                         "databaseCache", "tablePageCache", "columnPageCache"}, allEntries = true)
+                         "databaseCache", "tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
