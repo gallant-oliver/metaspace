@@ -300,4 +300,13 @@ public interface DataQualityDAO {
      */
     @Select("select * from template where templateId = (select templateId from template2qrtz_job where qrtz_job=#{qrtz_job})")
     public Template getTemplateByJob(@Param("qrtz_job") String qrtz_job);
+
+    @Select("select qrtz_job from template2qrtz_job where templateId=#{templateId}")
+    public String getJobByTemplateId(@Param("templateId") String templateId);
+
+    @Update("update template set finishedPercent=#{finishedPercent} where templateId=#{templateId}")
+    public int updateFinishedPercent(@Param("templateId") String templateId, @Param("finishedPercent") Float finishedPercent);
+
+    @Select("select finishedPercent from template where templateId=#{templateId}")
+    public Float getFinishedPercent(@Param("templateId") String templateId);
 }

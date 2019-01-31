@@ -23,7 +23,6 @@ import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.collections.map.HashedMap;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -32,8 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.security.PublicKey;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -66,14 +63,17 @@ public class QuartJob implements Job {
         } catch (SQLException e) {
 
         }
-
-        for (UserRule rule : rules) {
+        int totalStep = rules.size() + 1;
+        for (int i=0; i<rules.size(); i++) {
+            UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
                 List<Double> thresholds = qualityDao.queryTemplateThresholdByRuleId(rule.getRuleId());
                 rule.setRuleCheckThreshold(thresholds);
                 retryCount++;
                 runJob(rule);
+                float ratio = (float)(i+1)/totalStep;
+                qualityDao.updateFinishedPercent(template.getTemplateId(), ratio);
             } catch (SQLException e) {
 
             } catch (Exception e) {
@@ -88,6 +88,7 @@ public class QuartJob implements Job {
         }
         //更新报表结果
         updateReportResult(template, resultMap);
+        qualityDao.updateFinishedPercent(template.getTemplateId(), (float)1);
     }
 
     public void runJob(UserRule rule) {
@@ -150,6 +151,7 @@ public class QuartJob implements Job {
 
             }
         } catch (Exception e) {
+            LOG.info(e.getMessage());
             throw new RuntimeException();
         }
     }
@@ -210,6 +212,7 @@ public class QuartJob implements Job {
         } catch (SQLException e) {
             throw e;
         }catch (Exception e) {
+            LOG.info(e.getMessage());
             throw new RuntimeException();
         }
     }
@@ -523,6 +526,7 @@ public class QuartJob implements Job {
             }
             addReportByDao(report,list);
         } catch (Exception e) {
+            LOG.info(e.getMessage());
             throw new RuntimeException();
         }
     }

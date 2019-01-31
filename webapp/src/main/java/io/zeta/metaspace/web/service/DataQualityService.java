@@ -72,8 +72,6 @@ public class DataQualityService {
     @Autowired
     QuartzManager quartzManager;
 
-
-
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
         try {
@@ -94,6 +92,13 @@ public class DataQualityService {
             //template
             qualityDao.delTemplate(templateId);
             deleteRulesByTemplateId(templateId);
+            //job
+            String jobName = qualityDao.getJobByTemplateId(templateId);
+            String jobGroupName = JOB_GROUP_NAME + jobName;
+            String triggerName  = TRIGGER_NAME + jobName;
+            String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
+            quartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
+
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
@@ -101,6 +106,7 @@ public class DataQualityService {
         }
     }
 
+    @Transactional
     public void addRulesByTemlpateId(Template template) throws AtlasBaseException {
         String templateId = template.getTemplateId();
         List<UserRule> userRules = template.getRules();
@@ -131,6 +137,7 @@ public class DataQualityService {
         }
     }
 
+    @Transactional
     public void deleteRulesByTemplateId(String templateId) throws AtlasBaseException {
         try {
             //rules
@@ -143,6 +150,7 @@ public class DataQualityService {
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -344,6 +352,14 @@ public class DataQualityService {
     public int updateAlertStatus(String reportId, int status)  {
         try {
             return qualityDao.updateAlertStatus(reportId, status);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public Float getFinishedPercent(String templateId) {
+        try {
+            return qualityDao.getFinishedPercent(templateId);
         } catch (Exception e) {
             throw e;
         }

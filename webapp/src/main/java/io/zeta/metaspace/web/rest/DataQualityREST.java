@@ -310,4 +310,17 @@ public class DataQualityREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
+    @GET
+    @Path("/templates/percent/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Float getFinishedPercent(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            return dataQualityService.getFinishedPercent(templateId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
 }
