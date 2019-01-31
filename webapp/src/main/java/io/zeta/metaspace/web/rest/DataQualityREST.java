@@ -198,12 +198,12 @@ public class DataQualityREST {
      * @return List<ReportResult>
      */
     @GET
-    @Path("/reports/{templateId}/{offect}/{limit}")
+    @Path("/reports/{templateId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map getReports(@PathParam("templateId") String templateId, @PathParam("offect") int offect, @PathParam("limit") int limit) {
+    public Map getReports(@PathParam("templateId") String templateId, @PathParam("offset") int offset, @PathParam("limit") int limit) {
         try {
-            Map reports = dataQualityV2Service.getReports(templateId, offect, limit);
+            Map reports = dataQualityV2Service.getReports(templateId, offset, limit);
             return reports;
         } catch (SQLException e) {
 

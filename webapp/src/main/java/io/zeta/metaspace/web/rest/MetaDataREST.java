@@ -103,7 +103,48 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
-
+    /**
+     * 根据搜索条件返回库
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/search/databases")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + parameters + " )");
+            }
+            PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+    /**
+     * 根据库id返回表
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/tables/{databaseId}/{offset}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId,@PathParam("offset") long offset,@PathParam("limit") long limit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + databaseId+","+limit+","+offset + " )");
+            }
+            PageResult<Table> pageResult = searchService.getTableByDB(databaseId,offset,limit);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
     /**
      * 根据搜索条件返回表
      *
