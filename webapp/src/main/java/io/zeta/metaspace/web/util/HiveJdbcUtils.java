@@ -133,7 +133,7 @@ public class HiveJdbcUtils {
                 long totalSize = contentSummary.getLength();
                 return new TableMetadata(numFiles, Long.valueOf(totalSize));
             }catch (Exception e){
-                LOG.warn(String.valueOf(e.getStackTrace()));
+                LOG.warn(e.getMessage(),e);
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
             }
         } else {//view
