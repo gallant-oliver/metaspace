@@ -30,6 +30,7 @@ public class CategoryEntityV2 {
     private String upBrotherCategoryGuid;
     private String downBrotherCategoryGuid;
     private String parentCategoryGuid;
+    private Integer categoryType;
 
     public CategoryEntityV2() { }
     public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid) {
@@ -96,5 +97,13 @@ public class CategoryEntityV2 {
 
     public void setParentCategoryGuid(String parentCategoryGuid) {
         this.parentCategoryGuid = parentCategoryGuid;
+    }
+
+    public Integer getCategoryType() {
+        return categoryType;
+    }
+
+    public void setCategoryType(Integer categoryType) {
+        this.categoryType = categoryType;
     }
 }
