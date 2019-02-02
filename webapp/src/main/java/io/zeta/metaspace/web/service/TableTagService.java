@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.TableTagDAO;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-@Service
+@AtlasService
 public class TableTagService {
 @Autowired
     TableTagDAO tableTagDAO;

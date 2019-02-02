@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Path("table")
+@Path("tag")
 @Singleton
 @Service
 public class TagREST {
@@ -28,9 +28,9 @@ public class TagREST {
     @Path("/tag")
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String addTag(Map<String,String> request) throws AtlasBaseException {
-    String tagname = request.get("tagname");
-        tableTagService.addTag(tagname);
+    public String addTag(Tag tag) throws AtlasBaseException {
+
+        tableTagService.addTag(tag.getTagName());
         return "success";
     }
     @Path("/tags")
