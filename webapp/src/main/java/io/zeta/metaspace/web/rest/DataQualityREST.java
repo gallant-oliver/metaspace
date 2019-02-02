@@ -158,21 +158,48 @@ public class DataQualityREST {
     }
 
     /**
-     * 变更模板状态
+     * 开始模板
      *
      * @return String
      */
     @PUT
-    @Path("/template/status/{templateId}/{templateStatus}")
+    @Path("/template/status/enable/{templateId}/{templateStatus}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String putTemplateStatus(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
+    public String startTemplate(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
         try {
-            dataQualityService.updateTemplateStatus(templateId, templateStatus);
+            dataQualityService.startTemplate(templateId, templateStatus);
             return "success";
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
+
+    @PUT
+    @Path("/template/status/disable/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String stopTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            dataQualityService.stopTemplate(templateId);
+            return "success";
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    @GET
+    @Path("/template/status/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Integer getTemplateStatus(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            return dataQualityService.getTemplateStatus(templateId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+
+
 
     /**
      * 获取数据质量模板统计信息列表
@@ -227,7 +254,7 @@ public class DataQualityREST {
             return report;
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"sql异常");
-        } catch (AtlasBaseException e){
+        } catch (AtlasBaseException e) {
             throw e;
         }
 

@@ -57,14 +57,21 @@ public class QuartJob implements Job {
         List<UserRule> rules = null;
         JobKey key = jobExecutionContext.getTrigger().getJobKey();
         Template template = qualityDao.getTemplateByJob(key.getName());
+        String templateId = template.getTemplateId();
         try {
-            String templateId = template.getTemplateId();
+            //设置模板状态为【报表生成中】
+            qualityDao.updateTemplateStatus(TemplateStatus.GENERATING_REPORT.code, templateId);
+
             rules = qualityDao.queryTemplateUserRuleById(templateId);
         } catch (SQLException e) {
 
         }
         int totalStep = rules.size() + 1;
         for (int i=0; i<rules.size(); i++) {
+            //根据模板状态判断是否继续运行
+            Integer status = qualityDao.getTemplateStatus(templateId);
+            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code))
+                return;
             UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
@@ -87,8 +94,20 @@ public class QuartJob implements Job {
             }
         }
         //更新报表结果
-        updateReportResult(template, resultMap);
-        qualityDao.updateFinishedPercent(template.getTemplateId(), (float)1);
+        try {
+            updateReportResult(template, resultMap);
+            qualityDao.updateFinishedPercent(template.getTemplateId(), (float) 1);
+            String cron = qualityDao.getCronByTemplateId(templateId);
+            if (Objects.isNull(cron)) {
+                //设置模板状态为【已完成】
+                qualityDao.updateTemplateStatus(TemplateStatus.FINISHED.code, templateId);
+            } else {
+                //设置模板状态为【已启用】
+                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            }
+        } catch (Exception e) {
+
+        }
     }
 
     public void runJob(UserRule rule) {
@@ -281,8 +300,8 @@ public class QuartJob implements Job {
             long tableSize = tableSize(rule, false);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
-            long sizeChange = tableSize - lastValue;
+            Long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
+            Long sizeChange = tableSize - lastValue;
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
@@ -475,8 +494,6 @@ public class QuartJob implements Job {
                                 ruleStatus = RuleStatus.RED;
                             break;
                         }
-
-
                     }
                     break;
                 }
@@ -498,8 +515,6 @@ public class QuartJob implements Job {
         }
         if (ruleStatus == null) throw new RuntimeException();
         return ruleStatus;
-
-
     }
 
     /**
@@ -511,8 +526,7 @@ public class QuartJob implements Job {
 
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
-            List<Report.ReportRule> list=new ArrayList<>();
-            Report report = insertReport(template);
+            List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);

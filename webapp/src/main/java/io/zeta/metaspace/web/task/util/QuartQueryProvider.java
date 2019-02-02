@@ -28,6 +28,8 @@ public class QuartQueryProvider {
     public static String getQuery(final TaskType taskType) {
         switch (taskType) {
             case TABLE_ROW_NUM:
+            case TABLE_ROW_NUM_CHANGE:
+            case TABLE_ROW_NUM_CHANGE_RATIO:
                 return "select count(*) from %s";
             case AVG_VALUE:
             case AVG_VALUE_CHANGE:

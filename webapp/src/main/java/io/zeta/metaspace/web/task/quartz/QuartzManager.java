@@ -16,9 +16,6 @@
  */
 package io.zeta.metaspace.web.task.quartz;
 
-import io.zeta.metaspace.model.dataquality.Template;
-import io.zeta.metaspace.model.dataquality.UserRule;
-import io.zeta.metaspace.web.dao.DataQualityDAO;
 
 import org.apache.commons.lang.StringUtils;
 import org.quartz.CronScheduleBuilder;
@@ -34,9 +31,6 @@ import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-
-import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 
 /*
