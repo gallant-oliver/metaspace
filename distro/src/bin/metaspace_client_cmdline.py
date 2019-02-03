@@ -17,7 +17,7 @@
 # limitations under the License.
 
 import os
-import atlas_config as mc
+import metaspace_config as mc
 
 ATLAS_COMMAND_OPTS="-Datlas.home=%s"
 ATLAS_LOG_OPTS="-Datlas.log.dir=%s -Datlas.log.file=%s"
@@ -33,8 +33,8 @@ def get_atlas_classpath(confdir):
     mc.expandWebApp(atlas_home)
     p = os.pathsep
     atlas_classpath = confdir + p \
-                      + os.path.join(web_app_dir, "atlas", "WEB-INF", "classes") + p \
-                      + os.path.join(web_app_dir, "atlas", "WEB-INF", "lib", "*") + p \
+                      + os.path.join(web_app_dir, "metaspace", "WEB-INF", "classes") + p \
+                      + os.path.join(web_app_dir, "metaspace", "WEB-INF", "lib", "*") + p \
                       + os.path.join(atlas_home, "libext", "*")
     if mc.isCygwin():
         atlas_classpath = mc.convertCygwinPath(atlas_classpath, True)

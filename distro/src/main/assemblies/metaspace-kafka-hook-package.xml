@@ -23,19 +23,35 @@
         <format>tar.gz</format>
         <format>dir</format>
     </formats>
-    <id>storm-hook</id>
-    <baseDirectory>apache-atlas-storm-hook-${project.version}</baseDirectory>
+    <id>kafka-hook</id>
+    <baseDirectory>metaspace-kafka-hook-${project.version}</baseDirectory>
     <fileSets>
-        <!-- addons/storm -->
         <fileSet>
-            <directory>../addons/storm-bridge/target/dependency/bridge</directory>
+            <directory>target/bin</directory>
+            <outputDirectory>hook-bin</outputDirectory>
+            <includes>
+                <include>import-kafka.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- addons/kafka -->
+        <fileSet>
+            <directory>../addons/kafka-bridge/src/bin</directory>
+            <outputDirectory>hook-bin</outputDirectory>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- addons/hbase -->
+        <fileSet>
+            <directory>../addons/kafka-bridge/target/dependency/bridge</directory>
             <outputDirectory>bridge</outputDirectory>
         </fileSet>
-
         <fileSet>
-            <directory>../addons/storm-bridge/target/dependency/hook</directory>
+            <directory>../addons/kafka-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
-
     </fileSets>
 </assembly>

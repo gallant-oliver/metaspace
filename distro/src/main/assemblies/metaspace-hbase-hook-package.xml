@@ -23,17 +23,35 @@
         <format>tar.gz</format>
         <format>dir</format>
     </formats>
-    <id>sqoop-hook</id>
-    <baseDirectory>apache-atlas-sqoop-hook-${project.version}</baseDirectory>
+    <id>hbase-hook</id>
+    <baseDirectory>metaspace-hbase-hook-${project.version}</baseDirectory>
     <fileSets>
-        <!-- addons/sqoop -->
         <fileSet>
-            <directory>../addons/sqoop-bridge/target/dependency/bridge</directory>
+            <directory>target/bin</directory>
+            <outputDirectory>hook-bin</outputDirectory>
+            <includes>
+                <include>import-hbase.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- addons/hbase -->
+        <fileSet>
+            <directory>../addons/hbase-bridge/src/bin</directory>
+            <outputDirectory>hook-bin</outputDirectory>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- addons/hbase -->
+        <fileSet>
+            <directory>../addons/hbase-bridge/target/dependency/bridge</directory>
             <outputDirectory>bridge</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>../addons/sqoop-bridge/target/dependency/hook</directory>
+            <directory>../addons/hbase-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
 

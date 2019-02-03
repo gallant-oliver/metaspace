@@ -25,7 +25,7 @@
         <format>zip</format>
     </formats>
 
-    <baseDirectory>atlas-migration-exporter</baseDirectory>
+    <baseDirectory>metaspace-migration-exporter</baseDirectory>
 
     <fileSets>
         <fileSet>

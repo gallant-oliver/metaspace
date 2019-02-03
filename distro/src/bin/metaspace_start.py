@@ -19,7 +19,7 @@ import os
 import sys
 import traceback
 
-import atlas_config as mc
+import metaspace_config as mc
 
 ATLAS_LOG_OPTS="-Datlas.log.dir=%s -Datlas.log.file=%s.log"
 ATLAS_COMMAND_OPTS="-Datlas.home=%s"
@@ -74,8 +74,8 @@ def main():
 
     p = os.pathsep
     atlas_classpath = confdir + p \
-                       + os.path.join(web_app_dir, "atlas", "WEB-INF", "classes" ) + p \
-                       + os.path.join(web_app_dir, "atlas", "WEB-INF", "lib", "*" )  + p \
+                       + os.path.join(web_app_dir, "metaspace", "WEB-INF", "classes" ) + p \
+                       + os.path.join(web_app_dir, "metaspace", "WEB-INF", "lib", "*" )  + p \
                        + os.path.join(atlas_home, "libext", "*")
 
     is_hbase = mc.is_hbase(confdir)
@@ -140,7 +140,7 @@ def main():
         mc.start_elasticsearch(mc.elasticsearchBinDir(atlas_home), logdir)
         print "elasticsearch started."
 
-    web_app_path = os.path.join(web_app_dir, "atlas")
+    web_app_path = os.path.join(web_app_dir, "metaspace")
     if (mc.isCygwin()):
         web_app_path = mc.convertCygwinPath(web_app_path)
     if not is_setup:

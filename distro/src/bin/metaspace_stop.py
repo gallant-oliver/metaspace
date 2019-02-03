@@ -30,7 +30,7 @@ else:
 import sys
 import traceback
 import time
-import atlas_config as mc
+import metaspace_config as mc
 
 def main():
 

@@ -144,7 +144,7 @@ def kafkaTopicSetupDir(homeDir):
 
 def expandWebApp(dir):
     webappDir = webAppDir(dir)
-    webAppMetadataDir = os.path.join(webappDir, "atlas")
+    webAppMetadataDir = os.path.join(webappDir, "metaspace")
     d = os.sep
     if not os.path.exists(os.path.join(webAppMetadataDir, "WEB-INF")):
         try:
@@ -153,7 +153,7 @@ def expandWebApp(dir):
             if e.errno != errno.EEXIST:
                 raise e
             pass
-        atlasWarPath = os.path.join(atlasDir(), "server", "webapp", "atlas.war")
+        atlasWarPath = os.path.join(atlasDir(), "server", "webapp", "metaspace.war")
         if (isCygwin()):
             atlasWarPath = convertCygwinPath(atlasWarPath)
         os.chdir(webAppMetadataDir)
@@ -484,7 +484,7 @@ def get_atlas_url_port(confdir):
         else:
             port = getConfigWithDefault(confdir, ATLAS_HTTP_PORT, DEFAULT_ATLAS_HTTP_PORT)
 
-    print "starting atlas on port %s" % port
+    print "starting metaspace on port %s" % port
     return port
 
 def get_atlas_url_host(confdir):
@@ -492,7 +492,7 @@ def get_atlas_url_host(confdir):
     host = getConfigWithDefault(confdir, ATLAS_SERVER_BIND_ADDRESS, DEFAULT_ATLAS_SERVER_HOST)
     if (host == '0.0.0.0'):
         host = DEFAULT_ATLAS_SERVER_HOST
-    print "starting atlas on host %s" % host
+    print "starting metaspace on host %s" % host
     return host
 
 def wait_for_startup(confdir, wait):
@@ -648,7 +648,7 @@ def configure_cassandra(dir):
         os.remove(tmpl_file)
 
 def server_already_running(pid):
-    print "Atlas server is already running under process %s" % pid
+    print "metaspace server is already running under process %s" % pid
     sys.exit()  
     
 def server_pid_not_running(pid):
