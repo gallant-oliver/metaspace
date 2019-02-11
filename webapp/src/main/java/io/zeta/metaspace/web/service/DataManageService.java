@@ -226,6 +226,7 @@ public class DataManageService {
         }
     }
 
+    @Transactional
     public int addRelation(RelationEntityV2 relationEntity) throws AtlasBaseException {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
@@ -233,6 +234,11 @@ public class DataManageService {
             String qualifiedName = dao.queryQualifiedName(relationEntity.getCategoryGuid());
             if (Objects.nonNull(qualifiedName)) {
                 qualifiedName += "." + relationEntity.getTableName();
+            }
+
+            int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
+            if(count == 0) {
+                relationDao.addTableInfo(relationEntity);
             }
             relationEntity.setPath(qualifiedName);
             return relationDao.add(relationEntity);
