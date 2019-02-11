@@ -24,7 +24,7 @@ public interface TableTagDAO {
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")
     public int addTable2Tag(@Param("tagId") String tagId,@Param("tableGuid") String tableGuid);
 
-    @Insert("insert into table(tableguid,tablename,dbname,status) values(#{table.tableId},#{table.databaseName},#{table.tableName},#{table.status})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status) values(#{table.tableId},#{table.databaseName},#{table.tableName},#{table.status})")
     public int addTable(@Param("table") Table table);
 
     @Delete("delete from table2tag where tableguid=#{tableGuid} and tagid=#{tagId}")
@@ -33,6 +33,6 @@ public interface TableTagDAO {
     @Select("select 1 from tag where tagname=#{tagName}")
     public List<Tag> ifTagExists(String tagName);
 
-    @Select("select 1 from table where tableguid=#{tableGuid}")
+    @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
     public List<Table> ifTableExists(String tableGuid);
 }
