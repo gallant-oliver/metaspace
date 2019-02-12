@@ -2,16 +2,18 @@ package io.zeta.metaspace.model.tag;
 
 import io.zeta.metaspace.model.metadata.Table;
 
+import java.util.List;
+
 public class Tag2Table {
-    private String tagId;
+    private List<String> tags;
     private Table table;
 
-    public String getTagId() {
-        return tagId;
+    public List<String> getTags() {
+        return tags;
     }
 
-    public void setTagId(String tagId) {
-        this.tagId = tagId;
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
 
     public Table getTable() {
