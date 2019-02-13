@@ -76,13 +76,20 @@ public class DataQualityService {
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
         try {
-            String templateId = UUID.randomUUID().toString();
-            template.setTemplateId(templateId);
-            addRulesByTemlpateId(template);
-            //template
-            qualityDao.insertTemplate(template);
-            //设置模板状态为【未启用】
-            qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
+            String templateName = template.getTemplateName();
+            int sameNameCount = qualityDao.countTemplateName(templateName);
+            if(sameNameCount > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复模板名称");
+            } else {
+                String templateId = UUID.randomUUID().toString();
+                template.setTemplateId(templateId);
+                addRulesByTemlpateId(template);
+                //template
+                qualityDao.insertTemplate(template);
+                //设置模板状态为【未启用】
+                qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
+            }
+
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
@@ -220,7 +227,7 @@ public class DataQualityService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
         }
     }
 
@@ -232,7 +239,7 @@ public class DataQualityService {
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
 
@@ -378,6 +385,14 @@ public class DataQualityService {
     public Float getFinishedPercent(String templateId) {
         try {
             return qualityDao.getFinishedPercent(templateId);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public Integer getTemplateStatus(String templateId) {
+        try {
+            return qualityDao.getTemplateStatus(templateId);
         } catch (Exception e) {
             throw e;
         }

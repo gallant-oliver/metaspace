@@ -68,6 +68,9 @@ public interface DataQualityDAO {
     @Insert("update template set startTime=#{startTime} where templateId=#{templateId}")
     public int updateTemplateStartTime(@Param("templateId") String templateId, @Param("startTime") String startTime);
 
+    @Select("select count(*) from template where templateName=#{templateName}")
+    public int countTemplateName(@Param("templateName") String templateName);
+
     /**
      * 保存模板规则对应阈值
      * @param thresholdValue
@@ -256,7 +259,7 @@ public interface DataQualityDAO {
      * @return
      */
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
-    public long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
+    public Long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
     /**
      * 更新报告告警数量
@@ -305,8 +308,11 @@ public interface DataQualityDAO {
     public String getJobByTemplateId(@Param("templateId") String templateId);
 
     @Update("update template set finishedPercent=#{finishedPercent} where templateId=#{templateId}")
-    public int updateFinishedPercent(@Param("templateId") String templateId, @Param("finishedPercent") Float finishedPercent);
+    public Integer updateFinishedPercent(@Param("templateId") String templateId, @Param("finishedPercent") Float finishedPercent);
 
     @Select("select finishedPercent from template where templateId=#{templateId}")
     public Float getFinishedPercent(@Param("templateId") String templateId);
+
+    @Select("select templateStatus from template where templateId=#{templateId}")
+    public Integer getTemplateStatus(@Param("templateId") String templateId);
 }

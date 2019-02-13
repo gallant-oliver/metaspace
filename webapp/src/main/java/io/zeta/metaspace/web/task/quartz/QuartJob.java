@@ -68,6 +68,10 @@ public class QuartJob implements Job {
         }
         int totalStep = rules.size() + 1;
         for (int i=0; i<rules.size(); i++) {
+            //根据模板状态判断是否继续运行
+            Integer status = qualityDao.getTemplateStatus(templateId);
+            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code))
+                return;
             UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
@@ -296,8 +300,8 @@ public class QuartJob implements Job {
             long tableSize = tableSize(rule, false);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
-            long sizeChange = tableSize - lastValue;
+            Long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
+            Long sizeChange = tableSize - lastValue;
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
@@ -511,8 +515,6 @@ public class QuartJob implements Job {
         }
         if (ruleStatus == null) throw new RuntimeException();
         return ruleStatus;
-
-
     }
 
     /**
@@ -524,8 +526,7 @@ public class QuartJob implements Job {
 
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
-            List<Report.ReportRule> list=new ArrayList<>();
-            Report report = insertReport(template);
+            List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
