@@ -33,21 +33,25 @@ import java.util.List;
  */
 public interface RelationDAO {
     //@Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,path,status)values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{path},#{status})")
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path}")
+    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path})")
     public int add(RelationEntityV2 entity) throws SQLException;
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
     public int delete(@Param("relationshipGuid")String guid);
 
-    @Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
-    public RelationEntityV2 query(@Param("categoryGuid")String categoryGuid);
+    //@Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
+    /*@Select("select table_relation.relationshipGuid,table_relation.categoryGuid,table_relation.path,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
+            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
+    public RelationEntityV2 query(@Param("categoryGuid")String categoryGuid);*/
 
     //@Select("select * from table_relation where categoryGuid=#{categoryGuid} limit #{limit} offset #{offset}")
     @Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
     //@Select("select * from table_relation where categoryGuid=#{categoryGuid}")
-    @Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
+    //@Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
+    @Select("select table_relation.relationshipGuid,table_relation.categoryGuid,table_relation.path,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
+            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
     //@Select("select * from table_relation where tableGuid=#{tableGuid}")
@@ -75,6 +79,6 @@ public interface RelationDAO {
     @Select("select count(*) from tableinfo where tableGuid=#{tableGuid}")
     public int queryTableInfo(@Param("tableGuid")String tableGuid);
 
-    @Insert("insert into tableInfo(tableName,dbName,tableGuid,status)values(#{tableName},#{dbName},#{tableGuid},#{status}")
+    @Insert("insert into tableInfo(tableName,dbName,tableGuid,status)values(#{tableName},#{dbName},#{tableGuid},#{status})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
 }
