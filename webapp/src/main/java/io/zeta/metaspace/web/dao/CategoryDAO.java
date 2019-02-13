@@ -34,37 +34,37 @@ import java.util.Set;
  */
 public interface CategoryDAO {
 
-    @Insert("insert into table_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName)" +
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName)" +
             "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName})")
     public int add(CategoryEntityV2 category);
 
-    @Select("select * from table_category where categoryType=#{categoryType}")
+    @Select("select * from category where categoryType=#{categoryType}")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType);
 
-    @Select("select * from table_category where guid=#{guid}")
+    @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
-    @Select("select count(*) from table_category where qualifiedName=#{qualifiedName}")
+    @Select("select count(*) from category where qualifiedName=#{qualifiedName}")
     public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);
 
-    @Select("select qualifiedName from table_category where guid=#{guid}")
+    @Select("select qualifiedName from category where guid=#{guid}")
     public String queryQualifiedName(@Param("guid")String guid);
 
-    @Select("select count(*) from table_category where parentCategoryGuid=#{parentCategoryGuid}")
+    @Select("select count(*) from category where parentCategoryGuid=#{parentCategoryGuid}")
     public int queryChildrenNum(@Param("parentCategoryGuid")String guid);
 
-    @Select("select guid from table_category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL")
+    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL")
     public String queryLastChildCategory(@Param("parentCategoryGuid")String guid);
 
-    @Update("update table_category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
+    @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
     public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
 
-    @Update("update table_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
+    @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
 
-    @Update("update table_category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
+    @Update("update category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
     public int updateCategoryInfo(CategoryEntity category);
 
-    @Delete("delete from table_category where guid=#{guid}")
+    @Delete("delete from category where guid=#{guid}")
     public int delete(@Param("guid")String guid) throws SQLException;
 }
