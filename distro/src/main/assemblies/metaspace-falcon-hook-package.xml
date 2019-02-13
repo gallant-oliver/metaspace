@@ -23,35 +23,17 @@
         <format>tar.gz</format>
         <format>dir</format>
     </formats>
-    <id>hive-hook</id>
-    <baseDirectory>apache-atlas-hive-hook-${project.version}</baseDirectory>
+    <id>falcon-hook</id>
+    <baseDirectory>metaspace-falcon-hook-${project.version}</baseDirectory>
     <fileSets>
+        <!-- addons/falcon -->
         <fileSet>
-            <directory>target/bin</directory>
-            <outputDirectory>hook-bin</outputDirectory>
-            <includes>
-                <include>import-hive.sh</include>
-            </includes>
-            <fileMode>0755</fileMode>
-            <directoryMode>0755</directoryMode>
-        </fileSet>
-
-        <!-- addons/hive -->
-        <fileSet>
-            <directory>../addons/hive-bridge/src/bin</directory>
-            <outputDirectory>hook-bin</outputDirectory>
-            <fileMode>0755</fileMode>
-            <directoryMode>0755</directoryMode>
-        </fileSet>
-
-        <!-- addons/hive -->
-        <fileSet>
-            <directory>../addons/hive-bridge/target/dependency/bridge</directory>
+            <directory>../addons/falcon-bridge/target/dependency/bridge</directory>
             <outputDirectory>bridge</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>../addons/hive-bridge/target/dependency/hook</directory>
+            <directory>../addons/falcon-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
 

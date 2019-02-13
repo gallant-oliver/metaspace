@@ -24,7 +24,7 @@
         <format>dir</format>
     </formats>
     <id>server</id>
-    <baseDirectory>apache-atlas-${project.version}</baseDirectory>
+    <baseDirectory>metaspace-${project.version}</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>target/conf/</directory>
