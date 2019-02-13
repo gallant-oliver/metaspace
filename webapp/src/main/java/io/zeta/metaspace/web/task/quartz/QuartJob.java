@@ -57,8 +57,11 @@ public class QuartJob implements Job {
         List<UserRule> rules = null;
         JobKey key = jobExecutionContext.getTrigger().getJobKey();
         Template template = qualityDao.getTemplateByJob(key.getName());
+        String templateId = template.getTemplateId();
         try {
-            String templateId = template.getTemplateId();
+            //设置模板状态为【报表生成中】
+            qualityDao.updateTemplateStatus(TemplateStatus.GENERATING_REPORT.code, templateId);
+
             rules = qualityDao.queryTemplateUserRuleById(templateId);
         } catch (SQLException e) {
 
@@ -87,8 +90,20 @@ public class QuartJob implements Job {
             }
         }
         //更新报表结果
-        updateReportResult(template, resultMap);
-        qualityDao.updateFinishedPercent(template.getTemplateId(), (float)1);
+        try {
+            updateReportResult(template, resultMap);
+            qualityDao.updateFinishedPercent(template.getTemplateId(), (float) 1);
+            String cron = qualityDao.getCronByTemplateId(templateId);
+            if (Objects.isNull(cron)) {
+                //设置模板状态为【已完成】
+                qualityDao.updateTemplateStatus(TemplateStatus.FINISHED.code, templateId);
+            } else {
+                //设置模板状态为【已启用】
+                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            }
+        } catch (Exception e) {
+
+        }
     }
 
     public void runJob(UserRule rule) {
@@ -475,8 +490,6 @@ public class QuartJob implements Job {
                                 ruleStatus = RuleStatus.RED;
                             break;
                         }
-
-
                     }
                     break;
                 }

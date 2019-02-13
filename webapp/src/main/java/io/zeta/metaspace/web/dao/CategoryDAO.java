@@ -38,8 +38,8 @@ public interface CategoryDAO {
             "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName})")
     public int add(CategoryEntityV2 category);
 
-    @Select("select * from table_category")
-    public Set<CategoryEntityV2> getAll();
+    @Select("select * from table_category where categoryType=#{categoryType}")
+    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType);
 
     @Select("select * from table_category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
