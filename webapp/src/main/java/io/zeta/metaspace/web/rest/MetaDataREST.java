@@ -12,6 +12,10 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.tag.Tag2Table;
+import io.zeta.metaspace.web.filter.SSOFilter;
+import io.zeta.metaspace.web.service.TableTagService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -44,6 +48,7 @@ import io.zeta.metaspace.web.service.DataManageService;
 import org.apache.atlas.web.util.Servlets;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -103,6 +108,7 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
     /**
      * 根据搜索条件返回库
      *
@@ -124,6 +130,7 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
     /**
      * 根据库id返回表
      *
@@ -133,18 +140,19 @@ public class MetaDataREST {
     @Path("/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId,@PathParam("offset") long offset,@PathParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + databaseId+","+limit+","+offset + " )");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + databaseId + "," + limit + "," + offset + " )");
             }
-            PageResult<Table> pageResult = searchService.getTableByDB(databaseId,offset,limit);
+            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
         }
     }
+
     /**
      * 根据搜索条件返回表
      *
@@ -207,9 +215,9 @@ public class MetaDataREST {
             TableShow tableShow = searchService.getTableShow(guidCount);
             return tableShow;
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (IOException e) {
-            throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -234,11 +242,11 @@ public class MetaDataREST {
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
         } catch (AtlasBaseException e) {
-            throw  e;
-        }catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"hive查询异常");
+            throw e;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
         } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"图数据查询异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -345,6 +353,7 @@ public class MetaDataREST {
 
     /**
      * 获取字段血缘
+     *
      * @param guid
      * @param direction
      * @param depth
@@ -396,6 +405,7 @@ public class MetaDataREST {
 
     /**
      * 添加目录 V2
+     *
      * @param categoryInfo
      * @return
      * @throws Exception
@@ -420,6 +430,7 @@ public class MetaDataREST {
 
     /**
      * 修改目录信息 V2
+     *
      * @param categoryInfo
      * @return
      * @throws AtlasBaseException
@@ -435,7 +446,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
             return dataManageService.updateCategory(categoryInfo);
-        }  catch (MyBatisSystemException e) {
+        } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
@@ -444,6 +455,7 @@ public class MetaDataREST {
 
     /**
      * 删除目录 V2
+     *
      * @param categoryGuid
      * @return
      * @throws Exception
@@ -458,7 +470,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
             }
             dataManageService.deleteCategory(categoryGuid);
-        }  catch (CannotCreateTransactionException e) {
+        } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
@@ -468,6 +480,7 @@ public class MetaDataREST {
 
     /**
      * 添加关联
+     *
      * @param categoryGuid
      * @param relations
      * @return
@@ -495,6 +508,7 @@ public class MetaDataREST {
 
     /**
      * 获取关联关系
+     *
      * @param categoryGuid
      * @return
      * @throws AtlasBaseException
@@ -503,7 +517,7 @@ public class MetaDataREST {
     @Path("/category/relations/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid,RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
@@ -520,6 +534,7 @@ public class MetaDataREST {
 
     /**
      * 删除关联关系
+     *
      * @param relationshipList
      * @return
      * @throws AtlasBaseException
@@ -543,6 +558,7 @@ public class MetaDataREST {
 
     /**
      * 获取表关联
+     *
      * @param relationQuery
      * @return
      * @throws AtlasBaseException
@@ -558,13 +574,14 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
             }
             return dataManageService.getRelationsByTableName(relationQuery);
-        }  finally {
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
     /**
      * 获取全部目录
+     *
      * @param sort
      * @return
      * @throws AtlasBaseException
@@ -580,27 +597,27 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
             return dataManageService.getAll();
-        }  finally {
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
     /**
      * 更新表描述
+     *
      * @param tableEdit
      * @throws AtlasBaseException
      */
     @POST
     @Path("/update/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
             }
-            metadataService.updateTableDescription(tableEdit);
+            metadataService.updateTable(tableEdit);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
         } finally {
@@ -611,6 +628,7 @@ public class MetaDataREST {
 
     /**
      * 更新字段描述
+     *
      * @param columnEdits
      * @throws AtlasBaseException
      */
@@ -633,6 +651,7 @@ public class MetaDataREST {
 
     /**
      * 清除缓存
+     *
      * @return
      * @throws AtlasBaseException
      */
@@ -661,4 +680,75 @@ public class MetaDataREST {
         return HiveJdbcUtils.tableExists(database, tableName);
     }
 
+    @Autowired
+    TableTagService tableTagService;
+
+    @Path("/tag")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addTag(Tag tag) throws AtlasBaseException {
+        try {
+            String s = tableTagService.addTag(tag.getTagName());
+            return s;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建标签失败");
+        }
+
+    }
+
+    @Path("/tags")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Tag> getTags(Parameters parameters) throws AtlasBaseException {
+        try {
+            List<Tag> tags = tableTagService.getTags(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            return tags;
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标签失败");
+        }
+    }
+
+    @Path("/tag/table2tab")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addtable2tab(Tag2Table tag2Table) throws AtlasBaseException {
+        try {
+            tableTagService.addTable2Tag(tag2Table.getTable(), tag2Table.getTags());
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加标签失败");
+        }
+    }
+
+    @Path("/tag/{tagId}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String deleteTag(@PathParam("tagId") String tagId) throws AtlasBaseException {
+        try {
+            tableTagService.deleteTag(tagId);
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
+
+    @Path("/tag/tag2table/{tableguId}/{tagId}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+
+    public String deletetag2table(@PathParam("tableguId") String tableguId, @PathParam("tagId") String tagId) throws AtlasBaseException {
+        try {
+            tableTagService.deleteTable2Tag(tableguId, tagId);
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
 }

@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -23,8 +25,18 @@ package io.zeta.metaspace.model.metadata;
  */
 public class TableEdit {
 
+
     private String guid;
     private String description;
+    private List<String> tags;
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 
     public String getGuid() {
         return guid;

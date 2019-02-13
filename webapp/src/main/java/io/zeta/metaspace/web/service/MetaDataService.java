@@ -24,7 +24,9 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.RelationDAO;
+import io.zeta.metaspace.web.dao.TableTagDAO;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -82,6 +84,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableEdit;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
 import io.zeta.metaspace.model.metadata.TablePermission;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,6 +117,8 @@ public class MetaDataService {
     AtlasTypeDefStore typeDefStore;
     @Autowired
     MetaspaceGremlinService metaspaceLineageService;
+    @Autowired
+    TableTagDAO tableTagDAO;
     @Resource
     RelationDAO relationDao;
 
@@ -184,9 +189,21 @@ public class MetaDataService {
             columnQuery.setGuid(guid);
             List<Column> columns = getColumnInfoById(columnQuery, true);
             table.setColumns(columns);
-            //权限
-            TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(),table.getTableName(),table.getColumns());
-            table.setTablePermission(permission);
+            //权限,可能从secureplus获取，获取不到就不展示
+            try {
+                TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(), table.getTableName(), table.getColumns());
+                table.setTablePermission(permission);
+            }catch (Exception e){
+                LOG.error("获取权限失败,错误信息:"+e.getMessage(),e);
+            }
+            //tag，从postgresql获取，获取不到不展示
+            try {
+                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
+                table.setTags(tags);
+            }catch (Exception e){
+                LOG.error("获取权限失败,错误信息:"+e.getMessage(),e);
+            }
+
         }
         return table;
     }
@@ -722,13 +739,28 @@ public class MetaDataService {
         }
         return max + 1;
     }
-
-    public void updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
+    @Transactional
+    public void updateTable(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
         if(Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "提交修改信息有误");
         }
+        //修改tag
+        try{
+            tableTagDAO.delAllTable2Tag(guid);
+            List<String> tags = tableEdit.getTags();
+            for (String s : tags) {
+                try {
+                    tableTagDAO.addTable2Tag(s, guid);
+                }catch (Exception e){
+                    LOG.error("table "+guid+" 添加tag "+s+" 失败,错误信息:"+e.getMessage(),e);
+                }
+            }
+        }catch(Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除表标签失败");
+        }
+        //修改描述
         try {
             AtlasEntity entity = getEntityById(guid);
             String tableName = getEntityAttribute(entity, "name");
@@ -737,7 +769,7 @@ public class MetaDataService {
             String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
             HiveJdbcUtils.execute(sql, dbName);
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改表信息失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改表描述失败");
         }
     }
 
@@ -764,7 +796,7 @@ public class MetaDataService {
     }
 
     @CacheEvict(value = { "columnCache",
-                         "databaseCache", "tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
+            "databaseCache", "tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
