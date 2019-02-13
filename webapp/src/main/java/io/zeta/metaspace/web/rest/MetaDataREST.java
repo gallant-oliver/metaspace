@@ -570,7 +570,7 @@ public class MetaDataREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/category")
+    @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {

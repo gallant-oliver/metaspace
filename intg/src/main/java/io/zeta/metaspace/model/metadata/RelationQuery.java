@@ -26,6 +26,7 @@ public class RelationQuery {
     private String filterTableName;
     private int offset;
     private int limit;
+    private int categoryType;
 
     public String getCategoryGuid() {
         return categoryGuid;
@@ -57,5 +58,13 @@ public class RelationQuery {
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public int getCategoryType() {
+        return categoryType;
+    }
+
+    public void setCategoryType(int categoryType) {
+        this.categoryType = categoryType;
     }
 }

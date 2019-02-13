@@ -28,6 +28,7 @@ public class CategoryInfoV2 {
     private String description;
     private String direction;
     private String parentCategoryGuid;
+    private Integer categoryType;
 
     public String getGuid() {
         return guid;
@@ -67,5 +68,13 @@ public class CategoryInfoV2 {
 
     public void setParentCategoryGuid(String parentCategoryGuid) {
         this.parentCategoryGuid = parentCategoryGuid;
+    }
+
+    public Integer getCategoryType() {
+        return categoryType;
+    }
+
+    public void setCategoryType(Integer categoryType) {
+        this.categoryType = categoryType;
     }
 }

@@ -48,6 +48,8 @@ import java.util.UUID;
 @Service
 public class DataManageService {
 
+    private final int CATEGORY_TYPE = 0;
+
     @Autowired
     CategoryDAO dao;
 
@@ -56,7 +58,7 @@ public class DataManageService {
 
     public Set<CategoryEntityV2> getAll() throws AtlasBaseException {
         try {
-            return dao.getAll();
+            return dao.getAll(CATEGORY_TYPE);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
@@ -79,6 +81,8 @@ public class DataManageService {
             entity.setName(name);
             //description
             entity.setDescription(info.getDescription());
+
+            entity.setCategoryType(info.getCategoryType());
 
             //创建第一个目录
             if(Objects.isNull(currentCategoryGuid)) {
@@ -278,9 +282,10 @@ public class DataManageService {
         String tableName = query.getFilterTableName();
         int limit = query.getLimit();
         int offset = query.getOffset();
+        int categoryType = query.getCategoryType();
         PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset);
-        int totalNum = relationDao.queryTotalNumByName(tableName);
+        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset, categoryType);
+        int totalNum = relationDao.queryTotalNumByName(tableName, categoryType);
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         pageResult.setOffset(query.getOffset());
