@@ -573,13 +573,13 @@ public class MetaDataREST {
     @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@PathParam("categoryType") Integer categoryGuid) throws AtlasBaseException {
+    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            return dataManageService.getAll(categoryGuid);
+            return dataManageService.getAll(categoryType);
         }  finally {
             AtlasPerfTracer.log(perf);
         }

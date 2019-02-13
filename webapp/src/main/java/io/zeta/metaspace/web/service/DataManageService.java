@@ -288,7 +288,7 @@ public class DataManageService {
         int offset = query.getOffset();
         int categoryType = query.getCategoryType();
         PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset, categoryType);
+        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset);
         int totalNum = relationDao.queryTotalNumByName(tableName, categoryType);
         pageResult.setCount(list.size());
         pageResult.setLists(list);

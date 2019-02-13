@@ -52,4 +52,10 @@ public interface BusinessDAO {
 
     @Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
     public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);
+
+    @Select("select * from businessInfo where  name like '%${name}%' limit #{limit} offset #{offset}")
+    public List<BusinessInfo> queryBusinessByName(@Param("businessName")String businessName, @Param("limit")int limit,@Param("offset") int offset);
+
+    @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryId=#{categoryGuid} limit #{limit} offset #{offset})")
+    public List<BusinessInfo> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 }

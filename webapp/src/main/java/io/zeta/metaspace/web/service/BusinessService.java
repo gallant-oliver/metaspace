@@ -17,12 +17,16 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.web.dao.BusinessDAO;
+import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 /*
  * @description
@@ -34,9 +38,22 @@ public class BusinessService {
     @Autowired
     BusinessDAO businessDao;
 
-    public int addBusiness(BusinessInfo info) throws AtlasBaseException {
+    @Autowired
+    BusinessRelationDAO relationDao;
+
+    @Transactional
+    public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
         try {
-            return businessDao.insertBusinessInfo(info);
+
+            int insertFlag =  businessDao.insertBusinessInfo(info);
+
+            BusinessRelationEntity entity = new BusinessRelationEntity();
+            String relationGuid = UUID.randomUUID().toString();
+            entity.setCategoryId(categoryId);
+            entity.setRelationId(relationGuid);
+            int relationFlag = relationDao.add(entity);
+
+            return insertFlag & relationFlag;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
@@ -56,6 +73,22 @@ public class BusinessService {
             List<BusinessInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
             info.setTables(tables);
             return info;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public List<BusinessInfo> getBusinessListByCategoryId(String categoryId, int limit, int offset) throws AtlasBaseException {
+        try {
+            return businessDao.queryBusinessByCatetoryIdWithLimit(categoryId, limit, offset);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public List<BusinessInfo> getBusinessListByCondition(String businessName, int limit, int offset) throws AtlasBaseException {
+        try {
+            return businessDao.queryBusinessByName(businessName, limit, offset);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
