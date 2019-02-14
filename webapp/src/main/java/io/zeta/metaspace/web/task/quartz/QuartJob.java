@@ -163,6 +163,7 @@ public class QuartJob implements Job {
                 case EMPTY_VALUE_NUM_CHANGE_RATIO:
                 case DUP_VALUE_NUM_CHANGE_RATIO:
                     ruleResultChangeRatio(rule, true, true);
+                    break;
 
                 case UNIQUE_VALUE_NUM_RATIO:
                 case EMPTY_VALUE_NUM_RATIO:
@@ -244,7 +245,7 @@ public class QuartJob implements Job {
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
 
-            Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
             Double valueChange = Math.abs(nowValue - lastValue);
             if (record) {
@@ -256,13 +257,13 @@ public class QuartJob implements Job {
         }
     }
 
-    //表行数变化率
+    //规则值变化率
     public Double ruleResultChangeRatio(UserRule rule, boolean record, boolean columnRule) throws AtlasBaseException {
         try {
             Double ruleValueChange = ruleResultValueChange(rule, false, columnRule);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
             Double ratio = 0.0;
             if (lastValue != 0) {
@@ -296,13 +297,13 @@ public class QuartJob implements Job {
     }
 
     //表大小变化
-    public long tableSizeChange(UserRule rule, boolean record) throws AtlasBaseException {
+    public Double tableSizeChange(UserRule rule, boolean record) throws AtlasBaseException {
         try {
             long tableSize = tableSize(rule, false);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            Long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
-            Long sizeChange = Math.abs(tableSize - lastValue);
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
+            Double sizeChange = Math.abs(tableSize - lastValue);
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
@@ -314,7 +315,7 @@ public class QuartJob implements Job {
 
     //表大小变化率
     public double tableSizeChangeRatio(UserRule rule, boolean record) throws AtlasBaseException {
-        long tableSizeChange = tableSizeChange(rule, record);
+        Double tableSizeChange = tableSizeChange(rule, record);
         String templateId = rule.getTemplateId();
         String templateRuleId = rule.getRuleId();
         double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);

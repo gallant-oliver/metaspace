@@ -200,7 +200,7 @@ public interface DataQualityDAO {
      */
     @Insert("insert into report_userrule(ruleId,templateRuleId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
             "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus,refValue,generateTime)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
-            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.reportRuleStatus},#{rule.refValue},#{generateTime})")
+            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.reportRuleStatus},#{rule.refValue},#{rule.generateTime})")
     public void insertRuleReport(@Param("reportId")String reportId, @Param("rule")Report.ReportRule rule) throws SQLException;
 
     /**
@@ -259,7 +259,7 @@ public interface DataQualityDAO {
      * @return
      */
     @Select("select refValue from report_userrule where templateRuleId=#{templateRuleId} and reportId in (select reportId from report where templateId=#{templateId} order by reportproducedate desc limit 1)")
-    public Long getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
+    public Double getLastValue(@Param("templateId") String templateId,@Param("templateRuleId") String templateRuleId);
 
     /**
      * 更新报告告警数量
