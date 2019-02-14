@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import java.util.Date;
 import java.util.List;
 
 /*
@@ -38,6 +39,7 @@ public class UserRule implements java.io.Serializable {
     private String dataType;
     private int systemRuleId;
     private String reportId;
+    private Date generateTime;
 
 
     public String getRuleId() {
@@ -150,5 +152,13 @@ public class UserRule implements java.io.Serializable {
 
     public void setReportId(String reportId) {
         this.reportId = reportId;
+    }
+
+    public Date getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(Date generateTime) {
+        this.generateTime = generateTime;
     }
 }

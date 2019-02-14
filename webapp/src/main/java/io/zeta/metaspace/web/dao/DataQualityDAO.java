@@ -55,8 +55,8 @@ public interface DataQualityDAO {
      * @throws SQLException
      */
     @Insert("insert into template_userrule(ruleId,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,templateId,dataType,ruleType,systemRuleId)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
-            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType},#{systemRuleId})")
+            "ruleCheckThresholdUnit,templateId,dataType,ruleType,systemRuleId,generateTime)values(#{ruleId},#{ruleName},#{ruleInfo},#{ruleColumnName},#{ruleColumnType}," +
+            "#{ruleCheckType},#{ruleCheckExpression},#{ruleCheckThresholdUnit},#{templateId},#{dataType},#{ruleType},#{systemRuleId},#{generateTime})")
     public int insertUserRule(UserRule rule) throws SQLException;
 
     /**
@@ -162,7 +162,7 @@ public interface DataQualityDAO {
      * @return
      * @throws SQLException
      */
-    @Select("select * from template_userrule where templateId=#{templateId}")
+    @Select("select * from template_userrule where templateId=#{templateId} order by generateTime")
     public List<UserRule> queryTemplateUserRuleById(@Param("templateId") String templateId) throws SQLException;
 
     /**
@@ -199,8 +199,8 @@ public interface DataQualityDAO {
      * @throws SQLException
      */
     @Insert("insert into report_userrule(ruleId,templateRuleId,reportId,ruleType,ruleName,ruleInfo,ruleColumnName,ruleColumnType,ruleCheckType,ruleCheckExpression," +
-            "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus,refValue)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
-            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.reportRuleStatus},#{rule.refValue})")
+            "ruleCheckThresholdUnit,reportRuleValue,reportRuleStatus,refValue,generateTime)values(#{rule.ruleId},#{rule.templateRuleId},#{reportId},#{rule.ruleType},#{rule.ruleName},#{rule.ruleInfo},#{rule.ruleColumnName}," +
+            "#{rule.ruleColumnType},#{rule.ruleCheckType},#{rule.ruleCheckExpression},#{rule.ruleCheckThresholdUnit},#{rule.reportRuleValue},#{rule.reportRuleStatus},#{rule.refValue},#{generateTime})")
     public void insertRuleReport(@Param("reportId")String reportId, @Param("rule")Report.ReportRule rule) throws SQLException;
 
     /**
@@ -216,7 +216,7 @@ public interface DataQualityDAO {
      * @param reportId
      * @return
      */
-    @Select("select * from report_userrule where reportId=#{reportId}")
+    @Select("select * from report_userrule where reportId=#{reportId} order by generateTime")
     public List<Report.ReportRule> getReport(@Param("reportId") String reportId);
 
     /**

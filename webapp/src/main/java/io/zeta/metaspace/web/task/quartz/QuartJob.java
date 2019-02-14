@@ -44,6 +44,7 @@ import java.util.*;
 
 public class QuartJob implements Job {
     private static final Logger LOG = LoggerFactory.getLogger(QuartJob.class);
+    private static final Integer STATUS_START = 1;
     @Autowired
     private DataQualityDAO qualityDao;
 
@@ -245,13 +246,13 @@ public class QuartJob implements Job {
 
             Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double valueChange = nowValue - lastValue;
+            Double valueChange = Math.abs(nowValue - lastValue);
             if (record) {
                 recordDataMap(rule, nowValue, valueChange);
             }
             return valueChange;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
@@ -272,7 +273,7 @@ public class QuartJob implements Job {
             }
             return ratio;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
@@ -290,7 +291,7 @@ public class QuartJob implements Job {
             }
             return totalSize;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表大小失败");
         }
     }
 
@@ -301,13 +302,13 @@ public class QuartJob implements Job {
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
             Long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
-            Long sizeChange = tableSize - lastValue;
+            Long sizeChange = Math.abs(tableSize - lastValue);
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
             return sizeChange;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表大小失败");
         }
     }
 
@@ -353,7 +354,7 @@ public class QuartJob implements Job {
             values.add(ratio);
             resultMap.put(rule, values);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
@@ -531,9 +532,14 @@ public class QuartJob implements Job {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
+
+
+
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
+                Date generateTime = new Date(System.currentTimeMillis());
+                reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);
                 list.add(reportRule);
@@ -548,7 +554,10 @@ public class QuartJob implements Job {
     public void addReportByDao(Report report, List<Report.ReportRule> list ) throws SQLException {
         if(list.size() == 0)
             return;
+
         qualityDao.insertReport(report);
+        //设置report开启告警
+        qualityDao.updateAlertStatus(report.getReportId(), STATUS_START);
         for (Report.ReportRule reportRule : list) {
             qualityDao.insertRuleReport(report.getReportId(), reportRule);
             for (Double threshold : reportRule.getRuleCheckThreshold()) {

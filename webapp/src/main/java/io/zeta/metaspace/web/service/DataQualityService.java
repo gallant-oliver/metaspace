@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,7 +130,9 @@ public class DataQualityService {
                     columnRuleNum++;
                 rule.setTemplateId(templateId);
                 String ruleId = UUID.randomUUID().toString();
+                Date generateTime = new Date(System.currentTimeMillis());
                 rule.setRuleId(ruleId);
+                rule.setGenerateTime(generateTime);
                 qualityDao.insertUserRule(rule);
                 //threshold
                 List<Double> thresholds = rule.getRuleCheckThreshold();

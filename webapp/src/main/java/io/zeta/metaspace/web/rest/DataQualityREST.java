@@ -174,15 +174,21 @@ public class DataQualityREST {
         }
     }
 
+    /**
+     * 暂停模板
+     * @param templateId
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/template/status/disable/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String stopTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
+    public Response stopTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
             dataQualityService.stopTemplate(templateId);
-            return "success";
+            return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw e;
         }
     }
 
