@@ -72,9 +72,6 @@ public interface RelationDAO {
     /*@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset, @Param("categoryType") int categoryType);*/
 
-    @Select("select count(*) from table_relation where tableName like '%${tableName}%' and categoryType=#{categoryType}")
-    public int queryTotalNumByName(@Param("tableName")String tableName, @Param("categoryType") int categoryType);
-
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCatalogGuid(@Param("categoryGuid")String categoryGuid);
 

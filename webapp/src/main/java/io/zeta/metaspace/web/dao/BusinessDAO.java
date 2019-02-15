@@ -51,8 +51,8 @@ public interface BusinessDAO {
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<BusinessInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
-    @Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
-    public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);
+    /*@Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
+    public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);*/
 
     @Select("select * from businessInfo where  name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfo> queryBusinessByName(@Param("businessName")String businessName, @Param("limit")int limit,@Param("offset") int offset);

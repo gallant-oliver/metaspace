@@ -64,9 +64,10 @@ import javax.ws.rs.core.Response;
 
 @Singleton
 @Service
+@Path("")
 public class BusinessREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
-    private static final int businessType = 1;
+    private static final int CATEGORY_TYPE = 1;
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -147,7 +148,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.createMetadataCategory()");
             }
-            return dataManageService.createCategory(categoryInfo);
+            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -162,6 +163,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
+    @Path("/businesses/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
@@ -170,7 +172,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return dataManageService.getAll(businessType);
+            return dataManageService.getAll(CATEGORY_TYPE);
         }  finally {
             AtlasPerfTracer.log(perf);
         }

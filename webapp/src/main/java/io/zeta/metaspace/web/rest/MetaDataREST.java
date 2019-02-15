@@ -71,6 +71,7 @@ public class MetaDataREST {
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
     private static final String DEFAULT_DEPTH = "-1";
+    private static Integer CATEGORY_TYPE = 0;
 
     @Autowired
     private DataManageService dataManageService;
@@ -410,7 +411,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
-            return dataManageService.createCategory(categoryInfo);
+            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

@@ -24,6 +24,7 @@ import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.UUID;
  * @author sunhaoning
  * @date 2019/2/12 14:56
  */
+@Service
 public class BusinessService {
 
     @Autowired
