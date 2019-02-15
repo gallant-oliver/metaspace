@@ -10,7 +10,6 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
-
 public interface TableTagDAO {
     @Insert("insert into tag(tagid,tagname) values(#{tagId},#{tagName})")
     public int addTag(@Param("tagId") String tagId, @Param("tagName") String tagName);
