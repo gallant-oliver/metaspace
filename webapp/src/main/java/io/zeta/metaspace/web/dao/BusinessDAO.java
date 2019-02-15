@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -53,9 +54,20 @@ public interface BusinessDAO {
     @Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
     public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);
 
-    @Select("select * from businessInfo where  name like '%${name}%' limit #{limit} offset #{offset}")
+    @Select("select * from businessInfo where  name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfo> queryBusinessByName(@Param("businessName")String businessName, @Param("limit")int limit,@Param("offset") int offset);
+
+    @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
+            "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and updater like '%${submitter}%' limit #{limit} offset #{offset}")
+    public List<BusinessInfo> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+                                                       @Param("level2Category") String level2Category,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
 
     @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryId=#{categoryGuid} limit #{limit} offset #{offset})")
     public List<BusinessInfo> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
+
+    @Delete("delete from business2table where businessId=#{businessId}")
+    public int deleteRelationByBusinessId(@Param("businessId")String businessId);
+
+    @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
+    public int insertTableRelation(@Param("businessId")String businessId, @Param("tableId")String tableId);
 }

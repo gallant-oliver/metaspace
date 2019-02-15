@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
+import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import org.apache.atlas.AtlasErrorCode;
@@ -86,9 +87,32 @@ public class BusinessService {
         }
     }
 
-    public List<BusinessInfo> getBusinessListByCondition(String businessName, int limit, int offset) throws AtlasBaseException {
+    public List<BusinessInfo> getBusinessListByName(String businessName, int limit, int offset) throws AtlasBaseException {
         try {
             return businessDao.queryBusinessByName(businessName, limit, offset);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public List<BusinessInfo> getBusinessListByCondition(String status, String ticketNumber, String businessName,
+                                                         String level2Category, String submitter,int limit, int offset) throws AtlasBaseException {
+        try {
+            Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
+
+            return businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter, limit, offset);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    @Transactional
+    public void addBusinessAndTableRelation(String businessId, List<String> tableIdList) throws AtlasBaseException {
+        try {
+            businessDao.deleteRelationByBusinessId(businessId);
+            for(String guid : tableIdList) {
+                businessDao.insertTableRelation(businessId, guid);
+            }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }

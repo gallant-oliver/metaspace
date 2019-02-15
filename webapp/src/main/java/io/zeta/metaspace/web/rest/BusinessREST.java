@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.rest;
  */
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.filter.SSOFilter;
 import io.zeta.metaspace.web.service.BusinessService;
@@ -253,9 +254,43 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<BusinessInfo> getBusinessListWithCondition(@QueryParam("businessName") String businessName, @QueryParam("limit") int limit, @QueryParam("limit") int offset) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByCondition(businessName, limit, offset);
+            return businessService.getBusinessListByName(businessName, limit, offset);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        }
+    }
+
+    @GET
+    @Path("/businessManage")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<BusinessInfo> getBusinessListWithManage(@QueryParam("status") String status, @QueryParam("ticketNumber") String ticketNumber,
+                                                        @QueryParam("businessName") String businessName, @QueryParam("level2Category") String level2Category,
+                                                        @QueryParam("submitter") String submitter,@QueryParam("limit") int limit, @QueryParam("limit") int offset) throws AtlasBaseException {
+        try {
+            return businessService.getBusinessListByCondition(status, ticketNumber, businessName, level2Category, submitter, limit, offset);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 更新技术
+     * @param businessId
+     * @param tableIdList
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/businessManage/{businessId}")
+    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, List<String> tableIdList) throws AtlasBaseException {
+        try {
+            businessService.addBusinessAndTableRelation(businessId, tableIdList);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
         }
     }
 }
