@@ -17,28 +17,25 @@ package io.zeta.metaspace.web.filter;
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.utils.SSLClient;
+import io.zeta.metaspace.web.service.UsersService;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 
 @Component
@@ -49,6 +46,7 @@ public class SSOFilter implements Filter {
     private String infoURL = SSOConfig.getInfoURL();
     private String TICKET_KEY = "X-SSO-FullticketId";
 
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -57,6 +55,7 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
+
         Date date = new Date();
         Long startTime = System.currentTimeMillis();
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
@@ -67,7 +66,7 @@ public class SSOFilter implements Filter {
             filterChain.doFilter(request, response);
             return;
         }
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/")||requestURL.contains("/api/metaspace/admin/status")) {
+        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -101,6 +100,11 @@ public class SSOFilter implements Filter {
             HttpSession session = httpServletRequest.getSession();
             session.setAttribute("user", data);
             session.setAttribute("SSOTicket", ticket);
+            //给新用户授予访客权限
+            ServletContext servletContext = request.getServletContext();
+            WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+            UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
+            usersService.addUser(data);
             filterChain.doFilter(request, response);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -122,6 +126,7 @@ public class SSOFilter implements Filter {
         }
 
     }
+
 
     private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
         httpServletResponse.setStatus(401);

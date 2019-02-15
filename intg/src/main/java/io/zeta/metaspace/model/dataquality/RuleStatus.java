@@ -18,8 +18,8 @@ package io.zeta.metaspace.model.dataquality;
 
 public enum RuleStatus {
     NORMAL(0,"正常") , ORANGE(1,"橙色"), RED(2, "红色");
-    public Integer code;
-    public String desc;
+    private Integer code;
+    private String desc;
 
     RuleStatus(Integer code, String desc) {
         this.code = code;
