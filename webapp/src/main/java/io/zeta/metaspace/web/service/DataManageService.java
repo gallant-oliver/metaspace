@@ -53,6 +53,8 @@ public class DataManageService {
     @Autowired
     CategoryDAO dao;
 
+
+
     @Autowired
     RelationDAO relationDao;
 
@@ -67,7 +69,7 @@ public class DataManageService {
     }
 
     @Transactional
-    public CategoryEntityV2 createCategory(CategoryInfoV2 info) throws Exception {
+    public CategoryEntityV2 createCategory(CategoryInfoV2 info, Integer type) throws Exception {
         try {
             String currentCategoryGuid = info.getGuid();
             CategoryEntityV2 entity = new CategoryEntityV2();
@@ -83,8 +85,7 @@ public class DataManageService {
             entity.setName(name);
             //description
             entity.setDescription(info.getDescription());
-
-            entity.setCategoryType(info.getCategoryType());
+            entity.setCategoryType(type);
 
             //创建第一个目录
             if(Objects.isNull(currentCategoryGuid)) {
@@ -148,6 +149,7 @@ public class DataManageService {
                     dao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 }
             }
+
             dao.add(entity);
             return dao.queryByGuid(newCategoryGuid);
         } catch (Exception e) {
@@ -232,6 +234,7 @@ public class DataManageService {
         }
     }
 
+    @Transactional
     public int addRelation(RelationEntityV2 relationEntity) throws AtlasBaseException {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
@@ -239,6 +242,11 @@ public class DataManageService {
             String qualifiedName = dao.queryQualifiedName(relationEntity.getCategoryGuid());
             if (Objects.nonNull(qualifiedName)) {
                 qualifiedName += "." + relationEntity.getTableName();
+            }
+
+            int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
+            if(count == 0) {
+                relationDao.addTableInfo(relationEntity);
             }
             relationEntity.setPath(qualifiedName);
             return relationDao.add(relationEntity);
@@ -284,10 +292,9 @@ public class DataManageService {
         String tableName = query.getFilterTableName();
         int limit = query.getLimit();
         int offset = query.getOffset();
-        int categoryType = query.getCategoryType();
         PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset, categoryType);
-        int totalNum = relationDao.queryTotalNumByName(tableName, categoryType);
+        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset);
+        int totalNum = relationDao.queryTotalNumByName(tableName);
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         pageResult.setOffset(query.getOffset());

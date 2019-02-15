@@ -33,7 +33,7 @@ public class CategoryEntityV2 {
     private Integer categoryType;
 
     public CategoryEntityV2() { }
-    public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid) {
+    public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid, Integer categoryType) {
         this.guid = guid;
         this.qualifiedName = qualifiedName;
         this.name = name;
@@ -41,6 +41,7 @@ public class CategoryEntityV2 {
         this.upBrotherCategoryGuid = upBrotherCategoryGuid;
         this.downBrotherCategoryGuid = downBrotherCategoryGuid;
         this.parentCategoryGuid = parentCategoryGuid;
+        this.categoryType = categoryType;
     }
 
     public String getGuid() {
