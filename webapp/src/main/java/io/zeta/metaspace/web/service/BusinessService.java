@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /*
@@ -44,17 +46,30 @@ public class BusinessService {
     @Autowired
     BusinessRelationDAO relationDao;
 
+    @Autowired
+    CategoryDAO categoryDao;
+
+
+
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
         try {
-
+            String businessId = UUID.randomUUID().toString();
+            info.setBusinessId(businessId);
+            info.setDepartmentId(categoryId);
             int insertFlag =  businessDao.insertBusinessInfo(info);
 
             BusinessRelationEntity entity = new BusinessRelationEntity();
             String relationGuid = UUID.randomUUID().toString();
+
+            String qualifiedName = categoryDao.queryQualifiedName(categoryId);
+            if (Objects.nonNull(qualifiedName)) {
+                qualifiedName += "." + info.getName();
+            }
             entity.setCategoryId(categoryId);
             entity.setRelationId(relationGuid);
-            int relationFlag = relationDao.add(entity);
+            entity.setPath(qualifiedName);
+            int relationFlag = relationDao.addRelation(entity);
 
             return insertFlag & relationFlag;
         } catch (Exception e) {
