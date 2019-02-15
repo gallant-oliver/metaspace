@@ -32,8 +32,8 @@ import java.util.List;
  */
 public interface BusinessDAO {
 
-    @Insert("insert into business(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets)" +
-            "values(#{departmentid},#{businessid},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataassets})")
+    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets)" +
+            "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets})")
     public int insertBusinessInfo(BusinessInfo info);
 
     @Update("update business set businessstatus=#{status} where businessId=#{businessId}")

@@ -22,25 +22,25 @@ package io.zeta.metaspace.model.business;
  * @date 2019/2/13 10:34
  */
 public class BusinessRelationEntity {
-    private String relationId;
-    private String categoryId;
+    private String relationshipId;
+    private String categoryGuid;
     private String businessId;
     private String path;
 
-    public String getRelationId() {
-        return relationId;
+    public String getRelationshipId() {
+        return relationshipId;
     }
 
-    public void setRelationId(String relationId) {
-        this.relationId = relationId;
+    public void setRelationshipId(String relationshipId) {
+        this.relationshipId = relationshipId;
     }
 
-    public String getCategoryId() {
-        return categoryId;
+    public String getCategoryGuid() {
+        return categoryGuid;
     }
 
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryGuid(String categoryGuid) {
+        this.categoryGuid = categoryGuid;
     }
 
     public String getBusinessId() {

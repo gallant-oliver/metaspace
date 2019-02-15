@@ -23,6 +23,6 @@ import java.sql.SQLException;
 
 public interface BusinessRelationDAO {
 
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path})")
-    public int add(BusinessRelationEntity entity) throws SQLException;
+    @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path})")
+    public int addRelation(BusinessRelationEntity entity) throws SQLException;
 }

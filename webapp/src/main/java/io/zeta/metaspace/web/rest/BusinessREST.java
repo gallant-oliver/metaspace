@@ -88,7 +88,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/businesses/{categoryId}/businesses")
+    @Path("/businesses/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
