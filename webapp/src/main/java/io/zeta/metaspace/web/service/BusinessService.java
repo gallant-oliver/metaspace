@@ -66,8 +66,8 @@ public class BusinessService {
             if (Objects.nonNull(qualifiedName)) {
                 qualifiedName += "." + info.getName();
             }
-            entity.setCategoryId(categoryId);
-            entity.setRelationId(relationGuid);
+            entity.setCategoryGuid(categoryId);
+            entity.setRelationshipId(relationGuid);
             entity.setPath(qualifiedName);
             int relationFlag = relationDao.addRelation(entity);
 
