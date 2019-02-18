@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -534,12 +535,10 @@ public class QuartJob implements Job {
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
 
-
-
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
-                Date generateTime = new Date(System.currentTimeMillis());
+                Timestamp generateTime = new Timestamp(System.currentTimeMillis());
                 reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);
