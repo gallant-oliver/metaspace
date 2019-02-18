@@ -36,9 +36,25 @@ public class RoleService {
     public PageResult<User> getUsers(String roleId, String query, long offset, long limit){
         PageResult<User> userPageResult = new PageResult<>();
         List<User> users = roleDAO.getUsers(roleId, query, offset, limit);
+        long usersCount = roleDAO.getUsersCount(roleId, query);
         userPageResult.setLists(users);
         userPageResult.setOffset(offset);
         userPageResult.setSum(users.size());
+        userPageResult.setCount(usersCount);
         return userPageResult;
+    }
+    public PageResult<Role> getRoles(String query, long offset, long limit){
+        PageResult<Role> rolePageResult = new PageResult<>();
+        List<Role> roles = roleDAO.getRoles(query, offset, limit);
+        long rolesCount = roleDAO.getRolesCount( query);
+        rolePageResult.setLists(roles);
+        rolePageResult.setOffset(offset);
+        rolePageResult.setSum(roles.size());
+        rolePageResult.setCount(rolesCount);
+        return rolePageResult;
+    }
+    public String addUsers(String roleId,List<String> users){
+        roleDAO.addUsers(roleId,users);
+        return "success";
     }
 }

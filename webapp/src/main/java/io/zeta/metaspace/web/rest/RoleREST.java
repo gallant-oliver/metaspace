@@ -12,6 +12,7 @@ import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.restlet.resource.Get;
 import org.restlet.resource.Patch;
+import org.restlet.resource.Put;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
+import java.util.List;
 
 @Path("roles")
 @Singleton
@@ -52,8 +54,6 @@ public class RoleREST {
      */
     @Patch
     @Path("/{roleId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public String updateRoleStatus(@PathParam("roleId")String roleId,@QueryParam("status")int status) throws AtlasBaseException {
         try {
             return roleService.updateRoleStatus(roleId,status);
@@ -75,8 +75,6 @@ public class RoleREST {
      */
     @DELETE
     @Path("/{roleId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.deleteRole(roleId);
@@ -93,15 +91,13 @@ public class RoleREST {
      */
     @GET
     @Path("/{roleId}/users/search")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<User> getUsers(@PathParam("roleId") String roleId, @QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
             return roleService.getUsers(roleId, query, offset, limit);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException("");
+            LOG.error("搜索成员失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
         }
     }
 
@@ -112,17 +108,13 @@ public class RoleREST {
      */
     @GET
     @Path("")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getRoles(Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
+    public PageResult<Role> getRoles(@QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
         try {
-
-
-            return null;
+            return roleService.getRoles(query, offset, limit);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException("");
+            LOG.error("搜索角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
         }
     }
 
@@ -134,16 +126,12 @@ public class RoleREST {
     @POST
     @Path("/{roleId}/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> addUser(Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
+    public String addUsers(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
-
-
-            return null;
+            return roleService.addUsers(roleId,users) ;
         } catch (Exception e) {
             LOG.error("", e);
-            throw new AtlasBaseException("");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
         }
     }
 
@@ -157,17 +145,54 @@ public class RoleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> deleteUser(Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
 
 
             return null;
         } catch (Exception e) {
             LOG.error("", e);
-            throw new AtlasBaseException("");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
         }
     }
 
+    /**
+     * 获取角色方案及授权范围
+     *
+     * @return List<Database>
+     */
+    @Get
+    @Path("/{roleId}/privileges")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getPrivileges() throws AtlasBaseException {
+        try {
+
+
+            return null;
+        } catch (Exception e) {
+            LOG.error("", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+        }
+    }
+    /**
+     * 修改角色方案及授权范围
+     *
+     * @return List<Database>
+     */
+    @Put
+    @Path("/{roleId}/privileges")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> putPrivileges() throws AtlasBaseException {
+        try {
+
+
+            return null;
+        } catch (Exception e) {
+            LOG.error("", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+        }
+    }
     /**
      * 获取技术方案列表&搜索技术方案
      *
@@ -177,15 +202,14 @@ public class RoleREST {
     @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getPrivileges() throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
+    public PageResult<Database> getPrivilege() throws AtlasBaseException {
         try {
 
 
             return null;
         } catch (Exception e) {
             LOG.error("", e);
-            throw new AtlasBaseException("");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
         }
     }
 }

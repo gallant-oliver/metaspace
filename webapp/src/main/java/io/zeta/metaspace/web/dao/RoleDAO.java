@@ -20,10 +20,16 @@ public interface RoleDAO {
     @Select("select * from user where roleid=#{roleId} and username like '%'||#{query}||'%' order by username limit #{limit} offset #{offset}")
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
+    @Select("select count(1) from user where roleid=#{roleId} and username like '%'||#{query}||'%'")
+    public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
+
     @Select("select * from role where rolename like '%'||#{query}||'%' order by rolename limit #{limit} offset #{offset}")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("select count(1) from role where rolename like '%'||#{query}||'%'")
+    public long getRolesCount(@Param("query") String query);
     //添加成员
-//    @Update("update user set roleid=#{roleId} where userid in ")
+    //@Update("update user set roleid=#{roleId} where userid in ")
     @Update({"<script>update user set roleid=#{roleId} where userid in",
             "<foreach item='item' index='index' collection='list'",
             "open='(' separator=',' close=')'>",
