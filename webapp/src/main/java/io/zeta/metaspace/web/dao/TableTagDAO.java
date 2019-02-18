@@ -17,7 +17,7 @@ public interface TableTagDAO {
     @Delete("delete from tag where tagid=#{tagId}")
     public int deleteTag(@Param("tagId") String tagId);
 
-    @Select("select * from tag where tagname like '%'||#{query}||'%' limit #{limit} offset #{offset}")
+    @Select("select * from tag where tagname like '%'||#{query}||'%' order by tagname limit #{limit} offset #{offset}")
     public List<Tag> getTags(@Param("query") String query,@Param("offset")long offset,@Param("limit")long limit);
 
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")
