@@ -538,7 +538,7 @@ public class QuartJob implements Job {
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
-                Timestamp generateTime = new Timestamp(System.currentTimeMillis());
+                Long generateTime = System.currentTimeMillis();
                 reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);

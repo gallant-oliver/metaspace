@@ -131,7 +131,7 @@ public class DataQualityService {
                     columnRuleNum++;
                 rule.setTemplateId(templateId);
                 String ruleId = UUID.randomUUID().toString();
-                Timestamp generateTime = new Timestamp(System.currentTimeMillis());
+                Long generateTime = System.currentTimeMillis();
                 rule.setRuleId(ruleId);
                 rule.setGenerateTime(generateTime);
                 qualityDao.insertUserRule(rule);

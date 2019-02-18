@@ -40,7 +40,7 @@ public class UserRule implements java.io.Serializable {
     private String dataType;
     private int systemRuleId;
     private String reportId;
-    private Timestamp generateTime;
+    private Long generateTime;
 
 
     public String getRuleId() {
@@ -155,11 +155,11 @@ public class UserRule implements java.io.Serializable {
         this.reportId = reportId;
     }
 
-    public Timestamp getGenerateTime() {
+    public Long getGenerateTime() {
         return generateTime;
     }
 
-    public void setGenerateTime(Timestamp generateTime) {
+    public void setGenerateTime(Long generateTime) {
         this.generateTime = generateTime;
     }
 }

@@ -21,7 +21,7 @@ public class Report {
         private String ruleId;
         private String templateRuleId;
         private Double refValue;
-        private Timestamp generateTime;
+        private Long generateTime;
 
         public String getRuleId() {
             return ruleId;
@@ -143,11 +143,11 @@ public class Report {
             this.refValue = refValue;
         }
 
-        public Timestamp getGenerateTime() {
+        public Long getGenerateTime() {
             return generateTime;
         }
 
-        public void setGenerateTime(Timestamp generateTime) {
+        public void setGenerateTime(Long generateTime) {
             this.generateTime = generateTime;
         }
     }
