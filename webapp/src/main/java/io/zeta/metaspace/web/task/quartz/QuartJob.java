@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -71,8 +72,10 @@ public class QuartJob implements Job {
         for (int i=0; i<rules.size(); i++) {
             //根据模板状态判断是否继续运行
             Integer status = qualityDao.getTemplateStatus(templateId);
-            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code))
+            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code)) {
+                qualityDao.updateFinishedPercent(template.getTemplateId(), 0F);
                 return;
+            }
             UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
@@ -529,17 +532,17 @@ public class QuartJob implements Job {
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
             List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
+            Long interval = 0L;
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
 
-
-
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
-                Date generateTime = new Date(System.currentTimeMillis());
+                Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
                 reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);

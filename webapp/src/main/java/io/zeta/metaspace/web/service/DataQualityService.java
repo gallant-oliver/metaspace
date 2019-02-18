@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -123,6 +124,7 @@ public class DataQualityService {
         int tableRuleNum = 0;
         int columnRuleNum = 0;
         try {
+            Long interval = 0L;
             for (UserRule rule : userRules) {
                 if(rule.getRuleType() == 0)
                     tableRuleNum++;
@@ -130,7 +132,8 @@ public class DataQualityService {
                     columnRuleNum++;
                 rule.setTemplateId(templateId);
                 String ruleId = UUID.randomUUID().toString();
-                Date generateTime = new Date(System.currentTimeMillis());
+                Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
                 rule.setRuleId(ruleId);
                 rule.setGenerateTime(generateTime);
                 qualityDao.insertUserRule(rule);

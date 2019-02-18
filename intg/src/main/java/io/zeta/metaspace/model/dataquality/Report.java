@@ -1,5 +1,6 @@
 package io.zeta.metaspace.model.dataquality;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class Report {
         private String ruleId;
         private String templateRuleId;
         private Double refValue;
-        private Date generateTime;
+        private Long generateTime;
 
         public String getRuleId() {
             return ruleId;
@@ -142,11 +143,11 @@ public class Report {
             this.refValue = refValue;
         }
 
-        public Date getGenerateTime() {
+        public Long getGenerateTime() {
             return generateTime;
         }
 
-        public void setGenerateTime(Date generateTime) {
+        public void setGenerateTime(Long generateTime) {
             this.generateTime = generateTime;
         }
     }
