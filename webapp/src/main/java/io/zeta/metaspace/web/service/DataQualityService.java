@@ -124,6 +124,7 @@ public class DataQualityService {
         int tableRuleNum = 0;
         int columnRuleNum = 0;
         try {
+            Long interval = 0L;
             for (UserRule rule : userRules) {
                 if(rule.getRuleType() == 0)
                     tableRuleNum++;
@@ -132,6 +133,7 @@ public class DataQualityService {
                 rule.setTemplateId(templateId);
                 String ruleId = UUID.randomUUID().toString();
                 Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
                 rule.setRuleId(ruleId);
                 rule.setGenerateTime(generateTime);
                 qualityDao.insertUserRule(rule);

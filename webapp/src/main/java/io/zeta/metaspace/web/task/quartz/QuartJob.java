@@ -530,6 +530,7 @@ public class QuartJob implements Job {
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
             List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
+            Long interval = 0L;
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
@@ -539,6 +540,7 @@ public class QuartJob implements Job {
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
                 Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
                 reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);
