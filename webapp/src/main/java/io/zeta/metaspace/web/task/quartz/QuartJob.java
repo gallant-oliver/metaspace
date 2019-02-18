@@ -72,8 +72,10 @@ public class QuartJob implements Job {
         for (int i=0; i<rules.size(); i++) {
             //根据模板状态判断是否继续运行
             Integer status = qualityDao.getTemplateStatus(templateId);
-            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code))
+            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code)) {
+                qualityDao.updateFinishedPercent(template.getTemplateId(), 0F);
                 return;
+            }
             UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
