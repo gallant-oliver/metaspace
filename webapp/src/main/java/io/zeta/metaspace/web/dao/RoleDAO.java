@@ -1,7 +1,9 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.ibatis.annotations.*;
 
 import javax.ws.rs.PathParam;
@@ -28,7 +30,8 @@ public interface RoleDAO {
 
     @Select("select count(1) from role where rolename like '%'||#{query}||'%'")
     public long getRolesCount(@Param("query") String query);
-    //添加成员
+
+    //添加成员&更换一批人的角色
     //@Update("update user set roleid=#{roleId} where userid in ")
     @Update({"<script>update user set roleid=#{roleId} where userid in",
             "<foreach item='item' index='index' collection='list'",
@@ -36,6 +39,13 @@ public interface RoleDAO {
             "#{item}",
             "</foreach>",
             "</script>"})
-    public int addUsers(@Param("roleId") String roleId,@Param("userIds") List<String> userIds);
+    public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds);
 
+    //移除成员&更换角色
+    @Update("update user set roleid=#{roleId} where userid=#{userId}")
+    public int updateUser(@Param("roleId") String roleId, @Param("userId") String userId);
+
+   //获取角色方案及授权范围
+   @Select("select categoryid ,name categoryname,paretcategoryguid,upbrothercategoryguid,downbrothercategoryguid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
+    public List<CategoryEntity> getCategorysByType(String roleId,String categoryType);
 }

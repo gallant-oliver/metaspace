@@ -144,11 +144,9 @@ public class RoleREST {
     @Path("/{roleId}/users/{userId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> deleteUser(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> removeUser(@PathParam("roleId") String roleId,@PathParam("userId") String userId) throws AtlasBaseException {
         try {
-
-
-            return null;
+            return roleService.removeUser(userId);
         } catch (Exception e) {
             LOG.error("", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");

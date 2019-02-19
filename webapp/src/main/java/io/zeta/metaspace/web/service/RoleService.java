@@ -1,7 +1,9 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.DateUtils;
@@ -54,7 +56,11 @@ public class RoleService {
         return rolePageResult;
     }
     public String addUsers(String roleId,List<String> users){
-        roleDAO.addUsers(roleId,users);
+        roleDAO.updateUsers(roleId,users);
+        return "success";
+    }
+    public String removeUser( String userId){
+        roleDAO.updateUser(SystemRole.GUEST.getCode(),userId);
         return "success";
     }
 }
