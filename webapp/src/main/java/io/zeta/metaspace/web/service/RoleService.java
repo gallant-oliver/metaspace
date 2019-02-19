@@ -1,7 +1,9 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
@@ -62,5 +64,11 @@ public class RoleService {
     public String removeUser( String userId){
         roleDAO.updateUser(SystemRole.GUEST.getCode(),userId);
         return "success";
+    }
+    public RoleModulesCategories getPrivileges(String roleId){
+        RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
+        roleModulesCategories.setBusinessCategories(roleDAO.getCategorysByType(roleId, 1));
+        roleModulesCategories.setTechnicalCategories(roleDAO.getCategorysByType(roleId, 0));
+        roleModulesCategories.setModules();
     }
 }
