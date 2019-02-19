@@ -164,8 +164,6 @@ public class RoleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> getPrivileges() throws AtlasBaseException {
         try {
-
-
             return null;
         } catch (Exception e) {
             LOG.error("", e);
