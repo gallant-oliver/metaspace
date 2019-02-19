@@ -172,7 +172,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return dataManageService.getAll(CATEGORY_TYPE);
+            return dataManageService.getAll();
         }  finally {
             AtlasPerfTracer.log(perf);
         }

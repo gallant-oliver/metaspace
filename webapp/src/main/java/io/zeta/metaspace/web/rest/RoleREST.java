@@ -144,7 +144,7 @@ public class RoleREST {
     @Path("/{roleId}/users/{userId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> removeUser(@PathParam("roleId") String roleId,@PathParam("userId") String userId) throws AtlasBaseException {
+    public String removeUser(@PathParam("roleId") String roleId,@PathParam("userId") String userId) throws AtlasBaseException {
         try {
             return roleService.removeUser(userId);
         } catch (Exception e) {
