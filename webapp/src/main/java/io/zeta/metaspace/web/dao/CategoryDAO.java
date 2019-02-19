@@ -40,7 +40,7 @@ public interface CategoryDAO {
     public int add(CategoryEntityV2 category);
 
     @Select("select * from category where categoryType=#{categoryType}")
-    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType);
+    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType) throws SQLException;
 
 
     @Select("select * from category where guid=#{guid}")
