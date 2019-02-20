@@ -69,4 +69,7 @@ public interface CategoryDAO {
 
     @Delete("delete from category where guid=#{guid}")
     public int delete(@Param("guid")String guid) throws SQLException;
+
+    @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null)")
+    public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType) throws SQLException;
 }

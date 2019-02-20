@@ -36,6 +36,10 @@ public interface BusinessDAO {
             "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets})")
     public int insertBusinessInfo(BusinessInfo info);
 
+    @Update("update business set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
+            "maintainer=#{maintainer},dataAssets=#{dataAssets} where businessId=#{businessId}")
+    public int updateBusinessInfo(BusinessInfo info);
+
     @Update("update business set businessstatus=#{status} where businessId=#{businessId}")
     public int updateBusinessStatus(@Param("businessId")String businessId, @Param("status")int status);
 
@@ -54,13 +58,29 @@ public interface BusinessDAO {
     /*@Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
     public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);*/
 
-    @Select("select * from businessInfo where  name like '%${businessName}%' limit #{limit} offset #{offset}")
-    public List<BusinessInfo> queryBusinessByName(@Param("businessName")String businessName, @Param("limit")int limit,@Param("offset") int offset);
+    @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
+    public List<BusinessInfo> queryBusinessByNameWithLimit(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName, @Param("limit")int limit,@Param("offset") int offset);
+
+    @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
+    public List<BusinessInfo> queryBusinessByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
+
+    @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
+    public long queryBusinessCountByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
 
     @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and updater like '%${submitter}%' limit #{limit} offset #{offset}")
-    public List<BusinessInfo> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+    public List<BusinessInfo> queryBusinessByConditionWithLimit(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                                        @Param("level2Category") String level2Category,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
+
+    @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
+            "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and updater like '%${submitter}%'")
+    public List<BusinessInfo> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+                                                                @Param("level2Category") String level2Category,@Param("submitter") String submitter);
+
+    @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
+            "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and updater like '%${submitter}%'")
+    public long queryBusinessCountByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+                                              @Param("level2Category") String level2Category,@Param("submitter") String submitter);
 
     @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryId=#{categoryGuid} limit #{limit} offset #{offset})")
     public List<BusinessInfo> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);

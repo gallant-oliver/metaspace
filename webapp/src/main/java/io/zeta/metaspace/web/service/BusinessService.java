@@ -17,8 +17,11 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
@@ -77,6 +80,15 @@ public class BusinessService {
         }
     }
 
+    public int updateBusiness(String businessId, BusinessInfo info) throws AtlasBaseException {
+        try {
+            info.setBusinessId(businessId);
+            return businessDao.updateBusinessInfo(info);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
     public List<BusinessInfo> getBusinessList(String departmentId, int limit, int offset) throws AtlasBaseException {
         try {
             return businessDao.queryBusinessByDemparmentId(departmentId, limit, offset);
@@ -104,20 +116,50 @@ public class BusinessService {
         }
     }
 
-    public List<BusinessInfo> getBusinessListByName(String businessName, int limit, int offset) throws AtlasBaseException {
+    public PageResult<BusinessInfo> getBusinessListByName(String categoryId, Parameters parameters) throws AtlasBaseException {
         try {
-            return businessDao.queryBusinessByName(businessName, limit, offset);
+            PageResult<BusinessInfo> pageResult = new PageResult<>();
+            String businessName = parameters.getQuery();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfo> businessInfoList = null;
+            if(limit != -1) {
+                businessInfoList = businessDao.queryBusinessByNameWithLimit(categoryId, businessName, limit, offset);
+            } else {
+                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName);
+            }
+            long businessCount = businessDao.queryBusinessCountByName(categoryId, businessName);
+            pageResult.setSum(businessCount);
+            pageResult.setLists(businessInfoList);
+            pageResult.setCount(businessInfoList.size());
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 
-    public List<BusinessInfo> getBusinessListByCondition(String status, String ticketNumber, String businessName,
-                                                         String level2Category, String submitter,int limit, int offset) throws AtlasBaseException {
+    public PageResult<BusinessInfo> getBusinessListByCondition(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
+            PageResult<BusinessInfo> pageResult = new PageResult<>();
+            String status = parameter.getStatus();
+            String ticketNumber = parameter.getTicketNumber();
+            String businessName = parameter.getBusinessName();
+            String level2Category = parameter.getLevel2Category();
+            String  submitter = parameter.getSubmitter();
+            int limit = parameter.getLimit();
+            int offset = parameter.getOffset();
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
-
-            return businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter, limit, offset);
+            List<BusinessInfo> businessInfoList = null;
+            if(limit != -1) {
+                businessInfoList = businessDao.queryBusinessByConditionWithLimit(technicalStatus, ticketNumber, businessName, level2Category, submitter, limit, offset);
+            } else {
+                businessInfoList = businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);
+            }
+            pageResult.setLists(businessInfoList);
+            long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);
+            pageResult.setSum(businessCount);
+            pageResult.setCount(businessInfoList.size());
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }

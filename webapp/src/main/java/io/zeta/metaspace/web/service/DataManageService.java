@@ -305,4 +305,12 @@ public class DataManageService {
                 relationDao.updateTableStatus(guid, "DELETED");
         }
     }
+
+    public Set<CategoryEntityV2> getAllDepartments(int type) throws AtlasBaseException {
+        try {
+            return dao.getAllDepartments(type);
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
 }
