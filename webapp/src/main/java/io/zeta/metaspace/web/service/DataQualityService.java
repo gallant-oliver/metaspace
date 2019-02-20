@@ -49,8 +49,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,13 +78,20 @@ public class DataQualityService {
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
         try {
-            String templateId = UUID.randomUUID().toString();
-            template.setTemplateId(templateId);
-            addRulesByTemlpateId(template);
-            //template
-            qualityDao.insertTemplate(template);
-            //设置模板状态为【未启用】
-            qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
+            String templateName = template.getTemplateName();
+            int sameNameCount = qualityDao.countTemplateName(templateName);
+            if(sameNameCount > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复模板名称");
+            } else {
+                String templateId = UUID.randomUUID().toString();
+                template.setTemplateId(templateId);
+                addRulesByTemlpateId(template);
+                //template
+                qualityDao.insertTemplate(template);
+                //设置模板状态为【未启用】
+                qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
+            }
+
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
@@ -115,6 +124,7 @@ public class DataQualityService {
         int tableRuleNum = 0;
         int columnRuleNum = 0;
         try {
+            Long interval = 0L;
             for (UserRule rule : userRules) {
                 if(rule.getRuleType() == 0)
                     tableRuleNum++;
@@ -122,7 +132,10 @@ public class DataQualityService {
                     columnRuleNum++;
                 rule.setTemplateId(templateId);
                 String ruleId = UUID.randomUUID().toString();
+                Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
                 rule.setRuleId(ruleId);
+                rule.setGenerateTime(generateTime);
                 qualityDao.insertUserRule(rule);
                 //threshold
                 List<Double> thresholds = rule.getRuleCheckThreshold();
@@ -220,7 +233,7 @@ public class DataQualityService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
         }
     }
 
@@ -232,7 +245,7 @@ public class DataQualityService {
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
 
@@ -378,6 +391,14 @@ public class DataQualityService {
     public Float getFinishedPercent(String templateId) {
         try {
             return qualityDao.getFinishedPercent(templateId);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public Integer getTemplateStatus(String templateId) {
+        try {
+            return qualityDao.getTemplateStatus(templateId);
         } catch (Exception e) {
             throw e;
         }

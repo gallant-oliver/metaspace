@@ -21,7 +21,7 @@ public interface DataQualityV2DAO {
     public List<TemplateResult> getTemplateResults( String tableId) throws SQLException;
     @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
     public List<Report> getReport(String reportId) throws SQLException;
-    @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid from report_userrule where reportid = #{reportId}")
+    @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid,generateTime from report_userrule where reportid = #{reportId} order by generateTime")
     public List<Report.ReportRule> getReportRule(String reportId) throws SQLException;
     @Select("select thresholdvalue from report_userrule2threshold where ruleid = #{ruleId} order by thresholdvalue asc")
     public List<Double> getReportThresholdValue(String ruleId) throws SQLException;

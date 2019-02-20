@@ -163,7 +163,7 @@ public class DataQualityREST {
      * @return String
      */
     @PUT
-    @Path("/template/status/{templateId}/{templateStatus}")
+    @Path("/template/status/enable/{templateId}/{templateStatus}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String startTemplate(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
         try {
@@ -174,19 +174,35 @@ public class DataQualityREST {
         }
     }
 
+    /**
+     * 暂停模板
+     * @param templateId
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
-    @Path("/template/status/{templateId}")
+    @Path("/template/status/disable/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String stopTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
+    public Response stopTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
             dataQualityService.stopTemplate(templateId);
-            return "success";
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @GET
+    @Path("/template/status/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Integer getTemplateStatus(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            return dataQualityService.getTemplateStatus(templateId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
-
-
 
     /**
      * 获取数据质量模板统计信息列表
@@ -241,7 +257,7 @@ public class DataQualityREST {
             return report;
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"sql异常");
-        } catch (AtlasBaseException e){
+        } catch (AtlasBaseException e) {
             throw e;
         }
 

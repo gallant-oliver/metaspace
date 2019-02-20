@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -44,6 +45,7 @@ import java.util.*;
 
 public class QuartJob implements Job {
     private static final Logger LOG = LoggerFactory.getLogger(QuartJob.class);
+    private static final Integer STATUS_START = 1;
     @Autowired
     private DataQualityDAO qualityDao;
 
@@ -68,6 +70,12 @@ public class QuartJob implements Job {
         }
         int totalStep = rules.size() + 1;
         for (int i=0; i<rules.size(); i++) {
+            //根据模板状态判断是否继续运行
+            Integer status = qualityDao.getTemplateStatus(templateId);
+            if(Objects.nonNull(status) && status.equals(TemplateStatus.SUSPENDING.code)) {
+                qualityDao.updateFinishedPercent(template.getTemplateId(), 0F);
+                return;
+            }
             UserRule rule = rules.get(i);
             int retryCount = 0;
             try {
@@ -158,16 +166,16 @@ public class QuartJob implements Job {
                 case EMPTY_VALUE_NUM_CHANGE_RATIO:
                 case DUP_VALUE_NUM_CHANGE_RATIO:
                     ruleResultChangeRatio(rule, true, true);
+                    break;
 
                 case UNIQUE_VALUE_NUM_RATIO:
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(rule);
-
             }
         } catch (Exception e) {
             LOG.info(e.getMessage());
-            throw new RuntimeException();
+            //throw new RuntimeException();
         }
     }
 
@@ -239,27 +247,27 @@ public class QuartJob implements Job {
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
 
-            Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double valueChange = nowValue - lastValue;
+            Double valueChange = Math.abs(nowValue - lastValue);
             if (record) {
                 recordDataMap(rule, nowValue, valueChange);
             }
             return valueChange;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
-    //表行数变化率
+    //规则值变化率
     public Double ruleResultChangeRatio(UserRule rule, boolean record, boolean columnRule) throws AtlasBaseException {
         try {
             Double ruleValueChange = ruleResultValueChange(rule, false, columnRule);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double ratio = 0.0;
+            Double ratio = null;
             if (lastValue != 0) {
                 ratio = ruleValueChange / lastValue;
             }
@@ -268,7 +276,7 @@ public class QuartJob implements Job {
             }
             return ratio;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
@@ -286,30 +294,31 @@ public class QuartJob implements Job {
             }
             return totalSize;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表大小失败");
         }
     }
 
     //表大小变化
-    public long tableSizeChange(UserRule rule, boolean record) throws AtlasBaseException {
+    public Double tableSizeChange(UserRule rule, boolean record) throws AtlasBaseException {
         try {
             long tableSize = tableSize(rule, false);
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
-            long lastValue = qualityDao.getLastValue(templateId, templateRuleId);
-            long sizeChange = tableSize - lastValue;
+            Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
+            lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
+            Double sizeChange = Math.abs(tableSize - lastValue);
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
             }
             return sizeChange;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表大小失败");
         }
     }
 
     //表大小变化率
     public double tableSizeChangeRatio(UserRule rule, boolean record) throws AtlasBaseException {
-        long tableSizeChange = tableSizeChange(rule, record);
+        Double tableSizeChange = tableSizeChange(rule, record);
         String templateId = rule.getTemplateId();
         String templateRuleId = rule.getRuleId();
         double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
@@ -349,7 +358,7 @@ public class QuartJob implements Job {
             values.add(ratio);
             resultMap.put(rule, values);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "计算出现异常");
         }
     }
 
@@ -511,8 +520,6 @@ public class QuartJob implements Job {
         }
         if (ruleStatus == null) throw new RuntimeException();
         return ruleStatus;
-
-
     }
 
     /**
@@ -524,15 +531,19 @@ public class QuartJob implements Job {
 
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
-            List<Report.ReportRule> list=new ArrayList<>();
-            Report report = insertReport(template);
+            List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
+            Long interval = 0L;
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
                 double refValue = values.get(0);
                 double resultValue = values.get(1);
+
                 Report.ReportRule reportRule = getReportRule(rule, refValue, resultValue);
                 RuleStatus status = getReportRuleStatus(resultValue, rule);
                 reportRule.setReportRuleStatus(status.getCode());
+                Long generateTime = System.currentTimeMillis();
+                generateTime += (interval++);
+                reportRule.setGenerateTime(generateTime);
                 List<Double> ruleCheckThreshold = rule.getRuleCheckThreshold();
                 reportRule.setRuleCheckThreshold(ruleCheckThreshold);
                 list.add(reportRule);
@@ -547,7 +558,10 @@ public class QuartJob implements Job {
     public void addReportByDao(Report report, List<Report.ReportRule> list ) throws SQLException {
         if(list.size() == 0)
             return;
+
         qualityDao.insertReport(report);
+        //设置report开启告警
+        qualityDao.updateAlertStatus(report.getReportId(), STATUS_START);
         for (Report.ReportRule reportRule : list) {
             qualityDao.insertRuleReport(report.getReportId(), reportRule);
             for (Double threshold : reportRule.getRuleCheckThreshold()) {

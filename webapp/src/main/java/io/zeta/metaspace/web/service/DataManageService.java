@@ -48,6 +48,8 @@ import java.util.UUID;
 @Service
 public class DataManageService {
 
+    private final int CATEGORY_TYPE = 0;
+
     @Autowired
     CategoryDAO dao;
 
@@ -56,10 +58,12 @@ public class DataManageService {
     @Autowired
     RelationDAO relationDao;
 
-    public Set<CategoryEntityV2> getAll(int categoryType) throws AtlasBaseException {
+    public Set<CategoryEntityV2> getAll() throws AtlasBaseException {
         try {
-            return dao.getAll(categoryType);
+            return dao.getAll(CATEGORY_TYPE);
         } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }

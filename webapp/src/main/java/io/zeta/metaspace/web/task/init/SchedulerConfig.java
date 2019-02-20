@@ -1,17 +1,16 @@
 package io.zeta.metaspace.web.task.init;
 
-import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
-import org.quartz.Scheduler;
+import org.quartz.*;
 import org.quartz.ee.servlet.QuartzInitializerListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
@@ -20,6 +19,7 @@ import java.util.Properties;
 
 @Configuration
 public class SchedulerConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(SchedulerConfig.class);
     @Autowired
     private ApplicationContext applicationContext;
 
@@ -29,6 +29,7 @@ public class SchedulerConfig {
         jobFactory.setApplicationContext(applicationContext);
         return jobFactory;
     }
+
     @Bean(name = "SchedulerFactory")
     public SchedulerFactoryBean schedulerFactoryBean() throws IOException {
         SchedulerFactoryBean factory = new SchedulerFactoryBean();
@@ -65,7 +66,29 @@ public class SchedulerConfig {
     }
 
     @Bean
-    public QuartzManager quartzManager(){
+    public QuartzManager quartzManager() {
         return new QuartzManager();
     }
+
+    /*
+     *每晚十二点自动执行统计信息任务
+     */
+    @Bean
+    public String autoStatistics() throws IOException, SchedulerException {
+        Scheduler scheduler = scheduler();
+        JobKey jobKey = new JobKey("统计信息任务", "元数据分析");
+        if (scheduler.getJobDetail(jobKey) == null) {
+            LOG.info("添加统计信息任务");
+            JobDetail jobDetail = JobBuilder.newJob(StatisticsJob.class).withIdentity("统计信息任务", "元数据分析").build();
+            TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
+            triggerBuilder.withIdentity("统计信息调度器", "元数据分析");
+            triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 * * ?"));
+            Trigger trigger = triggerBuilder.build();
+            scheduler.scheduleJob(jobDetail, trigger);
+        } else {
+            LOG.info("统计信息任务已添加");
+        }
+        return "start";
+    }
+
 }

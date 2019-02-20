@@ -34,12 +34,14 @@ import java.util.Set;
  */
 public interface CategoryDAO {
 
+
     @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType)" +
             "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType})")
     public int add(CategoryEntityV2 category);
 
     @Select("select * from category where categoryType=#{categoryType}")
-    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType);
+    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType) throws SQLException;
+
 
     @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;

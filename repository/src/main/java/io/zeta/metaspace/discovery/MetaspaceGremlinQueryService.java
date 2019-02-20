@@ -376,6 +376,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();
                     table.setTableId(tableGuid);
                     table.setTableName(tableName);
+                    setVirtualTable(table);
                     table.setStatus(tableStatus);
                     table.setDescription(tableDescription);
 
@@ -423,6 +424,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误");
         }
 
+    }
+
+    private void setVirtualTable(Table table) {
+        if(table.getTableName().contains("values__tmp__table"))
+            table.setVirtualTable(true);
+        else
+            table.setVirtualTable(false);
     }
 
     @Override
@@ -486,6 +494,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
             table.setTableId(tableEntity.getGuid());
             table.setTableName(tableEntity.getAttribute("name").toString());
+            setVirtualTable(table);
             table.setStatus(tableEntity.getStatus().name());
             table.setDescription(tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString());
         }
@@ -597,6 +606,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
                 AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
                 tb.setTableName(dbEntity.getAttribute("name").toString());
+                setVirtualTable(tb);
                 tb.setTableId(dbEntity.getGuid());
                 tb.setStatus(dbEntity.getStatus().name());
                 tb.setDescription(dbEntity.getAttribute("comment")==null?"-":dbEntity.getAttribute("comment").toString());
