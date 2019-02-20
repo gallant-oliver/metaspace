@@ -25,15 +25,15 @@ import javax.inject.Singleton;
 import javax.ws.rs.*;
 import java.util.List;
 
-@Path("roles")
+@Path("role")
 @Singleton
 @Service
 public class RoleREST {
     private static final Logger LOG = LoggerFactory.getLogger(RoleREST.class);
     @Autowired
     private RoleService roleService;
-@Autowired
-private PrivilegeService privilegeService;
+    @Autowired
+    private PrivilegeService privilegeService;
     /**
      * 新增角色
      *
@@ -93,12 +93,13 @@ private PrivilegeService privilegeService;
      *
      * @return List<Database>
      */
-    @GET
-    @Path("/{roleId}/users/search")
+    @POST
+    @Path("/{roleId}/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<User> getUsers(@PathParam("roleId") String roleId, @QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<User> getUsers(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
         try {
-            return roleService.getUsers(roleId, query, offset, limit);
+            return roleService.getUsers(roleId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         } catch (Exception e) {
             LOG.error("搜索成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索成员失败");
@@ -110,12 +111,13 @@ private PrivilegeService privilegeService;
      *
      * @return List<Database>
      */
-    @GET
-    @Path("")
+    @POST
+    @Path("/roles")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Role> getRoles(@QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<Role> getRoles(Parameters parameters) throws AtlasBaseException {
         try {
-            return roleService.getRoles(query, offset, limit);
+            return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         } catch (Exception e) {
             LOG.error("搜索角色失败失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败失败");
@@ -128,7 +130,7 @@ private PrivilegeService privilegeService;
      * @return List<Database>
      */
     @POST
-    @Path("/{roleId}/users")
+    @Path("/{roleId}/user")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public String addUsers(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
@@ -193,12 +195,13 @@ private PrivilegeService privilegeService;
      *
      * @return List<Database>
      */
-    @Get
+    @POST
     @Path("/privileges")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Privilege> getPrivilege(@QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<Privilege> getPrivilege(Parameters parameters) throws AtlasBaseException {
         try {
-            return privilegeService.getPrivilegeList(query,(int)limit,(int)offset);
+            return privilegeService.getPrivilegeList(parameters.getQuery(),parameters.getLimit(),parameters.getOffset());
         } catch (Exception e) {
             LOG.error("搜索技术方案失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索技术方案失败");

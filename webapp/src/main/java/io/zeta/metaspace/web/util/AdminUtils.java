@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.util;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.zeta.metaspace.model.user.User;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -42,6 +43,20 @@ public class AdminUtils {
             return SSOTicket;
         }catch (AtlasBaseException e){
             throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
+        }
+
+    }
+    public static User getUserData() throws AtlasBaseException {
+        User user = new User();
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            Map m = (Map)request.getSession().getAttribute("user");
+            user.setUserId(m.get("AccountGuid").toString());
+            user.setAccount(m.get("LoginEmail").toString());
+            user.setUsername(m.get("DisplayName").toString());
+            return user;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
         }
