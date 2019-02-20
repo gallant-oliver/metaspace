@@ -172,11 +172,10 @@ public class QuartJob implements Job {
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(rule);
-
             }
         } catch (Exception e) {
             LOG.info(e.getMessage());
-            throw new RuntimeException();
+            //throw new RuntimeException();
         }
     }
 
@@ -268,7 +267,7 @@ public class QuartJob implements Job {
             String templateRuleId = rule.getRuleId();
             Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double ratio = 0.0;
+            Double ratio = null;
             if (lastValue != 0) {
                 ratio = ruleValueChange / lastValue;
             }
@@ -306,6 +305,7 @@ public class QuartJob implements Job {
             String templateId = rule.getTemplateId();
             String templateRuleId = rule.getRuleId();
             Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
+            lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
             Double sizeChange = Math.abs(tableSize - lastValue);
             if (record) {
                 recordDataMap(rule, (double) tableSize, (double) sizeChange);
