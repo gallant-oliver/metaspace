@@ -597,7 +597,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            return dataManageService.getAll();
+            return dataManageService.getAll(CATEGORY_TYPE);
         } finally {
             AtlasPerfTracer.log(perf);
         }
