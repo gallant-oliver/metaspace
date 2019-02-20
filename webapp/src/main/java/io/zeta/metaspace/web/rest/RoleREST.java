@@ -2,9 +2,12 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.privilege.Privilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -29,7 +32,8 @@ public class RoleREST {
     private static final Logger LOG = LoggerFactory.getLogger(RoleREST.class);
     @Autowired
     private RoleService roleService;
-
+@Autowired
+private PrivilegeService privilegeService;
     /**
      * 新增角色
      *
@@ -97,7 +101,7 @@ public class RoleREST {
             return roleService.getUsers(roleId, query, offset, limit);
         } catch (Exception e) {
             LOG.error("搜索成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索成员失败");
         }
     }
 
@@ -113,8 +117,8 @@ public class RoleREST {
         try {
             return roleService.getRoles(query, offset, limit);
         } catch (Exception e) {
-            LOG.error("搜索角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("搜索角色失败失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败失败");
         }
     }
 
@@ -130,8 +134,8 @@ public class RoleREST {
         try {
             return roleService.addUsers(roleId,users) ;
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("添加成员失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
         }
     }
 
@@ -142,14 +146,12 @@ public class RoleREST {
      */
     @DELETE
     @Path("/{roleId}/users/{userId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public String removeUser(@PathParam("roleId") String roleId,@PathParam("userId") String userId) throws AtlasBaseException {
         try {
             return roleService.removeUser(userId);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("移除成员失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"移除成员失败");
         }
     }
 
@@ -160,14 +162,13 @@ public class RoleREST {
      */
     @Get
     @Path("/{roleId}/privileges")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getPrivileges() throws AtlasBaseException {
+    public RoleModulesCategories getPrivileges(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
-            return null;
+            return roleService.getPrivileges(roleId);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("获取角色方案及授权范围失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色方案及授权范围失败");
         }
     }
     /**
@@ -178,15 +179,13 @@ public class RoleREST {
     @Put
     @Path("/{roleId}/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> putPrivileges() throws AtlasBaseException {
+
+    public String putPrivileges(@PathParam("roleId") String roleId,RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         try {
-
-
-            return null;
+            return roleService.putPrivileges(roleId,roleModulesCategories);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("修改角色方案及授权范围失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改角色方案及授权范围失败");
         }
     }
     /**
@@ -196,16 +195,13 @@ public class RoleREST {
      */
     @Get
     @Path("/privileges")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getPrivilege() throws AtlasBaseException {
+    public PageResult<Privilege> getPrivilege(@QueryParam("query") String query, @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
         try {
-
-
-            return null;
+            return privilegeService.getPrivilegeList(query,(int)limit,(int)offset);
         } catch (Exception e) {
-            LOG.error("", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"");
+            LOG.error("搜索技术方案失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索技术方案失败");
         }
     }
 }

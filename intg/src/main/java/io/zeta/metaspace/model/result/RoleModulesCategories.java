@@ -2,13 +2,14 @@ package io.zeta.metaspace.model.result;
 
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.privilege.Privilege;
 
 import java.util.List;
 
 public class RoleModulesCategories {
     private List<CategoryEntity> technicalCategories;
     private List<CategoryEntity> businessCategories;
-    private List<Module> modules;
+    private Privilege privilege;
 
     public List<CategoryEntity> getTechnicalCategories() {
         return technicalCategories;
@@ -26,11 +27,11 @@ public class RoleModulesCategories {
         this.businessCategories = businessCategories;
     }
 
-    public List<Module> getModules() {
-        return modules;
+    public Privilege getPrivilege() {
+        return privilege;
     }
 
-    public void setModules(List<Module> modules) {
-        this.modules = modules;
+    public void setPrivilege(Privilege privilege) {
+        this.privilege = privilege;
     }
 }

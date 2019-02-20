@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.privilege.Privilege;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -51,19 +52,19 @@ public interface RoleDAO {
     public List<CategoryEntity> getCategorysByType(String roleId,int categoryType);
 
    //获取角色方案
-    @Select("")
-    public List<Module> getModulesBy
+    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid")
+    public Privilege getPrivilegeByRoleId(String roleId);
 
    //修改角色方案
     @Update("update role set privilegeid=#{privilegeId} where roleid=#{roleId}")
-    public int updateCategorysByType(@Param("privilegeId") String privilegeId,@Param("roleId") String roleId);
+    public int updateCategory(@Param("privilegeId") String privilegeId,@Param("roleId") String roleId);
 
     //删除授权范围
     @Delete("delete from role2category where roleid=#{roleId}")
-    public int deleteCategorysByType(String roleId);
+    public int deleteRole2category(String roleId);
 
     //添加授权范围
     @Insert("insert into role2category values(#{roleId},#{categoryId},#{operation})")
-    public int addCategorysByType(String roleId,String categoryId,int operation);
+    public int addRole2category(String roleId,String categoryId,int operation);
 
 }
