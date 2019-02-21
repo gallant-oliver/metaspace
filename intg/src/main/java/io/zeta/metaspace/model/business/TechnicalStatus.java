@@ -18,7 +18,7 @@ package io.zeta.metaspace.model.business;
 
 public enum TechnicalStatus {
 
-    ADDED(0,"added") , BLANK(1,"blank");
+    BLANK(0,"blank"), ADDED(1,"added");
     public Integer code;
     public String desc;
 

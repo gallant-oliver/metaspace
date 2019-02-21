@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.rest;
  */
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -144,7 +145,7 @@ public class BusinessREST {
     @Path("/businesses/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfo> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
         try {
             return businessService.getBusinessListByName(categoryId, parameters);
         } catch (Exception e) {
@@ -292,7 +293,7 @@ public class BusinessREST {
     @Path("/businessManage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfo> getBusinessListWithManage(BusinessQueryParameter parameter) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListWithManage(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
             return businessService.getBusinessListByCondition(parameter);
         } catch (Exception e) {

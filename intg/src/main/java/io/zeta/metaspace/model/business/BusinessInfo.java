@@ -37,6 +37,9 @@ public class BusinessInfo {
     private String businessOperator;
     private String technicalLastUpdate;
     private String technicalOperator;
+    private String submitter;
+    private String submissionTime;
+    private String ticketNumber;
     private List<Table> tables;
 
     public static class Table {
@@ -189,6 +192,30 @@ public class BusinessInfo {
 
     public void setTechnicalOperator(String technicalOperator) {
         this.technicalOperator = technicalOperator;
+    }
+
+    public String getSubmitter() {
+        return submitter;
+    }
+
+    public void setSubmitter(String submitter) {
+        this.submitter = submitter;
+    }
+
+    public String getSubmissionTime() {
+        return submissionTime;
+    }
+
+    public void setSubmissionTime(String submissionTime) {
+        this.submissionTime = submissionTime;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
     }
 
     public List<Table> getTables() {

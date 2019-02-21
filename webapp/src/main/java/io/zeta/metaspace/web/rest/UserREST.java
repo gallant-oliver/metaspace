@@ -38,29 +38,29 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 
-@Path("")
+@Path("/users")
 @Singleton
 @Service
 public class UserREST {
 
     @Autowired
-    private UsersService userService;
+    private UsersService usersService;
 
     @GET
-    @Path("/users/{userId}")
+    @Path("/{userId}")
     public UserInfo UserInfo(@PathParam("userId") String userId) throws AtlasBaseException {
         try {
-            return userService.getUserInfoById(userId);
+            return usersService.getUserInfoById(userId);
         } catch (Exception e) {
             throw e;
         }
     }
 
     @GET
-    @Path("/users")
+    @Path("")
     public PageResult<User> UserList(@QueryParam("query") String query, @QueryParam("offset") Integer offset, @QueryParam("limit") Integer limit) throws AtlasBaseException {
         try {
-            return userService.getUserList(query, offset, limit);
+            return usersService.getUserList(query, offset, limit);
         } catch (Exception e) {
             throw e;
         }
