@@ -47,8 +47,7 @@ public class PrivilegeService {
     @Autowired
     private PrivilegeDAO privilegeDAO;
 
-    @Autowired
-    private RoleDAO roleDAO;
+
 
     public int addPrivilege(Privilege privilege) throws AtlasBaseException {
         try {

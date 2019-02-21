@@ -12,7 +12,9 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,8 +54,8 @@ public class RoleService {
         long usersCount = roleDAO.getUsersCount(roleId, query);
         userPageResult.setLists(users);
         userPageResult.setOffset(offset);
-        userPageResult.setSum(users.size());
-        userPageResult.setCount(usersCount);
+        userPageResult.setSum(usersCount);
+        userPageResult.setCount(users.size());
         return userPageResult;
     }
     @Transactional
@@ -63,21 +65,26 @@ public class RoleService {
         long rolesCount = roleDAO.getRolesCount( query);
         rolePageResult.setLists(roles);
         rolePageResult.setOffset(offset);
-        rolePageResult.setSum(roles.size());
-        rolePageResult.setCount(rolesCount);
+        rolePageResult.setSum(rolesCount);
+        rolePageResult.setCount(roles.size());
         return rolePageResult;
     }
     public String addUsers(String roleId,List<String> users){
         roleDAO.updateUsers(roleId,users);
         return "success";
     }
-    public String removeUser( String userId){
-        roleDAO.updateUser(SystemRole.GUEST.getCode(),userId);
+    public String removeUser( List<String> users){
+        roleDAO.updateUsers(SystemRole.GUEST.getCode(),users);
         return "success";
     }
     @Transactional
-    public RoleModulesCategories getPrivileges(String roleId){
+    public RoleModulesCategories getPrivileges(String roleId) throws AtlasBaseException {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
+        String userId = AdminUtils.getUserData().getUserId();
+        //当前用户的角色
+        String userRoleId = roleDAO.getRoleIdByUserId(userId);
+
+        //被勾选的
         roleModulesCategories.setBusinessCategories(roleDAO.getCategorysByType(roleId, 1));
         roleModulesCategories.setTechnicalCategories(roleDAO.getCategorysByType(roleId, 0));
         Privilege privilege = roleDAO.getPrivilegeByRoleId(roleId);
@@ -96,24 +103,24 @@ public class RoleService {
         for (Module module : modules) {
             moduleIds.add(module.getModuleId());
         }
-        List<CategoryEntity> businessCategories = roleModulesCategories.getBusinessCategories();
-        List<CategoryEntity> technicalCategories = roleModulesCategories.getTechnicalCategories();
+        List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
+        List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if(moduleIds.contains(SystemModule.BUSINESSE_OPERATE)) {
-            for (CategoryEntity businessCategory : businessCategories) {
+            for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
             }
         }else if(moduleIds.contains(SystemModule.BUSINESSE_CHECK)){
-            for (CategoryEntity businessCategory : businessCategories) {
+            for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
         if(moduleIds.contains(SystemModule.TECHNICAL_OPERATE)) {
-            for (CategoryEntity technicalCategory : technicalCategories) {
+            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
             }
 
         }else if(moduleIds.contains(SystemModule.TECHNICAL_CHECK)){
-            for (CategoryEntity technicalCategory : technicalCategories) {
+            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
             }
         }
