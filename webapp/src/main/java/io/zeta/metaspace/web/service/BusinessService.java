@@ -80,12 +80,12 @@ public class BusinessService {
             info.setBusinessLastUpdate(time);
             info.setTicketNumber(String.valueOf(timestamp));
 
+            int insertFlag =  businessDao.insertBusinessInfo(info);
+
             //更新business编辑状态
             businessDao.updateBusinessStatus(businessId, FINISHED_STATUS);
             //更新technical编辑状态
             businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
-
-            int insertFlag =  businessDao.insertBusinessInfo(info);
 
             BusinessRelationEntity entity = new BusinessRelationEntity();
             //relationshiGuid
@@ -220,6 +220,9 @@ public class BusinessService {
                 String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
                 String path = getCategoryPath(categoryId);
                 infoHeader.setPath(path);
+                String[] pathArr = path.split("\\.");
+                if(pathArr.length >= 2)
+                    infoHeader.setLevel2Category(pathArr[1]);
             }
             pageResult.setLists(businessInfoList);
             long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);

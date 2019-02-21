@@ -66,7 +66,7 @@ import javax.ws.rs.core.Response;
 
 @Singleton
 @Service
-@Path("")
+@Path("/businesses")
 public class BusinessREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
     private static final int CATEGORY_TYPE = 1;
@@ -90,7 +90,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/businesses/category/{categoryId}")
+    @Path("/category/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
@@ -110,7 +110,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @PUT
-    @Path("/businesses/{businessId}")
+    @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
@@ -123,7 +123,7 @@ public class BusinessREST {
     }
 
     @GET
-    @Path("/businesses/categories/{categoryId}")
+    @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<BusinessInfo> getBusinessList(@PathParam("categoryId") String categoryId, @QueryParam("limit") final int limit, @QueryParam("limit") final int offset) throws AtlasBaseException {
@@ -142,7 +142,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/businesses/categories/{categoryId}")
+    @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
@@ -160,7 +160,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/businesses/{businessId}")
+    @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo getBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
@@ -178,7 +178,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/businesses/categories")
+    @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
@@ -200,7 +200,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/businesses/categories")
+    @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public CategoryEntityV2 createCategory(CategoryInfoV2 categoryInfo) throws Exception {
@@ -224,7 +224,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @DELETE
-    @Path("/businesses/categories/{categoryGuid}")
+    @Path("/categories/{categoryGuid}")
     public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
@@ -248,7 +248,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @PUT
-    @Path("/businesses/categories/{categoryId}")
+    @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public CategoryEntityV2 updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo) throws AtlasBaseException {
@@ -271,7 +271,7 @@ public class BusinessREST {
      * @return
      * @throws AtlasBaseException
      */
-    @GET
+    /*@GET
     @Path("/businessManage/departments")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -281,7 +281,7 @@ public class BusinessREST {
         } catch (Exception e) {
             throw e;
         }
-    }
+    }*/
 
     /**
      * 业务对象搜索(业务对象管理)
@@ -289,7 +289,7 @@ public class BusinessREST {
      * @return
      * @throws AtlasBaseException
      */
-    @POST
+    /*@POST
     @Path("/businessManage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -299,7 +299,7 @@ public class BusinessREST {
         } catch (Exception e) {
             throw e;
         }
-    }
+    }*/
 
     /**
      * 更新技术
@@ -308,7 +308,7 @@ public class BusinessREST {
      * @return
      * @throws AtlasBaseException
      */
-    @PUT
+    /*@PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/businessManage/{businessId}")
@@ -319,5 +319,5 @@ public class BusinessREST {
         } catch (Exception e) {
             throw e;
         }
-    }
+    }*/
 }
