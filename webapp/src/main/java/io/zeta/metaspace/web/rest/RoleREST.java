@@ -147,10 +147,10 @@ public class RoleREST {
      * @return List<Database>
      */
     @DELETE
-    @Path("/{roleId}/users/{userId}")
-    public String removeUser(@PathParam("roleId") String roleId,@PathParam("userId") String userId) throws AtlasBaseException {
+    @Path("/{roleId}/user")
+    public String removeUser(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
-            return roleService.removeUser(userId);
+            return roleService.removeUser(users);
         } catch (Exception e) {
             LOG.error("移除成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"移除成员失败");
@@ -158,7 +158,7 @@ public class RoleREST {
     }
 
     /**
-     * 获取角色方案及授权范围
+     * 获取角色方案及授权范围(gai)
      *
      * @return List<Database>
      */
@@ -174,7 +174,7 @@ public class RoleREST {
         }
     }
     /**
-     * 修改角色方案及授权范围
+     * 修改角色方案及授权范围(gai)
      *
      * @return List<Database>
      */
