@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface RoleDAO {
     @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime})")
-    public int addRoles(Role role);
+    public int addRoles(@Param("role") Role role);
 
     @Update("update role set status=#{status} where roleid={roleId}")
     public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status);
@@ -26,7 +26,7 @@ public interface RoleDAO {
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
     @Select("select userid,username,account,users.roleid,rolename from users,role where users.userid=role.userid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username offset #{offset}")
-    public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
+    public List<User> getUser(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
 
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
@@ -35,7 +35,7 @@ public interface RoleDAO {
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
     @Select("select * from role where rolename like '%'||#{query}||'%' order by rolename  offset #{offset}")
-    public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset);
+    public List<Role> getRole(@Param("query") String query, @Param("offset") long offset);
 
     @Select("select count(1) from role where rolename like '%'||#{query}||'%'")
     public long getRolesCount(@Param("query") String query);
