@@ -121,7 +121,7 @@ public class BusinessREST {
         }
     }
 
-    /*@GET
+    @GET
     @Path("/businesses/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -131,8 +131,15 @@ public class BusinessREST {
         } catch (Exception e) {
             throw e;
         }
-    }*/
+    }
 
+    /**
+     * 搜索business列表(业务对象)
+     * @param categoryId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/businesses/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -160,29 +167,6 @@ public class BusinessREST {
             return businessService.getBusinessInfo(businessId);
         } catch (Exception e) {
             throw e;
-        }
-    }
-
-    /**
-     * 获取表详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/businesses/table/{tableId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("tableId") String guid) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getTableInfoById()");
-            }
-            return metadataService.getTableInfoById(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
         }
     }
 
@@ -299,12 +283,12 @@ public class BusinessREST {
     }
 
     /**
-     * 业务对象搜索
+     * 业务对象搜索(业务对象管理)
      * @param parameter
      * @return
      * @throws AtlasBaseException
      */
-    @GET
+    @POST
     @Path("/businessManage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

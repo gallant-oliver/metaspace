@@ -45,14 +45,10 @@ public class BusinessService {
 
     @Autowired
     BusinessDAO businessDao;
-
     @Autowired
     BusinessRelationDAO relationDao;
-
     @Autowired
     CategoryDAO categoryDao;
-
-
 
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
@@ -69,8 +65,9 @@ public class BusinessService {
             if (Objects.nonNull(qualifiedName)) {
                 qualifiedName += "." + info.getName();
             }
+            entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
-            entity.setRelationshipId(relationGuid);
+            entity.setRelationshipGuid(relationGuid);
             entity.setPath(qualifiedName);
             int relationFlag = relationDao.addRelation(entity);
 

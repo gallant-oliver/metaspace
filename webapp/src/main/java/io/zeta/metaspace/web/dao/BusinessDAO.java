@@ -36,20 +36,20 @@ public interface BusinessDAO {
             "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets})")
     public int insertBusinessInfo(BusinessInfo info);
 
-    @Update("update business set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
+    @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
             "maintainer=#{maintainer},dataAssets=#{dataAssets} where businessId=#{businessId}")
     public int updateBusinessInfo(BusinessInfo info);
 
-    @Update("update business set businessstatus=#{status} where businessId=#{businessId}")
+    @Update("update businessinfo set businessstatus=#{status} where businessId=#{businessId}")
     public int updateBusinessStatus(@Param("businessId")String businessId, @Param("status")int status);
 
-    @Update("update business set technicalstatus=#{status} where businessId=#{businessId}")
+    @Update("update businessinfo set technicalstatus=#{status} where businessId=#{businessId}")
     public int updateTechnicalStatus(@Param("businessId")String businessId, @Param("status")int status);
 
-    @Select("select * from business where departmentId=#{departmentId}")
+    @Select("select * from businessinfo where departmentId=#{departmentId}")
     public List<BusinessInfo> queryBusinessByDemparmentId(@Param("departmentId")String departmentId,  @Param("limit")int limit,@Param("offset") int offset);
 
-    @Select("select * from business where businessId=#{businessId}")
+    @Select("select * from businessinfo where businessId=#{businessId}")
     public BusinessInfo queryBusinessByBusinessId(@Param("businessId")String businessId);
 
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
@@ -89,5 +89,5 @@ public interface BusinessDAO {
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
 
     @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
-    public int insertTableRelation(@Param("businessId")String businessId, @Param("tableId")String tableId);
+    public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
 }
