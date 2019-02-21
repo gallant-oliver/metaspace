@@ -35,15 +35,59 @@ public class BusinessInfo {
     private String dataAssets;
     private String businessLastUpdate;
     private String businessOperator;
-    private String technologyLastUpdate;
-    private String technologyOperator;
+    private String technicalLastUpdate;
+    private String technicalOperator;
+    private String submitter;
+    private String submissionTime;
+    private String ticketNumber;
     private List<Table> tables;
 
-    public class Table {
+    public static class Table {
         private String tableGuid;
-        private String dbName;
         private String tableName;
+        private String dbName;
+        private String status;
         private String createTime;
+
+        public String getTableGuid() {
+            return tableGuid;
+        }
+
+        public void setTableGuid(String tableGuid) {
+            this.tableGuid = tableGuid;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public void setDbName(String dbName) {
+            this.dbName = dbName;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public void setTableName(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public String getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(String createTime) {
+            this.createTime = createTime;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 
     public String getBusinessId() {
@@ -134,20 +178,44 @@ public class BusinessInfo {
         this.businessOperator = businessOperator;
     }
 
-    public String getTechnologyLastUpdate() {
-        return technologyLastUpdate;
+    public String getTechnicalLastUpdate() {
+        return technicalLastUpdate;
     }
 
-    public void setTechnologyLastUpdate(String technologyLastUpdate) {
-        this.technologyLastUpdate = technologyLastUpdate;
+    public void setTechnicalLastUpdate(String technicalLastUpdate) {
+        this.technicalLastUpdate = technicalLastUpdate;
     }
 
-    public String getTechnologyOperator() {
-        return technologyOperator;
+    public String getTechnicalOperator() {
+        return technicalOperator;
     }
 
-    public void setTechnologyOperator(String technologyOperator) {
-        this.technologyOperator = technologyOperator;
+    public void setTechnicalOperator(String technicalOperator) {
+        this.technicalOperator = technicalOperator;
+    }
+
+    public String getSubmitter() {
+        return submitter;
+    }
+
+    public void setSubmitter(String submitter) {
+        this.submitter = submitter;
+    }
+
+    public String getSubmissionTime() {
+        return submissionTime;
+    }
+
+    public void setSubmissionTime(String submissionTime) {
+        this.submissionTime = submissionTime;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
     }
 
     public List<Table> getTables() {

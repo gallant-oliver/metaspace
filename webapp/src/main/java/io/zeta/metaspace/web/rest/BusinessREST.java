@@ -23,9 +23,11 @@ package io.zeta.metaspace.web.rest;
  */
 
 import io.zeta.metaspace.model.business.BusinessInfo;
-import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.web.filter.SSOFilter;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -88,7 +90,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/businesses/categories/{categoryId}")
+    @Path("/businesses/category/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
@@ -101,13 +103,25 @@ public class BusinessREST {
     }
 
     /**
-     * 获取目录下业务对象列表
-     * @param categoryId
-     * @param limit
-     * @param offset
+     * 更新业务对象信息
+     * @param businessId
+     * @param business
      * @return
      * @throws AtlasBaseException
      */
+    @PUT
+    @Path("/businesses/{businessId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
+        try {
+            businessService.updateBusiness(businessId, business);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
     @GET
     @Path("/businesses/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -120,6 +134,31 @@ public class BusinessREST {
         }
     }
 
+    /**
+     * 搜索business列表(业务对象)
+     * @param categoryId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/businesses/categories/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
+        try {
+            return businessService.getBusinessListByName(categoryId, parameters);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        }
+    }
+
+    /**
+     * 业务对象详情
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/businesses/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -129,6 +168,28 @@ public class BusinessREST {
             return businessService.getBusinessInfo(businessId);
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    /**
+     * 获取全部目录
+     * @param sort
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/businesses/categories")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
+            }
+            return dataManageService.getAll(CATEGORY_TYPE);
+        }  finally {
+            AtlasPerfTracer.log(perf);
         }
     }
 
@@ -152,28 +213,6 @@ public class BusinessREST {
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 获取全部目录
-     * @param sort
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/businesses/categories")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
-            }
-            return dataManageService.getAll();
-        }  finally {
             AtlasPerfTracer.log(perf);
         }
     }
@@ -203,7 +242,7 @@ public class BusinessREST {
     }
 
     /**
-     * 修改目录信息 V2
+     * 修改目录信息
      * @param categoryInfo
      * @return
      * @throws AtlasBaseException
@@ -228,49 +267,35 @@ public class BusinessREST {
     }
 
     /**
-     * 获取表详情
-     *
-     * @param guid
+     * 获取全部二级目录
      * @return
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/businesses/table/{tableId}")
+    @Path("/businessManage/departments")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("tableId") String guid) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
+    public Set<CategoryEntityV2> getAllDepartment() throws AtlasBaseException {
         try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getTableInfoById()");
-            }
-            return metadataService.getTableInfoById(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    @GET
-    @Path("/businesses/search")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<BusinessInfo> getBusinessListWithCondition(@QueryParam("businessName") String businessName, @QueryParam("limit") int limit, @QueryParam("limit") int offset) throws AtlasBaseException {
-        try {
-            return businessService.getBusinessListByName(businessName, limit, offset);
+            return dataManageService.getAllDepartments(CATEGORY_TYPE);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            throw e;
         }
     }
 
-    @GET
+    /**
+     * 业务对象搜索(业务对象管理)
+     * @param parameter
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
     @Path("/businessManage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<BusinessInfo> getBusinessListWithManage(@QueryParam("status") String status, @QueryParam("ticketNumber") String ticketNumber,
-                                                        @QueryParam("businessName") String businessName, @QueryParam("level2Category") String level2Category,
-                                                        @QueryParam("submitter") String submitter,@QueryParam("limit") int limit, @QueryParam("limit") int offset) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListWithManage(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByCondition(status, ticketNumber, businessName, level2Category, submitter, limit, offset);
+            return businessService.getBusinessListByCondition(parameter);
         } catch (Exception e) {
             throw e;
         }
