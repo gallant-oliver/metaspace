@@ -10,7 +10,6 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
-
 public interface TableTagDAO {
     @Insert("insert into tag(tagid,tagname) values(#{tagId},#{tagName})")
     public int addTag(@Param("tagId") String tagId, @Param("tagName") String tagName);
@@ -18,7 +17,7 @@ public interface TableTagDAO {
     @Delete("delete from tag where tagid=#{tagId}")
     public int deleteTag(@Param("tagId") String tagId);
 
-    @Select("select * from tag where tagname like '%'||#{query}||'%' limit #{limit} offset #{offset}")
+    @Select("select * from tag where tagname like '%'||#{query}||'%' order by tagname limit #{limit} offset #{offset}")
     public List<Tag> getTags(@Param("query") String query,@Param("offset")long offset,@Param("limit")long limit);
 
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")

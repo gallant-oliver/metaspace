@@ -12,25 +12,29 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/1/12 11:49
+ * @date 2019/2/19 15:29
  */
-package io.zeta.metaspace.model.dataquality;
+package io.zeta.metaspace.model.privilege;
 
-public enum RuleStatus {
-    NORMAL(0,"正常") , ORANGE(1,"橙色"), RED(2, "红色");
-    private Integer code;
+/*
+ * @description
+ * @author sunhaoning
+ * @date 2019/2/19 15:29
+ */
+public enum  SystemPrivilege {
+    ADMIN("1","平台管理员"),GUEST("2","访客"),BUSINESSE("3","业务"),TECHNIQUE("4","技术"),MANAGE("5","管理");
+    private String code;
     private String desc;
+    public String getCode() {
+        return code;
+    }
 
-    RuleStatus(Integer code, String desc) {
+    SystemPrivilege(String code, String desc) {
         this.code = code;
         this.desc = desc;
     }
 
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
+    public void setCode(String code) {
         this.code = code;
     }
 
@@ -41,17 +45,15 @@ public enum RuleStatus {
     public void setDesc(String desc) {
         this.desc = desc;
     }
-
-    public static RuleStatus getRuleStatusByCode(Integer code) {
-        RuleStatus defaultStatus = RuleStatus.NORMAL;
-        for(RuleStatus rs : RuleStatus.values()) {
-            if(rs.code == code)
-                return rs;
-        }
-        return defaultStatus;
+    public String getDescByCode(String code){
+        return getSystemPrivilegeByCode(code).desc;
     }
-
-    public static String getDescByCode(Integer code) {
-        return getRuleStatusByCode(code).desc;
+    public SystemPrivilege getSystemPrivilegeByCode(String code) {
+        SystemPrivilege systemPrivilege = SystemPrivilege.GUEST;
+        for (SystemPrivilege privilege : SystemPrivilege.values()) {
+            if(privilege.code.equals(code))
+                systemPrivilege = privilege;
+        }
+        return systemPrivilege;
     }
 }

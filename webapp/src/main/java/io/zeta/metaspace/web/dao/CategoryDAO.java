@@ -42,7 +42,6 @@ public interface CategoryDAO {
     @Select("select * from category where categoryType=#{categoryType}")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType) throws SQLException;
 
-
     @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
