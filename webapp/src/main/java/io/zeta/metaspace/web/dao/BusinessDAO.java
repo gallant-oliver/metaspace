@@ -38,7 +38,7 @@ public interface BusinessDAO {
     public int insertBusinessInfo(BusinessInfo info);
 
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
-            "maintainer=#{maintainer},dataAssets=#{dataAssets} where businessId=#{businessId}")
+            "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate} where businessId=#{businessId}")
     public int updateBusinessInfo(BusinessInfo info);
 
     @Update("update businessinfo set businessstatus=#{status} where businessId=#{businessId}")

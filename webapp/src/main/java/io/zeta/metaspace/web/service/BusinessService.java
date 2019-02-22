@@ -117,7 +117,7 @@ public class BusinessService {
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
         }
     }
 
