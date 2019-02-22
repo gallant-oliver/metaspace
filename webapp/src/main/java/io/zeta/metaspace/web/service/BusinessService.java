@@ -29,19 +29,14 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import javax.mail.Header;
 
 /*
  * @description
@@ -195,7 +190,11 @@ public class BusinessService {
     }
 
     public String getCategoryPath(String categoryId) throws AtlasBaseException {
-        List<String> pathList = new ArrayList<>();
+        try {
+            String pathStr = categoryDao.queryPathByGuid(categoryId);
+            String path = pathStr.substring(1, pathStr.length()-1);
+            path = path.replace(",",".");
+       /* List<String> pathList = new ArrayList<>();
         try {
             CategoryEntityV2 entity = categoryDao.queryByGuid(categoryId);
             String categoryName = entity.getName();
@@ -212,8 +211,8 @@ public class BusinessService {
                 path.append(pathList.get(i));
                 if(i != 0)
                     path.append(".");
-            }
-            return path.toString();
+            }*/
+            return path;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }

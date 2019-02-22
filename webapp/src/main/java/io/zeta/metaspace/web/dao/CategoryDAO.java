@@ -25,6 +25,7 @@ import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 /*
@@ -74,4 +75,14 @@ public interface CategoryDAO {
 
     @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType}")
     public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType) throws SQLException;
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "SELECT  PATH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    public String queryPathByGuid(@Param("guid")String guid);
 }
