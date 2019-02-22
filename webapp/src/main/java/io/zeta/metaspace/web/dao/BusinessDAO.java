@@ -103,4 +103,6 @@ public interface BusinessDAO {
 
     @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId})) and moduleId=#{moduleId}")
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
+
+
 }

@@ -135,8 +135,11 @@ public class BusinessService {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
 
-            String userId = AdminUtils.getUserData().getUserId();
+            String departmentId = info.getDepartmentId();
+            String departmentName = categoryDao.queryNameByGuid(departmentId);
+            info.setDepartmentName(departmentName);
 
+            String userId = AdminUtils.getUserData().getUserId();
             boolean editBusiness = businessDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
             boolean editTechnical = businessDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
 

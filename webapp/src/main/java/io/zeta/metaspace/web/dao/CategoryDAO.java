@@ -45,6 +45,9 @@ public interface CategoryDAO {
     @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
+    @Select("select name from category where guid=#{guid}")
+    public String queryNameByGuid(@Param("guid") String categoryGuid) throws SQLException;
+
     @Select("select count(*) from category where qualifiedName=#{qualifiedName}")
     public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);
 
