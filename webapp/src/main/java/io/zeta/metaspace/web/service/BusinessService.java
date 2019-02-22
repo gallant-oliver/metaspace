@@ -172,9 +172,15 @@ public class BusinessService {
                 businessInfoList = businessDao.queryBusinessByName(categoryId, businessName);
             }
             String path = getCategoryPath(categoryId);
+            String[] pathArr = path.split("\\.");
+            String level2Category = "";
+            if(pathArr.length >= 2)
+                level2Category = pathArr[1];
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 infoHeader.setPath(path);
+                infoHeader.setLevel2Category(level2Category);
             }
+
             long businessCount = businessDao.queryBusinessCountByName(categoryId, businessName);
             pageResult.setSum(businessCount);
             pageResult.setLists(businessInfoList);

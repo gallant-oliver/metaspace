@@ -59,10 +59,10 @@ public interface BusinessDAO {
     /*@Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
     public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);*/
 
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
+    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByNameWithLimit(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset);
 
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
+    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
     public List<BusinessInfoHeader> queryBusinessByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
 
     @Select("select departmentId from businessInfo where businessId = #{businessId}")
