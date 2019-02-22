@@ -74,12 +74,12 @@ public interface BusinessDAO {
     @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
     public long queryBusinessCountByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
 
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
+    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and submitter like '%${submitter}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByConditionWithLimit(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                                        @Param("level2Category") String level2Category,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
 
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
+    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and submitter like '%${submitter}%'")
     public List<BusinessInfoHeader> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                                                 @Param("level2Category") String level2Category,@Param("submitter") String submitter);
