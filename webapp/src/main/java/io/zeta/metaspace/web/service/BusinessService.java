@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -52,6 +53,8 @@ public class BusinessService {
     BusinessRelationDAO relationDao;
     @Autowired
     CategoryDAO categoryDao;
+    @Autowired
+    PrivilegeDAO privilegeDao;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_MODULE = 3;
@@ -129,14 +132,9 @@ public class BusinessService {
     public BusinessInfo getBusinessInfo(String businessId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
-
-            String departmentId = info.getDepartmentId();
-            String departmentName = categoryDao.queryNameByGuid(departmentId);
-            info.setDepartmentName(departmentName);
-
             String userId = AdminUtils.getUserData().getUserId();
-            boolean editBusiness = businessDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
-            boolean editTechnical = businessDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
+            boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
+            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
 
             info.setEditBusiness(editBusiness);
             info.setEditTechnical(editTechnical);
@@ -167,7 +165,7 @@ public class BusinessService {
             if(limit != -1) {
                 businessInfoList = businessDao.queryBusinessByNameWithLimit(categoryId, businessName, limit, offset);
             } else {
-                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName);
+                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName, offset);
             }
             String path = getCategoryPath(categoryId);
             String[] pathArr = path.split("\\.");

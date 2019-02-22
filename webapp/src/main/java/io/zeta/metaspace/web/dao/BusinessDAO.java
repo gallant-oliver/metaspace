@@ -33,62 +33,69 @@ import java.util.List;
  */
 public interface BusinessDAO {
 
+    //添加业务信息
     @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber)" +
             "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets},#{submitter},#{submissionTime},#{businessOperator},#{businessLastUpdate},#{ticketNumber})")
     public int insertBusinessInfo(BusinessInfo info);
 
+    //更新业务信息
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
             "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate} where businessId=#{businessId}")
     public int updateBusinessInfo(BusinessInfo info);
 
+    //更新业务信息补充状态
     @Update("update businessinfo set businessstatus=#{status} where businessId=#{businessId}")
     public int updateBusinessStatus(@Param("businessId")String businessId, @Param("status")int status);
 
+    //更新技术信息补充状态
     @Update("update businessinfo set technicalstatus=#{status} where businessId=#{businessId}")
     public int updateTechnicalStatus(@Param("businessId")String businessId, @Param("status")int status);
 
+    //查询业务目录关联的业务信息列表
     @Select("select * from businessinfo where departmentId=#{departmentId}")
     public List<BusinessInfo> queryBusinessByDemparmentId(@Param("departmentId")String departmentId,  @Param("limit")int limit,@Param("offset") int offset);
 
+    //查询业务信息详情
     @Select("select * from businessinfo where businessId=#{businessId}")
     public BusinessInfo queryBusinessByBusinessId(@Param("businessId")String businessId);
 
+    //查询业务信息关联的数据库表
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<BusinessInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
-    /*@Select("select * from businessInfo where  businessId like '%${businessId}%' and  name like '%${name}%' and businessOperator like '%${businessOperator}%'")
-    public List<BusinessInfo> queryBusinessByCondition(@Param("businessId")String businessId, @Param("name")String businessName, @Param("department")String department, @Param("businessOperator")String businessOperator);*/
-
+    //分页查询业务信息列表
     @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByNameWithLimit(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset);
 
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
-    public List<BusinessInfoHeader> queryBusinessByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
+    //根据业务信息名称查询列表
+    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' offset #{offset}")
+    public List<BusinessInfoHeader> queryBusinessByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName, @Param("offset") int offset);
 
+    //查询业务信息所属目录Id
     @Select("select departmentId from businessInfo where businessId = #{businessId}")
     public String queryCategoryIdByBusinessId(@Param("businessId")String businessId);
 
-    @Select("select name from category where categoryGuid=#{categoryGuid}")
-    public String queryCategoryNameById(@Param("categoryGuid")String categoryGuid);
-
+    //根据业务信息名称查询列表总数
     @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%'")
     public long queryBusinessCountByName(@Param("categoryGuid")String categoryGuid, @Param("businessName")String businessName);
 
+    //多条件分页查询业务信息列表
     @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and submitter like '%${submitter}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByConditionWithLimit(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                                        @Param("level2Category") String level2Category,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
-
+    //多条件查询业务信息列表
     @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and submitter like '%${submitter}%'")
     public List<BusinessInfoHeader> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                                                 @Param("level2Category") String level2Category,@Param("submitter") String submitter);
-
+    //多条件查询业务信息列表总数
     @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where name like '%${level2Category}%' and categorytype=1))" +
             "and technicalStatus=#{status} and businessId like '%${ticketNumber}%' and submitter like '%${submitter}%'")
     public long queryBusinessCountByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                               @Param("level2Category") String level2Category,@Param("submitter") String submitter);
 
+    //
     @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryId=#{categoryGuid} limit #{limit} offset #{offset})")
     public List<BusinessInfo> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
@@ -101,8 +108,7 @@ public interface BusinessDAO {
     @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
     public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
 
-    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId})) and moduleId=#{moduleId}")
-    public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
+
 
 
 }

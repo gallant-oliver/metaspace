@@ -27,7 +27,6 @@ public class BusinessInfo {
     private String businessId;
     private String name;
     private String departmentId;
-    private String departmentName;
     private String module;
     private String description;
     private String owner;
@@ -115,14 +114,6 @@ public class BusinessInfo {
 
     public void setDepartmentId(String departmentId) {
         this.departmentId = departmentId;
-    }
-
-    public String getDepartmentName() {
-        return departmentName;
-    }
-
-    public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
     }
 
     public String getModule() {

@@ -70,6 +70,9 @@ public interface RoleDAO {
     @Delete("delete from role2category where roleid=#{roleId}")
     public int deleteRole2category(String roleId);
 
+    @Delete("delete from role2category where roleId in (select roleId from users where userId=#{userId})")
+    public int deleteRole2categoryByUserId(String userId);
+
     //添加授权范围
     @Insert("insert into role2category values(#{roleId},#{categoryId},#{operation})")
     public int addRole2category(String roleId,String categoryId,int operation);

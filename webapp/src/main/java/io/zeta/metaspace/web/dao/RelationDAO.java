@@ -84,4 +84,5 @@ public interface RelationDAO {
 
     @Insert("insert into tableInfo(tableName,dbName,tableGuid,status)values(#{tableName},#{dbName},#{tableGuid},#{status})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
+
 }
