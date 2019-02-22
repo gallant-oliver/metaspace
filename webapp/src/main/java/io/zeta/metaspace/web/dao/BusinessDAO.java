@@ -100,4 +100,7 @@ public interface BusinessDAO {
 
     @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
     public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
+
+    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId})) and moduleId=#{moduleId}")
+    public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
 }

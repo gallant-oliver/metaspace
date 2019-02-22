@@ -59,6 +59,8 @@ public class BusinessService {
     CategoryDAO categoryDao;
 
     private static final int FINISHED_STATUS = 1;
+    private static final int BUSINESS_MODULE = 3;
+    private static final int TECHNICAL_MODULE = 4;
 
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
@@ -132,6 +134,15 @@ public class BusinessService {
     public BusinessInfo getBusinessInfo(String businessId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
+
+            String userId = AdminUtils.getUserData().getUserId();
+
+            boolean editBusiness = businessDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
+            boolean editTechnical = businessDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
+
+            info.setEditBusiness(editBusiness);
+            info.setEditTechnical(editTechnical);
+
             List<BusinessInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
             info.setTables(tables);
             return info;
