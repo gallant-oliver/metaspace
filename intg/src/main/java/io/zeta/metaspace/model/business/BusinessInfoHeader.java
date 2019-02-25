@@ -30,6 +30,7 @@ public class BusinessInfoHeader {
     private String technicalStatus;
     private String submitter;
     private String submissionTime;
+    private String ticketNumber;
 
     public String getBusinessId() {
         return businessId;
@@ -93,5 +94,13 @@ public class BusinessInfoHeader {
 
     public void setSubmissionTime(String submissionTime) {
         this.submissionTime = submissionTime;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
     }
 }

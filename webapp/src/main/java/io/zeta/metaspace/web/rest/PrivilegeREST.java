@@ -53,8 +53,13 @@ public class PrivilegeREST {
     @Autowired
     private PrivilegeService privilegeService;
 
+    /**
+     * 新增权限方法
+     * @param privilege
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
-    @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response addPrivilege(Privilege privilege) throws AtlasBaseException {
@@ -66,6 +71,11 @@ public class PrivilegeREST {
         }
     }
 
+    /**
+     * 获取权限模块
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/modules")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -79,7 +89,7 @@ public class PrivilegeREST {
     }
 
     @DELETE
-    @Path("/privileges/{privilegeId}")
+    @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public int deletePrivilege(@PathParam("privilegeId") String privilegeId) throws AtlasBaseException {
         try {
@@ -90,7 +100,7 @@ public class PrivilegeREST {
     }
 
     @PUT
-    @Path("/privileges/{privilegeId}")
+    @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, Privilege privilege) throws AtlasBaseException {
@@ -115,7 +125,7 @@ public class PrivilegeREST {
     }
 
     @GET
-    @Path("/privileges/{privilegeId}")
+    @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Privilege getPrivilegeInfo(@PathParam("privilegeId")String privilegeId) throws AtlasBaseException {

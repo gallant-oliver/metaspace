@@ -40,6 +40,8 @@ public class BusinessInfo {
     private String submitter;
     private String submissionTime;
     private String ticketNumber;
+    private Boolean editBusiness;
+    private Boolean editTechnical;
     private List<Table> tables;
 
     public static class Table {
@@ -216,6 +218,22 @@ public class BusinessInfo {
 
     public void setTicketNumber(String ticketNumber) {
         this.ticketNumber = ticketNumber;
+    }
+
+    public Boolean getEditBusiness() {
+        return editBusiness;
+    }
+
+    public void setEditBusiness(Boolean editBusiness) {
+        this.editBusiness = editBusiness;
+    }
+
+    public Boolean getEditTechnical() {
+        return editTechnical;
+    }
+
+    public void setEditTechnical(Boolean editTechnical) {
+        this.editTechnical = editTechnical;
     }
 
     public List<Table> getTables() {

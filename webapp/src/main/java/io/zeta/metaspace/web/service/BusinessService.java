@@ -26,22 +26,18 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import javax.mail.Header;
 
 /*
  * @description
@@ -57,8 +53,12 @@ public class BusinessService {
     BusinessRelationDAO relationDao;
     @Autowired
     CategoryDAO categoryDao;
+    @Autowired
+    PrivilegeDAO privilegeDao;
 
     private static final int FINISHED_STATUS = 1;
+    private static final int BUSINESS_MODULE = 3;
+    private static final int TECHNICAL_MODULE = 4;
 
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
@@ -80,12 +80,12 @@ public class BusinessService {
             info.setBusinessLastUpdate(time);
             info.setTicketNumber(String.valueOf(timestamp));
 
+            int insertFlag =  businessDao.insertBusinessInfo(info);
+
             //更新business编辑状态
             businessDao.updateBusinessStatus(businessId, FINISHED_STATUS);
             //更新technical编辑状态
             businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
-
-            int insertFlag =  businessDao.insertBusinessInfo(info);
 
             BusinessRelationEntity entity = new BusinessRelationEntity();
             //relationshiGuid
@@ -117,7 +117,7 @@ public class BusinessService {
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
         }
     }
 
@@ -132,6 +132,13 @@ public class BusinessService {
     public BusinessInfo getBusinessInfo(String businessId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
+            String userId = AdminUtils.getUserData().getUserId();
+            boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
+            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
+
+            info.setEditBusiness(editBusiness);
+            info.setEditTechnical(editTechnical);
+
             List<BusinessInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
             info.setTables(tables);
             return info;
@@ -158,12 +165,18 @@ public class BusinessService {
             if(limit != -1) {
                 businessInfoList = businessDao.queryBusinessByNameWithLimit(categoryId, businessName, limit, offset);
             } else {
-                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName);
+                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName, offset);
             }
             String path = getCategoryPath(categoryId);
+            String[] pathArr = path.split("\\.");
+            String level2Category = "";
+            if(pathArr.length >= 2)
+                level2Category = pathArr[1];
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 infoHeader.setPath(path);
+                infoHeader.setLevel2Category(level2Category);
             }
+
             long businessCount = businessDao.queryBusinessCountByName(categoryId, businessName);
             pageResult.setSum(businessCount);
             pageResult.setLists(businessInfoList);
@@ -175,7 +188,11 @@ public class BusinessService {
     }
 
     public String getCategoryPath(String categoryId) throws AtlasBaseException {
-        List<String> pathList = new ArrayList<>();
+        try {
+            String pathStr = categoryDao.queryPathByGuid(categoryId);
+            String path = pathStr.substring(1, pathStr.length()-1);
+            path = path.replace(",",".");
+       /* List<String> pathList = new ArrayList<>();
         try {
             CategoryEntityV2 entity = categoryDao.queryByGuid(categoryId);
             String categoryName = entity.getName();
@@ -192,8 +209,8 @@ public class BusinessService {
                 path.append(pathList.get(i));
                 if(i != 0)
                     path.append(".");
-            }
-            return path.toString();
+            }*/
+            return path;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
@@ -220,6 +237,9 @@ public class BusinessService {
                 String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
                 String path = getCategoryPath(categoryId);
                 infoHeader.setPath(path);
+                String[] pathArr = path.split("\\.");
+                if(pathArr.length >= 2)
+                    infoHeader.setLevel2Category(pathArr[1]);
             }
             pageResult.setLists(businessInfoList);
             long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);

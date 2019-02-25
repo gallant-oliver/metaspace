@@ -59,7 +59,7 @@ public enum TechnicalStatus {
     public static TechnicalStatus getTechnicalStatusByDesc(String desc) {
         TechnicalStatus defaultTechnicalStatus = TechnicalStatus.BLANK;
         for(TechnicalStatus ts : TechnicalStatus.values()) {
-            if(ts.desc == desc)
+            if(ts.desc.equals(desc))
                 return ts;
         }
         return defaultTechnicalStatus;
