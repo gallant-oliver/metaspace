@@ -8,6 +8,33 @@ public class Role {
     private String updateTime;
     private int status;
     private String createTime;
+    private int disable;
+    private int delete;
+    private int edit;
+
+    public int getDisable() {
+        return disable;
+    }
+
+    public void setDisable(int disable) {
+        this.disable = disable;
+    }
+
+    public int getDelete() {
+        return delete;
+    }
+
+    public void setDelete(int delete) {
+        this.delete = delete;
+    }
+
+    public int getEdit() {
+        return edit;
+    }
+
+    public void setEdit(int edit) {
+        this.edit = edit;
+    }
 
     public String getRoleId() {
         return roleId;

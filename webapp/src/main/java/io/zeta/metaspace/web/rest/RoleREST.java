@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.privilege.Privilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
@@ -39,7 +40,11 @@ public class RoleREST {
     public String addRole(Role role) throws AtlasBaseException {
         try {
             return roleService.addRole(role);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("新增角色失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"新增角色失败");
         }
@@ -55,7 +60,11 @@ public class RoleREST {
     public String updateRoleStatus(@PathParam("roleId")String roleId,@QueryParam("status")int status) throws AtlasBaseException {
         try {
             return roleService.updateRoleStatus(roleId,status);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             String s="";
             if(status==0)
                 s="禁用角色失败";
@@ -75,8 +84,17 @@ public class RoleREST {
     @Path("/{roleId}")
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
+            SystemRole[] values = SystemRole.values();
+            for (SystemRole value : values) {
+                if(roleId.equals(value.getCode()))
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"系统角色不允许删除");
+            }
             return roleService.deleteRole(roleId);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("删除角色失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除角色失败");
         }
@@ -94,7 +112,11 @@ public class RoleREST {
     public PageResult<User> getUsers(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getUsers(roleId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("搜索成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索成员失败");
         }
@@ -112,7 +134,11 @@ public class RoleREST {
     public PageResult<Role> getRoles(Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("搜索角色失败失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败失败");
         }
@@ -129,7 +155,11 @@ public class RoleREST {
     public String addUsers(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
             return roleService.addUsers(roleId,users) ;
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("添加成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
         }
@@ -144,8 +174,15 @@ public class RoleREST {
     @Path("/{roleId}/user")
     public String removeUser(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
+            if(roleId.equals(SystemRole.GUEST.getCode())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"访客不能移除成员");
+            }
             return roleService.removeUser(users);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("移除成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"移除成员失败");
         }
@@ -162,7 +199,11 @@ public class RoleREST {
     public RoleModulesCategories getPrivileges(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.getPrivileges(roleId);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("获取角色方案及授权范围失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色方案及授权范围失败");
         }
@@ -179,7 +220,11 @@ public class RoleREST {
     public String putPrivileges(@PathParam("roleId") String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         try {
             return roleService.putPrivileges(roleId,roleModulesCategories);
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("修改角色方案及授权范围失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改角色方案及授权范围失败");
         }
@@ -196,7 +241,11 @@ public class RoleREST {
     public PageResult<Privilege> getPrivilege(Parameters parameters) throws AtlasBaseException {
         try {
             return privilegeService.getPrivilegeList(parameters.getQuery(),parameters.getLimit(),parameters.getOffset());
-        } catch (Exception e) {
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("搜索技术方案失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索技术方案失败");
         }

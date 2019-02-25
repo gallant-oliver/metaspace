@@ -6,26 +6,30 @@ import io.zeta.metaspace.model.privilege.Privilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.ibatis.annotations.*;
 
 import javax.ws.rs.PathParam;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 public interface RoleDAO {
-    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime})")
+    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit})")
     public int addRoles(@Param("role") Role role);
-
-    @Update("update role set status=#{status} where roleid={roleId}")
+@Select("select 1 from role where rolename=#{roleName}")
+public List<Integer> ifRole(@Param("roleName")String roleName);
+    @Update("update role set status=#{status} where roleid=#{roleId}")
     public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status);
 
     @Delete("delete from role where roleid=#{roleId}")
     public int deleteRole(String roleId);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.userid=role.userid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username limit #{limit} offset #{offset}")
+    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username limit #{limit} offset #{offset}")
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.userid=role.userid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username offset #{offset}")
+    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username offset #{offset}")
     public List<User> getUser(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
 
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%'")
@@ -43,7 +47,7 @@ public interface RoleDAO {
     //添加成员&更换一批人的角色
     //@Update("update user set roleid=#{roleId} where userid in ")
     @Update({"<script>update users set roleid=#{roleId} where userid in",
-            "<foreach item='item' index='index' collection='list'",
+            "<foreach item='item' index='index' collection='userIds'",
             "open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
@@ -54,17 +58,19 @@ public interface RoleDAO {
     @Update("update users set roleid=#{roleId} where userid=#{userId}")
     public int updateUser(@Param("roleId") String roleId, @Param("userId") String userId);
 
-   //获取授权范围
-   @Select("select categoryid ,name categoryname,paretcategoryguid,upbrothercategoryguid,downbrothercategoryguid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
-    public List<RoleModulesCategories.Category> getCategorysByType(String roleId, int categoryType);
+
+
+
+
+
 
    //获取角色方案
-    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid")
+    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId}")
     public Privilege getPrivilegeByRoleId(String roleId);
 
    //修改角色方案
-    @Update("update role set privilegeid=#{privilegeId} where roleid=#{roleId}")
-    public int updateCategory(@Param("privilegeId") String privilegeId,@Param("roleId") String roleId);
+    @Update("update role set privilegeid=#{privilegeId},updatetime=#{updateTime} where roleid=#{roleId}")
+    public int updateCategory(@Param("privilegeId") String privilegeId,@Param("roleId") String roleId,@Param("updateTime")String updateTime);
 
     //删除授权范围
     @Delete("delete from role2category where roleid=#{roleId}")
@@ -72,10 +78,81 @@ public interface RoleDAO {
 
     //添加授权范围
     @Insert("insert into role2category values(#{roleId},#{categoryId},#{operation})")
-    public int addRole2category(String roleId,String categoryId,int operation);
+    public int addRole2category(@Param("roleId") String roleId,@Param("categoryId") String categoryId,@Param("operation") int operation);
 
     //根据userid查roleid
     @Select("select roleid from users where userid=#{userId}")
     public String getRoleIdByUserId(String userId);
+   //递归找子节点
+    @Select("WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where parentCategoryGuid = #{parentCategoryGuid} and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            ")" +
+            "SELECT * FROM categoryTree")
+    public List<RoleModulesCategories.Category> getChilds(@Param("parentCategoryGuid") String parentCategoryGuid,@Param("categoryType")int categoryType);
+    //递归找子节点
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where parentCategoryGuid in" +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid'"+
+            "    open='(' separator=',' close=')'>"+
+            "    #{item}"+
+            "    </foreach>"+
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            ")" +
+            "SELECT * FROM categoryTree</script>")
+    public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid,@Param("categoryType")int categoryType);
+
+    //递归找父节点，结果集包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS" +
+            "(" +
+            "    SELECT * from category where " +
+            "    guid =#{guid} " +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
+            ")" +
+            "SELECT * from categoryTree</script>")
+    public List<RoleModulesCategories.Category> getParents(@Param("guid") String guid,@Param("categoryType")int categoryType);
+
+    //递归找父节点,结果集不包含自己了
+    @Select("<script>WITH RECURSIVE categoryTree AS" +
+            "(" +
+            "    SELECT * from category where " +
+            "    guid in " +
+            "    <foreach item='item' index='index' collection='guid'"+
+            "    open='(' separator=',' close=')'>"+
+            "    #{item}"+
+            "    </foreach>"+
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
+            ")" +
+            "SELECT * from categoryTree where guid not in" +
+            "    <foreach item='item' index='index' collection='guid'"+
+            "    open='(' separator=',' close=')'>"+
+            "    #{item}"+
+            "    </foreach>"+
+            "</script>")
+    public List<RoleModulesCategories.Category> getParentCategorys(@Param("guid") List<String> guid,@Param("categoryType")int categoryType);
+    //获取授权范围id
+    @Select("select categoryid guid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
+    public List<String> getCategorysByTypeIds(@Param("roleId") String roleId,@Param("categoryType") int categoryType);
+   //查找权限节点
+    @Select("select categoryid guid,name categoryname,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
+    public List<RoleModulesCategories.Category> getCategorysByType(@Param("roleId") String roleId,@Param("categoryType") int categoryType);
+
+    @Select("select * from category where categoryType=#{categoryType}")
+    public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
 
 }

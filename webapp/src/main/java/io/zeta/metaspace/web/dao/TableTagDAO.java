@@ -30,10 +30,10 @@ public interface TableTagDAO {
     public int deleteTable2Tag(@Param("tableGuid") String tableGuid,@Param("tagId") String tagId);
 
     @Select("select 1 from tag where tagname=#{tagName}")
-    public List<Tag> ifTagExists(String tagName);
+    public List<Integer> ifTagExists(String tagName);
 
     @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
-    public List<Table> ifTableExists(String tableGuid);
+    public List<Integer> ifTableExists(String tableGuid);
 
     @Delete("delete from table2tag where tableguid=#{tableGuid}")
     public int delAllTable2Tag(String tableGuid);

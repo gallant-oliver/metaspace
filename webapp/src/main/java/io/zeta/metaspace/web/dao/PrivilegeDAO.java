@@ -53,7 +53,7 @@ public interface PrivilegeDAO {
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select("select * from privilege where privilegeName like '%'||#{query}||'%' limit #{limit} offset #{offset}")
-    public List<Privilege> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
+    public List<Privilege> getPrivilegeList(@Param("query")String query, @Param("limit")int limit, @Param("offset")int offset);
 
     @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%'")
     public long getRolesCount(@Param("query") String query);
