@@ -22,10 +22,15 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/2/19 11:27
  */
 
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeHeader;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.service.PrivilegeService;
+import io.zeta.metaspace.web.service.UsersService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +58,44 @@ public class PrivilegeREST {
     @Autowired
     private PrivilegeService privilegeService;
 
+    @Autowired
+    private UsersService usersService;
+
+    /**
+     * 用户详情
+     * @param userId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/users/{userId}")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public UserInfo UserInfo(@PathParam("userId") String userId) throws AtlasBaseException {
+        try {
+            return usersService.getUserInfoById(userId);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 获取用户列表
+     * @param parameterss
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<User> UserList(Parameters parameters) throws AtlasBaseException {
+        try {
+            return usersService.getUserList(parameters);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
     /**
      * 新增权限方法
      * @param privilege
@@ -62,7 +105,7 @@ public class PrivilegeREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response addPrivilege(Privilege privilege) throws AtlasBaseException {
+    public Response addPrivilege(PrivilegeHeader privilege) throws AtlasBaseException {
         try {
             privilegeService.addPrivilege(privilege);
             return Response.status(200).entity("success").build();
@@ -91,9 +134,9 @@ public class PrivilegeREST {
     @DELETE
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public int deletePrivilege(@PathParam("privilegeId") String privilegeId) throws AtlasBaseException {
+    public void deletePrivilege(@PathParam("privilegeId") String privilegeId) throws AtlasBaseException {
         try {
-            return privilegeService.delPrivilege(privilegeId);
+            privilegeService.delPrivilege(privilegeId);
         } catch (Exception e) {
             throw e;
         }
@@ -103,7 +146,7 @@ public class PrivilegeREST {
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, Privilege privilege) throws AtlasBaseException {
+    public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, PrivilegeInfo privilege) throws AtlasBaseException {
         try {
             privilegeService.updatePrivilege(privilegeId, privilege);
             return Response.status(200).entity("success").build();
@@ -116,7 +159,7 @@ public class PrivilegeREST {
     @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Privilege> getPrivilegeList(@QueryParam("query")String query, @QueryParam("limit")int limit, @QueryParam("offset")int offset) throws AtlasBaseException {
+    public PageResult<PrivilegeInfo> getPrivilegeList(@QueryParam("query")String query, @QueryParam("limit")int limit, @QueryParam("offset")int offset) throws AtlasBaseException {
         try {
             return privilegeService.getPrivilegeList(query, limit, offset);
         } catch (Exception e) {
@@ -128,7 +171,7 @@ public class PrivilegeREST {
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Privilege getPrivilegeInfo(@PathParam("privilegeId")String privilegeId) throws AtlasBaseException {
+    public PrivilegeInfo getPrivilegeInfo(@PathParam("privilegeId")String privilegeId) throws AtlasBaseException {
         try {
             return privilegeService.getPrivilegeInfo(privilegeId);
         } catch (Exception e) {

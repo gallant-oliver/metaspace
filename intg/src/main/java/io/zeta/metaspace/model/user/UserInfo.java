@@ -28,7 +28,7 @@ import java.util.List;
 public class UserInfo {
     private User user;
     private Role role;
-    private List<Module> module;
+    private List<Module> modules;
     private List<TechnicalCategory> technicalCategory;
     private List<BusinessCategory> businessCategory;
 
@@ -48,12 +48,12 @@ public class UserInfo {
         this.role = role;
     }
 
-    public List<Module> getModule() {
-        return module;
+    public List<Module> getModules() {
+        return modules;
     }
 
-    public void setModule(List<Module> module) {
-        this.module = module;
+    public void setModules(List<Module> modules) {
+        this.modules = modules;
     }
 
     public List<TechnicalCategory> getTechnicalCategory() {
@@ -72,16 +72,67 @@ public class UserInfo {
         this.businessCategory = businessCategory;
     }
 
-    public class Module {
-        private String moduleId;
-        private String moduleName;
-        private String type;
+    public static class User {
+        private String userId;
+        private String userName;
+        private String account;
 
-        public String getModuleId() {
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+
+        public String getAccount() {
+            return account;
+        }
+
+        public void setAccount(String account) {
+            this.account = account;
+        }
+    }
+
+    public static class Role {
+        private String roleId;
+        private String roleName;
+
+        public String getRoleId() {
+            return roleId;
+        }
+
+        public void setRoleId(String roleId) {
+            this.roleId = roleId;
+        }
+
+        public String getRoleName() {
+            return roleName;
+        }
+
+        public void setRoleName(String roleName) {
+            this.roleName = roleName;
+        }
+    }
+
+    public static class Module {
+        private int moduleId;
+        private String moduleName;
+        private int type;
+
+        public int getModuleId() {
             return moduleId;
         }
 
-        public void setModuleId(String moduleId) {
+        public void setModuleId(int moduleId) {
             this.moduleId = moduleId;
         }
 
@@ -93,19 +144,29 @@ public class UserInfo {
             this.moduleName = moduleName;
         }
 
-        public String getType() {
+        public int getType() {
             return type;
         }
 
-        public void setType(String type) {
+        public void setType(int type) {
             this.type = type;
         }
     }
 
-    public class TechnicalCategory {
+    public static class TechnicalCategory {
+        private String guid;
         private String categoryName;
-        private String level;
+        private int level;
         private String level2Category;
+
+        public TechnicalCategory() { }
+
+        public TechnicalCategory(String guid, String categoryName, int level, String level2Category) {
+            this.guid = guid;
+            this.categoryName = categoryName;
+            this.level = level;
+            this.level2Category = level2Category;
+        }
 
         public String getCategoryName() {
             return categoryName;
@@ -115,11 +176,19 @@ public class UserInfo {
             this.categoryName = categoryName;
         }
 
-        public String getLevel() {
+        public String getGuid() {
+            return guid;
+        }
+
+        public void setGuid(String guid) {
+            this.guid = guid;
+        }
+
+        public int getLevel() {
             return level;
         }
 
-        public void setLevel(String level) {
+        public void setLevel(int level) {
             this.level = level;
         }
 
@@ -132,10 +201,18 @@ public class UserInfo {
         }
     }
 
-    public class BusinessCategory {
+    public static class BusinessCategory {
+        private String guid;
         private String categoryName;
-        private String level;
+        private int level;
         private String level2Category;
+
+        public BusinessCategory(String guid, String categoryName, int level, String level2Category) {
+            this.guid = guid;
+            this.categoryName = categoryName;
+            this.level = level;
+            this.level2Category = level2Category;
+        }
 
         public String getCategoryName() {
             return categoryName;
@@ -145,11 +222,19 @@ public class UserInfo {
             this.categoryName = categoryName;
         }
 
-        public String getLevel() {
+        public String getGuid() {
+            return guid;
+        }
+
+        public void setGuid(String guid) {
+            this.guid = guid;
+        }
+
+        public int getLevel() {
             return level;
         }
 
-        public void setLevel(String level) {
+        public void setLevel(int level) {
             this.level = level;
         }
 

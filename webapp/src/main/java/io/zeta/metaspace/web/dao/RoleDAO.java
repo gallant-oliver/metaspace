@@ -1,15 +1,11 @@
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.metadata.CategoryEntity;
-import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.ibatis.annotations.*;
 
-import javax.ws.rs.PathParam;
 import java.util.List;
 
 public interface RoleDAO {
@@ -60,7 +56,7 @@ public interface RoleDAO {
 
    //获取角色方案
     @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid")
-    public Privilege getPrivilegeByRoleId(String roleId);
+    public PrivilegeInfo getPrivilegeByRoleId(String roleId);
 
    //修改角色方案
     @Update("update role set privilegeid=#{privilegeId} where roleid=#{roleId}")

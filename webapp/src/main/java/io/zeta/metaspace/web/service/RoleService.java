@@ -1,9 +1,7 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.model.metadata.CategoryEntity;
-import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -19,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.ws.rs.PathParam;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -87,14 +84,14 @@ public class RoleService {
         //被勾选的
         roleModulesCategories.setBusinessCategories(roleDAO.getCategorysByType(roleId, 1));
         roleModulesCategories.setTechnicalCategories(roleDAO.getCategorysByType(roleId, 0));
-        Privilege privilege = roleDAO.getPrivilegeByRoleId(roleId);
+        PrivilegeInfo privilege = roleDAO.getPrivilegeByRoleId(roleId);
         privilege.setModules(privilegeDAO.getRelatedModuleWithPrivilege(privilege.getPrivilegeId()));
         roleModulesCategories.setPrivilege(privilege);
         return roleModulesCategories;
     }
     @Transactional
     public String putPrivileges(String roleId,RoleModulesCategories roleModulesCategories){
-        Privilege privilege = roleModulesCategories.getPrivilege();
+        PrivilegeInfo privilege = roleModulesCategories.getPrivilege();
         String privilegeId = privilege.getPrivilegeId();
         roleDAO.updateCategory(privilegeId,roleId);
         roleDAO.deleteRole2category(roleId);

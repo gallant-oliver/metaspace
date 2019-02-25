@@ -1,19 +1,24 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +29,8 @@ public class UsersService {
     private UserDAO userDAO;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private CategoryDAO categoryDAO;
     @Bean(name="getUserService")
     public UsersService getUserService(){
         return usersService;
@@ -42,28 +49,66 @@ public class UsersService {
         }
     }
 
-
-    private final  Integer TECHNICAL_TYPE = 0;
-
     @Transactional
     public UserInfo getUserInfoById(String userId) throws AtlasBaseException {
         try {
             UserInfo info = new UserInfo();
             //user
-            User user = userDAO.getUser(userId);
+            User userTmp = userDAO.getUser(userId);
+            UserInfo.User user = new UserInfo.User();
+            user.setUserId(userTmp.getUserId());
+            user.setUserName(userTmp.getUsername());
+            user.setAccount(userTmp.getAccount());
             info.setUser(user);
             //role
-            Role role = userDAO.getRoleByUserId(userId);
+            Role roleTmp = userDAO.getRoleByUserId(userId);
+            UserInfo.Role role = new UserInfo.Role();
+            role.setRoleId(roleTmp.getRoleId());
+            role.setRoleName(roleTmp.getRoleName());
             info.setRole(role);
             String roleId = role.getRoleId();
             //module
             List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
+            info.setModules(moduleList);
             //technicalCategory
-            List<UserInfo.TechnicalCategory> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
-            info.setTechnicalCategory(technicalCategoryList);
+            List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
+            List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
+            for(CategoryEntityV2 entity : technicalCategoryList) {
+                String guid = entity.getGuid();
+                String name = entity.getName();
+                String pathStr = categoryDAO.queryPathByGuid(guid);
+                String path = pathStr.substring(1, pathStr.length()-1);
+                path = path.replace(",",".").replace("\"","");
+                String level2Category = null;
+                String[] pathArr = path.split("\\.");
+                int level = pathArr.length;
+                if(level >= 2) {
+                    level2Category = pathArr[1];
+                }
+                UserInfo.TechnicalCategory category = new UserInfo.TechnicalCategory(guid, name, level, level2Category);
+                userTechCategoryList.add(category);
+            }
+
+            info.setTechnicalCategory(userTechCategoryList);
             //businessCategory
-            List<UserInfo.BusinessCategory> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
-            info.setBusinessCategory(businessCategoryList);
+            List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
+            List<UserInfo.BusinessCategory> userBusiCategoryList = new ArrayList<>();
+            for(CategoryEntityV2 entity : businessCategoryList) {
+                String guid = entity.getGuid();
+                String name = entity.getName();
+                String pathStr = categoryDAO.queryPathByGuid(guid);
+                String path = pathStr.substring(1, pathStr.length()-1);
+                path = path.replace(",",".").replace("\"","");
+                String level2Category = null;
+                String[] pathArr = path.split("\\.");
+                int level = pathArr.length;
+                if(level >= 2) {
+                    level2Category = pathArr[1];
+                }
+                UserInfo.BusinessCategory category = new UserInfo.BusinessCategory(guid, name, level, level2Category);
+                userBusiCategoryList.add(category);
+            }
+            info.setBusinessCategory(userBusiCategoryList);
 
             return info;
         } catch (Exception e) {
@@ -71,10 +116,16 @@ public class UsersService {
         }
     }
 
-    public PageResult<User> getUserList(String query, Integer limit, Integer offset) throws AtlasBaseException {
+
+    public PageResult<User> getUserList(Parameters parameters) throws AtlasBaseException {
+
+        String query = parameters.getQuery();
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
             List<User> userList = userDAO.getUserList(query, limit, offset);
+
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
             userPageResult.setCount(userCount);

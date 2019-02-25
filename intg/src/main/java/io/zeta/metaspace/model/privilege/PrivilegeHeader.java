@@ -16,8 +16,6 @@
  */
 package io.zeta.metaspace.model.privilege;
 
-import io.zeta.metaspace.model.role.Role;
-
 import java.util.List;
 
 /*
@@ -25,14 +23,14 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/2/18 18:48
  */
-public class Privilege {
+public class PrivilegeHeader {
     private String privilegeId;
     private String privilegeName;
     private String description;
     private String createTime;
 
-    private List<Module> modules;
-    private List<Role> roles;
+    private List<Integer> modules;
+    private List<String> roles;
 
     public String getPrivilegeId() {
         return privilegeId;
@@ -66,19 +64,19 @@ public class Privilege {
         this.createTime = createTime;
     }
 
-    public List<Module> getModules() {
+    public List<Integer> getModules() {
         return modules;
     }
 
-    public void setModules(List<Module> modules) {
+    public void setModules(List<Integer> modules) {
         this.modules = modules;
     }
 
-    public List<Role> getRoles() {
+    public List<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<Role> roles) {
+    public void setRoles(List<String> roles) {
         this.roles = roles;
     }
 }

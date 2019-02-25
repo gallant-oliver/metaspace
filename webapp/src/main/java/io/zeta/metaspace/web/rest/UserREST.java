@@ -56,7 +56,7 @@ public class UserREST {
         }
     }
 
-    @GET
+    /*@GET
     @Path("")
     public PageResult<User> UserList(@QueryParam("query") String query, @QueryParam("offset") Integer offset, @QueryParam("limit") Integer limit) throws AtlasBaseException {
         try {
@@ -64,5 +64,5 @@ public class UserREST {
         } catch (Exception e) {
             throw e;
         }
-    }
+    }*/
 }
