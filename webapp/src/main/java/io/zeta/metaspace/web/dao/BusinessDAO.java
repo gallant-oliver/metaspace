@@ -95,16 +95,19 @@ public interface BusinessDAO {
     public long queryBusinessCountByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                               @Param("level2Category") String level2Category,@Param("submitter") String submitter);
 
-    //
+    //查询业务目录关系业务信息列表
     @Select("select * from businessInfo where businessId in (select businessId from business_relation where categoryId=#{categoryGuid} limit #{limit} offset #{offset})")
     public List<BusinessInfo> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
+    //更新技术信息操作者及更新时间
     @Update("update businessInfo set technicalOperator=#{technicalOperator},technicalLastUpdate=#{technicalLastUpdate} where businessId=#{businessId}")
     public int updateTechnicalInfo(@Param("businessId")String businessId, @Param("technicalOperator")String technicalOperator, @Param("technicalLastUpdate")String technicalLastUpdate);
 
+    //删除业务信息与表的关联
     @Delete("delete from business2table where businessId=#{businessId}")
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
 
+    //添加业务信息与表的关联
     @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
     public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
 

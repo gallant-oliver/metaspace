@@ -17,7 +17,8 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeHeader;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.role.Role;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -35,16 +36,39 @@ import java.util.List;
 public interface PrivilegeDAO {
 
     @Insert("insert into privilege(privilegeId, privilegeName, description, createTime)values(#{privilegeId}, #{privilegeName}, #{description}, #{createTime})")
-    public int addPrivilege(Privilege privilege);
+    public int addPrivilege(PrivilegeHeader privilege);
+
+    @Insert("<script>" +
+            "insert into privilege2module()values" +
+            "<foreach collection='list' item='moduleId' index='index'  separator=','>" +
+            "(#{privilegeId},#{moduleId})" +
+            "</foreach>" +
+            "</script>")
+    public int addModule2Privilege(@Param("privilegeId")String privilegeId,@Param("list")List<Integer> modules);
+
+    @Update({
+            "<script>" ,
+            "<foreach item='roleId' index='index' collection='roleIds' separator=';'>" ,
+            "update role set privilegeId=#{privilegeId} where roleId=#{roleId}",
+            "</foreach>",
+            "</script>"
+    })
+    public int updateRolePrivilege(@Param("privilegeId")String privilegeId, @Param("roleIds")List<String> roleIds);
+
+    @Delete("delete from role2Category where roleId = (select roleId from role where privilege=#{privilegeId}) and categoryId in (select categoryId from role2Category join category on (role2Category.categoryId=category.categoryId and category.type=#{type}))")
+    public int deleteRole2Category(@Param("privilegeId")String privilegeId, @Param("type")int type);
 
     @Select("select * from privilege")
     public List<Module> getAllModule();
 
-    @Select("delete from privilege where privilegeId=#{privilegeId}")
+    @Delete("delete from privilege where privilegeId=#{privilegeId}")
     public int deletePrivilege(@Param("privilegeId")String privilegeId);
 
+    @Delete("delete from privilege2module where privilegeId=#{privilegeId}")
+    public int deletePrivilege2Module(@Param("privilegeId")String privilegeId);
+
     @Update("update privilege set privilegeName=#{privilegeName},description=#{description} where privilegeId=#{privilegeId}")
-    public int updatePrivilege(Privilege privilege);
+    public int updatePrivilege(PrivilegeInfo privilege);
 
     @Update("update role set privilegeId=#{systemPrivilegeId} where privilegeId=#{privilegeId}")
     public int deleteRelatedRoleByPrivilegeId(@Param("privilegeId")String privilegeId, @Param("systemPrivilegeId")String systemPrivilegeId);
@@ -53,13 +77,14 @@ public interface PrivilegeDAO {
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select("select * from privilege where privilegeName like '%'||#{query}||'%' limit #{limit} offset #{offset}")
-    public List<Privilege> getPrivilegeList(@Param("query")String query, @Param("limit")int limit, @Param("offset")int offset);
+
+    public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
 
     @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%'")
     public long getRolesCount(@Param("query") String query);
 
     @Select("select * from privilege where privilegeId = #{privilegeId}")
-    public Privilege getPrivilegeInfo(@Param("privilegeId")String privilegeId);
+    public PrivilegeInfo getPrivilegeInfo(@Param("privilegeId")String privilegeId);
 
     @Select("select * from role where privilegeId=#{privilegeId}")
     public List<Role> getRelatedRoleWithPrivilege(@Param("privilegeId")String privilegeId);

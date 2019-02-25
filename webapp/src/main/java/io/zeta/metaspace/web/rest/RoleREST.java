@@ -2,7 +2,7 @@ package io.zeta.metaspace.web.rest;
 
 
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -238,7 +238,7 @@ public class RoleREST {
     @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Privilege> getPrivilege(Parameters parameters) throws AtlasBaseException {
+    public PageResult<PrivilegeInfo> getPrivilege(Parameters parameters) throws AtlasBaseException {
         try {
             return privilegeService.getPrivilegeList(parameters.getQuery(),parameters.getLimit(),parameters.getOffset());
         }

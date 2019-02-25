@@ -1,7 +1,7 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -18,8 +18,10 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 public class RoleService {
@@ -105,9 +107,11 @@ public class RoleService {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
         String userId = AdminUtils.getUserData().getUserId();
         String userRoleId = roleDAO.getRoleIdByUserId(userId);
-        Privilege privilege = roleDAO.getPrivilegeByRoleId(roleId);
+
+        PrivilegeInfo privilege = roleDAO.getPrivilegeByRoleId(roleId);
         List<Module> modules = privilegeDAO.getRelatedModuleWithPrivilege(privilege.getPrivilegeId());
         privilege.setModules(modules);
+
         roleModulesCategories.setPrivilege(privilege);
         List<Integer> moduleIds = new ArrayList<>();
         for (Module module : modules) {
@@ -236,8 +240,9 @@ public class RoleService {
     }
 
     @Transactional
-    public String putPrivileges(String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
-        Privilege privilege = roleModulesCategories.getPrivilege();
+
+    public String putPrivileges(String roleId,RoleModulesCategories roleModulesCategories){
+        PrivilegeInfo privilege = roleModulesCategories.getPrivilege();
         String privilegeId = privilege.getPrivilegeId();
         roleDAO.updateCategory(privilegeId, roleId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);

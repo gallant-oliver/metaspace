@@ -1,6 +1,6 @@
 package io.zeta.metaspace.model.result;
 
-import io.zeta.metaspace.model.privilege.Privilege;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 
 import java.util.List;
 import java.util.Objects;
@@ -8,7 +8,7 @@ import java.util.Objects;
 public class RoleModulesCategories {
     private List<Category> technicalCategories;
     private List<Category> businessCategories;
-    private Privilege privilege;
+    private PrivilegeInfo privilege;
 
     public List<Category> getTechnicalCategories() {
         return technicalCategories;
@@ -26,11 +26,11 @@ public class RoleModulesCategories {
         this.businessCategories = businessCategories;
     }
 
-    public Privilege getPrivilege() {
+    public PrivilegeInfo getPrivilege() {
         return privilege;
     }
 
-    public void setPrivilege(Privilege privilege) {
+    public void setPrivilege(PrivilegeInfo privilege) {
         this.privilege = privilege;
     }
     public static class Category{
