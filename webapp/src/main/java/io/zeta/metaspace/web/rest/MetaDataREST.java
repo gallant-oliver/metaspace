@@ -12,43 +12,27 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.result.BuildTableSql;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
-import io.zeta.metaspace.web.filter.SSOFilter;
+import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TableTagService;
+import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
-import io.zeta.metaspace.model.result.BuildTableSql;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.TableShow;
 import org.apache.atlas.utils.AtlasPerfTracer;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnEdit;
-import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.GuidCount;
-import io.zeta.metaspace.model.metadata.LineageDepthInfo;
-import io.zeta.metaspace.model.metadata.Parameters;
-
-import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.metadata.TableEdit;
-import io.zeta.metaspace.model.metadata.TableLineageInfo;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import io.zeta.metaspace.web.service.DataManageService;
-
 import org.apache.atlas.web.util.Servlets;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -59,7 +43,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -253,28 +236,7 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 获取表详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/table/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableInfoById()");
-            }
-            return metadataService.getTableInfoById(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
+
 
     /**
      * 获取字段详情
@@ -328,29 +290,7 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 表血缘深度详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/table/lineage/depth/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageDepthInfo getTableLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", guid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
-            }
-            return metadataService.getTableLineageDepthInfo(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
+
 
     /**
      * 获取字段血缘
@@ -380,29 +320,7 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 字段血缘深度详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/column/lineage/depth/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageDepthInfo getColumnLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", guid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
-            }
-            return metadataService.getColumnLineageDepthInfo(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
+
 
     /**
      * 添加目录 V2

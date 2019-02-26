@@ -62,10 +62,6 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (!requestURL.contains("/api/metaspace")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
         if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
             filterChain.doFilter(request, response);
             return;
@@ -131,7 +127,7 @@ public class SSOFilter implements Filter {
     private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
         httpServletResponse.setStatus(401);
         httpServletResponse.setCharacterEncoding("UTF-8");
-        httpServletResponse.setContentType("text/html;charset=utf-8");
+        httpServletResponse.setContentType("text/plain;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();
         HashMap<String, String> hashMap = new HashMap();
         hashMap.put("error", "请检查用户登陆状态");

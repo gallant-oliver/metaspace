@@ -16,21 +16,27 @@ import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
-import java.util.ArrayList;
-import java.util.List;
 
 
 @Service
 public class RoleService {
     @Autowired
-    RoleDAO roleDAO;
+    private RoleDAO roleDAO;
     @Autowired
-    PrivilegeDAO privilegeDAO;
+    private PrivilegeDAO privilegeDAO;
     @Autowired
-    CategoryDAO categoryDAO;
+    private RoleService roleService;
+
+
+    @Bean(name = "getRoleService")
+    public RoleService getRoleService() {
+        return roleService;
+    }
 
     public String addRole(Role role) throws AtlasBaseException {
         String now = DateUtils.getNow();
@@ -166,6 +172,7 @@ public class RoleService {
         return new ArrayList<>(result.values());
     }
 
+    @Transactional
     public Map<String, RoleModulesCategories.Category> getRoleStringCategoryMap(String roleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
@@ -202,6 +209,7 @@ public class RoleService {
         return categorys;
     }
 
+    @Transactional
     public Map<String, RoleModulesCategories.Category> getUserStringCategoryMap(String userRoleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
@@ -241,7 +249,7 @@ public class RoleService {
 
     @Transactional
 
-    public String putPrivileges(String roleId,RoleModulesCategories roleModulesCategories){
+    public String putPrivileges(String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         PrivilegeInfo privilege = roleModulesCategories.getPrivilege();
         String privilegeId = privilege.getPrivilegeId();
         roleDAO.updateCategory(privilegeId, roleId, DateUtils.getNow());
@@ -255,24 +263,29 @@ public class RoleService {
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if (moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
+                if (businessCategory.getStatus() == 1)
+                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
             }
         } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
+                if (businessCategory.getStatus() == 1)
+                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
         if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
+                if (technicalCategory.getStatus() == 1)
+                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
             }
 
         } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
+                if (technicalCategory.getStatus() == 1)
+                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
             }
         }
         return "success";
     }
+
 
 }

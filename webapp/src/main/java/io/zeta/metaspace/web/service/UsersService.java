@@ -1,13 +1,17 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.result.Item;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -31,15 +35,19 @@ public class UsersService {
     private UsersService usersService;
     @Autowired
     private CategoryDAO categoryDAO;
-    @Bean(name="getUserService")
-    public UsersService getUserService(){
+    @Autowired
+    private RoleDAO roleDAO;
+
+    @Bean(name = "getUserService")
+    public UsersService getUserService() {
         return usersService;
     }
+
     public void addUser(Map data) {
         String userId = data.get("AccountGuid").toString();
-        if(userDAO.ifUserExists(userId).size()==0){
+        if (userDAO.ifUserExists(userId).size() == 0) {
             String account = data.get("LoginEmail").toString();
-            String displayName=data.get("DisplayName").toString();
+            String displayName = data.get("DisplayName").toString();
             User user = new User();
             user.setUserId(userId);
             user.setAccount(account);
@@ -73,16 +81,16 @@ public class UsersService {
             //technicalCategory
             List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
             List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
-            for(CategoryEntityV2 entity : technicalCategoryList) {
+            for (CategoryEntityV2 entity : technicalCategoryList) {
                 String guid = entity.getGuid();
                 String name = entity.getName();
                 String pathStr = categoryDAO.queryPathByGuid(guid);
-                String path = pathStr.substring(1, pathStr.length()-1);
-                path = path.replace(",",".").replace("\"","");
+                String path = pathStr.substring(1, pathStr.length() - 1);
+                path = path.replace(",", ".").replace("\"", "");
                 String level2Category = null;
                 String[] pathArr = path.split("\\.");
                 int level = pathArr.length;
-                if(level >= 2) {
+                if (level >= 2) {
                     level2Category = pathArr[1];
                 }
                 UserInfo.TechnicalCategory category = new UserInfo.TechnicalCategory(guid, name, level, level2Category);
@@ -93,16 +101,16 @@ public class UsersService {
             //businessCategory
             List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
             List<UserInfo.BusinessCategory> userBusiCategoryList = new ArrayList<>();
-            for(CategoryEntityV2 entity : businessCategoryList) {
+            for (CategoryEntityV2 entity : businessCategoryList) {
                 String guid = entity.getGuid();
                 String name = entity.getName();
                 String pathStr = categoryDAO.queryPathByGuid(guid);
-                String path = pathStr.substring(1, pathStr.length()-1);
-                path = path.replace(",",".").replace("\"","");
+                String path = pathStr.substring(1, pathStr.length() - 1);
+                path = path.replace(",", ".").replace("\"", "");
                 String level2Category = null;
                 String[] pathArr = path.split("\\.");
                 int level = pathArr.length;
-                if(level >= 2) {
+                if (level >= 2) {
                     level2Category = pathArr[1];
                 }
                 UserInfo.BusinessCategory category = new UserInfo.BusinessCategory(guid, name, level, level2Category);
@@ -134,5 +142,22 @@ public class UsersService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
+    }
+
+    public List<Integer> ifPrivilege(List<String> categoryGuid, String tableGuid) {
+        return userDAO.ifPrivilege(categoryGuid, tableGuid);
+    }
+
+    public Item getUserItems() throws AtlasBaseException {
+        Item item = new Item();
+        String userId = AdminUtils.getUserData().getUserId();
+        Role roleByUserId = userDAO.getRoleByUserId(userId);
+        List<Module> modules= userDAO.getModuleByUserId(userId);
+        item.setRole(roleByUserId);
+        item.setModules(modules);
+        return item;
+    }
+    public String getRoleIdByUserId(String userId){
+        return roleDAO.getRoleIdByUserId(userId);
     }
 }

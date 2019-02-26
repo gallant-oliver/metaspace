@@ -149,4 +149,5 @@ public List<Integer> ifRole(@Param("roleName")String roleName);
     @Select("select * from category where categoryType=#{categoryType}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
 
+
 }
