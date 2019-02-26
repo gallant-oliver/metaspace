@@ -1,11 +1,10 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -15,6 +14,7 @@ import java.util.List;
 public interface UserDAO {
     @Select("select 1 from users where userid=#{userid}")
     public List<User> ifUserExists(String userid);
+
     @Insert("insert into users(userid,username,account,roleid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId})")
     public int addUser(@Param("user") User user);
 
@@ -38,4 +38,17 @@ public interface UserDAO {
 
     @Select("select count(1) from users where username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("query") String query);
+
+    @Select("<script>select count(1) from table_relation where categoryguid in" +
+            "    <foreach item='item' index='index' collection='categoryGuid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            " and tableguid=#{tableGuid}</script>")
+    public List<Integer> ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
+
+    @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and userid=#{userId}")
+    public List<Module> getModuleByUserId(String userId);
+
+
 }
