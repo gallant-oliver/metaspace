@@ -65,7 +65,7 @@ public class UsersService {
             User userTmp = userDAO.getUser(userId);
             UserInfo.User user = new UserInfo.User();
             user.setUserId(userTmp.getUserId());
-            user.setUserName(userTmp.getUsername());
+            user.setUsername(userTmp.getUsername());
             user.setAccount(userTmp.getAccount());
             info.setUser(user);
             //role

@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
+import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -42,7 +44,10 @@ import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -55,15 +60,21 @@ public class DataManageService {
     RelationDAO relationDao;
     @Autowired
     RoleDAO roleDao;
+    @Autowired
+    RoleService roleService;
 
 
-    public Set<CategoryEntityV2> getAll(int type) throws AtlasBaseException {
+    public List<RoleModulesCategories.Category> getAll(int type) throws AtlasBaseException {
         try {
-            return categoryDao.getAll(type);
+            String userId = AdminUtils.getUserData().getUserId();
+            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(userId, type);
+            Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+            List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+            return valueList;
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 
