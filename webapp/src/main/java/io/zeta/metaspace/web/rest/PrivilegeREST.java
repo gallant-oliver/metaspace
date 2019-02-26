@@ -47,7 +47,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 @Path("/privilege")
@@ -80,7 +79,7 @@ public class PrivilegeREST {
 
     /**
      * 获取用户列表
-     * @param parameterss
+     * @param parameters
      * @return
      * @throws AtlasBaseException
      */
@@ -131,6 +130,11 @@ public class PrivilegeREST {
         }
     }
 
+    /**
+     * 删除权限方案
+     * @param privilegeId
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -142,11 +146,18 @@ public class PrivilegeREST {
         }
     }
 
+    /**
+     * 修改权限方案
+     * @param privilegeId
+     * @param privilege
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, PrivilegeInfo privilege) throws AtlasBaseException {
+    public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, PrivilegeHeader privilege) throws AtlasBaseException {
         try {
             privilegeService.updatePrivilege(privilegeId, privilege);
             return Response.status(200).entity("success").build();
@@ -155,18 +166,30 @@ public class PrivilegeREST {
         }
     }
 
-    @GET
+    /**
+     * 获取权限方案列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
     @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<PrivilegeInfo> getPrivilegeList(@QueryParam("query")String query, @QueryParam("limit")int limit, @QueryParam("offset")int offset) throws AtlasBaseException {
+    public PageResult<PrivilegeInfo> getPrivilegeList(Parameters parameters) throws AtlasBaseException {
         try {
-            return privilegeService.getPrivilegeList(query, limit, offset);
+            return privilegeService.getPrivilegeList(parameters);
         } catch (Exception e) {
             throw e;
         }
     }
 
+    /**
+     * 获取权限方案详情
+     * @param privilegeId
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{privilegeId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

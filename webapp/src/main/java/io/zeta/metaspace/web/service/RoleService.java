@@ -241,7 +241,7 @@ public class RoleService {
 
     @Transactional
 
-    public String putPrivileges(String roleId,RoleModulesCategories roleModulesCategories){
+    public String putPrivileges(String roleId,RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         PrivilegeInfo privilege = roleModulesCategories.getPrivilege();
         String privilegeId = privilege.getPrivilegeId();
         roleDAO.updateCategory(privilegeId, roleId, DateUtils.getNow());

@@ -149,4 +149,14 @@ public List<Integer> ifRole(@Param("roleName")String roleName);
     @Select("select * from category where categoryType=#{categoryType}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
 
+
+    @Update({
+            "<script>" ,
+            "<foreach item='roleId' index='index' collection='roleIds' separator=';'>" ,
+            "update role set privilegeId=#{privilegeId} where roleId=#{roleId}",
+            "</foreach>",
+            "</script>"
+    })
+    public int updatePrivilege(@Param("roleId") String roleId);
+
 }

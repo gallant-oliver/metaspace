@@ -240,7 +240,7 @@ public class RoleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<PrivilegeInfo> getPrivilege(Parameters parameters) throws AtlasBaseException {
         try {
-            return privilegeService.getPrivilegeList(parameters.getQuery(),parameters.getLimit(),parameters.getOffset());
+            return privilegeService.getPrivilegeList(parameters);
         }
         catch(AtlasBaseException e){
             throw e;

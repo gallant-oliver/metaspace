@@ -24,7 +24,7 @@ package io.zeta.metaspace.model.privilege;
 public class Module {
     private int moduleId;
     private String moduleName;
-    private String type;
+    private int type;
 
     public int getModuleId() {
         return moduleId;
@@ -42,11 +42,11 @@ public class Module {
         this.moduleName = moduleName;
     }
 
-    public String getType() {
+    public int getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(int type) {
         this.type = type;
     }
 }

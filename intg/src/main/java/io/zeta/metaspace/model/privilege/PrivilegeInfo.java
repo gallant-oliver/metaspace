@@ -30,6 +30,8 @@ public class PrivilegeInfo {
     private String privilegeName;
     private String description;
     private String createTime;
+    private int edit;
+    private int delete;
 
     private List<Module> modules;
     private List<Role> roles;
@@ -64,6 +66,22 @@ public class PrivilegeInfo {
 
     public void setCreateTime(String createTime) {
         this.createTime = createTime;
+    }
+
+    public int getEdit() {
+        return edit;
+    }
+
+    public void setEdit(int edit) {
+        this.edit = edit;
+    }
+
+    public int getDelete() {
+        return delete;
+    }
+
+    public void setDelete(int delete) {
+        this.delete = delete;
     }
 
     public List<Module> getModules() {
