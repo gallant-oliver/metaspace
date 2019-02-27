@@ -128,7 +128,8 @@ def logDir(dir):
     return os.environ.get(ATLAS_LOG, localLog)
 
 def pidFile(dir):
-    localPid = os.path.join(dir, LOG)
+    #localPid = os.path.join(dir, LOG)
+    localPid = dir
     return os.path.join(os.environ.get(ATLAS_PID, localPid), 'atlas.pid')
 
 def dataDir(dir):
@@ -243,10 +244,10 @@ def runProcess(commandline, logdir=None, shell=False, wait=False):
     stdoutFile = None
     stderrFile = None
     if logdir:
-        stdoutFile = open(os.path.join(logdir, timestr + ".out"), "w")
-        stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
-
-    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stderrFile, shell=shell)
+        stdoutFile = open(os.path.join(logdir, "application.log"), "w")
+        #stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
+    #DEVNULL = open(os.devnull, 'wb')
+    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stdoutFile, shell=shell)
 
     if wait:
         p.communicate()
