@@ -118,4 +118,7 @@ public interface CategoryDAO {
 
     @Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
     public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);
+
+    @Select("select guid from category where parentcategoryguid is null")
+    public List<String> getAllRootCategory();
 }

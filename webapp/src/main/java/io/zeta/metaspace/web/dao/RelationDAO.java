@@ -62,12 +62,41 @@ public interface RelationDAO {
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
     //@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
-    @Select("select * from table_relation,tableinfo where table_relation.tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%') limit #{limit} offset #{offset}")
-    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset);
+    //@Select("select * from table_relation,tableinfo where table_relation.tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%') limit #{limit} offset #{offset}")
+
+    @Select({"<script>",
+             " select * from table_relation",
+             " join tableInfo on",
+             " table_relation.tableGuid=tableInfo.tableGuid",
+             " and",
+             " tableInfo.tableName like '%${tableName}%'",
+             " and",
+             " categoryGuid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
+             " #{categoryGuid}",
+             " </foreach>",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName,@Param("ids") List<String> categoryIds,@Param("limit")int limit,@Param("offset") int offset);
 
     //@Select("select count(*) from table_relation where tableName like '%${tableName}%'")
-    @Select("select count(*) from table_relation where tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%')")
-    public int queryTotalNumByName(@Param("tableName")String tableName);
+    //@Select("select count(*) from table_relation where tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%')")
+    @Select({"<script>",
+             " select count(*) from table_relation",
+             " join tableInfo on",
+             " table_relation.tableGuid=tableInfo.tableGuid",
+             " and",
+             " tableInfo.tableName like '%${tableName}%'",
+             " and",
+             " categoryGuid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
+             " #{categoryGuid}",
+             " </foreach>",
+             " </script>"})
+    public int queryTotalNumByName(@Param("tableName")String tableName, @Param("ids") List<String> categoryIds);
 
     /*@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset, @Param("categoryType") int categoryType);*/

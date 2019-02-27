@@ -60,7 +60,7 @@ public class MetaDataREST {
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
     private static final String DEFAULT_DEPTH = "-1";
-    private static Integer CATEGORY_TYPE = 0;
+    private static int CATEGORY_TYPE = 0;
 
     @Autowired
     private DataManageService dataManageService;
@@ -487,13 +487,15 @@ public class MetaDataREST {
     @Path("/table/relations/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery);
+            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE);
+        } catch (Exception e) {
+            throw e;
         } finally {
             AtlasPerfTracer.log(perf);
         }

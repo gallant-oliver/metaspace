@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.service;
  */
 
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -303,13 +304,7 @@ public class DataManageService {
             relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
             totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
         }
-
-        for(RelationEntityV2 entity : relations) {
-            String pathStr = categoryDao.queryPathByGuid(entity.getCategoryGuid());
-            String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",",".").replace("\"", "");
-            entity.setPath(path);
-        }
+        getPath(relations);
         pageResult.setCount(relations.size());
         pageResult.setLists(relations);
         pageResult.setOffset(query.getOffset());
@@ -317,18 +312,40 @@ public class DataManageService {
         return pageResult;
     }
 
-    public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query) {
-        String tableName = query.getFilterTableName();
-        int limit = query.getLimit();
-        int offset = query.getOffset();
-        PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> list =  relationDao.queryByTableName(tableName, limit, offset);
-        int totalNum = relationDao.queryTotalNumByName(tableName);
-        pageResult.setCount(list.size());
-        pageResult.setLists(list);
-        pageResult.setOffset(query.getOffset());
-        pageResult.setSum(totalNum);
-        return pageResult;
+    public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDao.getRoleIdByUserId(userId);
+            String tableName = query.getFilterTableName();
+            List<String> categoryIds = null;
+            if(SystemRole.ADMIN.getCode().equals(roleId)) {
+                categoryIds = categoryDao.getAllRootCategory();
+            } else {
+                categoryIds = roleDao.getCategorysByTypeIds(roleId, type);
+            }
+            int limit = query.getLimit();
+            int offset = query.getOffset();
+            PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            List<RelationEntityV2> list = relationDao.queryByTableName(tableName, categoryIds, limit, offset);
+            getPath(list);
+            int totalNum = relationDao.queryTotalNumByName(tableName, categoryIds);
+            pageResult.setCount(list.size());
+            pageResult.setLists(list);
+            pageResult.setOffset(query.getOffset());
+            pageResult.setSum(totalNum);
+            return pageResult;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public void getPath(List<RelationEntityV2> list) {
+        for(RelationEntityV2 entity : list) {
+            String pathStr = categoryDao.queryPathByGuid(entity.getCategoryGuid());
+            String path = pathStr.substring(1, pathStr.length()-1);
+            path = path.replace(",",".").replace("\"", "");
+            entity.setPath(path);
+        }
     }
 
     @Transactional
