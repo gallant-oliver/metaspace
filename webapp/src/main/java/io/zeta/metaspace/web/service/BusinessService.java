@@ -216,24 +216,6 @@ public class BusinessService {
             String pathStr = categoryDao.queryPathByGuid(categoryId);
             String path = pathStr.substring(1, pathStr.length()-1);
             path = path.replace(",",".");
-       /* List<String> pathList = new ArrayList<>();
-        try {
-            CategoryEntityV2 entity = categoryDao.queryByGuid(categoryId);
-            String categoryName = entity.getName();
-            pathList.add(categoryName);
-            String parentCategoryGuid = entity.getParentCategoryGuid();
-            while(Objects.nonNull(parentCategoryGuid)) {
-                entity = categoryDao.queryByGuid(parentCategoryGuid);
-                parentCategoryGuid = entity.getParentCategoryGuid();
-                categoryName = entity.getName();
-                pathList.add(categoryName);
-            }
-            StringBuilder path = new StringBuilder();
-            for(int i=pathList.size()-1; i>=0; i--) {
-                path.append(pathList.get(i));
-                if(i != 0)
-                    path.append(".");
-            }*/
             return path;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
@@ -248,7 +230,7 @@ public class BusinessService {
             ticketNumber = (ticketNumber==null ? "":ticketNumber);
             String businessName = parameter.getBusinessName();
             businessName = (businessName==null ? "":businessName);
-            String level2Category = parameter.getLevel2Category();
+            String level2CategoryId = parameter.getLevel2CategoryId();
             String  submitter = parameter.getSubmitter();
             submitter = (submitter==null ? "":submitter);
             int limit = parameter.getLimit();
@@ -256,9 +238,9 @@ public class BusinessService {
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
             List<BusinessInfoHeader> businessInfoList = null;
             if(limit != -1) {
-                businessInfoList = businessDao.queryBusinessByConditionWithLimit(technicalStatus, ticketNumber, businessName, level2Category, submitter, limit, offset);
+                businessInfoList = businessDao.queryBusinessByConditionWithLimit(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
             } else {
-                businessInfoList = businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);
+                businessInfoList = businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
             }
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
@@ -269,7 +251,7 @@ public class BusinessService {
                     infoHeader.setLevel2Category(pathArr[1]);
             }
             pageResult.setLists(businessInfoList);
-            long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2Category, submitter);
+            long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
             pageResult.setSum(businessCount);
             pageResult.setCount(businessInfoList.size());
             return pageResult;

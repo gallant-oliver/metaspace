@@ -27,7 +27,7 @@ public class BusinessQueryParameter {
     private String status;
     private String ticketNumber;
     private String businessName;
-    private String level2Category;
+    private String level2CategoryId;
     private String submitter;
     private int offset;
     private int limit;
@@ -56,12 +56,12 @@ public class BusinessQueryParameter {
         this.businessName = businessName;
     }
 
-    public String getLevel2Category() {
-        return level2Category;
+    public String getLevel2CategoryId() {
+        return level2CategoryId;
     }
 
-    public void setLevel2Category(String level2Category) {
-        this.level2Category = level2Category;
+    public void setLevel2CategoryId(String level2CategoryId) {
+        this.level2CategoryId = level2CategoryId;
     }
 
     public String getSubmitter() {
