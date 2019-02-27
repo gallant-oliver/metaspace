@@ -19,6 +19,7 @@ package io.zeta.metaspace.discovery;
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
 
+import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.GraphTransaction;
@@ -348,7 +349,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
             PageResult<Database> pageResult = new PageResult<>();
             List<Database> databases = new ArrayList<>();
-            List<Table> tables = null;
+            List<TableHeader> tables = null;
             Boolean hasRecoredDB = null;
             Database db = null;
 
@@ -366,19 +367,23 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
                 String dbGuid = getGuid(dbVertex);
 
-                Table table = new Table();
+                TableHeader table = new TableHeader();
                 if (Objects.nonNull(tableVertex)) {
                     AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
                     AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
                     String tableGuid = getGuid(tableVertex);
                     String tableName = tableEntity.getAttribute("name").toString();
-                    String tableStatus = tableEntity.getStatus().name();
-                    String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();
                     table.setTableId(tableGuid);
                     table.setTableName(tableName);
+                    /*
+                    String tableStatus = tableEntity.getStatus().name();
+                    String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();
                     setVirtualTable(table);
                     table.setStatus(tableStatus);
                     table.setDescription(tableDescription);
+                    */
+
+
 
                     for (Database database : databases) {
                         String dbName = database.getDatabaseName();

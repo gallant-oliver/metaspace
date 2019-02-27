@@ -5,6 +5,9 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -34,12 +37,21 @@ public class SearchService {
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
 
+    @Autowired
+    RoleDAO roleDAO;
+
     @Cacheable(value = "databaseCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters) throws AtlasBaseException {
-        int limit = parameters.getLimit();
-        int offset = parameters.getOffset();
-        String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getAllDBAndTable(queryDb, limit, offset);
+        User user = AdminUtils.getUserData();
+        String roleId = roleDAO.getRoleIdByUserId(user.getUserId());
+        if("1".equals(roleId)) {
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            String queryDb = parameters.getQuery();
+            return metaspaceEntityService.getAllDBAndTable(queryDb, limit, offset);
+        } else {
+            return null;
+        }
     }
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {

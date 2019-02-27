@@ -34,7 +34,10 @@ public interface UserDAO {
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
     @Select("select * from users join role on (users.roleId = role.roleId) where  username like '%${username}%' limit #{limit} offset #{offset}")
-    public List<User> getUserList(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
+    public List<User> getUserListWithLimit(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("select * from users join role on (users.roleId = role.roleId) where  username like '%${username}%' offset #{offset}")
+    public List<User> getUserList(@Param("username") String query,@Param("offset") int offset);
 
     @Select("select count(1) from users where username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("query") String query);

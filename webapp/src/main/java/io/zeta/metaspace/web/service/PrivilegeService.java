@@ -162,11 +162,17 @@ public class PrivilegeService {
 
     public PageResult<PrivilegeInfo> getPrivilegeList(Parameters parameters) throws AtlasBaseException {
         String query = parameters.getQuery();
+        query = (query==null ? "":query);
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
         try {
             PageResult<PrivilegeInfo> rolePageResult = new PageResult<>();
-            List<PrivilegeInfo> privilegeList = privilegeDAO.getPrivilegeList(query, limit, offset);
+            List<PrivilegeInfo> privilegeList = null;
+            if(-1 == limit) {
+                privilegeList = privilegeDAO.getPrivilegeList(query, offset);
+            } else {
+                privilegeList = privilegeDAO.getPrivilegeListWithLimit(query, limit, offset);
+            }
             for(PrivilegeInfo info : privilegeList) {
                 List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
                 info.setRoles(roleList);

@@ -66,8 +66,9 @@ public class DataManageService {
 
     public List<RoleModulesCategories.Category> getAll(int type) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(userId, type);
+            User user = AdminUtils.getUserData();
+            String roleId = roleDao.getRoleIdByUserId(user.getUserId());
+            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(roleId, type);
             Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
             List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
             return valueList;
@@ -275,6 +276,10 @@ public class DataManageService {
             if (Objects.nonNull(relationshipList)) {
                 for (RelationEntityV2 relationship : relationshipList) {
                     relationDao.delete(relationship.getRelationshipGuid());
+                    String categoryGuid = relationship.getCategoryGuid();
+                    String tableGuid = relationship.getTableGuid();
+
+
                 }
             }
         } catch (Exception e) {

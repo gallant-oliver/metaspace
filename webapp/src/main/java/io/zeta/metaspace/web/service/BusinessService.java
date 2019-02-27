@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.BusinessDAO;
@@ -134,13 +135,33 @@ public class BusinessService {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
             String userId = AdminUtils.getUserData().getUserId();
             boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
-            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
+
 
             info.setEditBusiness(editBusiness);
-            info.setEditTechnical(editTechnical);
 
-            List<BusinessInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+            String categoryGuid = info.getDepartmentId();
+            String departmentName = categoryDao.queryNameByGuid(categoryGuid);
+            info.setDepartmentName(departmentName);
+
+            return info;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public TechnologyInfo getRelatedTableList(String businessId) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            //technicalLastUpdate && technicalOperator
+            TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
+            //editTechnical
+            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
+            info.setEditTechnical(editTechnical);
+            //tables
+            List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
             info.setTables(tables);
+            //businessId
+            info.setBusinessId(businessId);
             return info;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
@@ -159,6 +180,7 @@ public class BusinessService {
         try {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String businessName = parameters.getQuery();
+            businessName = (businessName == null ? "":businessName);
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
@@ -221,9 +243,12 @@ public class BusinessService {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String status = parameter.getStatus();
             String ticketNumber = parameter.getTicketNumber();
+            ticketNumber = (ticketNumber==null ? "":ticketNumber);
             String businessName = parameter.getBusinessName();
+            businessName = (businessName==null ? "":businessName);
             String level2Category = parameter.getLevel2Category();
             String  submitter = parameter.getSubmitter();
+            submitter = (submitter==null ? "":submitter);
             int limit = parameter.getLimit();
             int offset = parameter.getOffset();
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);

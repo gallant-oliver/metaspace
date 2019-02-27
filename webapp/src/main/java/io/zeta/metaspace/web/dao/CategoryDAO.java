@@ -95,4 +95,16 @@ public interface CategoryDAO {
             "SELECT  DEPTH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
     public int queryLevelByGuid(@Param("guid")String guid);
+
+
+    @Select("WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where parentCategoryGuid=#{parentCategoryGuid}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            ")" +
+            "SELECT * FROM categoryTree")
+    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
 }

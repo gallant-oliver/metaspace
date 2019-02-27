@@ -27,6 +27,7 @@ public class BusinessInfo {
     private String businessId;
     private String name;
     private String departmentId;
+    private String departmentName;
     private String module;
     private String description;
     private String owner;
@@ -35,62 +36,15 @@ public class BusinessInfo {
     private String dataAssets;
     private String businessLastUpdate;
     private String businessOperator;
-    private String technicalLastUpdate;
-    private String technicalOperator;
+    //private String technicalLastUpdate;
+    //private String technicalOperator;
     private String submitter;
     private String submissionTime;
     private String ticketNumber;
     private Boolean editBusiness;
-    private Boolean editTechnical;
-    private List<Table> tables;
+    //private Boolean editTechnical;
+    //private List<Table> tables;
 
-    public static class Table {
-        private String tableGuid;
-        private String tableName;
-        private String dbName;
-        private String status;
-        private String createTime;
-
-        public String getTableGuid() {
-            return tableGuid;
-        }
-
-        public void setTableGuid(String tableGuid) {
-            this.tableGuid = tableGuid;
-        }
-
-        public String getDbName() {
-            return dbName;
-        }
-
-        public void setDbName(String dbName) {
-            this.dbName = dbName;
-        }
-
-        public String getTableName() {
-            return tableName;
-        }
-
-        public void setTableName(String tableName) {
-            this.tableName = tableName;
-        }
-
-        public String getCreateTime() {
-            return createTime;
-        }
-
-        public void setCreateTime(String createTime) {
-            this.createTime = createTime;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-    }
 
     public String getBusinessId() {
         return businessId;
@@ -114,6 +68,14 @@ public class BusinessInfo {
 
     public void setDepartmentId(String departmentId) {
         this.departmentId = departmentId;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 
     public String getModule() {
@@ -180,22 +142,6 @@ public class BusinessInfo {
         this.businessOperator = businessOperator;
     }
 
-    public String getTechnicalLastUpdate() {
-        return technicalLastUpdate;
-    }
-
-    public void setTechnicalLastUpdate(String technicalLastUpdate) {
-        this.technicalLastUpdate = technicalLastUpdate;
-    }
-
-    public String getTechnicalOperator() {
-        return technicalOperator;
-    }
-
-    public void setTechnicalOperator(String technicalOperator) {
-        this.technicalOperator = technicalOperator;
-    }
-
     public String getSubmitter() {
         return submitter;
     }
@@ -226,21 +172,5 @@ public class BusinessInfo {
 
     public void setEditBusiness(Boolean editBusiness) {
         this.editBusiness = editBusiness;
-    }
-
-    public Boolean getEditTechnical() {
-        return editTechnical;
-    }
-
-    public void setEditTechnical(Boolean editTechnical) {
-        this.editTechnical = editTechnical;
-    }
-
-    public List<Table> getTables() {
-        return tables;
-    }
-
-    public void setTables(List<Table> tables) {
-        this.tables = tables;
     }
 }

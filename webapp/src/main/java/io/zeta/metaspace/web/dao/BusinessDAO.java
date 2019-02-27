@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -59,9 +60,12 @@ public interface BusinessDAO {
     @Select("select * from businessinfo where businessId=#{businessId}")
     public BusinessInfo queryBusinessByBusinessId(@Param("businessId")String businessId);
 
+    @Select("select technicalLastUpdate,technicalOperator from businessinfo where businessId=#{businessId}")
+    public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
+
     //查询业务信息关联的数据库表
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
-    public List<BusinessInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
+    public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //分页查询业务信息列表
     @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")

@@ -25,6 +25,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
@@ -167,6 +168,18 @@ public class BusinessREST {
     public BusinessInfo getBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
         try {
             return businessService.getBusinessInfo(businessId);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @GET
+    @Path("/{businessId}/technical")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TechnologyInfo getBusinessRelatedTables(@PathParam("businessId") String businessId) throws AtlasBaseException {
+        try {
+            return businessService.getRelatedTableList(businessId);
         } catch (Exception e) {
             throw e;
         }
