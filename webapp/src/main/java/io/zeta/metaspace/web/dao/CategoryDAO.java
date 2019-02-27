@@ -17,16 +17,20 @@
 package io.zeta.metaspace.web.dao;
 
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
+
+import javax.ws.rs.DELETE;
 
 /*
  * @description
@@ -97,14 +101,21 @@ public interface CategoryDAO {
     public int queryLevelByGuid(@Param("guid")String guid);
 
 
-    @Select("WITH RECURSIVE categoryTree AS " +
-            "(" +
-            "    SELECT * from category" +
-            "    where parentCategoryGuid=#{parentCategoryGuid}" +
-            "    UNION " +
-            "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
-            ")" +
-            "SELECT * FROM categoryTree")
+    @Select("WITH RECURSIVE categoryTree AS  " +
+            "(SELECT * from category where parentCategoryGuid=#{parentCategoryGuid} " +
+            "UNION " +
+            "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid) " +
+            "SELECT guid FROM categoryTree")
     public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
+
+    @Delete({"<script>",
+             "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
+             "<foreach item='guid' index='index' collection='categoryList' separator=',' open='(' close=')'>" ,
+             "#{guid}",
+             "</foreach>",
+             "</script>"})
+    public int deleteChildrenRelation(@Param("tableGuid")String tableGuid, @Param("categoryList")List<String> categoryList);
+
+    @Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
+    public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);
 }

@@ -275,11 +275,14 @@ public class DataManageService {
         try {
             if (Objects.nonNull(relationshipList)) {
                 for (RelationEntityV2 relationship : relationshipList) {
-                    relationDao.delete(relationship.getRelationshipGuid());
-                    String categoryGuid = relationship.getCategoryGuid();
-                    String tableGuid = relationship.getTableGuid();
-
-
+                    String relationShipGuid = relationship.getRelationshipGuid();
+                    RelationEntityV2 entity = categoryDao.getRelationByGuid(relationShipGuid);
+                    //relationDao.delete(relationship.getRelationshipGuid());
+                    String categoryGuid = entity.getCategoryGuid();
+                    String tableGuid = entity.getTableGuid();
+                    List<String> childrenCategoryList = categoryDao.queryChildrenCategoryId(categoryGuid);
+                    childrenCategoryList.add(categoryGuid);
+                    categoryDao.deleteChildrenRelation(tableGuid, childrenCategoryList);
                 }
             }
         } catch (Exception e) {
