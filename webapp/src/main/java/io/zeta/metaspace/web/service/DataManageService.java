@@ -307,7 +307,7 @@ public class DataManageService {
         for(RelationEntityV2 entity : relations) {
             String pathStr = categoryDao.queryPathByGuid(entity.getCategoryGuid());
             String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",",".");
+            path = path.replace(",",".").replace("\"", "");
             entity.setPath(path);
         }
         pageResult.setCount(relations.size());
