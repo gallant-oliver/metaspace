@@ -155,6 +155,8 @@ public class BusinessService {
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
             //editTechnical
+            if(Objects.isNull(info))
+                info = new TechnologyInfo();
             boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, TECHNICAL_MODULE) == 0 ? false:true;
             info.setEditTechnical(editTechnical);
             //tables
