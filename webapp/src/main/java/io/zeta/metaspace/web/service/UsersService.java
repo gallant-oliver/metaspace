@@ -162,6 +162,9 @@ public class UsersService {
         item.setModules(modules);
         return item;
     }
+    public List<Module> getModules(String userId){
+        return  userDAO.getModuleByUserId(userId);
+    }
     public String getRoleIdByUserId(String userId){
         return roleDAO.getRoleIdByUserId(userId);
     }

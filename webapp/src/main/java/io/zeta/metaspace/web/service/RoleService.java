@@ -177,11 +177,7 @@ public class RoleService {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            for (RoleModulesCategories.Category allCategory : allCategorys) {
-                allCategory.setStatus(1);
-                allCategory.setShow(false);
-                categorys.put(allCategory.getGuid(), allCategory);
-            }
+            setMap(categorys, allCategorys,1,false);
         } else {
             List<String> businessCategories = roleDAO.getCategorysByTypeIds(roleId, categorytype);
             if (businessCategories.size() > 0) {
@@ -189,24 +185,21 @@ public class RoleService {
                 List<RoleModulesCategories.Category> parentCategorys = roleDAO.getParentCategorys(businessCategories, categorytype);
                 List<RoleModulesCategories.Category> privilegeCategorys = roleDAO.getCategorysByType(roleId, categorytype);
                 //得到角色的带权限的目录树
-                for (RoleModulesCategories.Category childCategory : childCategorys) {
-                    childCategory.setStatus(1);
-                    childCategory.setShow(false);
-                    categorys.put(childCategory.getGuid(), childCategory);
-                }
-                for (RoleModulesCategories.Category parentCategory : parentCategorys) {
-                    parentCategory.setStatus(0);
-                    parentCategory.setShow(false);
-                    categorys.put(parentCategory.getGuid(), parentCategory);
-                }
-                for (RoleModulesCategories.Category privilegeCategory : privilegeCategorys) {
-                    privilegeCategory.setStatus(1);
-                    privilegeCategory.setShow(false);
-                    categorys.put(privilegeCategory.getGuid(), privilegeCategory);
-                }
+                setMap(categorys, childCategorys,1,false);
+                setMap(categorys, parentCategorys,0,false);
+                setMap(categorys, privilegeCategorys,1,false);
             }
         }
         return categorys;
+    }
+
+    private void setMap(Map<String, RoleModulesCategories.Category> categorys, List<RoleModulesCategories.Category> allCategorys,int status,boolean show) {
+        for (RoleModulesCategories.Category allCategory : allCategorys) {
+            RoleModulesCategories.Category category = new RoleModulesCategories.Category(allCategory);
+            category.setStatus(status);
+            category.setShow(show);
+            categorys.put(category.getGuid(), category);
+        }
     }
 
     @Transactional
@@ -214,11 +207,7 @@ public class RoleService {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            for (RoleModulesCategories.Category allCategory : allCategorys) {
-                allCategory.setStatus(0);
-                allCategory.setShow(true);
-                userCategorys.put(allCategory.getGuid(), allCategory);
-            }
+            setMap(userCategorys, allCategorys,0,true);
         } else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
             if (userBusinessCategories.size() > 0) {
@@ -226,22 +215,9 @@ public class RoleService {
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
                 //得到用户的带权限的目录树
-
-                for (RoleModulesCategories.Category userChildCategory : userChildCategorys) {
-                    userChildCategory.setStatus(0);
-                    userChildCategory.setShow(true);
-                    userCategorys.put(userChildCategory.getGuid(), userChildCategory);
-                }
-                for (RoleModulesCategories.Category userParentCategory : userParentCategorys) {
-                    userParentCategory.setStatus(0);
-                    userParentCategory.setShow(false);
-                    userCategorys.put(userParentCategory.getGuid(), userParentCategory);
-                }
-                for (RoleModulesCategories.Category userPrivilegeCategory : userPrivilegeCategorys) {
-                    userPrivilegeCategory.setStatus(0);
-                    userPrivilegeCategory.setShow(true);
-                    userCategorys.put(userPrivilegeCategory.getGuid(), userPrivilegeCategory);
-                }
+                setMap(userCategorys, userChildCategorys,0,true);
+                setMap(userCategorys, userParentCategorys,0,false);
+                setMap(userCategorys, userPrivilegeCategorys,0,true);
             }
         }
         return userCategorys;
