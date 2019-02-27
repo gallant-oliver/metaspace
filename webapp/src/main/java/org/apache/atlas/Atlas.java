@@ -31,7 +31,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -128,7 +127,7 @@ public final class Atlas {
         showStartupInfo(buildConfiguration, enableTLS, appPort);
 
         server = EmbeddedServer.newServer(appHost, appPort, appPath, enableTLS);
-        installLogBridge();
+//        installLogBridge();
 
         server.start();
     }
@@ -218,13 +217,13 @@ public final class Atlas {
         LOG.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
     }
 
-    private static void installLogBridge() {
+    /*private static void installLogBridge() {
         // Optionally remove existing handlers attached to j.u.l root logger
         SLF4JBridgeHandler.removeHandlersForRootLogger();  // (since SLF4J 1.6.5)
 
         // add SLF4JBridgeHandler to j.u.l's root logger, should be done once during
         // the initialization phase of your application
         SLF4JBridgeHandler.install();
-    }
+    }*/
 
 }

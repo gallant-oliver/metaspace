@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="info" monitorInterval="1800">
+    <Properties>
+        <Property name="LOG_HOME">${sys:atlas.log.dir}</Property>
+        <Property name="LOG_FILE">${sys:atlas.log.file}</Property>
+    </Properties>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <!-- 控制台只输出level及以上级别的信息(onMatch),其他的直接拒绝(onMismatch) -->
+            <!-- <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"
+                /> -->
+            <!-- 输出日志的格式 -->
+            <PatternLayout
+                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
+        </Console>
+        <RollingFile name="application" fileName="${LOG_HOME}/${LOG_FILE}"
+                     filePattern="${LOG_HOME}/$d{yyyy-MM-dd}/application-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@core@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100M" />
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <RollingFile name="audit" fileName="${LOG_HOME}/audit.log"
+                     filePattern="${LOG_HOME}/$d{yyyy-MM-dd}/audit-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@audit@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100M" />
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <logger name="org.apache.atlas" level="info">
+        </logger>
+
+        <logger name="org.janusgraph" level="warn">
+        </logger>
+
+        <logger name="org.springframework" level="warn">
+        </logger>
+
+        <logger name="org.eclipse" level="info">
+        </logger>
+
+        <logger name="com.sun.jersey" level="info">
+        </logger>
+
+        <!-- to avoid logs - The configuration log.flush.interval.messages = 1 was supplied but isn't a known config -->
+        <logger name="org.apache.kafka.common.config.AbstractConfig" level="error">
+        </logger>
+
+        <logger name="AUDIT" level="info" additivity="false">
+            <appender-ref ref="audit"/>
+        </logger>
+
+        <logger name="METRICS" level="debug">
+        </logger>
+
+        <logger name="FAILED" level="info">
+        </logger>
+
+        <root level="info">
+            <appender-ref ref="application"/>
+        </root>
+    </Loggers>
+
+</configuration>
