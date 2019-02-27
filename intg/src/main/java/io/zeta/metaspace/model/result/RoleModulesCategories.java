@@ -37,9 +37,17 @@ public class RoleModulesCategories {
         private String guid;
         private String name;
         private String parentCategoryGuid;
-        private String upBrothCategoryGuid;
-        private String downBrothCategoryGuid;
+        private String upBrotherCategoryGuid;
+        private String downBrotherCategoryGuid;
         private int status;
+        public Category(){}
+        public Category(Category category) {
+            this.guid = category.guid;
+            this.name = category.name;
+            this.parentCategoryGuid = category.parentCategoryGuid;
+            this.upBrotherCategoryGuid = category.upBrotherCategoryGuid;
+            this.downBrotherCategoryGuid = category.downBrotherCategoryGuid;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -80,20 +88,20 @@ public class RoleModulesCategories {
             this.parentCategoryGuid = parentCategoryGuid;
         }
 
-        public String getUpBrothCategoryGuid() {
-            return upBrothCategoryGuid;
+        public String getUpBrotherCategoryGuid() {
+            return upBrotherCategoryGuid;
         }
 
-        public void setUpBrothCategoryGuid(String upBrothCategoryGuid) {
-            this.upBrothCategoryGuid = upBrothCategoryGuid;
+        public void setUpBrotherCategoryGuid(String upBrotherCategoryGuid) {
+            this.upBrotherCategoryGuid = upBrotherCategoryGuid;
         }
 
-        public String getDownBrothCategoryGuid() {
-            return downBrothCategoryGuid;
+        public String getDownBrotherCategoryGuid() {
+            return downBrotherCategoryGuid;
         }
 
-        public void setDownBrothCategoryGuid(String downBrothCategoryGuid) {
-            this.downBrothCategoryGuid = downBrothCategoryGuid;
+        public void setDownBrotherCategoryGuid(String downBrotherCategoryGuid) {
+            this.downBrotherCategoryGuid = downBrotherCategoryGuid;
         }
 
         public int getStatus() {

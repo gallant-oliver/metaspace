@@ -31,10 +31,10 @@ public interface RoleDAO {
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
-    @Select("select * from role where rolename like '%'||#{query}||'%' order by rolename limit #{limit} offset #{offset}")
+    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by rolename limit #{limit} offset #{offset}")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select * from role where rolename like '%'||#{query}||'%' order by rolename  offset #{offset}")
+    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by rolename offset #{offset}")
     public List<Role> getRole(@Param("query") String query, @Param("offset") long offset);
 
     @Select("select count(1) from role where rolename like '%'||#{query}||'%'")

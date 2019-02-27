@@ -72,7 +72,7 @@ public class PrivilegeFilter implements Filter {
                             //到这里再查库
                             String roleIdByUserId = usersService.getRoleIdByUserId(userId);
                             //超级管理员直接过
-                            if(roleIdByUserId.equals(SystemRole.ADMIN.getCode())){
+                            if (roleIdByUserId.equals(SystemRole.ADMIN.getCode())) {
                                 filterChain.doFilter(servletRequest, servletResponse);
                                 return;
                             }
@@ -80,13 +80,13 @@ public class PrivilegeFilter implements Filter {
                             Collection<RoleModulesCategories.Category> categories = userCatagory.values();
                             ArrayList<String> categoryGuids = new ArrayList<>();
                             for (RoleModulesCategories.Category category : categories) {
-                                if(category.isShow())categoryGuids.add(category.getGuid());
+                                if (category.isShow()) categoryGuids.add(category.getGuid());
                             }
                             List<Integer> sum = usersService.ifPrivilege(categoryGuids, guid);
-                            if(sum.size()>0){
+                            if (sum.size() > 0) {
                                 filterChain.doFilter(servletRequest, servletResponse);
                                 return;
-                            }else {
+                            } else {
                                 loginSkip(httpServletResponse, "当前用户权限不足");
                             }
                             break;
@@ -167,22 +167,24 @@ public class PrivilegeFilter implements Filter {
     }
 
     private UserInfo getUserInfo(HttpServletResponse response, UsersService usersService, String userId) throws IOException {
-        UserInfo userInfo=null;
+        UserInfo userInfo = null;
 
         try {
-             userInfo = usersService.getUserInfoById(userId);
+            userInfo = usersService.getUserInfoById(userId);
 
         } catch (Exception e) {
             loginSkip(response, "获取用户权限信息失败");
         }
         return userInfo;
     }
-    private Map<String, RoleModulesCategories.Category> getUserCatagory( RoleService roleService, String userId)  {
+
+    private Map<String, RoleModulesCategories.Category> getUserCatagory(RoleService roleService, String userId) {
 
         //技术目录
         Map<String, RoleModulesCategories.Category> userStringCategoryMap = roleService.getUserStringCategoryMap(userId, 0);
         return userStringCategoryMap;
     }
+
     @Override
     public void destroy() {
 

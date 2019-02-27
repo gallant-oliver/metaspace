@@ -5,12 +5,31 @@ public class Role {
     private String roleName;
     private String description;
     private String privilegeId;
+
+    public String getPrivilegeName() {
+        return privilegeName;
+    }
+
+    public void setPrivilegeName(String privilegeName) {
+        this.privilegeName = privilegeName;
+    }
+
+    private String privilegeName;
     private String updateTime;
     private int status;
     private String createTime;
     private int disable;
     private int delete;
     private int edit;
+private int members;
+
+    public int getMembers() {
+        return members;
+    }
+
+    public void setMembers(int members) {
+        this.members = members;
+    }
 
     public int getDisable() {
         return disable;
