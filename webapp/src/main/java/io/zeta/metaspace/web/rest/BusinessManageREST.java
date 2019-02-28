@@ -24,13 +24,19 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.RelationEntityV2;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,4 +126,48 @@ public class BusinessManageREST {
             throw e;
         }
     }
+
+    /**
+     * 获取技术目录
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/technical/categories")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
+        try {
+            return dataManageService.getAll(CATEGORY_TYPE);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+
+    /**
+     * 获取技术目录关联表
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/technical/relations/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RelationEntityV2> getCategoryRelation(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessManageREST.getCategoryRelation(" + categoryGuid + ")");
+            }
+            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
 }

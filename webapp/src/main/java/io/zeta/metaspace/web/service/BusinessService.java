@@ -31,6 +31,7 @@ import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
