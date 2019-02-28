@@ -251,7 +251,7 @@ public class RoleREST {
         }
     }
     /**
-     * 获取技术方案列表&搜索技术方案
+     * 获取全部角色
      *
      * @return List<Database>
      */
