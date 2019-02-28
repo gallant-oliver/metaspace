@@ -317,6 +317,9 @@ public class DataManageService {
             String userId = AdminUtils.getUserData().getUserId();
             String roleId = roleDao.getRoleIdByUserId(userId);
             String tableName = query.getFilterTableName();
+            tableName = (Objects.nonNull(tableName)? tableName: "");
+            String tag = query.getTag();
+            tag = (Objects.nonNull(tag)? tag: "");
             List<String> categoryIds = null;
             if(SystemRole.ADMIN.getCode().equals(roleId)) {
                 categoryIds = categoryDao.getAllRootCategory();
@@ -326,9 +329,9 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
-            List<RelationEntityV2> list = relationDao.queryByTableName(tableName, categoryIds, limit, offset);
+            List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
             getPath(list);
-            int totalNum = relationDao.queryTotalNumByName(tableName, categoryIds);
+            int totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
             pageResult.setOffset(query.getOffset());

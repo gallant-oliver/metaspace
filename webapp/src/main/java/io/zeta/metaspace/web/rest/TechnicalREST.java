@@ -42,7 +42,7 @@ public class TechnicalREST {
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
     /**
-     * 返回全部的库
+     * 添加关联表是搜库
      *
      * @return List<Database>
      */
@@ -54,8 +54,9 @@ public class TechnicalREST {
             PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResult(parameters,categoryId);
             return pageResult;
     }
+
     /**
-     * 根据搜索条件返回表
+     * 添加关联表时搜表
      *
      * @return List<Table>
      */
@@ -64,8 +65,8 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Table> getTableByQuery(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-            PageResult<Table> pageResult = searchService.getTechnicalTablePageResult(parameters,categoryId);
-            return pageResult;
+        PageResult<Table> pageResult = searchService.getTechnicalTablePageResult(parameters,categoryId);
+        return pageResult;
     }
 
     /**

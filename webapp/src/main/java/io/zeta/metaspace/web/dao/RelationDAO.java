@@ -68,19 +68,21 @@ public interface RelationDAO {
              " select * from table_relation",
              " join tableInfo on",
              " table_relation.tableGuid=tableInfo.tableGuid",
-             " and",
+             " where",
              " tableInfo.tableName like '%${tableName}%'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
+             " and",
+             " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%')",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName,@Param("ids") List<String> categoryIds,@Param("limit")int limit,@Param("offset") int offset);
+    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds,@Param("limit")int limit,@Param("offset") int offset);
 
     //@Select("select count(*) from table_relation where tableName like '%${tableName}%'")
     //@Select("select count(*) from table_relation where tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%')")
@@ -88,15 +90,17 @@ public interface RelationDAO {
              " select count(*) from table_relation",
              " join tableInfo on",
              " table_relation.tableGuid=tableInfo.tableGuid",
-             " and",
+             " where",
              " tableInfo.tableName like '%${tableName}%'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
+             " and",
+             " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%')",
              " </script>"})
-    public int queryTotalNumByName(@Param("tableName")String tableName, @Param("ids") List<String> categoryIds);
+    public int queryTotalNumByName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds);
 
     /*@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset, @Param("categoryType") int categoryType);*/

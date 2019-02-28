@@ -12,38 +12,20 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2018/10/25 16:35
+ * @date 2019/2/28 15:55
  */
 package io.zeta.metaspace.model.metadata;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2018/10/25 16:35
+ * @date 2019/2/28 15:55
  */
-public class RelationQuery {
-    private String categoryGuid;
-    private String filterTableName;
-    private String tag;
+public class CategoryQuery {
+
+    private String query;
     private int offset;
     private int limit;
-    private int categoryType;
-
-    public String getCategoryGuid() {
-        return categoryGuid;
-    }
-
-    public void setCategoryGuid(String categoryGuid) {
-        this.categoryGuid = categoryGuid;
-    }
-
-    public String getFilterTableName() {
-        return filterTableName;
-    }
-
-    public void setFilterTableName(String filterTableName) {
-        this.filterTableName = filterTableName;
-    }
 
     public int getOffset() {
         return offset;
@@ -61,19 +43,11 @@ public class RelationQuery {
         this.limit = limit;
     }
 
-    public int getCategoryType() {
-        return categoryType;
+    public String getQuery() {
+        return query;
     }
 
-    public void setCategoryType(int categoryType) {
-        this.categoryType = categoryType;
-    }
-
-    public String getTag() {
-        return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
+    public void setQuery(String query) {
+        this.query = query;
     }
 }
