@@ -122,21 +122,22 @@ private UsersService usersService;
         privilege.setModules(modules);
 
         roleModulesCategories.setPrivilege(privilege);
-        List<Integer> moduleIds = new ArrayList<>();
-        for (Module module : modules) {
-            moduleIds.add(module.getModuleId());
-        }
-
-        if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) {
-            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 1);
-            roleModulesCategories.setBusinessCategories(categorys);
-        }
-        if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode()) || moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 0);
-            roleModulesCategories.setTechnicalCategories(categorys);
-        }
-
-
+//        List<Integer> moduleIds = new ArrayList<>();
+//        for (Module module : modules) {
+//            moduleIds.add(module.getModuleId());
+//        }
+        List<RoleModulesCategories.Category> bcategorys = getCategorys(roleId, userRoleId, 1);
+        roleModulesCategories.setBusinessCategories(bcategorys);
+        List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
+        roleModulesCategories.setTechnicalCategories(tcategorys);
+//        if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) {
+//            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 1);
+//            roleModulesCategories.setBusinessCategories(categorys);
+//        }
+//        if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode()) || moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
+//            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 0);
+//            roleModulesCategories.setTechnicalCategories(categorys);
+//        }
         return roleModulesCategories;
     }
 
