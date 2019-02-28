@@ -151,7 +151,7 @@ public class BusinessManageREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/technical/relations/{categoryGuid}")
+    @Path("/technical/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RelationEntityV2> getCategoryRelation(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery) throws AtlasBaseException {
