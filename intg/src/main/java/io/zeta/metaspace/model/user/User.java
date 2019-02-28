@@ -6,6 +6,15 @@ public class User {
     private String account;
     private String roleId;
     private String roleName;
+    private int status;
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
 
     public String getRoleName() {
         return roleName;
