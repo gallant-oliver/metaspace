@@ -149,10 +149,11 @@ public class PrivilegeFilter implements Filter {
                 loginSkip(httpServletResponse, "当前用户没有该菜单的权限");
                 break;
             }
-        }
-        ;
-        filterChain.doFilter(servletRequest, servletResponse);
-        return;
+            default:{
+                filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
+        };
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String error) throws IOException {

@@ -57,10 +57,12 @@ public class SearchService {
             return getDatabaseResult(parameters,categoryId);
         }else{
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-            List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds,0);
-            for (RoleModulesCategories.Category child : childs) {
-                if(child.getGuid().equals(categoryId)){
-                    return getDatabaseResult(parameters,categoryId);
+            if(categorysByTypeIds.size()>0) {
+                List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
+                for (RoleModulesCategories.Category child : childs) {
+                    if (child.getGuid().equals(categoryId)) {
+                        return getDatabaseResult(parameters, categoryId);
+                    }
                 }
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"用户对该目录没有添加关联表的权限");
@@ -111,11 +113,13 @@ public class SearchService {
             return table;
         }else{
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-            List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds,0);
-            for (RoleModulesCategories.Category child : childs) {
-                if(child.getGuid().equals(categoryId)){
-                    PageResult<Table> table = getTableResult(parameters, categoryId);
-                    return table;
+            if(categorysByTypeIds.size()>0) {
+                List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
+                for (RoleModulesCategories.Category child : childs) {
+                    if (child.getGuid().equals(categoryId)) {
+                        PageResult<Table> table = getTableResult(parameters, categoryId);
+                        return table;
+                    }
                 }
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"用户对该目录没有添加关联表的权限");
