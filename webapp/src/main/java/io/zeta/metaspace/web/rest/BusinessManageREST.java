@@ -64,7 +64,8 @@ import javax.ws.rs.core.Response;
 public class BusinessManageREST {
 
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessManageREST.class);
-    private static final int CATEGORY_TYPE = 1;
+    private static final int BUSINESS_CATEGORY_TYPE = 1;
+    private static final int TECHNICAL_CATEGORY_TYPE = 0;
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -84,7 +85,7 @@ public class BusinessManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Set<CategoryEntityV2> getAllDepartment() throws AtlasBaseException {
         try {
-            return dataManageService.getAllDepartments(CATEGORY_TYPE);
+            return dataManageService.getAllDepartments(BUSINESS_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         }
@@ -138,7 +139,7 @@ public class BusinessManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
         try {
-            return dataManageService.getAll(CATEGORY_TYPE);
+            return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         }
@@ -178,7 +179,7 @@ public class BusinessManageREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessManageREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableName(relationQuery, TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         } finally {
