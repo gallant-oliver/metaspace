@@ -144,7 +144,6 @@ public class BusinessManageREST {
         }
     }
 
-
     /**
      * 获取技术目录关联表
      * @return
@@ -169,5 +168,21 @@ public class BusinessManageREST {
         }
     }
 
-
+    @POST
+    @Path("/technical/table/relations")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessManageREST.getQueryTables()");
+            }
+            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }
