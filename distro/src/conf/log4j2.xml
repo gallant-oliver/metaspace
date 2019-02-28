@@ -14,7 +14,7 @@
                     pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
         </Console>
         <RollingFile name="application" fileName="${LOG_HOME}/${LOG_FILE}"
-                     filePattern="${LOG_HOME}/$d{yyyy-MM-dd}/application-%d{yyyy-MM-dd}-%i.log.gz">
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/application-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@core@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
             </PatternLayout>
@@ -26,7 +26,7 @@
         </RollingFile>
 
         <RollingFile name="audit" fileName="${LOG_HOME}/audit.log"
-                     filePattern="${LOG_HOME}/$d{yyyy-MM-dd}/audit-%d{yyyy-MM-dd}-%i.log.gz">
+                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/audit-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@audit@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
             </PatternLayout>
