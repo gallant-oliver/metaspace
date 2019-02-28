@@ -72,27 +72,7 @@ public class MetaDataREST {
         this.metadataService = metadataService;
     }
 
-    /**
-     * 返回全部的库
-     *
-     * @return List<Database>
-     */
-    @POST
-    @Path("/search/database")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getAllDatabase(" + parameters + " )");
-            }
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
-            return pageResult;
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
+
 
     /**
      * 根据搜索条件返回库

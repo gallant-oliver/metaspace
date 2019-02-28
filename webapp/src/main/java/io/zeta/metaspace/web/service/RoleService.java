@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.ws.rs.PathParam;
 import java.util.*;
 
 
@@ -31,7 +33,8 @@ public class RoleService {
     private PrivilegeDAO privilegeDAO;
     @Autowired
     private RoleService roleService;
-
+@Autowired
+private UsersService usersService;
 
     @Bean(name = "getRoleService")
     public RoleService getRoleService() {
@@ -263,5 +266,12 @@ public class RoleService {
         return "success";
     }
 
-
+    public PageResult<User> getAllUsers(Parameters parameters,String roleId) throws AtlasBaseException {
+        PageResult<User> userList = usersService.getUserList(parameters);
+        List<User> lists = userList.getLists();
+        for (User user : lists) {
+            if(user.getRoleId().equals(roleId)) user.setStatus(1);
+        }
+        return userList;
+    }
 }

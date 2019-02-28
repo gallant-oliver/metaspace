@@ -57,7 +57,7 @@ public class RoleREST {
      */
     @PUT
     @Path("/{roleId}/{status}")
-    public String updateRoleStatus(@PathParam("roleId")String roleId,@QueryParam("status")int status) throws AtlasBaseException {
+    public String updateRoleStatus(@PathParam("roleId")String roleId,@PathParam("status") int status) throws AtlasBaseException {
         try {
             return roleService.updateRoleStatus(roleId,status);
         }
@@ -248,6 +248,27 @@ public class RoleREST {
         catch (Exception e) {
             LOG.error("搜索技术方案失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索技术方案失败");
+        }
+    }
+    /**
+     * 获取技术方案列表&搜索技术方案
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/users/{roleId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<User> getAllUsers(Parameters parameters,@PathParam("roleId") String roleId) throws AtlasBaseException {
+        try {
+            return roleService.getAllUsers(parameters,roleId);
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
+            LOG.error("获取全部用户失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取全部用户失败");
         }
     }
 }

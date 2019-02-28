@@ -1,10 +1,11 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
-
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -164,5 +165,28 @@ public interface RoleDAO {
     })
     public int updatePrivilege(@Param("roleId") String roleId);
 
+    @Select("select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname limit #{limit} offset #{offset}")
+    public List<String> getDBNames(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname offset #{offset}")
+    public List<String> getDBName(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset);
+
+    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ")
+    public long getDBCount(@Param("guid") String guid, @Param("query") String query);
+
+    @Select("select * from tableinfo where dbname=#{DBName}")
+    public List<TechnologyInfo.Table> getTableByDBName(String DBName);
+
+    @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename limit #{limit} offset #{offset}")
+    public List<TechnologyInfo.Table> getTableInfos(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename offset #{offset}")
+    public List<TechnologyInfo.Table> getTableInfo(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset);
+
+    @Select("select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%'")
+    public long getTableCount(@Param("guid") String guid, @Param("query") String query);
+
+    @Select("select * from category where guid=#{guid}")
+    public RoleModulesCategories.Category getCategoryByGuid(String guid);
 
 }
