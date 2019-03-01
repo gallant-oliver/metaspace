@@ -298,28 +298,4 @@ public class BusinessREST {
         return metadataService.getTableInfoById(guid);
     }
 
-    /**
-     * 获取字段详情
-     *
-     * @param query
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/table/column/")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Column> getColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", query.getGuid());
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getColumnInfoById");
-            }
-            return metadataService.getColumnInfoById(query, refreshCache);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
 }

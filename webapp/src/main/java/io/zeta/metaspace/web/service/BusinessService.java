@@ -136,10 +136,7 @@ public class BusinessService {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
             String userId = AdminUtils.getUserData().getUserId();
             boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
-
-
             info.setEditBusiness(editBusiness);
-
             String categoryGuid = info.getDepartmentId();
             String departmentName = categoryDao.queryNameByGuid(categoryGuid);
             info.setDepartmentName(departmentName);
