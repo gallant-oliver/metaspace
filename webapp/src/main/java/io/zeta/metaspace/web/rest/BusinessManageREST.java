@@ -78,7 +78,6 @@ public class BusinessManageREST {
     @Autowired
     MetaDataService metadataService;
 
-
     @GET
     @Path("/departments")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

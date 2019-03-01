@@ -115,7 +115,7 @@ public interface RelationDAO {
     @Select("select count(*) from tableinfo where tableGuid=#{tableGuid}")
     public int queryTableInfo(@Param("tableGuid")String tableGuid);
 
-    @Insert("insert into tableInfo(tableName,dbName,tableGuid,status)values(#{tableName},#{dbName},#{tableGuid},#{status})")
+    @Insert("insert into tableInfo(tableName,dbName,tableGuid,status,createTime)values(#{tableName},#{dbName},#{tableGuid},#{status},#{createTime})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
 
 }

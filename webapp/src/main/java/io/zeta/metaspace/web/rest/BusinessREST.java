@@ -26,6 +26,8 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
@@ -280,58 +282,44 @@ public class BusinessREST {
         }
     }
 
-    /**
-     * 获取全部二级目录
-     * @return
-     * @throws AtlasBaseException
-     */
-    /*@GET
-    @Path("/businessManage/departments")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryEntityV2> getAllDepartment() throws AtlasBaseException {
-        try {
-            return dataManageService.getAllDepartments(CATEGORY_TYPE);
-        } catch (Exception e) {
-            throw e;
-        }
-    }*/
 
     /**
-     * 业务对象搜索(业务对象管理)
-     * @param parameter
+     * 获取表详情
+     *
+     * @param guid
      * @return
      * @throws AtlasBaseException
      */
-    /*@POST
-    @Path("/businessManage")
+    @GET
+    @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfoHeader> getBusinessListWithManage(BusinessQueryParameter parameter) throws AtlasBaseException {
-        try {
-            return businessService.getBusinessListByCondition(parameter);
-        } catch (Exception e) {
-            throw e;
-        }
-    }*/
+    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
+        return metadataService.getTableInfoById(guid);
+    }
 
     /**
-     * 更新技术
-     * @param businessId
-     * @param tableIdList
+     * 获取字段详情
+     *
+     * @param query
      * @return
      * @throws AtlasBaseException
      */
-    /*@PUT
+    @POST
+    @Path("/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/businessManage/{businessId}")
-    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, List<String> tableIdList) throws AtlasBaseException {
+    public List<Column> getColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", query.getGuid());
+        AtlasPerfTracer perf = null;
         try {
-            businessService.addBusinessAndTableRelation(businessId, tableIdList);
-            return Response.status(200).entity("success").build();
-        } catch (Exception e) {
-            throw e;
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getColumnInfoById");
+            }
+            return metadataService.getColumnInfoById(query, refreshCache);
+        } finally {
+            AtlasPerfTracer.log(perf);
         }
-    }*/
+    }
+
 }
