@@ -133,7 +133,7 @@ public class UsersService {
         try {
             PageResult<User> userPageResult = new PageResult<>();
             List<User> userList = null;
-            if(-1 == limit) {
+            if (-1 == limit) {
                 userList = userDAO.getUserList(query, offset);
             } else {
                 userList = userDAO.getUserListWithLimit(query, limit, offset);
@@ -150,22 +150,27 @@ public class UsersService {
     }
 
     public List<Integer> ifPrivilege(List<String> categoryGuid, String tableGuid) {
-        return userDAO.ifPrivilege(categoryGuid, tableGuid);
+        if (categoryGuid.size() > 0)
+            return userDAO.ifPrivilege(categoryGuid, tableGuid);
+        else
+            return new ArrayList<>();
     }
 
     public Item getUserItems() throws AtlasBaseException {
         Item item = new Item();
         String userId = AdminUtils.getUserData().getUserId();
         Role roleByUserId = userDAO.getRoleByUserId(userId);
-        List<Module> modules= userDAO.getModuleByUserId(userId);
+        List<Module> modules = userDAO.getModuleByUserId(userId);
         item.setRole(roleByUserId);
         item.setModules(modules);
         return item;
     }
-    public List<Module> getModules(String userId){
-        return  userDAO.getModuleByUserId(userId);
+
+    public List<Module> getModules(String userId) {
+        return userDAO.getModuleByUserId(userId);
     }
-    public String getRoleIdByUserId(String userId){
+
+    public String getRoleIdByUserId(String userId) {
         return roleDAO.getRoleIdByUserId(userId);
     }
 }

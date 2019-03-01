@@ -23,7 +23,7 @@ public interface TableTagDAO {
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")
     public int addTable2Tag(@Param("tagId") String tagId,@Param("tableGuid") String tableGuid);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status) values(#{table.tableId},#{table.databaseName},#{table.tableName},#{table.status})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime) values(#{table.tableId},#{table.databaseName},#{table.tableName},#{table.status},#{table.createtime})")
     public int addTable(@Param("table") Table table);
 
     @Delete("delete from table2tag where tableguid=#{tableGuid} and tagid=#{tagId}")

@@ -102,11 +102,13 @@ private UsersService usersService;
     }
 
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
+        if(users.size()>0)
         roleDAO.updateUsers(roleId, users);
         return "success";
     }
 
     public String removeUser(List<String> users) throws AtlasBaseException {
+        if(users.size()>0)
         roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
         return "success";
     }
@@ -122,22 +124,10 @@ private UsersService usersService;
         privilege.setModules(modules);
 
         roleModulesCategories.setPrivilege(privilege);
-//        List<Integer> moduleIds = new ArrayList<>();
-//        for (Module module : modules) {
-//            moduleIds.add(module.getModuleId());
-//        }
         List<RoleModulesCategories.Category> bcategorys = getCategorys(roleId, userRoleId, 1);
         roleModulesCategories.setBusinessCategories(bcategorys);
         List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
         roleModulesCategories.setTechnicalCategories(tcategorys);
-//        if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) {
-//            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 1);
-//            roleModulesCategories.setBusinessCategories(categorys);
-//        }
-//        if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode()) || moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-//            List<RoleModulesCategories.Category> categorys = getCategorys(roleId, userRoleId, 0);
-//            roleModulesCategories.setTechnicalCategories(categorys);
-//        }
         return roleModulesCategories;
     }
 
@@ -252,7 +242,7 @@ private UsersService usersService;
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
-        if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) {
+        if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 if (technicalCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
@@ -273,6 +263,9 @@ private UsersService usersService;
         for (User user : lists) {
             if(user.getRoleId().equals(roleId)) user.setStatus(1);
         }
-        return userList;
+                return userList;
+    }
+    public Role getRoleIdBYUserId(String userId){
+        return roleDAO.getRoleByUsersId(userId);
     }
 }

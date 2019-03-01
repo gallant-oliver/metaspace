@@ -55,19 +55,18 @@ public class PrivilegeFilter implements Filter {
         } catch (AtlasBaseException e) {
             LOG.warn("查询用户信息失败", e);
             loginSkip(httpServletResponse, "查询用户信息失败");
+            return;
         }
         switch (check) {
             case "privilegecheck": {
-                String type = "";
-                String guid = "";
+                String privilegeType = "";
+                String privilegeGuid = "";
                 try {
-                    Gson gson = new Gson();
-                    String privilege = httpServletRequest.getParameter("privilege");
-                    JSONObject jsonObject = gson.fromJson(privilege, JSONObject.class);
-                    type = jsonObject.get("type").toString();
-                    guid = jsonObject.get("guid").toString();
+                     privilegeType = httpServletRequest.getParameter("privilegeType");
+                     privilegeGuid = httpServletRequest.getParameter("privilegeGuid");
 
-                    switch (type) {
+
+                    switch (privilegeType) {
                         case "table": {
                             //到这里再查库
                             String roleIdByUserId = usersService.getRoleIdByUserId(userId);
@@ -82,7 +81,7 @@ public class PrivilegeFilter implements Filter {
                             for (RoleModulesCategories.Category category : categories) {
                                 if (category.isShow()) categoryGuids.add(category.getGuid());
                             }
-                            List<Integer> sum = usersService.ifPrivilege(categoryGuids, guid);
+                            List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
                             if (sum.size() > 0) {
                                 filterChain.doFilter(servletRequest, servletResponse);
                                 return;
@@ -96,9 +95,10 @@ public class PrivilegeFilter implements Filter {
                     }
                     break;
                 } catch (Exception e) {
-                    LOG.warn("用户" + username + "没有" + type + " " + guid + " 的权限", e);
+                    LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
                     loginSkip(httpServletResponse, "当前用户没有该表的权限");
                 }
+                break;
             }
             case "technical": {
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
@@ -182,7 +182,7 @@ public class PrivilegeFilter implements Filter {
     private Map<String, RoleModulesCategories.Category> getUserCatagory(RoleService roleService, String userId) {
 
         //技术目录
-        Map<String, RoleModulesCategories.Category> userStringCategoryMap = roleService.getUserStringCategoryMap(userId, 0);
+        Map<String, RoleModulesCategories.Category> userStringCategoryMap = roleService.getUserStringCategoryMap(roleService.getRoleIdBYUserId(userId).getRoleId(), 0);
         return userStringCategoryMap;
     }
 

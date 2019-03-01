@@ -189,4 +189,7 @@ public interface RoleDAO {
     @Select("select * from category where guid=#{guid}")
     public RoleModulesCategories.Category getCategoryByGuid(String guid);
 
+    @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId}")
+    public Role getRoleByUsersId(String userId);
+
 }

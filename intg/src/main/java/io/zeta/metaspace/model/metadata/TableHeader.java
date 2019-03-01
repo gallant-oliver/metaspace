@@ -27,6 +27,15 @@ public class TableHeader {
     private String tableName;
     private String databaseId;
     private String databaseName;
+    private String createTime;
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
+    }
 
     public String getTableId() {
         return tableId;
