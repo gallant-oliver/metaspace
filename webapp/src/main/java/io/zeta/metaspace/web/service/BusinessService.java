@@ -24,10 +24,13 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -37,7 +40,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -57,10 +63,15 @@ public class BusinessService {
     CategoryDAO categoryDao;
     @Autowired
     PrivilegeDAO privilegeDao;
+    @Autowired
+    RoleDAO roleDao;
+    @Autowired
+    RoleService roleService;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_MODULE = 3;
     private static final int TECHNICAL_MODULE = 4;
+    private static final int BUSINESS_TYPE = 1;
 
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
@@ -94,11 +105,11 @@ public class BusinessService {
             String relationGuid = UUID.randomUUID().toString();
             entity.setRelationshipGuid(relationGuid);
             //path
-            String qualifiedName = categoryDao.queryQualifiedName(categoryId);
+            /*String qualifiedName = categoryDao.queryQualifiedName(categoryId);
             if (Objects.nonNull(qualifiedName)) {
                 qualifiedName += "." + info.getName();
             }
-            entity.setPath(qualifiedName);
+            entity.setPath(qualifiedName);*/
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
             int relationFlag = relationDao.addRelation(entity);
@@ -168,42 +179,81 @@ public class BusinessService {
         }
     }
 
-    public List<BusinessInfo> getBusinessListByCategoryId(String categoryId, int limit, int offset) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListByCategoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
         try {
-            return businessDao.queryBusinessByCatetoryIdWithLimit(categoryId, limit, offset);
+            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryIdWithLimit(categoryId, limit, offset);
+
+
+            String path = getCategoryPath(categoryId);
+            String[] pathArr = path.split("\\.");
+            String level2Category = "";
+            if(pathArr.length >= 2)
+                level2Category = pathArr[1];
+            for(BusinessInfoHeader infoHeader : list) {
+                //path
+                infoHeader.setPath(path + "." + infoHeader.getName());
+                //level2Category
+                infoHeader.setLevel2Category(level2Category);
+            }
+
+            long sum = businessDao.queryBusinessCountByByCatetoryId(categoryId);
+            pageResult.setSum(sum);
+            pageResult.setCount(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 
-    public PageResult<BusinessInfoHeader> getBusinessListByName(String categoryId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDao.getRoleIdByUserId(userId);
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String businessName = parameters.getQuery();
             businessName = (businessName == null ? "":businessName);
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
-            if(limit != -1) {
-                businessInfoList = businessDao.queryBusinessByNameWithLimit(categoryId, businessName, limit, offset);
+
+            Map<String, RoleModulesCategories.Category> userCategorys = null;
+            List<String> categoryIds = new ArrayList<>();
+            if(SystemRole.ADMIN.getCode().equals(roleId)) {
+                categoryIds = categoryDao.getAllCategory(BUSINESS_TYPE);
             } else {
-                businessInfoList = businessDao.queryBusinessByName(categoryId, businessName, offset);
+                userCategorys = roleService.getUserStringCategoryMap(roleId, BUSINESS_TYPE);
+                Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+                List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+                for(RoleModulesCategories.Category category : valueList) {
+                    if(category.isShow()) {
+                        categoryIds.add(category.getGuid());
+                    }
+                }
             }
-            String path = getCategoryPath(categoryId);
-            String[] pathArr = path.split("\\.");
-            String level2Category = "";
-            if(pathArr.length >= 2)
-                level2Category = pathArr[1];
+            businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset);
+
             for(BusinessInfoHeader infoHeader : businessInfoList) {
-                infoHeader.setPath(path);
+                String path = getCategoryPath(infoHeader.getCategoryGuid());
+                String[] pathArr = path.split("\\.");
+                String level2Category = "";
+                if(pathArr.length >= 2)
+                    level2Category = pathArr[1];
+                infoHeader.setPath(path + "." + infoHeader.getName());
                 infoHeader.setLevel2Category(level2Category);
             }
-
-            long businessCount = businessDao.queryBusinessCountByName(categoryId, businessName);
+            long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
             pageResult.setSum(businessCount);
             pageResult.setLists(businessInfoList);
             pageResult.setCount(businessInfoList.size());
             return pageResult;
+        } catch (AtlasBaseException e) {
+          throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
@@ -213,10 +263,10 @@ public class BusinessService {
         try {
             String pathStr = categoryDao.queryPathByGuid(categoryId);
             String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",",".");
+            path = path.replace(",", ".").replace("\"", "");
             return path;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
         }
     }
 

@@ -141,7 +141,7 @@ public class MetaDataREST {
     }
 
     /**
-     * 根据搜索条件返回行
+     * 根据搜索条件返回列
      *
      * @return List<Column>
      */

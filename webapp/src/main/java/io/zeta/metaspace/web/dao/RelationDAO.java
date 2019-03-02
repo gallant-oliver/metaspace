@@ -32,7 +32,7 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,path,status)values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{path},#{status})")
+    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,status)values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{status})")
     //@Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path})")
     public int add(RelationEntityV2 entity) throws SQLException;
 
@@ -50,7 +50,7 @@ public interface RelationDAO {
 
     //@Select("select * from table_relation where categoryGuid=#{categoryGuid}")
     //@Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
-    @Select("select table_relation.relationshipGuid,table_relation.categoryGuid,table_relation.path,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
+    @Select("select table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
@@ -75,8 +75,10 @@ public interface RelationDAO {
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
+             " <if test=\"tagName != null and tagName!=''\">",
              " and",
              " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%')",
+             " </if>",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -97,8 +99,10 @@ public interface RelationDAO {
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
+             " <if test=\"tagName != null and tagName!=''\">",
              " and",
              " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%')",
+             " </if>",
              " </script>"})
     public int queryTotalNumByName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds);
 

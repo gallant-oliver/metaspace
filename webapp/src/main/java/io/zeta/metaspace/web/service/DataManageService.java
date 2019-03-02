@@ -252,19 +252,11 @@ public class DataManageService {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
             relationEntity.setRelationshipGuid(relationshiGuid);
-            /*String qualifiedName = dao.queryQualifiedName(relationEntity.getCategoryGuid());
-            if (Objects.nonNull(qualifiedName)) {
-                qualifiedName += "." + relationEntity.getTableName();
-            }*/
 
             int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
             if(count == 0) {
                 relationDao.addTableInfo(relationEntity);
             }
-            String pathStr = categoryDao.queryPathByGuid(relationEntity.getCategoryGuid());
-            String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",",".");
-            relationEntity.setPath(path);
             return relationDao.add(relationEntity);
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -320,12 +312,22 @@ public class DataManageService {
             tableName = (Objects.nonNull(tableName)? tableName: "");
             String tag = query.getTag();
             tag = (Objects.nonNull(tag)? tag: "");
-            List<String> categoryIds = null;
+            Map<String, RoleModulesCategories.Category> userCategorys = null;
+            List<String> categoryIds = new ArrayList<>();
             if(SystemRole.ADMIN.getCode().equals(roleId)) {
-                categoryIds = categoryDao.getAllRootCategory();
+                categoryIds = categoryDao.getAllCategory(type);
             } else {
-                categoryIds = roleDao.getCategorysByTypeIds(roleId, type);
+                userCategorys = roleService.getUserStringCategoryMap(roleId, type);
+                Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+                List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+                for (RoleModulesCategories.Category category : valueList) {
+                    if (category.isShow()) {
+                        categoryIds.add(category.getGuid());
+                    }
+                }
             }
+
+
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();

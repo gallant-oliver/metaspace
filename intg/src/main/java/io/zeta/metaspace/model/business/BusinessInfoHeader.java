@@ -31,6 +31,7 @@ public class BusinessInfoHeader {
     private String submitter;
     private String submissionTime;
     private String ticketNumber;
+    private String categoryGuid;
 
     public String getBusinessId() {
         return businessId;
@@ -102,5 +103,13 @@ public class BusinessInfoHeader {
 
     public void setTicketNumber(String ticketNumber) {
         this.ticketNumber = ticketNumber;
+    }
+
+    public String getCategoryGuid() {
+        return categoryGuid;
+    }
+
+    public void setCategoryGuid(String categoryGuid) {
+        this.categoryGuid = categoryGuid;
     }
 }

@@ -126,32 +126,32 @@ public class BusinessREST {
         }
     }
 
-    @GET
-    @Path("/categories/{categoryId}")
+    @POST
+    @Path("/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<BusinessInfo> getBusinessList(@PathParam("categoryId") String categoryId, @QueryParam("limit") final int limit, @QueryParam("limit") final int offset) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByCategoryId(categoryId, limit, offset);
+            return businessService.getBusinessListByName(parameters);
         } catch (Exception e) {
             throw e;
         }
     }
 
     /**
-     * 搜索business列表(业务对象)
+     * 业务对象列表
      * @param categoryId
      * @param parameters
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/categories/{categoryId}")
+    @Path("/category/relations/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByName(categoryId, parameters);
+            return businessService.getBusinessListByCategoryId(categoryId, parameters);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
@@ -175,6 +175,12 @@ public class BusinessREST {
         }
     }
 
+    /**
+     * 业务对象关联技术信息详情
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{businessId}/technical")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

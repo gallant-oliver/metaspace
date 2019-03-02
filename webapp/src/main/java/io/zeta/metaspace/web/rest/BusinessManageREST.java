@@ -169,6 +169,12 @@ public class BusinessManageREST {
         }
     }
 
+    /**
+     * 业务对象查询表关联
+     * @param relationQuery
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/technical/table/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
