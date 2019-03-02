@@ -41,7 +41,7 @@ public class PrivilegeCheckREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/table/lineage/depth/{guid}")
+    @Path("/metadata/table/lineage/depth/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public LineageDepthInfo getTableLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
@@ -57,7 +57,7 @@ public class PrivilegeCheckREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/column/lineage/depth/{guid}")
+    @Path("/metadata/column/lineage/depth/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public LineageDepthInfo getColumnLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {

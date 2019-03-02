@@ -374,6 +374,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(createTime);
                     table.setCreateTime(formatDateStr);
+                    table.setStatus(tableEntity.getStatus().name());
                     /*
                     String tableStatus = tableEntity.getStatus().name();
                     String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();

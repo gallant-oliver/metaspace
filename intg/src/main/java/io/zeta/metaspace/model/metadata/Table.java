@@ -49,6 +49,15 @@ public class Table implements Serializable {
     private Boolean virtualTable;
     private String status;
     private List<Tag> tags;
+    private boolean edit;
+
+    public boolean isEdit() {
+        return edit;
+    }
+
+    public void setEdit(boolean edit) {
+        this.edit = edit;
+    }
 
     public List<Tag> getTags() {
         return tags;
