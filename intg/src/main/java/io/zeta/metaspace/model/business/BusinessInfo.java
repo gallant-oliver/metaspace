@@ -42,6 +42,7 @@ public class BusinessInfo {
     private String submissionTime;
     private String ticketNumber;
     private Boolean editBusiness;
+    private String level2CategoryId;
     //private Boolean editTechnical;
     //private List<Table> tables;
 
@@ -172,5 +173,13 @@ public class BusinessInfo {
 
     public void setEditBusiness(Boolean editBusiness) {
         this.editBusiness = editBusiness;
+    }
+
+    public String getLevel2CategoryId() {
+        return level2CategoryId;
+    }
+
+    public void setLevel2CategoryId(String level2CategoryId) {
+        this.level2CategoryId = level2CategoryId;
     }
 }

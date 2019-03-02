@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 @Service
@@ -283,25 +284,29 @@ public class DataManageService {
         }
     }
 
-    public PageResult<RelationEntityV2> getRelationsByCategoryGuid(String categoryGuid, RelationQuery query) {
-        int limit = query.getLimit();
-        int offset = query.getOffset();
-        PageResult<RelationEntityV2> pageResult = new PageResult<>();
-        List<RelationEntityV2> relations =  null;
-        int totalNum = 0;
-        if(query.getLimit() == -1) {
-            relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
-            totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
-        } else {
-            relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
-            totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
+    public PageResult<RelationEntityV2> getRelationsByCategoryGuid(String categoryGuid, RelationQuery query) throws AtlasBaseException {
+        try {
+            int limit = query.getLimit();
+            int offset = query.getOffset();
+            PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            List<RelationEntityV2> relations = null;
+            int totalNum = 0;
+            if (query.getLimit() == -1) {
+                relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
+                totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
+            } else {
+                relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
+                totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
+            }
+            getPath(relations);
+            pageResult.setCount(relations.size());
+            pageResult.setLists(relations);
+            pageResult.setOffset(query.getOffset());
+            pageResult.setSum(totalNum);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
         }
-        getPath(relations);
-        pageResult.setCount(relations.size());
-        pageResult.setLists(relations);
-        pageResult.setOffset(query.getOffset());
-        pageResult.setSum(totalNum);
-        return pageResult;
     }
 
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
@@ -313,8 +318,8 @@ public class DataManageService {
             String tag = query.getTag();
             tag = (Objects.nonNull(tag)? tag: "");
             Map<String, RoleModulesCategories.Category> userCategorys = null;
-            List<String> categoryIds = new ArrayList<>();
-            if(SystemRole.ADMIN.getCode().equals(roleId)) {
+            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
+            /*if(SystemRole.ADMIN.getCode().equals(roleId)) {
                 categoryIds = categoryDao.getAllCategory(type);
             } else {
                 userCategorys = roleService.getUserStringCategoryMap(roleId, type);
@@ -325,7 +330,7 @@ public class DataManageService {
                         categoryIds.add(category.getGuid());
                     }
                 }
-            }
+            }*/
 
 
             int limit = query.getLimit();
@@ -344,13 +349,13 @@ public class DataManageService {
         }
     }
 
-    public void getPath(List<RelationEntityV2> list) {
-        for(RelationEntityV2 entity : list) {
-            String pathStr = categoryDao.queryPathByGuid(entity.getCategoryGuid());
-            String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",",".").replace("\"", "");
-            entity.setPath(path);
-        }
+    public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
+        for (RelationEntityV2 entity : list) {
+                StringJoiner joiner = new StringJoiner(("."));
+                String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
+                joiner.add(path).add(entity.getTableName());
+                entity.setPath(joiner.toString());
+            }
     }
 
     @Transactional

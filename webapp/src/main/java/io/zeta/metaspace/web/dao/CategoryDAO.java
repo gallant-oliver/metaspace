@@ -91,6 +91,17 @@ public interface CategoryDAO {
     public String queryPathByGuid(@Param("guid")String guid);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "SELECT  PATH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    public String queryGuidPathByGuid(@Param("guid")String guid);
+
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
             "FROM category WHERE parentCategoryGuid IS NULL " +
             "UNION ALL " +
