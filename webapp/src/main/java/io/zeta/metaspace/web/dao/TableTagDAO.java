@@ -20,6 +20,9 @@ public interface TableTagDAO {
     @Select("select * from tag where tagname like '%'||#{query}||'%' order by tagname limit #{limit} offset #{offset}")
     public List<Tag> getTags(@Param("query") String query,@Param("offset")long offset,@Param("limit")long limit);
 
+    @Select("select * from tag where tagname like '%'||#{query}||'%' order by tagname offset #{offset}")
+    public List<Tag> getTag(@Param("query") String query,@Param("offset")long offset);
+
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")
     public int addTable2Tag(@Param("tagId") String tagId,@Param("tableGuid") String tableGuid);
 

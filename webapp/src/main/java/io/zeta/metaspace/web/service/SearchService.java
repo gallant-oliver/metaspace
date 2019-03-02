@@ -83,12 +83,13 @@ public class SearchService {
             Database database = new Database();
             database.setDatabaseName(s);
             List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableByDBName(s);
-            List<Table> tableList = new ArrayList<>();
+            List<TableHeader> tableList = new ArrayList<>();
             for (TechnologyInfo.Table tb : tableByDBName) {
-                Table table = new Table();
+                TableHeader table = new TableHeader();
                 table.setDatabaseName(s);
                 table.setTableId(tb.getTableGuid());
                 table.setTableName(tb.getTableName());
+                table.setCreateTime(tb.getCreateTime());
                 tableList.add(table);
             }
             database.setTableList(tableList);
@@ -143,6 +144,7 @@ public class SearchService {
             tb.setTableId(table.getTableGuid());
             tb.setTableName(table.getTableName());
             tb.setDatabaseName(table.getDbName());
+            tb.setCreateTime(table.getCreateTime());
             lists.add(tb);
         }
         tablePageResult.setSum(roleDAO.getTableCount(categoryId,query));
