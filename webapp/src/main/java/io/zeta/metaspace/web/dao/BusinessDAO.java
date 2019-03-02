@@ -35,8 +35,8 @@ import java.util.List;
 public interface BusinessDAO {
 
     //添加业务信息
-    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber)" +
-            "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets},#{submitter},#{submissionTime},#{businessOperator},#{businessLastUpdate},#{ticketNumber})")
+    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId)" +
+            "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets},#{submitter},#{submissionTime},#{businessOperator},#{businessLastUpdate},#{ticketNumber},#{level2CategoryId})")
     public int insertBusinessInfo(BusinessInfo info);
 
     //更新业务信息
@@ -106,21 +106,48 @@ public interface BusinessDAO {
              " </script>"})
     public long queryBusinessCountByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds);
 
-    //多条件分页查询业务信息列表
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where guid like '%${level2CategoryId}%' and categorytype=1))" +
-            "and technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%' limit #{limit} offset #{offset}")
-    public List<BusinessInfoHeader> queryBusinessByConditionWithLimit(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
-                                                       @Param("level2CategoryId") String level2Category,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
     //多条件查询业务信息列表
-    @Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where guid like '%${level2CategoryId}%' and categorytype=1))" +
-            "and technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'")
-    public List<BusinessInfoHeader> queryBusinessByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
-                                                                @Param("level2CategoryId") String level2Category,@Param("submitter") String submitter);
+    @Select({"<script>",
+             " select businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
+             " join business_relation on businessInfo.businessId = business_relation.businessId",
+             " where categoryGuid in(",
+             " select guid from category where guid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
+             " #{categoryGuid}",
+             " </foreach>",
+             " and categoryType=1)",
+             " and",
+             " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
+             " level2CategoryId=#{level2CategoryId}",
+             " </if>",
+             " technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<BusinessInfoHeader> queryBusinessByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+                                                       @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
+
+
     //多条件查询业务信息列表总数
-    @Select("select count(*) from businessInfo where businessId in (select businessId from business_relation where categoryGuid in (select guid from category where guid like '%${level2Category}%' and categorytype=1))" +
-            "and technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'")
-    public long queryBusinessCountByCondition(@Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
-                                              @Param("level2Category") String level2Category,@Param("submitter") String submitter);
+    @Select({"<script>",
+             " select count(*) from businessInfo",
+             " join business_relation on businessInfo.businessId = business_relation.businessId",
+             " where categoryGuid in(",
+             " select guid from category where guid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
+             " #{categoryGuid}",
+             " </foreach>",
+             " and categoryType=1)",
+             " and",
+             " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
+             " level2CategoryId=#{level2CategoryId}",
+             " </if>",
+             " technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " </script>"})
+    public long queryBusinessCountByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
+                                              @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter);
 
     //查询业务目录关系业务信息列表
     @Select({"<script>",

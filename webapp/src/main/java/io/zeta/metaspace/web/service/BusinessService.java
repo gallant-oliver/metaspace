@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 /*
@@ -92,7 +93,16 @@ public class BusinessService {
             info.setSubmissionTime(time);
             info.setBusinessLastUpdate(time);
             info.setTicketNumber(String.valueOf(timestamp));
-
+            //level2CategoryId
+            String pathStr = categoryDao.queryGuidPathByGuid(categoryId);
+            String path = pathStr.substring(1, pathStr.length()-1);
+            path = path.replace("\"", "");
+            String[] pathArr = path.split(",");
+            String level2CategoryId = "";
+            if(pathArr.length >= 2) {
+                level2CategoryId = pathArr[1];
+            }
+            info.setLevel2CategoryId(level2CategoryId);
             int insertFlag =  businessDao.insertBusinessInfo(info);
 
             //更新business编辑状态
@@ -104,12 +114,9 @@ public class BusinessService {
             //relationshiGuid
             String relationGuid = UUID.randomUUID().toString();
             entity.setRelationshipGuid(relationGuid);
-            //path
-            /*String qualifiedName = categoryDao.queryQualifiedName(categoryId);
-            if (Objects.nonNull(qualifiedName)) {
-                qualifiedName += "." + info.getName();
-            }
-            entity.setPath(qualifiedName);*/
+
+
+
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
             int relationFlag = relationDao.addRelation(entity);
@@ -185,20 +192,19 @@ public class BusinessService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryIdWithLimit(categoryId, limit, offset);
-
-
-            String path = getCategoryPath(categoryId);
+            String path = CategoryRelationUtils.getPath(categoryId);
+            StringJoiner joiner = new StringJoiner(".");
             String[] pathArr = path.split("\\.");
             String level2Category = "";
             if(pathArr.length >= 2)
                 level2Category = pathArr[1];
             for(BusinessInfoHeader infoHeader : list) {
                 //path
-                infoHeader.setPath(path + "." + infoHeader.getName());
+                joiner.add(path).add(infoHeader.getName());
+                infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
             }
-
             long sum = businessDao.queryBusinessCountByByCatetoryId(categoryId);
             pageResult.setSum(sum);
             pageResult.setCount(list.size());
@@ -221,30 +227,18 @@ public class BusinessService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
-
-            Map<String, RoleModulesCategories.Category> userCategorys = null;
-            List<String> categoryIds = new ArrayList<>();
-            if(SystemRole.ADMIN.getCode().equals(roleId)) {
-                categoryIds = categoryDao.getAllCategory(BUSINESS_TYPE);
-            } else {
-                userCategorys = roleService.getUserStringCategoryMap(roleId, BUSINESS_TYPE);
-                Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-                List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
-                for(RoleModulesCategories.Category category : valueList) {
-                    if(category.isShow()) {
-                        categoryIds.add(category.getGuid());
-                    }
-                }
-            }
+            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
             businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset);
 
             for(BusinessInfoHeader infoHeader : businessInfoList) {
-                String path = getCategoryPath(infoHeader.getCategoryGuid());
+                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
+                StringJoiner joiner = new StringJoiner(".");
+                joiner.add(path).add(infoHeader.getName());
+                infoHeader.setPath(joiner.toString());
                 String[] pathArr = path.split("\\.");
                 String level2Category = "";
                 if(pathArr.length >= 2)
                     level2Category = pathArr[1];
-                infoHeader.setPath(path + "." + infoHeader.getName());
                 infoHeader.setLevel2Category(level2Category);
             }
             long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
@@ -259,19 +253,11 @@ public class BusinessService {
         }
     }
 
-    public String getCategoryPath(String categoryId) throws AtlasBaseException {
-        try {
-            String pathStr = categoryDao.queryPathByGuid(categoryId);
-            String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",", ".").replace("\"", "");
-            return path;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
-        }
-    }
 
     public PageResult<BusinessInfoHeader> getBusinessListByCondition(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDao.getRoleIdByUserId(userId);
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String status = parameter.getStatus();
             String ticketNumber = parameter.getTicketNumber();
@@ -284,22 +270,18 @@ public class BusinessService {
             int limit = parameter.getLimit();
             int offset = parameter.getOffset();
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
-            List<BusinessInfoHeader> businessInfoList = null;
-            if(limit != -1) {
-                businessInfoList = businessDao.queryBusinessByConditionWithLimit(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
-            } else {
-                businessInfoList = businessDao.queryBusinessByCondition(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
-            }
+            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+            List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
-                String path = getCategoryPath(categoryId);
-                infoHeader.setPath(path);
+                String path = CategoryRelationUtils.getPath(categoryId);
+                infoHeader.setPath(path + "." + infoHeader.getName());
                 String[] pathArr = path.split("\\.");
                 if(pathArr.length >= 2)
                     infoHeader.setLevel2Category(pathArr[1]);
             }
             pageResult.setLists(businessInfoList);
-            long businessCount = businessDao.queryBusinessCountByCondition(technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
+            long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
             pageResult.setSum(businessCount);
             pageResult.setCount(businessInfoList.size());
             return pageResult;
