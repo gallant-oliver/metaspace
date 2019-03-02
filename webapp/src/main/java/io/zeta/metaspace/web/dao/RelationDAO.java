@@ -32,37 +32,24 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableName,dbName,tableGuid,status)values(#{relationshipGuid},#{categoryGuid},#{tableName},#{dbName},#{tableGuid},#{status})")
-    //@Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,path)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{path})")
+    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid)values(#{relationshipGuid},#{categoryGuid},#{tableGuid})")
     public int add(RelationEntityV2 entity) throws SQLException;
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
     public int delete(@Param("relationshipGuid")String guid);
 
-    //@Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
-    /*@Select("select table_relation.relationshipGuid,table_relation.categoryGuid,table_relation.path,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
-            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
-    public RelationEntityV2 query(@Param("categoryGuid")String categoryGuid);*/
-
-    //@Select("select * from table_relation where categoryGuid=#{categoryGuid} limit #{limit} offset #{offset}")
     @Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid limit #{limit} offset #{offset}")
     public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
-    //@Select("select * from table_relation where categoryGuid=#{categoryGuid}")
-    //@Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
     @Select("select table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
-    //@Select("select * from table_relation where tableGuid=#{tableGuid}")
     @Select("select * from table_relation,tableinfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid")String tableGuid) throws SQLException;
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
-
-    //@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
-    //@Select("select * from table_relation,tableinfo where table_relation.tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%') limit #{limit} offset #{offset}")
 
     @Select({"<script>",
              " select * from table_relation",
@@ -86,8 +73,6 @@ public interface RelationDAO {
              " </script>"})
     public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds,@Param("limit")int limit,@Param("offset") int offset);
 
-    //@Select("select count(*) from table_relation where tableName like '%${tableName}%'")
-    //@Select("select count(*) from table_relation where tableGuid in (select tableGuid from tableinfo where tableName like '%${tableName}%')")
     @Select({"<script>",
              " select count(*) from table_relation",
              " join tableInfo on",
@@ -106,14 +91,11 @@ public interface RelationDAO {
              " </script>"})
     public int queryTotalNumByName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds);
 
-    /*@Select("select * from table_relation where tableName like '%${tableName}%' limit #{limit} offset #{offset}")
-    public List<RelationEntityV2> queryByTableName(@Param("tableName")String tableName, @Param("limit")int limit,@Param("offset") int offset, @Param("categoryType") int categoryType);*/
-
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCatalogGuid(@Param("categoryGuid")String categoryGuid);
 
     //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
-    @Update("update tableinfo set status=#{status} where tableGuid=#{tableGuid}")
+    @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
     public int updateTableStatus(@Param("tableGuid")String tableGuid,@Param("status")String status);
 
     @Select("select count(*) from tableinfo where tableGuid=#{tableGuid}")
