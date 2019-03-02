@@ -46,6 +46,7 @@ public class TableTagService {
         if (tableTagDAO.ifTableExists(table.getTableId()).size()==0) {
             tableTagDAO.addTable(table);
         }
+        tableTagDAO.delAllTable2Tag(table.getTableId());
         for (String s : tagId) {
             try {
                 tableTagDAO.addTable2Tag(s, table.getTableId());
