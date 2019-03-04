@@ -237,7 +237,6 @@ public class BusinessService {
         }
     }
 
-
     public PageResult<BusinessInfoHeader> getBusinessListByCondition(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
