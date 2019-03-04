@@ -67,8 +67,10 @@ public class HomePageREST {
     public PageResult<TableUseInfo> getTableUsedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             return homePageService.getTableRelatedInfo(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 
@@ -85,8 +87,10 @@ public class HomePageREST {
     public PageResult<RoleUseInfo> getRoleUsedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             return homePageService.getRoleRelatedInfo(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 
@@ -102,8 +106,10 @@ public class HomePageREST {
     public List<Role> getAllRole() throws AtlasBaseException {
         try {
             return homePageService.getAllRole();
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 
@@ -121,8 +127,10 @@ public class HomePageREST {
     public PageResult<User> getUsersByRoleId(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             return homePageService.getUserListByRoleId(roleId, parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 
@@ -138,8 +146,10 @@ public class HomePageREST {
     public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
         try {
             return homePageService.getDataDistribution();
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 

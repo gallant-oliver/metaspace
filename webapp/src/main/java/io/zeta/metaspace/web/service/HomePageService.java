@@ -62,7 +62,7 @@ public class HomePageService {
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 
@@ -82,7 +82,7 @@ public class HomePageService {
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 
@@ -90,7 +90,7 @@ public class HomePageService {
         try {
             return homePageDAO.getAllRole();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 
@@ -106,7 +106,7 @@ public class HomePageService {
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 
@@ -127,7 +127,7 @@ public class HomePageService {
             dataDistributionList.add(blankData);
             return dataDistributionList;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 }
