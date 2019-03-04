@@ -116,6 +116,7 @@ public class DataManageService {
                 //qualifiedName
                 qualifiedName.append(name);
                 entity.setQualifiedName(qualifiedName.toString());
+                entity.setLevel(1);
                 categoryDao.add(entity);
                 return categoryDao.queryByGuid(newCategoryGuid);
             }
@@ -124,13 +125,16 @@ public class DataManageService {
             //获取当前catalog
             CategoryEntityV2 currentEntity = categoryDao.queryByGuid(currentCategoryGuid);
             String parentQualifiedName = null;
+            int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid);
             //创建子目录
             if( Objects.nonNull(newCategoryParentGuid)) {
                 entity.setParentCategoryGuid(currentCategoryGuid);
                 parentQualifiedName = currentEntity.getQualifiedName();
+                entity.setLevel(currentLevel+1);
             } else {
                 //创建同级目录
                 String currentCatalogParentGuid = currentEntity.getParentCategoryGuid();
+                entity.setLevel(currentLevel);
                 if(Objects.nonNull(currentCatalogParentGuid)) {
                     entity.setParentCategoryGuid(currentCatalogParentGuid);
                     CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(currentCatalogParentGuid);
