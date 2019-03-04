@@ -16,10 +16,118 @@
  */
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.homepage.DataDistribution;
+import io.zeta.metaspace.model.homepage.RoleUseInfo;
+import io.zeta.metaspace.model.homepage.TableUseInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.dao.HomePageDAO;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 9:56
  */
+@Service
 public class HomePageService {
+
+    @Autowired
+    HomePageDAO homePageDAO;
+
+
+    public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<TableUseInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<TableUseInfo> tableList = homePageDAO.getTableRelatedInfo(limit, offset);
+            long total = homePageDAO.getTotalTableUserTimes();
+            DecimalFormat df = new DecimalFormat("0.00");
+            tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes()/total))));
+            long sum = homePageDAO.getCountBusinessRelatedTable();
+
+            pageResult.setLists(tableList);
+            pageResult.setCount(tableList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    public PageResult<RoleUseInfo> getRoleRelatedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<RoleUseInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<RoleUseInfo> roleList = homePageDAO.getRoleRelatedInfo(limit, offset);
+            //long total = roleList.stream().map(RoleUseInfo::getNumber).reduce(Long::sum).get();
+            long total = homePageDAO.getTotalUserNumber();
+            DecimalFormat df = new DecimalFormat("0.00");
+            roleList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getNumber()/total))));
+            long sum = homePageDAO.getCountRole();
+            pageResult.setLists(roleList);
+            pageResult.setCount(roleList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    public List<Role> getAllRole() throws AtlasBaseException {
+        try {
+            return homePageDAO.getAllRole();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    public PageResult<User> getUserListByRoleId(String roleId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<User> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<User> userList = homePageDAO.getUserListByRoleId(roleId, limit, offset);
+            long sum = homePageDAO.getCountUserRelatedRole(roleId);
+            pageResult.setLists(userList);
+            pageResult.setCount(userList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+
+    public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
+        try {
+            List<DataDistribution> dataDistributionList = new ArrayList<>();
+            DataDistribution addedData = new DataDistribution();
+            long addeNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
+            addedData.setName("已补充技术信息");
+            addedData.setValue(addeNumber);
+            dataDistributionList.add(addedData);
+
+            DataDistribution blankData = new DataDistribution();
+            long blankNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.BLANK.code);
+            blankData.setName("未补充技术信息");
+            blankData.setValue(blankNumber);
+            dataDistributionList.add(blankData);
+            return dataDistributionList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
 }
