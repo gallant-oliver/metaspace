@@ -162,7 +162,7 @@ public interface BusinessDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<BusinessInfoHeader> queryBusinessByCatetoryIdWithLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
+    public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
     @Select({"<script>",
              " select count(*) from businessInfo",

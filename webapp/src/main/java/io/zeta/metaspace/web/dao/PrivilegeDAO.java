@@ -84,11 +84,15 @@ public interface PrivilegeDAO {
     })
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
-    @Select("select * from privilege where privilegeName like '%'||#{privilegeName}||'%' limit #{limit} offset #{offset}")
-    public List<PrivilegeInfo> getPrivilegeListWithLimit(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
+    @Select({" <script>",
+             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
 
-    @Select("select * from privilege where privilegeName like '%'||#{privilegeName}||'%' offset #{offset}")
-    public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("offset")int offset);
 
     @Select("select * from role where privilegeId=#{privilegeId}")
     public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);

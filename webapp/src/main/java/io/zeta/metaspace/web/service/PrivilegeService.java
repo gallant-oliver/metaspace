@@ -168,11 +168,7 @@ public class PrivilegeService {
         try {
             PageResult<PrivilegeInfo> rolePageResult = new PageResult<>();
             List<PrivilegeInfo> privilegeList = null;
-            if(-1 == limit) {
-                privilegeList = privilegeDAO.getPrivilegeList(query, offset);
-            } else {
-                privilegeList = privilegeDAO.getPrivilegeListWithLimit(query, limit, offset);
-            }
+            privilegeList = privilegeDAO.getPrivilegeList(query, limit, offset);
             for(PrivilegeInfo info : privilegeList) {
                 List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
                 info.setRoles(roleList);

@@ -23,7 +23,6 @@ package io.zeta.metaspace.web.service;
  */
 
 import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -65,7 +64,12 @@ public class DataManageService {
     @Autowired
     RoleService roleService;
 
-
+    /**
+     * 获取用户有权限的全部目录
+     * @param type
+     * @return
+     * @throws AtlasBaseException
+     */
     public List<RoleModulesCategories.Category> getAll(int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
@@ -81,6 +85,13 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 创建业务目录
+     * @param info
+     * @param type
+     * @return
+     * @throws Exception
+     */
     @Transactional
     public CategoryEntityV2 createCategory(CategoryInfoV2 info, Integer type) throws Exception {
         try {
@@ -170,6 +181,12 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 删除目录
+     * @param guid
+     * @return
+     * @throws Exception
+     */
     @Transactional
     public int deleteCategory(String guid) throws Exception {
         try {
@@ -205,6 +222,12 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 更新目录
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
     public CategoryEntityV2 updateCategory(CategoryInfoV2 info) throws AtlasBaseException {
         try {
             String guid = info.getGuid();
@@ -236,6 +259,12 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 添加关联
+     * @param categoryGuid
+     * @param relations
+     * @throws AtlasBaseException
+     */
     @Transactional
     public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
@@ -264,6 +293,11 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 删除表关联
+     * @param relationshipList
+     * @throws AtlasBaseException
+     */
     @Transactional
     public void removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
         try {
@@ -271,7 +305,6 @@ public class DataManageService {
                 for (RelationEntityV2 relationship : relationshipList) {
                     String relationShipGuid = relationship.getRelationshipGuid();
                     RelationEntityV2 entity = categoryDao.getRelationByGuid(relationShipGuid);
-                    //relationDao.delete(relationship.getRelationshipGuid());
                     String categoryGuid = entity.getCategoryGuid();
                     String tableGuid = entity.getTableGuid();
                     List<String> childrenCategoryList = categoryDao.queryChildrenCategoryId(categoryGuid);
@@ -284,6 +317,13 @@ public class DataManageService {
         }
     }
 
+    /**
+     *
+     * @param categoryGuid
+     * @param query
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult<RelationEntityV2> getRelationsByCategoryGuid(String categoryGuid, RelationQuery query) throws AtlasBaseException {
         try {
             int limit = query.getLimit();
@@ -291,13 +331,8 @@ public class DataManageService {
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = null;
             int totalNum = 0;
-            if (query.getLimit() == -1) {
-                relations = relationDao.queryRelationByCategoryGuid(categoryGuid);
-                totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
-            } else {
-                relations = relationDao.queryRelationByCategoryGuidByLimit(categoryGuid, limit, offset);
-                totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
-            }
+            relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
+            totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
             getPath(relations);
             pageResult.setCount(relations.size());
             pageResult.setLists(relations);
@@ -317,22 +352,7 @@ public class DataManageService {
             tableName = (Objects.nonNull(tableName)? tableName: "");
             String tag = query.getTag();
             tag = (Objects.nonNull(tag)? tag: "");
-            Map<String, RoleModulesCategories.Category> userCategorys = null;
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
-            /*if(SystemRole.ADMIN.getCode().equals(roleId)) {
-                categoryIds = categoryDao.getAllCategory(type);
-            } else {
-                userCategorys = roleService.getUserStringCategoryMap(roleId, type);
-                Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-                List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
-                for (RoleModulesCategories.Category category : valueList) {
-                    if (category.isShow()) {
-                        categoryIds.add(category.getGuid());
-                    }
-                }
-            }*/
-
-
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();

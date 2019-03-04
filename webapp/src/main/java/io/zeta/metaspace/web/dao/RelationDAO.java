@@ -38,14 +38,17 @@ public interface RelationDAO {
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
     public int delete(@Param("relationshipGuid")String guid);
 
-    @Select("select * from table_relation,tableinfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid limit #{limit} offset #{offset}")
-    public List<RelationEntityV2> queryRelationByCategoryGuidByLimit(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
+    @Select({"<script>",
+             " select table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
-    @Select("select table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status" +
-            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableinfo.tableGuid=table_relation.tableGuid")
-    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid")String categoryGuid);
-
-    @Select("select * from table_relation,tableinfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
+    @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid")String tableGuid) throws SQLException;
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")

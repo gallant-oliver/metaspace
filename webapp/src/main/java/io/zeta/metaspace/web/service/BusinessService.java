@@ -24,8 +24,6 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
@@ -34,16 +32,12 @@ import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -115,8 +109,6 @@ public class BusinessService {
             String relationGuid = UUID.randomUUID().toString();
             entity.setRelationshipGuid(relationGuid);
 
-
-
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
             int relationFlag = relationDao.addRelation(entity);
@@ -138,14 +130,6 @@ public class BusinessService {
             return businessDao.updateBusinessInfo(info);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
-        }
-    }
-
-    public List<BusinessInfo> getBusinessList(String departmentId, int limit, int offset) throws AtlasBaseException {
-        try {
-            return businessDao.queryBusinessByDemparmentId(departmentId, limit, offset);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 
@@ -191,7 +175,7 @@ public class BusinessService {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-            List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryIdWithLimit(categoryId, limit, offset);
+            List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset);
             String path = CategoryRelationUtils.getPath(categoryId);
             StringJoiner joiner = new StringJoiner(".");
             String[] pathArr = path.split("\\.");
