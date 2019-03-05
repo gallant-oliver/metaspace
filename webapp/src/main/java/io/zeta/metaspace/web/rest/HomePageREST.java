@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/4 9:55
  */
 
+import io.zeta.metaspace.model.homepage.CategoryDBInfo;
 import io.zeta.metaspace.model.homepage.DataDistribution;
 import io.zeta.metaspace.model.homepage.RoleUseInfo;
 import io.zeta.metaspace.model.homepage.TableUseInfo;
@@ -150,6 +151,26 @@ public class HomePageREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取贴源层系统列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/source/system")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getCategoryRelatedDB(parameters);
+        }  catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
 

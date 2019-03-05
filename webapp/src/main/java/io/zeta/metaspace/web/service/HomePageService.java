@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.homepage.CategoryDBInfo;
 import io.zeta.metaspace.model.homepage.DataDistribution;
 import io.zeta.metaspace.model.homepage.RoleUseInfo;
 import io.zeta.metaspace.model.homepage.TableUseInfo;
@@ -126,6 +127,24 @@ public class HomePageService {
             blankData.setValue(blankNumber);
             dataDistributionList.add(blankData);
             return dataDistributionList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<CategoryDBInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            String sourceLayerCategoryGudi = "df00c2be-fe48-4b9b-9276-95861c2632ae";
+
+            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGudi, limit, offset);
+            pageResult.setLists(categoryDBInfoList);
+            pageResult.setCount(categoryDBInfoList.size());
+            long sum = homePageDAO.getCountLevel2Category(sourceLayerCategoryGudi);
+            pageResult.setSum(sum);
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
