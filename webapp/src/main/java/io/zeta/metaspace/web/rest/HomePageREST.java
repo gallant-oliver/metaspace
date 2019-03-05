@@ -16,27 +16,132 @@
  */
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.homepage.BrokenLine;
-import io.zeta.metaspace.model.homepage.TimeDBTB;
+import io.zeta.metaspace.model.homepage.*;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HomePageService;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import java.util.List;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/3/4 9:55
- */
 @Path("home")
 @Singleton
+@Service
 public class HomePageREST {
+
     @Autowired
-    HomePageService homePageService;
+    private HomePageService homePageService;
+    /**
+     * 获取数据表使用次数与占比topN
+     *
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/table/rank")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<TableUseInfo> getTableUsedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getTableRelatedInfo(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取系统角色用户数与占比topN
+     *
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/role/rank")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RoleUseInfo> getRoleUsedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getRoleRelatedInfo(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取角色列表
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/roles")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Role> getAllRole() throws AtlasBaseException {
+        try {
+            return homePageService.getAllRole();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取系统角色的用户
+     *
+     * @param roleId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/role/{roleId}/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<User> getUsersByRoleId(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getUserListByRoleId(roleId, parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取已补充/未补充技术信息的业务对象占比
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/business/supplement")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
+        try {
+            return homePageService.getDataDistribution();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
     /**
      * 获取时间和总量
      *
@@ -45,8 +150,8 @@ public class HomePageREST {
     @GET
     @Path("/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TimeDBTB getTimeDbTb() {
-
+    public TimeDBTB getTimeDbTb() throws AtlasBaseException {
+        return homePageService.getTimeDbTb();
     }
 
     /**
@@ -55,10 +160,10 @@ public class HomePageREST {
      * @return List<Database>
      */
     @GET
-    @Path("/total")
+    @Path("/database/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getDBTotals() {
-
+    public BrokenLine getDBTotals() throws AtlasBaseException {
+        return homePageService.getDBTotals();
     }
 
     /**
@@ -67,10 +172,10 @@ public class HomePageREST {
      * @return List<Database>
      */
     @GET
-    @Path("/total")
+    @Path("/table/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getTBTotals() {
-
+    public BrokenLine getTBTotals() throws AtlasBaseException {
+        return homePageService.getTBTotals();
     }
 
     /**
@@ -79,9 +184,21 @@ public class HomePageREST {
      * @return List<Database>
      */
     @GET
-    @Path("/total")
+    @Path("/business/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getBusinessTotals() {
+    public BrokenLine getBusinessTotals() throws AtlasBaseException {
+        return homePageService.getBusinessTotals();
+    }
 
+    /**
+     * 测试生成某天统计
+     *
+     * @return List<Database>
+     */
+    @GET
+    @Path("/test/product/{date}")
+    public String testProduct(@PathParam("date") String date) throws AtlasBaseException {
+        homePageService.testProduct(date);
+        return "success";
     }
 }

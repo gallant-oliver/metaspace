@@ -4,6 +4,33 @@ public class TimeDBTB {
     private String date;
     private long databaseTotal;
     private long tableTotal;
+    private long subsystemTotal;
+    private long sourceLogicDBTotal;
+    private long sourceEntityDBTotal;
+
+    public long getSubsystemTotal() {
+        return subsystemTotal;
+    }
+
+    public void setSubsystemTotal(long subsystemTotal) {
+        this.subsystemTotal = subsystemTotal;
+    }
+
+    public long getSourceLogicDBTotal() {
+        return sourceLogicDBTotal;
+    }
+
+    public void setSourceLogicDBTotal(long sourceLogicDBTotal) {
+        this.sourceLogicDBTotal = sourceLogicDBTotal;
+    }
+
+    public long getSourceEntityDBTotal() {
+        return sourceEntityDBTotal;
+    }
+
+    public void setSourceEntityDBTotal(long sourceEntityDBTotal) {
+        this.sourceEntityDBTotal = sourceEntityDBTotal;
+    }
 
     public String getDate() {
         return date;

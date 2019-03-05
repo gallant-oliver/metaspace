@@ -5,7 +5,7 @@ import java.util.List;
 public class BrokenLine {
     private List<String> date;
     private List<String> name;
-    private List<List<Integer>> data;
+    private List<List<Long>> data;
 
     public List<String> getDate() {
         return date;
@@ -23,11 +23,11 @@ public class BrokenLine {
         this.name = name;
     }
 
-    public List<List<Integer>> getData() {
+    public List<List<Long>> getData() {
         return data;
     }
 
-    public void setData(List<List<Integer>> data) {
+    public void setData(List<List<Long>> data) {
         this.data = data;
     }
 }

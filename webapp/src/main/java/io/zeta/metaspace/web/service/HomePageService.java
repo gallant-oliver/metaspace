@@ -16,59 +16,279 @@
  */
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.model.homepage.BrokenLine;
-import io.zeta.metaspace.model.homepage.SystemStatistical;
-import io.zeta.metaspace.model.homepage.TimeDBTB;
-
-import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.business.TechnicalStatus;
+import io.zeta.metaspace.model.homepage.*;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.HomePageDAO;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.text.DecimalFormat;
+import java.util.*;
 
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 9:56
  */
+@Service
 public class HomePageService {
+    private static final Logger LOG = LoggerFactory.getLogger(HomePageService.class);
     @Autowired
     private HomePageDAO homePageDAO;
     @Autowired
-    private AtlasGraph atlasGraph;
-    @Autowired
-    private MetaspaceGremlinQueryProvider metaspaceGremlinQueryProvider;
+    private MetaspaceGremlinService metaspaceGremlinService;
+
+
     public void statisticsJob() throws AtlasBaseException {
-        String gremlinQuery = metaspaceGremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
-        List<Long> DBCount = (List) atlasGraph.executeGremlinScript(String.format(gremlinQuery, ""), false);
-        String countQuery = metaspaceGremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
-        List<Long> TBcount = (List) atlasGraph.executeGremlinScript(String.format(countQuery, ""), false);
+        long yesterday = DateUtils.getYesterday().getTime();
+        product(yesterday);
+    }
+
+    private void product(long date) throws AtlasBaseException {
+        List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
+        List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
         long businessCount = homePageDAO.getBusinessCount();
         long addedBusinessCount = homePageDAO.getAddedBusinessCount();
         long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount();
         String uuid = UUID.randomUUID().toString();
-        long yesterday = DateUtils.getYestoday().getTime();
-        homePageDAO.addStatistical(uuid,yesterday,DBCount.get(0),SystemStatistical.DB_TOTAL.getCode());
-        homePageDAO.addStatistical(uuid,yesterday,TBcount.get(0),SystemStatistical.TB_TOTAL.getCode());
-        homePageDAO.addStatistical(uuid,yesterday,businessCount,SystemStatistical.BUSINESS_TOTAL.getCode());
-        homePageDAO.addStatistical(uuid,yesterday,addedBusinessCount,SystemStatistical.BUSINESSE_ADD.getCode());
-        homePageDAO.addStatistical(uuid,yesterday,noAddedBusinessCount,SystemStatistical.BUSINESSE_NO_ADD.getCode());
+        homePageDAO.addStatistical(uuid, date, dbTotal.get(0), SystemStatistical.DB_TOTAL.getCode());
+        uuid = UUID.randomUUID().toString();
+        homePageDAO.addStatistical(uuid, date, tbTotal.get(0), SystemStatistical.TB_TOTAL.getCode());
+        uuid = UUID.randomUUID().toString();
+        homePageDAO.addStatistical(uuid, date, businessCount, SystemStatistical.BUSINESS_TOTAL.getCode());
+        uuid = UUID.randomUUID().toString();
+        homePageDAO.addStatistical(uuid, date, addedBusinessCount, SystemStatistical.BUSINESSE_ADD.getCode());
+        uuid = UUID.randomUUID().toString();
+        homePageDAO.addStatistical(uuid, date, noAddedBusinessCount, SystemStatistical.BUSINESSE_NO_ADD.getCode());
     }
-    public TimeDBTB getTimeDbTb(){
+
+    public void testProduct(String date) throws AtlasBaseException {
+        try {
+            long aLong = DateUtils.getLong(date);
+            product(aLong);
+        } catch (Exception e) {
+            LOG.error("异常了", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "异常了");
+        }
+
+    }
+
+    public TimeDBTB getTimeDbTb() throws AtlasBaseException {
+        try {
+            String date = DateUtils.getDate(DateUtils.getToday().getTime());
+            TimeDBTB timeDBTB = new TimeDBTB();
+            List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
+            List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
+            timeDBTB.setDate(date);
+            timeDBTB.setDatabaseTotal(dbTotal.get(0));
+            timeDBTB.setTableTotal(tbTotal.get(0));
+            return timeDBTB;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取统计信息失败");
+        }
+    }
+
+    ;
+
+    public BrokenLine getDBTotals() throws AtlasBaseException {
+        BrokenLine brokenLine = new BrokenLine();
+        addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL);
+        return brokenLine;
+    }
+
+    private void addBrokenLine(BrokenLine brokenLine, SystemStatistical systemStatistical) throws AtlasBaseException {
+        List<String> dates = brokenLine.getDate() == null ? new ArrayList<>() : brokenLine.getDate();
+        List<String> names = brokenLine.getName() == null ? new ArrayList<>() : brokenLine.getName();
+        List<List<Long>> data = brokenLine.getData() == null ? new ArrayList<>() : brokenLine.getData();
+        names.add(systemStatistical.getDesc());
+        long startDate = DateUtils.get29day().getTime();
+        long endDate = DateUtils.getYesterday().getTime();
+        if (dates.size() < 30) {
+            for (long time = startDate; time <= DateUtils.getToday().getTime(); time = DateUtils.getNext(time).getTime()) {
+                dates.add(DateUtils.getDate(time));
+            }
+        }
+        ArrayList<Long> list = new ArrayList<>();
+
+        List<DateStatistical> statisticalByDateType = homePageDAO.getStatisticalByDateType(startDate, endDate, systemStatistical.getCode());
+        Map<String, Long> map = new HashMap<>();
+        for (DateStatistical dateStatistical : statisticalByDateType) {
+            map.put(DateUtils.getDate(dateStatistical.getDate()), dateStatistical.getStatistical());
+        }
+        for (long time = startDate; time < DateUtils.getToday().getTime(); time = DateUtils.getNext(time).getTime()) {
+            String date = DateUtils.getDate(time);
+            if (map.containsKey(date)) {
+                list.add(map.get(date));
+            } else {
+                list.add(getYesterdayStatistical(map, time, startDate));
+            }
+
+        }
 
 
-    };
-    public BrokenLine getDBTotals() {
-        long time = DateUtils.getYestoday().getTime();
-        long db = homePageDAO.getStatisticalByDateType(time,SystemStatistical.DB_TOTAL.getCode());
+        switch (systemStatistical) {
+            case DB_TOTAL: {
+                long aLong = metaspaceGremlinService.getDBTotal().get(0);
+                switchCase(startDate, list, statisticalByDateType, map, aLong);
+                break;
+            }
+            case TB_TOTAL: {
+                long aLong = metaspaceGremlinService.getTBTotal().get(0);
+                switchCase(startDate, list, statisticalByDateType, map, aLong);
+                break;
+            }
+            case BUSINESS_TOTAL: {
+                long aLong = homePageDAO.getBusinessCount();
+                switchCase(startDate, list, statisticalByDateType, map, aLong);
+                break;
+            }
+            case BUSINESSE_ADD: {
+                long aLong = homePageDAO.getBusinessCount();
+                switchCase(startDate, list, statisticalByDateType, map, aLong);
+                break;
+            }
+            case BUSINESSE_NO_ADD: {
+                long aLong = homePageDAO.getBusinessCount();
+                switchCase(startDate, list, statisticalByDateType, map, aLong);
+                break;
+            }
+        }
+        data.add(list);
+        brokenLine.setData(data);
+        brokenLine.setDate(dates);
+        brokenLine.setName(names);
     }
-    public BrokenLine getTBTotals() {
-        long time = DateUtils.getYestoday().getTime();
-        long tb = homePageDAO.getStatisticalByDateType(time,SystemStatistical.TB_TOTAL.getCode());
+
+    private void switchCase(long startDate, ArrayList<Long> list, List<DateStatistical> statisticalByDateType, Map<String, Long> map, Long aLong) throws AtlasBaseException {
+        try {
+            list.add(aLong);
+        } catch (Exception e) {
+            if (statisticalByDateType.size() != 0)
+                list.add(getYesterdayStatistical(map, DateUtils.getToday().getTime(), startDate));
+            else
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取统计信息失败");
+        }
+        return;
+    }
+
+    private long getYesterdayStatistical(Map<String, Long> statisticalByDateType, long date, long startTime) {
+        long statistical = 0;
+        while (statistical == 0 && date >= startTime) {
+            date = DateUtils.getlast(date).getTime();
+            String time = DateUtils.getDate(date);
+            if (statisticalByDateType.containsKey(time)) {
+                return statisticalByDateType.get(time);
+            }
+        }
+        return statistical;
+    }
+
+    public BrokenLine getTBTotals() throws AtlasBaseException {
+        BrokenLine brokenLine = new BrokenLine();
+        addBrokenLine(brokenLine, SystemStatistical.TB_TOTAL);
+        return brokenLine;
+    }
+
+    public BrokenLine getBusinessTotals() throws AtlasBaseException {
+        BrokenLine brokenLine = new BrokenLine();
+        addBrokenLine(brokenLine, SystemStatistical.BUSINESS_TOTAL);
+        addBrokenLine(brokenLine, SystemStatistical.BUSINESSE_ADD);
+        addBrokenLine(brokenLine, SystemStatistical.BUSINESSE_NO_ADD);
+        return brokenLine;
+    }
+
+    public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<TableUseInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<TableUseInfo> tableList = homePageDAO.getTableRelatedInfo(limit, offset);
+            long total = homePageDAO.getTotalTableUserTimes();
+            DecimalFormat df = new DecimalFormat("0.00");
+            tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes() / total))));
+            long sum = homePageDAO.getCountBusinessRelatedTable();
+
+            pageResult.setLists(tableList);
+            pageResult.setCount(tableList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<RoleUseInfo> getRoleRelatedInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<RoleUseInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<RoleUseInfo> roleList = homePageDAO.getRoleRelatedInfo(limit, offset);
+            //long total = roleList.stream().map(RoleUseInfo::getNumber).reduce(Long::sum).get();
+            long total = homePageDAO.getTotalUserNumber();
+            DecimalFormat df = new DecimalFormat("0.00");
+            roleList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getNumber() / total))));
+            long sum = homePageDAO.getCountRole();
+            pageResult.setLists(roleList);
+            pageResult.setCount(roleList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public List<Role> getAllRole() throws AtlasBaseException {
+        try {
+            return homePageDAO.getAllRole();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<User> getUserListByRoleId(String roleId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<User> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<User> userList = homePageDAO.getUserListByRoleId(roleId, limit, offset);
+            long sum = homePageDAO.getCountUserRelatedRole(roleId);
+            pageResult.setLists(userList);
+            pageResult.setCount(userList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+
+    public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
+        try {
+            List<DataDistribution> dataDistributionList = new ArrayList<>();
+            DataDistribution addedData = new DataDistribution();
+            long addeNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
+            addedData.setName("已补充技术信息");
+            addedData.setValue(addeNumber);
+            dataDistributionList.add(addedData);
+
+            DataDistribution blankData = new DataDistribution();
+            long blankNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.BLANK.code);
+            blankData.setName("未补充技术信息");
+            blankData.setValue(blankNumber);
+            dataDistributionList.add(blankData);
+            return dataDistributionList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
     }
 }

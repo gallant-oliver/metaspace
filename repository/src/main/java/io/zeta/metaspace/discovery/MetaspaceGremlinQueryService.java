@@ -632,5 +632,14 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         tablePageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return tablePageResult;
     }
+    public List<Long> getDBTotal() throws AtlasBaseException {
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        return  (List) graph.executeGremlinScript(String.format(gremlinQuery, ""), false);
+
+    }
+    public List<Long> getTBTotal() throws AtlasBaseException {
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
+        return (List) graph.executeGremlinScript(String.format(countQuery, ""), false);
+    }
 }
 
