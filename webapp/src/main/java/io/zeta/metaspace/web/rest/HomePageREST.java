@@ -10,11 +10,8 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/3/4 9:55
- */
 package io.zeta.metaspace.web.rest;
+
 
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -27,6 +24,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import java.util.List;
@@ -38,6 +36,7 @@ public class HomePageREST {
 
     @Autowired
     private HomePageService homePageService;
+
     /**
      * 获取数据表使用次数与占比topN
      *
@@ -201,4 +200,47 @@ public class HomePageREST {
         homePageService.testProduct(date);
         return "success";
     }
+
+    /*
+     * 获取贴源层系统列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/source/system")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getCategoryRelatedDB(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    /**
+     * 获取贴源层子系统列表
+     *
+     * @param categoryGuid
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/source/system/{systemId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(@PathParam("systemId") String categoryGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getChildCategoryRelatedDB(categoryGuid, parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
 }

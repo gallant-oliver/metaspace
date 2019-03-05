@@ -24,6 +24,8 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
@@ -32,6 +34,7 @@ import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,7 +139,11 @@ public class BusinessService {
     public BusinessInfo getBusinessInfo(String businessId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
-            String userId = AdminUtils.getUserData().getUserId();
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String userId = user.getUserId();
             boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, BUSINESS_MODULE) == 0 ? false:true;
             info.setEditBusiness(editBusiness);
             String categoryGuid = info.getDepartmentId();
@@ -151,7 +158,12 @@ public class BusinessService {
 
     public TechnologyInfo getRelatedTableList(String businessId) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String userId = user.getUserId();
+
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
             //editTechnical
@@ -203,8 +215,11 @@ public class BusinessService {
 
     public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDao.getRoleIdByUserId(userId);
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String businessName = parameters.getQuery();
             businessName = (businessName == null ? "":businessName);
@@ -239,8 +254,11 @@ public class BusinessService {
 
     public PageResult<BusinessInfoHeader> getBusinessListByCondition(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDao.getRoleIdByUserId(userId);
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String status = parameter.getStatus();
             String ticketNumber = parameter.getTicketNumber();
@@ -254,19 +272,21 @@ public class BusinessService {
             int offset = parameter.getOffset();
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-            List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
-            for(BusinessInfoHeader infoHeader : businessInfoList) {
-                String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
-                String path = CategoryRelationUtils.getPath(categoryId);
-                infoHeader.setPath(path + "." + infoHeader.getName());
-                String[] pathArr = path.split("\\.");
-                if(pathArr.length >= 2)
-                    infoHeader.setLevel2Category(pathArr[1]);
+            if(Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
+                List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
+                for (BusinessInfoHeader infoHeader : businessInfoList) {
+                    String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
+                    String path = CategoryRelationUtils.getPath(categoryId);
+                    infoHeader.setPath(path + "." + infoHeader.getName());
+                    String[] pathArr = path.split("\\.");
+                    if (pathArr.length >= 2)
+                        infoHeader.setLevel2Category(pathArr[1]);
+                }
+                pageResult.setLists(businessInfoList);
+                long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
+                pageResult.setSum(businessCount);
+                pageResult.setCount(businessInfoList.size());
             }
-            pageResult.setLists(businessInfoList);
-            long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
-            pageResult.setSum(businessCount);
-            pageResult.setCount(businessInfoList.size());
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");

@@ -48,6 +48,7 @@ public class HomePageService {
     @Autowired
     private MetaspaceGremlinService metaspaceGremlinService;
 
+    private static final String sourceLayerCategoryGuid = "1";
 
     public void statisticsJob() throws AtlasBaseException {
         long yesterday = DateUtils.getYesterday().getTime();
@@ -105,6 +106,7 @@ public class HomePageService {
         addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL);
         return brokenLine;
     }
+
 
     private void addBrokenLine(BrokenLine brokenLine, SystemStatistical systemStatistical) throws AtlasBaseException {
         List<String> dates = brokenLine.getDate() == null ? new ArrayList<>() : brokenLine.getDate();
@@ -207,6 +209,7 @@ public class HomePageService {
         return brokenLine;
     }
 
+
     public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TableUseInfo> pageResult = new PageResult<>();
@@ -271,14 +274,13 @@ public class HomePageService {
         }
     }
 
-
     public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
         try {
             List<DataDistribution> dataDistributionList = new ArrayList<>();
             DataDistribution addedData = new DataDistribution();
-            long addeNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
+            long addedNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
             addedData.setName("已补充技术信息");
-            addedData.setValue(addeNumber);
+            addedData.setValue(addedNumber);
             dataDistributionList.add(addedData);
 
             DataDistribution blankData = new DataDistribution();
@@ -287,6 +289,39 @@ public class HomePageService {
             blankData.setValue(blankNumber);
             dataDistributionList.add(blankData);
             return dataDistributionList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<CategoryDBInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+
+            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, limit, offset);
+            pageResult.setLists(categoryDBInfoList);
+            pageResult.setCount(categoryDBInfoList.size());
+            long sum = homePageDAO.getCountCategory(sourceLayerCategoryGuid);
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(String categoryGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<CategoryDBInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getChildSystemDBCount(categoryGuid, limit, offset);
+            pageResult.setLists(categoryDBInfoList);
+            pageResult.setCount(categoryDBInfoList.size());
+            long sum = homePageDAO.getCountCategory(categoryGuid);
+            pageResult.setSum(sum);
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }

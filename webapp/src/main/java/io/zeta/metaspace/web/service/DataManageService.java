@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.service;
  */
 
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -73,7 +74,10 @@ public class DataManageService {
     public List<RoleModulesCategories.Category> getAll(int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            String roleId = roleDao.getRoleIdByUserId(user.getUserId());
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
             Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(roleId, type);
             Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
             List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
@@ -214,7 +218,11 @@ public class DataManageService {
             if (Objects.nonNull(downBrotherCategoryGuid)) {
                 categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
             }
-            String userId = AdminUtils.getUserData().getUserId();
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String userId = user.getUserId();
             roleDao.deleteRole2categoryByUserId(userId);
             return categoryDao.delete(guid);
         } catch (SQLException e) {
@@ -350,8 +358,11 @@ public class DataManageService {
 
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDao.getRoleIdByUserId(userId);
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if(role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
             String tableName = query.getFilterTableName();
             tableName = (Objects.nonNull(tableName)? tableName: "");
             String tag = query.getTag();
