@@ -90,9 +90,18 @@ public class HomePageService {
             TimeDBTB timeDBTB = new TimeDBTB();
             List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
             List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
+            List<CategoryDBInfo> categoryRelatedDBCount = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, -1, 0);
+            long entityDBTotal=0;
+            long logicDBTotal=0;
+            for (CategoryDBInfo categoryDBInfo : categoryRelatedDBCount) {
+                entityDBTotal+=categoryDBInfo.getEntityDBTotal();
+                logicDBTotal+=categoryDBInfo.getLogicDBTotal();
+            }
             timeDBTB.setDate(date);
             timeDBTB.setDatabaseTotal(dbTotal.get(0));
             timeDBTB.setTableTotal(tbTotal.get(0));
+            timeDBTB.setSourceEntityDBTotal(entityDBTotal);
+            timeDBTB.setSourceLogicDBTotal(logicDBTotal);
             return timeDBTB;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取统计信息失败");
