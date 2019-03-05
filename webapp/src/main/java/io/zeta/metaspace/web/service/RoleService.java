@@ -231,7 +231,7 @@ private UsersService usersService;
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if (moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+        if ((!businessCategories.isEmpty())&&moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())&&businessCategories.size()>0) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 if (businessCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
@@ -242,7 +242,7 @@ private UsersService usersService;
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
-        if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
+        if ((!technicalCategories.isEmpty())&&moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())&&technicalCategories.size()>0) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 if (technicalCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);

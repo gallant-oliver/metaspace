@@ -80,11 +80,13 @@ public class SchedulerConfig {
         if (scheduler.getJobDetail(jobKey) == null) {
             LOG.info("添加统计信息任务");
             JobDetail jobDetail = JobBuilder.newJob(StatisticsJob.class).withIdentity("统计信息任务", "元数据分析").build();
+            JobDetail homeJobDetail = JobBuilder.newJob(HomeStatisticsJob.class).withIdentity("首页统计信息任务", "系统数据分析").build();
             TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
             triggerBuilder.withIdentity("统计信息调度器", "元数据分析");
             triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 * * ?"));
             Trigger trigger = triggerBuilder.build();
             scheduler.scheduleJob(jobDetail, trigger);
+            scheduler.scheduleJob(homeJobDetail, trigger);
         } else {
             LOG.info("统计信息任务已添加");
         }

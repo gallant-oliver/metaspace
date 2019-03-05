@@ -16,10 +16,72 @@
  */
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.homepage.BrokenLine;
+import io.zeta.metaspace.model.homepage.TimeDBTB;
+import io.zeta.metaspace.web.service.HomePageService;
+import org.apache.atlas.web.util.Servlets;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.inject.Singleton;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 9:55
  */
+@Path("home")
+@Singleton
 public class HomePageREST {
+    @Autowired
+    HomePageService homePageService;
+    /**
+     * 获取时间和总量
+     *
+     * @return List<Database>
+     */
+    @GET
+    @Path("/total")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TimeDBTB getTimeDbTb() {
+
+    }
+
+    /**
+     * 获取数据库数量趋势
+     *
+     * @return List<Database>
+     */
+    @GET
+    @Path("/total")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public BrokenLine getDBTotals() {
+
+    }
+
+    /**
+     * 获取数据表数量趋势
+     *
+     * @return List<Database>
+     */
+    @GET
+    @Path("/total")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public BrokenLine getTBTotals() {
+
+    }
+
+    /**
+     * 获取业务对象数量趋势
+     *
+     * @return List<Database>
+     */
+    @GET
+    @Path("/total")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public BrokenLine getBusinessTotals() {
+
+    }
 }
