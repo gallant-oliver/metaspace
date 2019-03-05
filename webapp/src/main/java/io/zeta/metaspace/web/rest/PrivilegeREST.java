@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeHeader;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.service.PrivilegeService;
@@ -201,4 +202,17 @@ public class PrivilegeREST {
             throw e;
         }
     }
+
+    @POST
+    @Path("/roles")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Role> getPrivilegeInfo(Parameters parameters) throws AtlasBaseException {
+        try {
+            return privilegeService.getAllPermissionRole(parameters);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
 }

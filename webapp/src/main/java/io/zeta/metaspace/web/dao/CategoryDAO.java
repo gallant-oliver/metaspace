@@ -40,8 +40,8 @@ import javax.ws.rs.DELETE;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType)" +
-            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType})")
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level)" +
+            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType},#{level})")
     public int add(CategoryEntityV2 category);
 
     @Select("select * from category where categoryType=#{categoryType}")
@@ -132,4 +132,7 @@ public interface CategoryDAO {
 
     @Select("select guid from category where categoryType=#{categoryType}")
     public List<String> getAllCategory(@Param("categoryType")int categoryType);
+
+    @Select("select level from category where guid=#{guid}")
+    public int getCategoryLevel(@Param("guid")String guid);
 }
