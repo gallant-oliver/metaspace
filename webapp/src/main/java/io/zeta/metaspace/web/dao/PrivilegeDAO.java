@@ -111,4 +111,16 @@ public interface PrivilegeDAO {
 
     @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId})) and moduleId=#{moduleId}")
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
+
+    @Select({" <script>",
+             " select * from role where edit=1 order by roleId",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);
+
+    @Select("select count(*) from role where edit=1")
+    public long getCountAllPermissionRole();
 }

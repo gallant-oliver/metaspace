@@ -199,4 +199,20 @@ public class PrivilegeService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限模板详情失败");
         }
     }
+
+    public PageResult<Role> getAllPermissionRole(Parameters parameters) throws AtlasBaseException {
+        try {
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            PageResult<Role> pageResult = new PageResult<>();
+            List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
+            long sum = privilegeDAO.getCountAllPermissionRole();
+            pageResult.setLists(roleList);
+            pageResult.setCount(roleList.size());
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
 }
