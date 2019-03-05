@@ -174,6 +174,13 @@ public class HomePageREST {
         }
     }
 
+    /**
+     * 获取贴源层子系统列表
+     * @param categoryGuid
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/source/system/{systemId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

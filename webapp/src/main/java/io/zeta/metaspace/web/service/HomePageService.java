@@ -46,6 +46,8 @@ public class HomePageService {
     @Autowired
     HomePageDAO homePageDAO;
 
+    private static final String sourceLayerCategoryGuid = "1";
+
 
     public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
         try {
@@ -137,12 +139,11 @@ public class HomePageService {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-            String sourceLayerCategoryGudi = "df00c2be-fe48-4b9b-9276-95861c2632ae";
 
-            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGudi, limit, offset);
+            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, limit, offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCount(categoryDBInfoList.size());
-            long sum = homePageDAO.getCountCategory(sourceLayerCategoryGudi);
+            long sum = homePageDAO.getCountCategory(sourceLayerCategoryGuid);
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
