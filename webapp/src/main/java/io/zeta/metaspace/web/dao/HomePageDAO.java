@@ -111,6 +111,16 @@ public interface HomePageDAO {
     public List<CategoryDBInfo> getCategoryRelatedDBCount(@Param("guid")String guid, @Param("limit")int limit, @Param("offset")int offset);
 
     @Select("select count(*) from category where parentCategoryGuid=#{guid}")
-    public long getCountLevel2Category(@Param("guid")String guid);
+    public long getCountCategory(@Param("guid")String guid);
+
+    @Select({" <script>",
+             " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid}) A on B.parentCategoryGuid=A.guid GROUP BY A.guid,A.name",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<CategoryDBInfo> getChildSystemDBCount(@Param("guid")String guid, @Param("limit")int limit, @Param("offset")int offset);
+
 
 }

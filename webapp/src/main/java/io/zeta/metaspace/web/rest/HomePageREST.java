@@ -170,7 +170,21 @@ public class HomePageREST {
         }  catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    @POST
+    @Path("/source/system/{systemId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(@PathParam("systemId") String categoryGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return homePageService.getChildCategoryRelatedDB(categoryGuid, parameters);
+        }  catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 

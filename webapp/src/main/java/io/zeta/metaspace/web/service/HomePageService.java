@@ -142,7 +142,24 @@ public class HomePageService {
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGudi, limit, offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCount(categoryDBInfoList.size());
-            long sum = homePageDAO.getCountLevel2Category(sourceLayerCategoryGudi);
+            long sum = homePageDAO.getCountCategory(sourceLayerCategoryGudi);
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(String categoryGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<CategoryDBInfo> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+
+            List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getChildSystemDBCount(categoryGuid, limit, offset);
+            pageResult.setLists(categoryDBInfoList);
+            pageResult.setCount(categoryDBInfoList.size());
+            long sum = homePageDAO.getCountCategory(categoryGuid);
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
