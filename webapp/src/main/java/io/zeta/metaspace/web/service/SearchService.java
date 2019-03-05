@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.RoleDAO;
@@ -46,7 +47,10 @@ public class SearchService {
     @Transactional
     public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters,String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
-        String roleId = roleDAO.getRoleIdByUserId(user.getUserId());
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if(role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
         RoleModulesCategories.Category category = roleDAO.getCategoryByGuid(categoryId);
         if(SystemRole.ADMIN.getCode().equals(roleId)&&(category.getParentCategoryGuid()==null||category.getParentCategoryGuid().equals(""))) {
             int limit = parameters.getLimit();
@@ -105,7 +109,10 @@ public class SearchService {
     @Transactional
     public PageResult<Table> getTechnicalTablePageResult(Parameters parameters,String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
-        String roleId = roleDAO.getRoleIdByUserId(user.getUserId());
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if(role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
         RoleModulesCategories.Category category = roleDAO.getCategoryByGuid(categoryId);
         if(SystemRole.ADMIN.getCode().equals(roleId)&&(category.getParentCategoryGuid()==null||category.getParentCategoryGuid().equals(""))) {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());

@@ -160,6 +160,8 @@ public class UsersService {
         Item item = new Item();
         String userId = AdminUtils.getUserData().getUserId();
         Role roleByUserId = userDAO.getRoleByUserId(userId);
+        if(roleByUserId.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         List<Module> modules = userDAO.getModuleByUserId(userId);
         item.setRole(roleByUserId);
         item.setModules(modules);

@@ -116,7 +116,11 @@ private UsersService usersService;
     @Transactional
     public RoleModulesCategories getPrivileges(String roleId) throws AtlasBaseException {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
-        String userId = AdminUtils.getUserData().getUserId();
+        User user = AdminUtils.getUserData();
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if(role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String userId = user.getUserId();
         String userRoleId = roleDAO.getRoleIdByUserId(userId);
 
         PrivilegeInfo privilege = roleDAO.getPrivilegeByRoleId(roleId);

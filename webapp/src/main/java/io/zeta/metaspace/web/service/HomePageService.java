@@ -113,14 +113,13 @@ public class HomePageService {
         }
     }
 
-
     public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
         try {
             List<DataDistribution> dataDistributionList = new ArrayList<>();
             DataDistribution addedData = new DataDistribution();
-            long addeNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
+            long addedNumber = homePageDAO.getTechnicalStatusNumber(TechnicalStatus.ADDED.code);
             addedData.setName("已补充技术信息");
-            addedData.setValue(addeNumber);
+            addedData.setValue(addedNumber);
             dataDistributionList.add(addedData);
 
             DataDistribution blankData = new DataDistribution();
@@ -156,7 +155,6 @@ public class HomePageService {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getChildSystemDBCount(categoryGuid, limit, offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCount(categoryDBInfoList.size());
