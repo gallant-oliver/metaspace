@@ -26,7 +26,7 @@ import javax.ws.rs.QueryParam;
 public class BusinessQueryParameter {
     private String status;
     private String ticketNumber;
-    private String businessName;
+    private String name;
     private String level2CategoryId;
     private String submitter;
     private int offset;
@@ -48,12 +48,12 @@ public class BusinessQueryParameter {
         this.ticketNumber = ticketNumber;
     }
 
-    public String getBusinessName() {
-        return businessName;
+    public String getName() {
+        return name;
     }
 
-    public void setBusinessName(String businessName) {
-        this.businessName = businessName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getLevel2CategoryId() {
