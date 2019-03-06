@@ -153,7 +153,8 @@ public class PrivilegeService {
 
             //module
             privilegeDAO.deleteModule2PrivilegeById(privilegeId);
-            privilegeDAO.addModule2Privilege(privilegeId, moduleIds);
+            if(Objects.nonNull(moduleIds) && moduleIds.size()>0)
+                privilegeDAO.addModule2Privilege(privilegeId, moduleIds);
 
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新权限模板失败");

@@ -85,7 +85,7 @@ public interface PrivilegeDAO {
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select({" <script>",
-             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%'",
+             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%' order by privilegeId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -94,16 +94,16 @@ public interface PrivilegeDAO {
     public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
 
 
-    @Select("select * from role where privilegeId=#{privilegeId}")
+    @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
     public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);
 
     @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%'")
     public long getRolesCount(@Param("query") String query);
 
-    @Select("select * from privilege where privilegeId = #{privilegeId}")
+    @Select("select * from privilege where privilegeId = #{privilegeId} order by privilegeId")
     public PrivilegeInfo getPrivilegeInfo(@Param("privilegeId")String privilegeId);
 
-    @Select("select * from role where privilegeId=#{privilegeId}")
+    @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
     public List<Role> getRelatedRoleWithPrivilege(@Param("privilegeId")String privilegeId);
 
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId=#{privilegeId})")
