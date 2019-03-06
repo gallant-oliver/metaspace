@@ -42,7 +42,7 @@ public class TechnicalREST {
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
     /**
-     * 添加关联表是搜库
+     * 添加关联表时搜库
      *
      * @return List<Database>
      */
