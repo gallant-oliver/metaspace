@@ -58,14 +58,14 @@ public class SearchService {
             String queryDb = parameters.getQuery();
             return metaspaceEntityService.getAllDBAndTable(queryDb, limit, offset);
         } else if(SystemRole.ADMIN.getCode().equals(roleId)){
-            return getDatabaseResult(parameters,categoryId);
+            return getDatabaseResult(parameters,category.getParentCategoryGuid());
         }else{
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             if(categorysByTypeIds.size()>0) {
                 List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
                 for (RoleModulesCategories.Category child : childs) {
                     if (child.getGuid().equals(categoryId)) {
-                        return getDatabaseResult(parameters, categoryId);
+                        return getDatabaseResult(parameters, category.getParentCategoryGuid());
                     }
                 }
             }
@@ -117,7 +117,7 @@ public class SearchService {
         if(SystemRole.ADMIN.getCode().equals(roleId)&&(category.getParentCategoryGuid()==null||category.getParentCategoryGuid().equals(""))) {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         }else if(SystemRole.ADMIN.getCode().equals(roleId)) {
-            PageResult<Table> table = getTableResult(parameters, categoryId);
+            PageResult<Table> table = getTableResult(parameters, category.getParentCategoryGuid());
             return table;
         }else{
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
@@ -125,7 +125,7 @@ public class SearchService {
                 List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
                 for (RoleModulesCategories.Category child : childs) {
                     if (child.getGuid().equals(categoryId)) {
-                        PageResult<Table> table = getTableResult(parameters, categoryId);
+                        PageResult<Table> table = getTableResult(parameters, category.getParentCategoryGuid());
                         return table;
                     }
                 }

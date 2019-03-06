@@ -166,12 +166,12 @@ public class HomePageService {
                 break;
             }
             case BUSINESSE_ADD: {
-                long aLong = homePageDAO.getBusinessCount();
+                long aLong = homePageDAO.getAddedBusinessCount();
                 switchCase(startDate, list, statisticalByDateType, map, aLong);
                 break;
             }
             case BUSINESSE_NO_ADD: {
-                long aLong = homePageDAO.getBusinessCount();
+                long aLong = homePageDAO.getNoAddedBusinessCount();
                 switchCase(startDate, list, statisticalByDateType, map, aLong);
                 break;
             }
