@@ -30,6 +30,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
@@ -84,6 +85,7 @@ public class HomePageService {
 
     }
 
+    @Cacheable(value = "TimeAndDbCache")
     public TimeDBTB getTimeDbTb() throws AtlasBaseException {
         try {
             String date = DateUtils.getDate(DateUtils.getToday().getTime());
@@ -110,6 +112,7 @@ public class HomePageService {
 
     ;
 
+    @Cacheable(value = "DbTotalCache")
     public BrokenLine getDBTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL);
@@ -204,12 +207,14 @@ public class HomePageService {
         return statistical;
     }
 
+    @Cacheable(value = "TbTotalCache")
     public BrokenLine getTBTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.TB_TOTAL);
         return brokenLine;
     }
 
+    @Cacheable(value = "BusinessTotalCache")
     public BrokenLine getBusinessTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.BUSINESS_TOTAL);
@@ -218,7 +223,13 @@ public class HomePageService {
         return brokenLine;
     }
 
-
+    /**
+     * 获取数据表使用次数与占比topN
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "TableUseProportionCache", key = "#parameters.limit + #parameters.offset")
     public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TableUseInfo> pageResult = new PageResult<>();
@@ -239,6 +250,13 @@ public class HomePageService {
         }
     }
 
+    /**
+     * 获取系统角色用户数与占比topN
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "RoleUseProportionCache", key = "#parameters.limit + #parameters.offset")
     public PageResult<RoleUseInfo> getRoleRelatedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<RoleUseInfo> pageResult = new PageResult<>();
@@ -259,6 +277,7 @@ public class HomePageService {
         }
     }
 
+    @Cacheable(value = "RoleCache")
     public List<Role> getAllRole() throws AtlasBaseException {
         try {
             return homePageDAO.getAllRole();
@@ -267,6 +286,7 @@ public class HomePageService {
         }
     }
 
+    @Cacheable(value = "RoleUserListCache", key = "#parameters.limit + #parameters.offset")
     public PageResult<User> getUserListByRoleId(String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<User> pageResult = new PageResult<>();
@@ -283,6 +303,12 @@ public class HomePageService {
         }
     }
 
+    /**
+     * 获取已补充/未补充技术信息的业务对象占比
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "TechnicalSupplementProportionCache")
     public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
         try {
             List<DataDistribution> dataDistributionList = new ArrayList<>();
@@ -303,6 +329,13 @@ public class HomePageService {
         }
     }
 
+    /**
+     * 获取贴源层系统列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "SourceLayerListCache", key = "#parameters.limit + #parameters.offset")
     public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();
@@ -320,6 +353,14 @@ public class HomePageService {
         }
     }
 
+    /**
+     * 获取贴源层子系统列表
+     * @param categoryGuid
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "SourceChildLayerListCache", key = "#categoryGuid + #parameters.limit + #parameters.offset")
     public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(String categoryGuid, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();

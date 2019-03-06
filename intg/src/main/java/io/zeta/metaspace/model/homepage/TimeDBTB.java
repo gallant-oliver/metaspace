@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.homepage;
 
-public class TimeDBTB {
+import java.io.Serializable;
+
+public class TimeDBTB implements Serializable {
     private String date;
     private long databaseTotal;
     private long tableTotal;

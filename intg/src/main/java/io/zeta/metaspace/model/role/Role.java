@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.role;
 
-public class Role {
+import java.io.Serializable;
+
+public class Role implements Serializable {
     private String roleId;
     private String roleName;
     private String description;

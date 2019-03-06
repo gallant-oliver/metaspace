@@ -1,8 +1,9 @@
 package io.zeta.metaspace.model.homepage;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class BrokenLine {
+public class BrokenLine implements Serializable {
     private List<String> date;
     private List<String> name;
     private List<List<Long>> data;

@@ -16,12 +16,14 @@
  */
 package io.zeta.metaspace.model.homepage;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 14:09
  */
-public class RoleUseInfo {
+public class RoleUseInfo implements Serializable {
     private String roleId;
     private String roleName;
     private long number;

@@ -29,6 +29,14 @@
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
 
+  <cache name="databaseCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
   <cache name="tablePageCache"
          maxElementsInMemory="1000"
          eternal="false"
@@ -68,4 +76,93 @@
          timeToIdleSeconds="1200"
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="TableUseProportionCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="RoleUseProportionCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="TechnicalSupplementProportionCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="SourceLayerListCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="SourceChildLayerListCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="TimeAndDbCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="DbTotalCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="TbTotalCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="BusinessTotalCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="RoleUserListCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="RoleCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
 </ehcache>

@@ -16,12 +16,14 @@
  */
 package io.zeta.metaspace.model.homepage;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 10:01
  */
-public class TableUseInfo {
+public class TableUseInfo implements Serializable {
     private String tableGuid;
     private String tableName;
     private long times;

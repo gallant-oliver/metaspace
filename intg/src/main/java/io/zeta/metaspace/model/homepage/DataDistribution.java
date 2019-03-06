@@ -16,12 +16,14 @@
  */
 package io.zeta.metaspace.model.homepage;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/4 16:42
  */
-public class DataDistribution {
+public class DataDistribution implements Serializable {
     private String name;
     private long value;
 
