@@ -88,10 +88,11 @@ public class HomePageService {
     @Cacheable(value = "TimeAndDbCache")
     public TimeDBTB getTimeDbTb() throws AtlasBaseException {
         try {
-            String date = DateUtils.getDate(DateUtils.getToday().getTime());
+            String date = DateUtils.getNow2();
             TimeDBTB timeDBTB = new TimeDBTB();
             List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
             List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
+            long subSystemTotal = homePageDAO.getSubSystemTotal(sourceLayerCategoryGuid);
             List<CategoryDBInfo> categoryRelatedDBCount = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, -1, 0);
             long entityDBTotal=0;
             long logicDBTotal=0;
@@ -102,6 +103,7 @@ public class HomePageService {
             timeDBTB.setDate(date);
             timeDBTB.setDatabaseTotal(dbTotal.get(0));
             timeDBTB.setTableTotal(tbTotal.get(0));
+            timeDBTB.setSubsystemTotal(subSystemTotal);
             timeDBTB.setSourceEntityDBTotal(entityDBTotal);
             timeDBTB.setSourceLogicDBTotal(logicDBTotal);
             return timeDBTB;
@@ -135,12 +137,12 @@ public class HomePageService {
         ArrayList<Long> list = new ArrayList<>();
 
         List<DateStatistical> statisticalByDateType = homePageDAO.getStatisticalByDateType(startDate, endDate, systemStatistical.getCode());
-        Map<String, Long> map = new HashMap<>();
+        Map<Long, Long> map = new HashMap<>();
         for (DateStatistical dateStatistical : statisticalByDateType) {
-            map.put(DateUtils.getDate(dateStatistical.getDate()), dateStatistical.getStatistical());
+            map.put(dateStatistical.getDate(), dateStatistical.getStatistical());
         }
         for (long time = startDate; time < DateUtils.getToday().getTime(); time = DateUtils.getNext(time).getTime()) {
-            String date = DateUtils.getDate(time);
+            long date = time;
             if (map.containsKey(date)) {
                 list.add(map.get(date));
             } else {
@@ -183,7 +185,7 @@ public class HomePageService {
         brokenLine.setName(names);
     }
 
-    private void switchCase(long startDate, ArrayList<Long> list, List<DateStatistical> statisticalByDateType, Map<String, Long> map, Long aLong) throws AtlasBaseException {
+    private void switchCase(long startDate, ArrayList<Long> list, List<DateStatistical> statisticalByDateType, Map<Long, Long> map, Long aLong) throws AtlasBaseException {
         try {
             list.add(aLong);
         } catch (Exception e) {
@@ -195,13 +197,12 @@ public class HomePageService {
         return;
     }
 
-    private long getYesterdayStatistical(Map<String, Long> statisticalByDateType, long date, long startTime) {
+    private long getYesterdayStatistical(Map<Long, Long> statisticalByDateType, long date, long startTime) {
         long statistical = 0;
         while (statistical == 0 && date >= startTime) {
             date = DateUtils.getlast(date).getTime();
-            String time = DateUtils.getDate(date);
-            if (statisticalByDateType.containsKey(time)) {
-                return statisticalByDateType.get(time);
+            if (statisticalByDateType.containsKey(date)) {
+                return statisticalByDateType.get(date);
             }
         }
         return statistical;
