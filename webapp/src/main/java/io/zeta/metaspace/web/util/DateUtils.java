@@ -12,6 +12,12 @@ public class DateUtils {
         return sdf.format(currentTime);
     }
 
+    public static String getNow2() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        long currentTime = System.currentTimeMillis();
+        return sdf.format(currentTime);
+    }
+
     public static Date getToday() {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
@@ -45,7 +51,7 @@ public class DateUtils {
     }
 
     public static String getDate(long date) {
-        return new SimpleDateFormat("yyyy-MM-dd").format(date);
+        return new SimpleDateFormat("MM/dd").format(date);
     }
 
     public static Date getlast(long date) {

@@ -144,4 +144,7 @@ public interface HomePageDAO {
             " </script>"})
     public List<CategoryDBInfo> getChildSystemDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select("select count(1) from category where parentcategoryguid=#{parentGuid}")
+    public long getSubSystemTotal(String parentGuid);
+
 }
