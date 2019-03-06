@@ -32,10 +32,12 @@ public interface RoleDAO {
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
-    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId limit #{limit} offset #{offset}")
+//    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId limit #{limit} offset #{offset}")
+    @Select("select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' order by roleid limit #{limit} offset #{offset}")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId offset #{offset}")
+//    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId offset #{offset}")
+    @Select("select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' order by roleid offset #{offset}")
     public List<Role> getRole(@Param("query") String query, @Param("offset") long offset);
 
     @Select("select count(1) from role where rolename like '%'||#{query}||'%'")
