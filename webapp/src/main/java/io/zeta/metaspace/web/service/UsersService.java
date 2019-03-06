@@ -175,4 +175,8 @@ public class UsersService {
     public String getRoleIdByUserId(String userId) {
         return roleDAO.getRoleIdByUserId(userId);
     }
+
+    public Role getRoleByUserId(String userId){
+        return userDAO.getRoleByUserId(userId);
+    }
 }

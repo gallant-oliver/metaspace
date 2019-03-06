@@ -3,11 +3,13 @@ package io.zeta.metaspace.web.filter;
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -56,6 +58,10 @@ public class PrivilegeFilter implements Filter {
             LOG.warn("查询用户信息失败", e);
             loginSkip(httpServletResponse, "查询用户信息失败");
             return;
+        }
+        Role roleByUserId = usersService.getRoleByUserId(userId);
+        if(roleByUserId.getStatus() == 0){
+            loginSkip(httpServletResponse, "当前用户的角色已被禁用");
         }
         switch (check) {
             case "privilegecheck": {
