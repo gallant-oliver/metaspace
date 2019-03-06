@@ -141,8 +141,6 @@ public class PrivilegeService {
                 }
             }
 
-
-
             String guetPrivigeId = SystemPrivilege.GUEST.getCode();
             //将拥有该privilege的role更新为guet的privilege
             privilegeDAO.deleteRelatedRoleByPrivilegeId(privilegeId, guetPrivigeId);
