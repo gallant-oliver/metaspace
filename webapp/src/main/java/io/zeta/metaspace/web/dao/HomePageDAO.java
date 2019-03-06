@@ -63,8 +63,8 @@ public interface HomePageDAO {
     public long getCountBusinessRelatedTable();
 
     @Select({" <script>",
-            " select role.roleId,role.roleName,count(*) as number from role",
-            " join users on role.roleId=users.roleId group by role.roleId,role.roleName",
+            " select role.roleId,role.roleName,count(users.userId) as number from role",
+            " left join users on role.roleId=users.roleId group by role.roleId,role.roleName",
             " order by number desc",
             " <if test='limit!= -1'>",
             " limit #{limit}",

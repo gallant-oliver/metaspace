@@ -264,7 +264,7 @@ public class BusinessService {
             String status = parameter.getStatus();
             String ticketNumber = parameter.getTicketNumber();
             ticketNumber = (ticketNumber==null ? "":ticketNumber);
-            String businessName = parameter.getBusinessName();
+            String businessName = parameter.getName();
             businessName = (businessName==null ? "":businessName);
             String level2CategoryId = parameter.getLevel2CategoryId();
             String  submitter = parameter.getSubmitter();
