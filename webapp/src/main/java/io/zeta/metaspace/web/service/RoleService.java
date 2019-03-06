@@ -47,6 +47,9 @@ private UsersService usersService;
         role.setCreateTime(now);
         role.setUpdateTime(now);
         role.setStatus(1);
+        role.setDisable(1);
+        role.setEdit(1);
+        role.setDelete(1);
         if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
         }
@@ -132,6 +135,7 @@ private UsersService usersService;
         roleModulesCategories.setBusinessCategories(bcategorys);
         List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
         roleModulesCategories.setTechnicalCategories(tcategorys);
+        roleModulesCategories.setEdit(role.getEdit());
         return roleModulesCategories;
     }
 
@@ -235,7 +239,7 @@ private UsersService usersService;
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if ((!businessCategories.isEmpty())&&moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())&&businessCategories.size()>0) {
+        if (businessCategories!=null&&moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())&&businessCategories.size()>0) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 if (businessCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
@@ -246,7 +250,7 @@ private UsersService usersService;
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
-        if ((!technicalCategories.isEmpty())&&moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())&&technicalCategories.size()>0) {
+        if (technicalCategories!=null&&moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())&&technicalCategories.size()>0) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 if (technicalCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);

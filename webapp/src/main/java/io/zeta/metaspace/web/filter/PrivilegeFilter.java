@@ -60,11 +60,12 @@ public class PrivilegeFilter implements Filter {
             return;
         }
         Role roleByUserId = usersService.getRoleByUserId(userId);
-        if(roleByUserId.getStatus() == 0){
-            loginSkip(httpServletResponse, "当前用户的角色已被禁用");
-        }
         switch (check) {
             case "privilegecheck": {
+                if(roleByUserId.getStatus() == 0){
+                    loginSkip(httpServletResponse, "当前用户的角色已被禁用");
+                    return;
+                }
                 String privilegeType = "";
                 String privilegeGuid = "";
                 try {
@@ -107,6 +108,10 @@ public class PrivilegeFilter implements Filter {
                 break;
             }
             case "technical": {
+                if(roleByUserId.getStatus() == 0){
+                    loginSkip(httpServletResponse, "当前用户的角色已被禁用");
+                    return;
+                }
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
@@ -119,6 +124,10 @@ public class PrivilegeFilter implements Filter {
                 break;
             }
             case "businesses": {
+                if(roleByUserId.getStatus() == 0){
+                    loginSkip(httpServletResponse, "当前用户的角色已被禁用");
+                    return;
+                }
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
@@ -131,6 +140,10 @@ public class PrivilegeFilter implements Filter {
                 break;
             }
             case "businessManage": {
+                if(roleByUserId.getStatus() == 0){
+                    loginSkip(httpServletResponse, "当前用户的角色已被禁用");
+                    return;
+                }
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
@@ -144,6 +157,10 @@ public class PrivilegeFilter implements Filter {
             }
             case "role":
             case "privilege": {
+                if(roleByUserId.getStatus() == 0){
+                    loginSkip(httpServletResponse, "当前用户的角色已被禁用");
+                    return;
+                }
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {

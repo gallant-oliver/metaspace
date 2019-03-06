@@ -9,6 +9,15 @@ public class RoleModulesCategories {
     private List<Category> technicalCategories;
     private List<Category> businessCategories;
     private PrivilegeInfo privilege;
+    private int edit;
+
+    public int getEdit() {
+        return edit;
+    }
+
+    public void setEdit(int edit) {
+        this.edit = edit;
+    }
 
     public List<Category> getTechnicalCategories() {
         return technicalCategories;
