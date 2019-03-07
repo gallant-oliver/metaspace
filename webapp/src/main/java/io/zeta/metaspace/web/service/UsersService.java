@@ -141,8 +141,8 @@ public class UsersService {
 
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
-            userPageResult.setCount(userCount);
-            userPageResult.setSum(userList.size());
+            userPageResult.setCount(userList.size());
+            userPageResult.setSum(userCount);
             return userPageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
