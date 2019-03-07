@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.homepage.RoleUseInfo;
 import io.zeta.metaspace.model.homepage.TableUseInfo;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -147,4 +148,6 @@ public interface HomePageDAO {
     @Select("select count(1) from category where parentcategoryguid=#{parentGuid}")
     public long getSubSystemTotal(String parentGuid);
 
+    @Delete("delete  from statistical where date=#{date} ")
+    public int deleteStatistical(long date);
 }

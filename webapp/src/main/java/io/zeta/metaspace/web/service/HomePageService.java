@@ -57,6 +57,7 @@ public class HomePageService {
     }
 
     private void product(long date) throws AtlasBaseException {
+        homePageDAO.deleteStatistical(date);
         List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
         List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
         long businessCount = homePageDAO.getBusinessCount();

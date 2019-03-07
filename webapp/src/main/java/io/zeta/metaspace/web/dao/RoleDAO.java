@@ -33,7 +33,7 @@ public interface RoleDAO {
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
 //    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId limit #{limit} offset #{offset}")
-    @Select("select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' order by roleid limit #{limit} offset #{offset}")
+    @Select("select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' order by roleid limit #{limit} offset #{offset}")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
 //    @Select("select DISTINCT aa.*,COUNT(1) OVER (PARTITION BY aa.roleid) members from (select role.*,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ) aa left join users on  aa.roleid=users.roleid order by roleId offset #{offset}")
