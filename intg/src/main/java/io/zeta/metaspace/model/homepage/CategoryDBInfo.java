@@ -16,12 +16,14 @@
  */
 package io.zeta.metaspace.model.homepage;
 
+import java.io.Serializable;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/5 11:01
  */
-public class CategoryDBInfo {
+public class CategoryDBInfo implements Serializable {
     private String guid;
     private String name;
     private long logicDBTotal;
