@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 
@@ -78,6 +79,38 @@ public class CategoryRelationUtils {
             return path;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
+        }
+    }
+
+    public static void cleanInvalidBrother(List<RoleModulesCategories.Category> valueList) {
+        for (RoleModulesCategories.Category currentCategory : valueList) {
+            String upBrotherCategoryGuid = currentCategory.getUpBrotherCategoryGuid();
+            String downBrotherCategoryGuid = currentCategory.getDownBrotherCategoryGuid();
+            boolean hasUpBrother = false;
+            boolean hasDownBrother = false;
+            for (RoleModulesCategories.Category brotherCategory : valueList) {
+                String guid = brotherCategory.getGuid();
+                if (Objects.nonNull(upBrotherCategoryGuid)) {
+                    if (guid.equals(upBrotherCategoryGuid)) {
+                        hasUpBrother = true;
+                    }
+                }
+                if (Objects.nonNull(downBrotherCategoryGuid)) {
+                    if (guid.equals(downBrotherCategoryGuid)) {
+                        hasDownBrother = true;
+                        if (hasUpBrother && hasDownBrother) {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!hasUpBrother && Objects.nonNull(currentCategory.getUpBrotherCategoryGuid())) {
+                currentCategory.setUpBrotherCategoryGuid(null);
+            }
+            if (!hasDownBrother && Objects.nonNull(currentCategory.getDownBrotherCategoryGuid())) {
+                currentCategory.setDownBrotherCategoryGuid(null);
+            }
+
         }
     }
 }

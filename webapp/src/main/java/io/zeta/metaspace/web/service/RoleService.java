@@ -132,6 +132,7 @@ private UsersService usersService;
 
         roleModulesCategories.setPrivilege(privilege);
         List<RoleModulesCategories.Category> bcategorys = getCategorys(roleId, userRoleId, 1);
+
         roleModulesCategories.setBusinessCategories(bcategorys);
         List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
         roleModulesCategories.setTechnicalCategories(tcategorys);
@@ -171,7 +172,10 @@ private UsersService usersService;
                 result.put(key, value);
             }
         }
-        return new ArrayList<>(result.values());
+
+        List<RoleModulesCategories.Category> resultList =  new ArrayList<>(result.values());
+        CategoryRelationUtils.cleanInvalidBrother(resultList);
+        return resultList;
     }
 
     @Transactional

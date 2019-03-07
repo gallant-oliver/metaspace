@@ -81,6 +81,8 @@ public class DataManageService {
             Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(roleId, type);
             Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
             List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+
+            CategoryRelationUtils.cleanInvalidBrother(valueList);
             return valueList;
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
