@@ -59,6 +59,8 @@ public class RoleModulesCategories {
             this.parentCategoryGuid = category.parentCategoryGuid;
             this.upBrotherCategoryGuid = category.upBrotherCategoryGuid;
             this.downBrotherCategoryGuid = category.downBrotherCategoryGuid;
+            this.relate = category.relate;
+            this.description = category.description;
         }
 
         @Override
