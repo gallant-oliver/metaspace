@@ -83,6 +83,8 @@ public class DataManageService {
             List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
 
             CategoryRelationUtils.cleanInvalidBrother(valueList);
+
+
             return valueList;
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -90,6 +92,7 @@ public class DataManageService {
             throw e;
         }
     }
+
 
     /**
      * 创建业务目录
@@ -119,6 +122,11 @@ public class DataManageService {
 
             //创建第一个目录
             if(Objects.isNull(currentCategoryGuid)) {
+                User user = AdminUtils.getUserData();
+                Role role = roleDao.getRoleByUsersId(user.getUserId());
+                if("1".equals(role.getRoleId())) {
+                    throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
+                }
                 //qualifiedName
                 qualifiedName.append(name);
                 entity.setQualifiedName(qualifiedName.toString());

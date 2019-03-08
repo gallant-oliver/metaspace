@@ -103,6 +103,8 @@ public enum AtlasErrorCode {
     INVALID_QUERY_PARAM_LENGTH(400, "METASPACE-400-00-057", " 查询参数{0}的长度超过限制"),
     INVALID_QUERY_LENGTH(400, "METASPACE-400-00-058", " 查询长度无效,更新{0}以更改限制"),
 
+    PERMISSION_DENIED(401, "METASPACE-400-00-001", " {0}"),
+
     // DSL related error codes
     INVALID_DSL_QUERY(400, "METASPACE-400-00-059", " 无效的DSL查询:{0}|原因:{1},请参考METASPACE DSL语法"),
     INVALID_DSL_GROUPBY(400, "METASPACE-400-00-05A", " DSL语义错误——GroupBy属性{0}是非原始的"),
@@ -213,6 +215,8 @@ public enum AtlasErrorCode {
     CONF_LOAD_ERROE(500, "METASPACE-506-00-001", " 服务器配置错误: {0}"),
     SSO_CHECK_ERROE(500,"METASPACE-401-00-001","SSO异常,请重新登录"),
     SSO_USER_ERROE(500,"METASPACE-401-00-002","SSO异常,用户名为空");
+
+
 
     private String errorCode;
     private String errorMessage;

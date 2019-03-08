@@ -92,7 +92,9 @@ public class DataQualityService {
                 qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
             }
 
-        } catch (SQLException e) {
+        }  catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }
