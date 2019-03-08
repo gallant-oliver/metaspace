@@ -53,6 +53,11 @@ public interface RoleDAO {
             "</script>"})
     public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds);
 
+    //添加成员&更换一个角色的成员的角色
+    //@Update("update user set roleid=#{roleId} where userid in ")
+    @Update("update users set roleid=#{roleId} where userid in (select userid from users where roleid=#{oldRoleId})")
+    public int updateUsersByRoleId(@Param("roleId") String roleId, @Param("oldRoleId") String oldRoleId);
+
     //移除成员&更换角色
     @Update("update users set roleid=#{roleId} where userid=#{userId}")
     public int updateUser(@Param("roleId") String roleId, @Param("userId") String userId);

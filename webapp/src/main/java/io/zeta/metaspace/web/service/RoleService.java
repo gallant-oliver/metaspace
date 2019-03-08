@@ -33,8 +33,8 @@ public class RoleService {
     private PrivilegeDAO privilegeDAO;
     @Autowired
     private RoleService roleService;
-@Autowired
-private UsersService usersService;
+    @Autowired
+    private UsersService usersService;
 
     @Bean(name = "getRoleService")
     public RoleService getRoleService() {
@@ -43,7 +43,7 @@ private UsersService usersService;
 
     public String addRole(Role role) throws AtlasBaseException {
         String now = DateUtils.getNow();
-        role.setRoleId(UUID.randomUUID().toString());
+        role.setRoleId("m" + UUID.randomUUID().toString());
         role.setCreateTime(now);
         role.setUpdateTime(now);
         role.setStatus(1);
@@ -63,9 +63,11 @@ private UsersService usersService;
         return "success";
     }
 
+    @Transactional
     public String deleteRole(String roleId) throws AtlasBaseException {
         roleDAO.deleteRole(roleId);
         roleDAO.deleteRole2category(roleId);
+        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
         return "success";
     }
 
@@ -105,14 +107,14 @@ private UsersService usersService;
     }
 
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
-        if(users.size()>0)
-        roleDAO.updateUsers(roleId, users);
+        if (users.size() > 0)
+            roleDAO.updateUsers(roleId, users);
         return "success";
     }
 
     public String removeUser(List<String> users) throws AtlasBaseException {
-        if(users.size()>0)
-        roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+        if (users.size() > 0)
+            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
         return "success";
     }
 
@@ -121,7 +123,7 @@ private UsersService usersService;
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
         User user = AdminUtils.getUserData();
         Role role = roleDAO.getRoleByUsersId(user.getUserId());
-        if(role.getStatus() == 0)
+        if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String userId = user.getUserId();
         String userRoleId = roleDAO.getRoleIdByUserId(userId);
@@ -173,7 +175,7 @@ private UsersService usersService;
             }
         }
 
-        List<RoleModulesCategories.Category> resultList =  new ArrayList<>(result.values());
+        List<RoleModulesCategories.Category> resultList = new ArrayList<>(result.values());
         CategoryRelationUtils.cleanInvalidBrother(resultList);
         return resultList;
     }
@@ -183,7 +185,7 @@ private UsersService usersService;
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            setMap(categorys, allCategorys,1,false);
+            setMap(categorys, allCategorys, 1, false);
         } else {
             List<String> businessCategories = roleDAO.getCategorysByTypeIds(roleId, categorytype);
             if (businessCategories.size() > 0) {
@@ -191,15 +193,15 @@ private UsersService usersService;
                 List<RoleModulesCategories.Category> parentCategorys = roleDAO.getParentCategorys(businessCategories, categorytype);
                 List<RoleModulesCategories.Category> privilegeCategorys = roleDAO.getCategorysByType(roleId, categorytype);
                 //得到角色的带权限的目录树
-                setMap(categorys, childCategorys,1,false);
-                setMap(categorys, parentCategorys,0,false);
-                setMap(categorys, privilegeCategorys,1,false);
+                setMap(categorys, childCategorys, 1, false);
+                setMap(categorys, parentCategorys, 0, false);
+                setMap(categorys, privilegeCategorys, 1, false);
             }
         }
         return categorys;
     }
 
-    private void setMap(Map<String, RoleModulesCategories.Category> categorys, List<RoleModulesCategories.Category> allCategorys,int status,boolean show) {
+    private void setMap(Map<String, RoleModulesCategories.Category> categorys, List<RoleModulesCategories.Category> allCategorys, int status, boolean show) {
         for (RoleModulesCategories.Category allCategory : allCategorys) {
             RoleModulesCategories.Category category = new RoleModulesCategories.Category(allCategory);
             category.setStatus(status);
@@ -213,7 +215,7 @@ private UsersService usersService;
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            setMap(userCategorys, allCategorys,0,true);
+            setMap(userCategorys, allCategorys, 0, true);
         } else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
             if (userBusinessCategories.size() > 0) {
@@ -221,9 +223,9 @@ private UsersService usersService;
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
                 //得到用户的带权限的目录树
-                setMap(userCategorys, userChildCategorys,0,true);
-                setMap(userCategorys, userParentCategorys,0,false);
-                setMap(userCategorys, userPrivilegeCategorys,0,true);
+                setMap(userCategorys, userChildCategorys, 0, true);
+                setMap(userCategorys, userParentCategorys, 0, false);
+                setMap(userCategorys, userPrivilegeCategorys, 0, true);
             }
         }
         return userCategorys;
@@ -243,7 +245,7 @@ private UsersService usersService;
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if (businessCategories!=null&&moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())&&businessCategories.size()>0) {
+        if (businessCategories != null && moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && businessCategories.size() > 0) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 if (businessCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
@@ -254,7 +256,7 @@ private UsersService usersService;
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
             }
         }
-        if (technicalCategories!=null&&moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode())&&technicalCategories.size()>0) {
+        if (technicalCategories != null && moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
             for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                 if (technicalCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
@@ -269,15 +271,16 @@ private UsersService usersService;
         return "success";
     }
 
-    public PageResult<User> getAllUsers(Parameters parameters,String roleId) throws AtlasBaseException {
-        PageResult<User> userList = usersService.getUserList(parameters);
+    public PageResult<User> getAllUsers(Parameters parameters, String roleId) throws AtlasBaseException {
+        PageResult<User> userList = usersService.getUserListFilterAdmin(parameters);
         List<User> lists = userList.getLists();
         for (User user : lists) {
-            if(user.getRoleId().equals(roleId)) user.setStatus(1);
+            if (user.getRoleId().equals(roleId)) user.setStatus(1);
         }
-                return userList;
+        return userList;
     }
-    public Role getRoleIdBYUserId(String userId){
+
+    public Role getRoleIdBYUserId(String userId) {
         return roleDAO.getRoleByUsersId(userId);
     }
 }

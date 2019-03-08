@@ -51,6 +51,10 @@ public interface UserDAO {
              " </script>"})
     public List<User> getUserList(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' and role.roleid!='1' <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
+    public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
+
+
     @Select("select count(1) from users where username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("query") String query);
 
