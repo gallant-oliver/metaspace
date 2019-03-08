@@ -250,7 +250,7 @@ public class QuartJob implements Job {
 
             Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double valueChange = Math.abs(nowValue - lastValue);
+            double valueChange = Math.abs(nowValue - lastValue);
             if (record) {
                 recordDataMap(rule, nowValue, valueChange);
             }
@@ -268,7 +268,7 @@ public class QuartJob implements Job {
             String templateRuleId = rule.getRuleId();
             Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double ratio = null;
+            double ratio = 0;
             if (lastValue != 0) {
                 ratio = ruleValueChange / lastValue;
             }
@@ -307,9 +307,9 @@ public class QuartJob implements Job {
             String templateRuleId = rule.getRuleId();
             Double lastValue = qualityDao.getLastValue(templateId, templateRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
-            Double sizeChange = Math.abs(tableSize - lastValue);
+            double sizeChange = Math.abs(tableSize - lastValue);
             if (record) {
-                recordDataMap(rule, (double) tableSize, (double) sizeChange);
+                recordDataMap(rule, (double) tableSize, sizeChange);
             }
             return sizeChange;
         } catch (Exception e) {
@@ -319,10 +319,11 @@ public class QuartJob implements Job {
 
     //表大小变化率
     public double tableSizeChangeRatio(UserRule rule, boolean record) throws AtlasBaseException {
-        Double tableSizeChange = tableSizeChange(rule, record);
+        Double tableSizeChange = tableSizeChange(rule, false);
         String templateId = rule.getTemplateId();
         String templateRuleId = rule.getRuleId();
-        double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+        Double lastValue = qualityDao.getLastTableRowNum(templateId, templateRuleId);
+        lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
         double ratio = 0;
         if (lastValue != 0) {
             ratio = tableSizeChange / lastValue;
