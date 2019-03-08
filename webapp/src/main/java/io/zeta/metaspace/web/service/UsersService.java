@@ -52,7 +52,11 @@ public class UsersService {
             user.setUserId(userId);
             user.setAccount(account);
             user.setUsername(displayName);
-            user.setRoleId(SystemRole.GUEST.getCode());
+            if (user.getUsername().equals("msadmin")) {
+                user.setRoleId(SystemRole.ADMIN.getCode());
+            } else {
+                user.setRoleId(SystemRole.GUEST.getCode());
+            }
             userDAO.addUser(user);
         }
     }
@@ -132,13 +136,7 @@ public class UsersService {
         int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
-            List<User> userList = null;
-            if (-1 == limit) {
-                userList = userDAO.getUserList(query, offset);
-            } else {
-                userList = userDAO.getUserListWithLimit(query, limit, offset);
-            }
-
+            List<User> userList = userDAO.getUserList(query, offset, limit);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
             userPageResult.setCount(userList.size());
@@ -160,7 +158,7 @@ public class UsersService {
         Item item = new Item();
         String userId = AdminUtils.getUserData().getUserId();
         Role roleByUserId = userDAO.getRoleByUserId(userId);
-        if(roleByUserId.getStatus() == 0){
+        if (roleByUserId.getStatus() == 0) {
             item.setModules(new ArrayList<>());
             item.setRole(roleByUserId);
             return item;
@@ -179,7 +177,26 @@ public class UsersService {
         return roleDAO.getRoleIdByUserId(userId);
     }
 
-    public Role getRoleByUserId(String userId){
+    public Role getRoleByUserId(String userId) {
         return userDAO.getRoleByUserId(userId);
+    }
+
+    public PageResult<User> getUserListFilterAdmin(Parameters parameters) throws AtlasBaseException {
+
+        String query = parameters.getQuery();
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        try {
+            PageResult<User> userPageResult = new PageResult<>();
+            List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
+            userPageResult.setLists(userList);
+            long userCount = userDAO.getUsersCount(query);
+            userPageResult.setCount(userList.size());
+            userPageResult.setSum(userCount);
+            return userPageResult;
+        } catch (Exception e) {
+            LOG.error("获取成员失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取成员失败");
+        }
     }
 }
