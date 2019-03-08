@@ -133,12 +133,7 @@ public class UsersService {
         try {
             PageResult<User> userPageResult = new PageResult<>();
             List<User> userList = null;
-            if (-1 == limit) {
-                userList = userDAO.getUserList(query, offset);
-            } else {
-                userList = userDAO.getUserListWithLimit(query, limit, offset);
-            }
-
+            userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
             userPageResult.setCount(userList.size());

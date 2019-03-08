@@ -33,11 +33,15 @@ public interface UserDAO {
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId in (select privilegeId from role where roleId=#{roleId}))")
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
-    @Select("select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' limit #{limit} offset #{offset}")
-    public List<User> getUserListWithLimit(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
-
-    @Select("select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' offset #{offset}")
-    public List<User> getUserList(@Param("username") String query,@Param("offset") int offset);
+    @Select({"<script>",
+             "select users.*,role.roleName from users join role on users.roleId = role.roleId",
+             "where  username like '%${username}%' or account like '%${username}%'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<User> getUserList(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("select count(1) from users where username like '%'||#{query}||'%'")
     public long getUsersCount(@Param("query") String query);
