@@ -49,6 +49,9 @@ public class RoleModulesCategories {
         private String upBrotherCategoryGuid;
         private String downBrotherCategoryGuid;
         private int status;
+        private boolean relate;
+        private String description;
+
         public Category(){}
         public Category(Category category) {
             this.guid = category.guid;
@@ -129,6 +132,20 @@ public class RoleModulesCategories {
             this.show = show;
         }
 
+        public boolean isRelate() {
+            return relate;
+        }
 
+        public void setRelate(boolean relate) {
+            this.relate = relate;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
     }
 }
