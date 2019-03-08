@@ -84,11 +84,6 @@ public class RoleREST {
     @Path("/{roleId}")
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
-            SystemRole[] values = SystemRole.values();
-            for (SystemRole value : values) {
-                if(roleId.equals(value.getCode()))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"系统角色不允许删除");
-            }
             return roleService.deleteRole(roleId);
         }
         catch(AtlasBaseException e){
