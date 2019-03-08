@@ -233,7 +233,7 @@ public class DataManageService {
             if(role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String userId = user.getUserId();
-            roleDao.deleteRole2categoryByUserId(userId);
+            roleDao.deleteRole2categoryByUserId(guid);
             return categoryDao.delete(guid);
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
