@@ -140,7 +140,7 @@ public class UsersService {
             userPageResult.setSum(userCount);
             return userPageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }
 
