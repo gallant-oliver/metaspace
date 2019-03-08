@@ -103,6 +103,9 @@ public interface PrivilegeDAO {
     @Select("select * from privilege where privilegeId = #{privilegeId} order by privilegeId")
     public PrivilegeInfo getPrivilegeInfo(@Param("privilegeId")String privilegeId);
 
+    @Select("select delete from privilege where privilegeId = #{privilegeId}")
+    public int getEnableDelete(@Param("privilegeId")String privilegeId);
+
     @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
     public List<Role> getRelatedRoleWithPrivilege(@Param("privilegeId")String privilegeId);
 

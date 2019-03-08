@@ -98,6 +98,12 @@ public class PrivilegeService {
     @Transactional
     public void delPrivilege(String privilegeId) throws AtlasBaseException {
         try {
+
+            int enableDelete = privilegeDAO.getEnableDelete(privilegeId);
+            if(enableDelete == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "无权删除当前权限方案");
+            }
+
             //删除privilege
             privilegeDAO.deletePrivilege(privilegeId);
             //删除privilege2module
