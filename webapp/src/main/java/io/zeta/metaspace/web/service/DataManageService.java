@@ -78,7 +78,7 @@ public class DataManageService {
             if(role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
-            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserStringCategoryMap(roleId, type);
+            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserCategory(roleId, type);
             Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
             List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
 

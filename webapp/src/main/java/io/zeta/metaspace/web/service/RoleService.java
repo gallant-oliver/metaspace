@@ -246,7 +246,6 @@ public class RoleService {
     }
 
     @Transactional
-
     public String putPrivileges(String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
         if(role.getEdit()==0){
@@ -300,5 +299,32 @@ public class RoleService {
 
     public Role getRoleIdBYUserId(String userId) {
         return roleDAO.getRoleByUsersId(userId);
+    }
+
+    /**
+     * 获取用户目录树，有权限首级目录不能加关联
+     * @param userRoleId
+     * @param categorytype
+     * @return
+     */
+    @Transactional
+    public Map<String, RoleModulesCategories.Category> getUserCategory(String userRoleId, int categorytype) {
+        Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
+        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            setMap(userCategorys, allCategorys, 1, true);
+        } else {
+            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
+            if (userBusinessCategories.size() > 0) {
+                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
+                //得到用户的带权限的目录树
+                setMap(userCategorys, userChildCategorys, 1, true);
+                setMap(userCategorys, userParentCategorys, 0, false);
+                setMap(userCategorys, userPrivilegeCategorys, 0, true);
+            }
+        }
+        return userCategorys;
     }
 }
