@@ -262,7 +262,7 @@ public class RoleService {
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if (businessCategories != null && moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && businessCategories.size() > 0) {
+        if (businessCategories != null && (moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())||moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
             for (RoleModulesCategories.Category businessCategory : businessCategories) {
                 if (businessCategory.getStatus() == 1)
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
