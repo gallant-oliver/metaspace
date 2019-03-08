@@ -62,7 +62,7 @@ public interface CategoryDAO {
     @Select("select count(*) from category where parentCategoryGuid=#{parentCategoryGuid}")
     public int queryChildrenNum(@Param("parentCategoryGuid")String guid);
 
-    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL")
+    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL or downBrotherCategoryGuid=''")
     public String queryLastChildCategory(@Param("parentCategoryGuid")String guid);
 
     @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
