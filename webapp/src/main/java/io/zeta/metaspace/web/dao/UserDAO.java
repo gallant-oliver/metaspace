@@ -33,9 +33,17 @@ public interface UserDAO {
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId in (select privilegeId from role where roleId=#{roleId}))")
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
-    @Select({"<script>",
-             "select users.*,role.roleName from users join role on users.roleId = role.roleId",
-             "where  username like '%${username}%' or account like '%${username}%'",
+    @Select({" <script>",
+             " select users.*,role.roleName from users join role on users.roleId = role.roleId",
+             " where  username like '%${username}%' or account like '%${username}%'",
+             " order by",
+             " (case ",
+             " when username=#{username} or account=#{username} then 1",
+             " when username like '${username}%' or account like '${username}%' then 2",
+             " when username like '%${username}' or account like '%${username}' then 3",
+             " when username like '%${username}%' or account like '%${username}%' then 4",
+             " else 0",
+             " end)",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
