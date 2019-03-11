@@ -25,14 +25,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.groovy.GroovyExpression;
-import org.apache.atlas.repository.graphdb.AtlasEdge;
-import org.apache.atlas.repository.graphdb.AtlasGraph;
-import org.apache.atlas.repository.graphdb.AtlasGraphManagement;
-import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
-import org.apache.atlas.repository.graphdb.AtlasIndexQuery;
-import org.apache.atlas.repository.graphdb.AtlasSchemaViolationException;
-import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.graphdb.GremlinVersion;
+import org.apache.atlas.repository.graphdb.*;
 import org.apache.atlas.repository.graphdb.janus.query.AtlasJanusGraphQuery;
 import org.apache.atlas.repository.graphdb.utils.IteratorToIterableAdapter;
 import org.apache.atlas.type.AtlasType;
@@ -48,12 +41,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.io.IoCore;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter;
-import org.janusgraph.core.Cardinality;
-import org.janusgraph.core.JanusGraph;
-import org.janusgraph.core.JanusGraphFactory;
-import org.janusgraph.core.JanusGraphIndexQuery;
-import org.janusgraph.core.PropertyKey;
-import org.janusgraph.core.SchemaViolationException;
+import org.janusgraph.core.*;
 import org.janusgraph.core.schema.JanusGraphIndex;
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.diskstorage.BackendException;
@@ -65,12 +53,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -86,7 +70,8 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
     private static Configuration APPLICATION_PROPERTIES = null;
 
     private final ConvertGremlinValueFunction GREMLIN_VALUE_CONVERSION_FUNCTION = new ConvertGremlinValueFunction();
-    private final Set<String>                 multiProperties                   = new HashSet<>();
+    //这个参数暂时没用
+    private final Set<String> multiProperties = new HashSet<>();
 
     public AtlasJanusGraph() {
         //determine multi-properties once at startup
@@ -94,15 +79,15 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
 
         try {
 
-        mgmt = AtlasJanusGraphDatabase.getGraphInstance().openManagement();
-
+            mgmt = AtlasJanusGraphDatabase.getGraphInstance().openManagement();
             Iterable<PropertyKey> keys = mgmt.getRelationTypes(PropertyKey.class);
-
-            for (PropertyKey key : keys) {
-                if (key.cardinality() != Cardinality.SINGLE) {
-                    multiProperties.add(key.name());
-                }
-            }
+            CompletableFuture.runAsync(() -> {
+                keys.forEach(key -> {
+                    if (key.cardinality() != Cardinality.SINGLE) {
+                        multiProperties.add(key.name());
+                    }
+                });
+            });
         } finally {
             if (mgmt != null) {
                 mgmt.rollback();
