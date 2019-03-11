@@ -180,8 +180,8 @@ public class PrivilegeService {
             }
             long privilegeCount = privilegeDAO.getRolesCount(query);
             rolePageResult.setLists(privilegeList);
-            rolePageResult.setCount(privilegeCount);
-            rolePageResult.setSum(privilegeList.size());
+            rolePageResult.setCount(privilegeList.size());
+            rolePageResult.setSum(privilegeCount);
             return rolePageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限列表失败");
