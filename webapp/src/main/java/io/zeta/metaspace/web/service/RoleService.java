@@ -312,7 +312,7 @@ public class RoleService {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            setMap(userCategorys, allCategorys, 1, true);
+            setMap(userCategorys, allCategorys, 2, true);
         } else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
             if (userBusinessCategories.size() > 0) {
@@ -320,9 +320,9 @@ public class RoleService {
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
                 //得到用户的带权限的目录树
-                setMap(userCategorys, userChildCategorys, 1, true);
+                setMap(userCategorys, userChildCategorys, 2, true);
                 setMap(userCategorys, userParentCategorys, 0, false);
-                setMap(userCategorys, userPrivilegeCategorys, 0, true);
+                setMap(userCategorys, userPrivilegeCategorys, 1, true);
             }
         }
         return userCategorys;
