@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
+
 import java.util.List;
 
 @Path("home")
@@ -241,6 +243,18 @@ public class HomePageREST {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
+    }
+
+
+    @GET
+    @Path("/refreshcache")
+    public Response refreshCache() throws AtlasBaseException {
+        try {
+            homePageService.refreshCache();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+        }
+        return Response.status(200).entity("success").build();
     }
 
 }
