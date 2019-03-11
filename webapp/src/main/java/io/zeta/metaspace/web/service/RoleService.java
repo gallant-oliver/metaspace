@@ -152,7 +152,8 @@ public class RoleService {
         roleModulesCategories.setBusinessCategories(bcategorys);
         List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
         roleModulesCategories.setTechnicalCategories(tcategorys);
-        roleModulesCategories.setEdit(role.getEdit());
+        Role roleByRoleId = roleDAO.getRoleByRoleId(roleId);
+        roleModulesCategories.setEdit(roleByRoleId.getEdit());
         return roleModulesCategories;
     }
 
