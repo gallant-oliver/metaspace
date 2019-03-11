@@ -71,7 +71,7 @@ public interface RoleDAO {
     @Delete("delete from role2category where roleid=#{roleId}")
     public int deleteRole2category(String roleId);
 
-    @Delete("delete from role2category where categoryGuid=#{guid}")
+    @Delete("delete from role2category where categoryId=#{guid}")
     public int deleteRole2categoryByUserId(String guid);
 
     //添加授权范围
