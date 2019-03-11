@@ -215,8 +215,9 @@ public class DataManageService {
             if(childrenNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
             }
-            int relationNum = relationDao.queryRelationNumByCatalogGuid(guid);
-            if(relationNum > 0) {
+            int relationNum = relationDao.queryRelationNumByCategoryGuid(guid);
+            int businessRelationNum = relationDao.queryBusinessRelationNumByCategoryGuid(guid);
+            if(relationNum > 0 || businessRelationNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在关联关系");
             }
             CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid);

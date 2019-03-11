@@ -95,7 +95,10 @@ public interface RelationDAO {
     public int queryTotalNumByName(@Param("tableName")String tableName, @Param("tagName")String tagName, @Param("ids") List<String> categoryIds);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
-    public int queryRelationNumByCatalogGuid(@Param("categoryGuid")String categoryGuid);
+    public int queryRelationNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
+
+    @Select("select count(*) from business_relation where categoryGuid=#{categoryGuid}")
+    public int queryBusinessRelationNumByCategoryGuid(@Param("categoryGuid")String categoryGuid);
 
     //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
