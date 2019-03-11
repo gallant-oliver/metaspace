@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.BusinessService;
@@ -230,6 +231,13 @@ public class BusinessManageREST {
         }
     }
 
+    /**
+     * 更新业务对象信息
+     * @param businessId
+     * @param business
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/{businessId}/business")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -241,5 +249,20 @@ public class BusinessManageREST {
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    /**
+     * 获取表详情
+     *
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/table/{guid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
+        return metadataService.getTableInfoById(guid);
     }
 }
