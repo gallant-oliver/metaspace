@@ -229,4 +229,17 @@ public class BusinessManageREST {
             throw e;
         }
     }
+
+    @PUT
+    @Path("/{businessId}/business")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
+        try {
+            businessService.updateBusiness(businessId, business);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
 }
