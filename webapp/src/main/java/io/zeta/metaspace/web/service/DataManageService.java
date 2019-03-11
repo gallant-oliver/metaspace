@@ -193,7 +193,10 @@ public class DataManageService {
             }
 
             categoryDao.add(entity);
-            return categoryDao.queryByGuid(newCategoryGuid);
+            CategoryEntityV2 returnEntity =  categoryDao.queryByGuid(newCategoryGuid);
+            returnEntity.setShow(true);
+            returnEntity.setStatus(2);
+            return returnEntity;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
@@ -274,7 +277,10 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             categoryDao.updateCategoryInfo(entity);
-            return categoryDao.queryByGuid(guid);
+            CategoryEntityV2 returnEntity =  categoryDao.queryByGuid(guid);
+            returnEntity.setShow(true);
+            returnEntity.setStatus(2);
+            return returnEntity;
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
