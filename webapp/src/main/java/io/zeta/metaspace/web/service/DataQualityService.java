@@ -208,32 +208,49 @@ public class DataQualityService {
         //启动模板
         try {
             if(templateStatus == TemplateStatus.NOT_RUNNING.code) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                long currentTime = System.currentTimeMillis();
-                String currentTimeFormat = sdf.format(currentTime);
-                qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
-                String jobName = String.valueOf(currentTime);
-                String jobGroupName = JOB_GROUP_NAME + jobName;
-                String triggerName = TRIGGER_NAME + jobName;
-                String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
-                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
-                String cron = qualityDao.getCronByTemplateId(templateId);
-                quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
-                //设置模板状态为【已启用】
-                if (Objects.nonNull(cron)) {
-                    qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
-                }
+                addQuartzJob(templateId);
             } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
-                String jobName = qualityDao.getJobByTemplateId(templateId);
-                String jobGroupName = JOB_GROUP_NAME + jobName;
-                quartzManager.resumeJob(jobName, jobGroupName);
-                //设置模板状态为【已启用】
-                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+
+                String cron = qualityDao.getCronByTemplateId(templateId);
+                if(Objects.nonNull(cron)) {
+                    String jobName = qualityDao.getJobByTemplateId(templateId);
+                    String jobGroupName = JOB_GROUP_NAME + jobName;
+                    quartzManager.resumeJob(jobName, jobGroupName);
+                    //设置模板状态为【已启用】
+                    qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+                } else {
+                    //单次执行任务重新执行提交job
+                    addQuartzJob(templateId);
+                }
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
+        } catch (AtlasBaseException e) {
+          throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
+        }
+    }
+
+    public void addQuartzJob(String templateId) throws AtlasBaseException {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            long currentTime = System.currentTimeMillis();
+            String currentTimeFormat = sdf.format(currentTime);
+            qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
+            String jobName = String.valueOf(currentTime);
+            String jobGroupName = JOB_GROUP_NAME + jobName;
+            String triggerName = TRIGGER_NAME + jobName;
+            String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
+            String cron = qualityDao.getCronByTemplateId(templateId);
+            quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
+            //设置模板状态为【已启用】
+            if (Objects.nonNull(cron)) {
+                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
+                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
     }
 
