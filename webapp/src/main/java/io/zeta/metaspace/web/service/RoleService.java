@@ -263,27 +263,31 @@ public class RoleService {
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if (businessCategories != null && (moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode())||moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
-            for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                if (businessCategory.getStatus() == 1)
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
-            }
-        } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
-            for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                if (businessCategory.getStatus() == 1)
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
+        if(businessCategories != null) {
+            if ((moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
+                for (RoleModulesCategories.Category businessCategory : businessCategories) {
+                    if (businessCategory.getStatus() == 1)
+                        roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
+                }
+            } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
+                for (RoleModulesCategories.Category businessCategory : businessCategories) {
+                    if (businessCategory.getStatus() == 1)
+                        roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
+                }
             }
         }
-        if (technicalCategories != null && moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
-            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                if (technicalCategory.getStatus() == 1)
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
-            }
+        if(technicalCategories != null) {
+            if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
+                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
+                    if (technicalCategory.getStatus() == 1)
+                        roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
+                }
 
-        } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
-            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                if (technicalCategory.getStatus() == 1)
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
+            } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
+                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
+                    if (technicalCategory.getStatus() == 1)
+                        roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
+                }
             }
         }
         return "success";
