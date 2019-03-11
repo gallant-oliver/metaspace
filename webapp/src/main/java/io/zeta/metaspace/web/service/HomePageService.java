@@ -289,7 +289,7 @@ public class HomePageService {
         }
     }
 
-    @Cacheable(value = "RoleUserListCache", key = "#parameters.limit + #parameters.offset")
+    @Cacheable(value = "RoleUserListCache", key = "#roleId +  #parameters.limit + #parameters.offset")
     public PageResult<User> getUserListByRoleId(String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<User> pageResult = new PageResult<>();
