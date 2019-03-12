@@ -139,26 +139,28 @@ public class DataManageService {
             //获取当前catalog
             CategoryEntityV2 currentEntity = categoryDao.queryByGuid(currentCategoryGuid);
             String parentQualifiedName = null;
+            String parentGuid = null;
             int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid);
             //创建子目录
             if( Objects.nonNull(newCategoryParentGuid)) {
+                parentGuid = currentCategoryGuid;
                 entity.setParentCategoryGuid(currentCategoryGuid);
                 parentQualifiedName = currentEntity.getQualifiedName();
                 entity.setLevel(currentLevel+1);
             } else {
                 //创建同级目录
-                String currentCatalogParentGuid = currentEntity.getParentCategoryGuid();
+                parentGuid = currentEntity.getParentCategoryGuid();
                 entity.setLevel(currentLevel);
-                if(Objects.nonNull(currentCatalogParentGuid)) {
-                    entity.setParentCategoryGuid(currentCatalogParentGuid);
-                    CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(currentCatalogParentGuid);
+                if(Objects.nonNull(parentGuid)) {
+                    entity.setParentCategoryGuid(parentGuid);
+                    CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid);
                     parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
                 }
             }
             if(Objects.nonNull(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-            int count = categoryDao.queryQualifiedNameNum(qualifiedName.toString());
+            int count = categoryDao.querySameNameNum(name, parentGuid);
             if(count > 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             //qualifiedName
@@ -268,7 +270,7 @@ public class DataManageService {
             if (Objects.nonNull(parentQualifiedName))
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-            int count = categoryDao.queryQualifiedNameNum(qualifiedName.toString());
+            int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid());
             if (count > 0 && !currentEntity.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             }

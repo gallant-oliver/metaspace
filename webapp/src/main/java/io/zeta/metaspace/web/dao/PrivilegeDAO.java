@@ -38,6 +38,9 @@ public interface PrivilegeDAO {
     @Insert("insert into privilege(privilegeId, privilegeName, description, createTime, edit, delete)values(#{privilegeId}, #{privilegeName}, #{description}, #{createTime}, 1, 1)")
     public int addPrivilege(PrivilegeHeader privilege);
 
+    @Select("select count(1) from privilege where privilegeName=#{privilegeName}")
+    public int getPrivilegeNameCount(@Param("privilegeName")String privilegeName);
+
     @Insert("<script>" +
             "insert into privilege2module(privilegeId,moduleId)values" +
             "<foreach collection='list' item='moduleId' index='index'  separator=','>" +

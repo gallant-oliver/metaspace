@@ -58,6 +58,10 @@ public class PrivilegeService {
     @Transactional
     public void addPrivilege(PrivilegeHeader privilege) throws AtlasBaseException {
         try {
+            int nameCount = privilegeDAO.getPrivilegeNameCount(privilege.getPrivilegeName());
+            if(nameCount > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限方案名");
+            }
             String privilegeId = UUID.randomUUID().toString();
             privilege.setPrivilegeId(privilegeId);
             //createTime
@@ -128,10 +132,14 @@ public class PrivilegeService {
     @Transactional
     public void updatePrivilege(String privilegeId, PrivilegeHeader privilege) throws AtlasBaseException {
         try {
+            PrivilegeInfo currentPrivilege = privilegeDAO.getPrivilegeInfo(privilegeId);
+            int nameCount = privilegeDAO.getPrivilegeNameCount(privilege.getPrivilegeName());
+            if(nameCount > 0 && !currentPrivilege.getPrivilegeName().equals(privilege.getPrivilegeName())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限方案名");
+            }
+
             privilege.setPrivilegeId(privilegeId);
             privilegeDAO.updatePrivilege(privilege);
-
-
             List<Integer> moduleIds = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
 

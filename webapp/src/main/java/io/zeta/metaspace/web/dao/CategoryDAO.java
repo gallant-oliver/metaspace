@@ -53,8 +53,18 @@ public interface CategoryDAO {
     @Select("select name from category where guid=#{guid}")
     public String queryNameByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
-    @Select("select count(*) from category where qualifiedName=#{qualifiedName}")
-    public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);
+    @Select({" <script>",
+             " select count(1) from category where name=#{name}",
+             " <choose>",
+             " <when test='parentCategoryGuid != null'>",
+             " and parentCategoryGuid=#{parentCategoryGuid}",
+             " </when>",
+             " <otherwise>",
+             " and parentCategoryGuid is null",
+             " </otherwise>",
+             " </choose>",
+             " </script>"})
+    public int querySameNameNum(@Param("name") String categoryName, @Param("parentCategoryGuid")String parentCategoryGuid);
 
     @Select("select qualifiedName from category where guid=#{guid}")
     public String queryQualifiedName(@Param("guid")String guid);
