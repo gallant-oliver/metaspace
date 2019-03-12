@@ -49,7 +49,7 @@ public class QuartJob implements Job {
     @Autowired
     private DataQualityDAO qualityDao;
 
-    Map<UserRule, List<Double>> resultMap = new HashMap();
+    Map<UserRule, List<Double>> resultMap = new LinkedHashMap<>();
 
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
@@ -532,7 +532,8 @@ public class QuartJob implements Job {
 
     public void updateReportResult(Template template, Map<UserRule, List<Double>> resultMap) throws RuntimeException {
         try {
-            List<Report.ReportRule> list=new ArrayList<>();Report report = insertReport(template);
+            List<Report.ReportRule> list=new ArrayList<>();
+            Report report = insertReport(template);
             Long interval = 0L;
             for (UserRule rule : resultMap.keySet()) {
                 List<Double> values = resultMap.get(rule);
