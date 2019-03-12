@@ -39,6 +39,9 @@ public interface BusinessDAO {
             "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets},#{submitter},#{submissionTime},#{businessOperator},#{businessLastUpdate},#{ticketNumber},#{level2CategoryId})")
     public int insertBusinessInfo(BusinessInfo info);
 
+    @Select("select count(1) from businessInfo where name=#{name}")
+    public int sameNameCount(@Param("name")String businessName);
+
     //更新业务信息
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
             "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate} where businessId=#{businessId}")

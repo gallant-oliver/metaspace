@@ -36,6 +36,8 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +56,7 @@ import java.util.UUID;
  */
 @Service
 public class BusinessService {
-
+    private static final Logger LOG = LoggerFactory.getLogger(BusinessService.class);
     @Autowired
     BusinessDAO businessDao;
     @Autowired
@@ -76,6 +78,10 @@ public class BusinessService {
     @Transactional
     public int addBusiness(String categoryId, BusinessInfo info) throws AtlasBaseException {
         try {
+            int count = businessDao.sameNameCount(info.getName());
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
+            }
             //departmentId(categoryId)
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
@@ -118,7 +124,11 @@ public class BusinessService {
             entity.setCategoryGuid(categoryId);
             int relationFlag = relationDao.addRelation(entity);
             return insertFlag & relationFlag;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
     }
@@ -134,6 +144,7 @@ public class BusinessService {
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
         }
     }
@@ -154,6 +165,7 @@ public class BusinessService {
 
             return info;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -180,6 +192,7 @@ public class BusinessService {
             info.setBusinessId(businessId);
             return info;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -210,8 +223,10 @@ public class BusinessService {
             pageResult.setLists(list);
             return pageResult;
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -249,8 +264,10 @@ public class BusinessService {
             pageResult.setCount(businessInfoList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
           throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -291,7 +308,11 @@ public class BusinessService {
                 pageResult.setCount(businessInfoList.size());
             }
             return pageResult;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -312,6 +333,7 @@ public class BusinessService {
                 businessDao.insertTableRelation(businessId, guid);
             }
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -322,6 +344,7 @@ public class BusinessService {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
         }
     }
