@@ -180,7 +180,7 @@ public class PrivilegeFilter implements Filter {
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String error) throws IOException {
-        httpServletResponse.setStatus(401);
+        httpServletResponse.setStatus(403);
         httpServletResponse.setCharacterEncoding("UTF-8");
         httpServletResponse.setContentType("text/plain;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();

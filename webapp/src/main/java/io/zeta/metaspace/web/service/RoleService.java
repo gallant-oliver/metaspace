@@ -9,7 +9,6 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -21,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.ws.rs.PathParam;
 import java.util.*;
 
 
@@ -60,7 +58,7 @@ public class RoleService {
 
     public String updateRoleStatus(String roleId, int status) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
-        if(role.getDisable()==0){
+        if (role.getDisable() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许禁用");
         }
         roleDAO.updateRoleStatus(roleId, status);
@@ -70,7 +68,7 @@ public class RoleService {
     @Transactional
     public String deleteRole(String roleId) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
-        if(role.getDelete()==0){
+        if (role.getDelete() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许删除");
         }
         roleDAO.deleteRole(roleId);
@@ -99,7 +97,7 @@ public class RoleService {
     @Transactional
     public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
         PageResult<Role> rolePageResult = new PageResult<>();
-        List<Role> roles= roleDAO.getRoles(query, offset, limit);
+        List<Role> roles = roleDAO.getRoles(query, offset, limit);
         long rolesCount = roleDAO.getRolesCount(query);
         rolePageResult.setLists(roles);
         rolePageResult.setOffset(offset);
@@ -111,7 +109,7 @@ public class RoleService {
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
         for (String user : users) {
             String role = usersService.getRoleIdByUserId(user);
-            if(role.equals("1")){
+            if (role.equals("1")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
@@ -123,7 +121,7 @@ public class RoleService {
     public String removeUser(List<String> users) throws AtlasBaseException {
         for (String user : users) {
             String role = usersService.getRoleIdByUserId(user);
-            if(role.equals("1")){
+            if (role.equals("1")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
@@ -191,8 +189,20 @@ public class RoleService {
         }
 
         List<RoleModulesCategories.Category> resultList = new ArrayList<>(result.values());
+        setOtherCategory(categorytype, resultList);
         CategoryRelationUtils.cleanInvalidBrother(resultList);
         return resultList;
+    }
+
+    private void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype);
+        for (RoleModulesCategories.Category otherCategory : otherCategorys) {
+            otherCategory.setShow(false);
+            otherCategory.setHide(true);
+            otherCategory.setStatus(0);
+
+        }
+        resultList.addAll(otherCategorys);
     }
 
     @Transactional
@@ -221,6 +231,7 @@ public class RoleService {
             RoleModulesCategories.Category category = new RoleModulesCategories.Category(allCategory);
             category.setStatus(status);
             category.setShow(show);
+            category.setHide(false);
             categorys.put(category.getGuid(), category);
         }
     }
@@ -249,7 +260,7 @@ public class RoleService {
     @Transactional
     public String putPrivileges(String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
-        if(role.getEdit()==0){
+        if (role.getEdit() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许编辑");
         }
         PrivilegeInfo privilege = roleModulesCategories.getPrivilege();
@@ -263,30 +274,26 @@ public class RoleService {
         }
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
-        if(businessCategories != null) {
+        if (businessCategories != null) {
             if ((moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
                 for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    if (businessCategory.getStatus() == 1)
-                        roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
+                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
                 }
             } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
                 for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    if (businessCategory.getStatus() == 1)
-                        roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
+                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
                 }
             }
         }
-        if(technicalCategories != null) {
+        if (technicalCategories != null) {
             if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
                 for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    if (technicalCategory.getStatus() == 1)
-                        roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
+                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
                 }
 
             } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
                 for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    if (technicalCategory.getStatus() == 1)
-                        roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
+                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
                 }
             }
         }
@@ -308,12 +315,13 @@ public class RoleService {
 
     /**
      * 获取用户目录树，有权限首级目录不能加关联
+     *
      * @param userRoleId
      * @param categorytype
      * @return
      */
     @Transactional
-    public Map<String, RoleModulesCategories.Category> getUserCategory(String userRoleId, int categorytype) {
+    public ArrayList<RoleModulesCategories.Category> getUserCategory(String userRoleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
@@ -330,6 +338,10 @@ public class RoleService {
                 setMap(userCategorys, userPrivilegeCategorys, 1, true);
             }
         }
-        return userCategorys;
+
+        Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+        ArrayList<RoleModulesCategories.Category> categories = new ArrayList<>(valueCollection);
+        setOtherCategory(categorytype, categories);
+        return categories;
     }
 }
