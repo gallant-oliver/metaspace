@@ -193,12 +193,13 @@ public class DataManageService {
                     categoryDao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
                 }
             }
-
             categoryDao.add(entity);
             CategoryEntityV2 returnEntity =  categoryDao.queryByGuid(newCategoryGuid);
             returnEntity.setShow(true);
             returnEntity.setStatus(2);
             return returnEntity;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
