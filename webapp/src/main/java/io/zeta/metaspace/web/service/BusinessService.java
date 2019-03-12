@@ -190,12 +190,13 @@ public class BusinessService {
             int offset = parameters.getOffset();
             List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset);
             String path = CategoryRelationUtils.getPath(categoryId);
-            StringJoiner joiner = new StringJoiner(".");
+            StringJoiner joiner = null;
             String[] pathArr = path.split("\\.");
             String level2Category = "";
             if(pathArr.length >= 2)
                 level2Category = pathArr[1];
             for(BusinessInfoHeader infoHeader : list) {
+                joiner = new StringJoiner(".");
                 //path
                 joiner.add(path).add(infoHeader.getName());
                 infoHeader.setPath(joiner.toString());
