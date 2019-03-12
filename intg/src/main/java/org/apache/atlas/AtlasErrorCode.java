@@ -103,7 +103,7 @@ public enum AtlasErrorCode {
     INVALID_QUERY_PARAM_LENGTH(400, "METASPACE-400-00-057", " 查询参数{0}的长度超过限制"),
     INVALID_QUERY_LENGTH(400, "METASPACE-400-00-058", " 查询长度无效,更新{0}以更改限制"),
 
-    PERMISSION_DENIED(401, "METASPACE-400-00-001", " {0}"),
+    PERMISSION_DENIED(403, "METASPACE-400-00-001", " {0}"),
 
     // DSL related error codes
     INVALID_DSL_QUERY(400, "METASPACE-400-00-059", " 无效的DSL查询:{0}|原因:{1},请参考METASPACE DSL语法"),
