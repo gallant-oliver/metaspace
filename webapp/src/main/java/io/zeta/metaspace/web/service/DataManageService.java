@@ -78,13 +78,8 @@ public class DataManageService {
             if(role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
-            Map<String, RoleModulesCategories.Category> userCategorys = roleService.getUserCategory(roleId, type);
-            Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-            List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
-
+            List<RoleModulesCategories.Category> valueList = roleService.getUserCategory(roleId, type);
             CategoryRelationUtils.cleanInvalidBrother(valueList);
-
-
             return valueList;
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");

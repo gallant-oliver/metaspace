@@ -14,10 +14,13 @@
 
 package io.zeta.metaspace.web.filter;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.GuavaUtils;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
@@ -36,6 +39,8 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -43,9 +48,7 @@ public class SSOFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private String loginURL = SSOConfig.getLoginURL();
-    private String infoURL = SSOConfig.getInfoURL();
     private String TICKET_KEY = "X-SSO-FullticketId";
-
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -66,36 +69,17 @@ public class SSOFilter implements Filter {
             filterChain.doFilter(request, response);
             return;
         }
-        String ticket = httpServletRequest.getHeader(TICKET_KEY);
-        if (ticket == null || ticket == "") {
-            ticket = httpServletRequest.getParameter(TICKET_KEY);
-        }
-        if (ticket == null || ticket.equals("")) {
-            loginSkip(httpServletResponse, loginURL);
-            return;
-        }
         try {
-            HashMap<String, String> header = new HashMap<>();
-            header.put("ticket", ticket);
-            String s = SSLClient.doGet(infoURL, header);
-            Gson gson = new Gson();
-            JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
-            Object message = jsonObject.get("message");
-            if (message == null || (!message.toString().equals("Success"))) {
-                LOG.warn("用户信息获取失败");
+            String ticket = httpServletRequest.getHeader(TICKET_KEY);
+            if (ticket == null || ticket == "") {
+                ticket = httpServletRequest.getParameter(TICKET_KEY);
+            }
+            if (ticket == null || ticket.equals("")) {
                 loginSkip(httpServletResponse, loginURL);
                 return;
             }
-            Map data = (Map) jsonObject.get("data");
-            if (data == null) {
-                loginSkip(httpServletResponse, loginURL);
-                LOG.warn("用户信息获取失败");
-                return;
-            }
+            Map data = GuavaUtils.getUserInfo(ticket);
             userName = data.getOrDefault("LoginEmail", userName).toString();
-            HttpSession session = httpServletRequest.getSession();
-            session.setAttribute("user", data);
-            session.setAttribute("SSOTicket", ticket);
             //给新用户授予访客权限
             ServletContext servletContext = request.getServletContext();
             WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
@@ -103,15 +87,7 @@ public class SSOFilter implements Filter {
             usersService.addUser(data);
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-            httpServletResponse.setStatus(500);
-            httpServletResponse.setCharacterEncoding("UTF-8");
-            httpServletResponse.setContentType("text/html;charset=utf-8");
-            PrintWriter writer = httpServletResponse.getWriter();
-            HashMap<String, String> hashMap = new HashMap();
-            hashMap.put("error", "sso异常");
-            String j = new Gson().toJson(hashMap);
-            writer.print(j);
+            loginSkip(httpServletResponse, loginURL);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);

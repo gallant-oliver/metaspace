@@ -5,7 +5,6 @@ import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -145,6 +144,20 @@ public interface RoleDAO {
             "    </foreach>" +
             "</script>")
     public List<RoleModulesCategories.Category> getParentCategorys(@Param("guid") List<String> guid, @Param("categoryType") int categoryType);
+
+    //找出合集外的目录
+    @Select("<script>SELECT * from category where " +
+            "    <if test='categories!=null and categories.size()>0'>" +
+            "     guid not in" +
+            "    <foreach item='item' index='index' collection='categories'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "    and " +
+            "    </if>" +
+            "    categoryType = #{categoryType}" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getOtherCategorys(@Param("categories") List<RoleModulesCategories.Category> categories, @Param("categoryType") int categoryType);
 
     //获取授权范围id
     @Select("select categoryid guid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
