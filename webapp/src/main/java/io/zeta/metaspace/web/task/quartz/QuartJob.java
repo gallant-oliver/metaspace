@@ -92,6 +92,7 @@ public class QuartJob implements Job {
                 if (retryCount <= RETRY) {
                     execError.setRefireImmediately(true);
                 } else {
+                    qualityDao.updateFinishedPercent(template.getTemplateId(), 0F);
                     execError.setUnscheduleAllTriggers(true);
                 }
                 throw e;

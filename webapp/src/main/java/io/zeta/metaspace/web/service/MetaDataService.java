@@ -24,10 +24,16 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.privilege.PrivilegeInfo;
+import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.RelationDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableTagDAO;
-import io.zeta.metaspace.web.util.HivePermissionUtil;
+import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -55,9 +61,6 @@ import io.zeta.metaspace.web.common.filetable.UploadFileInfo;
 import io.zeta.metaspace.web.common.filetable.UploadPreview;
 import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
-import io.zeta.metaspace.web.util.ExcelUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import io.zeta.metaspace.web.util.StringUtils;
 import org.apache.avro.Schema;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -119,8 +122,12 @@ public class MetaDataService {
     MetaspaceGremlinService metaspaceLineageService;
     @Autowired
     TableTagDAO tableTagDAO;
-    @Resource
-    RelationDAO relationDao;
+    @Autowired
+    RelationDAO relationDAO;
+    @Autowired
+    RoleDAO roleDAO;
+    @Autowired
+    UserDAO userDAO;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -201,9 +208,19 @@ public class MetaDataService {
                 List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
                 table.setTags(tags);
             }catch (Exception e){
-                LOG.error("获取权限失败,错误信息:"+e.getMessage(),e);
+                LOG.error("获取标签失败,错误信息:"+e.getMessage(),e);
             }
-
+            //获取权限判断是否能编辑,默认不能
+            table.setEdit(false);
+            try {
+                List<Module> modules =  userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                for (Module module : modules) {
+                    if(module.getModuleId()==SystemModule.TECHNICAL_OPERATE.getCode())
+                        table.setEdit(true);
+                }
+            }catch (Exception e){
+                LOG.error("获取系统权限失败,错误信息:"+e.getMessage(),e);
+            }
         }
         return table;
     }
@@ -278,7 +295,7 @@ public class MetaDataService {
 
     public List<String> getRelationList(String guid) throws AtlasBaseException {
         try {
-            List<RelationEntityV2> relationEntities = relationDao.queryRelationByTableGuid(guid);
+            List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)
@@ -795,8 +812,7 @@ public class MetaDataService {
         }
     }
 
-    @CacheEvict(value = { "columnCache",
-            "databaseCache", "tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
+    @CacheEvict(value = { "columnCache","tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }

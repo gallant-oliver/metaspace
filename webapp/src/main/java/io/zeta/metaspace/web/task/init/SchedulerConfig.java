@@ -6,6 +6,7 @@ import org.quartz.ee.servlet.QuartzInitializerListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +23,8 @@ public class SchedulerConfig {
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerConfig.class);
     @Autowired
     private ApplicationContext applicationContext;
-
+    @Autowired @Qualifier("Scheduler")
+    private Scheduler scheduler;
     @Bean
     public SpringBeanJobFactory springBeanJobFactory() {
         AutoWiringSpringBeanJobFactory jobFactory = new AutoWiringSpringBeanJobFactory();
@@ -75,7 +77,6 @@ public class SchedulerConfig {
      */
     @Bean
     public String autoStatistics() throws IOException, SchedulerException {
-        Scheduler scheduler = scheduler();
         JobKey jobKey = new JobKey("统计信息任务", "元数据分析");
         if (scheduler.getJobDetail(jobKey) == null) {
             LOG.info("添加统计信息任务");
@@ -90,5 +91,23 @@ public class SchedulerConfig {
         }
         return "start";
     }
-
+    /*
+     *每晚十二点自动执行统计信息任务
+     */
+    @Bean
+    public String autoHomeStatistics() throws IOException, SchedulerException {
+        JobKey jobKey = new JobKey("首页统计信息任务", "系统数据分析");
+        if (scheduler.getJobDetail(jobKey) == null) {
+            LOG.info("添加首页统计信息任务");
+            JobDetail jobDetail = JobBuilder.newJob(HomeStatisticsJob.class).withIdentity("首页统计信息任务", "系统数据分析").build();
+            TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
+            triggerBuilder.withIdentity("首页统计信息调度器", "首页分析");
+            triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 * * ?"));
+            Trigger trigger = triggerBuilder.build();
+            scheduler.scheduleJob(jobDetail, trigger);
+        } else {
+            LOG.info("首页统计信息任务已添加");
+        }
+        return "start";
+    }
 }

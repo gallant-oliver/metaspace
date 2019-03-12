@@ -31,9 +31,12 @@ public class CategoryEntityV2 {
     private String downBrotherCategoryGuid;
     private String parentCategoryGuid;
     private Integer categoryType;
+    private int level;
+    private int status;
+    private boolean show;
 
     public CategoryEntityV2() { }
-    public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid) {
+    public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid, Integer categoryType) {
         this.guid = guid;
         this.qualifiedName = qualifiedName;
         this.name = name;
@@ -41,6 +44,7 @@ public class CategoryEntityV2 {
         this.upBrotherCategoryGuid = upBrotherCategoryGuid;
         this.downBrotherCategoryGuid = downBrotherCategoryGuid;
         this.parentCategoryGuid = parentCategoryGuid;
+        this.categoryType = categoryType;
     }
 
     public String getGuid() {
@@ -105,5 +109,29 @@ public class CategoryEntityV2 {
 
     public void setCategoryType(Integer categoryType) {
         this.categoryType = categoryType;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public boolean isShow() {
+        return show;
+    }
+
+    public void setShow(boolean show) {
+        this.show = show;
     }
 }

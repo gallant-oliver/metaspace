@@ -34,7 +34,11 @@ public class TableTagService {
     }
 
     public List<Tag> getTags(String query,long offset,long limit) {
-        List<Tag> tags = tableTagDAO.getTags(query, offset, limit);
+        List<Tag> tags=null;
+        if(limit==-1)
+            tags = tableTagDAO.getTag(query, offset);
+            else
+            tags = tableTagDAO.getTags(query, offset, limit);
         return tags;
     }
     @Transactional
@@ -42,6 +46,7 @@ public class TableTagService {
         if (tableTagDAO.ifTableExists(table.getTableId()).size()==0) {
             tableTagDAO.addTable(table);
         }
+        tableTagDAO.delAllTable2Tag(table.getTableId());
         for (String s : tagId) {
             try {
                 tableTagDAO.addTable2Tag(s, table.getTableId());
