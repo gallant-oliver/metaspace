@@ -63,8 +63,9 @@ public interface CategoryDAO {
              " and parentCategoryGuid is null",
              " </otherwise>",
              " </choose>",
+             " and categoryType=#{type}",
              " </script>"})
-    public int querySameNameNum(@Param("name") String categoryName, @Param("parentCategoryGuid")String parentCategoryGuid);
+    public int querySameNameNum(@Param("name") String categoryName, @Param("parentCategoryGuid")String parentCategoryGuid, @Param("type")int type);
 
     @Select("select qualifiedName from category where guid=#{guid}")
     public String queryQualifiedName(@Param("guid")String guid);

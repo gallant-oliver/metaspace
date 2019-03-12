@@ -160,7 +160,7 @@ public class DataManageService {
             if(Objects.nonNull(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-            int count = categoryDao.querySameNameNum(name, parentGuid);
+            int count = categoryDao.querySameNameNum(name, parentGuid, type);
             if(count > 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             //qualifiedName
@@ -256,7 +256,7 @@ public class DataManageService {
      * @return
      * @throws AtlasBaseException
      */
-    public CategoryEntityV2 updateCategory(CategoryInfoV2 info) throws AtlasBaseException {
+    public CategoryEntityV2 updateCategory(CategoryInfoV2 info, int type) throws AtlasBaseException {
         try {
             String guid = info.getGuid();
             String name = info.getName();
@@ -271,7 +271,7 @@ public class DataManageService {
             if (Objects.nonNull(parentQualifiedName))
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-            int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid());
+            int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid(), type);
             if (count > 0 && !currentEntity.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             }

@@ -158,7 +158,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
-            return dataManageService.updateCategory(categoryInfo);
+            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

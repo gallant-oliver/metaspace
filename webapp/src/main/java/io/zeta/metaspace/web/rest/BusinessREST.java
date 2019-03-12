@@ -304,7 +304,7 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.CategoryEntity()");
             }
             categoryInfo.setGuid(categoryGuid);
-            return dataManageService.updateCategory(categoryInfo);
+            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE);
         }  catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
