@@ -146,4 +146,5 @@ public interface CategoryDAO {
 
     @Select("select level from category where guid=#{guid}")
     public int getCategoryLevel(@Param("guid")String guid);
+
 }

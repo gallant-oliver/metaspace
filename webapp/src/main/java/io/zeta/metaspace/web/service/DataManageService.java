@@ -37,6 +37,8 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,8 @@ import java.util.UUID;
 
 @Service
 public class DataManageService {
+    private static final Logger LOG = LoggerFactory.getLogger(DataManageService.class);
+
     @Autowired
     CategoryDAO categoryDao;
     @Autowired
@@ -82,8 +86,10 @@ public class DataManageService {
             CategoryRelationUtils.cleanInvalidBrother(valueList);
             return valueList;
         } catch (MyBatisSystemException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -194,8 +200,10 @@ public class DataManageService {
             returnEntity.setStatus(2);
             return returnEntity;
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -237,10 +245,13 @@ public class DataManageService {
             roleDao.deleteRole2categoryByUserId(guid);
             return categoryDao.delete(guid);
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -281,6 +292,7 @@ public class DataManageService {
             returnEntity.setStatus(2);
             return returnEntity;
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }
@@ -299,6 +311,7 @@ public class DataManageService {
                 addRelation(relation);
             }
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -315,6 +328,7 @@ public class DataManageService {
             }
             return relationDao.add(relationEntity);
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }
@@ -339,6 +353,7 @@ public class DataManageService {
                 }
             }
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联出错");
         }
     }
@@ -366,6 +381,7 @@ public class DataManageService {
             pageResult.setSum(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -393,7 +409,11 @@ public class DataManageService {
             pageResult.setOffset(query.getOffset());
             pageResult.setSum(totalNum);
             return pageResult;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -421,6 +441,7 @@ public class DataManageService {
         try {
             return categoryDao.getAllDepartments(type);
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }

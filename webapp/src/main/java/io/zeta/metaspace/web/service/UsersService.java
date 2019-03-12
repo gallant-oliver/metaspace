@@ -124,7 +124,8 @@ public class UsersService {
 
             return info;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
         }
     }
 
@@ -143,6 +144,7 @@ public class UsersService {
             userPageResult.setSum(userCount);
             return userPageResult;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }

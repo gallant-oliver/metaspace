@@ -40,6 +40,8 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -64,14 +66,13 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 public class DataQualityService {
-
+    private static final Logger LOG = LoggerFactory.getLogger(HomePageService.class);
     private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     private static String TRIGGER_NAME = "METASPACE_TRIGGER";
     private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
 
     @Autowired
     DataQualityDAO qualityDao;
-
     @Autowired
     QuartzManager quartzManager;
 
@@ -93,8 +94,10 @@ public class DataQualityService {
             }
 
         }  catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }
@@ -113,8 +116,10 @@ public class DataQualityService {
             quartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
 
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -148,8 +153,10 @@ public class DataQualityService {
             template.setTableRulesNum(tableRuleNum);
             template.setColumnRulesNum(columnRuleNum);
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -165,9 +172,10 @@ public class DataQualityService {
                 qualityDao.deleteThresholdByRuleId(ruleId);
             }
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -180,8 +188,10 @@ public class DataQualityService {
             addRulesByTemlpateId(template);
             qualityDao.updateTemplate(template);
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -200,8 +210,10 @@ public class DataQualityService {
                 template.setRules(userRules);
             return template;
         } catch (SQLException e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
     }
@@ -234,7 +246,11 @@ public class DataQualityService {
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
         }
     }
@@ -247,6 +263,7 @@ public class DataQualityService {
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
@@ -322,6 +339,7 @@ public class DataQualityService {
             File zipFile = getZipFile(files);
             return zipFile;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
     }
@@ -386,6 +404,7 @@ public class DataQualityService {
         try {
             return qualityDao.updateAlertStatus(reportId, status);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -394,6 +413,7 @@ public class DataQualityService {
         try {
             return qualityDao.getFinishedPercent(templateId);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -402,6 +422,7 @@ public class DataQualityService {
         try {
             return qualityDao.getTemplateStatus(templateId);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw e;
         }
     }

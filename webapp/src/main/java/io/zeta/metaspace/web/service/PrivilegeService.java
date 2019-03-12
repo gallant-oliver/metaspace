@@ -86,7 +86,11 @@ public class PrivilegeService {
                     privilegeDAO.deleteRole2Category(roleId, TECHNICAL_TYPE);
                 }
             }
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加权限模板失败");
         }
     }
@@ -95,6 +99,7 @@ public class PrivilegeService {
         try {
             return privilegeDAO.getAllModule();
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限模块失败");
         }
     }
@@ -102,7 +107,6 @@ public class PrivilegeService {
     @Transactional
     public void delPrivilege(String privilegeId) throws AtlasBaseException {
         try {
-
             int enableDelete = privilegeDAO.getEnableDelete(privilegeId);
             if(enableDelete == 0) {
                 throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "无权删除当前权限方案");
@@ -124,7 +128,11 @@ public class PrivilegeService {
             String guetPrivigeId = SystemPrivilege.GUEST.getCode();
             privilegeDAO.updateRolePrivilege(guetPrivigeId, roleIds);
 
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除模板失败");
         }
     }
@@ -137,12 +145,10 @@ public class PrivilegeService {
             if(nameCount > 0 && !currentPrivilege.getPrivilegeName().equals(privilege.getPrivilegeName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限方案名");
             }
-
             privilege.setPrivilegeId(privilegeId);
             privilegeDAO.updatePrivilege(privilege);
             List<Integer> moduleIds = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
-
 
             if(!moduleIds.contains(2) && !moduleIds.contains(4) && !moduleIds.contains(5)) {
                 for(String roleId : roleIds) {
@@ -168,7 +174,11 @@ public class PrivilegeService {
             if(Objects.nonNull(moduleIds) && moduleIds.size()>0)
                 privilegeDAO.addModule2Privilege(privilegeId, moduleIds);
 
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新权限模板失败");
         }
     }
@@ -192,6 +202,7 @@ public class PrivilegeService {
             rolePageResult.setSum(privilegeCount);
             return rolePageResult;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限列表失败");
         }
     }
@@ -209,6 +220,7 @@ public class PrivilegeService {
                 privilege.setModules(moduleList);
             return privilege;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限模板详情失败");
         }
     }
@@ -225,7 +237,8 @@ public class PrivilegeService {
             pageResult.setSum(sum);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取角色列表失败");
         }
     }
 }

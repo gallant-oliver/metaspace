@@ -21,6 +21,8 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +41,7 @@ import javax.annotation.PostConstruct;
  */
 @Component
 public class CategoryRelationUtils {
-
+    private static final Logger LOG = LoggerFactory.getLogger(CategoryRelationUtils.class);
     @Autowired
     CategoryDAO categoryDAO;
     @Autowired
@@ -78,6 +80,7 @@ public class CategoryRelationUtils {
             path = path.replace(",", ".").replace("\"", "");
             return path;
         } catch (Exception e) {
+            LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
         }
     }
