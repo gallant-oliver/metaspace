@@ -52,6 +52,7 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -264,5 +265,20 @@ public class BusinessManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
         return metadataService.getTableInfoById(guid);
+    }
+
+    @DELETE
+    @Path("/{businessId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response deleteBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
+        try {
+            businessService.deleteBusiness(businessId);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
     }
 }

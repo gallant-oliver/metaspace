@@ -184,4 +184,7 @@ public interface BusinessDAO {
     @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
     public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
 
+    @Delete("delete from businessInfo where businessId=#{businessId}")
+    public int deleteBusinessById(@Param("businessId")String businessId);
+
 }

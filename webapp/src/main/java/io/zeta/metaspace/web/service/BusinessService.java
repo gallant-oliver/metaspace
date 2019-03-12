@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
@@ -312,6 +313,16 @@ public class BusinessService {
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    @Transactional
+    public void deleteBusiness(String businessId) throws AtlasBaseException {
+        try {
+            businessDao.deleteBusinessById(businessId);
+            businessDao.deleteRelationByBusinessId(businessId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
         }
     }
 }

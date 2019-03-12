@@ -394,4 +394,19 @@ public class BusinessREST {
         }
     }
 
+    @DELETE
+    @Path("/{businessId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response deleteBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
+        try {
+            businessService.deleteBusiness(businessId);
+            return Response.status(200).entity("success").build();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+    }
+
 }
