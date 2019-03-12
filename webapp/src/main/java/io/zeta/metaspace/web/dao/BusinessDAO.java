@@ -119,7 +119,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -142,7 +142,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
              " </script>"})
     public long queryBusinessCountByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                               @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter);
