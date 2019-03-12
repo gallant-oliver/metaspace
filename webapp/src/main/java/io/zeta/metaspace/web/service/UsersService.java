@@ -157,14 +157,7 @@ public class UsersService {
     public Item getUserItems() throws AtlasBaseException {
         Item item = new Item();
         String userId = AdminUtils.getUserData().getUserId();
-        Role roleByUserId = userDAO.getRoleByUserId(userId);
-        if (roleByUserId.getStatus() == 0) {
-            item.setModules(new ArrayList<>());
-            item.setRole(roleByUserId);
-            return item;
-        }
         List<Module> modules = userDAO.getModuleByUserId(userId);
-        item.setRole(roleByUserId);
         item.setModules(modules);
         return item;
     }
