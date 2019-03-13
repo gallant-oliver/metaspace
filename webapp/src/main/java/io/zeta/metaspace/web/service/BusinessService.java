@@ -85,7 +85,7 @@ public class BusinessService {
             //departmentId(categoryId)
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             info.setSubmitter(userName);
             info.setBusinessOperator(userName);
             //businessId
@@ -328,7 +328,7 @@ public class BusinessService {
     @Transactional
     public void addBusinessAndTableRelation(String businessId, List<String> tableIdList) throws AtlasBaseException {
         try {
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
