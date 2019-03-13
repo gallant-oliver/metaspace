@@ -34,7 +34,7 @@
     <properties>
         <projectBaseDir>${project.basedir}/..</projectBaseDir>
         <debug.jetty.daemon>true</debug.jetty.daemon>
-        <log4j.configuration.url>file:///${project.build.directory}/../../distro/src/conf/atlas-log4j.xml</log4j.configuration.url>
+        <log4j.configuration.url>file:///${project.build.directory}/../../distro/src/conf/log4j2.xml</log4j.configuration.url>
     </properties>
 
     <profiles>
@@ -66,7 +66,7 @@
                 </os>
             </activation>
             <properties>
-                <log4j.configuration.url>file:/${project.build.directory}/../../distro/src/conf/atlas-log4j.xml</log4j.configuration.url>
+                <log4j.configuration.url>file:/${project.build.directory}/../../distro/src/conf/log4j2.xml</log4j.configuration.url>
             </properties>
         </profile>
 
@@ -210,7 +210,10 @@
             <artifactId>jetty-all</artifactId>
             <groupId>org.eclipse.jetty.aggregate</groupId>
           </exclusion>
-
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
 
         </exclusions>
       </dependency>
@@ -544,7 +547,6 @@
             <artifactId>jna</artifactId>
             <version>4.1.0</version>
         </dependency>
-
       <dependency>
         <groupId>org.quartz-scheduler</groupId>
         <artifactId>quartz</artifactId>
@@ -555,7 +557,40 @@
         <artifactId>quartz-jobs</artifactId>
         <version>${quartz.version}</version>
       </dependency>
-
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency> <!-- 桥接：告诉Slf4j使用Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency> <!-- 桥接：告诉commons logging使用Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jcl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency> <!-- 桥接：告诉java util logging使用Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jul</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

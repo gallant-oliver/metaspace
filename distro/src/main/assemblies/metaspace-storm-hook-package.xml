@@ -23,17 +23,17 @@
         <format>tar.gz</format>
         <format>dir</format>
     </formats>
-    <id>falcon-hook</id>
-    <baseDirectory>apache-atlas-falcon-hook-${project.version}</baseDirectory>
+    <id>storm-hook</id>
+    <baseDirectory>metaspace-storm-hook-${project.version}</baseDirectory>
     <fileSets>
-        <!-- addons/falcon -->
+        <!-- addons/storm -->
         <fileSet>
-            <directory>../addons/falcon-bridge/target/dependency/bridge</directory>
+            <directory>../addons/storm-bridge/target/dependency/bridge</directory>
             <outputDirectory>bridge</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>../addons/falcon-bridge/target/dependency/hook</directory>
+            <directory>../addons/storm-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
 

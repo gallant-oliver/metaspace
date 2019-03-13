@@ -39,11 +39,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer.getTypesToCreate;
 import static org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer.getTypesToUpdate;
 
@@ -76,6 +80,8 @@ public abstract class AtlasTypeDefGraphStore implements AtlasTypeDefStore {
 
     protected abstract AtlasDefStore<AtlasRelationshipDef> getRelationshipDefStore(AtlasTypeRegistry typeRegistry);
 
+    private static ExecutorService executor = Executors.newFixedThreadPool(5);
+
     @Override
     public void init() throws AtlasBaseException {
         LOG.info("==> AtlasTypeDefGraphStore.init()");
@@ -87,13 +93,69 @@ public abstract class AtlasTypeDefGraphStore implements AtlasTypeDefStore {
             ttr = typeRegistry.lockTypeRegistryForUpdate(typeUpdateLockMaxWaitTimeSeconds);
 
             ttr.clear();
+            AtlasTransientTypeRegistry finalTtr = ttr;
+            long startTime = System.currentTimeMillis();
+            CompletableFuture<List<AtlasEnumDef>> f1 = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getEnumDefStore(finalTtr).getAll();
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage());
+                }
+                return null;
+            }, executor);
 
-            AtlasTypesDef typesDef = new AtlasTypesDef(getEnumDefStore(ttr).getAll(),
+            CompletableFuture<List<AtlasStructDef>> f2 = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getStructDefStore(finalTtr).getAll();
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage());
+                }
+                return null;
+            }, executor);
+            CompletableFuture<List<AtlasClassificationDef>> f3 = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getClassificationDefStore(finalTtr).getAll();
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage());
+                }
+                return null;
+            }, executor);
+
+            CompletableFuture<List<AtlasEntityDef>> f4 = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getEntityDefStore(finalTtr).getAll();
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage());
+                }
+                return null;
+            }, executor);
+
+            CompletableFuture<List<AtlasRelationshipDef>> f5 = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return getRelationshipDefStore(finalTtr).getAll();
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage());
+                }
+                return null;
+            }, executor);
+            CompletableFuture<Void> all = CompletableFuture.allOf(f1, f2, f3, f4, f5);
+            all.join();
+
+            AtlasTypesDef typesDef = new AtlasTypesDef();
+            try {
+                typesDef = new AtlasTypesDef(f1.get(), f2.get(), f3.get(), f4.get(), f5.get());
+            } catch (InterruptedException | ExecutionException e) {
+                LOG.error(e.getMessage());
+            }finally {
+                executor.shutdown();
+            }
+
+            /*AtlasTypesDef typesDef = new AtlasTypesDef(getEnumDefStore(ttr).getAll(),
                     getStructDefStore(ttr).getAll(),
                     getClassificationDefStore(ttr).getAll(),
                     getEntityDefStore(ttr).getAll(),
-                    getRelationshipDefStore(ttr).getAll());
-
+                    getRelationshipDefStore(ttr).getAll());*/
+            LOG.info("complete init AtlasTypesDef take time:{}ms", System.currentTimeMillis()- startTime);
             rectifyTypeErrorsIfAny(typesDef);
 
             ttr.addTypes(typesDef);

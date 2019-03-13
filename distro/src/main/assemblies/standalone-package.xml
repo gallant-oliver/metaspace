@@ -24,7 +24,7 @@
         <format>dir</format>
     </formats>
     <id>bin</id>
-    <baseDirectory>apache-atlas-${project.version}</baseDirectory>
+    <baseDirectory>metaspace-${project.version}</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>target/conf/</directory>
@@ -57,9 +57,9 @@
             <directory>target/bin</directory>
             <outputDirectory>hook-bin</outputDirectory>
             <includes>
-                <include>atlas_client_cmdline.py</include>
-                <include>atlas_config.py</include>
-                <include>atlas_kafka_setup_hook.py</include>
+                <include>metaspace_client_cmdline.py</include>
+                <include>metaspace_config.py</include>
+                <include>metaspace_kafka_setup_hook.py</include>
             </includes>
             <fileMode>0755</fileMode>
             <directoryMode>0755</directoryMode>
@@ -203,7 +203,7 @@
         <file>
             <source>../webapp/target/atlas-webapp-${project.version}.war</source>
             <outputDirectory>server/webapp</outputDirectory>
-            <destName>atlas.war</destName>
+            <destName>metaspace.war</destName>
         </file>
     </files>
 </assembly>
