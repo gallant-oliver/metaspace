@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 public class GuavaUtils {
     private static Cache<String, Map> ticketCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(10, TimeUnit.SECONDS).build();
-    private static String key = "userData";
     private static String infoURL = SSOConfig.getInfoURL();
     public static Cache<String, Map> getTicketCache() {
         return ticketCache;
@@ -24,7 +23,7 @@ public class GuavaUtils {
 
         HashMap<String, String> header = new HashMap<>();
         header.put("ticket", ticket);
-        Map data = ticketCache.get(key, new Callable<Map>() {
+        Map data = ticketCache.get(ticket, new Callable<Map>() {
 
             public Map call() throws Exception {
                 String s = SSLClient.doGet(infoURL, header);
@@ -35,7 +34,7 @@ public class GuavaUtils {
                     throw new Exception();
                 }
                 Map data = (Map) jsonObject.get("data");
-                ticketCache.put(key, data);
+                ticketCache.put(ticket, data);
                 return data;
             }
         });
