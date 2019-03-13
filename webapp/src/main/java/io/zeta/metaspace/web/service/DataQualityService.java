@@ -218,6 +218,7 @@ public class DataQualityService {
         }
     }
 
+    @Transactional
     public void startTemplate(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         try {
@@ -226,16 +227,21 @@ public class DataQualityService {
             } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
 
                 String cron = qualityDao.getCronByTemplateId(templateId);
-                if(Objects.nonNull(cron)) {
+                if(Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
                     String jobName = qualityDao.getJobByTemplateId(templateId);
                     String jobGroupName = JOB_GROUP_NAME + jobName;
                     quartzManager.resumeJob(jobName, jobGroupName);
                     //设置模板状态为【已启用】
-                    qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+
                 } else {
                     //单次执行任务重新执行提交job
                     addQuartzJob(templateId);
                 }
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                long currentTime = System.currentTimeMillis();
+                String currentTimeFormat = sdf.format(currentTime);
+                qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
+                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
