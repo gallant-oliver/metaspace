@@ -135,6 +135,12 @@ public class BusinessService {
 
     public int updateBusiness(String businessId, BusinessInfo info) throws AtlasBaseException {
         try {
+            BusinessInfo currentInfo = businessDao.queryBusinessByBusinessId(businessId);
+            int count = businessDao.sameNameCount(info.getName());
+
+            if(count > 0 && !currentInfo.getName().equals(info.getName())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
+            }
             String userName = AdminUtils.getUserName();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
