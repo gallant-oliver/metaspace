@@ -402,6 +402,7 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
+
             getPath(list);
             int totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             pageResult.setCount(list.size());
@@ -420,10 +421,11 @@ public class DataManageService {
 
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
-                StringJoiner joiner = new StringJoiner(("."));
-                String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
-                joiner.add(path).add(entity.getTableName());
-                entity.setPath(joiner.toString());
+            StringJoiner joiner = new StringJoiner(("."));
+            String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
+            //joiner.add(path).add(entity.getTableName());
+            joiner.add(path);
+            entity.setPath(joiner.toString());
             }
     }
 
