@@ -149,6 +149,8 @@ public class BusinessService {
             info.setBusinessLastUpdate(time);
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");

@@ -394,14 +394,13 @@ public class DataManageService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
             String tableName = query.getFilterTableName();
-            tableName = (Objects.nonNull(tableName)? tableName: "");
             String tag = query.getTag();
-            tag = (Objects.nonNull(tag)? tag: "");
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
+
             getPath(list);
             int totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             pageResult.setCount(list.size());
@@ -420,10 +419,11 @@ public class DataManageService {
 
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
-                StringJoiner joiner = new StringJoiner(("."));
-                String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
-                joiner.add(path).add(entity.getTableName());
-                entity.setPath(joiner.toString());
+            StringJoiner joiner = new StringJoiner(("."));
+            String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
+            //joiner.add(path).add(entity.getTableName());
+            joiner.add(path);
+            entity.setPath(joiner.toString());
             }
     }
 
