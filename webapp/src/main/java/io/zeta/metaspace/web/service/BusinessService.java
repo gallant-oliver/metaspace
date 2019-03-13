@@ -141,7 +141,7 @@ public class BusinessService {
             if(count > 0 && !currentInfo.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
             }
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
