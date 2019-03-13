@@ -39,6 +39,7 @@ import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry;
+import org.springframework.scheduling.annotation.Async;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -105,7 +106,10 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                     }
 
                     try {
+                        LOG.info("starting init graphInstance");
+                        long startTime = System.currentTimeMillis();
                         graphInstance = JanusGraphFactory.open(config);
+                        LOG.info("complete init graphInstance, take time:{}ms", System.currentTimeMillis() - startTime);
                     } catch (JanusGraphException e) {
                         LOG.warn("JanusGraphException: {}", e.getMessage());
                         if (e.getMessage().startsWith(OLDER_STORAGE_EXCEPTION)) {

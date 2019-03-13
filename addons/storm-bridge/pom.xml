@@ -441,7 +441,7 @@
                         </systemProperty>
                         <systemProperty>
                             <name>log4j.configuration</name>
-                            <value>file:///${project.build.directory}/test-classes/atlas-log4j.xml</value>
+                            <value>file:///${project.build.directory}/test-classes/log4j2.xml</value>
                         </systemProperty>
                         <systemProperty>
                             <name>atlas.graphdb.backend</name>

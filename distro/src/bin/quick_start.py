@@ -18,8 +18,8 @@
 import os
 import sys
 
-import atlas_config as mc
-import atlas_client_cmdline as cmdline
+import metaspace_config as mc
+import metaspace_client_cmdline as cmdline
 
 def main():
 

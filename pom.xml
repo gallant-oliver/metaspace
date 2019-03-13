@@ -47,485 +47,6 @@
         <url>https://gitlab.gridsum.com/gdp/zeta/metaspace/issues</url>
     </issueManagement>
 
-    <inceptionYear>2015</inceptionYear>
-
-    <mailingLists>
-        <mailingList>
-            <name>atlas-dev</name>
-            <subscribe>dev-subscribe@atlas.apache.org</subscribe>
-            <unsubscribe>dev-unsubscribe@atlas.apache.org</unsubscribe>
-            <post>dev@atlas.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/atlas-dev/</archive>
-        </mailingList>
-        <mailingList>
-            <name>atlas-user</name>
-            <subscribe>user-subscribe@atlas.apache.org</subscribe>
-            <unsubscribe>user-unsubscribe@atlas.apache.org</unsubscribe>
-            <post>user@atlas.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/atlas-user/</archive>
-        </mailingList>
-        <mailingList>
-            <name>atlas-commits</name>
-            <subscribe>commits-subscribe@atlas.apache.org</subscribe>
-            <unsubscribe>commits-unsubscribe@atlas.apache.org</unsubscribe>
-            <post>commits@atlas.apache.org</post>
-            <archive>http://mail-archives.apache.org/mod_mbox/atlas-commits/</archive>
-        </mailingList>
-    </mailingLists>
-
-    <scm>
-        <connection>scm:git:git://git.apache.org/atlas.git</connection>
-        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/atlas.git</developerConnection>
-        <tag>HEAD</tag>
-        <url>https://github.com/apache/atlas.git</url>
-    </scm>
-
-    <developers>
-        <developer>
-            <id>adossett</id>
-            <name>Aaron Dossett</name>
-            <email>adossett@target.com</email>
-            <timezone>America/Denver</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Target Inc.</organization>
-            <!--<organizationUrl>http://www.target.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>AAhn</id>
-            <name>Andrew Ahn</name>
-            <email>aa@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization></organization>
-        </developer>
-        <developer>
-            <id>apoorvnaik</id>
-            <name>Apoorv Naik</name>
-            <email>apoorvnaik@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>acmurthy</id>
-            <name>Arun C.Murthy</name>
-            <email>acmurthy@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>ayubpathan</id>
-            <name>Ayub Pathan</name>
-            <email>ayubpathan@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>amestry</id>
-            <name>Ashutosh Mestry</name>
-            <email>amestry@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>bstortz</id>
-            <name>Barbara Stortz</name>
-            <email>bstortz@sap.com</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>SAP Inc.</organization>
-            <!--<organizationUrl>http://www.sap.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>chyzer</id>
-            <name>Chris Hyzer</name>
-            <email>chyzer@aetna.com</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Aetna Inc.</organization>
-            <!--<organizationUrl>http://www.aetna.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>dmarkwat</id>
-            <name>Daniel Markwat</name>
-            <email>dmarkwat@aetna.com</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Aetna Inc.</organization>
-            <!--<organizationUrl>http://www.aetna.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>darshankumar</id>
-            <name>Darshan Kumar</name>
-            <email>darshankumar@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>MPR</organization>
-        </developer>
-        <developer>
-            <id>davidrad</id>
-            <name>David Radley</name>
-            <email>davidrad@apache.org</email>
-            <timezone>Europe/London</timezone>
-            <roles>
-                <role>committer</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>dkantor</id>
-            <name>Dave Kantor</name>
-            <email>dkantor@apache.org</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>dkaspar</id>
-            <name>David Kaspar</name>
-            <email>dkaspar@merck.com</email>
-            <timezone>Europe/Berlin</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Merck &amp; Co Inc.</organization>
-            <!--<organizationUrl>http://www.merck.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>dfusaro</id>
-            <name>Dennis Fusaro</name>
-            <email>dfusaro@aetna.com</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Aetna Inc.</organization>
-            <!--<organizationUrl>http://www.aetna.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>grahamwallis</id>
-            <name>Graham Wallis</name>
-            <email>grahamwallis@apache.org</email>
-            <timezone>Europe/London</timezone>
-            <roles>
-                <role>committer</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>gsenia</id>
-            <name>Greg Senia</name>
-            <email>gsenia@aetna.com</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Aetna Inc.</organization>
-            <!--<organizationUrl>http://www.aetna.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>rhbutani</id>
-            <name>Harish Butani</name>
-            <email>rhbutani@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization/>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>yhemanth</id>
-            <name>Hemanth Yamijala</name>
-            <email>yhemanth@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>ilasek</id>
-            <name>Ivo Lasek</name>
-            <email>ilasek@merck.com</email>
-            <timezone>Europe/Berlin</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Merck &amp; Co Inc.</organization>
-            <!--<organizationUrl>http://www.merck.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>jnhagelberg</id>
-            <name>Jeffrey Hagelberg</name>
-            <email>jnhagelberg@apache.org</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>jitendra</id>
-            <name>Jitendra Pandey</name>
-            <email>jitendra@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>jmaron</id>
-            <name>Jon Maron</name>
-            <email>jmaron@apache.org</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization></organization>
-        </developer>
-        <developer>
-            <id>kalyanikashikar</id>
-            <name>Kalyani Kashikar</name>
-            <email>kalyanikashikar@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Freestone Infotech</organization>
-        </developer>
-        <developer>
-            <id>kbhatt</id>
-            <name>Keval Bhatt</name>
-            <email>kbhatt@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Freestone Infotech</organization>
-        </developer>
-        <developer>
-            <id>madhan</id>
-            <name>Madhan Neethiraj</name>
-            <email>madhan@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>mandy</id>
-            <name>Mandy Chessell</name>
-            <email>mandy@apache.org</email>
-            <timezone>Europe/London</timezone>
-            <roles>
-                <role>committer</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>mschussler</id>
-            <name>Mitch Schussler</name>
-            <email>mschussler@apache.org</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>JPMC</organization>
-            <!--<organizationUrl>http://</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>guptaneeru</id>
-            <name>Neeru Gupta</name>
-            <email>guptaneeru@us.ibm.com</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>IBM Corporation</organization>
-            <!--<organizationUrl>http://www.ibm.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>nixon</id>
-            <name>Nixon Rodrigues</name>
-            <email>nixon@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Freestone Infotech</organization>
-        </developer>
-        <developer>
-            <id>sarath</id>
-            <name>Sarath Subramanian</name>
-            <email>sarath@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>shwethags</id>
-            <name>Shwetha GS</name>
-            <email>shwethags@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>sriksun</id>
-            <name>Srikanth Sundarrajan</name>
-            <email>sriksun@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>InMobi</organization>
-            <!--<organizationUrl>http://www.inmobi.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>sumasai</id>
-            <name>Suma Shivaprasad</name>
-            <email>sumasai@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>ssuresh</id>
-            <name>Suresh Srinivas</name>
-            <email>ssuresh@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>tbeerbower</id>
-            <name>Tom Beerbower</name>
-            <email>tbeerbower@apache.org</email>
-            <timezone>America/New_York</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization></organization>
-        </developer>
-        <developer>
-            <id>vranganathan</id>
-            <name>Venkat Ranganathan</name>
-            <email>venkatrangan@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-        <developer>
-            <id>venkatesh</id>
-            <name>Venkatesh Seetharam</name>
-            <email>venkatesh@apache.org</email>
-            <timezone>America/Los_Angeles</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization></organization>
-        </developer>
-        <developer>
-            <id>svimal2106</id>
-            <name>Vimal Sharma</name>
-            <email>svimal2106@apache.org</email>
-            <timezone>Asia/Kolkata</timezone>
-            <roles>
-                <role>committer</role>
-                <role>PMC</role>
-            </roles>
-            <organization>Hortonworks Inc.</organization>
-            <!--<organizationUrl>http://www.hortonworks.com</organizationUrl>-->
-        </developer>
-    </developers>
 
     <profiles>
 
@@ -627,7 +148,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <node.version>v0.10.30</node.version>
         <node-for-v2.version>v4.4.2</node-for-v2.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.25</slf4j.version>
         <jetty.version>9.3.14.v20161028</jetty.version>
         <jetty.jsp.version>9.2.12.v20150709</jetty.jsp.version>
         <jersey.version>1.19</jersey.version>
@@ -644,6 +165,7 @@
 
         <json.version>3.2.11</json.version>
         <log4j.version>1.2.17</log4j.version>
+        <log4j2.version>2.11.2</log4j2.version>
         <akka.version>2.3.7</akka.version>
         <spray.version>1.3.1</spray.version>
         <gson.version>2.5</gson.version>
@@ -861,7 +383,7 @@
             </dependency>
 
             <!-- Logging -->
-            <dependency>
+            <!--<dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -906,6 +428,41 @@
                         <artifactId>jms</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>-->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-web</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency> <!-- 桥接：告诉Slf4j使用Log4j2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency> <!-- 桥接：告诉commons logging使用Log4j2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-jcl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency> <!-- 桥接：告诉java util logging使用Log4j2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-jul</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
 
             <!-- hadoop -->
@@ -950,6 +507,10 @@
                         <groupId>junit</groupId>
                         <artifactId>junit</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -978,6 +539,10 @@
                         <groupId>org.codehaus.jackson</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -985,6 +550,12 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-auth</artifactId>
                 <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -995,6 +566,10 @@
                     <exclusion>
                         <groupId>org.mortbay.jetty</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1010,6 +585,12 @@
                 <artifactId>hadoop-minikdc</artifactId>
                 <version>${hadoop.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Zookeeper, curator -->
@@ -1035,6 +616,12 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- commons -->
@@ -1462,6 +1049,12 @@
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>hive-bridge</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1492,6 +1085,12 @@
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>hive-bridge-shim</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1528,6 +1127,12 @@
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>kafka-bridge</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- API documentation  -->
@@ -1596,6 +1201,12 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1606,6 +1217,10 @@
                     <exclusion>
                         <groupId>junit</groupId>
                         <artifactId>junit</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1620,6 +1235,12 @@
                 <groupId>com.101tec</groupId>
                 <artifactId>zkclient</artifactId>
                 <version>${zkclient.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
         </dependencies>
@@ -1628,18 +1249,32 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jcl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jul</artifactId>
         </dependency>
 
         <dependency>
@@ -1880,6 +1515,22 @@
                             </rules>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>false</fail>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -1913,7 +1564,7 @@
                     <systemProperties>
                         <user.dir>${project.basedir}</user.dir>
                         <atlas.data>${project.build.directory}/data</atlas.data>
-                        <log4j.configuration>atlas-log4j.xml</log4j.configuration>
+                        <log4j.configuration>log4j2.xml</log4j.configuration>
                         <embedded.solr.directory>${project.basedir}/target</embedded.solr.directory>
                     </systemProperties>
                     <skipTests>${skipTests}</skipTests>
@@ -1943,7 +1594,7 @@
                     <systemPropertyVariables>
                         <projectBaseDir>${projectBaseDir}</projectBaseDir>
                         <atlas.data>${project.build.directory}/data</atlas.data>
-                        <log4j.configuration>atlas-log4j.xml</log4j.configuration>
+                        <log4j.configuration>log4j2.xml</log4j.configuration>
                         <embedded.solr.directory>${project.basedir}/target</embedded.solr.directory>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>

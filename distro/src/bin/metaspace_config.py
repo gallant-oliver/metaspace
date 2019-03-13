@@ -128,7 +128,8 @@ def logDir(dir):
     return os.environ.get(ATLAS_LOG, localLog)
 
 def pidFile(dir):
-    localPid = os.path.join(dir, LOG)
+    #localPid = os.path.join(dir, LOG)
+    localPid = dir
     return os.path.join(os.environ.get(ATLAS_PID, localPid), 'atlas.pid')
 
 def dataDir(dir):
@@ -144,7 +145,7 @@ def kafkaTopicSetupDir(homeDir):
 
 def expandWebApp(dir):
     webappDir = webAppDir(dir)
-    webAppMetadataDir = os.path.join(webappDir, "atlas")
+    webAppMetadataDir = os.path.join(webappDir, "metaspace")
     d = os.sep
     if not os.path.exists(os.path.join(webAppMetadataDir, "WEB-INF")):
         try:
@@ -153,7 +154,7 @@ def expandWebApp(dir):
             if e.errno != errno.EEXIST:
                 raise e
             pass
-        atlasWarPath = os.path.join(atlasDir(), "server", "webapp", "atlas.war")
+        atlasWarPath = os.path.join(atlasDir(), "server", "webapp", "metaspace.war")
         if (isCygwin()):
             atlasWarPath = convertCygwinPath(atlasWarPath)
         os.chdir(webAppMetadataDir)
@@ -243,10 +244,10 @@ def runProcess(commandline, logdir=None, shell=False, wait=False):
     stdoutFile = None
     stderrFile = None
     if logdir:
-        stdoutFile = open(os.path.join(logdir, timestr + ".out"), "w")
-        stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
-
-    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stderrFile, shell=shell)
+        stdoutFile = open(os.path.join(logdir, "application.log"), "w")
+        #stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
+    #DEVNULL = open(os.devnull, 'wb')
+    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stdoutFile, shell=shell)
 
     if wait:
         p.communicate()
@@ -484,7 +485,7 @@ def get_atlas_url_port(confdir):
         else:
             port = getConfigWithDefault(confdir, ATLAS_HTTP_PORT, DEFAULT_ATLAS_HTTP_PORT)
 
-    print "starting atlas on port %s" % port
+    print "starting metaspace on port %s" % port
     return port
 
 def get_atlas_url_host(confdir):
@@ -492,7 +493,7 @@ def get_atlas_url_host(confdir):
     host = getConfigWithDefault(confdir, ATLAS_SERVER_BIND_ADDRESS, DEFAULT_ATLAS_SERVER_HOST)
     if (host == '0.0.0.0'):
         host = DEFAULT_ATLAS_SERVER_HOST
-    print "starting atlas on host %s" % host
+    print "starting metaspace on host %s" % host
     return host
 
 def wait_for_startup(confdir, wait):
@@ -648,7 +649,7 @@ def configure_cassandra(dir):
         os.remove(tmpl_file)
 
 def server_already_running(pid):
-    print "Atlas server is already running under process %s" % pid
+    print "metaspace server is already running under process %s" % pid
     sys.exit()  
     
 def server_pid_not_running(pid):

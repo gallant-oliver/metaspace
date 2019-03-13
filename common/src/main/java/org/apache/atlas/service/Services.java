@@ -39,32 +39,23 @@ import static org.apache.atlas.AtlasConstants.ATLAS_SERVICES_ENABLED;
 @Profile("!test")
 public class Services {
     public static final Logger LOG = LoggerFactory.getLogger(Services.class);
-    private static final String DATA_MIGRATION_CLASS_NAME_DEFAULT = "DataMigrationService";
-
     private final List<Service> services;
-    private final String        dataMigrationClassName;
     private final boolean       servicesEnabled;
-    private final boolean       migrationEnabled;
 
     @Inject
     public Services(List<Service> services, Configuration configuration) {
         this.services               = services;
-        this.dataMigrationClassName = configuration.getString("atlas.migration.class.name", DATA_MIGRATION_CLASS_NAME_DEFAULT);
         this.servicesEnabled        = configuration.getBoolean(ATLAS_SERVICES_ENABLED, true);
-        this.migrationEnabled       = StringUtils.isNotEmpty(configuration.getString(ATLAS_MIGRATION_MODE_FILENAME));
     }
 
     @PostConstruct
     public void start() {
         try {
-            for (Service svc : services) {
-                if (!isServiceUsed(svc)) {
-                    continue;
+            if(servicesEnabled) {
+                for (Service svc : services) {
+                    LOG.info("Starting service {}", svc.getClass().getName());
+                    svc.start();
                 }
-
-                LOG.info("Starting service {}", svc.getClass().getName());
-
-                svc.start();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -73,31 +64,16 @@ public class Services {
 
     @PreDestroy
     public void stop() {
-        for (int idx = services.size() - 1; idx >= 0; idx--) {
-            Service svc = services.get(idx);
-            try {
-                if (!isServiceUsed(svc)) {
-                    continue;
+        if (servicesEnabled) {
+            for (int idx = services.size() - 1; idx >= 0; idx--) {
+                Service svc = services.get(idx);
+                try {
+                    LOG.info("Stopping service {}", svc.getClass().getName());
+                    svc.stop();
+                } catch (Throwable e) {
+                    LOG.warn("Error stopping service {}", svc.getClass().getName(), e);
                 }
-
-                LOG.info("Stopping service {}", svc.getClass().getName());
-
-                svc.stop();
-            } catch (Throwable e) {
-                LOG.warn("Error stopping service {}", svc.getClass().getName(), e);
             }
         }
-    }
-
-    private boolean isServiceUsed(Service service) {
-        if (isDataMigrationService(service)) {
-            return migrationEnabled;
-        } else {
-            return !migrationEnabled && servicesEnabled;
-        }
-    }
-
-    private boolean isDataMigrationService(Service svc) {
-        return svc.getClass().getSimpleName().equals(dataMigrationClassName);
     }
 }

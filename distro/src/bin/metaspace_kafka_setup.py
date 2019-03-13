@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import sys
-import atlas_client_cmdline as cmdline
-import atlas_config as mc
+import metaspace_client_cmdline as cmdline
+import metaspace_config as mc
 
 def main():
     conf_dir = cmdline.setup_conf_dir()

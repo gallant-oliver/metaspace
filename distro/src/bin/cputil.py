@@ -18,7 +18,7 @@
 import os
 import sys
 
-import atlas_config as mc
+import metaspace_config as mc
 
 DEFAULT_JVM_OPTS="-Xmx1024m"
 
@@ -41,8 +41,8 @@ def main():
 
     p = os.pathsep
     atlas_classpath = confdir + p \
-                       + os.path.join(web_app_dir, "atlas", "WEB-INF", "classes" ) + p \
-                       + os.path.join(web_app_dir, "atlas", "WEB-INF", "lib", "*" )  + p \
+                       + os.path.join(web_app_dir, "metaspace", "WEB-INF", "classes" ) + p \
+                       + os.path.join(web_app_dir, "metaspace", "WEB-INF", "lib", "*" )  + p \
                        + os.path.join(atlas_home, "libext", "*")
 
     process = mc.java("org.apache.atlas.util.CredentialProviderUtility", sys.argv[1:], atlas_classpath, jvm_opts_list)
