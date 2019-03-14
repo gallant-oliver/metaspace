@@ -17,6 +17,12 @@ public class AdminUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(AdminUtils.class);
     private static String TICKET_KEY = "X-SSO-FullticketId";
+
+    /**
+     * 获取到的是账号截取的name，用于hive，hdfs等
+     * @return
+     * @throws AtlasBaseException
+     */
     public static String getUserName() throws AtlasBaseException {
         String userName=null;
         try {
@@ -48,6 +54,12 @@ public class AdminUtils {
         }
 
     }
+
+    /**
+     * 仅可以获取UserId，Account，Username
+     * @return
+     * @throws AtlasBaseException
+     */
     public static User getUserData() throws AtlasBaseException {
         User user = new User();
         try {
@@ -60,6 +72,6 @@ public class AdminUtils {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
         }
-
     }
+
 }
