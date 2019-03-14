@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.dataquality.Report;
+import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.result.ReportResult;
@@ -296,6 +297,9 @@ public interface DataQualityDAO {
     @Insert("insert into template2qrtz_job(templateId,qrtz_job)values(#{templateId},#{qrtz_job})")
     public int insertTemplate2Qrtz_Trigger(@Param("templateId") String templateId, @Param("qrtz_job") String qrtz_job);
 
+    @Delete("delete from template2qrtz_job where templateId=#{templateId}")
+    public int deleteTemplate2QrtzByTemplateId(@Param("templateId") String templateId);
+
     /**
      * 根据quartzName查询Template
      * @param qrtz_job
@@ -315,4 +319,7 @@ public interface DataQualityDAO {
 
     @Select("select templateStatus from template where templateId=#{templateId}")
     public Integer getTemplateStatus(@Param("templateId") String templateId);
+
+    @Insert("insert into report_error(errorId,templateId,reportId,ruleId,content,generateTime,retryCount)values(#{errorId},#{templateId},#{reportId},#{ruleId},#{content},#{generateTime},#{retryCount})")
+    public int insertReportError(ReportError error);
 }
