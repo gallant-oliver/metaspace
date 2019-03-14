@@ -157,7 +157,7 @@ public interface BusinessDAO {
              " on",
              " businessInfo.businessId = business_relation.businessId",
              " and",
-             " business_relation.categoryGuid=#{categoryGuid}",
+             " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,name",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
