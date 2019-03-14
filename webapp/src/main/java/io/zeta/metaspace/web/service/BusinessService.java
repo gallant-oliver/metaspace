@@ -333,9 +333,12 @@ public class BusinessService {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
             businessDao.updateTechnicalInfo(businessId, userName, time);
-
             //更新technical编辑状态
-            businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
+            if(Objects.nonNull(tableIdList) && tableIdList.size() > 0) {
+                businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
+            } else {
+                businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
+            }
             businessDao.deleteRelationByBusinessId(businessId);
             for(String guid : tableIdList) {
                 businessDao.insertTableRelation(businessId, guid);
