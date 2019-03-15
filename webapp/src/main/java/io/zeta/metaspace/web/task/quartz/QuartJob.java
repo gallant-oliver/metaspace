@@ -122,6 +122,7 @@ public class QuartJob implements Job {
                         error.setRetryCount(retryCount);
                         qualityDao.insertReportError(error);
                         qualityDao.updateFinishedPercent(templateId, 0F);
+                        Thread.sleep(RETRY * 10000);
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
                     }
