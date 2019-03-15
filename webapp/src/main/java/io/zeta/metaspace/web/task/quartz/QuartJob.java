@@ -148,7 +148,6 @@ public class QuartJob implements Job {
                 case TABLE_ROW_NUM_CHANGE_RATIO:
                     ruleResultChangeRatio(rule, true, false);
                     break;
-
                 case TABLE_SIZE:
                     tableSize(rule, true);
                     break;

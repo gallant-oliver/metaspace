@@ -19,41 +19,27 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.result.DownloadUri;
-import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.service.DataQualityService;
-import io.zeta.metaspace.web.service.DataQualityV2Service;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
-import javax.annotation.Generated;
 import javax.inject.Singleton;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -66,11 +52,8 @@ public class DataQualityREST {
     private HttpServletRequest httpServletRequest;
     @Context
     private HttpServletResponse httpServletResponse;
-
     @Autowired
     private DataQualityService dataQualityService;
-    @Autowired
-    private DataQualityV2Service dataQualityV2Service;
 
 
     /**
@@ -215,7 +198,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId) {
         try {
-            return dataQualityV2Service.getTemplates(tableId);
+            return dataQualityService.getTemplates(tableId);
         } catch (SQLException e) {
 
         }
@@ -233,7 +216,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Map getReports(@PathParam("templateId") String templateId, @PathParam("offset") int offset, @PathParam("limit") int limit) {
         try {
-            Map reports = dataQualityV2Service.getReports(templateId, offset, limit);
+            Map reports = dataQualityService.getReports(templateId, offset, limit);
             return reports;
         } catch (SQLException e) {
 
@@ -253,7 +236,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Report getReport(@PathParam("reportId") String reportId) throws AtlasBaseException {
         try {
-            Report report = dataQualityV2Service.getReport(reportId);
+            Report report = dataQualityService.getReport(reportId);
             return report;
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"sql异常");
@@ -274,7 +257,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TableColumnRules getRules(@PathParam("tableId") String tableId, @PathParam("buildType") int buildType) {
         try {
-            TableColumnRules rules = dataQualityV2Service.getRules(tableId, buildType);
+            TableColumnRules rules = dataQualityService.getRules(tableId, buildType);
             return rules;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.service;
  */
 
 import io.zeta.metaspace.model.dataquality.CheckExpression;
+import io.zeta.metaspace.model.dataquality.DataType;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
@@ -31,6 +32,12 @@ import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.TemplateStatus;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.dataquality.RuleStatus;
+import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.ReportResult;
+import io.zeta.metaspace.model.result.TableColumnRules;
+import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
@@ -75,6 +82,8 @@ public class DataQualityService {
     DataQualityDAO qualityDao;
     @Autowired
     QuartzManager quartzManager;
+    @Autowired
+    private MetaDataService metadataService;
 
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
@@ -308,7 +317,7 @@ public class DataQualityService {
                 tableData = new ArrayList<>();
                 columnData = new ArrayList<>();
                 String reportName = qualityDao.getReportName(reportId);
-                List<Report.ReportRule> reportRules = qualityDao.getReport(reportId);
+                List<Report.ReportRule> reportRules = qualityDao.getReportRuleList(reportId);
                 List<String> resultList = null;
                 for (Report.ReportRule rule : reportRules) {
                     resultList = new ArrayList<>();
@@ -451,5 +460,90 @@ public class DataQualityService {
             LOG.error(e.getMessage());
             throw e;
         }
+    }
+
+    public List<TemplateResult> getTemplates(String tableId) throws SQLException {
+        List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId);
+        return templateResults;
+    }
+
+    ;
+
+    public Map getReports(String templateId, int offset, int limit) throws SQLException {
+        Map<String, Object> map = new HashMap<>();
+        List<ReportResult> reports = qualityDao.getReports(templateId, offset, limit);
+        long count = qualityDao.getCount(templateId);
+        map.put("reports",reports);
+        map.put("total",count);
+        return map;
+    }
+
+    public Report getReport(String reportId) throws SQLException, AtlasBaseException {
+        List<Report> reports = qualityDao.getReport(reportId);
+        if(reports.size()==0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该报表不存在");
+        Report report = reports.get(0);
+        List<Report.ReportRule> reportRule = qualityDao.getReportRule(reportId);
+        for (Report.ReportRule rule : reportRule) {
+            String ruleResultId = rule.getRuleId();
+            List<Double> reportThresholdValue = qualityDao.getReportThresholdValue(ruleResultId);
+            rule.setRuleCheckThreshold(reportThresholdValue);
+        }
+        report.setRules(reportRule);
+
+        return report;
+    }
+
+    public TableColumnRules getRules(String tableId, int buildType) throws SQLException, AtlasBaseException {
+        TableColumnRules tableColumnRules = new TableColumnRules();
+        List<TableColumnRules.ColumnsRule> columnsRules = new ArrayList<>();
+        List<TableColumnRules.SystemRule> tableSystemRules = qualityDao.getTableSystemRules(RuleType.TABLE.code, buildType);
+        addCheckRules(tableSystemRules);
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(tableId);
+        List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
+        Table tableInfoById = metadataService.getTableInfoById(tableId);
+        tableColumnRules.setSource(tableInfoById.getDatabaseName()+"."+tableInfoById.getTableName());
+        for (Column column : columns) {
+            TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
+            String columnName = column.getColumnName();
+            String type = column.getType();
+            columnsRule.setRuleColumnName(columnName);
+            columnsRule.setRuleColumnType(type);
+            DataType datatype = getDatatype(type);
+            List<TableColumnRules.SystemRule> columnSystemRules = qualityDao.getColumnSystemRules(RuleType.COLUMN.code, datatype.getCode(), buildType);
+            addCheckRules(columnSystemRules);
+            columnsRule.setColumnRules(columnSystemRules);
+            columnsRules.add(columnsRule);
+        }
+        tableColumnRules.setTableRules(tableSystemRules);
+        tableColumnRules.setColumnsRules(columnsRules);
+
+        return tableColumnRules;
+    }
+
+    private void addCheckRules(List<TableColumnRules.SystemRule> tableSystemRules) throws SQLException {
+        for (TableColumnRules.SystemRule tableSystemRule : tableSystemRules) {
+            int ruleId = tableSystemRule.getRuleId();
+            List<Integer> checktypes = qualityDao.getChecktypes(ruleId);
+            tableSystemRule.setRuleAllowCheckType(checktypes);
+        }
+    }
+
+    private DataType getDatatype(String type) {
+        ArrayList<String> numeric = new ArrayList<>();
+        numeric.add("tinyint");
+        numeric.add("smallint");
+        numeric.add("int");
+        numeric.add("integer");
+        numeric.add("bigint");
+        numeric.add("float");
+        numeric.add("double");
+        numeric.add("double precision");
+        numeric.add("decimal");
+        numeric.add("numeric");
+        if (numeric.contains(type))
+            return DataType.NUMERIC;
+
+        return DataType.UNNUMERIC;
     }
 }

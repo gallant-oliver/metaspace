@@ -28,21 +28,18 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
@@ -60,8 +57,6 @@ public class BusinessService {
     @Autowired
     BusinessDAO businessDao;
     @Autowired
-    BusinessRelationDAO relationDao;
-    @Autowired
     CategoryDAO categoryDao;
     @Autowired
     PrivilegeDAO privilegeDao;
@@ -71,8 +66,6 @@ public class BusinessService {
     RoleService roleService;
 
     private static final int FINISHED_STATUS = 1;
-    private static final int BUSINESS_MODULE = 3;
-    private static final int TECHNICAL_MODULE = 4;
     private static final int BUSINESS_TYPE = 1;
 
     @Transactional
@@ -122,7 +115,7 @@ public class BusinessService {
 
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
-            int relationFlag = relationDao.addRelation(entity);
+            int relationFlag = businessDao.addRelation(entity);
             return insertFlag & relationFlag;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());

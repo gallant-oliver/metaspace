@@ -21,6 +21,8 @@ import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.result.ReportResult;
+import io.zeta.metaspace.model.result.TableColumnRules;
+import io.zeta.metaspace.model.result.TemplateResult;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -218,7 +220,7 @@ public interface DataQualityDAO {
      * @return
      */
     @Select("select * from report_userrule where reportId=#{reportId} order by generateTime")
-    public List<Report.ReportRule> getReport(@Param("reportId") String reportId);
+    public List<Report.ReportRule> getReportRuleList(@Param("reportId") String reportId);
 
     /**
      * 查询报告名称
@@ -322,4 +324,28 @@ public interface DataQualityDAO {
 
     @Insert("insert into report_error(errorId,templateId,reportId,ruleId,content,generateTime,retryCount)values(#{errorId},#{templateId},#{reportId},#{ruleId},#{content},#{generateTime},#{retryCount})")
     public int insertReportError(ReportError error);
+
+    @Select("select * from (select reportproducedate,temp.templateid templateid,orangealerts, redalerts,reportid,reportname,alert,temp.buildtype buildtype,temp.periodcron periodcron,temp.templatename templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,MAX(reportproducedate) OVER (PARTITION BY report.templateid) maxtime\n" +
+            "from\n" +
+            "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum\n" +
+            "from template \n" +
+            "where tableid = #{tableId}) as temp left join report \n" +
+            "on report.templateid=temp.templateid) temp2re where maxtime=reportproducedate or reportproducedate is null")
+    public List<TemplateResult> getTemplateResults(String tableId) throws SQLException;
+    @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
+    public List<Report> getReport(String reportId) throws SQLException;
+    @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid,generateTime from report_userrule where reportid = #{reportId} order by generateTime")
+    public List<Report.ReportRule> getReportRule(String reportId) throws SQLException;
+    @Select("select thresholdvalue from report_userrule2threshold where ruleid = #{ruleId} order by thresholdvalue asc")
+    public List<Double> getReportThresholdValue(String ruleId) throws SQLException;
+    @Select("select reportid,reportname,orangealerts,redalerts,reportproducedate from report where templateid = #{templateId} order by reportproducedate desc limit #{limit} offset #{offset}")
+    public List<ReportResult> getReports(@Param("templateId") String templateId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
+    @Select("select count(*) from report where templateid = #{templateId}")
+    public long getCount(@Param("templateId") String templateId) throws SQLException;
+    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2datatype,rule2buildtype where systemrule.ruleid=rule2datatype.ruleid  and systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and datatype=#{dataType} and ruletype=#{ruleType} order by ruleid")
+    public List<TableColumnRules.SystemRule> getColumnSystemRules(@Param("ruleType") int ruleType, @Param("dataType") int dataType, @Param("buildType") int buildType) throws SQLException;
+    @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2buildtype where systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and ruletype=#{ruleType} order by ruleid")
+    public List<TableColumnRules.SystemRule> getTableSystemRules(@Param("ruleType") int ruleType,@Param("buildType") int buildType) throws SQLException;
+    @Select("select checktype from rule2checktype where ruleid = #{ruleId}")
+    public List<Integer> getChecktypes(int ruleId) throws SQLException;
 }
