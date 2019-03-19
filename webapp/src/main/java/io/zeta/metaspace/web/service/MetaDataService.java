@@ -763,20 +763,6 @@ public class MetaDataService {
         if(Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "提交修改信息有误");
         }
-        //修改tag
-        try{
-            tableTagDAO.delAllTable2Tag(guid);
-            List<String> tags = tableEdit.getTags();
-            for (String s : tags) {
-                try {
-                    tableTagDAO.addTable2Tag(s, guid);
-                }catch (Exception e){
-                    LOG.error("table "+guid+" 添加tag "+s+" 失败,错误信息:"+e.getMessage(),e);
-                }
-            }
-        }catch(Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除表标签失败");
-        }
         //修改描述
         try {
             AtlasEntity entity = getEntityById(guid);
