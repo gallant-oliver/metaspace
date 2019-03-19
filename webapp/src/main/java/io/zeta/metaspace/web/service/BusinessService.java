@@ -354,6 +354,7 @@ public class BusinessService {
         try {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
+            businessDao.deleteRelationById(businessId);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
