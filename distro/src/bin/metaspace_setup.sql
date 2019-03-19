@@ -805,7 +805,11 @@ INSERT INTO "public"."privilege2module" VALUES ('5', 1);
 INSERT INTO "public"."privilege2module" VALUES ('5', 3);
 INSERT INTO "public"."privilege2module" VALUES ('5', 5);
 INSERT INTO "public"."privilege2module" VALUES ('5', 7);
-
+INSERT INTO category(guid,name,categorytype,level) VALUES('1','贴源层',0,1);
+INSERT INTO category(guid,name,categorytype,level) VALUES('2','基础层',0,1);
+INSERT INTO category(guid,name,categorytype,level) VALUES('3','规范层',0,1);
+INSERT INTO category(guid,name,categorytype,level) VALUES('4','通过层',0,1);
+INSERT INTO category(guid,name,categorytype,level) VALUES('5','应用层',0,1);
 -- ----------------------------
 -- Primary Key structure for table qrtz_triggers
 -- ----------------------------
