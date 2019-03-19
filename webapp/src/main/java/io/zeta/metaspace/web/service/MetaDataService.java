@@ -24,15 +24,13 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.TableTagDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -47,8 +45,6 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.common.filetable.ColumnExt;
 import io.zeta.metaspace.web.common.filetable.CsvEncode;
@@ -77,16 +73,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnEdit;
-import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
-import io.zeta.metaspace.model.metadata.LineageDepthInfo;
-import io.zeta.metaspace.model.metadata.LineageTrace;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.metadata.TableEdit;
-import io.zeta.metaspace.model.metadata.TableLineageInfo;
-import io.zeta.metaspace.model.metadata.TablePermission;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -128,6 +114,8 @@ public class MetaDataService {
     RoleDAO roleDAO;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    TableDAO tableDAO;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -162,11 +150,7 @@ public class MetaDataService {
             table.setStatus(entity.getStatus().name());
             //创建人
             table.setOwner(getEntityAttribute(entity, "owner"));
-            //创建时间
-            Object createTime = entity.getAttribute("createTime");
-            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String formatDateStr = sdf.format(createTime);
-            table.setCreateTime(formatDateStr);
+
             //描述
             table.setDescription(getEntityAttribute(entity, "comment"));
             //sd
@@ -181,9 +165,7 @@ public class MetaDataService {
             table.setDatabaseName(relatedObject.getDisplayText());
             //所属业务
             table.setBusiness("");
-            //表关联信息
-            List<String> relations = getRelationList(guid);
-            table.setRelations(relations);
+
             //类别
             table.setCategory("");
             //表生命周期
@@ -220,6 +202,43 @@ public class MetaDataService {
                 }
             }catch (Exception e){
                 LOG.error("获取系统权限失败,错误信息:"+e.getMessage(),e);
+            }
+
+            //1.4新增
+            try{
+                TableHeader tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
+                //ownerId
+                String owner = tableInfoByTableguid.getOwner();
+                table.setOwner(owner);
+            }catch (Exception e){
+                LOG.error("获取数据owner失败,错误信息:"+e.getMessage(),e);
+            }
+            try{
+                //创建时间
+                Object createTime = entity.getAttribute("createTime");
+                SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formatDateStr = sdf.format(createTime);
+                table.setCreateTime(formatDateStr);
+            }catch (Exception e){
+                LOG.error("获取源系统维度失败,错误信息:"+e.getMessage(),e);
+            }
+            try{
+
+            }catch (Exception e){
+                LOG.error("获取数仓维度失败,错误信息:"+e.getMessage(),e);
+            }
+            try{
+                //表关联信息
+                List<String> relations = getRelationList(guid);
+                table.setRelations(relations);
+
+            }catch (Exception e){
+                LOG.error("获取数据目录维度失败,错误信息:"+e.getMessage(),e);
+            }
+            try{
+
+            }catch (Exception e){
+                LOG.error("获取业务维度失败,错误信息:"+e.getMessage(),e);
             }
         }
         return table;

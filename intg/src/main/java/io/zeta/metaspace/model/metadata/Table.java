@@ -22,18 +22,8 @@ public class Table implements Serializable {
     private String tableId;
     private String tableName;
     private String business;
-    private List<String> relations;
     private String owner;
-    private String createTime;
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
+    private String dataOwner;
     private String category;
     private String databaseId;
     private String databaseName;
@@ -50,6 +40,104 @@ public class Table implements Serializable {
     private String status;
     private List<Tag> tags;
     private boolean edit;
+
+    private String subordinateSystem;
+    private String subordinateDatabase;
+    private String systemAdmin;
+    private String createTime;
+
+    private String dataWarehouseAdmin;
+    private String dataWarehouseDescription;
+
+    private List<String> relations;
+    private String catalogAdmin;
+    private String relationTime;
+
+    private List<BusinessObject> businessObjects;
+
+    private TablePermission tablePermission;
+
+    private List<Column> columns;
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getSubordinateSystem() {
+        return subordinateSystem;
+    }
+
+    public void setSubordinateSystem(String subordinateSystem) {
+        this.subordinateSystem = subordinateSystem;
+    }
+
+    public String getSubordinateDatabase() {
+        return subordinateDatabase;
+    }
+
+    public void setSubordinateDatabase(String subordinateDatabase) {
+        this.subordinateDatabase = subordinateDatabase;
+    }
+
+    public String getSystemAdmin() {
+        return systemAdmin;
+    }
+
+    public void setSystemAdmin(String systemAdmin) {
+        this.systemAdmin = systemAdmin;
+    }
+
+    public String getDataWarehouseAdmin() {
+        return dataWarehouseAdmin;
+    }
+
+    public void setDataWarehouseAdmin(String dataWarehouseAdmin) {
+        this.dataWarehouseAdmin = dataWarehouseAdmin;
+    }
+
+    public String getDataWarehouseDescription() {
+        return dataWarehouseDescription;
+    }
+
+    public void setDataWarehouseDescription(String dataWarehouseDescription) {
+        this.dataWarehouseDescription = dataWarehouseDescription;
+    }
+
+    public String getCatalogAdmin() {
+        return catalogAdmin;
+    }
+
+    public void setCatalogAdmin(String catalogAdmin) {
+        this.catalogAdmin = catalogAdmin;
+    }
+
+    public String getRelationTime() {
+        return relationTime;
+    }
+
+    public void setRelationTime(String relationTime) {
+        this.relationTime = relationTime;
+    }
+
+    public List<BusinessObject> getBusinessObjects() {
+        return businessObjects;
+    }
+
+    public void setBusinessObjects(List<BusinessObject> businessObjects) {
+        this.businessObjects = businessObjects;
+    }
+
+    public String getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(String dataOwner) {
+        this.dataOwner = dataOwner;
+    }
 
     public boolean isEdit() {
         return edit;
@@ -90,9 +178,6 @@ public class Table implements Serializable {
     public void setColumns(List<Column> columns) {
         this.columns = columns;
     }
-
-    private TablePermission tablePermission;
-    private List<Column> columns;
 
     public String getTableId() {
         return tableId;
@@ -236,5 +321,36 @@ public class Table implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public static class BusinessObject {
+        private String businessObject;
+        private String department;
+
+        public String getBusinessObject() {
+            return businessObject;
+        }
+
+        public void setBusinessObject(String businessObject) {
+            this.businessObject = businessObject;
+        }
+
+        public String getDepartment() {
+            return department;
+        }
+
+        public void setDepartment(String department) {
+            this.department = department;
+        }
+
+        public String getBusinessLeader() {
+            return businessLeader;
+        }
+
+        public void setBusinessLeader(String businessLeader) {
+            this.businessLeader = businessLeader;
+        }
+
+        private String businessLeader;
     }
 }

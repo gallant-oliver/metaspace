@@ -29,6 +29,7 @@ public class TableHeader {
     private String databaseName;
     private String createTime;
     private String status;
+    private String owner;
 
     public String getStatus() {
         return status;
@@ -76,5 +77,13 @@ public class TableHeader {
 
     public void setDatabaseName(String databaseName) {
         this.databaseName = databaseName;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }
