@@ -2,6 +2,8 @@ package io.zeta.metaspace.web.util;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.cache.Cache;
+import io.zeta.metaspace.model.user.User;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -14,12 +16,18 @@ import java.util.Map;
 public class AdminUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(AdminUtils.class);
+    private static String TICKET_KEY = "X-SSO-FullticketId";
 
+    /**
+     * 获取到的是账号截取的name，用于hive，hdfs等
+     * @return
+     * @throws AtlasBaseException
+     */
     public static String getUserName() throws AtlasBaseException {
         String userName=null;
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            Map<String, String> user = (Map) request.getSession().getAttribute("user");
+            Map<String, String> user = GuavaUtils.getUserInfo(request.getHeader(TICKET_KEY));
             userName = user.get("LoginEmail").split("@")[0];
             if(userName==null||userName.equals(""))
                 throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
@@ -35,8 +43,7 @@ public class AdminUtils {
         String SSOTicket=null;
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            SSOTicket =  request.getSession().getAttribute("SSOTicket").toString();
-
+            SSOTicket =  request.getHeader(TICKET_KEY);
             if(SSOTicket==null||SSOTicket.equals(""))
                 throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
             return SSOTicket;
@@ -47,4 +54,24 @@ public class AdminUtils {
         }
 
     }
+
+    /**
+     * 仅可以获取UserId，Account，Username
+     * @return
+     * @throws AtlasBaseException
+     */
+    public static User getUserData() throws AtlasBaseException {
+        User user = new User();
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            Map m = GuavaUtils.getUserInfo(request.getHeader(TICKET_KEY));
+            user.setUserId(m.get("AccountGuid").toString());
+            user.setAccount(m.get("LoginEmail").toString());
+            user.setUsername(m.get("DisplayName").toString());
+            return user;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
+        }
+    }
+
 }

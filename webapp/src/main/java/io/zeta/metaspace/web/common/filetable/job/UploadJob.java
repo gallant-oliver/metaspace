@@ -152,15 +152,22 @@ public class UploadJob extends AnalysisJob {
 
     private void removeParquetFileProxy(String username) throws IOException, InterruptedException, AtlasBaseException {
         //todo kerberos
-        FileSystem fileSystem = HdfsUtils.getFs();
-        Path parquetFilePath = new Path(getParquetFileDir());
-        fileSystem.delete(parquetFilePath, true);
+
+        try (FileSystem fileSystem = HdfsUtils.getFs();) {
+            Path parquetFilePath = new Path(getParquetFileDir());
+            fileSystem.delete(parquetFilePath, true);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     private void moveParquetFileProxy(String username, final Path src, final Path dest) throws IOException, InterruptedException, AtlasBaseException {
         //todo kerberos
-        FileSystem fs = HdfsUtils.getFs();
-        fs.rename(src, dest);
+        try (FileSystem fs = HdfsUtils.getFs();) {
+            fs.rename(src, dest);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        }
     }
 
     @Override
@@ -255,7 +262,7 @@ public class UploadJob extends AnalysisJob {
 
     private String getParquetFileDir() {
         return FiletableConfig.getUploadHdfsPath() + "/" +
-               getUploadJobInfo().getTaskInfo().getJobId();
+                getUploadJobInfo().getTaskInfo().getJobId();
     }
 
     /**
@@ -275,12 +282,12 @@ public class UploadJob extends AnalysisJob {
         ParquetWriter<IndexedRecord> parquetWriter = null;
         try {
             parquetWriter = new ParquetWriter<>(outputPath, writeSupport, CompressionCodecName.SNAPPY,
-                                                Constants.PARQUET_BLOCK_SIZE,
-                                                Constants.PARQUET_PAGE_SIZE,
-                                                Constants.PARQUET_DICTIONARY_PAGE_SIZE,
-                                                Constants.PARQUET_ENABLE_DICTIONARY,
-                                                Constants.PARQUET_VALIDATING,
-                                                HdfsUtils.conf());
+                    Constants.PARQUET_BLOCK_SIZE,
+                    Constants.PARQUET_PAGE_SIZE,
+                    Constants.PARQUET_DICTIONARY_PAGE_SIZE,
+                    Constants.PARQUET_ENABLE_DICTIONARY,
+                    Constants.PARQUET_VALIDATING,
+                    HdfsUtils.conf());
 
             if (null == sheet || sheet.isEmpty()) {
                 throw new RuntimeException("current sheet is not exist or empty!");

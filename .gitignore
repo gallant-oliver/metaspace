@@ -14,3 +14,9 @@ deploy/
 
 webapp/src/main/webapp/static/.DS_Store
 webapp/src/main/webapp/.DS_Store
+metaspace_1_3_0_1_91-storm-plugin-1.1.0.1.3.0.1-91.noarch.rpm
+metaspace_1_3_0_1_91-sqoop-plugin-1.1.0.1.3.0.1-91.noarch.rpm
+metaspace_1_3_0_1_91-hive-plugin-1.1.0.1.3.0.1-91.noarch.rpm
+metaspace_1_3_0_1_91-falcon-plugin-1.1.0.1.3.0.1-91.noarch.rpm
+metaspace_1_3_0_1_91-1.1.0.1.3.0.1-91.noarch.rpm
+metaspace_1_3_0_1_91-patch-1.1.0.1.3.0.1-91.noarch.rpm

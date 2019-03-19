@@ -16,12 +16,15 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2018/10/25 20:01
  */
 public class TableEdit {
+
 
     private String guid;
     private String description;

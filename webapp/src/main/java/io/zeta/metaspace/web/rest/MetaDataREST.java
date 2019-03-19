@@ -12,41 +12,25 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
-
-import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.RelationEntityV2;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
-import org.apache.atlas.utils.AtlasPerfTracer;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnEdit;
-import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.GuidCount;
-import io.zeta.metaspace.model.metadata.LineageDepthInfo;
-import io.zeta.metaspace.model.metadata.Parameters;
-
-import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.metadata.TableEdit;
-import io.zeta.metaspace.model.metadata.TableLineageInfo;
+import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.tag.Tag2Table;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.TableTagService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import io.zeta.metaspace.web.service.DataManageService;
-
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -54,11 +38,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 
 @Path("metadata")
 @Singleton
@@ -72,6 +54,7 @@ public class MetaDataREST {
     private static final String DEFAULT_DIRECTION = "BOTH";
     private static final String DEFAULT_DEPTH = "-1";
 
+
     @Autowired
     private DataManageService dataManageService;
 
@@ -82,22 +65,45 @@ public class MetaDataREST {
         this.metadataService = metadataService;
     }
 
+
     /**
-     * 返回全部的库
+     * 根据搜索条件返回库
      *
      * @return List<Database>
      */
     @POST
-    @Path("/search/database")
+    @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getAllDatabase(" + parameters + " )");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + parameters + " )");
             }
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据库id返回表
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/tables/{databaseId}/{offset}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + databaseId + "," + limit + "," + offset + " )");
+            }
+            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -127,7 +133,7 @@ public class MetaDataREST {
     }
 
     /**
-     * 根据搜索条件返回行
+     * 根据搜索条件返回列
      *
      * @return List<Column>
      */
@@ -166,9 +172,9 @@ public class MetaDataREST {
             TableShow tableShow = searchService.getTableShow(guidCount);
             return tableShow;
         } catch (AtlasBaseException e) {
-            throw  e;
+            throw e;
         } catch (IOException e) {
-            throw  new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -193,38 +199,16 @@ public class MetaDataREST {
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
         } catch (AtlasBaseException e) {
-            throw  e;
-        }catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"hive查询异常");
+            throw e;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
         } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"图数据查询异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
-    /**
-     * 获取表详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/table/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableInfoById()");
-            }
-            return metadataService.getTableInfoById(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
 
     /**
      * 获取字段详情
@@ -278,32 +262,10 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 表血缘深度详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/table/lineage/depth/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageDepthInfo getTableLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", guid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
-            }
-            return metadataService.getTableLineageDepthInfo(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
 
     /**
      * 获取字段血缘
+     *
      * @param guid
      * @param direction
      * @param depth
@@ -329,237 +291,26 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 字段血缘深度详情
-     *
-     * @param guid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/column/lineage/depth/{guid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public LineageDepthInfo getColumnLineageDepthInfo(@PathParam("guid") String guid) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", guid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getLineageInfo");
-            }
-            return metadataService.getColumnLineageDepthInfo(guid);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 添加目录 V2
-     * @param categoryInfo
-     * @return
-     * @throws Exception
-     */
-    @POST
-    @Path("/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 createCategory(CategoryInfoV2 categoryInfo) throws Exception {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
-            }
-            return dataManageService.createCategory(categoryInfo);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 修改目录信息 V2
-     * @param categoryInfo
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/update/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
-            }
-            return dataManageService.updateCategory(categoryInfo);
-        }  catch (MyBatisSystemException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 删除目录 V2
-     * @param categoryGuid
-     * @return
-     * @throws Exception
-     */
-    @DELETE
-    @Path("/category/{categoryGuid}")
-    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid) throws Exception {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
-            }
-            dataManageService.deleteCategory(categoryGuid);
-        }  catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-    /**
-     * 添加关联
-     * @param categoryGuid
-     * @param relations
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/category/{categoryGuid}/assignedEntities")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
-            }
-            dataManageService.assignTablesToCategory(categoryGuid, relations);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-    /**
-     * 获取关联关系
-     * @param categoryGuid
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/category/relations/{categoryGuid}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid,RelationQuery relationQuery) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
-            }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
-        } catch (MyBatisSystemException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 删除关联关系
-     * @param relationshipList
-     * @return
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/category/relation")
-    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
-            }
-            dataManageService.removeRelationAssignmentFromTables(relationshipList);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-    /**
-     * 获取表关联
-     * @param relationQuery
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/table/relations/")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
-            }
-            return dataManageService.getRelationsByTableName(relationQuery);
-        }  finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
-     * 获取全部目录
-     * @param sort
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/category")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
-            }
-            return dataManageService.getAll();
-        }  finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
 
     /**
      * 更新表描述
+     *
      * @param tableEdit
      * @throws AtlasBaseException
      */
     @POST
     @Path("/update/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
             }
-            metadataService.updateTableDescription(tableEdit);
+            metadataService.updateTable(tableEdit);
+
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
         } finally {
@@ -570,6 +321,7 @@ public class MetaDataREST {
 
     /**
      * 更新字段描述
+     *
      * @param columnEdits
      * @throws AtlasBaseException
      */
@@ -590,8 +342,10 @@ public class MetaDataREST {
         return Response.status(200).entity("success").build();
     }
 
+
     /**
      * 清除缓存
+     *
      * @return
      * @throws AtlasBaseException
      */
@@ -620,4 +374,75 @@ public class MetaDataREST {
         return HiveJdbcUtils.tableExists(database, tableName);
     }
 
+    @Autowired
+    TableTagService tableTagService;
+
+    @Path("/tag")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addTag(Tag tag) throws AtlasBaseException {
+        try {
+            String s = tableTagService.addTag(tag.getTagName());
+            return s;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建标签失败");
+        }
+
+    }
+
+    @Path("/tags")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Tag> getTags(Parameters parameters) throws AtlasBaseException {
+        try {
+            List<Tag> tags = tableTagService.getTags(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            return tags;
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标签失败");
+        }
+    }
+
+    @Path("/tag/table2tab")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addtable2tab(Tag2Table tag2Table) throws AtlasBaseException {
+        try {
+            tableTagService.addTable2Tag(tag2Table.getTable(), tag2Table.getTags());
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加标签失败");
+        }
+    }
+
+    @Path("/tag/{tagId}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String deleteTag(@PathParam("tagId") String tagId) throws AtlasBaseException {
+        try {
+            tableTagService.deleteTag(tagId);
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
+
+    @Path("/tag/tag2table/{tableguId}/{tagId}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+
+    public String deletetag2table(@PathParam("tableguId") String tableguId, @PathParam("tagId") String tagId) throws AtlasBaseException {
+        try {
+            tableTagService.deleteTable2Tag(tableguId, tagId);
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
 }

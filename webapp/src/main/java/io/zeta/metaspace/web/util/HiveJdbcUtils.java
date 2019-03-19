@@ -127,19 +127,20 @@ public class HiveJdbcUtils {
         String tableName = split[1];
         String location = location(db, tableName);
         if (location != null) {
-            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs");){
+            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
                 ContentSummary contentSummary = fs.getContentSummary(new Path(location));
                 long numFiles = contentSummary.getFileCount();
                 long totalSize = contentSummary.getLength();
                 return new TableMetadata(numFiles, Long.valueOf(totalSize));
             }catch (Exception e){
-                LOG.warn(String.valueOf(e.getStackTrace()));
+                LOG.warn(e.getMessage(),e);
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
             }
         } else {//view
             return new TableMetadata();
         }
     }
+
 
     private static String location(String db, String tableName) {
         try(Connection conn = getSystemConnection(db);
@@ -157,6 +158,19 @@ public class HiveJdbcUtils {
             LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
         }
         return null;
+    }
+
+    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            Connection conn = getSystemConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            if(e.getMessage().contains("Permission denied")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {

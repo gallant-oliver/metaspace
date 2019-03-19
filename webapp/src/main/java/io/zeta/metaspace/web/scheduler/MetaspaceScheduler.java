@@ -72,12 +72,12 @@ public class MetaspaceScheduler {
     public MetaspaceScheduler() {
     }
 
-    @Scheduled(cron = "0 0 23 * * ?")   //每天晚上11点
+    //每天晚上12点
     public void insertTableMetadataStat() throws Exception {
         log.info("scheduler start");
         //List<AtlasEntityHeader> tables = allActiveTable();
         List<AtlasEntityHeader> tables = allActiveTableV2();
-        String date = DateUtils.today();
+        String date = DateUtils.yesterday();
         insertTableStatList(tables, date);
         log.info("scheduler end");
     }
