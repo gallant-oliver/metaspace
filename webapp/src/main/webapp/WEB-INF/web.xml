@@ -48,15 +48,23 @@
   </servlet-mapping>
 
   <filter>
-    <filter-name>AuditFilter</filter-name>
+    <filter-name>SSOFilter</filter-name>
     <filter-class>io.zeta.metaspace.web.filter.SSOFilter</filter-class>
   </filter>
 
   <filter-mapping>
-    <filter-name>AuditFilter</filter-name>
-    <url-pattern>/*</url-pattern>
+    <filter-name>SSOFilter</filter-name>
+    <url-pattern>/api/metaspace/*</url-pattern>
   </filter-mapping>
+  <filter>
+    <filter-name>PrivilegeFilter</filter-name>
+    <filter-class>io.zeta.metaspace.web.filter.PrivilegeFilter</filter-class>
+  </filter>
 
+  <filter-mapping>
+    <filter-name>PrivilegeFilter</filter-name>
+    <url-pattern>/api/metaspace/*</url-pattern>
+  </filter-mapping>
   <listener>
     <listener-class>org.apache.logging.log4j.web.Log4jServletContextListener</listener-class>
   </listener>
@@ -73,7 +81,7 @@
     <session-timeout>60</session-timeout>
     <tracking-mode>COOKIE</tracking-mode>
     <cookie-config>
-      <name>ATLASSESSIONID</name>
+      <name>METASPACESSESSIONID</name>
       <http-only>true</http-only>
     </cookie-config>
   </session-config>

@@ -17,15 +17,20 @@
 package io.zeta.metaspace.web.dao;
 
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
+
+import javax.ws.rs.DELETE;
 
 /*
  * @description
@@ -34,37 +39,112 @@ import java.util.Set;
  */
 public interface CategoryDAO {
 
-    @Insert("insert into table_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName)" +
-            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName})")
+
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level)" +
+            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType},#{level})")
     public int add(CategoryEntityV2 category);
 
-    @Select("select * from table_category")
-    public Set<CategoryEntityV2> getAll();
+    @Select("select * from category where categoryType=#{categoryType}")
+    public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType) throws SQLException;
 
-    @Select("select * from table_category where guid=#{guid}")
+    @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
-    @Select("select count(*) from table_category where qualifiedName=#{qualifiedName}")
-    public int queryQualifiedNameNum(@Param("qualifiedName")String qualifiedName);
+    @Select("select name from category where guid=#{guid}")
+    public String queryNameByGuid(@Param("guid") String categoryGuid) throws SQLException;
 
-    @Select("select qualifiedName from table_category where guid=#{guid}")
+    @Select({" <script>",
+             " select count(1) from category where name=#{name}",
+             " <choose>",
+             " <when test='parentCategoryGuid != null'>",
+             " and parentCategoryGuid=#{parentCategoryGuid}",
+             " </when>",
+             " <otherwise>",
+             " and parentCategoryGuid is null",
+             " </otherwise>",
+             " </choose>",
+             " and categoryType=#{type}",
+             " </script>"})
+    public int querySameNameNum(@Param("name") String categoryName, @Param("parentCategoryGuid")String parentCategoryGuid, @Param("type")int type);
+
+    @Select("select qualifiedName from category where guid=#{guid}")
     public String queryQualifiedName(@Param("guid")String guid);
 
-    @Select("select count(*) from table_category where parentCategoryGuid=#{parentCategoryGuid}")
+    @Select("select count(*) from category where parentCategoryGuid=#{parentCategoryGuid}")
     public int queryChildrenNum(@Param("parentCategoryGuid")String guid);
 
-    @Select("select guid from table_category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL")
+    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and downBrotherCategoryGuid is NULL or downBrotherCategoryGuid=''")
     public String queryLastChildCategory(@Param("parentCategoryGuid")String guid);
 
-    @Update("update table_category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
+    @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
     public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
 
-    @Update("update table_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
+    @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
 
-    @Update("update table_category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
+    @Update("update category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
     public int updateCategoryInfo(CategoryEntity category);
 
-    @Delete("delete from table_category where guid=#{guid}")
+    @Delete("delete from category where guid=#{guid}")
     public int delete(@Param("guid")String guid) throws SQLException;
+
+    @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType}")
+    public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType) throws SQLException;
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "SELECT  PATH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    public String queryPathByGuid(@Param("guid")String guid);
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "SELECT  PATH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    public String queryGuidPathByGuid(@Param("guid")String guid);
+
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "SELECT  DEPTH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    public int queryLevelByGuid(@Param("guid")String guid);
+
+
+    @Select("WITH RECURSIVE categoryTree AS  " +
+            "(SELECT * from category where parentCategoryGuid=#{parentCategoryGuid} " +
+            "UNION " +
+            "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid) " +
+            "SELECT guid FROM categoryTree")
+    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
+
+    @Delete({"<script>",
+             "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
+             "<foreach item='guid' index='index' collection='categoryList' separator=',' open='(' close=')'>" ,
+             "#{guid}",
+             "</foreach>",
+             "</script>"})
+    public int deleteChildrenRelation(@Param("tableGuid")String tableGuid, @Param("categoryList")List<String> categoryList);
+
+    @Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
+    public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);
+
+    @Select("select guid from category where categoryType=#{categoryType}")
+    public List<String> getAllCategory(@Param("categoryType")int categoryType);
+
+    @Select("select level from category where guid=#{guid}")
+    public int getCategoryLevel(@Param("guid")String guid);
+
 }

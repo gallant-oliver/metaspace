@@ -24,8 +24,10 @@ package io.zeta.metaspace.model.metadata;
 public class RelationQuery {
     private String categoryGuid;
     private String filterTableName;
+    private String tag;
     private int offset;
     private int limit;
+    private int categoryType;
 
     public String getCategoryGuid() {
         return categoryGuid;
@@ -57,5 +59,21 @@ public class RelationQuery {
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public int getCategoryType() {
+        return categoryType;
+    }
+
+    public void setCategoryType(int categoryType) {
+        this.categoryType = categoryType;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

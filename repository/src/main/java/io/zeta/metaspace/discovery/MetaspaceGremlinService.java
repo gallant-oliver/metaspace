@@ -16,12 +16,12 @@
  */
 package io.zeta.metaspace.discovery;
 
-import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.lineage.AtlasLineageInfo;
 
 import java.util.List;
 
@@ -45,7 +45,11 @@ public interface MetaspaceGremlinService {
 
     String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException;
 
-    PageResult<Table> getTableNameAndDbNameByQuery(String query,int offset,int limit) throws AtlasBaseException;
+    PageResult<Table> getTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException;
 
     PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, int offset, int limit) throws AtlasBaseException;
+
+    public List<Long> getDBTotal() throws AtlasBaseException;
+
+    public List<Long> getTBTotal() throws AtlasBaseException;
 }

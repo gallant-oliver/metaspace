@@ -30,6 +30,7 @@ public class RelationEntityV2 {
     private String tableGuid;
     private String path;
     private String status;
+    private String createTime;
 
     public RelationEntityV2() { }
 
@@ -97,5 +98,13 @@ public class RelationEntityV2 {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
     }
 }

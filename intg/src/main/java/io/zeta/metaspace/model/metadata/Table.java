@@ -13,10 +13,12 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import io.zeta.metaspace.model.table.Tag;
+
 import java.io.Serializable;
 import java.util.List;
 
-public class Table  implements Serializable {
+public class Table implements Serializable {
     private String tableId;
     private String tableName;
     private String business;
@@ -46,6 +48,24 @@ public class Table  implements Serializable {
     private String type;
     private Boolean virtualTable;
     private String status;
+    private List<Tag> tags;
+    private boolean edit;
+
+    public boolean isEdit() {
+        return edit;
+    }
+
+    public void setEdit(boolean edit) {
+        this.edit = edit;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
+    }
 
     public List<String> getRelations() {
         return relations;
