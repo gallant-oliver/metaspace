@@ -125,7 +125,7 @@ public class DataManageService {
             if(Objects.isNull(currentCategoryGuid)) {
                 User user = AdminUtils.getUserData();
                 Role role = roleDao.getRoleByUsersId(user.getUserId());
-                if("1".equals(role.getRoleId())) {
+                if(!"1".equals(role.getRoleId())) {
                     throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
                 }
                 //qualifiedName
