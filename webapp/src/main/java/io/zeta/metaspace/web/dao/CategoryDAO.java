@@ -147,4 +147,12 @@ public interface CategoryDAO {
     @Select("select level from category where guid=#{guid}")
     public int getCategoryLevel(@Param("guid")String guid);
 
+    @Update({" <script>",
+             " update tableInfo set dataOwner=#{ownersIds,jdbcType=ARRAY, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where tableGuid in",
+             "<foreach item='guid' index='index' collection='tableIds' separator=',' open='(' close=')'>" ,
+             "#{guid}",
+             "</foreach>",
+             "</script>"})
+    public int addTableOwners(@Param("tableIds")List<String> tableIds, @Param("ownersIds")String[] ownersIds) throws SQLException;
+
 }

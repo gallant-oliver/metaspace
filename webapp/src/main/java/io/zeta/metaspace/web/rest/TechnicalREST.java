@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -51,8 +53,8 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> getAllDatabase(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-            PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResult(parameters,categoryId);
-            return pageResult;
+        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResult(parameters,categoryId);
+        return pageResult;
     }
 
     /**
@@ -269,5 +271,42 @@ public class TechnicalREST {
         }
     }
 
+
+    @POST
+    @Path("/owner/table/")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addOwners(TableOwner tableOwner) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.addOwners()");
+            }
+            dataManageService.addTableOwner(tableOwner);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List getOrganization() {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganization()");
+            }
+            return dataManageService.getOrganization();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
 }
