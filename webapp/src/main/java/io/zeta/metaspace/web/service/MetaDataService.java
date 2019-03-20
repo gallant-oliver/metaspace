@@ -209,7 +209,7 @@ public class MetaDataService {
                 TableHeader tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
                 //ownerId
                 String owner = tableInfoByTableguid.getOwner();
-                table.setOwner(owner);
+                table.setDataOwner(owner);
             }catch (Exception e){
                 LOG.error("获取数据owner失败,错误信息:"+e.getMessage(),e);
             }
@@ -231,7 +231,7 @@ public class MetaDataService {
                 //表关联信息
                 List<String> relations = getRelationList(guid);
                 table.setRelations(relations);
-
+                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
             }catch (Exception e){
                 LOG.error("获取数据目录维度失败,错误信息:"+e.getMessage(),e);
             }

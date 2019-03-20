@@ -23,7 +23,7 @@ public class Table implements Serializable {
     private String tableName;
     private String business;
     private String owner;
-    private String dataOwner;
+    private List<String> dataOwner;
     private String category;
     private String databaseId;
     private String databaseName;
@@ -43,14 +43,14 @@ public class Table implements Serializable {
 
     private String subordinateSystem;
     private String subordinateDatabase;
-    private String systemAdmin;
+    private List<String> systemAdmin;
     private String createTime;
 
     private String dataWarehouseAdmin;
     private String dataWarehouseDescription;
 
     private List<String> relations;
-    private String catalogAdmin;
+    private List<String> catalogAdmin;
     private String relationTime;
 
     private List<BusinessObject> businessObjects;
@@ -83,14 +83,6 @@ public class Table implements Serializable {
         this.subordinateDatabase = subordinateDatabase;
     }
 
-    public String getSystemAdmin() {
-        return systemAdmin;
-    }
-
-    public void setSystemAdmin(String systemAdmin) {
-        this.systemAdmin = systemAdmin;
-    }
-
     public String getDataWarehouseAdmin() {
         return dataWarehouseAdmin;
     }
@@ -107,14 +99,6 @@ public class Table implements Serializable {
         this.dataWarehouseDescription = dataWarehouseDescription;
     }
 
-    public String getCatalogAdmin() {
-        return catalogAdmin;
-    }
-
-    public void setCatalogAdmin(String catalogAdmin) {
-        this.catalogAdmin = catalogAdmin;
-    }
-
     public String getRelationTime() {
         return relationTime;
     }
@@ -129,14 +113,6 @@ public class Table implements Serializable {
 
     public void setBusinessObjects(List<BusinessObject> businessObjects) {
         this.businessObjects = businessObjects;
-    }
-
-    public String getDataOwner() {
-        return dataOwner;
-    }
-
-    public void setDataOwner(String dataOwner) {
-        this.dataOwner = dataOwner;
     }
 
     public boolean isEdit() {
@@ -313,6 +289,30 @@ public class Table implements Serializable {
 
     public void setVirtualTable(Boolean virtualTable) {
         this.virtualTable = virtualTable;
+    }
+
+    public List<String> getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(List<String> dataOwner) {
+        this.dataOwner = dataOwner;
+    }
+
+    public List<String> getSystemAdmin() {
+        return systemAdmin;
+    }
+
+    public void setSystemAdmin(List<String> systemAdmin) {
+        this.systemAdmin = systemAdmin;
+    }
+
+    public List<String> getCatalogAdmin() {
+        return catalogAdmin;
+    }
+
+    public void setCatalogAdmin(List<String> catalogAdmin) {
+        this.catalogAdmin = catalogAdmin;
     }
 
     public String getStatus() {

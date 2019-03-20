@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -29,7 +31,7 @@ public class TableHeader {
     private String databaseName;
     private String createTime;
     private String status;
-    private String owner;
+    private List<String> owner;
 
     public String getStatus() {
         return status;
