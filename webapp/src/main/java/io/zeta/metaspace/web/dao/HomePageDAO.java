@@ -57,7 +57,7 @@ public interface HomePageDAO {
     public List<TableUseInfo> getTableRelatedInfo(@Param("limit") int limit, @Param("offset") int offset);
 
     //@Select("SELECT sum(total) from (select count(*) as total from role join users on role.roleId=users.roleId group by role.roleId) A")
-    @Select("select count(*) from business2table")
+    @Select("select count(DISTINCT businessId) from business2table")
     public long getTotalTableUserTimes();
 
     @Select("SELECT count(distinct tableGuid) from  business2Table")

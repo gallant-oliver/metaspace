@@ -190,4 +190,7 @@ public interface BusinessDAO {
     @Delete("delete from businessInfo where businessId=#{businessId}")
     public int deleteBusinessById(@Param("businessId")String businessId);
 
+    @Delete("delete from business_relation where businessId=#{businessId}")
+    public int deleteRelationById(@Param("businessId")String businessId);
+
 }
