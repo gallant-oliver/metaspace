@@ -26,6 +26,8 @@ public class Column implements Serializable {
     private String description;
     private Boolean isPartitionKey;
     private String status;
+    private Integer columnPrivilegeGuid;
+    private String columnPrivilege;
     public String getTableId() {
         return tableId;
     }
@@ -104,5 +106,21 @@ public class Column implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Integer getColumnPrivilegeGuid() {
+        return columnPrivilegeGuid;
+    }
+
+    public void setColumnPrivilegeGuid(Integer columnPrivilegeGuid) {
+        this.columnPrivilegeGuid = columnPrivilegeGuid;
+    }
+
+    public String getColumnPrivilege() {
+        return columnPrivilege;
+    }
+
+    public void setColumnPrivilege(String columnPrivilege) {
+        this.columnPrivilege = columnPrivilege;
     }
 }

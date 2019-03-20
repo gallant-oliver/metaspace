@@ -26,6 +26,8 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
@@ -265,7 +267,7 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableInfoById(guid);
+        return businessService.getTableInfoById(guid);
     }
 
     @DELETE
@@ -279,6 +281,48 @@ public class BusinessManageREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 添加权限字段
+     * @param privilege
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 添加权限字段关联
+     * @param relation
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/relation/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilegeRelation(ColumnPrivilegeRelation relation) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilegeRelation(relation);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
         return Response.status(200).entity("success").build();
     }
