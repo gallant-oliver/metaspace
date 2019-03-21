@@ -18,22 +18,19 @@
 
 package org.apache.atlas.web.errors;
 
-import static org.apache.atlas.AtlasErrorCode.INTERNAL_UNKNOWN_ERROR;
-
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.type.AtlasType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static org.apache.atlas.AtlasErrorCode.URL_NOT_FOUND;
 
 /**
  * Exception mapper for Jersey.
@@ -56,14 +53,18 @@ public class AllExceptionMapper implements ExceptionMapper<Exception> {
     protected Response buildExceptionResponse(Exception exception) {
 
         Map<String, String> errorJsonMap = new LinkedHashMap<>();
-        errorJsonMap.put("errorCode", INTERNAL_UNKNOWN_ERROR.getErrorCode());
-        errorJsonMap.put("errorMessage", exception.getMessage());
+        errorJsonMap.put("errorCode", URL_NOT_FOUND.getErrorCode());
+        String errorMessage = exception.getMessage();
+        if (StringUtils.isNotEmpty(errorMessage) && errorMessage.contains("null for")) {
+            errorMessage = "not found" + errorMessage.substring(8);
+        }
+        errorJsonMap.put("errorMessage", errorMessage);
 
         if (exception.getCause() != null) {
             errorJsonMap.put("errorCause", exception.getCause().getMessage());
         }
-        Response.ResponseBuilder responseBuilder = Response.status(500);
-        responseBuilder.entity(AtlasType.toJson(errorJsonMap));
+        Response.ResponseBuilder responseBuilder = Response.status(400);
+        responseBuilder.entity(AtlasType.toJson(errorJsonMap)).type(Servlets.JSON_MEDIA_TYPE);
         return responseBuilder.build();
     }
 
