@@ -258,7 +258,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
                 StringJoiner joiner = new StringJoiner(".");
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 String[] pathArr = path.split("\\.");
                 String level2Category = "";
