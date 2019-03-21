@@ -128,6 +128,8 @@ public class MetaDataService {
     RoleDAO roleDAO;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    DataManageService dataManageService;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -296,6 +298,7 @@ public class MetaDataService {
     public List<String> getRelationList(String guid) throws AtlasBaseException {
         try {
             List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
+            dataManageService.getPath(relationEntities);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)
