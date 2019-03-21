@@ -213,10 +213,12 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<Module> modules =  userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                for (Module module : modules) {
-                    if(module.getModuleId()==SystemModule.TECHNICAL_OPERATE.getCode())
-                        table.setEdit(true);
+                if(table.getTablePermission().isWRITE()) {
+                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                    for (Module module : modules) {
+                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode())
+                            table.setEdit(true);
+                    }
                 }
             }catch (Exception e){
                 LOG.error("获取系统权限失败,错误信息:"+e.getMessage(),e);
