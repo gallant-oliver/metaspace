@@ -220,7 +220,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : list) {
                 joiner = new StringJoiner(".");
                 //path
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
