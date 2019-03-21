@@ -31,7 +31,7 @@ public class TableHeader {
     private String databaseName;
     private String createTime;
     private String status;
-    private List<String> owner;
+    private List<String> dateOwner;
 
     public String getStatus() {
         return status;
@@ -81,11 +81,11 @@ public class TableHeader {
         this.databaseName = databaseName;
     }
 
-    public String getOwner() {
-        return owner;
+    public List<String> getDateOwner() {
+        return dateOwner;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setDateOwner(List<String> dateOwner) {
+        this.dateOwner = dateOwner;
     }
 }

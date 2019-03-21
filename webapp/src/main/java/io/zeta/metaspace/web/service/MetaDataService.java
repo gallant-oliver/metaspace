@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
@@ -208,8 +209,10 @@ public class MetaDataService {
             try{
                 TableHeader tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
                 //ownerId
-                String owner = tableInfoByTableguid.getOwner();
-                table.setDataOwner(owner);
+                List<String> owners = tableInfoByTableguid.getDateOwner();
+                for (String owner : owners) {
+                }
+                table.setDataOwner(owners);
             }catch (Exception e){
                 LOG.error("获取数据owner失败,错误信息:"+e.getMessage(),e);
             }
