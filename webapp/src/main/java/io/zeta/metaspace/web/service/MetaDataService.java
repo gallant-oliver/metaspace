@@ -213,8 +213,10 @@ public class MetaDataService {
                 for (String owner : owners) {
                 }
                 table.setDataOwner(owners);
+                //更新时间
+                table.set(DateUtils.date2String(entity.getUpdateTime()));
             }catch (Exception e){
-                LOG.error("获取数据owner失败,错误信息:"+e.getMessage(),e);
+                LOG.error("获取数据基础信息失败,错误信息:"+e.getMessage(),e);
             }
             try{
                 //创建时间
@@ -235,6 +237,9 @@ public class MetaDataService {
                 List<String> relations = getRelationList(guid);
                 table.setRelations(relations);
                 List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
+                //目录管理员
+                table.setDataOwner(adminByTableguid);
+
             }catch (Exception e){
                 LOG.error("获取数据目录维度失败,错误信息:"+e.getMessage(),e);
             }
