@@ -16,6 +16,10 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -31,7 +35,6 @@ public class TableHeader {
     private String databaseName;
     private String createTime;
     private String status;
-    private List<String> dateOwner;
 
     public String getStatus() {
         return status;
@@ -81,11 +84,5 @@ public class TableHeader {
         this.databaseName = databaseName;
     }
 
-    public List<String> getDateOwner() {
-        return dateOwner;
-    }
 
-    public void setDateOwner(List<String> dateOwner) {
-        this.dateOwner = dateOwner;
-    }
 }

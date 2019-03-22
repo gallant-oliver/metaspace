@@ -21,21 +21,16 @@ import java.util.List;
 public class Table implements Serializable {
     private String tableId;
     private String tableName;
-    private String business;
     private String owner;
     private List<String> dataOwner;
     private String updateTime;
-    private String category;
     private String databaseId;
     private String databaseName;
-    private String tableLife;
     private String partitionKey;
     private Boolean partitionTable;
-    private String partitionLife;
     private String format;
     private String location;
     private String description;
-    private String topic;
     private String type;
     private Boolean virtualTable;
     private String status;
@@ -45,7 +40,6 @@ public class Table implements Serializable {
 
     private String subordinateSystem;
     private String subordinateDatabase;
-
     private List<String> systemAdmin;
     private String createTime;
 
@@ -78,13 +72,6 @@ public class Table implements Serializable {
         this.editTag = editTag;
     }
 
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
 
     public String getSubordinateSystem() {
         return subordinateSystem;
@@ -191,13 +178,6 @@ public class Table implements Serializable {
         this.tableName = tableName;
     }
 
-    public String getBusiness() {
-        return business;
-    }
-
-    public void setBusiness(String business) {
-        this.business = business;
-    }
 
     public String getOwner() {
         return owner;
@@ -231,13 +211,6 @@ public class Table implements Serializable {
         this.databaseName = databaseName;
     }
 
-    public String getTableLife() {
-        return tableLife;
-    }
-
-    public void setTableLife(String tableLife) {
-        this.tableLife = tableLife;
-    }
 
     public String getPartitionKey() {
         return partitionKey;
@@ -255,13 +228,6 @@ public class Table implements Serializable {
         this.partitionTable = partitionTable;
     }
 
-    public String getPartitionLife() {
-        return partitionLife;
-    }
-
-    public void setPartitionLife(String partitionLife) {
-        this.partitionLife = partitionLife;
-    }
 
     public String getFormat() {
         return format;
@@ -287,13 +253,6 @@ public class Table implements Serializable {
         this.description = description;
     }
 
-    public String getTopic() {
-        return topic;
-    }
-
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
 
     public TablePermission getTablePermission() {
         return tablePermission;
@@ -346,6 +305,7 @@ public class Table implements Serializable {
     public static class BusinessObject {
         private String businessObject;
         private String department;
+        private String businessLeader;
 
         public String getBusinessObject() {
             return businessObject;
@@ -371,6 +331,6 @@ public class Table implements Serializable {
             this.businessLeader = businessLeader;
         }
 
-        private String businessLeader;
+
     }
 }

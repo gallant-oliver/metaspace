@@ -25,6 +25,7 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -167,17 +168,6 @@ public class MetaDataService {
             AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
             table.setDatabaseId(relatedObject.getGuid());
             table.setDatabaseName(relatedObject.getDisplayText());
-            //所属业务
-            table.setBusiness("");
-
-            //类别
-            table.setCategory("");
-            //表生命周期
-            table.setTableLife("");
-            //分区生命周期
-            table.setPartitionLife("");
-            //分类信息
-            table.setTopic("");
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(guid);
             List<Column> columns = getColumnInfoById(columnQuery, true);
@@ -217,18 +207,24 @@ public class MetaDataService {
 
             //1.4新增
             try {
-                TableHeader tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
+                TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
                 //ownerId
-                List<String> owners = tableInfoByTableguid.getDateOwner();
+                List<String> owners = tableInfoByTableguid.getDataOwner();
                 for (String owner : owners) {
                 }
                 table.setDataOwner(owners);
                 //更新时间
-                table.set(DateUtils.date2String(entity.getUpdateTime()));
+                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
             } catch (Exception e) {
                 LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
             }
             try {
+                //所属系统
+                table.setSubordinateSystem("");
+                //所属数据库
+                table.setSubordinateDatabase("");
+                //源系统管理员
+                table.setSystemAdmin(new ArrayList<String>());
                 //创建时间
                 Object createTime = entity.getAttribute("createTime");
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -249,12 +245,13 @@ public class MetaDataService {
                 List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
                 table.setDataOwner(adminByTableguid);
-
+                //关联时间
+                table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
             try {
-
+                table.setBusinessObjects(tableDAO.getBusinessObjectByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
             }

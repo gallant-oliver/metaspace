@@ -1,0 +1,69 @@
+package io.zeta.metaspace.model.pojo;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.postgresql.util.PGobject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class TableInfo {
+    private String tableGuid;
+    private String tableName;
+    private String dbName;
+    private String status;
+    private String createTime;
+    private JSONtype dataOwner;
+
+    public String getTableGuid() {
+        return tableGuid;
+    }
+
+    public void setTableGuid(String tableGuid) {
+        this.tableGuid = tableGuid;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
+    }
+
+    public List<String> getDataOwner() {
+        ArrayList<String> list = new ArrayList<>();
+        if(dataOwner!=null){
+            dataOwner.
+        }
+        return list;
+    }
+
+    public void setDataOwner(PGobject dataOwner) {
+        this.dataOwner = dataOwner;
+    }
+}
