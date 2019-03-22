@@ -62,7 +62,7 @@ public class PrivilegeService {
             if(nameCount > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限方案名");
             }
-            String privilegeId = UUID.randomUUID().toString();
+            String privilegeId = "m" + UUID.randomUUID().toString();
             privilege.setPrivilegeId(privilegeId);
             //createTime
             long createTime = System.currentTimeMillis();

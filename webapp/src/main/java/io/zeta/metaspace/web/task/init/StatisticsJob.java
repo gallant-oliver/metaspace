@@ -17,6 +17,7 @@ public class StatisticsJob implements Job {
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
         try {
             metaspaceScheduler.insertTableMetadataStat();
+
         } catch (Exception e) {
             LOG.error("统计信息出错", e);
         }

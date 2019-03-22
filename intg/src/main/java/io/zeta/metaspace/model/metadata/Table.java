@@ -24,6 +24,7 @@ public class Table implements Serializable {
     private String business;
     private String owner;
     private List<String> dataOwner;
+    private String updateTime;
     private String category;
     private String databaseId;
     private String databaseName;
@@ -40,9 +41,11 @@ public class Table implements Serializable {
     private String status;
     private List<Tag> tags;
     private boolean edit;
+    private boolean editTag;
 
     private String subordinateSystem;
     private String subordinateDatabase;
+
     private List<String> systemAdmin;
     private String createTime;
 
@@ -58,6 +61,22 @@ public class Table implements Serializable {
     private TablePermission tablePermission;
 
     private List<Column> columns;
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public boolean isEditTag() {
+        return editTag;
+    }
+
+    public void setEditTag(boolean editTag) {
+        this.editTag = editTag;
+    }
 
     public String getCategory() {
         return category;
@@ -114,6 +133,7 @@ public class Table implements Serializable {
     public void setBusinessObjects(List<BusinessObject> businessObjects) {
         this.businessObjects = businessObjects;
     }
+
 
     public boolean isEdit() {
         return edit;

@@ -15,7 +15,6 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
@@ -27,16 +26,11 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -47,7 +41,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 
 @Path("metadata")
 @Singleton
@@ -71,7 +64,6 @@ public class MetaDataREST {
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
     }
-
 
 
     /**
@@ -218,7 +210,6 @@ public class MetaDataREST {
     }
 
 
-
     /**
      * 获取字段详情
      *
@@ -272,7 +263,6 @@ public class MetaDataREST {
     }
 
 
-
     /**
      * 获取字段血缘
      *
@@ -302,9 +292,6 @@ public class MetaDataREST {
     }
 
 
-
-
-
     /**
      * 更新表描述
      *
@@ -321,6 +308,9 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
             }
             metadataService.updateTable(tableEdit);
+
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
         } finally {
@@ -351,7 +341,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
 
 
     /**

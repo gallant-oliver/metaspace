@@ -77,7 +77,7 @@ public class MetaspaceScheduler {
         log.info("scheduler start");
         //List<AtlasEntityHeader> tables = allActiveTable();
         List<AtlasEntityHeader> tables = allActiveTableV2();
-        String date = DateUtils.today();
+        String date = DateUtils.yesterday();
         insertTableStatList(tables, date);
         log.info("scheduler end");
     }
