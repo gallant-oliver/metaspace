@@ -31,6 +31,7 @@ public class RelationEntityV2 {
     private String path;
     private String status;
     private String createTime;
+    private String generateTime;
 
     public RelationEntityV2() { }
 
@@ -106,5 +107,13 @@ public class RelationEntityV2 {
 
     public void setCreateTime(String createTime) {
         this.createTime = createTime;
+    }
+
+    public String getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(String generateTime) {
+        this.generateTime = generateTime;
     }
 }

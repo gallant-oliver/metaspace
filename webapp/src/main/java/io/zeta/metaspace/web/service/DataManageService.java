@@ -47,10 +47,8 @@ import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -309,8 +307,12 @@ public class DataManageService {
     @Transactional
     public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
+            long time = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String generateTime = format.format(time);
             for (RelationEntityV2 relation : relations) {
                 relation.setCategoryGuid(categoryGuid);
+                relation.setGenerateTime(generateTime);
                 addRelation(relation);
             }
         } catch (AtlasBaseException e) {
