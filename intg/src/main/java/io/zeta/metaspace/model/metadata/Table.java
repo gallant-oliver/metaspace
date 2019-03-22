@@ -30,6 +30,14 @@ public class Table implements Serializable {
         return category;
     }
 
+    public boolean isEditTag() {
+        return editTag;
+    }
+
+    public void setEditTag(boolean editTag) {
+        this.editTag = editTag;
+    }
+
     public void setCategory(String category) {
         this.category = category;
     }
@@ -50,7 +58,7 @@ public class Table implements Serializable {
     private String status;
     private List<Tag> tags;
     private boolean edit;
-
+    private boolean editTag;
     public boolean isEdit() {
         return edit;
     }
