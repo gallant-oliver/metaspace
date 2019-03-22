@@ -190,7 +190,6 @@ public class MetaDataService {
             table.setEdit(false);
             table.setEditTag(false);
             try {
-
                 List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
                 for (Module module : modules) {
                     if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
@@ -198,7 +197,6 @@ public class MetaDataService {
                         if (table.getTablePermission().isWRITE()) {
                             table.setEdit(true);
                         }
-
                     }
                 }
             } catch (Exception e) {
@@ -210,9 +208,16 @@ public class MetaDataService {
                 TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
                 //ownerId
                 List<String> owners = tableInfoByTableguid.getDataOwner();
-                for (String owner : owners) {
+                List<Map> organization = dataManageService.getOrganization();
+                List<String> strings = new ArrayList<>();
+                for (Map map : organization) {
+                    String id=map.get("id").toString();
+                    for (String owner : owners) {
+                        if(owner.equals(id))
+                            strings.add(map.get("name").toString());
+                    }
                 }
-                table.setDataOwner(owners);
+                table.setDataOwner(strings);
                 //更新时间
                 table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
             } catch (Exception e) {
@@ -244,14 +249,15 @@ public class MetaDataService {
                 table.setRelations(relations);
                 List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
-                table.setDataOwner(adminByTableguid);
+                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
                 table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
             try {
-                table.setBusinessObjects(tableDAO.getBusinessObjectByTableguid(guid));
+                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid);
+                table.setBusinessObjects(businessObjectByTableguid);
             } catch (Exception e) {
                 LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
             }

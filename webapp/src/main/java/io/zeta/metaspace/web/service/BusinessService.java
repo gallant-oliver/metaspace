@@ -21,9 +21,13 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -31,9 +35,11 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.ColumnPrivilegeDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.ObjectUtils;
@@ -70,6 +76,10 @@ public class BusinessService {
     RoleDAO roleDao;
     @Autowired
     RoleService roleService;
+    @Autowired
+    ColumnPrivilegeDAO columnPrivilegeDAO;
+    @Autowired
+    MetaDataService metaDataService;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
@@ -361,5 +371,57 @@ public class BusinessService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
         }
+    }
+
+
+    public int addColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            String columnName = privilege.getName();
+            int count = columnPrivilegeDAO.queryNameCount(columnName);
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限字段");
+            }
+            return columnPrivilegeDAO.addColumnPrivilege(columnName);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    @Transactional
+    public int addColumnPrivilegeRelation(ColumnPrivilegeRelation relation) throws AtlasBaseException {
+        try {
+            int columnPrivilegeGuid = relation.getColumnPrivilegeGuid();
+            ColumnPrivilegeRelation columnRelation = columnPrivilegeDAO.queryPrivilegeRelation(columnPrivilegeGuid);
+            if(Objects.nonNull(columnRelation)) {
+                return columnPrivilegeDAO.updateColumnPrivilegeRelation(relation);
+            } else {
+                return columnPrivilegeDAO.addColumnPrivilegeRelation(relation);
+            }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    public ColumnPrivilegeRelation queryRelatedColumn(int columnGuid) throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.queryPrivilegeRelation(columnGuid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    public Table getTableInfoById(String guid) throws AtlasBaseException {
+        Table table =  metaDataService.getTableInfoById(guid);
+        List<Column> columns = table.getColumns();
+        for(Column column : columns) {
+            String columnId = column.getColumnId();
+            ColumnPrivilegeRelation relation = columnPrivilegeDAO.queryPrivilegeRelationByColumnGuid(columnId);
+            if(Objects.nonNull(relation)) {
+                column.setColumnPrivilege(relation.getName());
+                column.setColumnPrivilegeGuid(relation.getColumnPrivilegeGuid());
+            }
+        }
+        return table;
     }
 }
