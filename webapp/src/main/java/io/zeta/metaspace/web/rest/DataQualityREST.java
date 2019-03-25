@@ -361,9 +361,8 @@ public class DataQualityREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
         }
     }*/
-
     @GET
-    @Path("/report/percent/{templateId}")
+    @Path("/template/{templateId}/percent")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ReportError getReportError(@PathParam("templateId") String templateId) throws AtlasBaseException {
