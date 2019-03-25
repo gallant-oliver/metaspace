@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.DataType;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
+import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.RuleType;
 import io.zeta.metaspace.model.dataquality.Template;
@@ -545,5 +546,13 @@ public class DataQualityService {
             return DataType.NUMERIC;
 
         return DataType.UNNUMERIC;
+    }
+
+    public ReportError getLastReportError(String templateId) throws AtlasBaseException {
+        try {
+            return qualityDao.getLastError(templateId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误失败");
+        }
     }
 }

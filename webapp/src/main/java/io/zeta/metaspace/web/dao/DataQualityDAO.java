@@ -348,4 +348,7 @@ public interface DataQualityDAO {
     public List<TableColumnRules.SystemRule> getTableSystemRules(@Param("ruleType") int ruleType,@Param("buildType") int buildType) throws SQLException;
     @Select("select checktype from rule2checktype where ruleid = #{ruleId}")
     public List<Integer> getChecktypes(int ruleId) throws SQLException;
+
+    @Select("select * from report_error where templateId=#{templateId} order by generateTime desc limit 1")
+    public ReportError getLastError(@Param("templateId") String templateId);
 }

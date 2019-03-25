@@ -79,7 +79,7 @@ public class QuartJob implements Job {
             }
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            qualityDao.updateFinishedPercent(templateId, -1F);
+            qualityDao.updateFinishedPercent(templateId, 0F);
             return;
         }
     }

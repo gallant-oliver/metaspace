@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.dataquality.Report;
+import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.TableColumnRules;
@@ -360,4 +361,19 @@ public class DataQualityREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
         }
     }
+
+    @GET
+    @Path("/report/error/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ReportError getReportError(@PathParam("templateId") String templateId) throws AtlasBaseException {
+        try {
+            return dataQualityService.getLastReportError(templateId);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
+        }
+    }
+
+
 }
