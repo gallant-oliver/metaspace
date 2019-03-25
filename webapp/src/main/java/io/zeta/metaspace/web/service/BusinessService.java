@@ -350,8 +350,17 @@ public class BusinessService {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
             }
             businessDao.deleteRelationByBusinessId(businessId);
-            businessDao.insertTableRelation(businessId, list);
-            businessDao.setBusinessTrustTable(businessId, trustTable);
+
+
+            if(Objects.nonNull(list) && list.size()>0) {
+                businessDao.insertTableRelation(businessId, list);
+                if(Objects.isNull(trustTable)) {
+                    trustTable = list.get(0);
+                }
+            }
+            if(Objects.nonNull(trustTable)) {
+                businessDao.setBusinessTrustTable(businessId, trustTable);
+            }
 
         } catch (Exception e) {
             LOG.error(e.getMessage());
