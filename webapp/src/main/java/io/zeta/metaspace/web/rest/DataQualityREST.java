@@ -166,11 +166,11 @@ public class DataQualityREST {
     public Response startTemplate(@PathParam("templateId") String templateId, @PathParam("templateStatus") int templateStatus) throws AtlasBaseException {
         try {
             dataQualityService.startTemplate(templateId, templateStatus);
-            return Response.status(200).entity("success").build();
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -349,7 +349,7 @@ public class DataQualityREST {
         }
     }
 
-    @GET
+    /*@GET
     @Path("/templates/percent/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -360,10 +360,10 @@ public class DataQualityREST {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
         }
-    }
+    }*/
 
     @GET
-    @Path("/report/error/{templateId}")
+    @Path("/report/percent/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ReportError getReportError(@PathParam("templateId") String templateId) throws AtlasBaseException {

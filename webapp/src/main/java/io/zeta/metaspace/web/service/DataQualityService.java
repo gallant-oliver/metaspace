@@ -550,7 +550,10 @@ public class DataQualityService {
 
     public ReportError getLastReportError(String templateId) throws AtlasBaseException {
         try {
-            return qualityDao.getLastError(templateId);
+            float percent = qualityDao.getFinishedPercent(templateId);
+            ReportError error = qualityDao.getLastError(templateId);
+            error.setPercent(percent);
+            return error;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误失败");
         }

@@ -30,6 +30,7 @@ public class ReportError {
     private String content;
     private String generateTime;
     private int retryCount;
+    private float percent;
 
     public String getErrorId() {
         return errorId;
@@ -85,5 +86,13 @@ public class ReportError {
 
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
+    }
+
+    public float getPercent() {
+        return percent;
+    }
+
+    public void setPercent(float percent) {
+        this.percent = percent;
     }
 }
