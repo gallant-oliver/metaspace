@@ -200,4 +200,7 @@ public interface RoleDAO {
 
     @Select("select * from role where roleid=#{roleId}")
     public Role getRoleByRoleId(String roleId);
+
+    @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
+    public List<TechnologyInfo.Table> getTableInfosByDB(@Param("guid") String guid, @Param("DB") String DB);
 }
