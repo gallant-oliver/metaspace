@@ -44,24 +44,25 @@ public class SearchService {
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
     RoleDAO roleDAO;
+
     @Transactional
-    public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters,String categoryId) throws AtlasBaseException {
+    public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters, String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         Role role = roleDAO.getRoleByUsersId(user.getUserId());
-        if(role.getStatus() == 0)
+        if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String roleId = role.getRoleId();
         RoleModulesCategories.Category category = roleDAO.getCategoryByGuid(categoryId);
-        if(SystemRole.ADMIN.getCode().equals(roleId)&&(category.getParentCategoryGuid()==null||category.getParentCategoryGuid().equals(""))) {
+        if (SystemRole.ADMIN.getCode().equals(roleId) && (category.getParentCategoryGuid() == null || category.getParentCategoryGuid().equals(""))) {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             String queryDb = parameters.getQuery();
             return metaspaceEntityService.getAllDBAndTable(queryDb, limit, offset);
-        } else if(SystemRole.ADMIN.getCode().equals(roleId)){
-            return getDatabaseResult(parameters,category.getParentCategoryGuid());
-        }else{
+        } else if (SystemRole.ADMIN.getCode().equals(roleId)) {
+            return getDatabaseResult(parameters, category.getParentCategoryGuid());
+        } else {
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-            if(categorysByTypeIds.size()>0) {
+            if (categorysByTypeIds.size() > 0) {
                 List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
                 for (RoleModulesCategories.Category child : childs) {
                     if (child.getGuid().equals(categoryId)) {
@@ -69,59 +70,69 @@ public class SearchService {
                     }
                 }
             }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"用户对该目录没有添加关联表的权限");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
         }
     }
 
-    private PageResult<Database> getDatabaseResult(Parameters parameters,String categoryId) {
-        List<String> dbName=null;
-        if(parameters.getLimit()==-1){
-             dbName = roleDAO.getDBName(categoryId,parameters.getQuery(),parameters.getOffset());
-        }else{
-            dbName = roleDAO.getDBNames(categoryId,parameters.getQuery(),parameters.getOffset(),parameters.getLimit());
-        }
+    @Transactional
+    public PageResult<Database> getDatabaseResult(Parameters parameters, String categoryId) {
+        List<String> dbName = null;
+        dbName = roleDAO.getDBNames(categoryId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         PageResult<Database> databasePageResult = new PageResult<>();
 
         List<Database> lists = new ArrayList<>();
+        //List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableInfos(categoryId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         for (String s : dbName) {
             Database database = new Database();
             database.setDatabaseName(s);
-            List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableByDBName(s);
             List<TableHeader> tableList = new ArrayList<>();
-            for (TechnologyInfo.Table tb : tableByDBName) {
+            List<TechnologyInfo.Table> tbs =roleDAO.getTableInfosByDB(categoryId,s);
+            for (TechnologyInfo.Table tb : tbs) {
                 TableHeader table = new TableHeader();
                 table.setDatabaseName(s);
                 table.setTableId(tb.getTableGuid());
                 table.setTableName(tb.getTableName());
                 table.setCreateTime(tb.getCreateTime());
+                table.setStatus(tb.getStatus());
                 tableList.add(table);
             }
+ /*           for (TechnologyInfo.Table tb : tableByDBName) {
+                if (tb.getDbName().equals(s)){
+                    TableHeader table = new TableHeader();
+                    table.setDatabaseName(s);
+                    table.setTableId(tb.getTableGuid());
+                    table.setTableName(tb.getTableName());
+                    table.setCreateTime(tb.getCreateTime());
+                    table.setStatus(tb.getStatus());
+                    tableList.add(table);
+                }
+            }*/
             database.setTableList(tableList);
             lists.add(database);
         }
         databasePageResult.setLists(lists);
         databasePageResult.setOffset(parameters.getOffset());
         databasePageResult.setCount(dbName.size());
-        databasePageResult.setSum(roleDAO.getDBCount(categoryId,parameters.getQuery()));
+        databasePageResult.setSum(roleDAO.getDBCount(categoryId, parameters.getQuery()));
         return databasePageResult;
     }
 
     @Transactional
-    public PageResult<Table> getTechnicalTablePageResult(Parameters parameters,String categoryId) throws AtlasBaseException {
+    public PageResult<Table> getTechnicalTablePageResult(Parameters parameters, String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         Role role = roleDAO.getRoleByUsersId(user.getUserId());
-        if(role.getStatus() == 0)
+        if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String roleId = role.getRoleId();
         RoleModulesCategories.Category category = roleDAO.getCategoryByGuid(categoryId);
-        if(SystemRole.ADMIN.getCode().equals(roleId)&&(category.getParentCategoryGuid()==null||category.getParentCategoryGuid().equals(""))) {
+        if (SystemRole.ADMIN.getCode().equals(roleId) && (category.getParentCategoryGuid() == null || category.getParentCategoryGuid().equals(""))) {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
-        }else if(SystemRole.ADMIN.getCode().equals(roleId)) {
+        } else if (SystemRole.ADMIN.getCode().equals(roleId)) {
             PageResult<Table> table = getTableResult(parameters, category.getParentCategoryGuid());
             return table;
-        }else{
+        } else {
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-            if(categorysByTypeIds.size()>0) {
+            if (categorysByTypeIds.size() > 0) {
                 List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
                 for (RoleModulesCategories.Category child : childs) {
                     if (child.getGuid().equals(categoryId)) {
@@ -130,7 +141,7 @@ public class SearchService {
                     }
                 }
             }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"用户对该目录没有添加关联表的权限");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
         }
     }
 
@@ -140,21 +151,18 @@ public class SearchService {
         String query = parameters.getQuery();
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
-        List<TechnologyInfo.Table> tableInfo=null;
-        if(limit==-1){
-            tableInfo = roleDAO.getTableInfo(categoryId, query,offset);
-        }else{
-           tableInfo = roleDAO.getTableInfos(categoryId, query, offset, limit);
-        }
+        List<TechnologyInfo.Table> tableInfo = null;
+        tableInfo = roleDAO.getTableInfos(categoryId, query, offset, limit);
         for (TechnologyInfo.Table table : tableInfo) {
             Table tb = new Table();
             tb.setTableId(table.getTableGuid());
             tb.setTableName(table.getTableName());
             tb.setDatabaseName(table.getDbName());
             tb.setCreateTime(table.getCreateTime());
+            tb.setStatus(table.getStatus());
             lists.add(tb);
         }
-        tablePageResult.setSum(roleDAO.getTableCount(categoryId,query));
+        tablePageResult.setSum(roleDAO.getTableCount(categoryId, query));
         tablePageResult.setCount(tableInfo.size());
         tablePageResult.setOffset(offset);
         tablePageResult.setLists(lists);
@@ -166,11 +174,12 @@ public class SearchService {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
         String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getDatabaseByQuery(queryDb,offset, limit );
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, offset, limit);
     }
+
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
-    public PageResult<Table> getTableByDB(String databaseId,long offset,long limit) throws AtlasBaseException {
-        return metaspaceEntityService.getTableByDB(databaseId,offset, limit);
+    public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
+        return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
@@ -257,7 +266,7 @@ public class SearchService {
             buildTableSql.setSql(stringBuffer.toString());
             buildTableSql.setTableId(tableId);
             return buildTableSql;
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
 

@@ -163,7 +163,7 @@ public interface BusinessDAO {
              " on",
              " businessInfo.businessId = business_relation.businessId",
              " and",
-             " business_relation.categoryGuid=#{categoryGuid}",
+             " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,name",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -195,5 +195,8 @@ public interface BusinessDAO {
 
     @Delete("delete from businessInfo where businessId=#{businessId}")
     public int deleteBusinessById(@Param("businessId")String businessId);
+
+    @Delete("delete from business_relation where businessId=#{businessId}")
+    public int deleteRelationById(@Param("businessId")String businessId);
 
 }

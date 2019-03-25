@@ -128,6 +128,8 @@ public class MetaDataService {
     RoleDAO roleDAO;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    DataManageService dataManageService;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -212,11 +214,18 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
+            table.setEditTag(false);
             try {
-                List<Module> modules =  userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                for (Module module : modules) {
-                    if(module.getModuleId()==SystemModule.TECHNICAL_OPERATE.getCode())
-                        table.setEdit(true);
+
+                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                    for (Module module : modules) {
+                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()){
+                            table.setEditTag(true);
+                            if(table.getTablePermission().isWRITE()) {
+                                table.setEdit(true);
+                        }
+
+                    }
                 }
             }catch (Exception e){
                 LOG.error("获取系统权限失败,错误信息:"+e.getMessage(),e);
@@ -296,6 +305,7 @@ public class MetaDataService {
     public List<String> getRelationList(String guid) throws AtlasBaseException {
         try {
             List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
+            dataManageService.getPath(relationEntities);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)
@@ -762,20 +772,6 @@ public class MetaDataService {
         String description = tableEdit.getDescription();
         if(Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "提交修改信息有误");
-        }
-        //修改tag
-        try{
-            tableTagDAO.delAllTable2Tag(guid);
-            List<String> tags = tableEdit.getTags();
-            for (String s : tags) {
-                try {
-                    tableTagDAO.addTable2Tag(s, guid);
-                }catch (Exception e){
-                    LOG.error("table "+guid+" 添加tag "+s+" 失败,错误信息:"+e.getMessage(),e);
-                }
-            }
-        }catch(Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除表标签失败");
         }
         //修改描述
         try {

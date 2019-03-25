@@ -584,7 +584,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             try {
                 while (serviceState.getState() != ServiceState.ServiceStateValue.ACTIVE) {
                     try {
-                        LOG.info("Atlas Server is not ready. Waiting for {} milliseconds to retry...", SERVER_READY_WAIT_TIME_MS);
+                        LOG.info("METASPACE Server is not ready. Waiting for {} milliseconds to retry...", SERVER_READY_WAIT_TIME_MS);
 
                         timer.sleep(SERVER_READY_WAIT_TIME_MS);
                     } catch (InterruptedException e) {
@@ -599,7 +599,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                 return false;
             }
 
-            LOG.info("Atlas Server is ready, can start reading Kafka events.");
+            LOG.info("METASPACE Server is ready, can start reading Kafka events.");
 
             return true;
         }

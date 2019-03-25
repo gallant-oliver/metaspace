@@ -24,6 +24,7 @@ public class HivePermissionUtil {
             String ssoTicket = AdminUtils.getSSOTicket();
             HashMap<String, String> map = new HashMap<>();
             map.put("X-SSO-FullticketId", ssoTicket);
+            map.put("User-Agent","Chrome");
             String session = SSLClient.doGet(SecurePlusConfig.getSecurePlusPrivilegeREST()
                     + "?" + "user=" + userName
                     + "&" + "database=" + db

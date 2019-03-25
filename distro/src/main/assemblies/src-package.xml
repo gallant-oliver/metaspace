@@ -23,7 +23,7 @@
         <format>tar.gz</format>
     </formats>
     <id>sources</id>
-    <baseDirectory>apache-atlas-sources-${project.version}</baseDirectory>
+    <baseDirectory>metaspace-sources-${project.version}</baseDirectory>
     <fileSets>
         <fileSet>
             <directory>..</directory>

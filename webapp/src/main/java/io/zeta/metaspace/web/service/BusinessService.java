@@ -78,7 +78,7 @@ public class BusinessService {
             //departmentId(categoryId)
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             info.setSubmitter(userName);
             info.setBusinessOperator(userName);
             //businessId
@@ -134,7 +134,7 @@ public class BusinessService {
             if(count > 0 && !currentInfo.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
             }
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
@@ -142,6 +142,8 @@ public class BusinessService {
             info.setBusinessLastUpdate(time);
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
@@ -211,7 +213,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : list) {
                 joiner = new StringJoiner(".");
                 //path
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
@@ -249,7 +252,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
                 StringJoiner joiner = new StringJoiner(".");
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 String[] pathArr = path.split("\\.");
                 String level2Category = "";
@@ -319,14 +323,17 @@ public class BusinessService {
     @Transactional
     public void addBusinessAndTableRelation(String businessId, List<String> tableIdList) throws AtlasBaseException {
         try {
-            String userName = AdminUtils.getUserName();
+            String userName = AdminUtils.getUserData().getUsername();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
             businessDao.updateTechnicalInfo(businessId, userName, time);
-
             //更新technical编辑状态
-            businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
+            if(Objects.nonNull(tableIdList) && tableIdList.size() > 0) {
+                businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
+            } else {
+                businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
+            }
             businessDao.deleteRelationByBusinessId(businessId);
             for(String guid : tableIdList) {
                 businessDao.insertTableRelation(businessId, guid);
@@ -342,6 +349,7 @@ public class BusinessService {
         try {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
+            businessDao.deleteRelationById(businessId);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
