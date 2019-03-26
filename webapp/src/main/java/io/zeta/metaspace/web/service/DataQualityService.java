@@ -551,7 +551,12 @@ public class DataQualityService {
     public ReportError getLastReportError(String templateId) throws AtlasBaseException {
         try {
             float percent = qualityDao.getFinishedPercent(templateId);
-            ReportError error = qualityDao.getLastError(templateId);
+            ReportError error = null;
+            error = qualityDao.getLastError(templateId);
+            if(Objects.isNull(error)) {
+                error = new ReportError();
+                error.setTemplateId(templateId);
+            }
             error.setPercent(percent);
             return error;
         } catch (Exception e) {
