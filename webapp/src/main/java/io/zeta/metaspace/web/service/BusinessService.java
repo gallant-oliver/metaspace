@@ -16,12 +16,16 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeObject;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
@@ -43,14 +47,18 @@ import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.ObjectUtils;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.stringtemplate.v4.ST;
 
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -387,10 +395,52 @@ public class BusinessService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限字段");
             }
-            return columnPrivilegeDAO.addColumnPrivilege(columnName);
+            return columnPrivilegeDAO.addColumnPrivilege(privilege);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    public int deleteColumnPrivilege(Integer guid) throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.deleteColumnPrivilege(guid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+    }
+
+    public int updateColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.updateColumnPrivilege(privilege);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public List<ColumnPrivilege> getColumnPrivilegeList() throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.getColumnPrivilegeList();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public List<String> getColumnPrivilegeValue(Integer guid) throws AtlasBaseException{
+        try {
+            Gson gson = new Gson();
+            ColumnPrivilegeObject columnObject = columnPrivilegeDAO.queryColumnPrivilege(guid);
+            PGobject pGobject = (PGobject)columnObject.getFields();
+            String value = pGobject.getValue();
+            Type type = new TypeToken<List<String>>(){}.getType();
+            List<String> values = gson.fromJson(value, type);
+            return values;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
         }
     }
 

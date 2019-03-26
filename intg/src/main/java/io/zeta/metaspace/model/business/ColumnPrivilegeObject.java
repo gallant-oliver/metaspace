@@ -12,19 +12,19 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/20 11:36
+ * @date 2019/3/26 11:14
  */
 package io.zeta.metaspace.model.business;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/20 11:36
+ * @date 2019/3/26 11:14
  */
-public class ColumnPrivilege {
+public class ColumnPrivilegeObject {
     private int guid;
     private String name;
-    private String[] fields;
+    private Object fields;
 
     public int getGuid() {
         return guid;
@@ -42,11 +42,11 @@ public class ColumnPrivilege {
         this.name = name;
     }
 
-    public String[] getFields() {
+    public Object getFields() {
         return fields;
     }
 
-    public void setFields(String[] fields) {
+    public void setFields(Object fields) {
         this.fields = fields;
     }
 }

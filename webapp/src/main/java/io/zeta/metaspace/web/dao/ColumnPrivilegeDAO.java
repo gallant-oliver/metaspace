@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeObject;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -33,8 +34,8 @@ import java.util.List;
  */
 public interface ColumnPrivilegeDAO {
 
-    @Insert("insert into columnPrivilege(name)values(#{name})")
-    public int addColumnPrivilege(@Param("name") String privilegeName);
+    @Insert("insert into columnPrivilege(name,fields)values(#{name},#{fields,jdbcType=ARRAY, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg})")
+    public int addColumnPrivilege(ColumnPrivilege privilege);
 
     @Select("select count(1) from columnPrivilege where name=#{name}")
     public int queryNameCount(@Param("name") String privilegeName);
@@ -42,11 +43,14 @@ public interface ColumnPrivilegeDAO {
     @Delete("delete from columnPrivilege where guid=#{guid}")
     public int deleteColumnPrivilege(@Param("guid") int guid);
 
-    @Update("update columnPrivilege set name=#{name} where guid=#{guid}")
-    public int updateColumnPrivilege(@Param("guid") int guid, @Param("name") String privilegeName);
+    @Update("update columnPrivilege set name=#{name},fields=#{fields,jdbcType=ARRAY, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where guid=#{guid}")
+    public int updateColumnPrivilege(ColumnPrivilege privilege);
+
+    @Select("select * from columnPrivilege")
+    public List<ColumnPrivilege> getColumnPrivilegeList();
 
     @Delete("select * from columnPrivilege where guid=#{guid}")
-    public List<String> queryColumnPrivilege(@Param("guid") int guid);
+    public ColumnPrivilegeObject queryColumnPrivilege(@Param("guid") int guid);
 
     @Insert("insert into column2privilege(columnGuid,columnPrivilegeGuid)values(#{columnGuid},#{columnPrivilegeGuid})")
     public int addColumnPrivilegeRelation(ColumnPrivilegeRelation relation);
