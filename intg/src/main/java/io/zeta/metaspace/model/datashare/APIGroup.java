@@ -12,27 +12,25 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/26 11:14
+ * @date 2019/3/25 20:10
  */
-package io.zeta.metaspace.model.business;
-
-import org.postgresql.util.PGobject;
+package io.zeta.metaspace.model.datashare;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/26 11:14
+ * @date 2019/3/25 20:10
  */
-public class ColumnPrivilegeObject {
-    private int guid;
+public class APIGroup {
+    private String guid;
     private String name;
-    private PGobject fields;
+    private String description;
 
-    public int getGuid() {
+    public String getGuid() {
         return guid;
     }
 
-    public void setGuid(int guid) {
+    public void setGuid(String guid) {
         this.guid = guid;
     }
 
@@ -44,11 +42,11 @@ public class ColumnPrivilegeObject {
         this.name = name;
     }
 
-    public Object getFields() {
-        return fields;
+    public String getDescription() {
+        return description;
     }
 
-    public void setFields(Object fields) {
-        this.fields = (PGobject) fields;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
