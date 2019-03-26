@@ -49,8 +49,8 @@ public interface ColumnPrivilegeDAO {
     @Select("select * from columnPrivilege")
     public List<ColumnPrivilege> getColumnPrivilegeList();
 
-    @Delete("select * from columnPrivilege where guid=#{guid}")
-    public ColumnPrivilegeObject queryColumnPrivilege(@Param("guid") int guid);
+    @Select("select fields from columnPrivilege where guid=#{guid}")
+    public Object queryColumnPrivilege(@Param("guid") int guid);
 
     @Insert("insert into column2privilege(columnGuid,columnPrivilegeGuid)values(#{columnGuid},#{columnPrivilegeGuid})")
     public int addColumnPrivilegeRelation(ColumnPrivilegeRelation relation);

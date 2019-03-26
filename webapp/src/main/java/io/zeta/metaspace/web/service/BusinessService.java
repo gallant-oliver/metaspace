@@ -17,15 +17,12 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnPrivilege;
-import io.zeta.metaspace.model.business.ColumnPrivilegeObject;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
@@ -429,18 +426,17 @@ public class BusinessService {
         }
     }
 
-    public List<String> getColumnPrivilegeValue(Integer guid) throws AtlasBaseException{
+    public List<String> getColumnPrivilegeValue(Integer guid) throws AtlasBaseException {
         try {
             Gson gson = new Gson();
-            ColumnPrivilegeObject columnObject = columnPrivilegeDAO.queryColumnPrivilege(guid);
-            PGobject pGobject = (PGobject)columnObject.getFields();
+            Object columnObject = columnPrivilegeDAO.queryColumnPrivilege(guid);
+            PGobject pGobject = (PGobject)columnObject;
             String value = pGobject.getValue();
-            Type type = new TypeToken<List<String>>(){}.getType();
-            List<String> values = gson.fromJson(value, type);
+            List<String> values = gson.fromJson(value, List.class);
             return values;
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败失败");
         }
     }
 
