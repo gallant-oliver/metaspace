@@ -43,6 +43,7 @@ public class BusinessInfo {
     private String ticketNumber;
     private Boolean editBusiness;
     private String level2CategoryId;
+    private String trustTable;
     //private Boolean editTechnical;
     //private List<Table> tables;
 
@@ -181,5 +182,13 @@ public class BusinessInfo {
 
     public void setLevel2CategoryId(String level2CategoryId) {
         this.level2CategoryId = level2CategoryId;
+    }
+
+    public String getTrustTable() {
+        return trustTable;
+    }
+
+    public void setTrustTable(String trustTable) {
+        this.trustTable = trustTable;
     }
 }

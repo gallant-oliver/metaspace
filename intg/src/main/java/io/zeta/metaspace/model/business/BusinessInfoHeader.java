@@ -32,6 +32,7 @@ public class BusinessInfoHeader {
     private String submissionTime;
     private String ticketNumber;
     private String categoryGuid;
+    private String trustTable;
 
     public String getBusinessId() {
         return businessId;
@@ -111,5 +112,13 @@ public class BusinessInfoHeader {
 
     public void setCategoryGuid(String categoryGuid) {
         this.categoryGuid = categoryGuid;
+    }
+
+    public String getTrustTable() {
+        return trustTable;
+    }
+
+    public void setTrustTable(String trustTable) {
+        this.trustTable = trustTable;
     }
 }

@@ -22,9 +22,13 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
+import com.google.gson.Gson;
+import io.zeta.metaspace.SSOConfig;
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -35,6 +39,7 @@ import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
+import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -49,6 +54,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -427,7 +433,7 @@ public class DataManageService {
             //joiner.add(path).add(entity.getTableName());
             joiner.add(path);
             entity.setPath(joiner.toString());
-            }
+        }
     }
 
     @Transactional
@@ -447,5 +453,29 @@ public class DataManageService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
+    }
+
+    public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
+        try {
+            List<String> tableIds = tableOwner.getTableIds();
+            List<String> ownerIds = tableOwner.getOwnerIds();
+            return categoryDao.addTableOwners(tableIds, ownerIds.toArray(new String[ownerIds.size()]));
+        } catch (SQLException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    public List getOrganization() {
+        String organizationURL = SSOConfig.getOrganizationURL();
+        HashMap<String, String> header = new HashMap<>();
+        String session = SSLClient.doGet(organizationURL, header);
+        Gson gson = new Gson();
+        Map body = gson.fromJson(session, Map.class);
+        List data = (List) body.get("data");
+        return data;
     }
 }
