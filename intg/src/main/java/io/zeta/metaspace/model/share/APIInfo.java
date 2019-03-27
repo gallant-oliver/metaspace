@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.share;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -29,12 +31,12 @@ public class APIInfo {
     private String dbGuid;
     private String dbName;
     private String groupGuid;
-    private String group;
+    private String groupName;
     private Boolean publish;
     private String keeper;
     private String dataOwner;
     private Long maxRowNumber;
-    private Object fields;
+    private List<Field> fields;
     private String version;
     private String description;
     private String protocol;
@@ -45,4 +47,227 @@ public class APIInfo {
     private String updater;
     private String updateTime;
     private Boolean star;
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getTableGuid() {
+        return tableGuid;
+    }
+
+    public void setTableGuid(String tableGuid) {
+        this.tableGuid = tableGuid;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getDbGuid() {
+        return dbGuid;
+    }
+
+    public void setDbGuid(String dbGuid) {
+        this.dbGuid = dbGuid;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
+
+    public String getGroupGuid() {
+        return groupGuid;
+    }
+
+    public void setGroupGuid(String groupGuid) {
+        this.groupGuid = groupGuid;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
+    }
+
+    public String getKeeper() {
+        return keeper;
+    }
+
+    public void setKeeper(String keeper) {
+        this.keeper = keeper;
+    }
+
+    public String getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(String dataOwner) {
+        this.dataOwner = dataOwner;
+    }
+
+    public Long getMaxRowNumber() {
+        return maxRowNumber;
+    }
+
+    public void setMaxRowNumber(Long maxRowNumber) {
+        this.maxRowNumber = maxRowNumber;
+    }
+
+    public List<Field> getFields() {
+        return fields;
+    }
+
+    public void setFields(List<Field> fields) {
+        this.fields = fields;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public String getRequestMode() {
+        return requestMode;
+    }
+
+    public void setRequestMode(String requestMode) {
+        this.requestMode = requestMode;
+    }
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    public void setReturnType(String returnType) {
+        this.returnType = returnType;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(String generateTime) {
+        this.generateTime = generateTime;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
+    }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Boolean getStar() {
+        return star;
+    }
+
+    public void setStar(Boolean star) {
+        this.star = star;
+    }
+
+    class Field {
+        private String columnName;
+        private Boolean filter;
+        private Boolean fill;
+        private String defaultValue;
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public Boolean getFilter() {
+            return filter;
+        }
+
+        public void setFilter(Boolean filter) {
+            this.filter = filter;
+        }
+
+        public Boolean getFill() {
+            return fill;
+        }
+
+        public void setFill(Boolean fill) {
+            this.fill = fill;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+    }
 }

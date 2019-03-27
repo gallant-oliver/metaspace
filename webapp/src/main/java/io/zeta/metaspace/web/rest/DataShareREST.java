@@ -63,7 +63,12 @@ public class DataShareREST {
     @Autowired
     private SearchService searchService;
 
-
+    /**
+     * 创建API
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

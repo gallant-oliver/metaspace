@@ -30,8 +30,8 @@ public interface DataShareDAO {
              " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime",
              " )values(",
              " #{guid},#{name},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime}",
-             ")"})
+             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime})",
+             " </script>"})
     public int insertAPIInfo(APIInfo info);
 
     @Update("update apiInfo set star=#{star} where guid=#{guid}")

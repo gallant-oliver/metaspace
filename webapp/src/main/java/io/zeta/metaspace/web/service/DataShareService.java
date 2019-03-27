@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 /*
@@ -44,6 +46,14 @@ public class DataShareService {
 
     public int insertAPIInfo(APIInfo info) throws AtlasBaseException {
         try {
+            String user = AdminUtils.getUserData().getUsername();
+            info.setKeeper(user);
+            info.setUpdater(user);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            long currentTime = System.currentTimeMillis();
+            String currentTimeFormat = sdf.format(currentTime);
+            info.setGenerateTime(currentTimeFormat);
+            info.setUpdateTime(currentTimeFormat);
             return shareDAO.insertAPIInfo(info);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "插入失败");
