@@ -22,10 +22,18 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
+import io.zeta.metaspace.model.metadata.Database;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIGroup;
+import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.web.service.DataShareGroupService;
+import io.zeta.metaspace.web.service.DataShareService;
+import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,6 +58,26 @@ public class DataShareREST {
 
     @Autowired
     DataShareGroupService groupService;
+    @Autowired
+    DataShareService shareService;
+    @Autowired
+    private SearchService searchService;
+
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response insertAPIInfo(APIInfo info) throws AtlasBaseException {
+        try {
+            shareService.insertAPIInfo(info);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
 
     @POST
     @Path("/group")
@@ -108,5 +136,69 @@ public class DataShareREST {
         }
     }
 
+    @POST
+    @Path("/databases")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
+    /**
+     * 根据库id返回表
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/tables/{databaseId}/{offset}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 收藏/取消收藏API
+     * @param apiGuid
+     * @param status
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/star/{apiGuid}/{status}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public int updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            return shareService.updateStarStatus(apiGuid, status);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @PUT
+    @Path("/publish/{status}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public int updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            return shareService.updatePublishStatus(apiGuidList, status);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }
