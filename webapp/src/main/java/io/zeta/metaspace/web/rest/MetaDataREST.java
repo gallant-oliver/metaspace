@@ -445,4 +445,16 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
         }
     }
+    @Path("/supplementTable")
+    @GET
+    public String supplementTable() throws AtlasBaseException {
+        try {
+            dataManageService.supplementTable();
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "补充贴源层失败");
+        }
+    }
+
 }

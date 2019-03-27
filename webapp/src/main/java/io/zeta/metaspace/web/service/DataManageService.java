@@ -24,9 +24,13 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
+import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -35,10 +39,13 @@ import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -66,6 +73,10 @@ public class DataManageService {
     RoleDAO roleDao;
     @Autowired
     RoleService roleService;
+    @Autowired
+    TableDAO tableDAO;
+    @Autowired
+    MetaspaceGremlinQueryService metaspaceEntityService;
 
     /**
      * 获取用户有权限的全部目录
@@ -332,10 +343,10 @@ public class DataManageService {
             String relationshiGuid = UUID.randomUUID().toString();
             relationEntity.setRelationshipGuid(relationshiGuid);
 
-            int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
-            if (count == 0) {
-                relationDao.addTableInfo(relationEntity);
-            }
+//            int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
+//            if (count == 0) {
+//                relationDao.addTableInfo(relationEntity);
+//            }
             return relationDao.add(relationEntity);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
@@ -478,5 +489,104 @@ public class DataManageService {
         Map body = gson.fromJson(session, Map.class);
         List data = (List) body.get("data");
         return data;
+    }
+
+    @Transactional
+    public void addTable(List<AtlasEntity> entities) {
+        //添加到tableinfo
+        for (AtlasEntity entity : entities) {
+            String typeName = entity.getTypeName();
+            if (typeName.contains("table")) {
+                String guid = entity.getGuid();
+                if (tableDAO.ifTableExists(guid).size() == 0) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(guid);
+                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    Object createTime = entity.getAttribute("createTime");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String formatDateStr = sdf.format(createTime);
+                    tableInfo.setCreateTime(formatDateStr);
+                    tableInfo.setStatus(entity.getStatus().name());
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    tableInfo.setTableGuid(relatedDB.getGuid());
+                    tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableDAO.addTable(tableInfo);
+                }
+            }
+        }
+        addFullRelation();
+
+    }
+
+    @Transactional
+    public void addFullRelation() {
+        //添加关联
+        List<String> newTable = tableDAO.getNewTable();
+        List<TableRelation> tableRelations = new ArrayList<>();
+        for (String s : newTable) {
+            TableRelation tableRelation = new TableRelation();
+            tableRelation.setCategoryGuid("1");
+            tableRelation.setGenerateTime(DateUtils.getNow());
+            tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+            tableRelation.setTableGuid(s);
+            tableRelations.add(tableRelation);
+        }
+        if (tableRelations.size() > 0)
+            tableDAO.addRelations(tableRelations);
+    }
+
+    @Transactional
+    public void supplementTable() throws AtlasBaseException {
+        PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", 0, -1);
+        List<Table> lists = tableNameAndDbNameByQuery.getLists();
+        for (Table list : lists) {
+            String tableId = list.getTableId();
+            if (tableDAO.ifTableExists(tableId).size() == 0) {
+                TableInfo tableInfo = new TableInfo();
+                tableInfo.setTableGuid(tableId);
+                tableInfo.setTableName(list.getTableName());
+                tableInfo.setCreateTime(list.getCreateTime());
+                tableInfo.setStatus(list.getStatus());
+                tableInfo.setTableGuid(list.getDatabaseId());
+                tableInfo.setDbName(list.getDatabaseName());
+                tableDAO.addTable(tableInfo);
+            }
+        }
+        addFullRelation();
+    }
+
+    @Transactional
+    public void updateTable(List<AtlasEntity> entities) {
+        for (AtlasEntity entity : entities) {
+            String typeName = entity.getTypeName();
+            if (typeName.contains("table")) {
+                TableInfo tableInfo = new TableInfo();
+                tableInfo.setTableGuid(entity.getGuid());
+                tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                tableInfo.setDbName(relatedDB.getDisplayText());
+                tableDAO.updateTable(tableInfo);
+            }
+        }
+    }
+
+
+    public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
+        AtlasRelatedObjectId objectId = null;
+        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
+            Object obj = entity.getRelationshipAttribute("db");
+            if (obj instanceof AtlasRelatedObjectId) {
+                objectId = (AtlasRelatedObjectId) obj;
+            }
+        }
+        return objectId;
+    }
+
+    public String getEntityAttribute(AtlasEntity entity, String attributeName) {
+        if (entity.hasAttribute(attributeName) && Objects.nonNull(entity.getAttribute(attributeName))) {
+            return entity.getAttribute(attributeName).toString();
+        } else {
+            return null;
+        }
     }
 }

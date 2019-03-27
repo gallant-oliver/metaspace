@@ -1,7 +1,6 @@
 package io.zeta.metaspace.model.pojo;
 
 import com.google.gson.Gson;
-import io.zeta.metaspace.model.metadata.JSONTypeHandlerPg;
 import org.postgresql.util.PGobject;
 
 import java.util.ArrayList;
@@ -14,6 +13,15 @@ public class TableInfo {
     private String status;
     private String createTime;
     private PGobject dataOwner;
+    private String databaseGuid;
+
+    public String getDatabaseGuid() {
+        return databaseGuid;
+    }
+
+    public void setDatabaseGuid(String databaseGuid) {
+        this.databaseGuid = databaseGuid;
+    }
 
     public String getTableGuid() {
         return tableGuid;
@@ -59,7 +67,7 @@ public class TableInfo {
         List<String> list = new ArrayList<>();
         if (dataOwner != null) {
             Gson gson = new Gson();
-            list=gson.fromJson(dataOwner.getValue().toString(),List.class);
+            list = gson.fromJson(dataOwner.getValue().toString(), List.class);
         }
         return list;
     }
