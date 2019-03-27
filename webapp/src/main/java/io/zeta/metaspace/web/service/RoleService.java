@@ -275,27 +275,16 @@ public class RoleService {
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if (businessCategories != null) {
-            if ((moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
                 for (RoleModulesCategories.Category businessCategory : businessCategories) {
                     roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
                 }
-            } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
-                }
-            }
         }
+
+        //
         if (technicalCategories != null) {
-            if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
                 for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
                     roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
                 }
-
-            } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
-                }
-            }
         }
         return "success";
     }
@@ -315,7 +304,7 @@ public class RoleService {
 
     /**
      * 获取用户目录树，有权限首级目录不能加关联
-     *
+     * 1.4新权限 有编辑目录权限的可以编辑目录和添加关联，其他人只能看
      * @param userRoleId
      * @param categorytype
      * @return

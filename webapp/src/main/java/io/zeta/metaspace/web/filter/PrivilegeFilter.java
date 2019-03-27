@@ -115,7 +115,7 @@ public class PrivilegeFilter implements Filter {
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
-                    if (module.getModuleId() == SystemModule.TECHNICAL_CHECK.getCode() || module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                    if (module.getModuleId() == SystemModule.TECHNICAL_CHECK.getCode() || module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode() || module.getModuleId() == SystemModule.TECHNICAL_EDIT.getCode()) {
                         filterChain.doFilter(servletRequest, servletResponse);
                         return;
                     }
@@ -131,7 +131,7 @@ public class PrivilegeFilter implements Filter {
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
-                    if (module.getModuleId() == SystemModule.BUSINESSE_CHECK.getCode() || module.getModuleId() == SystemModule.BUSINESSE_OPERATE.getCode()) {
+                    if (module.getModuleId() == SystemModule.BUSINESSE_CHECK.getCode() || module.getModuleId() == SystemModule.BUSINESSE_OPERATE.getCode() || module.getModuleId() ==SystemModule.BUSINESSE_EDIT.getCode()) {
                         filterChain.doFilter(servletRequest, servletResponse);
                         return;
                     }

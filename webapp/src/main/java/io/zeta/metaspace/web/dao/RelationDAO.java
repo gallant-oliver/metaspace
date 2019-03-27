@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -113,5 +114,21 @@ public interface RelationDAO {
 
     @Insert("insert into tableInfo(tableName,dbName,tableGuid,status,createTime)values(#{tableName},#{dbName},#{tableGuid},#{status},#{createTime})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
+
+    @Delete("delete from table_relation where tableguid=#{guid}")
+    public int deleteByTableGuid(String guid);
+    @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
+    public int addRelation(TableRelation tableRelation);
+
+    @Select("<script>WITH RECURSIVE categoryTree AS" +
+            "(" +
+            "    SELECT * from category where " +
+            "    guid =#{guid} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
+            ")" +
+            "SELECT guid from categoryTree where parentcategoryguid is null or parentcategoryguid =''</script>")
+    public String getTopGuidByGuid(@Param("guid")String guid);
 
 }

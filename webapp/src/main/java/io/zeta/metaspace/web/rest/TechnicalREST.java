@@ -53,7 +53,7 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> getAllDatabase(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResult(parameters,categoryId);
+        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters,categoryId);
         return pageResult;
     }
 
@@ -67,7 +67,7 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Table> getTableByQuery(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Table> pageResult = searchService.getTechnicalTablePageResult(parameters,categoryId);
+        PageResult<Table> pageResult = searchService.getTechnicalTablePageResultV2(parameters,categoryId);
         return pageResult;
     }
 
@@ -237,7 +237,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
             }
-            dataManageService.removeRelationAssignmentFromTables(relationshipList);
+            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

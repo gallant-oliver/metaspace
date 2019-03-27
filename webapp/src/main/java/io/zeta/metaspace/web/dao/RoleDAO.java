@@ -203,4 +203,44 @@ public interface RoleDAO {
 
     @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
     public List<TechnologyInfo.Table> getTableInfosByDB(@Param("guid") String guid, @Param("DB") String DB);
+
+    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "    and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    public List<String> getDBNamesV2(@Param("guid") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "    and tableinfo.dbname like '%'||#{query}||'%' ")
+    public long getDBCount(@Param("guid") List<String> guids, @Param("query") String query);
+
+    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
+    public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guid") List<String> guids, @Param("DB") String DB);
+
+    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "     and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guid") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("<script>select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "     and tableinfo.tablename like '%'||#{query}||'%'</script>")
+    public long getTableCountV2(@Param("guid") List<String> guids, @Param("query") String query);
 }
