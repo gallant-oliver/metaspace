@@ -351,4 +351,7 @@ public interface DataQualityDAO {
 
     @Select("select * from report_error where templateId=#{templateId} order by generateTime desc limit 1")
     public ReportError getLastError(@Param("templateId") String templateId);
+
+    @Delete("delete from report_error where templateId=#{templateId}")
+    public int deleteReportError(@Param("templateId") String templateId);
 }

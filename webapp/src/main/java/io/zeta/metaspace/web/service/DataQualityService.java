@@ -236,6 +236,7 @@ public class DataQualityService {
             if(templateStatus == TemplateStatus.NOT_RUNNING.code) {
                 addQuartzJob(templateId);
             } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
+                qualityDao.deleteReportError(templateId);
                 String cron = qualityDao.getCronByTemplateId(templateId);
                 if(Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
                     String jobName = qualityDao.getJobByTemplateId(templateId);
