@@ -27,19 +27,19 @@ public interface TableDAO {
     @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid})")
     public int addTable(@Param("table") TableInfo table);
 
-    @Update("update tableinfo(tablename,dbnam) set(#{table.tableName},#{table.dbName}) where tableguid=#{table.tableGuid}")
+    @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
-    @Select("select tableguid from tableinfo leftjoin table_relation on table_relation.tableguid=tableinfo.tableguid and categoryguid is null")
+    @Select("select tableguid from tableinfo except select tableguid from table_relation")
     public List<String> getNewTable();
 
     @Insert({"<script>insert into table_relation values",
-            "<foreach item='item' index='index' collection='guids'",
-            "open='(' separator=',' close=')'>",
-            "{#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}}",
+            "<foreach item='item' index='index' collection='tableRelations'",
+            "open=' ' separator=',' close=' '>",
+            "(#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime})",
             "</foreach>",
             "</script>"})
-    public int addRelations(List<TableRelation> tableRelations);
+    public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
 
     @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
     public List<Integer> ifTableExists(String tableGuid);

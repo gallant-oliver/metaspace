@@ -508,7 +508,7 @@ public class DataManageService {
                     tableInfo.setCreateTime(formatDateStr);
                     tableInfo.setStatus(entity.getStatus().name());
                     AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                    tableInfo.setTableGuid(relatedDB.getGuid());
+                    tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.addTable(tableInfo);
                 }
@@ -547,7 +547,7 @@ public class DataManageService {
                 tableInfo.setTableName(list.getTableName());
                 tableInfo.setCreateTime(list.getCreateTime());
                 tableInfo.setStatus(list.getStatus());
-                tableInfo.setTableGuid(list.getDatabaseId());
+                tableInfo.setDatabaseGuid(list.getDatabaseId());
                 tableInfo.setDbName(list.getDatabaseName());
                 tableDAO.addTable(tableInfo);
             }

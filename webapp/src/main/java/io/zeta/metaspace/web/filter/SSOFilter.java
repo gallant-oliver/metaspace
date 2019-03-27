@@ -87,7 +87,7 @@ public class SSOFilter implements Filter {
             usersService.addUser(data);
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            LOG.error("sso校验失败",e);
+            LOG.error("权限校验失败",e);
             loginSkip(httpServletResponse, loginURL);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
