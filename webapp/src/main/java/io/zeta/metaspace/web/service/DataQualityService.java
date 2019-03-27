@@ -99,6 +99,7 @@ public class DataQualityService {
                 addRulesByTemlpateId(template);
                 //template
                 qualityDao.insertTemplate(template);
+                qualityDao.updateFinishedPercent(templateId, 0F);
                 //设置模板状态为【未启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
             }
@@ -551,7 +552,7 @@ public class DataQualityService {
 
     public ReportError getLastReportError(String templateId) throws AtlasBaseException {
         try {
-            float percent = qualityDao.getFinishedPercent(templateId);
+            Float percent = qualityDao.getFinishedPercent(templateId);
             ReportError error = null;
             error = qualityDao.getLastError(templateId);
             if(Objects.isNull(error)) {
