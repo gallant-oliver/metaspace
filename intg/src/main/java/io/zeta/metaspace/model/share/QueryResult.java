@@ -12,41 +12,45 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/25 20:10
+ * @date 2019/3/28 11:01
  */
-package io.zeta.metaspace.model.datashare;
+package io.zeta.metaspace.model.share;
+
+import com.google.gson.JsonObject;
+
+import java.util.List;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/25 20:10
+ * @date 2019/3/28 11:01
  */
-public class APIGroup {
-    private String guid;
-    private String name;
-    private String description;
+public class QueryResult {
+    List<JsonObject> data;
+    Long limit;
+    Long offset;
 
-    public String getGuid() {
-        return guid;
+    public List<JsonObject> getData() {
+        return data;
     }
 
-    public void setGuid(String guid) {
-        this.guid = guid;
+    public void setData(List<JsonObject> data) {
+        this.data = data;
     }
 
-    public String getName() {
-        return name;
+    public long getLimit() {
+        return limit;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLimit(Long limit) {
+        this.limit = limit;
     }
 
-    public String getDescription() {
-        return description;
+    public long getOffset() {
+        return offset;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setOffset(Long offset) {
+        this.offset = offset;
     }
 }

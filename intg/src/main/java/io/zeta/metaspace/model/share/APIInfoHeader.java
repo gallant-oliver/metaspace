@@ -12,7 +12,7 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/26 19:45
+ * @date 2019/3/27 17:45
  */
 package io.zeta.metaspace.model.share;
 
@@ -21,29 +21,19 @@ import java.util.List;
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/26 19:45
+ * @date 2019/3/27 17:45
  */
-public class APIInfo {
+public class APIInfoHeader {
     private String guid;
     private String name;
     private String tableGuid;
     private String tableName;
-    private String dbGuid;
-    private String dbName;
     private String groupGuid;
     private String groupName;
     private Boolean publish;
     private String keeper;
     private List<String> dataOwner;
-    private Long maxRowNumber;
-    private List<Field> fields;
     private String version;
-    private String description;
-    private String protocol;
-    private String requestMode;
-    private String returnType;
-    private String path;
-    private String generateTime;
     private String updater;
     private String updateTime;
     private Boolean star;
@@ -78,22 +68,6 @@ public class APIInfo {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
-    }
-
-    public String getDbGuid() {
-        return dbGuid;
-    }
-
-    public void setDbGuid(String dbGuid) {
-        this.dbGuid = dbGuid;
-    }
-
-    public String getDbName() {
-        return dbName;
-    }
-
-    public void setDbName(String dbName) {
-        this.dbName = dbName;
     }
 
     public String getGroupGuid() {
@@ -136,76 +110,12 @@ public class APIInfo {
         this.dataOwner = dataOwner;
     }
 
-    public Long getMaxRowNumber() {
-        return maxRowNumber;
-    }
-
-    public void setMaxRowNumber(Long maxRowNumber) {
-        this.maxRowNumber = maxRowNumber;
-    }
-
-    public List<Field> getFields() {
-        return fields;
-    }
-
-    public void setFields(List<Field> fields) {
-        this.fields = fields;
-    }
-
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    public String getRequestMode() {
-        return requestMode;
-    }
-
-    public void setRequestMode(String requestMode) {
-        this.requestMode = requestMode;
-    }
-
-    public String getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(String returnType) {
-        this.returnType = returnType;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getGenerateTime() {
-        return generateTime;
-    }
-
-    public void setGenerateTime(String generateTime) {
-        this.generateTime = generateTime;
     }
 
     public String getUpdater() {
@@ -230,44 +140,5 @@ public class APIInfo {
 
     public void setStar(Boolean star) {
         this.star = star;
-    }
-
-    public static class Field {
-        private String columnName;
-        private Boolean filter;
-        private Boolean fill;
-        private String defaultValue;
-
-        public String getColumnName() {
-            return columnName;
-        }
-
-        public void setColumnName(String columnName) {
-            this.columnName = columnName;
-        }
-
-        public Boolean getFilter() {
-            return filter;
-        }
-
-        public void setFilter(Boolean filter) {
-            this.filter = filter;
-        }
-
-        public Boolean getFill() {
-            return fill;
-        }
-
-        public void setFill(Boolean fill) {
-            this.fill = fill;
-        }
-
-        public String getDefaultValue() {
-            return defaultValue;
-        }
-
-        public void setDefaultValue(String defaultValue) {
-            this.defaultValue = defaultValue;
-        }
     }
 }

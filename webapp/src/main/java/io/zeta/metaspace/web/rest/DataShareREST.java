@@ -22,12 +22,16 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.model.share.APIInfo;
+import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.web.service.DataShareGroupService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.SearchService;
@@ -35,12 +39,17 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -49,6 +58,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 @Path("datashare")
@@ -62,6 +72,9 @@ public class DataShareREST {
     DataShareService shareService;
     @Autowired
     private SearchService searchService;
+
+    @Context
+    private HttpServletResponse httpServletResponse;
 
     /**
      * 创建API
@@ -83,7 +96,96 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 同名校验
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/same")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean querySameName(APIInfo info) throws AtlasBaseException {
+        try {
+            String name = info.getName();
+            return shareService.querySameName(name);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
 
+    /**
+     * 删除API
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public int deleteAPIINfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.deleteAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除en 失败");
+        }
+    }
+
+    /**
+     * 修改API信息
+     * @param guid
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateAPIInfo(@PathParam("apiGuid")String guid, APIInfo info) throws AtlasBaseException {
+        try {
+            shareService.updateAPIInfo(guid, info);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    @GET
+    @Path("/{groupGuid}/{my}/{publish}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")Integer publish) throws AtlasBaseException {
+        try {
+            return shareService.getAPIList(guid, my, publish);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+
+    /**
+     * 创建API分组
+     * @param group
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/group")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -99,6 +201,12 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 删除API分组
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/group/{groupId}")
     public Response deleteGroup(@PathParam("groupId")String guid) throws AtlasBaseException {
@@ -112,6 +220,13 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 更新API分组信息
+     * @param guid
+     * @param group
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/group/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -127,6 +242,11 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 获取API分组列表
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/groups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -141,6 +261,12 @@ public class DataShareREST {
         }
     }
 
+    /**
+     * 获取库列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -155,6 +281,9 @@ public class DataShareREST {
         }
     }
 
+    /**
+     * 获取库下所有表
+     */
     /**
      * 根据库id返回表
      *
@@ -194,6 +323,13 @@ public class DataShareREST {
         }
     }
 
+    /**
+     * 发布/撤销API
+     * @param status
+     * @param apiGuidList
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/publish/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -206,4 +342,20 @@ public class DataShareREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    @POST
+    @Path("/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws AtlasBaseException,IOException {
+        AtlasPerfTracer perf = null;
+        try {
+            List<Map> result = shareService.testAPI(parameter);
+            Gson gson = new Gson();
+            return result;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
 }
