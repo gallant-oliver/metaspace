@@ -33,6 +33,8 @@ import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableTagDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.model.Progress;
+import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -66,6 +68,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -99,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -130,6 +134,8 @@ public class MetaDataService {
     UserDAO userDAO;
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -813,6 +819,52 @@ public class MetaDataService {
 
     }
 
+    /**
+     * 同步元数据
+     *
+     * @return
+     */
+    public String synchronizeMetaData(String databaseType, TableSchema tableSchema) throws Exception {
+        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
+        switch (databaseType1) {
+            case HIVE:
+                hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
+                break;
+            case MYSQL:
+            case ORACLE:
+            case POSTGRESQL:
+                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+        }
+        return "success";
+    }
+    public Progress importProgress(String databaseType) throws Exception {
+        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
+        Progress progress = new Progress(0, 0);
+        switch (databaseType1) {
+            case HIVE:
+                AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
+                AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
+                progress = new Progress(totalTables.get(), updatedTables.get());
+                break;
+            case MYSQL:
+            case ORACLE:
+            case POSTGRESQL:
+                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+        }
+        return progress;
+    }
+
+    public enum  DatabaseType {
+        HIVE,
+        MYSQL,
+        ORACLE,
+        POSTGRESQL
+        ;
+        public String getName() {
+            return name().toLowerCase();
+        }
+    }
+
     @AtlasService
     public static class UploadJobService {
 
@@ -856,6 +908,8 @@ public class MetaDataService {
 
             return twoTuple;
         }
+
+
 
         /**
          * 预览Excel xls数据</p>
