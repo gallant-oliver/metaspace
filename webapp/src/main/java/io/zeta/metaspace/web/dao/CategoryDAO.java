@@ -155,4 +155,7 @@ public interface CategoryDAO {
              "</script>"})
     public int addTableOwners(@Param("tableIds")List<String> tableIds, @Param("ownersIds")String[] ownersIds) throws SQLException;
 
+    @Select("select category.guid from category,table_relation where table_relation=#{guid} and table_relation.categoryguid=category.guid")
+    public String getCategoryGuidByTableGuid(String guid);
+
 }

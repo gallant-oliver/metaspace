@@ -3,8 +3,8 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -23,12 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
-import java.util.List;
-import java.util.Map;
-
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Path("technical")
 @Singleton
@@ -43,6 +41,7 @@ public class TechnicalREST {
     @Autowired
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
+
     /**
      * 添加关联表时搜库
      *
@@ -52,8 +51,8 @@ public class TechnicalREST {
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters,categoryId);
+    public PageResult<Database> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
+        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
         return pageResult;
     }
 
@@ -66,8 +65,8 @@ public class TechnicalREST {
     @Path("/search/table/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByQuery(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Table> pageResult = searchService.getTechnicalTablePageResultV2(parameters,categoryId);
+    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId);
         return pageResult;
     }
 
@@ -143,6 +142,7 @@ public class TechnicalREST {
         }
         return Response.status(200).entity("success").build();
     }
+
     /**
      * 修改目录信息 V2
      *

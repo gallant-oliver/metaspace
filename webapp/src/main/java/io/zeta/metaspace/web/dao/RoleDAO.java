@@ -243,4 +243,7 @@ public interface RoleDAO {
             "    </foreach>" +
             "     and tableinfo.tablename like '%'||#{query}||'%'</script>")
     public long getTableCountV2(@Param("guid") List<String> guids, @Param("query") String query);
+
+    @Select("select guid from category where categorytype=#{categoryType} and level = 1")
+    public List<String> getTopCategoryGuid(int categoryType);
 }

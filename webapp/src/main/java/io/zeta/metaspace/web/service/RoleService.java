@@ -9,8 +9,11 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -33,6 +36,10 @@ public class RoleService {
     private RoleService roleService;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private CategoryDAO categoryDAO;
+    @Autowired
+    private UserDAO userDAO;
 
     @Bean(name = "getRoleService")
     public RoleService getRoleService() {
@@ -275,16 +282,16 @@ public class RoleService {
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if (businessCategories != null) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
-                }
+            for (RoleModulesCategories.Category businessCategory : businessCategories) {
+                roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
+            }
         }
 
         //
         if (technicalCategories != null) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
-                }
+            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
+                roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
+            }
         }
         return "success";
     }
@@ -304,7 +311,9 @@ public class RoleService {
 
     /**
      * 获取用户目录树，有权限首级目录不能加关联
-     * 1.4新权限 有编辑目录权限的可以编辑目录和添加关联，其他人只能看
+     * 1.4新权限 有管理目录权限的可以编辑目录和添加关联，其他人只能看
+     * 业务目录的，有管理目录权限的编辑目录，有编辑业务信息权限的可以创建业务对象和编辑业务对象
+     *
      * @param userRoleId
      * @param categorytype
      * @return
@@ -321,16 +330,60 @@ public class RoleService {
                 List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
-                //得到用户的带权限的目录树
-                setMap(userCategorys, userChildCategorys, 2, true);
-                setMap(userCategorys, userParentCategorys, 0, false);
-                setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                //按角色方案
+                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
+                List<Integer> modules = new ArrayList<>();
+                for (UserInfo.Module module : moduleByRoleId) {
+                    modules.add(module.getModuleId());
+                }
+                //技术目录
+                switch (categorytype) {
+                    //技术目录
+                    case 0: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE)) {
+                            //按勾选的目录
+                            setMap(userCategorys, userChildCategorys, 2, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                        } else {
+                            setMap(userCategorys, userChildCategorys, 0, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
+                        }
+                    }
+                    ;
+                    //业务目录
+                    case 1: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE) && modules.contains(SystemModule.BUSINESSE_EDIT)) {
+                            setMap(userCategorys, userChildCategorys, 2, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE)) {
+                            setMap(userCategorys, userChildCategorys, 3, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 4, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT)) {
+                            setMap(userCategorys, userChildCategorys, 5, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 5, true);
+                        } else {
+                            setMap(userCategorys, userChildCategorys, 0, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
+                        }
+                    }
+                    ;
+                }
+
             }
         }
 
         Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
         ArrayList<RoleModulesCategories.Category> categories = new ArrayList<>(valueCollection);
         setOtherCategory(categorytype, categories);
+
         return categories;
     }
 }
