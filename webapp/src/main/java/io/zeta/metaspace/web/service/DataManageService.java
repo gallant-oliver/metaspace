@@ -383,12 +383,14 @@ public class DataManageService {
         try {
             if (Objects.nonNull(relationshipList)) {
                 for (RelationEntityV2 relationship : relationshipList) {
-                    relationDao.delete(relationship.getRelationshipGuid());
+                    String relationshipGuid = relationship.getRelationshipGuid();
+                    RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
+                    relationDao.delete(relationInfo.getRelationshipGuid());
                     TableRelation tableRelation = new TableRelation();
                     tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-                    String guid = relationDao.getTopGuidByGuid(relationship.getCategoryGuid());
+                    String guid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
                     tableRelation.setCategoryGuid(guid);
-                    tableRelation.setTableGuid(relationship.getTableGuid());
+                    tableRelation.setTableGuid(relationInfo.getTableGuid());
                     tableRelation.setGenerateTime(DateUtils.getNow());
                     relationDao.addRelation(tableRelation);
                 }

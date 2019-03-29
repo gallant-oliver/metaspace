@@ -295,12 +295,18 @@ public class SearchService {
             for (RoleModulesCategories.Category child : childs) {
                 strings.add(child.getGuid());
             }
+            //如果没目录
+            if (strings.size() == 0) {
+                databasePageResult.setOffset(parameters.getOffset());
+                databasePageResult.setCount(0);
+                databasePageResult.setSum(0);
+                return databasePageResult;
+            }
             dbName = roleDAO.getDBNamesV2(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
             List<Database> lists = new ArrayList<>();
             for (String s : dbName) {
                 Database database = new Database();
                 database.setDatabaseName(s);
-
                 List<TechnologyInfo.Table> tbs = roleDAO.getTableInfosByDBV2(strings, s);
                 List<AddRelationTable> tables = getTables(tbs);
                 database.setTableList(tables);
@@ -361,6 +367,12 @@ public class SearchService {
             for (RoleModulesCategories.Category child : childs) {
                 strings.add(child.getGuid());
             }
+            if (strings.size() == 0) {
+                tablePageResult.setSum(0);
+                tablePageResult.setCount(0);
+                tablePageResult.setOffset(offset);
+                return tablePageResult;
+            }
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> lists = getTables(tableInfo);
             tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
@@ -385,7 +397,7 @@ public class SearchService {
             if (categoryGuidByTableGuid == null) {
                 tb.setPath("");
             } else {
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{","").replace("}",""));
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
             }
             lists.add(tb);
         }

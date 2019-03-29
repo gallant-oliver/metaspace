@@ -231,18 +231,19 @@ public interface RoleDAO {
     @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
-            "    #{itemxl}" +
+            "    #{item}" +
             "    </foreach>" +
             "    and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
-    public List<String> getDBNamesV2(@Param("guid") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+    public List<String> getDBNamesV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' ")
-    public long getDBCountV2(@Param("guid") List<String> guids, @Param("query") String query);
+            "    and tableinfo.dbname like '%'||#{query}||'%' </script>")
+    public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query);
+
 
     @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
