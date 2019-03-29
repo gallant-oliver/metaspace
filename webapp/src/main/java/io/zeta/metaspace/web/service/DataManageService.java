@@ -24,12 +24,9 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
-<<<<<<< HEAD
-=======
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.RelationQuery;
->>>>>>> feature/metaspace-1.4
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -516,13 +513,13 @@ public class DataManageService {
     }
 
 
-    public PageResult<Table> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
+    /*public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
         try {
 
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
-    }
+    }*/
 
 
     @Transactional

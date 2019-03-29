@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
@@ -10,6 +11,7 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -49,6 +51,8 @@ public class SearchService {
     UserDAO userDAO;
     @Autowired
     CategoryDAO categoryDAO;
+    @Autowired
+    RelationDAO relationDAO;
 
 /*    @Transactional
     public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters, String categoryId) throws AtlasBaseException {
@@ -159,11 +163,13 @@ public class SearchService {
         return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
     }
 
-    public PageResult<Table> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
-        String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+        String query = parameters.getQuery();
+        PageResult<TableInfo> pageResult = new PageResult<>();
+        relationDAO.getDbTables(databaseId, query, limit, offset);
+        return pageResult;
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")

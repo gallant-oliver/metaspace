@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.model.share.APIInfo;
@@ -306,10 +307,10 @@ public class DataShareREST {
     @Path("/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
-            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
+            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQuery(databaseId, parameters);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
