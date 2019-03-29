@@ -22,7 +22,7 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
-import com.google.gson.Gson;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -31,20 +31,16 @@ import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.web.service.DataShareGroupService;
 import io.zeta.metaspace.web.service.DataShareService;
+import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -68,11 +64,13 @@ import javax.ws.rs.core.Response;
 public class DataShareREST {
 
     @Autowired
-    DataShareGroupService groupService;
+    private DataShareGroupService groupService;
     @Autowired
-    DataShareService shareService;
+    private DataShareService shareService;
     @Autowired
     private SearchService searchService;
+    @Autowired
+    private MetaDataService metaDataService;
 
     @Context
     private HttpServletRequest httpServletRequest;
@@ -303,6 +301,21 @@ public class DataShareREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    @GET
+    @Path("/tables/columns/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
+            return columnList;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
 
     /**
      * 收藏/取消收藏API
