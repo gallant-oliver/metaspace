@@ -12,6 +12,11 @@ public class DateUtils {
         return sdf.format(currentTime);
     }
 
+    public static String date2String(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(date);
+    }
+
     public static String getNow2() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
         long currentTime = System.currentTimeMillis();

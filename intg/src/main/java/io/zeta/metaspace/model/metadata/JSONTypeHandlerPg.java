@@ -36,12 +36,13 @@ import java.sql.SQLException;
 public class JSONTypeHandlerPg extends BaseTypeHandler<Object> {
     private static final PGobject jsonObject = new PGobject();
     Gson gson = new Gson();
+
     @Override
     public void setNonNullParameter(PreparedStatement preparedStatement, int i, Object o, JdbcType jdbcType) throws SQLException {
 
         jsonObject.setType("json");
         jsonObject.setValue(gson.toJson(o));
-        preparedStatement.setObject(i,jsonObject);
+        preparedStatement.setObject(i, jsonObject);
 
     }
 

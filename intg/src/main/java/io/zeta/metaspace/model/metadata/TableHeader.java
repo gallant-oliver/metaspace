@@ -16,6 +16,12 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -77,4 +83,6 @@ public class TableHeader {
     public void setDatabaseName(String databaseName) {
         this.databaseName = databaseName;
     }
+
+
 }

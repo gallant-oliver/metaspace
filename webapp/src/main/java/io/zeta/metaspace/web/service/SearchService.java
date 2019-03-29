@@ -3,14 +3,15 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.result.BuildTableSql;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -44,8 +45,12 @@ public class SearchService {
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
     RoleDAO roleDAO;
+    @Autowired
+    UserDAO userDAO;
+    @Autowired
+    CategoryDAO categoryDAO;
 
-    @Transactional
+/*    @Transactional
     public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters, String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         Role role = roleDAO.getRoleByUsersId(user.getUserId());
@@ -81,33 +86,13 @@ public class SearchService {
         PageResult<Database> databasePageResult = new PageResult<>();
 
         List<Database> lists = new ArrayList<>();
-        //List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableInfos(categoryId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         for (String s : dbName) {
             Database database = new Database();
             database.setDatabaseName(s);
-            List<TableHeader> tableList = new ArrayList<>();
-            List<TechnologyInfo.Table> tbs =roleDAO.getTableInfosByDB(categoryId,s);
-            for (TechnologyInfo.Table tb : tbs) {
-                TableHeader table = new TableHeader();
-                table.setDatabaseName(s);
-                table.setTableId(tb.getTableGuid());
-                table.setTableName(tb.getTableName());
-                table.setCreateTime(tb.getCreateTime());
-                table.setStatus(tb.getStatus());
-                tableList.add(table);
-            }
- /*           for (TechnologyInfo.Table tb : tableByDBName) {
-                if (tb.getDbName().equals(s)){
-                    TableHeader table = new TableHeader();
-                    table.setDatabaseName(s);
-                    table.setTableId(tb.getTableGuid());
-                    table.setTableName(tb.getTableName());
-                    table.setCreateTime(tb.getCreateTime());
-                    table.setStatus(tb.getStatus());
-                    tableList.add(table);
-                }
-            }*/
-            database.setTableList(tableList);
+
+            List<TechnologyInfo.Table> tbs = roleDAO.getTableInfosByDB(categoryId, s);
+            List<Table> tables = getTables(tbs);
+            database.setTableList(tables);
             lists.add(database);
         }
         databasePageResult.setLists(lists);
@@ -145,29 +130,21 @@ public class SearchService {
         }
     }
 
-    private PageResult<Table> getTableResult(Parameters parameters, String categoryId) {
+    @Transactional
+    public PageResult<Table> getTableResult(Parameters parameters, String categoryId) {
         PageResult<Table> tablePageResult = new PageResult<>();
-        List<Table> lists = new ArrayList<>();
         String query = parameters.getQuery();
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
         List<TechnologyInfo.Table> tableInfo = null;
         tableInfo = roleDAO.getTableInfos(categoryId, query, offset, limit);
-        for (TechnologyInfo.Table table : tableInfo) {
-            Table tb = new Table();
-            tb.setTableId(table.getTableGuid());
-            tb.setTableName(table.getTableName());
-            tb.setDatabaseName(table.getDbName());
-            tb.setCreateTime(table.getCreateTime());
-            tb.setStatus(table.getStatus());
-            lists.add(tb);
-        }
+        List<Table> tables = getTables(tableInfo);
         tablePageResult.setSum(roleDAO.getTableCount(categoryId, query));
         tablePageResult.setCount(tableInfo.size());
         tablePageResult.setOffset(offset);
-        tablePageResult.setLists(lists);
+        tablePageResult.setLists(tables);
         return tablePageResult;
-    }
+    }*/
 
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
@@ -276,7 +253,161 @@ public class SearchService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
+    }
+
+    //1.4获取关联表，获取有权限的目录下的表
+    @Transactional
+    public PageResult<Database> getTechnicalDatabasePageResultV2(Parameters parameters, String categoryId) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if (role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
+        List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
+        for (UserInfo.Module module : moduleByRoleId) {
+            //有管理技术目录权限
+            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                //admin有全部目录权限，且可以给一级目录加关联
+                if (roleId.equals(SystemRole.ADMIN.getCode())) {
+                    List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+                    return getDatabaseResultV2(parameters, topCategoryGuid);
+                } else {
+                    List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+                    if (categorysByTypeIds.size() > 0) {
+                        List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categorysByTypeIds, 0);
+                        for (RoleModulesCategories.Category child : childs) {
+                            //当该目录是用户有权限目录的子目录时
+                            if (child.getGuid().equals(categoryId)) {
+                                return getDatabaseResultV2(parameters, categorysByTypeIds);
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
 
 
+    }
+
+    //备用，一组目录查子库加表
+    @Transactional
+    public PageResult<Database> getDatabaseResultV2(Parameters parameters, List<String> categoryIds) {
+        List<String> dbName = null;
+        PageResult<Database> databasePageResult = new PageResult<>();
+        if (categoryIds.size() > 0) {
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
+            ArrayList<String> strings = new ArrayList<>();
+            for (RoleModulesCategories.Category child : childs) {
+                strings.add(child.getGuid());
+            }
+            //如果没目录
+            if (strings.size() == 0) {
+                databasePageResult.setOffset(parameters.getOffset());
+                databasePageResult.setCount(0);
+                databasePageResult.setSum(0);
+                return databasePageResult;
+            }
+            dbName = roleDAO.getDBNamesV2(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            List<Database> lists = new ArrayList<>();
+            for (String s : dbName) {
+                Database database = new Database();
+                database.setDatabaseName(s);
+                List<TechnologyInfo.Table> tbs = roleDAO.getTableInfosByDBV2(strings, s);
+                List<AddRelationTable> tables = getTables(tbs);
+                database.setTableList(tables);
+                lists.add(database);
+            }
+            databasePageResult.setLists(lists);
+            databasePageResult.setOffset(parameters.getOffset());
+            databasePageResult.setCount(dbName.size());
+            databasePageResult.setSum(roleDAO.getDBCountV2(strings, parameters.getQuery()));
+        }
+        return databasePageResult;
+    }
+
+    @Transactional
+    public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if (role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
+        List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
+        for (UserInfo.Module module : moduleByRoleId) {
+            //有管理技术目录权限
+            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                //admin有全部目录权限，且可以给一级目录加关联
+                if (roleId.equals(SystemRole.ADMIN.getCode())) {
+                    List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+                    return getTableResultV2(parameters, topCategoryGuid);
+                } else {
+                    List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+                    if (categorysByTypeIds.size() > 0) {
+                        List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categorysByTypeIds, 0);
+                        for (RoleModulesCategories.Category child : childs) {
+                            //当该目录是用户有权限目录的子目录时
+                            if (child.getGuid().equals(categoryId)) {
+                                return getTableResultV2(parameters, categorysByTypeIds);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
+    }
+
+    //一组目录查子表
+    @Transactional
+    public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds) {
+        PageResult<AddRelationTable> tablePageResult = new PageResult<>();
+
+        String query = parameters.getQuery();
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        List<TechnologyInfo.Table> tableInfo = null;
+        if (categoryIds.size() > 0) {
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
+            ArrayList<String> strings = new ArrayList<>();
+            for (RoleModulesCategories.Category child : childs) {
+                strings.add(child.getGuid());
+            }
+            if (strings.size() == 0) {
+                tablePageResult.setSum(0);
+                tablePageResult.setCount(0);
+                tablePageResult.setOffset(offset);
+                return tablePageResult;
+            }
+            tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
+            List<AddRelationTable> lists = getTables(tableInfo);
+            tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
+            tablePageResult.setCount(tableInfo.size());
+            tablePageResult.setOffset(offset);
+            tablePageResult.setLists(lists);
+        }
+        return tablePageResult;
+    }
+
+    @Transactional
+    public List<AddRelationTable> getTables(List<TechnologyInfo.Table> tableInfo) {
+        List<AddRelationTable> lists = new ArrayList<>();
+        for (TechnologyInfo.Table table : tableInfo) {
+            AddRelationTable tb = new AddRelationTable();
+            tb.setTableId(table.getTableGuid());
+            tb.setTableName(table.getTableName());
+            tb.setDatabaseName(table.getDbName());
+            tb.setCreateTime(table.getCreateTime());
+            tb.setStatus(table.getStatus());
+            String categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
+            if (categoryGuidByTableGuid == null) {
+                tb.setPath("");
+            } else {
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
+            }
+            lists.add(tb);
+        }
+        return lists;
     }
 }

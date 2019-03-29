@@ -43,9 +43,9 @@ public class TableTagService {
     }
     @Transactional
     public void addTable2Tag(Table table, List<String> tagId){
-        if (tableTagDAO.ifTableExists(table.getTableId()).size()==0) {
-            tableTagDAO.addTable(table);
-        }
+//        if (tableTagDAO.ifTableExists(table.getTableId()).size()==0) {
+//            tableTagDAO.addTable(table);
+//        }
         tableTagDAO.delAllTable2Tag(table.getTableId());
         for (String s : tagId) {
             try {

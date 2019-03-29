@@ -24,23 +24,34 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
+<<<<<<< HEAD
+=======
+import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.metadata.CategoryEntity;
+import io.zeta.metaspace.model.metadata.RelationQuery;
+>>>>>>> feature/metaspace-1.4
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.pojo.TableRelation;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
+import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -48,20 +59,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import io.zeta.metaspace.model.metadata.CategoryEntity;
-import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.result.PageResult;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 public class DataManageService {
@@ -75,9 +76,14 @@ public class DataManageService {
     RoleDAO roleDao;
     @Autowired
     RoleService roleService;
+    @Autowired
+    TableDAO tableDAO;
+    @Autowired
+    MetaspaceGremlinQueryService metaspaceEntityService;
 
     /**
      * 获取用户有权限的全部目录
+     *
      * @param type
      * @return
      * @throws AtlasBaseException
@@ -86,7 +92,7 @@ public class DataManageService {
         try {
             User user = AdminUtils.getUserData();
             Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            if (role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
             List<RoleModulesCategories.Category> valueList = roleService.getUserCategory(roleId, type);
@@ -104,6 +110,7 @@ public class DataManageService {
 
     /**
      * 创建业务目录
+     *
      * @param info
      * @param type
      * @return
@@ -117,7 +124,7 @@ public class DataManageService {
             StringBuffer qualifiedName = new StringBuffer();
             String newCategoryGuid = UUID.randomUUID().toString();
             String name = info.getName();
-            if(Objects.isNull(name)) {
+            if (Objects.isNull(name)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
             //guid
@@ -129,10 +136,10 @@ public class DataManageService {
             entity.setCategoryType(type);
 
             //创建第一个目录
-            if(Objects.isNull(currentCategoryGuid)) {
+            if (Objects.isNull(currentCategoryGuid)) {
                 User user = AdminUtils.getUserData();
                 Role role = roleDao.getRoleByUsersId(user.getUserId());
-                if(!"1".equals(role.getRoleId())) {
+                if (!"1".equals(role.getRoleId())) {
                     throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
                 }
                 //qualifiedName
@@ -153,32 +160,32 @@ public class DataManageService {
             String parentGuid = null;
             int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid);
             //创建子目录
-            if( Objects.nonNull(newCategoryParentGuid)) {
+            if (Objects.nonNull(newCategoryParentGuid)) {
                 parentGuid = currentCategoryGuid;
                 entity.setParentCategoryGuid(currentCategoryGuid);
                 parentQualifiedName = currentEntity.getQualifiedName();
-                entity.setLevel(currentLevel+1);
+                entity.setLevel(currentLevel + 1);
             } else {
                 //创建同级目录
                 parentGuid = currentEntity.getParentCategoryGuid();
                 entity.setLevel(currentLevel);
-                if(Objects.nonNull(parentGuid)) {
+                if (Objects.nonNull(parentGuid)) {
                     entity.setParentCategoryGuid(parentGuid);
                     CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid);
                     parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
                 }
             }
-            if(Objects.nonNull(parentQualifiedName) && parentQualifiedName.length() > 0)
+            if (Objects.nonNull(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
             int count = categoryDao.querySameNameNum(name, parentGuid, type);
-            if(count > 0)
+            if (count > 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             //qualifiedName
             entity.setQualifiedName(qualifiedName.toString());
 
             //子目录
-            if( Objects.nonNull(newCategoryParentGuid)) {
+            if (Objects.nonNull(newCategoryParentGuid)) {
                 String lastChildGuid = categoryDao.queryLastChildCategory(currentCategoryGuid);
                 if (Objects.nonNull(lastChildGuid)) {
                     entity.setUpBrotherCategoryGuid(lastChildGuid);
@@ -205,7 +212,7 @@ public class DataManageService {
                 }
             }
             categoryDao.add(entity);
-            CategoryEntityV2 returnEntity =  categoryDao.queryByGuid(newCategoryGuid);
+            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
             returnEntity.setShow(true);
             returnEntity.setStatus(2);
             return returnEntity;
@@ -220,6 +227,7 @@ public class DataManageService {
 
     /**
      * 删除目录
+     *
      * @param guid
      * @return
      * @throws Exception
@@ -228,12 +236,12 @@ public class DataManageService {
     public int deleteCategory(String guid) throws Exception {
         try {
             int childrenNum = categoryDao.queryChildrenNum(guid);
-            if(childrenNum > 0) {
+            if (childrenNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
             }
             int relationNum = relationDao.queryRelationNumByCategoryGuid(guid);
             int businessRelationNum = relationDao.queryBusinessRelationNumByCategoryGuid(guid);
-            if(relationNum > 0 || businessRelationNum > 0) {
+            if (relationNum > 0 || businessRelationNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在关联关系");
             }
             CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid);
@@ -250,7 +258,7 @@ public class DataManageService {
             }
             User user = AdminUtils.getUserData();
             Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            if (role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             roleDao.deleteRole2categoryByUserId(guid);
             return categoryDao.delete(guid);
@@ -268,6 +276,7 @@ public class DataManageService {
 
     /**
      * 更新目录
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -297,7 +306,7 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             categoryDao.updateCategoryInfo(entity);
-            CategoryEntityV2 returnEntity =  categoryDao.queryByGuid(guid);
+            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(guid);
             returnEntity.setShow(true);
             returnEntity.setStatus(2);
             return returnEntity;
@@ -309,6 +318,7 @@ public class DataManageService {
 
     /**
      * 添加关联
+     *
      * @param categoryGuid
      * @param relations
      * @throws AtlasBaseException
@@ -316,8 +326,14 @@ public class DataManageService {
     @Transactional
     public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
+            long time = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String generateTime = format.format(time);
             for (RelationEntityV2 relation : relations) {
+                //删除旧的
+                relationDao.deleteByTableGuid(relation.getTableGuid());
                 relation.setCategoryGuid(categoryGuid);
+                relation.setGenerateTime(generateTime);
                 addRelation(relation);
             }
         } catch (AtlasBaseException e) {
@@ -331,11 +347,6 @@ public class DataManageService {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
             relationEntity.setRelationshipGuid(relationshiGuid);
-
-            int count = relationDao.queryTableInfo(relationEntity.getTableGuid());
-            if(count == 0) {
-                relationDao.addTableInfo(relationEntity);
-            }
             return relationDao.add(relationEntity);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
@@ -345,6 +356,7 @@ public class DataManageService {
 
     /**
      * 删除表关联
+     *
      * @param relationshipList
      * @throws AtlasBaseException
      */
@@ -368,8 +380,31 @@ public class DataManageService {
         }
     }
 
+    //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
+    @Transactional
+    public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
+        try {
+            if (Objects.nonNull(relationshipList)) {
+                for (RelationEntityV2 relationship : relationshipList) {
+                    String relationshipGuid = relationship.getRelationshipGuid();
+                    RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
+                    relationDao.delete(relationInfo.getRelationshipGuid());
+                    TableRelation tableRelation = new TableRelation();
+                    tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+                    String guid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
+                    tableRelation.setCategoryGuid(guid);
+                    tableRelation.setTableGuid(relationInfo.getTableGuid());
+                    tableRelation.setGenerateTime(DateUtils.getNow());
+                    relationDao.addRelation(tableRelation);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联出错");
+        }
+    }
+
     /**
-     *
      * @param categoryGuid
      * @param query
      * @return
@@ -400,7 +435,7 @@ public class DataManageService {
         try {
             User user = AdminUtils.getUserData();
             Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            if (role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
             String tableName = query.getFilterTableName();
@@ -442,7 +477,7 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
-            if(typeName.contains("table"))
+            if (typeName.contains("table"))
                 relationDao.updateTableStatus(guid, "DELETED");
         }
     }
@@ -480,6 +515,7 @@ public class DataManageService {
         return data;
     }
 
+
     public PageResult<Table> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
         try {
 
@@ -488,4 +524,103 @@ public class DataManageService {
         }
     }
 
+
+    @Transactional
+    public void addTable(List<AtlasEntity> entities) {
+        //添加到tableinfo
+        for (AtlasEntity entity : entities) {
+            String typeName = entity.getTypeName();
+            if (typeName.contains("table")) {
+                String guid = entity.getGuid();
+                if (tableDAO.ifTableExists(guid).size() == 0) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(guid);
+                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    Object createTime = entity.getAttribute("createTime");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String formatDateStr = sdf.format(createTime);
+                    tableInfo.setCreateTime(formatDateStr);
+                    tableInfo.setStatus(entity.getStatus().name());
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    tableInfo.setDatabaseGuid(relatedDB.getGuid());
+                    tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableDAO.addTable(tableInfo);
+                }
+            }
+        }
+        addFullRelation();
+
+    }
+
+    @Transactional
+    public void addFullRelation() {
+        //添加关联
+        List<String> newTable = tableDAO.getNewTable();
+        List<TableRelation> tableRelations = new ArrayList<>();
+        for (String s : newTable) {
+            TableRelation tableRelation = new TableRelation();
+            tableRelation.setCategoryGuid("1");
+            tableRelation.setGenerateTime(DateUtils.getNow());
+            tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+            tableRelation.setTableGuid(s);
+            tableRelations.add(tableRelation);
+        }
+        if (tableRelations.size() > 0)
+            tableDAO.addRelations(tableRelations);
+    }
+
+    @Transactional
+    public void supplementTable() throws AtlasBaseException {
+        PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", 0, -1);
+        List<Table> lists = tableNameAndDbNameByQuery.getLists();
+        for (Table list : lists) {
+            String tableId = list.getTableId();
+            if (tableDAO.ifTableExists(tableId).size() == 0) {
+                TableInfo tableInfo = new TableInfo();
+                tableInfo.setTableGuid(tableId);
+                tableInfo.setTableName(list.getTableName());
+                tableInfo.setCreateTime(list.getCreateTime());
+                tableInfo.setStatus(list.getStatus());
+                tableInfo.setDatabaseGuid(list.getDatabaseId());
+                tableInfo.setDbName(list.getDatabaseName());
+                tableDAO.addTable(tableInfo);
+            }
+        }
+        addFullRelation();
+    }
+
+    @Transactional
+    public void updateTable(List<AtlasEntity> entities) {
+        for (AtlasEntity entity : entities) {
+            String typeName = entity.getTypeName();
+            if (typeName.contains("table")) {
+                TableInfo tableInfo = new TableInfo();
+                tableInfo.setTableGuid(entity.getGuid());
+                tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                tableInfo.setDbName(relatedDB.getDisplayText());
+                tableDAO.updateTable(tableInfo);
+            }
+        }
+    }
+
+
+    public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
+        AtlasRelatedObjectId objectId = null;
+        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
+            Object obj = entity.getRelationshipAttribute("db");
+            if (obj instanceof AtlasRelatedObjectId) {
+                objectId = (AtlasRelatedObjectId) obj;
+            }
+        }
+        return objectId;
+    }
+
+    public String getEntityAttribute(AtlasEntity entity, String attributeName) {
+        if (entity.hasAttribute(attributeName) && Objects.nonNull(entity.getAttribute(attributeName))) {
+            return entity.getAttribute(attributeName).toString();
+        } else {
+            return null;
+        }
+    }
 }

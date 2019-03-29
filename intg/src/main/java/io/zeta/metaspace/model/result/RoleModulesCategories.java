@@ -42,7 +42,8 @@ public class RoleModulesCategories {
     public void setPrivilege(PrivilegeInfo privilege) {
         this.privilege = privilege;
     }
-    public static class Category{
+
+    public static class Category {
         private String guid;
         private String name;
         private String parentCategoryGuid;
@@ -50,8 +51,19 @@ public class RoleModulesCategories {
         private String downBrotherCategoryGuid;
         private int status;
         private String description;
+        private int level;
 
-        public Category(){}
+        public int getLevel() {
+            return level;
+        }
+
+        public void setLevel(int level) {
+            this.level = level;
+        }
+
+        public Category() {
+        }
+
         public Category(Category category) {
             this.guid = category.guid;
             this.name = category.name;
@@ -75,7 +87,7 @@ public class RoleModulesCategories {
             return Objects.hash(guid);
         }
 
-        private boolean show	;
+        private boolean show;
         private boolean hide;
 
         public boolean isHide() {
