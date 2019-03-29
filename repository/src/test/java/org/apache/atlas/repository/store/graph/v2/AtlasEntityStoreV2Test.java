@@ -541,7 +541,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
         final String paramsAttr = "parameters";
         Assert.assertNotNull(firstEntityCreated.getAttribute(isReplicatedAttr));
         Assert.assertEquals(firstEntityCreated.getAttribute(isReplicatedAttr), Boolean.FALSE);
-        Assert.assertNull(firstEntityCreated.getAttribute(paramsAttr));
+        Assert.assertNotNull(firstEntityCreated.getAttribute(paramsAttr));
 
         //Update to true
         dbEntity.setAttribute(isReplicatedAttr, Boolean.TRUE);

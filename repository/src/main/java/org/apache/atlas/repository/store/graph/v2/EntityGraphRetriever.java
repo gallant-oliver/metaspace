@@ -794,8 +794,8 @@ public final class EntityGraphRetriever {
             ret = getPrimitiveMap(entityVertex, attribute.getVertexPropertyName());
         }
 
-        if (MapUtils.isEmpty(ret)) {
-            ret = null;
+        if (null == ret) {
+            ret = new HashMap<>();
         }
 
         return ret;
