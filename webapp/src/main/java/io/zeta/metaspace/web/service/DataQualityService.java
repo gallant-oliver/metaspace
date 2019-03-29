@@ -97,6 +97,7 @@ public class DataQualityService {
                 String templateId = UUID.randomUUID().toString();
                 template.setTemplateId(templateId);
                 addRulesByTemlpateId(template);
+                template.setGenerateTime(System.currentTimeMillis());
                 //template
                 qualityDao.insertTemplate(template);
                 qualityDao.updateFinishedPercent(templateId, 0F);
@@ -469,8 +470,6 @@ public class DataQualityService {
         List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId);
         return templateResults;
     }
-
-    ;
 
     public Map getReports(String templateId, int offset, int limit) throws SQLException {
         Map<String, Object> map = new HashMap<>();

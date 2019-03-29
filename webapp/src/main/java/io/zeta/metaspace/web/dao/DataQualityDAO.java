@@ -47,8 +47,8 @@ public interface DataQualityDAO {
      * @return
      * @throws SQLException
      */
-    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source)" +
-            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum},#{source})")
+    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source,generateTime)" +
+            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum},#{source},#{generateTime})")
     public int insertTemplate(Template template) throws SQLException;
 
     /**
@@ -327,9 +327,9 @@ public interface DataQualityDAO {
 
     @Select("select * from (select reportproducedate,temp.templateid templateid,orangealerts, redalerts,reportid,reportname,alert,temp.buildtype buildtype,temp.periodcron periodcron,temp.templatename templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,MAX(reportproducedate) OVER (PARTITION BY report.templateid) maxtime\n" +
             "from\n" +
-            "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum\n" +
+            "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum " +
             "from template \n" +
-            "where tableid = #{tableId}) as temp left join report \n" +
+            "where tableid = #{tableId} order by generatetime desc) as temp left join report \n" +
             "on report.templateid=temp.templateid) temp2re where maxtime=reportproducedate or reportproducedate is null")
     public List<TemplateResult> getTemplateResults(String tableId) throws SQLException;
     @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
