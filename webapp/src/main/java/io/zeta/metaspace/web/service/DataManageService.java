@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -478,4 +479,13 @@ public class DataManageService {
         List data = (List) body.get("data");
         return data;
     }
+
+    public PageResult<Table> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
+        try {
+
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
 }

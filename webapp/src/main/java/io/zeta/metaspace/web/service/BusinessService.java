@@ -32,15 +32,18 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnPrivilegeDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.Atlas;
+import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.ObjectUtils;
@@ -85,6 +88,10 @@ public class BusinessService {
     ColumnPrivilegeDAO columnPrivilegeDAO;
     @Autowired
     MetaDataService metaDataService;
+    @Autowired
+    DataShareDAO shareDAO;
+    @Autowired
+    DataShareService shareService;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
@@ -478,5 +485,34 @@ public class BusinessService {
             }
         }
         return table;
+    }
+
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            TechnologyInfo technologyInfo = getRelatedTableList(businessGuid);
+            List<TechnologyInfo.Table> tableHeaderList = technologyInfo.getTables();
+            List<String> tableList = new ArrayList<>();
+            tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+
+            List<APIInfoHeader> APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
+
+            for (APIInfoHeader api : APIList) {
+                List<String> dataOwner = shareService.getDataOwner(api.getTableGuid());
+                api.setDataOwner(dataOwner);
+            }
+            PageResult<APIInfoHeader> pageResult = new PageResult<>();
+            int apiCount = shareDAO.countTableRelatedAPI(tableList);
+            pageResult.setSum(apiCount);
+            pageResult.setLists(APIList);
+            pageResult.setCount(APIList.size());
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
     }
 }

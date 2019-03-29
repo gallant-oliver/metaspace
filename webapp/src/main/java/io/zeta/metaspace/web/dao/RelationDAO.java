@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.Table;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -114,4 +115,12 @@ public interface RelationDAO {
     @Insert("insert into tableInfo(tableName,dbName,tableGuid,status,createTime)values(#{tableName},#{dbName},#{tableGuid},#{status},#{createTime})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
 
+    @Select({" <script>",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like %#{query}%",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<Table> getDbTables(@Param("databaseGuid")String databaseId, String query, long offset, long limit);
 }

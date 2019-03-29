@@ -30,6 +30,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.xmlbeans.impl.jam.mutable.MPackage;
 import org.json.JSONObject;
+import org.omg.CORBA.OBJ_ADAPTER;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,7 +144,7 @@ public class DataShareService {
         }
     }
 
-    public List<APIInfoHeader> getAPIList(String guid, Integer my, Integer publish) throws AtlasBaseException {
+    public List<APIInfoHeader> getAPIList(String guid, Integer my, String publish) throws AtlasBaseException {
         try {
             String user = AdminUtils.getUserData().getUsername();
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user);
@@ -176,14 +177,16 @@ public class DataShareService {
             Gson gson = new Gson();
             Object dataOwnerObject = shareDAO.getDataOwnerByGuid(guid);
             PGobject pGobject = (PGobject)dataOwnerObject;
-            String value = pGobject.getValue();
-            List<String> values = gson.fromJson(value, List.class);
-            List<LinkedTreeMap> organization = dataManageService.getOrganization();
             List<String> dataOwner = new ArrayList<>();
-            for(LinkedTreeMap map : organization) {
-                String id = map.get("id").toString();
-                if(values.contains(id)) {
-                    dataOwner.add(map.get("name").toString());
+            if(Objects.nonNull(pGobject)) {
+                String value = pGobject.getValue();
+                List<String> values = gson.fromJson(value, List.class);
+                List<LinkedTreeMap> organization = dataManageService.getOrganization();
+                for (LinkedTreeMap map : organization) {
+                    String id = map.get("id").toString();
+                    if (values.contains(id)) {
+                        dataOwner.add(map.get("name").toString());
+                    }
                 }
             }
             return dataOwner;
@@ -196,7 +199,8 @@ public class DataShareService {
 
     public int updateStarStatus(String apiGuid, Integer status) throws AtlasBaseException {
         try {
-            return shareDAO.updateStarStatus(apiGuid, status);
+            Boolean star = (0==status)?false:true;
+            return shareDAO.updateStarStatus(apiGuid, star);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
         }
@@ -204,7 +208,8 @@ public class DataShareService {
 
     public int updatePublishStatus(List<String> apiGuid, Integer status) throws AtlasBaseException {
         try {
-            return shareDAO.updatePublishStatus(apiGuid, status);
+            Boolean publish = (0==status)?false:true;
+            return shareDAO.updatePublishStatus(apiGuid, publish);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }

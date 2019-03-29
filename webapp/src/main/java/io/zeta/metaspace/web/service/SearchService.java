@@ -182,6 +182,13 @@ public class SearchService {
         return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
     }
 
+    public PageResult<Table> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
+        long limit = parameters.getLimit();
+        long offset = parameters.getOffset();
+        String queryDb = parameters.getQuery();
+        return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+    }
+
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResultV2(Parameters parameters) throws AtlasBaseException {
         return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());

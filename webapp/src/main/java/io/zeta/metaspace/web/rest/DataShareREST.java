@@ -154,6 +154,12 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 获取API详情
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -166,11 +172,19 @@ public class DataShareREST {
         }
     }
 
+    /**
+     * 查询API列表
+     * @param guid
+     * @param my
+     * @param publish
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{groupGuid}/{my}/{publish}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")Integer publish) throws AtlasBaseException {
+    public List<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish) throws AtlasBaseException {
         try {
             return shareService.getAPIList(guid, my, publish);
         } catch (Exception e) {
@@ -292,7 +306,7 @@ public class DataShareREST {
     @Path("/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
@@ -328,13 +342,14 @@ public class DataShareREST {
     @Path("/star/{apiGuid}/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public int updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
+    public Response updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
-            return shareService.updateStarStatus(apiGuid, status);
+            shareService.updateStarStatus(apiGuid, status);
         } finally {
             AtlasPerfTracer.log(perf);
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
