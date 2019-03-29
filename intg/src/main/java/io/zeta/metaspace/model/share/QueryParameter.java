@@ -29,8 +29,9 @@ public class QueryParameter {
     private String dbGuid;
     private long maxRowNumber;
     private List<Parameter> parameter;
-    private long limit;
-    private long offset;
+    private List<String> queryFields;
+    private Long limit;
+    private Long offset;
 
     public String getTableGuid() {
         return tableGuid;
@@ -56,19 +57,19 @@ public class QueryParameter {
         this.maxRowNumber = maxRowNumber;
     }
 
-    public long getLimit() {
+    public Long getLimit() {
         return limit;
     }
 
-    public void setLimit(long limit) {
+    public void setLimit(Long limit) {
         this.limit = limit;
     }
 
-    public long getOffset() {
+    public Long getOffset() {
         return offset;
     }
 
-    public void setOffset(long offset) {
+    public void setOffset(Long offset) {
         this.offset = offset;
     }
 
@@ -80,9 +81,17 @@ public class QueryParameter {
         this.parameter = parameter;
     }
 
+    public List<String> getQueryFields() {
+        return queryFields;
+    }
+
+    public void setQueryFields(List<String> queryFields) {
+        this.queryFields = queryFields;
+    }
+
     public static class Parameter {
         private String columnName;
-        private String value;
+        private List<String> value;
 
         public String getColumnName() {
             return columnName;
@@ -92,11 +101,11 @@ public class QueryParameter {
             this.columnName = columnName;
         }
 
-        public String getValue() {
+        public List<String> getValue() {
             return value;
         }
 
-        public void setValue(String value) {
+        public void setValue(List<String> value) {
             this.value = value;
         }
     }

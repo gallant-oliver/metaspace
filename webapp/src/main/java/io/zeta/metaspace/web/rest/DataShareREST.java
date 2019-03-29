@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -74,7 +75,7 @@ public class DataShareREST {
     private SearchService searchService;
 
     @Context
-    private HttpServletResponse httpServletResponse;
+    private HttpServletRequest httpServletRequest;
 
     /**
      * 创建API
@@ -347,15 +348,35 @@ public class DataShareREST {
     @Path("/test/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws AtlasBaseException,IOException {
+    public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
         AtlasPerfTracer perf = null;
         try {
-            List<Map> result = shareService.testAPI(parameter);
-            Gson gson = new Gson();
+            List<Map> result = shareService.testAPI(randomName, parameter);
             return result;
         } finally {
             AtlasPerfTracer.log(perf);
         }
+    }
+
+    @PUT
+    @Path("/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            shareService.cancelSQLThread(randomName);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @GET
+    @Path("/data/{version}/{url}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
+        return shareService.queryAPIData(url, httpServletRequest);
     }
 
 }

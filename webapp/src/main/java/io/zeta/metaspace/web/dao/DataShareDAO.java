@@ -113,4 +113,15 @@ public interface DataShareDAO {
 
     @Select("select dbName from tableInfo where tableGuid=#{tableGuid}")
     public String querydbNameByGuid(@Param("tableGuid")String guid);
+
+    @Select({" <script>",
+             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.maxRowNumber,apiInfo.publish,tableInfo.tableName",
+             " from apiInfo,tableInfo",
+             " where apiInfo.tableGuid=tableInfo.tableGuid",
+             " and path=#{path}",
+             " </script>"})
+    public APIInfo getAPIInfo(@Param("path")String path);
+
+    @Select("select fields from apiInfo where path=#{path}")
+    public Object getAPIFields(@Param("path")String path);
 }
