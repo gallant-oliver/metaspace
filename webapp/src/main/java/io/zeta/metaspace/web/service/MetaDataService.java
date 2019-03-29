@@ -16,32 +16,22 @@
  */
 package io.zeta.metaspace.web.service;
 
-import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
-
-import com.gridsum.gdp.library.commons.exception.VerifyException;
-import com.gridsum.gdp.library.commons.utils.FileUtils;
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import com.gridsum.gdp.library.commons.exception.VerifyException;
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
-import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
-<<<<<<< HEAD
-import io.zeta.metaspace.utils.SSLClient;
+import io.zeta.metaspace.web.common.filetable.*;
+import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.*;
-=======
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.TableTagDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
->>>>>>> origin/dev
+import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -56,24 +46,11 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.common.filetable.ColumnExt;
-import io.zeta.metaspace.web.common.filetable.CsvEncode;
-import io.zeta.metaspace.web.common.filetable.CsvHeader;
-import io.zeta.metaspace.web.common.filetable.CsvUtils;
-import io.zeta.metaspace.web.common.filetable.ExcelReader;
-import io.zeta.metaspace.web.common.filetable.FileType;
-import io.zeta.metaspace.web.common.filetable.UploadConfig;
-import io.zeta.metaspace.web.common.filetable.UploadFileInfo;
-import io.zeta.metaspace.web.common.filetable.UploadPreview;
-import io.zeta.metaspace.web.config.FiletableConfig;
-import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import org.apache.avro.Schema;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -84,23 +61,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
+import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 /*
  * @description
@@ -224,9 +194,9 @@ public class MetaDataService {
                 List<Map> organization = dataManageService.getOrganization();
                 List<String> strings = new ArrayList<>();
                 for (Map map : organization) {
-                    String id=map.get("id").toString();
+                    String id = map.get("id").toString();
                     for (String owner : owners) {
-                        if(owner.equals(id))
+                        if (owner.equals(id))
                             strings.add(map.get("name").toString());
                     }
                 }
@@ -879,6 +849,7 @@ public class MetaDataService {
         }
         return "success";
     }
+
     public Progress importProgress(String databaseType) throws Exception {
         DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
         Progress progress = new Progress(0, 0);
@@ -896,12 +867,12 @@ public class MetaDataService {
         return progress;
     }
 
-    public enum  DatabaseType {
+    public enum DatabaseType {
         HIVE,
         MYSQL,
         ORACLE,
-        POSTGRESQL
-        ;
+        POSTGRESQL;
+
         public String getName() {
             return name().toLowerCase();
         }
@@ -950,7 +921,6 @@ public class MetaDataService {
 
             return twoTuple;
         }
-
 
 
         /**
