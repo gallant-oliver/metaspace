@@ -341,7 +341,7 @@ public class RoleService {
                     //技术目录
                     case 0: {
                         //按角色方案
-                        if (modules.contains(SystemModule.TECHNICAL_OPERATE)) {
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
                             //按勾选的目录
                             setMap(userCategorys, userChildCategorys, 2, true);
                             setMap(userCategorys, userParentCategorys, 0, false);
@@ -351,20 +351,20 @@ public class RoleService {
                             setMap(userCategorys, userParentCategorys, 0, false);
                             setMap(userCategorys, userPrivilegeCategorys, 0, true);
                         }
+                        break;
                     }
-                    ;
                     //业务目录
                     case 1: {
                         //按角色方案
-                        if (modules.contains(SystemModule.BUSINESSE_OPERATE) && modules.contains(SystemModule.BUSINESSE_EDIT)) {
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
                             setMap(userCategorys, userChildCategorys, 2, true);
                             setMap(userCategorys, userParentCategorys, 0, false);
                             setMap(userCategorys, userPrivilegeCategorys, 1, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE)) {
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
                             setMap(userCategorys, userChildCategorys, 3, true);
                             setMap(userCategorys, userParentCategorys, 0, false);
                             setMap(userCategorys, userPrivilegeCategorys, 4, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT)) {
+                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
                             setMap(userCategorys, userChildCategorys, 5, true);
                             setMap(userCategorys, userParentCategorys, 0, false);
                             setMap(userCategorys, userPrivilegeCategorys, 5, true);
@@ -373,8 +373,8 @@ public class RoleService {
                             setMap(userCategorys, userParentCategorys, 0, false);
                             setMap(userCategorys, userPrivilegeCategorys, 0, true);
                         }
+                        break;
                     }
-                    ;
                 }
 
             }

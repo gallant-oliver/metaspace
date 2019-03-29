@@ -261,13 +261,13 @@ public class SearchService {
             //有管理技术目录权限
             if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
                 //admin有全部目录权限，且可以给一级目录加关联
-                if (roleId.equals(SystemRole.ADMIN)) {
+                if (roleId.equals(SystemRole.ADMIN.getCode())) {
                     List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
                     return getDatabaseResultV2(parameters, topCategoryGuid);
                 } else {
                     List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
                     if (categorysByTypeIds.size() > 0) {
-                        List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
+                        List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categorysByTypeIds, 0);
                         for (RoleModulesCategories.Category child : childs) {
                             //当该目录是用户有权限目录的子目录时
                             if (child.getGuid().equals(categoryId)) {
@@ -290,7 +290,7 @@ public class SearchService {
         List<String> dbName = null;
         PageResult<Database> databasePageResult = new PageResult<>();
         if (categoryIds.size() > 0) {
-            List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categoryIds, 0);
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
             ArrayList<String> strings = new ArrayList<>();
             for (RoleModulesCategories.Category child : childs) {
                 strings.add(child.getGuid());
@@ -309,7 +309,7 @@ public class SearchService {
             databasePageResult.setLists(lists);
             databasePageResult.setOffset(parameters.getOffset());
             databasePageResult.setCount(dbName.size());
-            databasePageResult.setSum(roleDAO.getDBCount(strings, parameters.getQuery()));
+            databasePageResult.setSum(roleDAO.getDBCountV2(strings, parameters.getQuery()));
         }
         return databasePageResult;
     }
@@ -326,13 +326,13 @@ public class SearchService {
             //有管理技术目录权限
             if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
                 //admin有全部目录权限，且可以给一级目录加关联
-                if (roleId.equals(SystemRole.ADMIN)) {
+                if (roleId.equals(SystemRole.ADMIN.getCode())) {
                     List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
                     return getTableResultV2(parameters, topCategoryGuid);
                 } else {
                     List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
                     if (categorysByTypeIds.size() > 0) {
-                        List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categorysByTypeIds, 0);
+                        List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categorysByTypeIds, 0);
                         for (RoleModulesCategories.Category child : childs) {
                             //当该目录是用户有权限目录的子目录时
                             if (child.getGuid().equals(categoryId)) {
@@ -340,7 +340,6 @@ public class SearchService {
                             }
                         }
                     }
-
                 }
             }
         }
@@ -357,7 +356,7 @@ public class SearchService {
         int offset = parameters.getOffset();
         List<TechnologyInfo.Table> tableInfo = null;
         if (categoryIds.size() > 0) {
-            List<RoleModulesCategories.Category> childs = roleDAO.getChildCategorys(categoryIds, 0);
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
             ArrayList<String> strings = new ArrayList<>();
             for (RoleModulesCategories.Category child : childs) {
                 strings.add(child.getGuid());
@@ -386,7 +385,7 @@ public class SearchService {
             if (categoryGuidByTableGuid == null) {
                 tb.setPath("");
             } else {
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid));
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{","").replace("}",""));
             }
             lists.add(tb);
         }
