@@ -6,10 +6,10 @@ window.systemConfigs = {
   'FAVICON': '/favicon.png',
 
   // 当前系统的版本号
-  'VERSION': 'v1.0.0',
+  'VERSION': 'v1.4.0',
 
   // API的地址
-  'API_HOST': 'http://10.201.50.209:80/api/metaspace',
+  'API_HOST': 'http://127.0.0.1:21000/api/metaspace',
 
   // SSO登录的地址
   'SSO_URL': 'http://10.200.60.36:80',
@@ -27,5 +27,5 @@ window.systemConfigs = {
   'TICKET_KEY': 'X-SSO-FullticketId',
 
   // 用来显示页面的版权信息，一般显示在页面底部
-  'LICENCE': '©Company 2018 版权所有'
+  'LICENCE': '©Company 2019 版权所有'
 };
