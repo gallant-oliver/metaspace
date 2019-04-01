@@ -134,8 +134,6 @@ public class MetaDataService {
     UserDAO userDAO;
     @Autowired
     DataManageService dataManageService;
-    @Autowired
-    HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -826,6 +824,7 @@ public class MetaDataService {
      */
     public String synchronizeMetaData(String databaseType, TableSchema tableSchema) throws Exception {
         DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
+        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
         switch (databaseType1) {
             case HIVE:
                 hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
@@ -840,6 +839,7 @@ public class MetaDataService {
     public Progress importProgress(String databaseType) throws Exception {
         DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
         Progress progress = new Progress(0, 0);
+        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
         switch (databaseType1) {
             case HIVE:
                 AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();

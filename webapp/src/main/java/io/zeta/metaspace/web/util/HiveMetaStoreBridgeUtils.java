@@ -62,7 +62,6 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  * and registers them in Atlas.
  */
 
-@Component
 public class HiveMetaStoreBridgeUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
 
@@ -87,6 +86,7 @@ public class HiveMetaStoreBridgeUtils {
     private final Hive                    hiveClient;
     private final AtlasClientV2           atlasClientV2;
     private final boolean                 convertHdfsPathToLowerCase;
+    private static HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
 
     public AtomicInteger getTotalTables() {
         return totalTables;
@@ -96,7 +96,7 @@ public class HiveMetaStoreBridgeUtils {
         return updatedTables;
     }
 
-    public HiveMetaStoreBridgeUtils() throws HiveException, AtlasException {
+    private HiveMetaStoreBridgeUtils() throws HiveException, AtlasException {
         Configuration atlasConf        = ApplicationProperties.get();
         String[]      atlasEndpoint    = atlasConf.getStringArray(ATLAS_ENDPOINT);
 
@@ -127,7 +127,16 @@ public class HiveMetaStoreBridgeUtils {
         return convertHdfsPathToLowerCase;
     }
 
-
+    public static HiveMetaStoreBridgeUtils getInstance() throws HiveException, AtlasException {
+        if (null == hiveMetaStoreBridgeUtils) {
+            synchronized (HiveMetaStoreBridgeUtils.class) {
+                if (null == hiveMetaStoreBridgeUtils) {
+                    hiveMetaStoreBridgeUtils = new HiveMetaStoreBridgeUtils();
+                }
+            }
+        }
+        return hiveMetaStoreBridgeUtils;
+    }
     /**
      * import all database
      * @throws Exception
