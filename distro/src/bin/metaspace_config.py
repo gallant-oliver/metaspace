@@ -244,10 +244,9 @@ def runProcess(commandline, logdir=None, shell=False, wait=False):
     stdoutFile = None
     stderrFile = None
     if logdir:
-        stdoutFile = open(os.path.join(logdir, "application.log"), "w")
-        #stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
-    #DEVNULL = open(os.devnull, 'wb')
-    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stdoutFile, shell=shell)
+        stdoutFile = open(os.path.join(logdir, timestr + ".out"), "w")
+        stderrFile = open(os.path.join(logdir,timestr + ".err"), "w")
+    p = subprocess.Popen(commandline, stdout=stdoutFile, stderr=stderrFile, shell=shell)
 
     if wait:
         p.communicate()
