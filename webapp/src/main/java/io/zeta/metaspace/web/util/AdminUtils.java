@@ -44,6 +44,9 @@ public class AdminUtils {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
             SSOTicket =  request.getHeader(TICKET_KEY);
+            if (SSOTicket == null || SSOTicket == "") {
+                SSOTicket = request.getParameter(TICKET_KEY);
+            }
             if(SSOTicket==null||SSOTicket.equals(""))
                 throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
             return SSOTicket;
@@ -63,8 +66,8 @@ public class AdminUtils {
     public static User getUserData() throws AtlasBaseException {
         User user = new User();
         try {
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            Map m = GuavaUtils.getUserInfo(request.getHeader(TICKET_KEY));
+            String ssoTicket = getSSOTicket();
+            Map m = GuavaUtils.getUserInfo(ssoTicket);
             user.setUserId(m.get("AccountGuid").toString());
             user.setAccount(m.get("LoginEmail").toString());
             user.setUsername(m.get("DisplayName").toString());
