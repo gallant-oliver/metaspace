@@ -33,6 +33,8 @@ import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableTagDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.model.Progress;
+import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -66,6 +68,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -99,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -128,6 +132,10 @@ public class MetaDataService {
     RoleDAO roleDAO;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    DataManageService dataManageService;
+    @Autowired
+    HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -212,11 +220,18 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
+            table.setEditTag(false);
             try {
-                List<Module> modules =  userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                for (Module module : modules) {
-                    if(module.getModuleId()==SystemModule.TECHNICAL_OPERATE.getCode())
-                        table.setEdit(true);
+
+                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                    for (Module module : modules) {
+                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()){
+                            table.setEditTag(true);
+                            if(table.getTablePermission().isWRITE()) {
+                                table.setEdit(true);
+                        }
+
+                    }
                 }
             }catch (Exception e){
                 LOG.error("获取系统权限失败,错误信息:"+e.getMessage(),e);
@@ -296,6 +311,7 @@ public class MetaDataService {
     public List<String> getRelationList(String guid) throws AtlasBaseException {
         try {
             List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
+            dataManageService.getPath(relationEntities);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)
@@ -763,20 +779,6 @@ public class MetaDataService {
         if(Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "提交修改信息有误");
         }
-        //修改tag
-        try{
-            tableTagDAO.delAllTable2Tag(guid);
-            List<String> tags = tableEdit.getTags();
-            for (String s : tags) {
-                try {
-                    tableTagDAO.addTable2Tag(s, guid);
-                }catch (Exception e){
-                    LOG.error("table "+guid+" 添加tag "+s+" 失败,错误信息:"+e.getMessage(),e);
-                }
-            }
-        }catch(Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除表标签失败");
-        }
         //修改描述
         try {
             AtlasEntity entity = getEntityById(guid);
@@ -815,6 +817,52 @@ public class MetaDataService {
     @CacheEvict(value = { "columnCache","tablePageCache", "columnPageCache","databaseSearchCache","TableByDBCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
+    }
+
+    /**
+     * 同步元数据
+     *
+     * @return
+     */
+    public String synchronizeMetaData(String databaseType, TableSchema tableSchema) throws Exception {
+        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
+        switch (databaseType1) {
+            case HIVE:
+                hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
+                break;
+            case MYSQL:
+            case ORACLE:
+            case POSTGRESQL:
+                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+        }
+        return "success";
+    }
+    public Progress importProgress(String databaseType) throws Exception {
+        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
+        Progress progress = new Progress(0, 0);
+        switch (databaseType1) {
+            case HIVE:
+                AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
+                AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
+                progress = new Progress(totalTables.get(), updatedTables.get());
+                break;
+            case MYSQL:
+            case ORACLE:
+            case POSTGRESQL:
+                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+        }
+        return progress;
+    }
+
+    public enum  DatabaseType {
+        HIVE,
+        MYSQL,
+        ORACLE,
+        POSTGRESQL
+        ;
+        public String getName() {
+            return name().toLowerCase();
+        }
     }
 
     @AtlasService
@@ -860,6 +908,8 @@ public class MetaDataService {
 
             return twoTuple;
         }
+
+
 
         /**
          * 预览Excel xls数据</p>

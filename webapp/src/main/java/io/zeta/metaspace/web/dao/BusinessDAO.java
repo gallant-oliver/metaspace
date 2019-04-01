@@ -201,4 +201,8 @@ public interface BusinessDAO {
     @Update("update businessInfo set trustTable=#{trustTable} where businessId=#{businessId}")
     public int setBusinessTrustTable(@Param("businessId")String businessId, @Param("trustTable")String trustTable);
 
+    @Delete("delete from business_relation where businessId=#{businessId}")
+    public int deleteRelationById(@Param("businessId")String businessId);
+
+
 }

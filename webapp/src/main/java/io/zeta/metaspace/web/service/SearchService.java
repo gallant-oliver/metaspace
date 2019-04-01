@@ -81,12 +81,22 @@ public class SearchService {
         PageResult<Database> databasePageResult = new PageResult<>();
 
         List<Database> lists = new ArrayList<>();
-        List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableInfos(categoryId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+        //List<TechnologyInfo.Table> tableByDBName = roleDAO.getTableInfos(categoryId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
         for (String s : dbName) {
             Database database = new Database();
             database.setDatabaseName(s);
             List<TableHeader> tableList = new ArrayList<>();
-            for (TechnologyInfo.Table tb : tableByDBName) {
+            List<TechnologyInfo.Table> tbs =roleDAO.getTableInfosByDB(categoryId,s);
+            for (TechnologyInfo.Table tb : tbs) {
+                TableHeader table = new TableHeader();
+                table.setDatabaseName(s);
+                table.setTableId(tb.getTableGuid());
+                table.setTableName(tb.getTableName());
+                table.setCreateTime(tb.getCreateTime());
+                table.setStatus(tb.getStatus());
+                tableList.add(table);
+            }
+ /*           for (TechnologyInfo.Table tb : tableByDBName) {
                 if (tb.getDbName().equals(s)){
                     TableHeader table = new TableHeader();
                     table.setDatabaseName(s);
@@ -96,7 +106,7 @@ public class SearchService {
                     table.setStatus(tb.getStatus());
                     tableList.add(table);
                 }
-            }
+            }*/
             database.setTableList(tableList);
             lists.add(database);
         }

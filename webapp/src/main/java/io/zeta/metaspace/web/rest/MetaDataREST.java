@@ -12,13 +12,15 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
+import io.zeta.metaspace.web.model.Progress;
+import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
@@ -27,27 +29,24 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.mybatis.spring.MyBatisSystemException;
+import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("metadata")
 @Singleton
@@ -60,6 +59,7 @@ public class MetaDataREST {
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
     private static final String DEFAULT_DEPTH = "-1";
+    private AtomicBoolean importing = new AtomicBoolean(false);
 
 
     @Autowired
@@ -71,7 +71,6 @@ public class MetaDataREST {
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
     }
-
 
 
     /**
@@ -218,7 +217,6 @@ public class MetaDataREST {
     }
 
 
-
     /**
      * 获取字段详情
      *
@@ -272,7 +270,6 @@ public class MetaDataREST {
     }
 
 
-
     /**
      * 获取字段血缘
      *
@@ -302,9 +299,6 @@ public class MetaDataREST {
     }
 
 
-
-
-
     /**
      * 更新表描述
      *
@@ -321,6 +315,9 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
             }
             metadataService.updateTable(tableEdit);
+
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
         } finally {
@@ -351,7 +348,6 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
-
 
 
     /**
@@ -455,5 +451,29 @@ public class MetaDataREST {
             PERF_LOG.error(e.getMessage(), e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
         }
+    }
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Path("/import/{databaseType}")
+    public String synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
+        if (!importing.getAndSet(true)) {
+            try {
+                metadataService.synchronizeMetaData(databaseType, tableSchema);
+            } finally {
+                importing.set(false);
+            }
+        }else {
+            return "in the process of import tables";
+        }
+
+        return "success";
+    }
+
+    @GET
+    @Path("/import/progress/{databaseType}")
+    public Response importProgress(@PathParam("databaseType") String databaseType) throws Exception {
+        Progress progress = metadataService.importProgress(databaseType);
+        return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 }

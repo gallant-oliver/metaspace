@@ -1,39 +1,62 @@
 image: repository.gridsum.com:8443/gridsum/java:8
 variables:
-  MAVEN_OPTS: "-Djava.awt.headless=true -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.showDateTime=true"
+  MAVEN_OPTS: "-Djava.awt.headless=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN"
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  DEPLOY_USER: "sunhaoning"
+  DEVELOP_SERVER_ID_1: "10.201.50.209"
+  QA_SERVER_ID_1: "10.201.50.202"
+  DEPLOY_PATH: "/usr/local/soft"
 before_script:
   - eval $(ssh-agent -s)
   - ssh-add <(echo "$SSH_PRIVATE_KEY")
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-#缓存
-cache:
-  paths:
-    - ./.m2/repository
 # 定义 stages
 stages:
   - test
-  - cleanup
-  - cleanup_build
+  - build_artifacts
+  - sonar
+
 # 定义 job
 test:
   tags:
     - java
   stage: test
   script:
-  - "mvn $MAVEN_CLI_OPTS clean test"
+    - "mvn $MAVEN_CLI_OPTS clean test"
+  cache:
+      key: "$CI_COMMIT_REF_NAME"
+      policy: pull
 
-cleanup-build:
-  stage: cleanup_build
+
+build artifacts:
+  tags:
+    - java
+  stage: build_artifacts
   script:
-  - 'mvn clean'
-  when: on_failure
+    - "mvn $MAVEN_CLI_OPTS -DskipTests package -Pdist"
+    - "scp distro/target/metaspace-*-bin.tar.gz $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH"
+    - "scp distro/target/metaspace-*-bin.tar.gz $DEPLOY_USER@$QA_SERVER_ID_1:$DEPLOY_PATH"
+  when: manual
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - distro/target/metaspace-*-bin.tar.gz
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
 
 
-cleanup:
-  stage: cleanup
+sonar:
+  tags:
+    - java
+  stage: sonar
   script:
-  - 'mvn clean'
-  when: always
+    - "mvn $MAVEN_CLI_OPTS clean package -Dmaven.test.skip=true sonar:sonar -Dsonar.scm.disabled=true"
+  when: manual
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+
+
 

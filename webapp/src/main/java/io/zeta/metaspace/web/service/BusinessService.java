@@ -247,7 +247,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : list) {
                 joiner = new StringJoiner(".");
                 //path
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
@@ -285,7 +286,8 @@ public class BusinessService {
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
                 StringJoiner joiner = new StringJoiner(".");
-                joiner.add(path).add(infoHeader.getName());
+                //joiner.add(path).add(infoHeader.getName());
+                joiner.add(path);
                 infoHeader.setPath(joiner.toString());
                 String[] pathArr = path.split("\\.");
                 String level2Category = "";
@@ -392,6 +394,7 @@ public class BusinessService {
         try {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
+            businessDao.deleteRelationById(businessId);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");

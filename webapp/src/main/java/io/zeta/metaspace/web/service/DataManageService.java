@@ -139,7 +139,10 @@ public class DataManageService {
                 entity.setQualifiedName(qualifiedName.toString());
                 entity.setLevel(1);
                 categoryDao.add(entity);
-                return categoryDao.queryByGuid(newCategoryGuid);
+                CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
+                returnEntity.setShow(true);
+                returnEntity.setStatus(2);
+                return returnEntity;
             }
 
             String newCategoryParentGuid = info.getParentCategoryGuid();
