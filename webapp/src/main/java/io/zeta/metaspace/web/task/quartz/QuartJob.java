@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.task.quartz;
 import io.zeta.metaspace.model.dataquality.*;
 import io.zeta.metaspace.model.table.TableMetadata;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
+import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.quartz.Job;
@@ -44,6 +45,8 @@ public class QuartJob implements Job {
     private static final Integer STATUS_START = 1;
     @Autowired
     private DataQualityDAO qualityDao;
+    @Autowired
+    DataQualityService qualityService;
     Map<UserRule, List<Double>> resultMap = new LinkedHashMap<>();
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
@@ -73,6 +76,7 @@ public class QuartJob implements Job {
             if (Objects.isNull(cron)) {
                 //设置模板状态为【已完成】
                 qualityDao.updateTemplateStatus(TemplateStatus.FINISHED.code, templateId);
+                qualityService.stopTemplate(templateId);
             } else {
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
