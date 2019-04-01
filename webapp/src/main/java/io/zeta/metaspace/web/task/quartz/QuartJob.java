@@ -77,7 +77,7 @@ public class QuartJob implements Job {
             if (StringUtils.isEmpty(cron)) {
                 //设置模板状态为【已完成】
                 qualityDao.updateTemplateStatus(TemplateStatus.FINISHED.code, templateId);
-                //qualityService.stopTemplate(templateId);
+                qualityDao.deleteTemplate2QrtzByTemplateId(templateId);
             } else {
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
