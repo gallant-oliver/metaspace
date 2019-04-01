@@ -304,7 +304,7 @@ public class DataShareREST {
      * @return List<Database>
      */
     @POST
-    @Path("/tables/{databaseId}/{offset}/{limit}")
+    @Path("/tables/{databaseId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {

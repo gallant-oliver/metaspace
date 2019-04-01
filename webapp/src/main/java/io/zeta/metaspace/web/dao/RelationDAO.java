@@ -114,13 +114,18 @@ public interface RelationDAO {
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
 
     @Select({" <script>",
-             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like %#{query}%",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<TableInfo> getDbTables(@Param("databaseGuid")String databaseId, String query, long offset, long limit);
+    public List<TableInfo> getDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
+
+    @Select({" <script>",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
+             " </script>"})
+    public int countDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query);
 
     @Delete("delete from table_relation where tableguid=#{guid}")
     public int deleteByTableGuid(String guid);

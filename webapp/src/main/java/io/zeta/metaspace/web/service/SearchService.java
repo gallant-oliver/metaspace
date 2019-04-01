@@ -24,6 +24,8 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,8 @@ import java.util.*;
 
 @AtlasService
 public class SearchService {
+
+    public static final Log LOG = LogFactory.getLog(SearchService.class);
     @Autowired
     private EntityREST entityREST;
     @Autowired
@@ -164,12 +168,21 @@ public class SearchService {
     }
 
     public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
-        long limit = parameters.getLimit();
-        long offset = parameters.getOffset();
-        String query = parameters.getQuery();
-        PageResult<TableInfo> pageResult = new PageResult<>();
-        relationDAO.getDbTables(databaseId, query, limit, offset);
-        return pageResult;
+        try {
+            long limit = parameters.getLimit();
+            long offset = parameters.getOffset();
+            String query = parameters.getQuery();
+            PageResult<TableInfo> pageResult = new PageResult<>();
+            List<TableInfo> tableList = relationDAO.getDbTables(databaseId, query, limit, offset);
+            int countDbTable = relationDAO.countDbTables(databaseId, query);
+            pageResult.setLists(tableList);
+            pageResult.setSum(countDbTable);
+            pageResult.setCount(tableList.size());
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
