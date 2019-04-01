@@ -22,6 +22,7 @@ import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import org.apache.commons.lang.StringUtils;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -73,10 +74,10 @@ public class QuartJob implements Job {
             updateReportResult(template, reportId, resultMap);
             qualityDao.updateFinishedPercent(template.getTemplateId(), (float) 1);
             String cron = qualityDao.getCronByTemplateId(templateId);
-            if (Objects.isNull(cron)) {
+            if (StringUtils.isEmpty(cron)) {
                 //设置模板状态为【已完成】
                 qualityDao.updateTemplateStatus(TemplateStatus.FINISHED.code, templateId);
-                qualityService.stopTemplate(templateId);
+                //qualityService.stopTemplate(templateId);
             } else {
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);

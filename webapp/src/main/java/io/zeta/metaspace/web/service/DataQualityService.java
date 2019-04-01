@@ -254,6 +254,9 @@ public class DataQualityService {
                 qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            } else if(templateStatus == TemplateStatus.FINISHED.code) {
+                //单次执行任务重新执行提交job
+                addQuartzJob(templateId);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
