@@ -562,6 +562,10 @@ public class DataQualityService {
                 error.setTemplateId(templateId);
             }
             error.setPercent(percent);
+            Integer status = getTemplateStatus(templateId);
+            if(Objects.nonNull(status)) {
+                error.setStatus(status);
+            }
             return error;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误失败");
