@@ -59,6 +59,7 @@ import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -213,8 +214,21 @@ public class BusinessService {
                 info = new TechnologyInfo();
             boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_EDIT.getCode()) == 0 ? false : true;
             info.setEditTechnical(editTechnical);
+
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+
+            String trustTableGuid = businessDao.getTrustTableGuid(businessId);
+            if(Objects.nonNull(trustTableGuid)) {
+                TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
+                if(Objects.nonNull(trustTable)) {
+                    tables.remove(trustTable);
+                    trustTable.setTrust(true);
+                    tables.add(0, trustTable);
+                } else {
+                    tables.stream().findFirst().get().setTrust(true);
+                }
+            }
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
