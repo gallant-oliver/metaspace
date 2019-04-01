@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
@@ -43,14 +44,19 @@ import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.ObjectUtils;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.stringtemplate.v4.ST;
 
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -201,8 +207,21 @@ public class BusinessService {
                 info = new TechnologyInfo();
             boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_EDIT.getCode()) == 0 ? false : true;
             info.setEditTechnical(editTechnical);
+
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+
+            String trustTableGuid = businessDao.getTrustTableGuid(businessId);
+            if(Objects.nonNull(trustTableGuid)) {
+                TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
+                if(Objects.nonNull(trustTable)) {
+                    tables.remove(trustTable);
+                    trustTable.setTrust(true);
+                    tables.add(0, trustTable);
+                } else {
+                    tables.stream().findFirst().get().setTrust(true);
+                }
+            }
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -352,8 +371,17 @@ public class BusinessService {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
             }
             businessDao.deleteRelationByBusinessId(businessId);
-            businessDao.insertTableRelation(businessId, list);
-            businessDao.setBusinessTrustTable(businessId, trustTable);
+
+
+            if(Objects.nonNull(list) && list.size()>0) {
+                businessDao.insertTableRelation(businessId, list);
+                if(Objects.isNull(trustTable)) {
+                    trustTable = list.get(0);
+                }
+            }
+            if(Objects.nonNull(trustTable)) {
+                businessDao.setBusinessTrustTable(businessId, trustTable);
+            }
 
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -381,10 +409,51 @@ public class BusinessService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限字段");
             }
-            return columnPrivilegeDAO.addColumnPrivilege(columnName);
+            return columnPrivilegeDAO.addColumnPrivilege(privilege);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+    }
+
+    public int deleteColumnPrivilege(Integer guid) throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.deleteColumnPrivilege(guid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+    }
+
+    public int updateColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.updateColumnPrivilege(privilege);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public List<ColumnPrivilege> getColumnPrivilegeList() throws AtlasBaseException {
+        try {
+            return columnPrivilegeDAO.getColumnPrivilegeList();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public List<String> getColumnPrivilegeValue(Integer guid) throws AtlasBaseException {
+        try {
+            Gson gson = new Gson();
+            Object columnObject = columnPrivilegeDAO.queryColumnPrivilege(guid);
+            PGobject pGobject = (PGobject)columnObject;
+            String value = pGobject.getValue();
+            List<String> values = gson.fromJson(value, List.class);
+            return values;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败失败");
         }
     }
 

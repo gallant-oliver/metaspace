@@ -12,25 +12,25 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/20 11:36
+ * @date 2019/3/25 20:10
  */
-package io.zeta.metaspace.model.business;
+package io.zeta.metaspace.model.datashare;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/20 11:36
+ * @date 2019/3/25 20:10
  */
-public class ColumnPrivilege {
-    private int guid;
+public class APIGroup {
+    private String guid;
     private String name;
-    private String[] fields;
+    private String description;
 
-    public int getGuid() {
+    public String getGuid() {
         return guid;
     }
 
-    public void setGuid(int guid) {
+    public void setGuid(String guid) {
         this.guid = guid;
     }
 
@@ -42,11 +42,11 @@ public class ColumnPrivilege {
         this.name = name;
     }
 
-    public String[] getFields() {
-        return fields;
+    public String getDescription() {
+        return description;
     }
 
-    public void setFields(String[] fields) {
-        this.fields = fields;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

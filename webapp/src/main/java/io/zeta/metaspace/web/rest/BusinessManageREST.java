@@ -307,6 +307,71 @@ public class BusinessManageREST {
     }
 
     /**
+     * 删除权限字段
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response delColumnPrivilege(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            businessService.deleteColumnPrivilege(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @PUT
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateColumnPrivilege(@PathParam("privilegeId")Integer guid, ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            privilege.setGuid(guid);
+            businessService.updateColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnPrivilege> getColumnPrivilegeList() throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeList();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    @GET
+    @Path("/privilege/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<String> getColumnPrivilegeValue(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeValue(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
      * 添加权限字段关联
      * @param relation
      * @return
