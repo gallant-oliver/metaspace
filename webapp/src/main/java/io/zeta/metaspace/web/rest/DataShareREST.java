@@ -72,7 +72,6 @@ public class DataShareREST {
     private SearchService searchService;
     @Autowired
     private MetaDataService metaDataService;
-
     @Context
     private HttpServletRequest httpServletRequest;
 
@@ -125,12 +124,15 @@ public class DataShareREST {
     @Path("/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public int deleteAPIINfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+    public Response deleteAPIINfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
         try {
-            return shareService.deleteAPIInfo(guid);
+            shareService.deleteAPIInfo(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除en 失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
         }
+        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -181,13 +183,13 @@ public class DataShareREST {
      * @return
      * @throws AtlasBaseException
      */
-    @GET
+    @POST
     @Path("/{groupGuid}/{my}/{publish}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish, Parameters parameters) throws AtlasBaseException {
         try {
-            return shareService.getAPIList(guid, my, publish);
+            return shareService.getAPIList(guid, my, publish, parameters);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
@@ -286,12 +288,11 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
             PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
             return pageResult;
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 
@@ -308,29 +309,32 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
             PageResult<TableInfo> pageResult = searchService.getTableByDBWithQuery(databaseId, parameters);
             return pageResult;
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 
+    /**
+     * 获取表字段
+     * @param tableGuid
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/tables/columns/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
             List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
             return columnList;
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
-
 
     /**
      * 收藏/取消收藏API
@@ -344,11 +348,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
         try {
             shareService.updateStarStatus(apiGuid, status);
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
         return Response.status(200).entity("success").build();
     }
@@ -364,26 +367,32 @@ public class DataShareREST {
     @Path("/publish/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public int updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
+    public Response updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
         try {
-            return shareService.updatePublishStatus(apiGuidList, status);
-        } finally {
-            AtlasPerfTracer.log(perf);
+            shareService.updatePublishStatus(apiGuidList, status);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
+        return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 测试API
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
     @POST
     @Path("/test/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
-        AtlasPerfTracer perf = null;
         try {
             List<Map> result = shareService.testAPI(randomName, parameter);
             return result;
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 
@@ -392,11 +401,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
-        AtlasPerfTracer perf = null;
         try {
-            shareService.cancelSQLThread(randomName);
-        } finally {
-            AtlasPerfTracer.log(perf);
+            shareService.cancelAPIThread(randomName);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 
@@ -405,7 +413,13 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
-        return shareService.queryAPIData(url, httpServletRequest);
+        try {
+            return shareService.queryAPIData(url, httpServletRequest);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
     }
 
 }

@@ -65,8 +65,28 @@ public interface DataShareDAO {
              " <when test=\"publish=='unpublish'\"> and publish=0 </when>",
              " <when test=\"publish=='publish'\"> and publish=1 </when>",
              " </choose>",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
              " </script>"})
-    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper);
+    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("limit")int limit, @Param("offset")int offset);
+
+
+    @Select({" <script>",
+             " select count(1)",
+             " from apiInfo,tableInfo,apiGroup where",
+             " apiInfo.groupGuid=#{groupGuid}",
+             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
+             " <if test='my==0'>",
+             " and keeper=#{keeper}",
+             " </if>",
+             " <choose>",
+             " <when test=\"publish=='unpublish'\"> and publish=0 </when>",
+             " <when test=\"publish=='publish'\"> and publish=1 </when>",
+             " </choose>",
+             " </script>"})
+    public int getAPICount(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper);
 
     @Select("select fields from apiInfo where guid=#{guid}")
     public Object getQueryFiledsByGuid(@Param("guid")String guid);

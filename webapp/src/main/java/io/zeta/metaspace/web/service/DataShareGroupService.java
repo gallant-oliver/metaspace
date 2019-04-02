@@ -22,7 +22,6 @@ package io.zeta.metaspace.web.service;
  * @date 2019/3/26 16:01
  */
 
-import com.sleepycat.je.log.entry.AbortLogEntry;
 import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.web.dao.DataShareGroupDAO;
 import org.apache.atlas.AtlasErrorCode;
@@ -39,10 +38,8 @@ import java.util.UUID;
 public class DataShareGroupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataShareGroupService.class);
-
     @Autowired
     DataShareGroupDAO groupDAO;
-
 
     public int insertGroup(APIGroup group) throws AtlasBaseException {
         try {
