@@ -325,12 +325,12 @@ public interface DataQualityDAO {
     @Insert("insert into report_error(errorId,templateId,reportId,ruleId,content,generateTime,retryCount)values(#{errorId},#{templateId},#{reportId},#{ruleId},#{content},#{generateTime},#{retryCount})")
     public int insertReportError(ReportError error);
 
-    @Select("select * from (select reportproducedate,temp.templateid templateid,orangealerts, redalerts,reportid,reportname,alert,temp.buildtype buildtype,temp.periodcron periodcron,temp.templatename templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,MAX(reportproducedate) OVER (PARTITION BY report.templateid) maxtime\n" +
+    @Select("select * from (select reportproducedate,temp.templateid templateid,orangealerts, redalerts,reportid,reportname,alert,temp.buildtype buildtype,temp.periodcron periodcron,temp.templatename templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,generatetime,MAX(reportproducedate) OVER (PARTITION BY report.templateid) maxtime\n" +
             "from\n" +
-            "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum " +
+            "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,generatetime " +
             "from template \n" +
             "where tableid = #{tableId} order by generatetime desc) as temp left join report \n" +
-            "on report.templateid=temp.templateid) temp2re where maxtime=reportproducedate or reportproducedate is null")
+            "on report.templateid=temp.templateid) temp2re where maxtime=reportproducedate or reportproducedate is null order by generatetime desc")
     public List<TemplateResult> getTemplateResults(String tableId) throws SQLException;
     @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
     public List<Report> getReport(String reportId) throws SQLException;
