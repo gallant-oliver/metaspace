@@ -34,6 +34,7 @@ public class Template {
     private int columnRulesNum;
     private String source;
     private List<UserRule> rules;
+    private Long generateTime;
 
     public String getTableId() {
         return tableId;
@@ -105,5 +106,13 @@ public class Template {
 
     public void setRules(List<UserRule> rules) {
         this.rules = rules;
+    }
+
+    public Long getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(Long generateTime) {
+        this.generateTime = generateTime;
     }
 }

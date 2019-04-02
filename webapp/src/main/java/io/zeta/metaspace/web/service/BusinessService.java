@@ -35,31 +35,23 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.BusinessRelationDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnPrivilegeDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
-import org.apache.atlas.Atlas;
-import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.lang.ObjectUtils;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.stringtemplate.v4.ST;
-
-import java.lang.reflect.Type;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -75,8 +67,6 @@ public class BusinessService {
     private static final Logger LOG = LoggerFactory.getLogger(BusinessService.class);
     @Autowired
     BusinessDAO businessDao;
-    @Autowired
-    BusinessRelationDAO relationDao;
     @Autowired
     CategoryDAO categoryDao;
     @Autowired
@@ -144,7 +134,7 @@ public class BusinessService {
 
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
-            int relationFlag = relationDao.addRelation(entity);
+            int relationFlag = businessDao.addRelation(entity);
             return insertFlag & relationFlag;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
