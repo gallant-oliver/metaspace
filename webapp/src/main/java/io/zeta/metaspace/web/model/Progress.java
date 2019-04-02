@@ -3,10 +3,18 @@ package io.zeta.metaspace.web.model;
 public class Progress {
     int total;
     int updated;
+    String error;
 
     public Progress(int total, int updated) {
         this.total = total;
         this.updated = updated;
+        this.error = "";
+    }
+
+    public Progress(int total, int updated, String error) {
+        this.total = total;
+        this.updated = updated;
+        this.error = error;
     }
 
     public int getTotal() {
@@ -23,5 +31,13 @@ public class Progress {
 
     public void setUpdated(int updated) {
         this.updated = updated;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 }

@@ -29,6 +29,10 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.common.filetable.*;
 import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.RelationDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.TableTagDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
@@ -101,8 +105,7 @@ public class MetaDataService {
     TableDAO tableDAO;
     @Autowired
     DataManageService dataManageService;
-    @Autowired
-    HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
+    private String errorMessage;
 
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
@@ -836,33 +839,71 @@ public class MetaDataService {
      *
      * @return
      */
-    public String synchronizeMetaData(String databaseType, TableSchema tableSchema) throws Exception {
-        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
-        switch (databaseType1) {
-            case HIVE:
-                hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
-                break;
-            case MYSQL:
-            case ORACLE:
-            case POSTGRESQL:
-                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+    public void synchronizeMetaData(String databaseType, TableSchema tableSchema){
+        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        if (null == databaseTypeEntity) {
+            errorMessage = String.format("not support database type %s", databaseType);
+            LOG.error(errorMessage);
+            return;
         }
-        return "success";
+        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
+        try {
+            hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
+        } catch (Exception e) {
+            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: %s", e.getMessage());
+            LOG.error("get hiveMetaStoreBridgeUtils instance error", e);
+            return;
+        }
+        errorMessage = "";
+        try {
+            switch (databaseTypeEntity) {
+                case HIVE:
+                    hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
+                    break;
+                case MYSQL:
+                case ORACLE:
+                case POSTGRESQL:
+                    errorMessage = String.format("not support database type %s", databaseType);
+                    LOG.error(errorMessage);
+                    break;
+            }
+        } catch (Exception e) {
+            errorMessage = String.format("import metadata error:%s", e.getMessage());
+            LOG.error("import metadata error", e);
+        }
+    }
+
+    private DatabaseType getDatabaseType(String databaseType) {
+        DatabaseType databaseTypeEntity = null;
+        for (DatabaseType databaseType2 : DatabaseType.values()) {
+            if (org.apache.commons.lang.StringUtils.isNotEmpty(databaseType) && databaseType.toLowerCase().equals(databaseType2.getName())) {
+                databaseTypeEntity = databaseType2;
+                break;
+            }
+        }
+        return databaseTypeEntity;
     }
 
     public Progress importProgress(String databaseType) throws Exception {
-        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
-        Progress progress = new Progress(0, 0);
-        switch (databaseType1) {
+        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        Progress progress = new Progress(0, 0, "");
+        if (null == databaseTypeEntity) {
+            progress.setError(String.format("not support database type %s", databaseType));
+            return progress;
+        }
+        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
+        switch (databaseTypeEntity) {
             case HIVE:
                 AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
                 AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
                 progress = new Progress(totalTables.get(), updatedTables.get());
+                progress.setError(errorMessage);
                 break;
             case MYSQL:
             case ORACLE:
             case POSTGRESQL:
-                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+                progress.setError(String.format("not support database type %s, hive is support", databaseType));
+                break;
         }
         return progress;
     }
