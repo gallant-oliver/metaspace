@@ -457,8 +457,8 @@ public class DataManageService {
 
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            List<String> tableIds = tableOwner.getTableIds();
-            List<String> ownerIds = tableOwner.getOwnerIds();
+            List<String> tableIds = tableOwner.getTables();
+            List<TableOwner.Owner> ownerIds = tableOwner.getOwners();
             return categoryDao.addTableOwners(tableIds, ownerIds.toArray(new String[ownerIds.size()]));
         } catch (SQLException e) {
             LOG.error(e.getMessage());
