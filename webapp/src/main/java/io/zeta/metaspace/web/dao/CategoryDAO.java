@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.TableOwner;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
@@ -148,11 +149,11 @@ public interface CategoryDAO {
     public int getCategoryLevel(@Param("guid")String guid);
 
     @Update({" <script>",
-             " update tableInfo set dataOwner=#{ownersIds,jdbcType=ARRAY, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where tableGuid in",
-             "<foreach item='guid' index='index' collection='tableIds' separator=',' open='(' close=')'>" ,
+             " update tableInfo set dataOwner=#{owners,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where tableGuid in",
+             "<foreach item='guid' index='index' collection='tables' separator=',' open='(' close=')'>" ,
              "#{guid}",
              "</foreach>",
              "</script>"})
-    public int addTableOwners(@Param("tableIds")List<String> tableIds, @Param("ownersIds")String[] ownersIds) throws SQLException;
+    public int addTableOwners(TableOwner owner) throws SQLException;
 
 }
