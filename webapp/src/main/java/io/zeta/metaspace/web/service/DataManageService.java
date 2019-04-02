@@ -490,9 +490,7 @@ public class DataManageService {
 
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            List<String> tableIds = tableOwner.getTableIds();
-            List<String> ownerIds = tableOwner.getOwnerIds();
-            return categoryDao.addTableOwners(tableIds, ownerIds.toArray(new String[ownerIds.size()]));
+            return categoryDao.addTableOwners(tableOwner);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
