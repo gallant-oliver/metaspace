@@ -16,25 +16,24 @@
  */
 package io.zeta.metaspace.web.service;
 
-import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
-
-import com.gridsum.gdp.library.commons.exception.VerifyException;
-import com.gridsum.gdp.library.commons.utils.FileUtils;
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
+import com.gridsum.gdp.library.commons.exception.VerifyException;
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
-import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.web.common.filetable.*;
+import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableTagDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -49,26 +48,11 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.common.filetable.ColumnExt;
-import io.zeta.metaspace.web.common.filetable.CsvEncode;
-import io.zeta.metaspace.web.common.filetable.CsvHeader;
-import io.zeta.metaspace.web.common.filetable.CsvUtils;
-import io.zeta.metaspace.web.common.filetable.ExcelReader;
-import io.zeta.metaspace.web.common.filetable.FileType;
-import io.zeta.metaspace.web.common.filetable.UploadConfig;
-import io.zeta.metaspace.web.common.filetable.UploadFileInfo;
-import io.zeta.metaspace.web.common.filetable.UploadPreview;
-import io.zeta.metaspace.web.config.FiletableConfig;
-import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import org.apache.avro.Schema;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,33 +63,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import io.zeta.metaspace.discovery.MetaspaceGremlinService;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnEdit;
-import io.zeta.metaspace.model.metadata.ColumnLineageInfo;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
-import io.zeta.metaspace.model.metadata.LineageDepthInfo;
-import io.zeta.metaspace.model.metadata.LineageTrace;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.metadata.TableEdit;
-import io.zeta.metaspace.model.metadata.TableLineageInfo;
-import io.zeta.metaspace.model.metadata.TablePermission;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
+import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 /*
  * @description
@@ -134,6 +101,7 @@ public class MetaDataService {
     UserDAO userDAO;
     @Autowired
     DataManageService dataManageService;
+    private String errorMessage;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -822,34 +790,71 @@ public class MetaDataService {
      *
      * @return
      */
-    public String synchronizeMetaData(String databaseType, TableSchema tableSchema) throws Exception {
-        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
-        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
-        switch (databaseType1) {
-            case HIVE:
-                hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
-                break;
-            case MYSQL:
-            case ORACLE:
-            case POSTGRESQL:
-                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+    public void synchronizeMetaData(String databaseType, TableSchema tableSchema){
+        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        if (null == databaseTypeEntity) {
+            errorMessage = String.format("not support database type %s", databaseType);
+            LOG.error(errorMessage);
+            return;
         }
-        return "success";
+        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
+        try {
+            hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
+        } catch (Exception e) {
+            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: %s", e.getMessage());
+            LOG.error("get hiveMetaStoreBridgeUtils instance error", e);
+            return;
+        }
+        errorMessage = "";
+        try {
+            switch (databaseTypeEntity) {
+                case HIVE:
+                    hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
+                    break;
+                case MYSQL:
+                case ORACLE:
+                case POSTGRESQL:
+                    errorMessage = String.format("not support database type %s", databaseType);
+                    LOG.error(errorMessage);
+                    break;
+            }
+        } catch (Exception e) {
+            errorMessage = String.format("import metadata error:%s", e.getMessage());
+            LOG.error("import metadata error", e);
+        }
     }
+
+    private DatabaseType getDatabaseType(String databaseType) {
+        DatabaseType databaseTypeEntity = null;
+        for (DatabaseType databaseType2 : DatabaseType.values()) {
+            if (org.apache.commons.lang.StringUtils.isNotEmpty(databaseType) && databaseType.toLowerCase().equals(databaseType2.getName())) {
+                databaseTypeEntity = databaseType2;
+                break;
+            }
+        }
+        return databaseTypeEntity;
+    }
+
     public Progress importProgress(String databaseType) throws Exception {
-        DatabaseType databaseType1 = DatabaseType.valueOf(databaseType.toUpperCase());
-        Progress progress = new Progress(0, 0);
+        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        Progress progress = new Progress(0, 0, "");
+        if (null == databaseTypeEntity) {
+            progress.setError(String.format("not support database type %s", databaseType));
+            return progress;
+        }
         HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
-        switch (databaseType1) {
+        switch (databaseTypeEntity) {
             case HIVE:
                 AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
                 AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
                 progress = new Progress(totalTables.get(), updatedTables.get());
+                progress.setError(errorMessage);
                 break;
             case MYSQL:
             case ORACLE:
             case POSTGRESQL:
-                throw new UnsupportedOperationException("not support " + databaseType1.getName());
+                progress.setError(String.format("not support database type %s, hive is support", databaseType));
+                break;
         }
         return progress;
     }
