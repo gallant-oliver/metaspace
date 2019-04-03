@@ -92,7 +92,7 @@ public class DataQualityService {
             String templateName = template.getTemplateName();
             int sameNameCount = qualityDao.countTemplateName(templateName);
             if(sameNameCount > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复模板名称");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板名称重复");
             } else {
                 String templateId = UUID.randomUUID().toString();
                 template.setTemplateId(templateId);
