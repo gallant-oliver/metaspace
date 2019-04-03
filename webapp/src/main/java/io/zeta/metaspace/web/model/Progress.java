@@ -4,6 +4,9 @@ public class Progress {
     int total;
     int updated;
     String error;
+    long startTime;
+    long endTime;
+
 
     public Progress(int total, int updated) {
         this.total = total;
@@ -39,5 +42,21 @@ public class Progress {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
     }
 }

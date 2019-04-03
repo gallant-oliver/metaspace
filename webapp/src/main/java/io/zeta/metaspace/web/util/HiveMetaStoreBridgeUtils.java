@@ -30,7 +30,6 @@ import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
-import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.atlas.utils.HdfsNameServiceResolver;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -45,14 +44,15 @@ import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.session.SessionState;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
 
@@ -76,14 +76,15 @@ public class HiveMetaStoreBridgeUtils {
     public static final String HIVE_METASTORE_URIS             = "hive.metastore.uris";
     public static final String METASPACE_HIVE_METASTORE_URIS   = "metaspace.hive.metastore.uris";
 
-    private static final int    EXIT_CODE_SUCCESS = 0;
-    private static final int    EXIT_CODE_FAILED  = 1;
     private static final String DEFAULT_ATLAS_URL = "http://localhost:21000/";
     private volatile AtomicInteger totalTables = new AtomicInteger(0);
     private volatile AtomicInteger updatedTables = new AtomicInteger(0);
+    private volatile AtomicLong startTime = new AtomicLong(0);
+    private volatile AtomicLong endTime = new AtomicLong(0);
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private final String                  clusterName;
-    private final Hive                    hiveClient;
+    private final Hive hiveMetaStoreClient;
     private final AtlasClientV2           atlasClientV2;
     private final boolean                 convertHdfsPathToLowerCase;
     private static HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
@@ -96,7 +97,15 @@ public class HiveMetaStoreBridgeUtils {
         return updatedTables;
     }
 
-    private HiveMetaStoreBridgeUtils() throws HiveException, AtlasException {
+    public AtomicLong getStartTime() {
+        return startTime;
+    }
+
+    public AtomicLong getEndTime() {
+        return endTime;
+    }
+
+    private HiveMetaStoreBridgeUtils() throws AtlasException, HiveException {
         Configuration atlasConf        = ApplicationProperties.get();
         String[]      atlasEndpoint    = atlasConf.getStringArray(ATLAS_ENDPOINT);
 
@@ -110,7 +119,7 @@ public class HiveMetaStoreBridgeUtils {
         hiveConf.addResource(MetaspaceConfig.getHiveConfig()+ File.separator + "hive-site.xml");
         String metastoreUris = atlasConf.getString(METASPACE_HIVE_METASTORE_URIS, "thrift:127.0.0.1:9083");
         hiveConf.set(HIVE_METASTORE_URIS, metastoreUris);
-        hiveClient = Hive.get(hiveConf);
+        hiveMetaStoreClient = Hive.get(hiveConf);
         convertHdfsPathToLowerCase = atlasConf.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true);
     }
 
@@ -119,15 +128,11 @@ public class HiveMetaStoreBridgeUtils {
         return clusterName;
     }
 
-    public Hive getHiveClient() {
-        return hiveClient;
-    }
-
     public boolean isConvertHdfsPathToLowerCase() {
         return convertHdfsPathToLowerCase;
     }
 
-    public static HiveMetaStoreBridgeUtils getInstance() throws HiveException, AtlasException {
+    public static HiveMetaStoreBridgeUtils getInstance() throws AtlasException, HiveException {
         if (null == hiveMetaStoreBridgeUtils) {
             synchronized (HiveMetaStoreBridgeUtils.class) {
                 if (null == hiveMetaStoreBridgeUtils) {
@@ -145,6 +150,8 @@ public class HiveMetaStoreBridgeUtils {
         List<String> databaseNames = null;
         totalTables.set(0);
         updatedTables.set(0);
+        startTime.set(System.currentTimeMillis());
+        LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         String database = "";
         String table = "";
         if (null != tableSchema) {
@@ -152,35 +159,38 @@ public class HiveMetaStoreBridgeUtils {
             table = tableSchema.getTable();
         }
         if (StringUtils.isEmpty(database)) {
-            databaseNames = hiveClient.getAllDatabases();
+            databaseNames = hiveMetaStoreClient.getAllDatabases();
 
         } else {
-            databaseNames = hiveClient.getDatabasesByPattern(database);
+            databaseNames = hiveMetaStoreClient.getDatabasesByPattern(database);
         }
-
+        int tables = 0;
         if (StringUtils.isEmpty(table)) {
             for (String databaseName : databaseNames) {
-                totalTables.addAndGet(hiveClient.getAllTables(databaseName).size());
+                tables += hiveMetaStoreClient.getAllTables(databaseName).size();
             }
+
         } else {
             for (String databaseName : databaseNames) {
-                totalTables.addAndGet(hiveClient.getTablesByPattern(databaseName, table).size());
+                tables += hiveMetaStoreClient.getTablesByPattern(databaseName, table).size();
             }
         }
-
-        if(!CollectionUtils.isEmpty(databaseNames)) {
+        totalTables.set(tables);
+        if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
             for (String databaseName : databaseNames) {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
 
                 if (dbEntity != null) {
-                    importTables(dbEntity.getEntity(), databaseName, table,false);
+                    importTables(dbEntity.getEntity(), databaseName, table, false);
                 }
             }
         } else {
             LOG.info("No database found");
         }
+        endTime.set(System.currentTimeMillis());
+        LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 
     /**
@@ -196,9 +206,9 @@ public class HiveMetaStoreBridgeUtils {
         final List<String> tableNames;
 
         if (StringUtils.isEmpty(tableToImport)) {
-            tableNames = hiveClient.getAllTables(databaseName);
+            tableNames = hiveMetaStoreClient.getAllTables(databaseName);
         } else {
-            tableNames = hiveClient.getTablesByPattern(databaseName, tableToImport);
+            tableNames = hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport);
         }
 
         if(!CollectionUtils.isEmpty(tableNames)) {
@@ -228,7 +238,7 @@ public class HiveMetaStoreBridgeUtils {
     @VisibleForTesting
     public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError) throws Exception {
         try {
-            Table                  table       = hiveClient.getTable(databaseName, tableName);
+            Table                  table       = hiveMetaStoreClient.getTable(databaseName, tableName);
             AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
             if (table.getTableType() == TableType.EXTERNAL_TABLE) {
@@ -288,7 +298,7 @@ public class HiveMetaStoreBridgeUtils {
      */
     private AtlasEntityWithExtInfo registerDatabase(String databaseName) throws Exception {
         AtlasEntityWithExtInfo ret = null;
-        Database               db  = hiveClient.getDatabase(databaseName);
+        Database               db  = hiveMetaStoreClient.getDatabase(databaseName);
 
         if (db != null) {
             ret = findDatabase(clusterName, databaseName);
