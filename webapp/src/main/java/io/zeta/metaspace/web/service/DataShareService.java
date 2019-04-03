@@ -250,12 +250,15 @@ public class DataShareService {
             List<String> dataOwner = new ArrayList<>();
             if(Objects.nonNull(pGobject)) {
                 String value = pGobject.getValue();
-                List<String> values = gson.fromJson(value, List.class);
+                List<Map> onwers = gson.fromJson(value, List.class);
                 List<LinkedTreeMap> organization = dataManageService.getOrganization();
                 for (LinkedTreeMap map : organization) {
                     String id = map.get("id").toString();
-                    if (values.contains(id)) {
-                        dataOwner.add(map.get("name").toString());
+                    String type = map.get("type").toString();
+                    for(Map owner : onwers) {
+                        if(owner.get("id").toString().equals(id) && owner.get("type").toString().equals(type)) {
+                            dataOwner.add(map.get("name").toString());
+                        }
                     }
                 }
             }
