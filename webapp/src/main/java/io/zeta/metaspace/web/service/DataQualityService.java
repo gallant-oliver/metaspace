@@ -107,6 +107,8 @@ public class DataQualityService {
         }  catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
