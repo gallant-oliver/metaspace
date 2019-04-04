@@ -151,6 +151,7 @@ public class HiveMetaStoreBridgeUtils {
         totalTables.set(0);
         updatedTables.set(0);
         startTime.set(System.currentTimeMillis());
+        endTime.set(0);
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         String database = "";
         String table = "";
