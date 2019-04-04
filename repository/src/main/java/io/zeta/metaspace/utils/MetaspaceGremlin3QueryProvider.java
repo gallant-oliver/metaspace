@@ -31,13 +31,13 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
 
             case LINEAGE_DEPTH:
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
-                        ".sack(sum).by(constant(1))).emit().sack(),constant(0)).max().toList()";
+                        ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
 
             case DIRECT_ENTITY_NUM:
                 return "g.withSack(0).V().has('__guid','%s').inE('%s').outV().outE('%s').inV().count().toList()";
 
             case FULL_COLUMN_LINEAGE:
-                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).emit().select('e1', 'e2').toList()";
+                return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV().simplePath()).emit().select('e1', 'e2').toList()";
 
             case PARTIAL_COLUMN_LINEAGE:
                 return "g.V().has('__guid','%s').outE('__hive_table.columns').inV().repeat(__.inE('%s').as('e1').outV().outE('%s').as('e2').inV()).times(%s).emit().select('e1', 'e2').toList()";

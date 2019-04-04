@@ -72,8 +72,12 @@ public class PrivilegeService {
 
             List<Integer> modules = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
-            privilegeDAO.addModule2Privilege(privilegeId, modules);
-            privilegeDAO.updateRolePrivilege(privilegeId, roleIds);
+            if(Objects.nonNull(modules)) {
+                privilegeDAO.addModule2Privilege(privilegeId, modules);
+            }
+            if(Objects.nonNull(roleIds)) {
+                privilegeDAO.updateRolePrivilege(privilegeId, roleIds);
+            }
             privilegeDAO.addPrivilege(privilege);
 
             if(!modules.contains(2) && !modules.contains(4) && !modules.contains(5)) {
