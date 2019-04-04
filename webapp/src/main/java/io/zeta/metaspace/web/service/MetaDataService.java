@@ -669,7 +669,35 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+            AtlasEntity entity = entitiesStore.getById(guid).getEntity();
+            if(Objects.nonNull(entity)) {
+                if (entity.getTypeName().contains("column")) {
+                    //guid
+                    lineageDepthEntity.setGuid(guid);
+                    AtlasEntity atlasColumnEntity = getEntityById(guid);
+                    //columnName && displayText
+                    lineageDepthEntity.setDisplayText(getEntityAttribute(atlasColumnEntity, "name"));
+                    //updateTime
+                    SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String formatDateStr = sdf.format(atlasColumnEntity.getUpdateTime());
+                    lineageDepthEntity.setUpdateTime(formatDateStr);
+
+                    AtlasRelatedObjectId relatedTable = (AtlasRelatedObjectId)atlasColumnEntity.getRelationshipAttribute("table");
+                    if(Objects.nonNull(relatedTable)) {
+                        AtlasEntity atlasTableEntity = entitiesStore.getById(relatedTable.getGuid()).getEntity();
+                        //tableName
+                        if (atlasTableEntity.hasAttribute("name") && Objects.nonNull(atlasTableEntity.getAttribute("name")))
+                            lineageDepthEntity.setTableName(atlasTableEntity.getAttribute("name").toString());
+                        AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
+                        if (Objects.nonNull(relatedObject)) {
+                            //dbName
+                            lineageDepthEntity.setDbName(relatedObject.getDisplayText());
+                        }
+                    }
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
+                }
+            }
+            /*AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if (Objects.nonNull(entities) && entities.size() != 0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
@@ -698,7 +726,7 @@ public class MetaDataService {
                     }
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
-            }
+            }*/
             return lineageDepthEntity;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘深度详情失败");
