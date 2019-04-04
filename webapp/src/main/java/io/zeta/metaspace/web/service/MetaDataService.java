@@ -474,7 +474,27 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
+            AtlasEntity entity = entitiesStore.getById(guid).getEntity();
+            if(Objects.nonNull(entity)) {
+                if (entity.getTypeName().contains("table") || entity.getTypeName().contains("hdfs")) {
+                    //guid
+                    lineageDepthEntity.setGuid(guid);
+                    //tableName
+                    lineageDepthEntity.setTableName(getEntityAttribute(entity, "name"));
+                    //displayText
+                    //lineageDepthEntity.setDisplayText(entity);
+                    //updateTime
+                    SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String formatDateStr = sdf.format(entity.getUpdateTime());
+                    lineageDepthEntity.setUpdateTime(formatDateStr);
+                    //dbName
+                    AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+                    if(Objects.nonNull(relatedObject))
+                        lineageDepthEntity.setDbName(relatedObject.getDisplayText());
+                    lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
+                }
+            }
+            /*AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, AtlasLineageInfo.LineageDirection.BOTH, -1);
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if(Objects.nonNull(entities) && entities.size()!=0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
@@ -496,7 +516,7 @@ public class MetaDataService {
                         lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
-            }
+            }*/
             return lineageDepthEntity;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘深度详情失败");
