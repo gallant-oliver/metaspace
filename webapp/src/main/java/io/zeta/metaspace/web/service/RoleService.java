@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -200,8 +201,8 @@ public class RoleService {
         CategoryRelationUtils.cleanInvalidBrother(resultList);
         return resultList;
     }
-
-    private void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
+    @Transactional
+    public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
         List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             otherCategory.setShow(false);
@@ -386,4 +387,117 @@ public class RoleService {
 
         return categories;
     }
+
+    @Transactional
+    public List<CategoryPrivilege> getUserCategory2(String userRoleId, int categorytype) {
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
+            addPrivilege(userCategorys, allCategorys,privilege);
+        }else {
+            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
+            if (userBusinessCategories.size() > 0) {
+                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
+                //按角色方案
+                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
+                List<Integer> modules = new ArrayList<>();
+                for (UserInfo.Module module : moduleByRoleId) {
+                    modules.add(module.getModuleId());
+                }
+                CategoryPrivilege.Privilege childPrivilege=null;
+                CategoryPrivilege.Privilege parentPrivilege=null;
+                CategoryPrivilege.Privilege ownerPrivilege=null;
+                //技术目录
+                switch (categorytype) {
+                    //技术目录
+                    case 0: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())&& modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                            //按勾选的目录
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+
+                        } else if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())){
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,false);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,false);
+                        } else if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())){
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                        }
+                        break;
+                    }
+                    //业务目录
+                    case 1: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,true,true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                        }
+                        break;
+                    }
+                }
+                addPrivilege(userCategorys, userChildCategorys,childPrivilege);
+                addPrivilege(userCategorys, userParentCategorys,parentPrivilege);
+                addPrivilege(userCategorys, userPrivilegeCategorys,ownerPrivilege);
+            }
+        }
+        addOtherCategory(categorytype, userCategorys);
+        return userCategorys;
+    }
+
+    private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys,CategoryPrivilege.Privilege privilege) {
+        String[] systemCategoryGuids={"1","2","3","4","5"};
+        List<String> lists =Arrays.asList(systemCategoryGuids);
+        for (RoleModulesCategories.Category category : allCategorys) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
+            //系统系统目录不允许删除
+            if (lists.contains(category.getGuid())){
+                privilege.setDelete(false);
+            }
+            //一级目录不允许删关联
+            if(category.getLevel()==1){
+                privilege.setDeleteRelation(false);
+            }
+            categoryPrivilege.setPrivilege(privilege);
+            userCategorys.add(categoryPrivilege);
+        }
+    }
+
+    @Transactional
+    public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList) {
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype);
+        ArrayList<CategoryPrivilege> others = new ArrayList<>();
+        for (RoleModulesCategories.Category otherCategory : otherCategorys) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true,false,false,false,false,false,false,false);
+            categoryPrivilege.setPrivilege(privilege);
+            others.add(categoryPrivilege);
+        }
+        resultList.addAll(others);
+    }
+
+
 }
