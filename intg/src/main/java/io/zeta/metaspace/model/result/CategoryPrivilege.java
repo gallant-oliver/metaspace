@@ -120,8 +120,9 @@ public class CategoryPrivilege {
         private boolean ash;
         private boolean addSibling;
         private boolean addChildren;
-        private boolean createRelation;
         private boolean delete;
+        private boolean edit;
+        private boolean createRelation;
         private boolean deleteRelation;
         private boolean addOwner;
 
@@ -165,6 +166,14 @@ public class CategoryPrivilege {
             return createRelation;
         }
 
+        public boolean isEdit() {
+            return edit;
+        }
+
+        public void setEdit(boolean edit) {
+            this.edit = edit;
+        }
+
         public void setCreateRelation(boolean createRelation) {
             this.createRelation = createRelation;
         }
@@ -193,13 +202,26 @@ public class CategoryPrivilege {
             this.addOwner = addOwner;
         }
 
-        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner) {
+        public Privilege(Privilege privilege) {
+            this.hide = privilege.isHide();
+            this.ash = privilege.isAsh();
+            this.addSibling = privilege.isAddSibling();
+            this.addChildren = privilege.isAddChildren();
+            this.createRelation = privilege.isCreateRelation();
+            this.delete = privilege.isDelete();
+            this.deleteRelation = privilege.isDeleteRelation();
+            this.addOwner = privilege.isAddOwner();
+            this.edit=privilege.isEdit();
+        }
+
+        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner,boolean edit) {
             this.hide = hide;
             this.ash = ash;
             this.addSibling = addSibling;
             this.addChildren = addChildren;
-            this.createRelation = createRelation;
             this.delete = delete;
+            this.edit = edit;
+            this.createRelation = createRelation;
             this.deleteRelation = deleteRelation;
             this.addOwner = addOwner;
         }

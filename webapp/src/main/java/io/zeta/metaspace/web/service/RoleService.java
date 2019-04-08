@@ -19,6 +19,8 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ import java.util.*;
 
 @Service
 public class RoleService {
+    private static final Logger LOG        = LoggerFactory.getLogger(RoleService.class);
     @Autowired
     private RoleDAO roleDAO;
     @Autowired
@@ -393,7 +396,7 @@ public class RoleService {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
             addPrivilege(userCategorys, allCategorys,privilege);
         }else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
@@ -417,22 +420,22 @@ public class RoleService {
                         //按角色方案
                         if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())&& modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
                             //按勾选的目录
-                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
-                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,false,true,true,true);
 
                         } else if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())){
-                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,false);
-                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,false);
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,false,true);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,false,true,false,true);
                         } else if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())){
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true,false);
                         } else {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
                         }
                         break;
                     }
@@ -440,21 +443,21 @@ public class RoleService {
                     case 1: {
                         //按角色方案
                         if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true);
                         } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,true,true);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,true,true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,true,true,true);
                         } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,false);
                         } else {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
-                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
                         }
                         break;
                     }
@@ -472,16 +475,18 @@ public class RoleService {
         String[] systemCategoryGuids={"1","2","3","4","5"};
         List<String> lists =Arrays.asList(systemCategoryGuids);
         for (RoleModulesCategories.Category category : allCategorys) {
+            CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
-            //系统系统目录不允许删除
+            //系统系统目录不允许删除和编辑
             if (lists.contains(category.getGuid())){
-                privilege.setDelete(false);
+                privilegeinfo.setDelete(false);
+                privilegeinfo.setEdit(false);
             }
             //一级目录不允许删关联
             if(category.getLevel()==1){
-                privilege.setDeleteRelation(false);
+                privilegeinfo.setDeleteRelation(false);
             }
-            categoryPrivilege.setPrivilege(privilege);
+            categoryPrivilege.setPrivilege(privilegeinfo);
             userCategorys.add(categoryPrivilege);
         }
     }
@@ -492,7 +497,7 @@ public class RoleService {
         ArrayList<CategoryPrivilege> others = new ArrayList<>();
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true,false,false,false,false,false,false,false);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true,false,false,false,false,false,false,false,false);
             categoryPrivilege.setPrivilege(privilege);
             others.add(categoryPrivilege);
         }
