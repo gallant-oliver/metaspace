@@ -91,7 +91,7 @@ public class QueryParameter {
 
     public static class Parameter {
         private String columnName;
-        private List<String> value;
+        private List<Object> value;
 
         public String getColumnName() {
             return columnName;
@@ -101,11 +101,11 @@ public class QueryParameter {
             this.columnName = columnName;
         }
 
-        public List<String> getValue() {
+        public List<Object> getValue() {
             return value;
         }
 
-        public void setValue(List<String> value) {
+        public void setValue(List<Object> value) {
             this.value = value;
         }
     }

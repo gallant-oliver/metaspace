@@ -18,10 +18,12 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -46,6 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,6 +79,8 @@ public class DataShareService {
     DataShareDAO shareDAO;
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    private MetaDataService metaDataService;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
 
@@ -290,9 +295,29 @@ public class DataShareService {
         }
     }
 
+    /**
+     *
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws AtlasBaseException
+     */
     public List<Map> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
         try {
-            APITask task = new APITask(randomName, parameter);
+            String tableGuid = parameter.getTableGuid();
+            HashMap<String, List> columnMap = new HashMap<>();
+            List<QueryParameter.Parameter> parameters = parameter.getParameter();
+            parameters.stream().forEach(p -> columnMap.put(p.getColumnName(), p.getValue()));
+            Map columnTypeMap = getColumnType(tableGuid, columnMap.keySet());
+            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
+            String dbName = shareDAO.querydbNameByGuid(tableGuid);
+            long limit = parameter.getLimit();
+            long offset = parameter.getOffset();
+            List<String> queryColumns = parameter.getQueryFields();
+
+            String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
+
+            APITask task = new APITask(randomName, sql, dbName);
             Future<List<Map>> futureResult = pool.submit(task);
             List<Map> result = futureResult.get();
             return result;
@@ -303,11 +328,13 @@ public class DataShareService {
     }
 
     class APITask implements Callable<List<Map>> {
-        private QueryParameter parameter;
         private String name;
-        APITask(String name, QueryParameter parameter) {
+        private String sql;
+        private String dbName;
+        APITask(String name, String sql, String dbName) {
             this.name = name;
-            this.parameter = parameter;
+            this.sql = sql;
+            this.dbName = dbName;
         }
         @Override
         public List<Map> call() throws Exception {
@@ -315,14 +342,6 @@ public class DataShareService {
                 if (Objects.nonNull(name)) {
                     Thread.currentThread().setName(name);
                 }
-                String tableGuid = parameter.getTableGuid();
-                Long limit = parameter.getLimit();
-                Long offset = parameter.getOffset();
-                String tableName = shareDAO.queryTableNameByGuid(tableGuid);
-                String dbName = shareDAO.querydbNameByGuid(tableGuid);
-                List<QueryParameter.Parameter> parameters = parameter.getParameter();
-                List<String> columns = parameter.getQueryFields();
-                String sql = getQuerySQL(tableName, columns, parameters, limit, offset);
                 ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
                 Map map = new HashMap();
                 List<Map> result = new ArrayList<>();
@@ -347,6 +366,11 @@ public class DataShareService {
         }
     }
 
+    /**
+     * 取消查询线程
+     * @param name
+     * @throws AtlasBaseException
+     */
     public void cancelAPIThread(String name) throws AtlasBaseException {
         try {
             ThreadGroup currentGroup = Thread.currentThread().getThreadGroup();
@@ -386,51 +410,91 @@ public class DataShareService {
             if (Objects.nonNull(publish) && !publish) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未发布");
             }
+            //查询数据分享API字段详情
             Object fieldsObject = shareDAO.getAPIFields(path);
             PGobject pGobject = (PGobject) fieldsObject;
             String valueObject = pGobject.getValue();
             Gson gson = new Gson();
             List<Map> values = gson.fromJson(valueObject, List.class);
-            List<String> queryFields = new ArrayList<>();
+            Set<String> fields = new HashSet<>();
             List<FilterColumn> filterFileds = new ArrayList<>();
-
             for (Map map : values) {
                 String columnName = map.get("columnName").toString();
                 String defaultValue = map.get("defaultValue").toString();
                 Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
                 Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
-                queryFields.add(columnName);
+                fields.add(columnName);
                 if (filter) {
                     FilterColumn column = new FilterColumn(columnName, defaultValue, fill);
                     filterFileds.add(column);
                 }
             }
             Map parameterMap = request.getParameterMap();
-            checkFieldName(filterFileds, parameterMap);
-            //过滤参数列表
-            List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, parameterMap);
+            //请求中查询字段
+            Object columnObj = parameterMap.get("columns");
+            String columnStr = "";
+            if(columnObj instanceof String[]) {
+                String[] str = (String[])columnObj;
+                columnStr = str[0];
+            }
+            String[] columnArr = columnStr.substring(1, columnStr.length()-1).split(",");
+            List<String> queryFiles = Arrays.asList(columnArr);
+            //请求中过滤字段
+            Object filterColumnObj = parameterMap.get("filters");
+            String filterColumnStr = "";
+            if(filterColumnObj instanceof String[]) {
+                String[] str = (String[])filterColumnObj;
+                filterColumnStr = str[0];
+            }
+            String[] filterColumnArr = filterColumnStr.substring(1, filterColumnStr.length()-1).split(";");
+            Map filterColumnMap = new HashMap();
+            for(String filterColumn : filterColumnArr) {
+                String[] kvArr = filterColumn.split(":");
+                String columnName = kvArr[0];
+                List<String> valueList = new ArrayList<>();
+                if(kvArr[1].contains("{")) {
+                    String valueStr = kvArr[1];
+                    String[] valueArr = valueStr.substring(1, valueStr.length()-1).split(",");
+                    valueList = Arrays.asList(valueArr);
+                } else {
+                    valueList.add(kvArr[1]);
+                }
+                filterColumnMap.put(columnName, valueList);
+            }
+            //检查请求中查询字段是否包含于详情中字段
+            checkFieldName(fields, queryFiles);
+            //获取字段类型
+            Map columnTypeMap = getColumnType(tableGuid, fields);
+            //校验过滤参数列表
+            List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, filterColumnMap);
             //limit
             Object limitObj = parameterMap.get("limit");
             Long limit = null;
-            if(Objects.nonNull(limitObj))
-                limit = Long.parseLong(limitObj.toString());
+            if(Objects.nonNull(limitObj) && limitObj instanceof String[]) {
+                String[] str = (String[])limitObj;
+                limit = Long.parseLong(str[0]);
+            }
             //offset
             Object offsetObj = parameterMap.get("offset");
             long offset = 0;
-            if(Objects.nonNull(offsetObj))
-                offset = Long.parseLong(offsetObj.toString());
-
-            QueryParameter queryParameter = new QueryParameter();
-            queryParameter.setTableGuid(tableGuid);
-            queryParameter.setMaxRowNumber(info.getMaxRowNumber());
-            if(Objects.nonNull(limit)) {
-                queryParameter.setLimit(limit);
+            if(Objects.nonNull(offsetObj) && offsetObj instanceof String[]) {
+                String[] str = (String[])offsetObj;
+                offset = Long.parseLong(str[0]);
             }
-            queryParameter.setOffset(offset);
-            queryParameter.setQueryFields(queryFields);
-            queryParameter.setParameter(kvList);
+            //对比limit和maxRowNumber
+            long maxRowNumber = info.getMaxRowNumber();
+            if(Objects.nonNull(limit)) {
+                limit = Math.min(limit, maxRowNumber);
+            } else {
+                limit = maxRowNumber;
+            }
+            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
+            String dbName = shareDAO.querydbNameByGuid(tableGuid);
+            //sql
+            String sql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
+            //任务
             String randomName = String.valueOf(System.currentTimeMillis());
-            APITask task = new APITask(randomName, queryParameter);
+            APITask task = new APITask(randomName, sql, dbName);
             Future<List<Map>> futureResult = pool.submit(task);
             List<Map> result = futureResult.get();
             return result;
@@ -447,18 +511,15 @@ public class DataShareService {
     }
 
     /**
-     * 校验查询字段
-     * @param filterFileds
-     * @param parameterMap
+     * 查询字段是否在允许范围内
+     * @param fields
+     * @param queryFields
      * @throws AtlasBaseException
      */
-    public void checkFieldName(List<FilterColumn> filterFileds, Map<String, String> parameterMap) throws AtlasBaseException {
-        for(String key : parameterMap.keySet()) {
-            //过滤字段列表中是否包含请求字段名
-            if(filterFileds.stream().filter(filed -> filed.getColumnName().equals(key)).count() == 0) {
-                if(!"limit".equals(key) && !"offset".equals(key)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + key);
-                }
+    public void checkFieldName(Set<String> fields, List<String> queryFields) throws AtlasBaseException {
+        for(String field : queryFields) {
+            if(!fields.contains(field)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + field);
             }
         }
     }
@@ -466,26 +527,28 @@ public class DataShareService {
     /**
      * 校验查询字段取值
      * @param filterFileds
-     * @param parameterMap
+     * @param filterColumnMap
      * @return
      * @throws AtlasBaseException
      */
-    public List<QueryParameter.Parameter> checkFieldValue(List<FilterColumn> filterFileds, Map parameterMap) throws AtlasBaseException {
+    public List<QueryParameter.Parameter> checkFieldValue(List<FilterColumn> filterFileds, Map filterColumnMap) throws AtlasBaseException {
         List<QueryParameter.Parameter> kvList = new ArrayList<>();
         for(FilterColumn field : filterFileds) {
             //必传值
             if(field.getFill()) {
                 //未传值
-                if(!parameterMap.containsKey(field.getColumnName())) {
+                if(!filterColumnMap.containsKey(field.getColumnName())) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求错误，未填必传值字段:" + field.getColumnName());
                 } else {
                     QueryParameter.Parameter parameter = new QueryParameter.Parameter();
                     parameter.setColumnName(field.getColumnName());
                     String key = field.getColumnName();
-                    Object value = parameterMap.get(key);
+                    Object value = filterColumnMap.get(key);
                     if(value instanceof String[]) {
                         String[] values = (String[])value;
                         parameter.setValue(Arrays.asList(values));
+                    } else if(value instanceof List) {
+                        parameter.setValue((List<Object>) value);
                     }
                     kvList.add(parameter);
                 }
@@ -494,12 +557,14 @@ public class DataShareService {
                 QueryParameter.Parameter parameter = new QueryParameter.Parameter();
                 parameter.setColumnName(field.getColumnName());
                 //已传值
-                if(parameterMap.containsKey(field.getColumnName())) {
+                if(filterColumnMap.containsKey(field.getColumnName())) {
                     String key = field.getColumnName();
-                    Object value = parameterMap.get(key);
+                    Object value = filterColumnMap.get(key);
                     if(value instanceof String[]) {
                         String[] values = (String[])value;
                         parameter.setValue(Arrays.asList(values));
+                    } else if(value instanceof List) {
+                        parameter.setValue((List<Object>) value);
                     }
                 //默认值
                 } else {
@@ -511,44 +576,90 @@ public class DataShareService {
         return kvList;
     }
 
+    public Map<String, String> getColumnType(String tableGuid, Set<String> columSet) throws AtlasBaseException {
+        Map<String, String> columnTypeMap = new HashMap();
+        List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
+        Map<String, String> columnMap = new HashMap<>();
+        columnList.forEach(column -> columnMap.put(column.getColumnName(), column.getType()));
+        for (String columnName : columSet) {
+            if (columnMap.containsKey(columnName)) {
+                String type = columnMap.get(columnName);
+                columnTypeMap.put(columnName, type);
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未知的查询字段");
+            }
+        }
+        return columnTypeMap;
+    }
+
     /**
      * 拼接查询SQL
      * @param tableName
-     * @param columns
+     * @param columnTypeMap
      * @param kvList
      * @param limit
      * @param offset
      * @return
      */
-    public String getQuerySQL(String tableName, List<String> columns, List<QueryParameter.Parameter> kvList, Long limit, Long offset) {
-        StringBuffer sb = new StringBuffer();
-        sb.append("select ");
-        StringJoiner columnJoiner = new StringJoiner(",");
-        columns.stream().forEach(column -> columnJoiner.add(column));
-        sb.append(columnJoiner.toString());
-        sb.append(" from ");
-        sb.append(tableName);
-        //过滤条件
-        if(Objects.nonNull(kvList) && kvList.size()>0) {
-            sb.append(" where ");
-            StringJoiner filterJoiner = new StringJoiner(" and ");
-            kvList.stream().forEach((kv) -> {
-                StringBuffer valueBuffer = new StringBuffer();
-                StringJoiner valueJoiner = new StringJoiner(",");
-                kv.getValue().forEach(value -> valueJoiner.add(value));
-                valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
-                filterJoiner.add(valueBuffer.toString());
-            });
-            sb.append(filterJoiner.toString());
+    public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+        try {
+            StringBuffer sb = new StringBuffer();
+            sb.append("select ");
+            StringJoiner columnJoiner = new StringJoiner(",");
+            queryColumns.stream().forEach(column -> columnJoiner.add(column));
+            sb.append(columnJoiner.toString());
+            sb.append(" from ");
+            sb.append(tableName);
+            //过滤条件
+            if (Objects.nonNull(kvList) && kvList.size() > 0) {
+                sb.append(" where ");
+                StringJoiner filterJoiner = new StringJoiner(" and ");
+                for (QueryParameter.Parameter kv : kvList) {
+                    StringBuffer valueBuffer = new StringBuffer();
+                    StringJoiner valueJoiner = new StringJoiner(",");
+                    String type = columnTypeMap.get(kv.getColumnName());
+                    DataType dataType = DataType.parseOf(type);
+
+                    List<Object> valueList = kv.getValue();
+                    //验证设置取值是否正确
+                    valueList.stream().forEach(value -> dataType.valueOf(value).get());
+                    if(DataType.BOOLEAN == dataType) {
+                        for(Object value : valueList) {
+                            if(!value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
+                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, kv.getColumnName() + "取值需为bool类型");
+                            }
+                        }
+                    }
+                    if (DataType.STRING == dataType) {
+                        kv.getValue().forEach(value -> valueJoiner.add("\"" + value.toString() + "\""));
+                    } else {
+                        kv.getValue().forEach(value -> valueJoiner.add(value.toString()));
+                    }
+                    if (valueList.size() > 1) {
+                        valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
+                    } else {
+                        valueBuffer.append(kv.getColumnName()).append("=").append(valueJoiner.toString());
+                    }
+                    filterJoiner.add(valueBuffer.toString());
+                }
+                sb.append(filterJoiner.toString());
+            }
+            //limit
+            if (Objects.nonNull(limit) && -1 != limit) {
+                sb.append(" limit ");
+                sb.append(limit);
+            }
+            //offset
+            sb.append(" offset ");
+            sb.append(offset);
+            LOG.info("SQL：" + sb.toString());
+            return sb.toString();
+        } catch (NumberFormatException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据类型错误");
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
         }
-        //limit
-        if(Objects.nonNull(limit) && -1!=limit) {
-            sb.append(" limit ");
-            sb.append(limit);
-        }
-        //offset
-        sb.append(" offset ");
-        sb.append(offset);
-        return sb.toString();
     }
 }
