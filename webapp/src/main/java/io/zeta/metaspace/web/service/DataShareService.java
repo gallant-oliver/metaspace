@@ -606,7 +606,7 @@ public class DataShareService {
             StringBuffer sb = new StringBuffer();
             sb.append("select ");
             StringJoiner columnJoiner = new StringJoiner(",");
-            queryColumns.stream().forEach(column -> columnJoiner.add(column));
+            queryColumns.stream().forEach(column -> columnJoiner.add("\"" + column + "\""));
             sb.append(columnJoiner.toString());
             sb.append(" from ");
             sb.append(tableName);
@@ -636,9 +636,9 @@ public class DataShareService {
                         kv.getValue().forEach(value -> valueJoiner.add(value.toString()));
                     }
                     if (valueList.size() > 1) {
-                        valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
+                        valueBuffer.append("\"" + kv.getColumnName() + "\"").append(" in ").append("(").append(valueJoiner.toString()).append(")");
                     } else {
-                        valueBuffer.append(kv.getColumnName()).append("=").append(valueJoiner.toString());
+                        valueBuffer.append("\"" + kv.getColumnName() + "\"").append("=").append(valueJoiner.toString());
                     }
                     filterJoiner.add(valueBuffer.toString());
                 }
