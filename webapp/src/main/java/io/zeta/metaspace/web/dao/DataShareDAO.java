@@ -57,7 +57,7 @@ public interface DataShareDAO {
              " tableInfo.tableName,apiGroup.name as groupName",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
-             " <if test='groupGuid!=1'>",
+             " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
              " <if test='my==0'>",
