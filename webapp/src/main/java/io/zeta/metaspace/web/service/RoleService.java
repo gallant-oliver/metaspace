@@ -447,9 +447,9 @@ public class RoleService {
                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true);
                         } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,true,true,true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,false,true,true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,true,true,true);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,false,true,true);
                         } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
@@ -462,16 +462,16 @@ public class RoleService {
                         break;
                     }
                 }
-                addPrivilege(userCategorys, userChildCategorys,childPrivilege);
-                addPrivilege(userCategorys, userParentCategorys,parentPrivilege);
-                addPrivilege(userCategorys, userPrivilegeCategorys,ownerPrivilege);
+                addPrivilege(userCategorys, userChildCategorys,childPrivilege,categorytype);
+                addPrivilege(userCategorys, userParentCategorys,parentPrivilege,categorytype);
+                addPrivilege(userCategorys, userPrivilegeCategorys,ownerPrivilege,categorytype);
             }
         }
         addOtherCategory(categorytype, userCategorys);
         return userCategorys;
     }
 
-    private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys,CategoryPrivilege.Privilege privilege) {
+    private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys,CategoryPrivilege.Privilege privilege,int categorytype) {
         String[] systemCategoryGuids={"1","2","3","4","5"};
         List<String> lists =Arrays.asList(systemCategoryGuids);
         for (RoleModulesCategories.Category category : allCategorys) {
@@ -482,8 +482,8 @@ public class RoleService {
                 privilegeinfo.setDelete(false);
                 privilegeinfo.setEdit(false);
             }
-            //一级目录不允许删关联
-            if(category.getLevel()==1){
+            //技术目录一级目录不允许删关联
+            if(categorytype==0&&category.getLevel()==1){
                 privilegeinfo.setDeleteRelation(false);
             }
             categoryPrivilege.setPrivilege(privilegeinfo);
