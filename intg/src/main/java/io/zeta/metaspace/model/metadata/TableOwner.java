@@ -44,23 +44,23 @@ public class TableOwner {
     }
 
     public static class Owner {
-        private int id;
-        private int type;
+        private String id;
+        private String type;
 
-        public int getId() {
+        public String getId() {
             return id;
         }
 
         public void setId(int id) {
-            this.id = id;
+            this.id = String.valueOf(id);
         }
 
-        public int getType() {
+        public String getType() {
             return type;
         }
 
         public void setType(int type) {
-            this.type = type;
+            this.type = String.valueOf(type);
         }
     }
 
