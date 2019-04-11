@@ -12,6 +12,7 @@ public class KerberosConfig {
 //    private static String metaspaceAdmin;
 //    private static String metaspaceKeytab;
     private static String hivePrincipal;
+    private static String impalaPrincipal;
 
     public static boolean isKerberosEnable() {
         return kerberosEnable;
@@ -29,6 +30,10 @@ public class KerberosConfig {
         return hivePrincipal;
     }
 
+    public static String getImpalaPrincipal() {
+        return impalaPrincipal;
+    }
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -39,7 +44,7 @@ public class KerberosConfig {
 //                metaspaceAdmin = conf.getString("metaspace.kerberos.admin");
 //                metaspaceKeytab = conf.getString("metaspace.kerberos.keytab");
                 hivePrincipal = conf.getString("metaspace.hive.principal");
-
+                impalaPrincipal = conf.getString("metaspace.impala.principal");
 //                if (metaspaceAdmin == null || metaspaceAdmin.equals("")) {
 //                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.admin未正确配置");
 //                }

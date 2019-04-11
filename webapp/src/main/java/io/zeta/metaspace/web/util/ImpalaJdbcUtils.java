@@ -40,16 +40,19 @@ import java.sql.SQLException;
  */
 public class ImpalaJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
-    private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
+    private static String hivedriverClassName = "com.cloudera.impala.jdbc41.Driver";
     private static String impalaUrl = "";
-    private static String impalaPrincipal = "";
+    private static String krbRealm = "";
+    private static String krbHost = "";
+    private static String krbStr = "";
+    String kerberosStr = ";AuthMech=1;KrbRealm=PANEL.COM;KrbHostFQDN=ms-ip-1;KrbServiceName=impala";
 
 
     static {
         try {
             Class.forName(hivedriverClassName);
             impalaUrl = MetaspaceConfig.getImpalaConf();
-            impalaPrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
+            krbStr = ";AuthMech=1;KrbRealm=" + krbRealm  + ";KrbHostFQDN=" + krbHost + ";KrbServiceName=impala";
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -61,10 +64,10 @@ public class ImpalaJdbcUtils {
         String user = AdminUtils.getUserName();
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
-            jdbcUrl = impalaUrl + "/" + db + impalaPrincipal + ";hive.server2.proxy.user=" + user;
+            jdbcUrl = impalaUrl + "/" + db + krbStr + ";DelegationUID=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
-            jdbcUrl = impalaUrl + "/" + db + ";hive.server2.proxy.user=" + user;
+            jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         }
         return connection;
@@ -79,11 +82,11 @@ public class ImpalaJdbcUtils {
 
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
-            jdbcUrl = impalaUrl + "/" + db + impalaPrincipal + ";hive.server2.proxy.user=" + user;
+            jdbcUrl = impalaUrl + "/" + db + krbStr + ";DelegationUID=" + user;
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
-            jdbcUrl = impalaUrl + "/" + db + ";hive.server2.proxy.user=" + user;
-            connection = DriverManager.getConnection(jdbcUrl, user, "");
+            jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
+            connection = DriverManager.getConnection(jdbcUrl);
         }
         return connection;
     }
