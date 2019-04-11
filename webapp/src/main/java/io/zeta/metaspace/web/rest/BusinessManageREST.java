@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -157,7 +158,7 @@ public class BusinessManageREST {
     @Path("/technical/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
+    public List<CategoryPrivilege> getAllCategory() throws AtlasBaseException {
         try {
             return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {

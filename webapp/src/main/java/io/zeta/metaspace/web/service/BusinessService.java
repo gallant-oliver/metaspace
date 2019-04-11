@@ -479,7 +479,7 @@ public class BusinessService {
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         Table table =  metaDataService.getTableInfoById(guid);
-        List<Column> columns = table.getColumns();
+        /*List<Column> columns = table.getColumns();
         for(Column column : columns) {
             String columnId = column.getColumnId();
             ColumnPrivilegeRelation relation = columnPrivilegeDAO.queryPrivilegeRelationByColumnGuid(columnId);
@@ -487,7 +487,7 @@ public class BusinessService {
                 column.setColumnPrivilege(relation.getName());
                 column.setColumnPrivilegeGuid(relation.getColumnPrivilegeGuid());
             }
-        }
+        }*/
         return table;
     }
 

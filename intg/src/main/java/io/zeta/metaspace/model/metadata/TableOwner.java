@@ -24,22 +24,44 @@ import java.util.List;
  * @date 2019/3/19 10:36
  */
 public class TableOwner {
-    private List<String> tableIds;
-    private List<String> ownerIds;
+    private List<String> tables;
+    private List<Owner> owners;
 
-    public List<String> getTableIds() {
-        return tableIds;
+    public List<String> getTables() {
+        return tables;
     }
 
-    public void setTableIds(List<String> tableIds) {
-        this.tableIds = tableIds;
+    public void setTables(List<String> tables) {
+        this.tables = tables;
     }
 
-    public List<String> getOwnerIds() {
-        return ownerIds;
+    public List<Owner> getOwners() {
+        return owners;
     }
 
-    public void setOwnerIds(List<String> ownerIds) {
-        this.ownerIds = ownerIds;
+    public void setOwners(List<Owner> owners) {
+        this.owners = owners;
     }
+
+    public static class Owner {
+        private String id;
+        private String type;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+
 }

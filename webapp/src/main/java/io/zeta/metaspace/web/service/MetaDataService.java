@@ -193,13 +193,14 @@ public class MetaDataService {
             try {
                 TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
                 //ownerId
-                List<String> owners = tableInfoByTableguid.getDataOwner();
+                List<Map> owners = tableInfoByTableguid.getDataOwner();
                 List<Map> organization = dataManageService.getOrganization();
                 List<String> strings = new ArrayList<>();
                 for (Map map : organization) {
                     String id = map.get("id").toString();
-                    for (String owner : owners) {
-                        if (owner.equals(id))
+                    String type = map.get("type").toString();
+                    for (Map owner : owners) {
+                        if (owner.get("id").equals(id) && owner.get("type").equals(type))
                             strings.add(map.get("name").toString());
                     }
                 }

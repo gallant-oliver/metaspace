@@ -31,6 +31,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -85,15 +86,14 @@ public class DataManageService {
      * @return
      * @throws AtlasBaseException
      */
-    public List<RoleModulesCategories.Category> getAll(int type) throws AtlasBaseException {
+    public List<CategoryPrivilege> getAll(int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
             Role role = roleDao.getRoleByUsersId(user.getUserId());
             if (role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
-            List<RoleModulesCategories.Category> valueList = roleService.getUserCategory(roleId, type);
-            CategoryRelationUtils.cleanInvalidBrother(valueList);
+            List<CategoryPrivilege> valueList = roleService.getUserCategory2(roleId, type);
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error(e.getMessage());
@@ -490,9 +490,7 @@ public class DataManageService {
 
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            List<String> tableIds = tableOwner.getTableIds();
-            List<String> ownerIds = tableOwner.getOwnerIds();
-            return categoryDao.addTableOwners(tableIds, ownerIds.toArray(new String[ownerIds.size()]));
+            return categoryDao.addTableOwners(tableOwner);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
