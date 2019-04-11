@@ -314,7 +314,8 @@ public class DataShareService {
             long limit = parameter.getLimit();
             long offset = parameter.getOffset();
             List<String> queryColumns = parameter.getQueryFields();
-
+            long maxRowNumber = parameter.getMaxRowNumber();
+            limit = Math.min(limit, maxRowNumber);
             String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
 
             APITask task = new APITask(randomName, sql, dbName);
@@ -345,14 +346,15 @@ public class DataShareService {
                     Thread.currentThread().setName(name);
                 }
                 ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
-                Map map = new HashMap();
+
                 List<Map> result = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
-                if (resultSet.next()) {
+                while (resultSet.next()) {
+                    Map map = new HashMap();
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
-                        String value = resultSet.getString(columnName);
+                        Object value = resultSet.getObject(columnName);
                         map.put(columnName, value);
                     }
                     result.add(map);
