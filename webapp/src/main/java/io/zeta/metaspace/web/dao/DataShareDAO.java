@@ -56,7 +56,7 @@ public interface DataShareDAO {
              " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,apiInfo.star,",
              " tableInfo.tableName,apiGroup.name as groupName",
              " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
+             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
@@ -72,14 +72,13 @@ public interface DataShareDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("limit")int limit, @Param("offset")int offset);
+    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query, @Param("limit")int limit, @Param("offset")int offset);
 
 
     @Select({" <script>",
              " select count(1)",
              " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.groupGuid=#{groupGuid}",
-             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
+             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
@@ -91,7 +90,7 @@ public interface DataShareDAO {
              " <when test=\"publish=='publish'\"> and publish=true </when>",
              " </choose>",
              " </script>"})
-    public int getAPICount(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper);
+    public int getAPICount(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query);
 
     @Select("select fields from apiInfo where guid=#{guid}")
     public Object getQueryFiledsByGuid(@Param("guid")String guid);

@@ -217,12 +217,13 @@ public class DataShareService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
-            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, limit, offset);
+            String query = parameters.getQuery();
+            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, query, limit, offset);
             for(APIInfoHeader header : list) {
                 List<String> dataOwner = getDataOwner(header.getTableGuid());
                 header.setDataOwner(dataOwner);
             }
-            int apiCount = shareDAO.getAPICount(guid, my, publish, user);
+            int apiCount = shareDAO.getAPICount(guid, my, publish, user, query);
             pageResult.setSum(apiCount);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
