@@ -237,6 +237,7 @@ public class APIInfo {
         private Boolean filter;
         private Boolean fill;
         private String defaultValue;
+        private String type;
 
         public String getColumnName() {
             return columnName;
@@ -268,6 +269,14 @@ public class APIInfo {
 
         public void setDefaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
     }
 }

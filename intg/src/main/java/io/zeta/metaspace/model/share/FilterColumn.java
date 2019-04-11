@@ -25,6 +25,14 @@ public class FilterColumn {
     private String columnName;
     private String value;
     private Boolean fill;
+    private String type;
+
+    public FilterColumn(String columnName, String value, Boolean fill, String type) {
+        this.columnName = columnName;
+        this.value = value;
+        this.fill = fill;
+        this.type = type;
+    }
 
     public FilterColumn(String columnName, String value, Boolean fill) {
         this.columnName = columnName;
@@ -54,5 +62,13 @@ public class FilterColumn {
 
     public void setFill(Boolean fill) {
         this.fill = fill;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
