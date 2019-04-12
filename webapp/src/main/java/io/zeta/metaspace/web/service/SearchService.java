@@ -159,7 +159,14 @@ public class SearchService {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
         String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getDatabaseByQuery(queryDb, offset, limit);
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, false, offset, limit);
+    }
+
+    public PageResult<Database> getActiveDatabase(Parameters parameters) throws AtlasBaseException {
+        long limit = parameters.getLimit();
+        long offset = parameters.getOffset();
+        String queryDb = parameters.getQuery();
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, true, offset, limit);
     }
 
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")

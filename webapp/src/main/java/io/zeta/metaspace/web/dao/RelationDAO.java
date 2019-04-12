@@ -115,6 +115,7 @@ public interface RelationDAO {
 
     @Select({" <script>",
              " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
+             " and status='ACTIVE'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -123,7 +124,7 @@ public interface RelationDAO {
     public List<TableInfo> getDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
 
     @Select({" <script>",
-             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'  and status='ACTIVE'",
              " </script>"})
     public int countDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query);
 

@@ -57,6 +57,8 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
 
             case DB_TOTAL_NUM_BY_QUERY:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
+            case DB_ACTIVE_TOTAL_NUM_BY_QUERY:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').dedup().count().toList()";
 
             case TABLE_GUID_QUERY:
                 //g.tx().commit();
@@ -81,8 +83,12 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
 
             case DATABASE_BY_QUERY:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
+            case ACTIVE_DATABASE_BY_QUERY:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
             case FULL_DATABASE:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().toList()";
+            case FULL_ACTIVE_DATABASE:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').order().by('__timestamp').dedup().toList()";
             case TABLE_BY_DB:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid','%s').inE().outV().has('__typeName','hive_table').has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
             case FULL_TABLE:
