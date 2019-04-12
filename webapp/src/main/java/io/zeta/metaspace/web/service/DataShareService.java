@@ -109,6 +109,9 @@ public class DataShareService {
             info.setPublish(false);
             //star
             info.setStar(false);
+            //path
+            String[] pathList = info.getPath().split("/");
+            info.setPath(pathList[pathList.length-1]);
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -190,6 +193,11 @@ public class DataShareService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
+            String version = info.getVersion();
+            String path = info.getPath();
+            StringJoiner pathJoiner = new StringJoiner("/");
+            pathJoiner.add("api").add(version).add("share").add(path);
+            info.setPath("/" + pathJoiner.toString());
             List<APIInfo.Field> fields = getQueryFileds(guid);
             List<String> dataOwner = getDataOwner(info.getTableGuid());
             info.setDataOwner(dataOwner);
