@@ -41,6 +41,9 @@ public interface DataShareGroupDAO {
     @Delete("delete from apiGroup where guid=#{guid}")
     public int deleteGroup(@Param("guid") String guid);
 
+    @Select("select count(1) from apiInfo where groupGuid=#{guid}")
+    public int getGroupRelatedAPI(@Param("guid") String guid);
+
     @Select("select name from apiGroup where guid=#{guid}")
     public String getGroupNameById(@Param("guid") String guid);
 

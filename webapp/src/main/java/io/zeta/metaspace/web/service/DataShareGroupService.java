@@ -64,6 +64,10 @@ public class DataShareGroupService {
             if("1".equals(guid) || "2".equals(guid)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许删除当前分组");
             }
+            int count = groupDAO.getGroupRelatedAPI(guid);
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前分组下API关联不为空");
+            }
             return groupDAO.deleteGroup(guid);
         } catch (AtlasBaseException e) {
             throw e;
