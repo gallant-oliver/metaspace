@@ -188,11 +188,18 @@ public class DataShareService {
      */
     public APIInfo getAPIInfo(String guid) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
             List<APIInfo.Field> fields = getQueryFileds(guid);
             List<String> dataOwner = getDataOwner(info.getTableGuid());
             info.setDataOwner(dataOwner);
             info.setFields(fields);
+            int count = shareDAO.getStarCount(userId, guid);
+            if(count > 0) {
+                info.setStar(true);
+            } else {
+                info.setStar(false);
+            }
             return info;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -214,15 +221,24 @@ public class DataShareService {
     public PageResult<APIInfoHeader> getAPIList(String guid, Integer my, String publish, Parameters parameters) throws AtlasBaseException {
         try {
             String user = AdminUtils.getUserData().getUsername();
+            String userId = AdminUtils.getUserData().getUserId();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             String query = parameters.getQuery();
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, query, limit, offset);
+            List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
+                if(starAPIList.contains(header.getGuid())) {
+                    header.setStar(true);
+                } else {
+                    header.setStar(false);
+                }
                 List<String> dataOwner = getDataOwner(header.getTableGuid());
                 header.setDataOwner(dataOwner);
             }
+
+
             int apiCount = shareDAO.getAPICount(guid, my, publish, user, query);
             pageResult.setSum(apiCount);
             pageResult.setCount(list.size());
@@ -278,8 +294,14 @@ public class DataShareService {
 
     public int updateStarStatus(String apiGuid, Integer status) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
             Boolean star = (0==status)?false:true;
-            return shareDAO.updateStarStatus(apiGuid, star);
+            if(star) {
+                return shareDAO.insertAPIStar(userId, apiGuid);
+            } else {
+                return shareDAO.deleteAPIStar(userId, apiGuid);
+            }
+            //return shareDAO.updateStarStatus(apiGuid, star);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
@@ -630,7 +652,7 @@ public class DataShareService {
                     valueList.stream().forEach(value -> dataType.valueOf(value).get());
                     if(DataType.BOOLEAN == dataType) {
                         for(Object value : valueList) {
-                            if(!value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
+                            if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
                                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, kv.getColumnName() + "取值需为bool类型");
                             }
                         }

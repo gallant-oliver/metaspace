@@ -499,15 +499,17 @@ public class BusinessService {
             tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-
-            List<APIInfoHeader> APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
-
-            for (APIInfoHeader api : APIList) {
-                List<String> dataOwner = shareService.getDataOwner(api.getTableGuid());
-                api.setDataOwner(dataOwner);
-            }
+            List<APIInfoHeader> APIList = new ArrayList<>();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
-            int apiCount = shareDAO.countTableRelatedAPI(tableList);
+            int apiCount = 0;
+            if(Objects.nonNull(tableList) && tableList.size()>0) {
+                APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
+                for (APIInfoHeader api : APIList) {
+                    List<String> dataOwner = shareService.getDataOwner(api.getTableGuid());
+                    api.setDataOwner(dataOwner);
+                }
+                apiCount = shareDAO.countTableRelatedAPI(tableList);
+            }
             pageResult.setSum(apiCount);
             pageResult.setLists(APIList);
             pageResult.setCount(APIList.size());

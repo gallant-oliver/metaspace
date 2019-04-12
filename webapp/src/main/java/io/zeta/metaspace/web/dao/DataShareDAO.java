@@ -53,7 +53,7 @@ public interface DataShareDAO {
     public APIInfo getAPIInfoByGuid(@Param("guid")String guid);
 
     @Select({" <script>",
-             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,apiInfo.star,",
+             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " tableInfo.tableName,apiGroup.name as groupName",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%'",
@@ -106,6 +106,18 @@ public interface DataShareDAO {
 
     @Update("update apiInfo set star=#{star} where guid=#{guid}")
     public int updateStarStatus(@Param("guid")String guid, @Param("star")Boolean starStatus);
+
+    @Insert("insert into user2apistar(apiGuid,userId)values(#{apiGuid},#{userId})")
+    public int insertAPIStar(@Param("userId")String userId, @Param("apiGuid")String apiGuid);
+
+    @Insert("delete from user2apistar where apiGuid=#{apiGuid} and userId=#{userId}")
+    public int deleteAPIStar(@Param("userId")String userId, @Param("apiGuid")String apiGuid);
+
+    @Select("select apiGuid from user2apistar where userId=#{userId}")
+    public List<String> getUserStarAPI(@Param("userId")String userId);
+
+    @Select("select count(1) from user2apistar where apiGuid=#{apiGuid} and userId=#{userId}")
+    public int getStarCount(@Param("userId")String userId, @Param("apiGuid")String apiGuid);
 
     @Update({" <script>",
              " update apiInfo set publish=#{publish} where guid in",
