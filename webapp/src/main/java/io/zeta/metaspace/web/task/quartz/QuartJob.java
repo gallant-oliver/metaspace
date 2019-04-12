@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.table.TableMetadata;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.quartz.Job;
@@ -220,7 +221,8 @@ public class QuartJob implements Job {
             } else {
                 sql = String.format(query, tableName);
             }
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            //ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
             double resultValue = 0;
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
@@ -287,7 +289,8 @@ public class QuartJob implements Job {
 
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
-            TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
+            //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
+            TableMetadata metadata = ImpalaJdbcUtils.systemMetadata(source);
             //表数据量
             long totalSize = metadata.getTotalSize();
             if (record) {
@@ -346,7 +349,8 @@ public class QuartJob implements Job {
             Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            //ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 totalNum = Double.valueOf(object.toString());
