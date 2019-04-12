@@ -170,10 +170,12 @@ public interface DataShareDAO {
              " #{tableGuid}",
              " </foreach>",
              " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
-             " <if test='limit!= -1'>",
+             " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",
+             " <if test='offset != null'>",
              " offset #{offset}",
+             " </if>",
              " </script>"})
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset);
 

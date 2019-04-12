@@ -497,8 +497,8 @@ public class BusinessService {
             List<TechnologyInfo.Table> tableHeaderList = technologyInfo.getTables();
             List<String> tableList = new ArrayList<>();
             tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
-            int limit = parameters.getLimit();
-            int offset = parameters.getOffset();
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
             List<APIInfoHeader> APIList = new ArrayList<>();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             int apiCount = 0;
