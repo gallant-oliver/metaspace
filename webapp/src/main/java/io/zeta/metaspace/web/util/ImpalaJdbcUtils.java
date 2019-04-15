@@ -38,8 +38,8 @@ import java.sql.SQLException;
  * @author sunhaoning
  * @date 2019/4/8 16:54
  */
-public class ImpalaJdbcUtils extends HiveJdbcUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
+public class ImpalaJdbcUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(ImpalaJdbcUtils.class);
     private static String driverClassName = "com.cloudera.impala.jdbc41.Driver";
     private static String impalaUrl = "";
     private static String krbStr = "";
@@ -87,6 +87,27 @@ public class ImpalaJdbcUtils extends HiveJdbcUtils {
         return connection;
     }
 
+    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            Connection conn = getSystemConnection(db);
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
+            if(e.getMessage().contains("Permission denied")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
+    }
+
+    public static void execute(String sql, String db) throws AtlasBaseException {
+        try (Connection conn = getConnection(db)) {
+            conn.createStatement().execute(sql);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
+    }
+
     /**
      * 表数据量大小，单位bytes
      * 文件个数
@@ -101,10 +122,16 @@ public class ImpalaJdbcUtils extends HiveJdbcUtils {
         String location = location(db, tableName);
         if (location != null) {
             try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
-                ContentSummary contentSummary = fs.getContentSummary(new Path(location));
-                long numFiles = contentSummary.getFileCount();
-                long totalSize = contentSummary.getLength();
-                return new TableMetadata(numFiles, Long.valueOf(totalSize));
+                Path path = new Path(location);
+                if(fs.exists(path)) {
+                    ContentSummary contentSummary = fs.getContentSummary(path);
+
+                    long numFiles = contentSummary.getFileCount();
+                    long totalSize = contentSummary.getLength();
+                    return new TableMetadata(numFiles, Long.valueOf(totalSize));
+                } else {
+                    return new TableMetadata();
+                }
             }catch (Exception e){
                 LOG.warn(e.getMessage(),e);
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
@@ -113,6 +140,7 @@ public class ImpalaJdbcUtils extends HiveJdbcUtils {
             return new TableMetadata();
         }
     }
+
 
     private static String location(String db, String tableName) {
         try(Connection conn = getSystemConnection(db);
@@ -130,18 +158,5 @@ public class ImpalaJdbcUtils extends HiveJdbcUtils {
             LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
         }
         return null;
-    }
-
-    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
-        try {
-            Connection conn = getSystemConnection(db);
-            ResultSet resultSet = conn.createStatement().executeQuery(sql);
-            return resultSet;
-        } catch (SQLException e) {
-            if(e.getMessage().contains("Permission denied")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-            }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
-        }
     }
 }

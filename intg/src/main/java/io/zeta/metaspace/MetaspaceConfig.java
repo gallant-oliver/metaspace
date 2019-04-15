@@ -10,7 +10,7 @@ public class MetaspaceConfig {
     private static String hdfsConf;
     private static String hiveUrl;
     private static String hbaseConf;
-    private static String impalaConf;
+    private static String impalaUrl;
 
     public static String getHbaseConf() {
         return hbaseConf;
@@ -25,7 +25,7 @@ public class MetaspaceConfig {
     }
 
     public static String getImpalaConf() {
-        return impalaConf;
+        return impalaUrl;
     }
 
     static {
@@ -34,7 +34,7 @@ public class MetaspaceConfig {
             hdfsConf = conf.getString("metaspace.hdfs.conf");
             hiveUrl = conf.getString("metaspace.hive.url");
             hbaseConf = conf.getString("metaspace.hbase.conf");
-            impalaConf = conf.getString("metaspace.impala.url");
+            impalaUrl = conf.getString("metaspace.impala.url");
             if (hdfsConf == null || hdfsConf.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hdfs.conf未正确配置");
             }
@@ -44,7 +44,7 @@ public class MetaspaceConfig {
             if (hbaseConf == null || hbaseConf.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hbase.conf未正确配置");
             }
-            if (impalaConf == null || impalaConf.equals("")) {
+            if (impalaUrl == null || impalaUrl.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.impala.url未正确配置");
             }
         } catch (Exception e) {
