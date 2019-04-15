@@ -510,6 +510,16 @@ public class DataManageService {
         return data;
     }
 
+
+    /*public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
+        try {
+
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }*/
+
+
     @Transactional
     public void addTable(List<AtlasEntity> entities) {
         //添加到tableinfo

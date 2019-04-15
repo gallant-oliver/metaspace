@@ -12,30 +12,33 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/25 19:55
+ * @date 2019/3/26 19:45
  */
-package io.zeta.metaspace.model.datashare;
+package io.zeta.metaspace.model.share;
+
+import java.util.List;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/25 19:55
+ * @date 2019/3/26 19:45
  */
 public class APIInfo {
     private String guid;
     private String name;
-    private String description;
     private String tableGuid;
     private String tableName;
     private String dbGuid;
     private String dbName;
-    private String group;
-    private boolean publish;
+    private String groupGuid;
+    private String groupName;
+    private Boolean publish;
     private String keeper;
-    private String dataOwner;
-    private String maxRowNumber;
-    private QueryField queryField;
+    private List<String> dataOwner;
+    private Long maxRowNumber;
+    private List<Field> fields;
     private String version;
+    private String description;
     private String protocol;
     private String requestMode;
     private String returnType;
@@ -43,7 +46,7 @@ public class APIInfo {
     private String generateTime;
     private String updater;
     private String updateTime;
-    private boolean star;
+    private Boolean star;
 
     public String getGuid() {
         return guid;
@@ -59,14 +62,6 @@ public class APIInfo {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getTableGuid() {
@@ -101,19 +96,27 @@ public class APIInfo {
         this.dbName = dbName;
     }
 
-    public String getGroup() {
-        return group;
+    public String getGroupGuid() {
+        return groupGuid;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupGuid(String groupGuid) {
+        this.groupGuid = groupGuid;
     }
 
-    public boolean isPublish() {
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public Boolean getPublish() {
         return publish;
     }
 
-    public void setPublish(boolean publish) {
+    public void setPublish(Boolean publish) {
         this.publish = publish;
     }
 
@@ -125,28 +128,28 @@ public class APIInfo {
         this.keeper = keeper;
     }
 
-    public String getDataOwner() {
+    public List<String> getDataOwner() {
         return dataOwner;
     }
 
-    public void setDataOwner(String dataOwner) {
+    public void setDataOwner(List<String> dataOwner) {
         this.dataOwner = dataOwner;
     }
 
-    public String getMaxRowNumber() {
+    public Long getMaxRowNumber() {
         return maxRowNumber;
     }
 
-    public void setMaxRowNumber(String maxRowNumber) {
+    public void setMaxRowNumber(Long maxRowNumber) {
         this.maxRowNumber = maxRowNumber;
     }
 
-    public QueryField getQueryField() {
-        return queryField;
+    public List<Field> getFields() {
+        return fields;
     }
 
-    public void setQueryField(QueryField queryField) {
-        this.queryField = queryField;
+    public void setFields(List<Field> fields) {
+        this.fields = fields;
     }
 
     public String getVersion() {
@@ -155,6 +158,14 @@ public class APIInfo {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getProtocol() {
@@ -213,18 +224,59 @@ public class APIInfo {
         this.updateTime = updateTime;
     }
 
-    public boolean isStar() {
+    public Boolean getStar() {
         return star;
     }
 
-    public void setStar(boolean star) {
+    public void setStar(Boolean star) {
         this.star = star;
     }
 
-    class QueryField {
+    public static class Field {
         private String columnName;
-        private boolean filter;
-        private boolean fill;
+        private Boolean filter;
+        private Boolean fill;
         private String defaultValue;
+        private String type;
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public Boolean getFilter() {
+            return filter;
+        }
+
+        public void setFilter(Boolean filter) {
+            this.filter = filter;
+        }
+
+        public Boolean getFill() {
+            return fill;
+        }
+
+        public void setFill(Boolean fill) {
+            this.fill = fill;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
     }
 }

@@ -572,10 +572,24 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return column;
     }
 
-    public PageResult<Database> getDatabaseByQuery(String queryDb, long offset, long limit) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active,long offset, long limit) throws AtlasBaseException {
         PageResult<Database> databasePageResult = new PageResult<>();
         List<Database> lists = new ArrayList<>();
-        String format = (offset == 0 && limit == -1) ? String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DATABASE), queryDb) : String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DATABASE_BY_QUERY), queryDb,offset, offset + limit);
+        String queryStr = "";
+        if((offset == 0 && limit == -1)) {
+            if(active) {
+                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_DATABASE);
+            } else {
+                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DATABASE);
+            }
+        } else {
+            if(active) {
+                queryStr =gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_DATABASE_BY_QUERY);
+            } else {
+                queryStr =gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DATABASE_BY_QUERY);
+            }
+        }
+        String format = (offset == 0 && limit == -1) ? String.format(queryStr, queryDb) : String.format(queryStr, queryDb,offset, offset + limit);
         List<AtlasVertex> databases = (List) graph.executeGremlinScript(format, false);
         for (AtlasVertex database : databases) {
             Database db = new Database();
@@ -595,7 +609,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         databasePageResult.setCount(lists.size());
         databasePageResult.setOffset(offset);
         databasePageResult.setLists(lists);
-        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
+        String gremlinQuery = active?gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_ACTIVE_TOTAL_NUM_BY_QUERY):gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
         String numQuery = String.format(gremlinQuery, queryDb);
         List num = (List) graph.executeGremlinScript(numQuery, false);
         databasePageResult.setSum(Integer.parseInt(num.get(0).toString()));
@@ -632,6 +646,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         tablePageResult.setSum(Integer.parseInt(num.get(0).toString()));
         return tablePageResult;
     }
+
+
     public List<Long> getDBTotal() throws AtlasBaseException {
         String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
         return  (List) graph.executeGremlinScript(String.format(gremlinQuery, ""), false);

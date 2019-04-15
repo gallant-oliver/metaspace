@@ -397,7 +397,7 @@ public class RoleService {
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
-            addPrivilege(userCategorys, allCategorys,privilege);
+            addPrivilege(userCategorys, allCategorys,privilege, categorytype);
         }else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
             if (userBusinessCategories.size() > 0) {

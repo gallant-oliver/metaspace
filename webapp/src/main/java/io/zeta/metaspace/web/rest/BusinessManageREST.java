@@ -29,11 +29,13 @@ import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnPrivilege;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -110,6 +112,18 @@ public class BusinessManageREST {
     public PageResult<BusinessInfoHeader> getBusinessListWithManage(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
             return businessService.getBusinessListByCondition(parameter);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @POST
+    @Path("/{businessId}/datashare")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId, Parameters parameters) throws AtlasBaseException {
+        try {
+            return businessService.getBusinessTableRelatedAPI(businessId, parameters);
         } catch (Exception e) {
             throw e;
         }

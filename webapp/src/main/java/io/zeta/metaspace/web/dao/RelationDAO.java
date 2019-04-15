@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.web.dao;
 
+
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.*;
@@ -110,6 +112,21 @@ public interface RelationDAO {
 
     @Insert("insert into tableInfo(tableName,dbName,tableGuid,status,createTime)values(#{tableName},#{dbName},#{tableGuid},#{status},#{createTime})")
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
+
+    @Select({" <script>",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
+             " and status='ACTIVE'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<TableInfo> getDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
+
+    @Select({" <script>",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'  and status='ACTIVE'",
+             " </script>"})
+    public int countDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query);
 
     @Delete("delete from table_relation where tableguid=#{guid}")
     public int deleteByTableGuid(String guid);

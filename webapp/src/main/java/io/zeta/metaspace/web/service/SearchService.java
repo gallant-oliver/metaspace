@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
@@ -10,6 +11,7 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -22,6 +24,8 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,8 @@ import java.util.*;
 
 @AtlasService
 public class SearchService {
+
+    public static final Log LOG = LogFactory.getLog(SearchService.class);
     @Autowired
     private EntityREST entityREST;
     @Autowired
@@ -49,6 +55,8 @@ public class SearchService {
     UserDAO userDAO;
     @Autowired
     CategoryDAO categoryDAO;
+    @Autowired
+    RelationDAO relationDAO;
 
 /*    @Transactional
     public PageResult<Database> getTechnicalDatabasePageResult(Parameters parameters, String categoryId) throws AtlasBaseException {
@@ -151,12 +159,37 @@ public class SearchService {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
         String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getDatabaseByQuery(queryDb, offset, limit);
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, false, offset, limit);
+    }
+
+    public PageResult<Database> getActiveDatabase(Parameters parameters) throws AtlasBaseException {
+        long limit = parameters.getLimit();
+        long offset = parameters.getOffset();
+        String queryDb = parameters.getQuery();
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, true, offset, limit);
     }
 
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
     public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
         return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+    }
+
+    public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
+        try {
+            long limit = parameters.getLimit();
+            long offset = parameters.getOffset();
+            String query = parameters.getQuery();
+            PageResult<TableInfo> pageResult = new PageResult<>();
+            List<TableInfo> tableList = relationDAO.getDbTables(databaseId, query, limit, offset);
+            int countDbTable = relationDAO.countDbTables(databaseId, query);
+            pageResult.setLists(tableList);
+            pageResult.setSum(countDbTable);
+            pageResult.setCount(tableList.size());
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")

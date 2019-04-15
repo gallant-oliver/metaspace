@@ -12,18 +12,19 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/25 20:10
+ * @date 2019/3/26 15:56
  */
-package io.zeta.metaspace.model.datashare;
+package io.zeta.metaspace.model.share;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/25 20:10
+ * @date 2019/3/26 15:56
  */
 public class APIGroup {
     private String guid;
     private String name;
+    private String parentGuid;
     private String description;
 
     public String getGuid() {
@@ -40,6 +41,14 @@ public class APIGroup {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getParentGuid() {
+        return parentGuid;
+    }
+
+    public void setParentGuid(String parentGuid) {
+        this.parentGuid = parentGuid;
     }
 
     public String getDescription() {

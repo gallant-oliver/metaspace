@@ -72,14 +72,13 @@ public interface BusinessDAO {
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
-<<<<<<< HEAD
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId)values(#{relationshipGuid},#{categoryGuid},#{businessId})")
     public int addRelation(BusinessRelationEntity entity) throws SQLException;
-=======
+
     @Select("select trustTable from businessInfo where businessId=#{businessId}")
     public String getTrustTableGuid(@Param("businessId")String businessId);
->>>>>>> feature/metaspace-1.4
+
 
     //根据业务信息名称查询列表
     @Select({"<script>",
@@ -211,6 +210,5 @@ public interface BusinessDAO {
 
     @Delete("delete from business_relation where businessId=#{businessId}")
     public int deleteRelationById(@Param("businessId")String businessId);
-
 
 }

@@ -44,6 +44,7 @@ public abstract class MetaspaceGremlinQueryProvider {
         DB_TABLE_BY_QUERY,
         FULL_DB_TABLE,
         DB_TOTAL_NUM_BY_QUERY,
+        DB_ACTIVE_TOTAL_NUM_BY_QUERY,
 
         TABLE_GUID_QUERY,
 
@@ -54,7 +55,9 @@ public abstract class MetaspaceGremlinQueryProvider {
         FULL_COLUMN_TABLE_DB,
         COLUMN_COUNT_BY_QUERY,
         DATABASE_BY_QUERY,
+        ACTIVE_DATABASE_BY_QUERY,
         FULL_DATABASE,
+        FULL_ACTIVE_DATABASE,
         TABLE_BY_DB,
         FULL_TABLE,
         TABLE_TOTAL_BY_DB,

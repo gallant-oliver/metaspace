@@ -31,8 +31,8 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.javatuples.Pair;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,12 +46,14 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("metadata")
 @Singleton
 @Service
 public class MetaDataREST {
+    private static final Logger LOG = LoggerFactory.getLogger(MetaDataREST.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.MetaDataREST");
     @Autowired
     private SearchService searchService;
@@ -469,18 +471,16 @@ public class MetaDataREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}")
-    public String synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
+    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
         if (!importing.getAndSet(true)) {
-            try {
+            CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
-            } finally {
                 importing.set(false);
-            }
-        }else {
-            return "in the process of import tables";
+            });
+        } else {
+            return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
         }
-
-        return "success";
+        return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
     }
 
     @GET
