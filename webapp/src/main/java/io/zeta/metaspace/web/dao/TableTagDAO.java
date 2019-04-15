@@ -26,17 +26,11 @@ public interface TableTagDAO {
     @Insert("insert into table2tag(tagid,tableguid) values(#{tagId},#{tableGuid})")
     public int addTable2Tag(@Param("tagId") String tagId,@Param("tableGuid") String tableGuid);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime) values(#{table.tableId},#{table.tableName},#{table.databaseName},#{table.status},#{table.createTime})")
-    public int addTable(@Param("table") Table table);
-
     @Delete("delete from table2tag where tableguid=#{tableGuid} and tagid=#{tagId}")
     public int deleteTable2Tag(@Param("tableGuid") String tableGuid,@Param("tagId") String tagId);
 
     @Select("select 1 from tag where tagname=#{tagName}")
     public List<Integer> ifTagExists(String tagName);
-
-    @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
-    public List<Integer> ifTableExists(String tableGuid);
 
     @Delete("delete from table2tag where tableguid=#{tableGuid}")
     public int delAllTable2Tag(String tableGuid);

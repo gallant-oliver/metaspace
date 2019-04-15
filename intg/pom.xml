@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.0.0</version>
+        <version>1.4.0</version>
     </parent>
     <artifactId>atlas-intg</artifactId>
     <description>Apache Atlas Integration</description>
@@ -93,6 +93,17 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.1-901-1.jdbc4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.4.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

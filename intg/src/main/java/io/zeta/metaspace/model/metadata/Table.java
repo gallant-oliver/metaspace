@@ -21,13 +21,47 @@ import java.util.List;
 public class Table implements Serializable {
     private String tableId;
     private String tableName;
-    private String business;
-    private List<String> relations;
     private String owner;
+    private List<String> dataOwner;
+    private String updateTime;
+    private String databaseId;
+    private String databaseName;
+    private String partitionKey;
+    private Boolean partitionTable;
+    private String format;
+    private String location;
+    private String description;
+    private String type;
+    private Boolean virtualTable;
+    private String status;
+    private List<Tag> tags;
+    private boolean edit;
+    private boolean editTag;
+
+    private String subordinateSystem;
+    private String subordinateDatabase;
+    private List<String> systemAdmin;
     private String createTime;
 
-    public String getCategory() {
-        return category;
+    private String dataWarehouseAdmin;
+    private String dataWarehouseDescription;
+
+    private List<String> relations;
+    private List<String> catalogAdmin;
+    private String relationTime;
+
+    private List<BusinessObject> businessObjects;
+
+    private TablePermission tablePermission;
+
+    private List<Column> columns;
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
     }
 
     public boolean isEditTag() {
@@ -38,27 +72,56 @@ public class Table implements Serializable {
         this.editTag = editTag;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+
+    public String getSubordinateSystem() {
+        return subordinateSystem;
     }
 
-    private String category;
-    private String databaseId;
-    private String databaseName;
-    private String tableLife;
-    private String partitionKey;
-    private Boolean partitionTable;
-    private String partitionLife;
-    private String format;
-    private String location;
-    private String description;
-    private String topic;
-    private String type;
-    private Boolean virtualTable;
-    private String status;
-    private List<Tag> tags;
-    private boolean edit;
-    private boolean editTag;
+    public void setSubordinateSystem(String subordinateSystem) {
+        this.subordinateSystem = subordinateSystem;
+    }
+
+    public String getSubordinateDatabase() {
+        return subordinateDatabase;
+    }
+
+    public void setSubordinateDatabase(String subordinateDatabase) {
+        this.subordinateDatabase = subordinateDatabase;
+    }
+
+    public String getDataWarehouseAdmin() {
+        return dataWarehouseAdmin;
+    }
+
+    public void setDataWarehouseAdmin(String dataWarehouseAdmin) {
+        this.dataWarehouseAdmin = dataWarehouseAdmin;
+    }
+
+    public String getDataWarehouseDescription() {
+        return dataWarehouseDescription;
+    }
+
+    public void setDataWarehouseDescription(String dataWarehouseDescription) {
+        this.dataWarehouseDescription = dataWarehouseDescription;
+    }
+
+    public String getRelationTime() {
+        return relationTime;
+    }
+
+    public void setRelationTime(String relationTime) {
+        this.relationTime = relationTime;
+    }
+
+    public List<BusinessObject> getBusinessObjects() {
+        return businessObjects;
+    }
+
+    public void setBusinessObjects(List<BusinessObject> businessObjects) {
+        this.businessObjects = businessObjects;
+    }
+
+
     public boolean isEdit() {
         return edit;
     }
@@ -99,9 +162,6 @@ public class Table implements Serializable {
         this.columns = columns;
     }
 
-    private TablePermission tablePermission;
-    private List<Column> columns;
-
     public String getTableId() {
         return tableId;
     }
@@ -118,13 +178,6 @@ public class Table implements Serializable {
         this.tableName = tableName;
     }
 
-    public String getBusiness() {
-        return business;
-    }
-
-    public void setBusiness(String business) {
-        this.business = business;
-    }
 
     public String getOwner() {
         return owner;
@@ -158,13 +211,6 @@ public class Table implements Serializable {
         this.databaseName = databaseName;
     }
 
-    public String getTableLife() {
-        return tableLife;
-    }
-
-    public void setTableLife(String tableLife) {
-        this.tableLife = tableLife;
-    }
 
     public String getPartitionKey() {
         return partitionKey;
@@ -182,13 +228,6 @@ public class Table implements Serializable {
         this.partitionTable = partitionTable;
     }
 
-    public String getPartitionLife() {
-        return partitionLife;
-    }
-
-    public void setPartitionLife(String partitionLife) {
-        this.partitionLife = partitionLife;
-    }
 
     public String getFormat() {
         return format;
@@ -214,13 +253,6 @@ public class Table implements Serializable {
         this.description = description;
     }
 
-    public String getTopic() {
-        return topic;
-    }
-
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
 
     public TablePermission getTablePermission() {
         return tablePermission;
@@ -238,11 +270,67 @@ public class Table implements Serializable {
         this.virtualTable = virtualTable;
     }
 
+    public List<String> getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(List<String> dataOwner) {
+        this.dataOwner = dataOwner;
+    }
+
+    public List<String> getSystemAdmin() {
+        return systemAdmin;
+    }
+
+    public void setSystemAdmin(List<String> systemAdmin) {
+        this.systemAdmin = systemAdmin;
+    }
+
+    public List<String> getCatalogAdmin() {
+        return catalogAdmin;
+    }
+
+    public void setCatalogAdmin(List<String> catalogAdmin) {
+        this.catalogAdmin = catalogAdmin;
+    }
+
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public static class BusinessObject {
+        private String businessObject;
+        private String department;
+        private String businessLeader;
+
+        public String getBusinessObject() {
+            return businessObject;
+        }
+
+        public void setBusinessObject(String businessObject) {
+            this.businessObject = businessObject;
+        }
+
+        public String getDepartment() {
+            return department;
+        }
+
+        public void setDepartment(String department) {
+            this.department = department;
+        }
+
+        public String getBusinessLeader() {
+            return businessLeader;
+        }
+
+        public void setBusinessLeader(String businessLeader) {
+            this.businessLeader = businessLeader;
+        }
+
+
     }
 }

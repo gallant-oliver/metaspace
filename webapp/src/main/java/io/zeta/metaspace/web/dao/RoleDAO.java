@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
@@ -110,6 +111,30 @@ public interface RoleDAO {
             "SELECT * FROM categoryTree</script>")
     public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType);
 
+    //递归找子节点加自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where parentCategoryGuid in " +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            ")" +
+            "SELECT * FROM categoryTree" +
+            " UNION " +
+            "SELECT * FROM category where guid in " +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType);
+
     //递归找父节点，结果集包含自己
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
@@ -159,6 +184,19 @@ public interface RoleDAO {
             "</script>")
     public List<RoleModulesCategories.Category> getOtherCategorys(@Param("categories") List<RoleModulesCategories.Category> categories, @Param("categoryType") int categoryType);
 
+    //找出合集外的目录2
+    @Select("<script>SELECT * from category where " +
+            "    <if test='categories!=null and categories.size()>0'>" +
+            "     guid not in" +
+            "    <foreach item='item' index='index' collection='categories'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item.guid}" +
+            "    </foreach>" +
+            "    and " +
+            "    </if>" +
+            "    categoryType = #{categoryType}" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getOtherCategorys2(@Param("categories") List<CategoryPrivilege> categories, @Param("categoryType") int categoryType);
     //获取授权范围id
     @Select("select categoryid guid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
     public List<String> getCategorysByTypeIds(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
@@ -203,4 +241,48 @@ public interface RoleDAO {
 
     @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
     public List<TechnologyInfo.Table> getTableInfosByDB(@Param("guid") String guid, @Param("DB") String DB);
+
+    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    public List<String> getDBNamesV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("<script>select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and tableinfo.dbname like '%'||#{query}||'%' </script>")
+    public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query);
+
+
+    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
+    public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guids") List<String> guids, @Param("DB") String DB);
+
+    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("<script>select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.tablename like '%'||#{query}||'%'</script>")
+    public long getTableCountV2(@Param("guids") List<String> guids, @Param("query") String query);
+
+    @Select("select guid from category where categorytype=#{categoryType} and level = 1")
+    public List<String> getTopCategoryGuid(int categoryType);
 }

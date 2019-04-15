@@ -1,11 +1,49 @@
+-- ----------------------------
+-- Table structure for apigroup
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."apigroup";
+CREATE TABLE "public"."apigroup" (
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "parentguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+)
+;
+
+-- ----------------------------
+-- Table structure for apiinfo
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."apiinfo";
+CREATE TABLE "public"."apiinfo" (
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tableguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "dbguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "maxrownumber" float8 DEFAULT NULL,
+  "fields" json DEFAULT NULL,
+  "version" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "returntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "path" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "updater" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "groupguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "star" int2 DEFAULT NULL,
+  "publish" int2 DEFAULT NULL
+)
+;
 
 -- ----------------------------
 -- Table structure for business2table
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business2table";
 CREATE TABLE "public"."business2table" (
-  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -14,9 +52,10 @@ CREATE TABLE "public"."business2table" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_relation";
 CREATE TABLE "public"."business_relation" (
-  "categoryguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "relationshipguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "businessid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "categoryguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "relationshipguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -25,25 +64,26 @@ CREATE TABLE "public"."business_relation" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."businessinfo";
 CREATE TABLE "public"."businessinfo" (
-  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "departmentid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "module" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "owner" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "manager" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "maintainer" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "dataassets" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "businesslastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "businessoperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "technicallastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "technicaloperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "departmentid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "module" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "owner" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "manager" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "maintainer" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dataassets" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "businesslastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "businessoperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "technicallastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "technicaloperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "technicalstatus" int2 DEFAULT NULL,
   "businessstatus" int2 DEFAULT NULL,
   "submitter" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "ticketnumber" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "submissiontime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -70,7 +110,7 @@ CREATE TABLE "public"."category" (
 DROP TABLE IF EXISTS "public"."module";
 CREATE TABLE "public"."module" (
   "moduleid" int4 NOT NULL DEFAULT NULL,
-  "modulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "modulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "type" int4 DEFAULT NULL
 )
 ;
@@ -83,10 +123,10 @@ COMMENT ON COLUMN "public"."module"."type" IS '模块类型';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."privilege";
 CREATE TABLE "public"."privilege" (
-  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "privilegename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "privilegename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "edit" int2 DEFAULT NULL,
   "delete" int2 DEFAULT NULL
 )
@@ -103,7 +143,7 @@ COMMENT ON COLUMN "public"."privilege"."delete" IS '是否可删除';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."privilege2module";
 CREATE TABLE "public"."privilege2module" (
-  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "moduleid" int4 NOT NULL DEFAULT NULL
 )
 ;
@@ -113,9 +153,9 @@ CREATE TABLE "public"."privilege2module" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_blob_triggers";
 CREATE TABLE "public"."qrtz_blob_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "blob_data" bytea DEFAULT NULL
 )
 ;
@@ -125,8 +165,8 @@ CREATE TABLE "public"."qrtz_blob_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_calendars";
 CREATE TABLE "public"."qrtz_calendars" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "calendar" bytea NOT NULL DEFAULT NULL
 )
 ;
@@ -136,11 +176,11 @@ CREATE TABLE "public"."qrtz_calendars" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_cron_triggers";
 CREATE TABLE "public"."qrtz_cron_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "cron_expression" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "time_zone_id" varchar(80) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "cron_expression" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "time_zone_id" varchar(80) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -149,17 +189,17 @@ CREATE TABLE "public"."qrtz_cron_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_fired_triggers";
 CREATE TABLE "public"."qrtz_fired_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "entry_id" varchar(95) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "entry_id" varchar(95) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "fired_time" int8 NOT NULL DEFAULT NULL,
   "sched_time" int8 NOT NULL DEFAULT NULL,
   "priority" int4 NOT NULL DEFAULT NULL,
-  "state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "job_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "job_group" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "is_nonconcurrent" bool DEFAULT NULL,
   "requests_recovery" bool DEFAULT NULL
 )
@@ -170,11 +210,11 @@ CREATE TABLE "public"."qrtz_fired_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_job_details";
 CREATE TABLE "public"."qrtz_job_details" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "job_class_name" varchar(250) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "job_class_name" varchar(250) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "is_durable" bool NOT NULL DEFAULT NULL,
   "is_nonconcurrent" bool NOT NULL DEFAULT NULL,
   "is_update_data" bool NOT NULL DEFAULT NULL,
@@ -188,8 +228,8 @@ CREATE TABLE "public"."qrtz_job_details" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_locks";
 CREATE TABLE "public"."qrtz_locks" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "lock_name" varchar(40) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "lock_name" varchar(40) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -198,8 +238,8 @@ CREATE TABLE "public"."qrtz_locks" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_paused_trigger_grps";
 CREATE TABLE "public"."qrtz_paused_trigger_grps" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -208,8 +248,8 @@ CREATE TABLE "public"."qrtz_paused_trigger_grps" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_scheduler_state";
 CREATE TABLE "public"."qrtz_scheduler_state" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "last_checkin_time" int8 NOT NULL DEFAULT NULL,
   "checkin_interval" int8 NOT NULL DEFAULT NULL
 )
@@ -220,9 +260,9 @@ CREATE TABLE "public"."qrtz_scheduler_state" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_simple_triggers";
 CREATE TABLE "public"."qrtz_simple_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "repeat_count" int8 NOT NULL DEFAULT NULL,
   "repeat_interval" int8 NOT NULL DEFAULT NULL,
   "times_triggered" int8 NOT NULL DEFAULT NULL
@@ -234,18 +274,18 @@ CREATE TABLE "public"."qrtz_simple_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_simprop_triggers";
 CREATE TABLE "public"."qrtz_simprop_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "str_prop_1" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "str_prop_2" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "str_prop_3" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "str_prop_1" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "str_prop_2" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "str_prop_3" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "int_prop_1" int4 DEFAULT NULL,
   "int_prop_2" int4 DEFAULT NULL,
   "long_prop_1" int8 DEFAULT NULL,
   "long_prop_2" int8 DEFAULT NULL,
-  "dec_prop_1" numeric(13,4) DEFAULT NULL,
-  "dec_prop_2" numeric(13,4) DEFAULT NULL,
+  "dec_prop_1" numeric(13,4) DEFAULT NULL::numeric,
+  "dec_prop_2" numeric(13,4) DEFAULT NULL::numeric,
   "bool_prop_1" bool DEFAULT NULL,
   "bool_prop_2" bool DEFAULT NULL
 )
@@ -256,20 +296,20 @@ CREATE TABLE "public"."qrtz_simprop_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_triggers";
 CREATE TABLE "public"."qrtz_triggers" (
-  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "next_fire_time" int8 DEFAULT NULL,
   "prev_fire_time" int8 DEFAULT NULL,
   "priority" int4 DEFAULT NULL,
-  "trigger_state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "trigger_type" varchar(8) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "trigger_state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_type" varchar(8) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "start_time" int8 NOT NULL DEFAULT NULL,
   "end_time" int8 DEFAULT NULL,
-  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "misfire_instr" int2 DEFAULT NULL,
   "job_data" bytea DEFAULT NULL
 )
@@ -280,17 +320,32 @@ CREATE TABLE "public"."qrtz_triggers" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report";
 CREATE TABLE "public"."report" (
-  "reportid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "reportname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "reportid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "reportname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "orangealerts" int8 DEFAULT NULL,
   "redalerts" int8 DEFAULT NULL,
-  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "buildtype" int4 DEFAULT NULL,
-  "reportproducedate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "templateid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "reportproducedate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "templateid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "alert" int2 DEFAULT NULL
+)
+;
+
+-- ----------------------------
+-- Table structure for report_error
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."report_error";
+CREATE TABLE "public"."report_error" (
+  "errorid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "templateid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "reportid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "ruleid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "content" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "retrycount" int2 DEFAULT NULL
 )
 ;
 
@@ -304,13 +359,13 @@ CREATE TABLE "public"."report_userrule" (
   "reportrulestatus" int2 DEFAULT NULL,
   "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
   "ruletype" int4 DEFAULT NULL,
-  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "rulechecktype" int4 DEFAULT NULL,
   "rulecheckexpression" int4 DEFAULT NULL,
-  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "refvalue" float8 DEFAULT NULL,
   "templateruleid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "generatetime" float8 DEFAULT NULL
@@ -323,7 +378,7 @@ CREATE TABLE "public"."report_userrule" (
 DROP TABLE IF EXISTS "public"."report_userrule2threshold";
 CREATE TABLE "public"."report_userrule2threshold" (
   "thresholdvalue" float8 NOT NULL DEFAULT NULL,
-  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -332,13 +387,13 @@ CREATE TABLE "public"."report_userrule2threshold" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."role";
 CREATE TABLE "public"."role" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "rolename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "updatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "rolename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "updatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "status" int2 DEFAULT NULL,
-  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "disable" int2 DEFAULT NULL,
   "delete" int2 DEFAULT NULL,
   "edit" int2 DEFAULT NULL
@@ -360,8 +415,8 @@ COMMENT ON COLUMN "public"."role"."edit" IS '是否可编辑';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."role2category";
 CREATE TABLE "public"."role2category" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "categoryid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "categoryid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "operation" int2 DEFAULT NULL
 )
 ;
@@ -402,9 +457,9 @@ CREATE TABLE "public"."rule2datatype" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."statistical";
 CREATE TABLE "public"."statistical" (
-  "statisticalid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "statisticalid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "date" int8 DEFAULT NULL,
-  "statistical" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "statistical" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "statisticaltypeid" int4 DEFAULT NULL
 )
 ;
@@ -415,7 +470,7 @@ CREATE TABLE "public"."statistical" (
 DROP TABLE IF EXISTS "public"."statisticaltype";
 CREATE TABLE "public"."statisticaltype" (
   "statisticaltypeid" int4 NOT NULL DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -425,10 +480,10 @@ CREATE TABLE "public"."statisticaltype" (
 DROP TABLE IF EXISTS "public"."systemrule";
 CREATE TABLE "public"."systemrule" (
   "ruleid" int2 NOT NULL DEFAULT NULL,
-  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "ruletype" int2 DEFAULT NULL,
-  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -443,29 +498,14 @@ CREATE TABLE "public"."table2tag" (
 ;
 
 -- ----------------------------
--- Table structure for table_category
--- ----------------------------
-DROP TABLE IF EXISTS "public"."table_category";
-CREATE TABLE "public"."table_category" (
-  "guid" text COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "description" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "name" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "upbrothercategoryguid" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "downbrothercategoryguid" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "parentcategoryguid" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "qualifiedname" text COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "categorytype" int2 DEFAULT NULL
-)
-;
-
--- ----------------------------
 -- Table structure for table_relation
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table_relation";
 CREATE TABLE "public"."table_relation" (
   "relationshipguid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
   "categoryguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "tableguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
+  "tableguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -474,11 +514,13 @@ CREATE TABLE "public"."table_relation" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."tableinfo";
 CREATE TABLE "public"."tableinfo" (
-  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "tablename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "dbname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "status" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "tablename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dbname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "status" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dataowner" json DEFAULT NULL,
+  "databaseguid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -488,7 +530,7 @@ CREATE TABLE "public"."tableinfo" (
 DROP TABLE IF EXISTS "public"."tag";
 CREATE TABLE "public"."tag" (
   "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 
@@ -500,15 +542,16 @@ CREATE TABLE "public"."template" (
   "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
   "tableid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "buildtype" int2 DEFAULT NULL,
-  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "starttime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "templatestatus" int2 DEFAULT NULL,
-  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "tablerulesnum" int2 DEFAULT NULL,
   "columnrulesnum" int2 DEFAULT NULL,
-  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "finishedpercent" numeric(53,2) DEFAULT NULL,
-  "shutdown" bool DEFAULT NULL
+  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "finishedpercent" numeric(53,2) DEFAULT NULL::numeric,
+  "shutdown" bool DEFAULT NULL,
+  "generatetime" float8 DEFAULT NULL
 )
 ;
 
@@ -518,7 +561,7 @@ CREATE TABLE "public"."template" (
 DROP TABLE IF EXISTS "public"."template2qrtz_job";
 CREATE TABLE "public"."template2qrtz_job" (
   "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "qrtz_job" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "qrtz_job" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -528,13 +571,13 @@ CREATE TABLE "public"."template2qrtz_job" (
 DROP TABLE IF EXISTS "public"."template_userrule";
 CREATE TABLE "public"."template_userrule" (
   "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "rulechecktype" int2 DEFAULT NULL,
   "rulecheckexpression" int2 DEFAULT NULL,
-  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "templateid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "datatype" int2 DEFAULT NULL,
   "ruletype" int2 DEFAULT NULL,
@@ -549,7 +592,7 @@ CREATE TABLE "public"."template_userrule" (
 DROP TABLE IF EXISTS "public"."template_userrule2threshold";
 CREATE TABLE "public"."template_userrule2threshold" (
   "thresholdvalue" float8 NOT NULL DEFAULT NULL,
-  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
+  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 
@@ -558,16 +601,26 @@ CREATE TABLE "public"."template_userrule2threshold" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."users";
 CREATE TABLE "public"."users" (
-  "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "roleid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
 COMMENT ON COLUMN "public"."users"."username" IS '用户名';
 COMMENT ON COLUMN "public"."users"."account" IS '用户账号';
 COMMENT ON COLUMN "public"."users"."roleid" IS '用户角色id';
+
+-- ----------------------------
+-- Primary Key structure for table apigroup
+-- ----------------------------
+ALTER TABLE "public"."apigroup" ADD CONSTRAINT "apigroup_pkey" PRIMARY KEY ("guid");
+
+-- ----------------------------
+-- Primary Key structure for table apiinfo
+-- ----------------------------
+ALTER TABLE "public"."apiinfo" ADD CONSTRAINT "apiinfo_pkey" PRIMARY KEY ("guid");
 
 -- ----------------------------
 -- Primary Key structure for table business2table
@@ -761,56 +814,6 @@ CREATE INDEX "idx_qrtz_t_state" ON "public"."qrtz_triggers" USING btree (
 );
 
 -- ----------------------------
--- Records of table
--- ----------------------------
-INSERT INTO "public"."statisticaltype" VALUES (1, '数据库总量');
-INSERT INTO "public"."statisticaltype" VALUES (2, '数据表总量');
-INSERT INTO "public"."statisticaltype" VALUES (3, '业务对象总量');
-INSERT INTO "public"."statisticaltype" VALUES (4, '业务对象已补充');
-INSERT INTO "public"."statisticaltype" VALUES (5, '业务对象未补充');
-INSERT INTO "public"."role" VALUES ('2', '访客', '访客', '2', NULL, 1, NULL, 0, 0, 0);
-INSERT INTO "public"."role" VALUES ('4', '业务', '业务数据负责人', '4', NULL, 1, NULL, 1, 0, 1);
-INSERT INTO "public"."role" VALUES ('5', '技术', '技术数据负责人', '5', NULL, 1, NULL, 1, 0, 1);
-INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '1', NULL, 1, NULL, 0, 0, 0);
-INSERT INTO "public"."role" VALUES ('3', '管理员', '管理员', '3', NULL, 1, NULL, 1, 0, 1);
-INSERT INTO "public"."module" VALUES (5, '业务对象管理', 1);
-INSERT INTO "public"."module" VALUES (4, '业务信息操作', 0);
-INSERT INTO "public"."module" VALUES (1, '技术数据', 1);
-INSERT INTO "public"."module" VALUES (2, '业务对象', 1);
-INSERT INTO "public"."module" VALUES (6, '权限', 1);
-INSERT INTO "public"."module" VALUES (3, '技术信息', 0);
-INSERT INTO "public"."module" VALUES (7, '元数据管理', 1);
-INSERT INTO "public"."privilege" VALUES ('2', '访客', '访客', NULL, 0, 0);
-INSERT INTO "public"."privilege" VALUES ('1', 'Admin', '平台管理员', NULL, 0, 0);
-INSERT INTO "public"."privilege" VALUES ('3', '管理', '技术权限', NULL, 1, 0);
-INSERT INTO "public"."privilege" VALUES ('4', '业务', '业务权限', NULL, 1, 0);
-INSERT INTO "public"."privilege" VALUES ('5', '技术', '业务对象管理', NULL, 1, 0);
-INSERT INTO "public"."privilege2module" VALUES ('1', 1);
-INSERT INTO "public"."privilege2module" VALUES ('1', 2);
-INSERT INTO "public"."privilege2module" VALUES ('1', 3);
-INSERT INTO "public"."privilege2module" VALUES ('1', 4);
-INSERT INTO "public"."privilege2module" VALUES ('1', 5);
-INSERT INTO "public"."privilege2module" VALUES ('1', 6);
-INSERT INTO "public"."privilege2module" VALUES ('1', 7);
-INSERT INTO "public"."privilege2module" VALUES ('3', 2);
-INSERT INTO "public"."privilege2module" VALUES ('3', 1);
-INSERT INTO "public"."privilege2module" VALUES ('3', 5);
-INSERT INTO "public"."privilege2module" VALUES ('3', 6);
-INSERT INTO "public"."privilege2module" VALUES ('3', 3);
-INSERT INTO "public"."privilege2module" VALUES ('3', 4);
-INSERT INTO "public"."privilege2module" VALUES ('3', 7);
-INSERT INTO "public"."privilege2module" VALUES ('4', 2);
-INSERT INTO "public"."privilege2module" VALUES ('4', 4);
-INSERT INTO "public"."privilege2module" VALUES ('5', 1);
-INSERT INTO "public"."privilege2module" VALUES ('5', 3);
-INSERT INTO "public"."privilege2module" VALUES ('5', 5);
-INSERT INTO "public"."privilege2module" VALUES ('5', 7);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('1','贴源层',NUll,'2',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('2','基础层','1','3',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('3','规范层','2','4',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('4','通过层','3','5',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('5','应用层','4',NULL,0,1);
--- ----------------------------
 -- Primary Key structure for table qrtz_triggers
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_pkey" PRIMARY KEY ("sched_name", "trigger_name", "trigger_group");
@@ -819,6 +822,11 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_pkey" PRIMARY
 -- Primary Key structure for table report
 -- ----------------------------
 ALTER TABLE "public"."report" ADD CONSTRAINT "report_pkey" PRIMARY KEY ("reportid");
+
+-- ----------------------------
+-- Primary Key structure for table report_error
+-- ----------------------------
+ALTER TABLE "public"."report_error" ADD CONSTRAINT "report_error_pkey" PRIMARY KEY ("errorid");
 
 -- ----------------------------
 -- Primary Key structure for table report_userrule
@@ -874,11 +882,6 @@ ALTER TABLE "public"."systemrule" ADD CONSTRAINT "rule_pkey" PRIMARY KEY ("rulei
 -- Primary Key structure for table table2tag
 -- ----------------------------
 ALTER TABLE "public"."table2tag" ADD CONSTRAINT "tagid2tableid_pkey" PRIMARY KEY ("tagid", "tableguid");
-
--- ----------------------------
--- Primary Key structure for table table_category
--- ----------------------------
-ALTER TABLE "public"."table_category" ADD CONSTRAINT "category_copy1_pkey" PRIMARY KEY ("guid");
 
 -- ----------------------------
 -- Primary Key structure for table table_relation
@@ -945,4 +948,64 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('1','贴源层',NUll,'2',0,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('2','基础层','1','3',0,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('3','规范层','2','4',0,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('4','通过层','3','5',0,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('5','应用层','4',NULL,0,1);
+INSERT INTO "public"."privilege" VALUES ('2', '访客', '访客', NULL, 0, 0);
+INSERT INTO "public"."privilege" VALUES ('1', 'Admin', '平台管理员', NULL, 0, 0);
+INSERT INTO "public"."privilege" VALUES ('3', '管理', '技术权限', NULL, 0, 0);
+INSERT INTO "public"."privilege" VALUES ('4', '业务', '业务权限', NULL, 0, 0);
+INSERT INTO "public"."privilege" VALUES ('5', '技术', '业务对象管理', NULL, 0, 0);
+INSERT INTO "public"."statisticaltype" VALUES (1, '数据库总量');
+INSERT INTO "public"."statisticaltype" VALUES (2, '数据表总量');
+INSERT INTO "public"."statisticaltype" VALUES (3, '业务对象总量');
+INSERT INTO "public"."statisticaltype" VALUES (4, '业务对象已补充');
+INSERT INTO "public"."statisticaltype" VALUES (5, '业务对象未补充');
+INSERT INTO "public"."role" VALUES ('2', '访客', '访客', '2', NULL, 1, NULL, 0, 0, 0);
+INSERT INTO "public"."role" VALUES ('4', '业务', '业务数据负责人', '4', NULL, 1, NULL, 1, 0, 0);
+INSERT INTO "public"."role" VALUES ('5', '技术', '技术数据负责人', '5', NULL, 1, NULL, 1, 0, 0);
+INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '1', NULL, 1, NULL, 0, 0, 0);
+INSERT INTO "public"."role" VALUES ('3', '管理员', '管理员', '3', NULL, 1, NULL, 1, 0, 0);
+INSERT INTO "public"."module" VALUES (1, '技术信息', 1);
+INSERT INTO "public"."module" VALUES (2, '业务信息', 1);
+INSERT INTO "public"."module" VALUES (5, '业务对象管理', 1);
+INSERT INTO "public"."module" VALUES (6, '权限', 1);
+INSERT INTO "public"."module" VALUES (7, '元数据管理', 1);
+INSERT INTO "public"."module" VALUES (3, '管理技术目录', 0);
+INSERT INTO "public"."module" VALUES (8, '编辑技术信息', 0);
+INSERT INTO "public"."module" VALUES (4, '管理业务目录', 0);
+INSERT INTO "public"."module" VALUES (9, '编辑业务目录', 0);
+INSERT INTO "public"."module" VALUES (10, 'API信息', 1);
+INSERT INTO "public"."privilege2module" VALUES ('1', 1);
+INSERT INTO "public"."privilege2module" VALUES ('1', 2);
+INSERT INTO "public"."privilege2module" VALUES ('1', 3);
+INSERT INTO "public"."privilege2module" VALUES ('1', 4);
+INSERT INTO "public"."privilege2module" VALUES ('1', 5);
+INSERT INTO "public"."privilege2module" VALUES ('1', 6);
+INSERT INTO "public"."privilege2module" VALUES ('1', 7);
+INSERT INTO "public"."privilege2module" VALUES ('1', 8);
+INSERT INTO "public"."privilege2module" VALUES ('1', 9);
+INSERT INTO "public"."privilege2module" VALUES ('1', 10);
+INSERT INTO "public"."privilege2module" VALUES ('2', 2);
+INSERT INTO "public"."privilege2module" VALUES ('3', 1);
+INSERT INTO "public"."privilege2module" VALUES ('3', 2);
+INSERT INTO "public"."privilege2module" VALUES ('3', 3);
+INSERT INTO "public"."privilege2module" VALUES ('3', 4);
+INSERT INTO "public"."privilege2module" VALUES ('3', 5);
+INSERT INTO "public"."privilege2module" VALUES ('3', 7);
+INSERT INTO "public"."privilege2module" VALUES ('3', 8);
+INSERT INTO "public"."privilege2module" VALUES ('3', 9);
+INSERT INTO "public"."privilege2module" VALUES ('3', 10);
+INSERT INTO "public"."privilege2module" VALUES ('4', 2);
+INSERT INTO "public"."privilege2module" VALUES ('4', 4);
+INSERT INTO "public"."privilege2module" VALUES ('4', 9);
+INSERT INTO "public"."privilege2module" VALUES ('5', 1);
+INSERT INTO "public"."privilege2module" VALUES ('5', 2);
+INSERT INTO "public"."privilege2module" VALUES ('5', 3);
+INSERT INTO "public"."privilege2module" VALUES ('5', 5);
+INSERT INTO "public"."privilege2module" VALUES ('5', 7);
+INSERT INTO "public"."privilege2module" VALUES ('5', 8);
+INSERT INTO "public"."privilege2module" VALUES ('5', 10);
 

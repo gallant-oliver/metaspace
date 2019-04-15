@@ -3,7 +3,9 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.result.AddRelationTable;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -22,11 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
-import java.util.List;
-
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Path("technical")
 @Singleton
@@ -41,6 +42,7 @@ public class TechnicalREST {
     @Autowired
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
+
     /**
      * 添加关联表时搜库
      *
@@ -50,9 +52,9 @@ public class TechnicalREST {
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-            PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResult(parameters,categoryId);
-            return pageResult;
+    public PageResult<Database> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
+        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
+        return pageResult;
     }
 
     /**
@@ -64,8 +66,8 @@ public class TechnicalREST {
     @Path("/search/table/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByQuery(Parameters parameters,@PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Table> pageResult = searchService.getTechnicalTablePageResult(parameters,categoryId);
+    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId);
         return pageResult;
     }
 
@@ -80,7 +82,7 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -141,6 +143,7 @@ public class TechnicalREST {
         }
         return Response.status(200).entity("success").build();
     }
+
     /**
      * 修改目录信息 V2
      *
@@ -235,7 +238,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
             }
-            dataManageService.removeRelationAssignmentFromTables(relationshipList);
+            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -269,5 +272,42 @@ public class TechnicalREST {
         }
     }
 
+
+    @POST
+    @Path("/owner/table/")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addOwners(TableOwner tableOwner) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.addOwners()");
+            }
+            dataManageService.addTableOwner(tableOwner);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List getOrganization() {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganization()");
+            }
+            return dataManageService.getOrganization();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
 }

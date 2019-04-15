@@ -72,9 +72,14 @@ public interface BusinessDAO {
     @Select("select * from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
+<<<<<<< HEAD
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId)values(#{relationshipGuid},#{categoryGuid},#{businessId})")
     public int addRelation(BusinessRelationEntity entity) throws SQLException;
+=======
+    @Select("select trustTable from businessInfo where businessId=#{businessId}")
+    public String getTrustTableGuid(@Param("businessId")String businessId);
+>>>>>>> feature/metaspace-1.4
 
     //根据业务信息名称查询列表
     @Select({"<script>",
@@ -190,13 +195,22 @@ public interface BusinessDAO {
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
 
     //添加业务信息与表的关联
-    @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
-    public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
+    @Insert({" <script>",
+            " insert into business2table(businessId, tableGuid)values",
+            " <foreach collection='list' item='tableGuid' index='index'  separator=','>",
+             " (#{businessId},#{tableGuid})",
+             " </foreach>",
+            " </script>"})
+    public int insertTableRelation(@Param("businessId")String businessId, @Param("list")List<String> list);
 
     @Delete("delete from businessInfo where businessId=#{businessId}")
     public int deleteBusinessById(@Param("businessId")String businessId);
 
+    @Update("update businessInfo set trustTable=#{trustTable} where businessId=#{businessId}")
+    public int setBusinessTrustTable(@Param("businessId")String businessId, @Param("trustTable")String trustTable);
+
     @Delete("delete from business_relation where businessId=#{businessId}")
     public int deleteRelationById(@Param("businessId")String businessId);
+
 
 }

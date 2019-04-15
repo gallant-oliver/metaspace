@@ -4,17 +4,23 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
@@ -25,6 +31,7 @@ import java.util.*;
 
 @Service
 public class RoleService {
+    private static final Logger LOG        = LoggerFactory.getLogger(RoleService.class);
     @Autowired
     private RoleDAO roleDAO;
     @Autowired
@@ -33,6 +40,10 @@ public class RoleService {
     private RoleService roleService;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private CategoryDAO categoryDAO;
+    @Autowired
+    private UserDAO userDAO;
 
     @Bean(name = "getRoleService")
     public RoleService getRoleService() {
@@ -193,8 +204,8 @@ public class RoleService {
         CategoryRelationUtils.cleanInvalidBrother(resultList);
         return resultList;
     }
-
-    private void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
+    @Transactional
+    public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
         List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             otherCategory.setShow(false);
@@ -275,26 +286,15 @@ public class RoleService {
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if (businessCategories != null) {
-            if ((moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
-                }
-            } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
-                }
+            for (RoleModulesCategories.Category businessCategory : businessCategories) {
+                roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
             }
         }
-        if (technicalCategories != null) {
-            if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
-                }
 
-            } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
-                }
+        //
+        if (technicalCategories != null) {
+            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
+                roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
             }
         }
         return "success";
@@ -315,6 +315,8 @@ public class RoleService {
 
     /**
      * 获取用户目录树，有权限首级目录不能加关联
+     * 1.4新权限 有管理目录权限的可以编辑目录和添加关联，其他人只能看
+     * 业务目录的，有管理目录权限的编辑目录，有编辑业务信息权限的可以创建业务对象和编辑业务对象
      *
      * @param userRoleId
      * @param categorytype
@@ -332,16 +334,175 @@ public class RoleService {
                 List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
-                //得到用户的带权限的目录树
-                setMap(userCategorys, userChildCategorys, 2, true);
-                setMap(userCategorys, userParentCategorys, 0, false);
-                setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                //按角色方案
+                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
+                List<Integer> modules = new ArrayList<>();
+                for (UserInfo.Module module : moduleByRoleId) {
+                    modules.add(module.getModuleId());
+                }
+                //技术目录
+                switch (categorytype) {
+                    //技术目录
+                    case 0: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
+                            //按勾选的目录
+                            setMap(userCategorys, userChildCategorys, 2, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                        } else {
+                            setMap(userCategorys, userChildCategorys, 0, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
+                        }
+                        break;
+                    }
+                    //业务目录
+                    case 1: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            setMap(userCategorys, userChildCategorys, 2, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                            setMap(userCategorys, userChildCategorys, 3, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 4, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            setMap(userCategorys, userChildCategorys, 5, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 5, true);
+                        } else {
+                            setMap(userCategorys, userChildCategorys, 0, true);
+                            setMap(userCategorys, userParentCategorys, 0, false);
+                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
+                        }
+                        break;
+                    }
+                }
+
             }
         }
 
         Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
         ArrayList<RoleModulesCategories.Category> categories = new ArrayList<>(valueCollection);
         setOtherCategory(categorytype, categories);
+
         return categories;
     }
+
+    @Transactional
+    public List<CategoryPrivilege> getUserCategory2(String userRoleId, int categorytype) {
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+            addPrivilege(userCategorys, allCategorys,privilege);
+        }else {
+            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
+            if (userBusinessCategories.size() > 0) {
+                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
+                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
+                //按角色方案
+                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
+                List<Integer> modules = new ArrayList<>();
+                for (UserInfo.Module module : moduleByRoleId) {
+                    modules.add(module.getModuleId());
+                }
+                CategoryPrivilege.Privilege childPrivilege=null;
+                CategoryPrivilege.Privilege parentPrivilege=null;
+                CategoryPrivilege.Privilege ownerPrivilege=null;
+                //技术目录
+                switch (categorytype) {
+                    //技术目录
+                    case 0: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())&& modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                            //按勾选的目录
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,false,true,true,true);
+
+                        } else if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())){
+                             childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,false,true);
+                             parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                             ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,false,true,false,true);
+                        } else if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())){
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,true,false);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                        }
+                        break;
+                    }
+                    //业务目录
+                    case 1: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,false,true,false,true,true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,false,true,false,true,true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,false);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false,true,false,false,false,false,false,false,false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false,false,false,false,false,false,false,false,false);
+                        }
+                        break;
+                    }
+                }
+                addPrivilege(userCategorys, userChildCategorys,childPrivilege,categorytype);
+                addPrivilege(userCategorys, userParentCategorys,parentPrivilege,categorytype);
+                addPrivilege(userCategorys, userPrivilegeCategorys,ownerPrivilege,categorytype);
+            }
+        }
+        addOtherCategory(categorytype, userCategorys);
+        return userCategorys;
+    }
+
+    private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys,CategoryPrivilege.Privilege privilege,int categorytype) {
+        String[] systemCategoryGuids={"1","2","3","4","5"};
+        List<String> lists =Arrays.asList(systemCategoryGuids);
+        for (RoleModulesCategories.Category category : allCategorys) {
+            CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
+            //系统系统目录不允许删除和编辑
+            if (lists.contains(category.getGuid())){
+                privilegeinfo.setDelete(false);
+                privilegeinfo.setEdit(false);
+            }
+            //技术目录一级目录不允许删关联
+            if(categorytype==0&&category.getLevel()==1){
+                privilegeinfo.setDeleteRelation(false);
+            }
+            categoryPrivilege.setPrivilege(privilegeinfo);
+            userCategorys.add(categoryPrivilege);
+        }
+    }
+
+    @Transactional
+    public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList) {
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype);
+        ArrayList<CategoryPrivilege> others = new ArrayList<>();
+        for (RoleModulesCategories.Category otherCategory : otherCategorys) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true,false,false,false,false,false,false,false,false);
+            categoryPrivilege.setPrivilege(privilege);
+            others.add(categoryPrivilege);
+        }
+        resultList.addAll(others);
+    }
+
+
 }

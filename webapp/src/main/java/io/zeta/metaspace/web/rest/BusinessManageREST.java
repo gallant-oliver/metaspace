@@ -25,9 +25,13 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.service.BusinessService;
@@ -122,7 +126,7 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{businessId}")
-    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, List<String> tableIdList) throws AtlasBaseException {
+    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
         try {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
@@ -140,7 +144,7 @@ public class BusinessManageREST {
     @Path("/technical/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
+    public List<CategoryPrivilege> getAllCategory() throws AtlasBaseException {
         try {
             return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
@@ -264,7 +268,7 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableInfoById(guid);
+        return businessService.getTableInfoById(guid);
     }
 
     @DELETE
@@ -278,6 +282,113 @@ public class BusinessManageREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 添加权限字段
+     * @param privilege
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 删除权限字段
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response delColumnPrivilege(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            businessService.deleteColumnPrivilege(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @PUT
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateColumnPrivilege(@PathParam("privilegeId")Integer guid, ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            privilege.setGuid(guid);
+            businessService.updateColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnPrivilege> getColumnPrivilegeList() throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeList();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    @GET
+    @Path("/privilege/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<String> getColumnPrivilegeValue(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeValue(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * 添加权限字段关联
+     * @param relation
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/relation/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilegeRelation(ColumnPrivilegeRelation relation) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilegeRelation(relation);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
         return Response.status(200).entity("success").build();
     }

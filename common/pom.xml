@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.0.0</version>
+        <version>1.4.0</version>
     </parent>
     <artifactId>atlas-common</artifactId>
     <description>Apache Atlas Common</description>
@@ -110,21 +110,15 @@
             <artifactId>atlas-intg</artifactId>
         </dependency>
 
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>4.3.17.RELEASE</version>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
-            <version>4.3.17.RELEASE</version>
+            <version>${spring.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
-            <version>4.3.17.RELEASE</version>
+            <version>${spring.version}</version>
         </dependency>
 
         <dependency>
