@@ -38,7 +38,7 @@ import java.sql.SQLException;
  * @author sunhaoning
  * @date 2019/4/8 16:54
  */
-public class ImpalaJdbcUtils {
+public class ImpalaJdbcUtils extends HiveJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
     private static String driverClassName = "com.cloudera.impala.jdbc41.Driver";
     private static String impalaUrl = "";
