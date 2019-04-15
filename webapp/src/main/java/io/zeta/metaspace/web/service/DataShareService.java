@@ -316,10 +316,38 @@ public class DataShareService {
         }
     }
 
-    public int updatePublishStatus(List<String> apiGuid, Integer status) throws AtlasBaseException {
+    public int starAPI(String apiGuid) throws AtlasBaseException {
         try {
-            Boolean publish = (0==status)?false:true;
-            return shareDAO.updatePublishStatus(apiGuid, publish);
+            String userId = AdminUtils.getUserData().getUserId();
+            return shareDAO.insertAPIStar(userId, apiGuid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
+        }
+    }
+
+    public int unStarAPI(String apiGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            return shareDAO.deleteAPIStar(userId, apiGuid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
+        }
+    }
+
+    public int publishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            return shareDAO.updatePublishStatus(apiGuid, true);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
