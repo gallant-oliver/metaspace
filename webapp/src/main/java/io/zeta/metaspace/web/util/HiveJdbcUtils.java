@@ -128,10 +128,16 @@ public class HiveJdbcUtils {
         String location = location(db, tableName);
         if (location != null) {
             try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
-                ContentSummary contentSummary = fs.getContentSummary(new Path(location));
-                long numFiles = contentSummary.getFileCount();
-                long totalSize = contentSummary.getLength();
-                return new TableMetadata(numFiles, Long.valueOf(totalSize));
+                Path path = new Path(location);
+                if(fs.exists(path)) {
+                    ContentSummary contentSummary = fs.getContentSummary(path);
+
+                    long numFiles = contentSummary.getFileCount();
+                    long totalSize = contentSummary.getLength();
+                    return new TableMetadata(numFiles, Long.valueOf(totalSize));
+                } else {
+                    return new TableMetadata();
+                }
             }catch (Exception e){
                 LOG.warn(e.getMessage(),e);
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");

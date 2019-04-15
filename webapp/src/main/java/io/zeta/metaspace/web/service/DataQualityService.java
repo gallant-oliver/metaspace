@@ -23,14 +23,22 @@ package io.zeta.metaspace.web.service;
  */
 
 import io.zeta.metaspace.model.dataquality.CheckExpression;
+import io.zeta.metaspace.model.dataquality.DataType;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.dataquality.Report;
+import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.RuleType;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.dataquality.TemplateStatus;
 import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.dataquality.RuleStatus;
+import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.ReportResult;
+import io.zeta.metaspace.model.result.TableColumnRules;
+import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
@@ -75,6 +83,8 @@ public class DataQualityService {
     DataQualityDAO qualityDao;
     @Autowired
     QuartzManager quartzManager;
+    @Autowired
+    private MetaDataService metadataService;
 
     @Transactional
     public void addTemplate(Template template) throws AtlasBaseException {
@@ -82,20 +92,23 @@ public class DataQualityService {
             String templateName = template.getTemplateName();
             int sameNameCount = qualityDao.countTemplateName(templateName);
             if(sameNameCount > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复模板名称");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板名称重复");
             } else {
                 String templateId = UUID.randomUUID().toString();
                 template.setTemplateId(templateId);
                 addRulesByTemlpateId(template);
+                template.setGenerateTime(System.currentTimeMillis());
                 //template
                 qualityDao.insertTemplate(template);
+                qualityDao.updateFinishedPercent(templateId, 0F);
                 //设置模板状态为【未启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
             }
-
         }  catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -107,6 +120,8 @@ public class DataQualityService {
         try {
             //template
             qualityDao.delTemplate(templateId);
+            qualityDao.deleteTemplate2QrtzByTemplateId(templateId);
+            //template2qurt
             deleteRulesByTemplateId(templateId);
             //job
             String jobName = qualityDao.getJobByTemplateId(templateId);
@@ -218,31 +233,32 @@ public class DataQualityService {
         }
     }
 
+    @Transactional
     public void startTemplate(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         try {
             if(templateStatus == TemplateStatus.NOT_RUNNING.code) {
+                addQuartzJob(templateId);
+            } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
+                qualityDao.deleteReportError(templateId);
+                String cron = qualityDao.getCronByTemplateId(templateId);
+                if(Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
+                    String jobName = qualityDao.getJobByTemplateId(templateId);
+                    String jobGroupName = JOB_GROUP_NAME + jobName;
+                    quartzManager.resumeJob(jobName, jobGroupName);
+                } else {
+                    //单次执行任务重新执行提交job
+                    addQuartzJob(templateId);
+                }
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 long currentTime = System.currentTimeMillis();
                 String currentTimeFormat = sdf.format(currentTime);
                 qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
-                String jobName = String.valueOf(currentTime);
-                String jobGroupName = JOB_GROUP_NAME + jobName;
-                String triggerName = TRIGGER_NAME + jobName;
-                String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
-                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
-                String cron = qualityDao.getCronByTemplateId(templateId);
-                quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
-                //设置模板状态为【已启用】
-                if (Objects.nonNull(cron)) {
-                    qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
-                }
-            } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
-                String jobName = qualityDao.getJobByTemplateId(templateId);
-                String jobGroupName = JOB_GROUP_NAME + jobName;
-                quartzManager.resumeJob(jobName, jobGroupName);
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            } else if(templateStatus == TemplateStatus.FINISHED.code) {
+                //单次执行任务重新执行提交job
+                addQuartzJob(templateId);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
@@ -255,11 +271,39 @@ public class DataQualityService {
         }
     }
 
+    public void addQuartzJob(String templateId) throws AtlasBaseException {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            long currentTime = System.currentTimeMillis();
+            String currentTimeFormat = sdf.format(currentTime);
+            qualityDao.updateTemplateStartTime(templateId, currentTimeFormat);
+            String jobName = String.valueOf(currentTime);
+            String jobGroupName = JOB_GROUP_NAME + jobName;
+            String triggerName = TRIGGER_NAME + jobName;
+            String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
+            String cron = qualityDao.getCronByTemplateId(templateId);
+            quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
+            //设置模板状态为【已启用】
+            qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
+            qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            /*if (Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
+                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
+                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
+            }*/
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
+        }
+    }
+
     public void stopTemplate(String templateId) throws AtlasBaseException {
         try {
             String jobName = qualityDao.getJobByTemplateId(templateId);
             String jobGroupName = JOB_GROUP_NAME + jobName;
             quartzManager.pauseJob(jobName, jobGroupName);
+            String cron = qualityDao.getCronByTemplateId(templateId);
+            if(Objects.isNull(cron) || StringUtils.isEmpty(cron)) {
+                qualityDao.deleteTemplate2QrtzByTemplateId(templateId);
+            }
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
@@ -282,7 +326,7 @@ public class DataQualityService {
                 tableData = new ArrayList<>();
                 columnData = new ArrayList<>();
                 String reportName = qualityDao.getReportName(reportId);
-                List<Report.ReportRule> reportRules = qualityDao.getReport(reportId);
+                List<Report.ReportRule> reportRules = qualityDao.getReportRuleList(reportId);
                 List<String> resultList = null;
                 for (Report.ReportRule rule : reportRules) {
                     resultList = new ArrayList<>();
@@ -340,7 +384,7 @@ public class DataQualityService {
             return zipFile;
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }
 
@@ -424,6 +468,109 @@ public class DataQualityService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw e;
+        }
+    }
+
+    public List<TemplateResult> getTemplates(String tableId) throws SQLException {
+        List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId);
+        return templateResults;
+    }
+
+    public Map getReports(String templateId, int offset, int limit) throws SQLException {
+        Map<String, Object> map = new HashMap<>();
+        List<ReportResult> reports = qualityDao.getReports(templateId, offset, limit);
+        long count = qualityDao.getCount(templateId);
+        map.put("reports",reports);
+        map.put("total",count);
+        return map;
+    }
+
+    public Report getReport(String reportId) throws SQLException, AtlasBaseException {
+        List<Report> reports = qualityDao.getReport(reportId);
+        if(reports.size()==0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该报表不存在");
+        Report report = reports.get(0);
+        List<Report.ReportRule> reportRule = qualityDao.getReportRule(reportId);
+        for (Report.ReportRule rule : reportRule) {
+            String ruleResultId = rule.getRuleId();
+            List<Double> reportThresholdValue = qualityDao.getReportThresholdValue(ruleResultId);
+            rule.setRuleCheckThreshold(reportThresholdValue);
+        }
+        report.setRules(reportRule);
+
+        return report;
+    }
+
+    public TableColumnRules getRules(String tableId, int buildType) throws SQLException, AtlasBaseException {
+        TableColumnRules tableColumnRules = new TableColumnRules();
+        List<TableColumnRules.ColumnsRule> columnsRules = new ArrayList<>();
+        List<TableColumnRules.SystemRule> tableSystemRules = qualityDao.getTableSystemRules(RuleType.TABLE.code, buildType);
+        addCheckRules(tableSystemRules);
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(tableId);
+        List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
+        Table tableInfoById = metadataService.getTableInfoById(tableId);
+        tableColumnRules.setSource(tableInfoById.getDatabaseName()+"."+tableInfoById.getTableName());
+        for (Column column : columns) {
+            TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
+            String columnName = column.getColumnName();
+            String type = column.getType();
+            columnsRule.setRuleColumnName(columnName);
+            columnsRule.setRuleColumnType(type);
+            DataType datatype = getDatatype(type);
+            List<TableColumnRules.SystemRule> columnSystemRules = qualityDao.getColumnSystemRules(RuleType.COLUMN.code, datatype.getCode(), buildType);
+            addCheckRules(columnSystemRules);
+            columnsRule.setColumnRules(columnSystemRules);
+            columnsRules.add(columnsRule);
+        }
+        tableColumnRules.setTableRules(tableSystemRules);
+        tableColumnRules.setColumnsRules(columnsRules);
+
+        return tableColumnRules;
+    }
+
+    private void addCheckRules(List<TableColumnRules.SystemRule> tableSystemRules) throws SQLException {
+        for (TableColumnRules.SystemRule tableSystemRule : tableSystemRules) {
+            int ruleId = tableSystemRule.getRuleId();
+            List<Integer> checktypes = qualityDao.getChecktypes(ruleId);
+            tableSystemRule.setRuleAllowCheckType(checktypes);
+        }
+    }
+
+    private DataType getDatatype(String type) {
+        ArrayList<String> numeric = new ArrayList<>();
+        numeric.add("tinyint");
+        numeric.add("smallint");
+        numeric.add("int");
+        numeric.add("integer");
+        numeric.add("bigint");
+        numeric.add("float");
+        numeric.add("double");
+        numeric.add("double precision");
+        numeric.add("decimal");
+        numeric.add("numeric");
+        if (numeric.contains(type))
+            return DataType.NUMERIC;
+
+        return DataType.UNNUMERIC;
+    }
+
+    public ReportError getLastReportError(String templateId) throws AtlasBaseException {
+        try {
+            Float percent = qualityDao.getFinishedPercent(templateId);
+            ReportError error = null;
+            error = qualityDao.getLastError(templateId);
+            if(Objects.isNull(error)) {
+                error = new ReportError();
+                error.setTemplateId(templateId);
+            }
+            error.setPercent(percent);
+            Integer status = getTemplateStatus(templateId);
+            if(Objects.nonNull(status)) {
+                error.setStatus(status);
+            }
+            return error;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误失败");
         }
     }
 }
