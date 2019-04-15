@@ -72,6 +72,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
@@ -945,8 +946,12 @@ public class MetaDataService {
             case HIVE:
                 AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
                 AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
+                AtomicLong startTime = hiveMetaStoreBridgeUtils.getStartTime();
+                AtomicLong endTime = hiveMetaStoreBridgeUtils.getEndTime();
                 progress = new Progress(totalTables.get(), updatedTables.get());
                 progress.setError(errorMessage);
+                progress.setStartTime(startTime.get());
+                progress.setEndTime(endTime.get());
                 break;
             case MYSQL:
             case ORACLE:
