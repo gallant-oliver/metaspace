@@ -209,7 +209,6 @@ public class MetaDataService {
                 //更新时间
                 //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
                 table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
-                System.out.println(entity.getUpdatedBy());
             } catch (Exception e) {
                 LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
             }
@@ -237,9 +236,9 @@ public class MetaDataService {
                 //表关联信息
                 List<String> relations = getRelationList(guid);
                 table.setRelations(relations);
-                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
+//                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
-                table.setCatalogAdmin(adminByTableguid);
+//                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
                 table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
