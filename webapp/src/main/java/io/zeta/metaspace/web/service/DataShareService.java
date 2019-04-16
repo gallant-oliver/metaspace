@@ -29,13 +29,8 @@ import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import javafx.concurrent.Task;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.xmlbeans.impl.jam.mutable.MPackage;
-import org.json.JSONObject;
-import org.omg.CORBA.OBJ_ADAPTER;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -316,10 +311,38 @@ public class DataShareService {
         }
     }
 
-    public int updatePublishStatus(List<String> apiGuid, Integer status) throws AtlasBaseException {
+    public int starAPI(String apiGuid) throws AtlasBaseException {
         try {
-            Boolean publish = (0==status)?false:true;
-            return shareDAO.updatePublishStatus(apiGuid, publish);
+            String userId = AdminUtils.getUserData().getUserId();
+            return shareDAO.insertAPIStar(userId, apiGuid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
+        }
+    }
+
+    public int unStarAPI(String apiGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            return shareDAO.deleteAPIStar(userId, apiGuid);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
+        }
+    }
+
+    public int publishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            return shareDAO.updatePublishStatus(apiGuid, true);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");

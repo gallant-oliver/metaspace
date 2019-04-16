@@ -336,14 +336,7 @@ public class DataShareREST {
         }
     }
 
-    /**
-     * 收藏/取消收藏API
-     * @param apiGuid
-     * @param status
-     * @return
-     * @throws AtlasBaseException
-     */
-    @PUT
+    /*@PUT
     @Path("/star/{apiGuid}/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -354,22 +347,91 @@ public class DataShareREST {
             throw e;
         }
         return Response.status(200).entity("success").build();
-    }
+    }*/
 
     /**
-     * 发布/撤销API
-     * @param status
-     * @param apiGuidList
+     * 收藏API
+     * @param apiGuid
      * @return
      * @throws AtlasBaseException
      */
     @PUT
+    @Path("/star/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response starAPI(@PathParam("apiGuid") String apiGuid) throws AtlasBaseException {
+        try {
+            shareService.starAPI(apiGuid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 取消收藏API
+     * @param apiGuid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/star/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response unStarAPI(@PathParam("apiGuid") String apiGuid) throws AtlasBaseException {
+        try {
+            shareService.unStarAPI(apiGuid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /*@PUT
     @Path("/publish/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
         try {
             shareService.updatePublishStatus(apiGuidList, status);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+        return Response.status(200).entity("success").build();
+    }*/
+
+    /**
+     * 发布API
+     * @param apiGuidList
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/publish")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response publish(List<String> apiGuidList) throws AtlasBaseException {
+        try {
+            shareService.publishAPI(apiGuidList);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 撤销发布API
+     * @param apiGuidList
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/publish")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response unPublish(List<String> apiGuidList) throws AtlasBaseException {
+        try {
+            shareService.unpublishAPI(apiGuidList);
         } catch (AtlasBaseException e) {
             throw e;
         }
