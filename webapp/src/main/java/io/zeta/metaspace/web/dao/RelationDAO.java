@@ -123,6 +123,24 @@ public interface RelationDAO {
              " </script>"})
     public List<TableInfo> getDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
 
+
+
+    @Select({" <script>",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' and tableName not like 'values__tmp__table__%'",
+             " and status='ACTIVE'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<TableInfo> getDbTablesWithoutTmp(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
+
+    @Select({" <script>",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' and tableName not like 'values_tmp_table_%'",
+             " and status='ACTIVE'",
+             " </script>"})
+    public int countDbTablesWithoutTmp(@Param("databaseGuid")String databaseId, @Param("query")String query);
+
     @Select({" <script>",
              " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'  and status='ACTIVE'",
              " </script>"})

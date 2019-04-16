@@ -174,14 +174,14 @@ public class SearchService {
         return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
     }
 
-    public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
             long limit = parameters.getLimit();
             long offset = parameters.getOffset();
             String query = parameters.getQuery();
             PageResult<TableInfo> pageResult = new PageResult<>();
-            List<TableInfo> tableList = relationDAO.getDbTables(databaseId, query, limit, offset);
-            int countDbTable = relationDAO.countDbTables(databaseId, query);
+            List<TableInfo> tableList = relationDAO.getDbTablesWithoutTmp(databaseId, query, limit, offset);
+            int countDbTable = relationDAO.countDbTablesWithoutTmp(databaseId, query);
             pageResult.setLists(tableList);
             pageResult.setSum(countDbTable);
             pageResult.setCount(tableList.size());
