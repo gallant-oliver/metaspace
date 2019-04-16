@@ -336,13 +336,6 @@ public class DataShareREST {
         }
     }
 
-    /**
-     * 收藏/取消收藏API
-     * @param apiGuid
-     * @param status
-     * @return
-     * @throws AtlasBaseException
-     */
     /*@PUT
     @Path("/star/{apiGuid}/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -356,6 +349,12 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }*/
 
+    /**
+     * 收藏API
+     * @param apiGuid
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/star/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -369,6 +368,12 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
+    /**
+     * 取消收藏API
+     * @param apiGuid
+     * @return
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/star/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -382,13 +387,6 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
-    /**
-     * 发布/撤销API
-     * @param status
-     * @param apiGuidList
-     * @return
-     * @throws AtlasBaseException
-     */
     /*@PUT
     @Path("/publish/{status}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -403,7 +401,7 @@ public class DataShareREST {
     }*/
 
     /**
-     * 撤销API
+     * 发布API
      * @param apiGuidList
      * @return
      * @throws AtlasBaseException
@@ -422,7 +420,7 @@ public class DataShareREST {
     }
 
     /**
-     * 撤销API
+     * 撤销发布API
      * @param apiGuidList
      * @return
      * @throws AtlasBaseException
