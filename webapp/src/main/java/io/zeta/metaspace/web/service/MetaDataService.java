@@ -198,8 +198,8 @@ public class MetaDataService {
                 List<Map> organization = dataManageService.getOrganization();
                 List<String> strings = new ArrayList<>();
                 for (Map map : organization) {
-                    String id = map.get("id").toString();
-                    String type = map.get("type").toString();
+                    String id = String.valueOf(((Double)map.get("id")).intValue());
+                    String type =String.valueOf(((Double)map.get("type")).intValue()) ;
                     for (Map owner : owners) {
                         if (owner.get("id").equals(id) && owner.get("type").equals(type))
                             strings.add(map.get("name").toString());
@@ -207,7 +207,9 @@ public class MetaDataService {
                 }
                 table.setDataOwner(strings);
                 //更新时间
+                //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
                 table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
+                System.out.println(entity.getUpdatedBy());
             } catch (Exception e) {
                 LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
             }
