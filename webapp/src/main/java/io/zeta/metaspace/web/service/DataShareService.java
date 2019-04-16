@@ -27,7 +27,9 @@ import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -75,6 +77,8 @@ public class DataShareService {
     DataManageService dataManageService;
     @Autowired
     private MetaDataService metaDataService;
+    @Autowired
+    private UserDAO userDAO;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
 
@@ -87,7 +91,7 @@ public class DataShareService {
             String guid = UUID.randomUUID().toString();
             //guid
             info.setGuid(guid);
-            String user = AdminUtils.getUserData().getUsername();
+            String user = AdminUtils.getUserData().getUserId();
             //keeper
             info.setKeeper(user);
             //updater
@@ -164,7 +168,7 @@ public class DataShareService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
             }
             info.setGuid(guid);
-            String user = AdminUtils.getUserData().getUsername();
+            String user = AdminUtils.getUserData().getUserId();
             //updater
             info.setUpdater(user);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -192,6 +196,9 @@ public class DataShareService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
+            if(Objects.isNull(info)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
+            }
             String version = info.getVersion();
             String path = info.getPath();
             StringJoiner pathJoiner = new StringJoiner("/");
@@ -207,6 +214,18 @@ public class DataShareService {
             } else {
                 info.setStar(false);
             }
+            int userAPICount = shareDAO.countUserAPI(userId, guid);
+            info.setEdit(userAPICount==0?false:true);
+            //keeper
+            String keeperGuid = info.getKeeper();
+            User keeperUser = userDAO.getUser(keeperGuid);
+            String keeper = keeperUser.getUsername();
+            info.setKeeper(keeper);
+            //updater
+            String updaterGuid = info.getUpdater();
+            User updaterUser = userDAO.getUser(updaterGuid);
+            String updater = updaterUser.getUsername();
+            info.setUpdater(updater);
             return info;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());

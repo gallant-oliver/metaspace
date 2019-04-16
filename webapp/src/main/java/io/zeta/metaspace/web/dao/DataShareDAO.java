@@ -193,4 +193,7 @@ public interface DataShareDAO {
              " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
              " </script>"})
     public int countTableRelatedAPI(@Param("tableList")List<String> tableList);
+
+    @Select("select count(1) from apiInfo where keeper=#{keeper} and guid=#{guid}")
+    public int countUserAPI(@Param("keeper")String keeper, @Param("guid")String apiGuid);
 }
