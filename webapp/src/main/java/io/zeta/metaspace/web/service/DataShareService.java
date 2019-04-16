@@ -29,13 +29,8 @@ import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import javafx.concurrent.Task;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.xmlbeans.impl.jam.mutable.MPackage;
-import org.json.JSONObject;
-import org.omg.CORBA.OBJ_ADAPTER;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +55,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.PathParam;
 
 /*
  * @description
@@ -111,7 +104,12 @@ public class DataShareService {
             info.setStar(false);
             //path
             String[] pathList = info.getPath().split("/");
-            info.setPath(pathList[pathList.length-1]);
+            String path = pathList[pathList.length-1];
+            info.setPath(path);
+            int count = shareDAO.samePathCount(path);
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复路径");
+            }
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());

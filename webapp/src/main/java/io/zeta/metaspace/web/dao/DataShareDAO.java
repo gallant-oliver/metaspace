@@ -39,6 +39,9 @@ public interface DataShareDAO {
              " </script>"})
     public int insertAPIInfo(APIInfo info);
 
+    @Select("select count(1) from apiInfo where path=#{path}")
+    public int samePathCount(@Param("path")String path);
+
     @Update({" <script>",
              " update apiInfo set name=#{name},tableGuid=#{tableGuid},dbGuid=#{dbGuid},groupGuid=#{groupGuid},maxRowNumber=#{maxRowNumber},",
              " fields=#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
@@ -67,7 +70,7 @@ public interface DataShareDAO {
              " <when test=\"publish=='unpublish'\"> and publish=false </when>",
              " <when test=\"publish=='publish'\"> and publish=true </when>",
              " </choose>",
-             " order by updateTime",
+             " order by updateTime desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
