@@ -35,9 +35,11 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -87,6 +89,8 @@ public class BusinessManageREST {
     private BusinessService businessService;
     @Autowired
     MetaDataService metadataService;
+    @Autowired
+    DataShareService shareService;
 
     @GET
     @Path("/departments")
@@ -126,6 +130,18 @@ public class BusinessManageREST {
             return businessService.getBusinessTableRelatedAPI(businessId, parameters);
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    @GET
+    @Path("/datashare/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
 
