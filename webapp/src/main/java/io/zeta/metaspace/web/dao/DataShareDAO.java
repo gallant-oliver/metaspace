@@ -67,7 +67,7 @@ public interface DataShareDAO {
              " <when test=\"publish=='unpublish'\"> and publish=false </when>",
              " <when test=\"publish=='publish'\"> and publish=true </when>",
              " </choose>",
-             " order by updateTime",
+             " order by updateTime desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
