@@ -255,6 +255,16 @@ public class DataShareService {
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
+                //keeper
+                String keeperGuid = header.getKeeper();
+                User keeperUser = userDAO.getUser(keeperGuid);
+                String keeper = keeperUser.getUsername();
+                header.setKeeper(keeper);
+                //updater
+                String updaterGuid = header.getUpdater();
+                User updaterUser = userDAO.getUser(updaterGuid);
+                String updater = updaterUser.getUsername();
+                header.setUpdater(updater);
                 if(starAPIList.contains(header.getGuid())) {
                     header.setStar(true);
                 } else {
