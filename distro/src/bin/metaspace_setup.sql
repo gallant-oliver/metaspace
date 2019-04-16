@@ -4,9 +4,9 @@
 DROP TABLE IF EXISTS "public"."apigroup";
 CREATE TABLE "public"."apigroup" (
   "guid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "parentguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -16,24 +16,24 @@ CREATE TABLE "public"."apigroup" (
 DROP TABLE IF EXISTS "public"."apiinfo";
 CREATE TABLE "public"."apiinfo" (
   "guid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "tableguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "dbguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "maxrownumber" float8 DEFAULT NULL,
   "fields" json DEFAULT NULL,
-  "version" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "returntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "path" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "version" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "returntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "path" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "updater" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "groupguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "star" int2 DEFAULT NULL,
-  "publish" int2 DEFAULT NULL
+  "star" bool DEFAULT NULL,
+  "publish" bool DEFAULT NULL
 )
 ;
 
@@ -480,10 +480,10 @@ CREATE TABLE "public"."statisticaltype" (
 DROP TABLE IF EXISTS "public"."systemrule";
 CREATE TABLE "public"."systemrule" (
   "ruleid" int2 NOT NULL DEFAULT NULL,
-  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "ruletype" int2 DEFAULT NULL,
-  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -593,6 +593,16 @@ DROP TABLE IF EXISTS "public"."template_userrule2threshold";
 CREATE TABLE "public"."template_userrule2threshold" (
   "thresholdvalue" float8 NOT NULL DEFAULT NULL,
   "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+)
+;
+
+-- ----------------------------
+-- Table structure for user2apistar
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user2apistar";
+CREATE TABLE "public"."user2apistar" (
+  "apiguid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "userid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
 )
 ;
 
@@ -919,6 +929,11 @@ ALTER TABLE "public"."template_userrule" ADD CONSTRAINT "system_rule_copy1_pkey"
 ALTER TABLE "public"."template_userrule2threshold" ADD CONSTRAINT "threshold_pkey" PRIMARY KEY ("thresholdvalue", "ruleid");
 
 -- ----------------------------
+-- Primary Key structure for table user2apistar
+-- ----------------------------
+ALTER TABLE "public"."user2apistar" ADD CONSTRAINT "user2apistar_pkey" PRIMARY KEY ("apiguid", "userid");
+
+-- ----------------------------
 -- Primary Key structure for table users
 -- ----------------------------
 ALTER TABLE "public"."users" ADD CONSTRAINT "user_pkey" PRIMARY KEY ("userid");
@@ -1008,4 +1023,166 @@ INSERT INTO "public"."privilege2module" VALUES ('5', 5);
 INSERT INTO "public"."privilege2module" VALUES ('5', 7);
 INSERT INTO "public"."privilege2module" VALUES ('5', 8);
 INSERT INTO "public"."privilege2module" VALUES ('5', 10);
-
+INSERT INTO "public"."role2category" VALUES ('3', '1', 0);
+INSERT INTO "public"."role2category" VALUES ('3', '2', 0);
+INSERT INTO "public"."role2category" VALUES ('3', '3', 0);
+INSERT INTO "public"."role2category" VALUES ('3', '4', 0);
+INSERT INTO "public"."role2category" VALUES ('3', '5', 0);
+INSERT INTO "public"."role2category" VALUES ('5', '1', 0);
+INSERT INTO "public"."role2category" VALUES ('5', '2', 0);
+INSERT INTO "public"."role2category" VALUES ('5', '3', 0);
+INSERT INTO "public"."role2category" VALUES ('5', '4', 0);
+INSERT INTO "public"."role2category" VALUES ('5', '5', 0);
+INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
+INSERT INTO "public"."systemrule" VALUES (14, '字段汇总值变化', '相比上一周期，字段汇总值变化', 1, '');
+INSERT INTO "public"."systemrule" VALUES (15, '字段最小值变化', '相比上一周期，字段最小值变化', 1, '');
+INSERT INTO "public"."systemrule" VALUES (16, '
+字段最大值变化', '相比上一周期，字段最大值变化', 1, '');
+INSERT INTO "public"."systemrule" VALUES (29, '字段重复值个数/总行数', '计算字段重复值行数所占的比例', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (28, '字段空值个数/总行数', '计算字段空值行数所占的比例', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (27, '字段唯一值个数/总行数', '计算字段唯一值行数所占的比例', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (3, '表大小变化', '相比上一周期，表大小变化', 0, '字节');
+INSERT INTO "public"."systemrule" VALUES (0, '表行数变化率', '相比上一周期，表行数变化率', 0, '%');
+INSERT INTO "public"."systemrule" VALUES (2, '表行数变化', '相比上一周期，表行数变化', 0, '行');
+INSERT INTO "public"."systemrule" VALUES (1, '表大小变化率', '相比上一周期，表大小变化率', 0, '%');
+INSERT INTO "public"."systemrule" VALUES (6, '字段平均值变化率', '相比上一周期，字段平均值变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (4, '当前表行数', '表行数是否符合预期', 0, '行');
+INSERT INTO "public"."systemrule" VALUES (5, '当前表大小', '表大小是否符合预期', 0, '字节');
+INSERT INTO "public"."systemrule" VALUES (20, '字段平均值', '计算字段平均值', 1, NULL);
+INSERT INTO "public"."systemrule" VALUES (21, '字段汇总值', '计算字段汇总值', 1, NULL);
+INSERT INTO "public"."systemrule" VALUES (22, '字段最小值', '计算字段最小值', 1, NULL);
+INSERT INTO "public"."systemrule" VALUES (23, '字段最大值
+', '计算字段最大值', 1, NULL);
+INSERT INTO "public"."systemrule" VALUES (7, '字段汇总值变化率', '相比上一周期，字段汇总值变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (8, '字段最小值变化率', '相比上一周期，字段最小值变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (9, '字段最大值变化率', '相比上一周期，字段最大值变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (10, '字段唯一值个数变化率', '相比上一周期，字段唯一值个数变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (11, '字段空值个数变化率', '相比上一周期，字段空值个数变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (12, '字段重复值个数变化率', '相比上一周期，字段重复值个数变化率', 1, '%');
+INSERT INTO "public"."systemrule" VALUES (24, '字段唯一值个数', '计算字段唯一值个数', 1, '个');
+INSERT INTO "public"."systemrule" VALUES (25, '字段空值个数', '计算字段空值个数', 1, '个');
+INSERT INTO "public"."systemrule" VALUES (26, '字段重复值个数', '计算字段重复值个数', 1, '个');
+INSERT INTO "public"."systemrule" VALUES (17, '字段唯一值个数变化', '相比上一周期，字段唯一值个数变化', 1, '个');
+INSERT INTO "public"."systemrule" VALUES (18, '字段空值个数变化', '相比上一周期，字段空值个数变化', 1, '个');
+INSERT INTO "public"."systemrule" VALUES (19, '字段重复值个数变化', '相比上一周期，字段重复值个数变化
+', 1, '个');
+INSERT INTO "public"."rule2buildtype" VALUES (0, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (1, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (2, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (3, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (4, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (5, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (6, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (7, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (8, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (9, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (10, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (11, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (12, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (13, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (14, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (15, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (16, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (17, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (18, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (19, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (20, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (21, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (22, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (23, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (24, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (25, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (26, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (27, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (28, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (29, 0);
+INSERT INTO "public"."rule2buildtype" VALUES (4, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (5, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (20, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (21, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (22, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (23, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (24, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (25, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (26, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (27, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (28, 1);
+INSERT INTO "public"."rule2buildtype" VALUES (29, 1);
+INSERT INTO "public"."rule2checktype" VALUES (1, 1);
+INSERT INTO "public"."rule2checktype" VALUES (0, 0);
+INSERT INTO "public"."rule2checktype" VALUES (0, 1);
+INSERT INTO "public"."rule2checktype" VALUES (1, 0);
+INSERT INTO "public"."rule2checktype" VALUES (2, 0);
+INSERT INTO "public"."rule2checktype" VALUES (3, 0);
+INSERT INTO "public"."rule2checktype" VALUES (4, 0);
+INSERT INTO "public"."rule2checktype" VALUES (5, 0);
+INSERT INTO "public"."rule2checktype" VALUES (6, 0);
+INSERT INTO "public"."rule2checktype" VALUES (7, 0);
+INSERT INTO "public"."rule2checktype" VALUES (8, 0);
+INSERT INTO "public"."rule2checktype" VALUES (9, 0);
+INSERT INTO "public"."rule2checktype" VALUES (10, 0);
+INSERT INTO "public"."rule2checktype" VALUES (11, 0);
+INSERT INTO "public"."rule2checktype" VALUES (12, 0);
+INSERT INTO "public"."rule2checktype" VALUES (13, 0);
+INSERT INTO "public"."rule2checktype" VALUES (14, 0);
+INSERT INTO "public"."rule2checktype" VALUES (15, 0);
+INSERT INTO "public"."rule2checktype" VALUES (16, 0);
+INSERT INTO "public"."rule2checktype" VALUES (17, 0);
+INSERT INTO "public"."rule2checktype" VALUES (18, 0);
+INSERT INTO "public"."rule2checktype" VALUES (19, 0);
+INSERT INTO "public"."rule2checktype" VALUES (20, 0);
+INSERT INTO "public"."rule2checktype" VALUES (21, 0);
+INSERT INTO "public"."rule2checktype" VALUES (22, 0);
+INSERT INTO "public"."rule2checktype" VALUES (23, 0);
+INSERT INTO "public"."rule2checktype" VALUES (24, 0);
+INSERT INTO "public"."rule2checktype" VALUES (25, 0);
+INSERT INTO "public"."rule2checktype" VALUES (26, 0);
+INSERT INTO "public"."rule2checktype" VALUES (27, 0);
+INSERT INTO "public"."rule2checktype" VALUES (28, 0);
+INSERT INTO "public"."rule2checktype" VALUES (29, 0);
+INSERT INTO "public"."rule2checktype" VALUES (6, 1);
+INSERT INTO "public"."rule2checktype" VALUES (7, 1);
+INSERT INTO "public"."rule2checktype" VALUES (8, 1);
+INSERT INTO "public"."rule2checktype" VALUES (9, 1);
+INSERT INTO "public"."rule2checktype" VALUES (10, 1);
+INSERT INTO "public"."rule2checktype" VALUES (11, 1);
+INSERT INTO "public"."rule2checktype" VALUES (12, 1);
+INSERT INTO "public"."rule2checktype" VALUES (27, 1);
+INSERT INTO "public"."rule2checktype" VALUES (28, 1);
+INSERT INTO "public"."rule2checktype" VALUES (29, 1);
+INSERT INTO "public"."rule2datatype" VALUES (6, 1);
+INSERT INTO "public"."rule2datatype" VALUES (7, 1);
+INSERT INTO "public"."rule2datatype" VALUES (8, 1);
+INSERT INTO "public"."rule2datatype" VALUES (9, 1);
+INSERT INTO "public"."rule2datatype" VALUES (10, 1);
+INSERT INTO "public"."rule2datatype" VALUES (11, 1);
+INSERT INTO "public"."rule2datatype" VALUES (12, 1);
+INSERT INTO "public"."rule2datatype" VALUES (13, 1);
+INSERT INTO "public"."rule2datatype" VALUES (14, 1);
+INSERT INTO "public"."rule2datatype" VALUES (15, 1);
+INSERT INTO "public"."rule2datatype" VALUES (16, 1);
+INSERT INTO "public"."rule2datatype" VALUES (17, 1);
+INSERT INTO "public"."rule2datatype" VALUES (18, 1);
+INSERT INTO "public"."rule2datatype" VALUES (19, 1);
+INSERT INTO "public"."rule2datatype" VALUES (20, 1);
+INSERT INTO "public"."rule2datatype" VALUES (21, 1);
+INSERT INTO "public"."rule2datatype" VALUES (22, 1);
+INSERT INTO "public"."rule2datatype" VALUES (23, 1);
+INSERT INTO "public"."rule2datatype" VALUES (24, 1);
+INSERT INTO "public"."rule2datatype" VALUES (25, 1);
+INSERT INTO "public"."rule2datatype" VALUES (26, 1);
+INSERT INTO "public"."rule2datatype" VALUES (27, 1);
+INSERT INTO "public"."rule2datatype" VALUES (28, 1);
+INSERT INTO "public"."rule2datatype" VALUES (29, 1);
+INSERT INTO "public"."rule2datatype" VALUES (17, 2);
+INSERT INTO "public"."rule2datatype" VALUES (18, 2);
+INSERT INTO "public"."rule2datatype" VALUES (19, 2);
+INSERT INTO "public"."rule2datatype" VALUES (24, 2);
+INSERT INTO "public"."rule2datatype" VALUES (25, 2);
+INSERT INTO "public"."rule2datatype" VALUES (26, 2);
+INSERT INTO "public"."rule2datatype" VALUES (27, 2);
+INSERT INTO "public"."rule2datatype" VALUES (28, 2);
+INSERT INTO "public"."rule2datatype" VALUES (29, 2);
+INSERT INTO "public"."rule2datatype" VALUES (10, 2);
+INSERT INTO "public"."rule2datatype" VALUES (11, 2);
+INSERT INTO "public"."rule2datatype" VALUES (12, 2);

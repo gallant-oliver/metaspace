@@ -147,6 +147,18 @@ public class DataManageService {
                 CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
                 returnEntity.setShow(true);
                 returnEntity.setStatus(2);
+                //加一级目录，自动授权给角色
+                switch (type){
+                    case 0:{
+                        //技术目录不允许加一级目录
+                        break;}
+                    case 1:{
+                        roleDao.addRole2category("2",newCategoryGuid,0);
+                        roleDao.addRole2category("3",newCategoryGuid,0);
+                        roleDao.addRole2category("4",newCategoryGuid,0);
+                        roleDao.addRole2category("5",newCategoryGuid,0);
+                        break;}
+                }
                 return returnEntity;
             }
 

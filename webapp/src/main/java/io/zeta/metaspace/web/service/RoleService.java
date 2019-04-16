@@ -477,14 +477,12 @@ public class RoleService {
         for (RoleModulesCategories.Category category : allCategorys) {
             CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
-            //系统系统目录不允许删除和编辑
+            //系统系统目录不允许删除和编辑,删关联和加同级
             if (lists.contains(category.getGuid())){
                 privilegeinfo.setDelete(false);
                 privilegeinfo.setEdit(false);
-            }
-            //技术目录一级目录不允许删关联
-            if(categorytype==0&&category.getLevel()==1){
                 privilegeinfo.setDeleteRelation(false);
+                privilegeinfo.setAddSibling(false);
             }
             categoryPrivilege.setPrivilege(privilegeinfo);
             userCategorys.add(categoryPrivilege);
