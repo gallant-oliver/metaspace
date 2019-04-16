@@ -55,10 +55,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.PathParam;
 
 /*
  * @description
@@ -106,7 +104,12 @@ public class DataShareService {
             info.setStar(false);
             //path
             String[] pathList = info.getPath().split("/");
-            info.setPath(pathList[pathList.length-1]);
+            String path = pathList[pathList.length-1];
+            info.setPath(path);
+            int count = shareDAO.samePathCount(path);
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复路径");
+            }
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
