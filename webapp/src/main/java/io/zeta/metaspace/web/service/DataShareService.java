@@ -21,6 +21,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
@@ -334,13 +335,40 @@ public class DataShareService {
         }
     }
 
-    public int publishAPI(List<String> apiGuid) throws AtlasBaseException {
+    public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
-            return shareDAO.updatePublishStatus(apiGuid, true);
+            return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
+    }
+
+    public APIContent generateAPIContent(List<String> guidList) {
+        APIContent content = new APIContent();
+        List<APIContent.APIDetail> contentList = new ArrayList<>();
+        for(String api_id : guidList) {
+            APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
+            String api_name = info.getName();
+            String api_desc = info.getDescription();
+            String api_version = info.getVersion();
+            String api_owner = info.getKeeper();
+            String api_catalog = "";
+            String create_time = info.getGenerateTime();
+            String uri = info.getPath();
+            String method = info.getRequestMode();
+            String upstream_url = "";
+            String swagger_content = "";
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            contentList.add(detail);
+        }
+        content.setApis_detail(contentList);
+        return content;
+    }
+
+    public String generateSwaggerContent() {
+        String content = "";
+        return content;
     }
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {

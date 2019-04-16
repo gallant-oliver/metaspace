@@ -188,7 +188,7 @@ public class SearchService {
             return pageResult;
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 
