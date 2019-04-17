@@ -18,6 +18,20 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+import io.swagger.models.ModelImpl;
+import io.swagger.models.Operation;
+import io.swagger.models.Path;
+import io.swagger.models.Response;
+import io.swagger.models.Scheme;
+import io.swagger.models.Swagger;
+import io.swagger.models.parameters.BodyParameter;
+import io.swagger.models.parameters.Parameter;
+import io.swagger.models.properties.ArrayProperty;
+import io.swagger.models.properties.IntegerProperty;
+import io.swagger.models.properties.ObjectProperty;
+import io.swagger.models.properties.Property;
+import io.swagger.models.properties.StringProperty;
+import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -32,8 +46,12 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
+import org.junit.Test;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +63,7 @@ import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -70,6 +89,8 @@ import javax.servlet.http.HttpServletRequest;
 public class DataShareService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataShareService.class);
+
+    public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
 
     @Autowired
     DataShareDAO shareDAO;
@@ -246,13 +267,12 @@ public class DataShareService {
      */
     public PageResult<APIInfoHeader> getAPIList(String guid, Integer my, String publish, Parameters parameters) throws AtlasBaseException {
         try {
-            String user = AdminUtils.getUserData().getUsername();
             String userId = AdminUtils.getUserData().getUserId();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             String query = parameters.getQuery();
-            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, query, limit, offset);
+            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
                 //keeper
@@ -274,8 +294,7 @@ public class DataShareService {
                 header.setDataOwner(dataOwner);
             }
 
-
-            int apiCount = shareDAO.getAPICount(guid, my, publish, user, query);
+            int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
             pageResult.setSum(apiCount);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
@@ -328,22 +347,6 @@ public class DataShareService {
     }
 
 
-    public int updateStarStatus(String apiGuid, Integer status) throws AtlasBaseException {
-        try {
-            String userId = AdminUtils.getUserData().getUserId();
-            Boolean star = (0==status)?false:true;
-            if(star) {
-                return shareDAO.insertAPIStar(userId, apiGuid);
-            } else {
-                return shareDAO.deleteAPIStar(userId, apiGuid);
-            }
-            //return shareDAO.updateStarStatus(apiGuid, star);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
-        }
-    }
-
     public int starAPI(String apiGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -373,7 +376,7 @@ public class DataShareService {
         }
     }
 
-    public APIContent generateAPIContent(List<String> guidList) {
+    public APIContent generateAPIContent(List<String> guidList) throws Exception {
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
@@ -387,7 +390,7 @@ public class DataShareService {
             String uri = info.getPath();
             String method = info.getRequestMode();
             String upstream_url = "";
-            String swagger_content = "";
+            String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
         }
@@ -395,9 +398,99 @@ public class DataShareService {
         return content;
     }
 
-    public String generateSwaggerContent() {
-        String content = "";
+    public String generateSwaggerContent(APIInfo info) throws AtlasException,Exception {
+        Configuration configuration = ApplicationProperties.get();
+        String host = configuration.getString(ATLAS_REST_ADDRESS);
+        Swagger swagger = new Swagger();
+        //host
+        swagger.setHost(host);
+        //scheme
+        swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
+        //path
+        String version = info.getVersion();
+        String pathStr = info.getPath();
+        StringJoiner pathJoiner = new StringJoiner("/");
+        pathJoiner.add("api").add(version).add("share").add(pathStr);
+        pathStr = "/" + pathJoiner.toString();
+        Map pathMap = new HashMap();
+        Path path = new Path();
+        pathMap.put(pathStr, path);
+        swagger.setPaths(pathMap);
+
+        Operation operation = new Operation();
+        operation.setConsumes(Collections.singletonList("application/json"));
+        operation.setProduces(Collections.singletonList("application/json"));
+
+        //description
+        String desc = info.getDescription();
+        operation.setSummary(desc);
+
+        BodyParameter parameter = new BodyParameter();
+        parameter.setIn("body");
+        parameter.setRequired(true);
+        ModelImpl model = new ModelImpl();
+
+        model.setRequired(Arrays.asList("columns", "filters", "offset", "limit"));
+        Map<String,Property> propertyMap = new HashMap<>();
+
+        List<APIInfo.Field> fields = info.getFields();
+        for(APIInfo.Field field : fields) {
+            String columnName = field.getColumnName();
+            boolean filter = field.getFilter();
+            boolean fill = field.getFill();
+            String value = field.getDefaultValue();
+            String type = field.getType();
+
+
+            ObjectProperty columnProperty = new ObjectProperty();
+            columnProperty.setRequired(true);
+            columnProperty.setType("Object");
+
+            //columnProperty.setProperties();
+            ArrayProperty valueProperty = new ArrayProperty();
+
+            propertyMap.put(columnName, columnProperty);
+        }
+
+
+
+        //columns
+        ArrayProperty columnsProperty = new ArrayProperty();
+        columnsProperty.setRequired(true);
+        columnsProperty.setType("Array");
+        StringProperty columnItem = new StringProperty();
+        columnItem.setType("String");
+        columnsProperty.setItems(columnItem);
+        propertyMap.put("columns", columnsProperty);
+        //filters
+        ArrayProperty filtersProperty = new ArrayProperty();
+        filtersProperty.setRequired(true);
+        filtersProperty.setType("Array");
+        ObjectProperty filterItem = new ObjectProperty();
+        filterItem.setType("object");
+        filterItem.setExample("{\"name\": \"name\",\"value\": [\"zhangsan\",\"lisi\"]}");
+        filtersProperty.setItems(filterItem);
+        propertyMap.put("filters", filtersProperty);
+        //offset
+        IntegerProperty offset = new IntegerProperty();
+        offset.setDefault(0);
+        offset.setRequired(true);
+        propertyMap.put("offset", offset);
+        //limit
+        IntegerProperty limit = new IntegerProperty();
+        limit.setRequired(true);
+        limit.setDefault(10);
+        propertyMap.put("limit", limit);
+        //property
+        model.setProperties(propertyMap);
+        //model
+        parameter.setSchema(model);
+        //
+
+
+        String content = Yaml.pretty().writeValueAsString(swagger);
         return content;
+
     }
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
