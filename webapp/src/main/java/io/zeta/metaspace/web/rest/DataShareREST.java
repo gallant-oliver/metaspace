@@ -310,7 +310,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
-            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQuery(databaseId, parameters);
+            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;

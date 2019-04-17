@@ -21,12 +21,15 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -74,6 +77,8 @@ public class DataShareService {
     DataManageService dataManageService;
     @Autowired
     private MetaDataService metaDataService;
+    @Autowired
+    private UserDAO userDAO;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
 
@@ -86,7 +91,7 @@ public class DataShareService {
             String guid = UUID.randomUUID().toString();
             //guid
             info.setGuid(guid);
-            String user = AdminUtils.getUserData().getUsername();
+            String user = AdminUtils.getUserData().getUserId();
             //keeper
             info.setKeeper(user);
             //updater
@@ -163,7 +168,7 @@ public class DataShareService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
             }
             info.setGuid(guid);
-            String user = AdminUtils.getUserData().getUsername();
+            String user = AdminUtils.getUserData().getUserId();
             //updater
             info.setUpdater(user);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -191,6 +196,9 @@ public class DataShareService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
+            if(Objects.isNull(info)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
+            }
             String version = info.getVersion();
             String path = info.getPath();
             StringJoiner pathJoiner = new StringJoiner("/");
@@ -206,6 +214,18 @@ public class DataShareService {
             } else {
                 info.setStar(false);
             }
+            int userAPICount = shareDAO.countUserAPI(userId, guid);
+            info.setEdit(userAPICount==0?false:true);
+            //keeper
+            String keeperGuid = info.getKeeper();
+            User keeperUser = userDAO.getUser(keeperGuid);
+            String keeper = keeperUser.getUsername();
+            info.setKeeper(keeper);
+            //updater
+            String updaterGuid = info.getUpdater();
+            User updaterUser = userDAO.getUser(updaterGuid);
+            String updater = updaterUser.getUsername();
+            info.setUpdater(updater);
             return info;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -235,6 +255,16 @@ public class DataShareService {
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, user, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
+                //keeper
+                String keeperGuid = header.getKeeper();
+                User keeperUser = userDAO.getUser(keeperGuid);
+                String keeper = keeperUser.getUsername();
+                header.setKeeper(keeper);
+                //updater
+                String updaterGuid = header.getUpdater();
+                User updaterUser = userDAO.getUser(updaterGuid);
+                String updater = updaterUser.getUsername();
+                header.setUpdater(updater);
                 if(starAPIList.contains(header.getGuid())) {
                     header.setStar(true);
                 } else {
@@ -334,13 +364,40 @@ public class DataShareService {
         }
     }
 
-    public int publishAPI(List<String> apiGuid) throws AtlasBaseException {
+    public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
-            return shareDAO.updatePublishStatus(apiGuid, true);
+            return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
+    }
+
+    public APIContent generateAPIContent(List<String> guidList) {
+        APIContent content = new APIContent();
+        List<APIContent.APIDetail> contentList = new ArrayList<>();
+        for(String api_id : guidList) {
+            APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
+            String api_name = info.getName();
+            String api_desc = info.getDescription();
+            String api_version = info.getVersion();
+            String api_owner = info.getKeeper();
+            String api_catalog = "";
+            String create_time = info.getGenerateTime();
+            String uri = info.getPath();
+            String method = info.getRequestMode();
+            String upstream_url = "";
+            String swagger_content = "";
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            contentList.add(detail);
+        }
+        content.setApis_detail(contentList);
+        return content;
+    }
+
+    public String generateSwaggerContent() {
+        String content = "";
+        return content;
     }
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {

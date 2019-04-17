@@ -35,9 +35,12 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -52,6 +55,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Singleton;
@@ -87,6 +91,8 @@ public class BusinessManageREST {
     private BusinessService businessService;
     @Autowired
     MetaDataService metadataService;
+    @Autowired
+    DataShareService shareService;
 
     @GET
     @Path("/departments")
@@ -125,6 +131,50 @@ public class BusinessManageREST {
         try {
             return businessService.getBusinessTableRelatedAPI(businessId, parameters);
         } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @GET
+    @Path("/datashare/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * 测试API
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+        try {
+            List<Map> result = shareService.testAPI(randomName, parameter);
+            return result;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
+        try {
+            shareService.cancelAPIThread(randomName);
+        } catch (AtlasBaseException e) {
             throw e;
         }
     }

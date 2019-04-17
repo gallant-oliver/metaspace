@@ -47,6 +47,7 @@ public class APIInfo {
     private String updater;
     private String updateTime;
     private Boolean star;
+    private Boolean edit;
 
     public String getGuid() {
         return guid;
@@ -230,6 +231,14 @@ public class APIInfo {
 
     public void setStar(Boolean star) {
         this.star = star;
+    }
+
+    public Boolean getEdit() {
+        return edit;
+    }
+
+    public void setEdit(Boolean edit) {
+        this.edit = edit;
     }
 
     public static class Field {
