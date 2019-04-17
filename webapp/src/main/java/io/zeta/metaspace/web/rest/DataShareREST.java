@@ -484,4 +484,18 @@ public class DataShareREST {
         }
     }
 
+    @POST
+    @Path("/data/{version}/{url}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Map> queryAPIData(@PathParam("url") String url, Map dataMap) throws Exception {
+        try {
+            return shareService.queryAPIData(url, httpServletRequest);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
 }

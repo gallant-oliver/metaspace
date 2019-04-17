@@ -222,6 +222,12 @@
         <dependency>
             <groupId>org.apache.atlas</groupId>
             <artifactId>atlas-repository</artifactId>
+          <exclusions>
+            <exclusion>
+              <artifactId>snakeyaml</artifactId>
+              <groupId>org.yaml</groupId>
+            </exclusion>
+          </exclusions>
         </dependency>
 
         <dependency>
@@ -493,6 +499,12 @@
             <artifactId>atlas-repository</artifactId>
             <classifier>tests</classifier>
             <scope>test</scope>
+          <exclusions>
+            <exclusion>
+              <artifactId>snakeyaml</artifactId>
+              <groupId>org.yaml</groupId>
+            </exclusion>
+          </exclusions>
         </dependency>
 
         <dependency>
@@ -626,6 +638,12 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-annotations</artifactId>
         </dependency>
+
+      <dependency>
+        <groupId>io.swagger</groupId>
+        <artifactId>swagger-core</artifactId>
+        <version>1.5.22</version>
+      </dependency>
     </dependencies>
 
     <build>
