@@ -54,7 +54,9 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import io.zeta.metaspace.web.util.StringUtils;
 import jodd.typeconverter.Convert;
+import jodd.util.StringUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -103,6 +105,7 @@ public class DataShareService {
     private static final Logger LOG = LoggerFactory.getLogger(DataShareService.class);
 
     public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
+    public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
 
     @Autowired
     DataShareDAO shareDAO;
@@ -381,11 +384,12 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
+            Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
-            String organizationURL = SSOConfig.getOrganizationURL();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS);
             Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
-            SSLClient.doPost(organizationURL, dataMap);
-
+            String res = SSLClient.doPost(mobiusURL, dataMap);
+            System.out.println(res);
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -394,6 +398,7 @@ public class DataShareService {
     }
 
     public APIContent generateAPIContent(List<String> guidList) throws Exception {
+        Configuration configuration = ApplicationProperties.get();
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
@@ -402,11 +407,11 @@ public class DataShareService {
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
             String api_owner = info.getKeeper();
-            String api_catalog = "";
+            String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
             String uri = info.getPath();
             String method = info.getRequestMode();
-            String upstream_url = "";
+            String upstream_url = configuration.getString(ATLAS_REST_ADDRESS);
             String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
@@ -453,17 +458,15 @@ public class DataShareService {
             Map<String, Property> propertyMap = new HashMap<>();
 
             List<String> columnList = new ArrayList<>();
-
             List<APIInfo.Field> values = new ArrayList<>();
 
             Gson gson = new Gson();
-            for (Object obj : info.getFields()) {
+            for (Object obj : getQueryFileds(info.getGuid())) {
                 Type type = new TypeToken<APIInfo.Field>() {
                 }.getType();
                 APIInfo.Field field = gson.fromJson(gson.toJson(obj), type);
                 values.add(field);
             }
-
             values.stream().forEach(field -> columnList.add(field.getColumnName()));
 
             //columns
@@ -477,68 +480,86 @@ public class DataShareService {
             propertyMap.put("columns", columnsProperty);
 
             //filters
+            Map<String, Property> filterPropertyMap = new HashMap<>();
             ObjectProperty filtersProperty = new ObjectProperty();
             filtersProperty.setRequired(true);
             filtersProperty.setType("Object");
-            Map<String, Property> filterPropertyMap = new HashMap<>();
+            //default
+            ArrayProperty defaultProperty = new ArrayProperty();
+            defaultProperty.setType("Array");
+            StringProperty defaultItems = new StringProperty();
+            defaultItems.setType("String");
+            defaultProperty.setItems(defaultItems);
+            filterPropertyMap.put("default", defaultProperty);
+            //fill
+            Map<String, Property> fillPropertyMap = new HashMap<>();
+            ObjectProperty fillProperty = new ObjectProperty();
+            fillProperty.setType("Object");
             for (APIInfo.Field field : values) {
                 String columnName = field.getColumnName();
                 String type = field.getType();
                 Boolean filter = field.getFilter();
                 Boolean fill = field.getFill();
+                String defaultValue = field.getDefaultValue();
                 if (filter) {
                     DataType dataType = DataType.parseOf(type);
                     if (DataType.BOOLEAN == dataType) {
-                        BooleanProperty filterProperty = new BooleanProperty();
+                        BooleanProperty fillColumnProperty = new BooleanProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            fillColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Boolean.valueOf(field.getDefaultValue()));
+                            if(StringUtil.isEmpty(defaultValue))
+                                fillColumnProperty.setDefault(Boolean.valueOf(defaultValue));
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        fillColumnProperty.setType(type);
+                        fillPropertyMap.put(columnName, fillColumnProperty);
                     } else if (DataType.INT == dataType) {
-                        IntegerProperty filterProperty = new IntegerProperty();
+                        IntegerProperty fillColumnProperty = new IntegerProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            fillColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
+                            if(StringUtil.isEmpty(defaultValue))
+                                fillColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        fillColumnProperty.setType(type);
+                        fillPropertyMap.put(columnName, fillColumnProperty);
                     } else if (DataType.DOUBLE == dataType) {
-                        DoubleProperty filterProperty = new DoubleProperty();
+                        DoubleProperty fillColumnProperty = new DoubleProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            fillColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Double.valueOf(field.getDefaultValue()));
+                            if(StringUtil.isEmpty(defaultValue))
+                                fillColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        fillColumnProperty.setType(type);
+                        fillPropertyMap.put(columnName, fillColumnProperty);
                     } else if (DataType.FLOAT == dataType) {
-                        FloatProperty filterProperty = new FloatProperty();
+                        FloatProperty fillColumnProperty = new FloatProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            fillColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Float.valueOf(field.getDefaultValue()));
+                            if(StringUtil.isEmpty(defaultValue))
+                                fillColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        fillColumnProperty.setType(type);
+                        fillPropertyMap.put(columnName, fillColumnProperty);
                     } else {
-                        StringProperty filterProperty = new StringProperty();
+                        StringProperty fillColumnProperty = new StringProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            fillColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(field.getDefaultValue());
+                            if(Objects.nonNull(defaultValue))
+                                fillColumnProperty.setDefault(field.getDefaultValue());
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        fillColumnProperty.setType(type);
+                        fillPropertyMap.put(columnName, fillColumnProperty);
                     }
                 }
-                filtersProperty.setProperties(filterPropertyMap);
             }
+            fillProperty.setProperties(fillPropertyMap);
+            filterPropertyMap.put("fill", fillProperty);
+            filtersProperty.setProperties(filterPropertyMap);
             propertyMap.put("filters", filtersProperty);
-
             //offset
             IntegerProperty offset = new IntegerProperty();
             offset.setDefault(0);
@@ -553,7 +574,7 @@ public class DataShareService {
             model.setProperties(propertyMap);
             //model
             parameter.setSchema(model);
-            //
+
             parameters.add(parameter);
             operation.setParameters(parameters);
             path.setPost(operation);
@@ -568,13 +589,11 @@ public class DataShareService {
             operation.setResponses(responseMap);
             String yamlOutput = Yaml.pretty().writeValueAsString(swagger);
             System.out.println(yamlOutput.substring(yamlOutput.indexOf("\n") + 1));
-
             String content = Yaml.pretty().writeValueAsString(swagger);
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-
     }
 
 

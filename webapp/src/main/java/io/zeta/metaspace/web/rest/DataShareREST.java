@@ -354,19 +354,6 @@ public class DataShareREST {
         }
     }
 
-    /*@PUT
-    @Path("/star/{apiGuid}/{status}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
-        try {
-            shareService.updateStarStatus(apiGuid, status);
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-        return Response.status(200).entity("success").build();
-    }*/
-
     /**
      * 收藏API
      * @param apiGuid
@@ -404,19 +391,6 @@ public class DataShareREST {
         }
         return Response.status(200).entity("success").build();
     }
-
-    /*@PUT
-    @Path("/publish/{status}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
-        try {
-            shareService.updatePublishStatus(apiGuidList, status);
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-        return Response.status(200).entity("success").build();
-    }*/
 
     /**
      * 发布API
