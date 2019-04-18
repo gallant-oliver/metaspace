@@ -31,16 +31,16 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
+import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.utils.SSLClient;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -78,6 +78,8 @@ public class DataManageService {
     TableDAO tableDAO;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
+    @Autowired
+    UserDAO userDAO;
 
     /**
      * 获取用户有权限的全部目录
@@ -114,7 +116,7 @@ public class DataManageService {
      * @throws Exception
      */
     @Transactional
-    public CategoryEntityV2 createCategory(CategoryInfoV2 info, Integer type) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 info, Integer type) throws Exception {
         try {
             String currentCategoryGuid = info.getGuid();
             CategoryEntityV2 entity = new CategoryEntityV2();
@@ -144,9 +146,12 @@ public class DataManageService {
                 entity.setQualifiedName(qualifiedName.toString());
                 entity.setLevel(1);
                 categoryDao.add(entity);
-                CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
-                returnEntity.setShow(true);
-                returnEntity.setStatus(2);
+                CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                if(type==0){
+                    privilege.setDeleteRelation(false);
+                }
+                returnEntity.setPrivilege(privilege);
                 return returnEntity;
             }
 
@@ -209,9 +214,28 @@ public class DataManageService {
                 }
             }
             categoryDao.add(entity);
-            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
-            returnEntity.setShow(true);
-            returnEntity.setStatus(2);
+            CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+            User user = AdminUtils.getUserData();
+            List<Module> moduleByUserId = userDAO.getModuleByUserId(user.getUserId());
+            List<Integer> modules = new ArrayList<>();
+            for (Module module : moduleByUserId) {
+                modules.add(module.getModuleId());
+            }
+            CategoryPrivilege.Privilege privilege =null;
+            if(type==0) {
+                if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                }else{
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, false, true);
+                }
+                }else{
+                if(modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                }else{
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, true, false, true);
+                }
+            }
+            returnEntity.setPrivilege(privilege);
             return returnEntity;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -278,7 +302,7 @@ public class DataManageService {
      * @return
      * @throws AtlasBaseException
      */
-    public CategoryEntityV2 updateCategory(CategoryInfoV2 info, int type) throws AtlasBaseException {
+    public String updateCategory(CategoryInfoV2 info, int type) throws AtlasBaseException {
         try {
             String guid = info.getGuid();
             String name = info.getName();
@@ -303,10 +327,7 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             categoryDao.updateCategoryInfo(entity);
-            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(guid);
-            returnEntity.setShow(true);
-            returnEntity.setStatus(2);
-            return returnEntity;
+            return "success";
         } catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");

@@ -105,7 +105,7 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
