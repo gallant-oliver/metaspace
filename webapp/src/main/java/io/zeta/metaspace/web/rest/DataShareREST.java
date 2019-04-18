@@ -498,4 +498,20 @@ public class DataShareREST {
         }
     }
 
+    @GET
+    @Path("/swagger/{guid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public String getSwagger(@PathParam("guid") String guid) throws Exception {
+        try {
+            APIInfo info = shareService.getAPIInfo(guid);
+            String content = shareService.generateSwaggerContent(info);
+            return content;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
 }
