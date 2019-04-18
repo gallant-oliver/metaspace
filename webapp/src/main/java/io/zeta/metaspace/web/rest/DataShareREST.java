@@ -25,7 +25,6 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIGroup;
@@ -289,7 +288,26 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getActiveDatabase(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 搜库
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/search/databases")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getDatabaseAndTableByQuery(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;

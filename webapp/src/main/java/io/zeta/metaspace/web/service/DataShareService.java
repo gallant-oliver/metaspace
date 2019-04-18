@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
@@ -27,11 +28,17 @@ import io.swagger.models.Swagger;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.ArrayProperty;
+import io.swagger.models.properties.BooleanProperty;
+import io.swagger.models.properties.DateProperty;
+import io.swagger.models.properties.DecimalProperty;
+import io.swagger.models.properties.DoubleProperty;
+import io.swagger.models.properties.FloatProperty;
 import io.swagger.models.properties.IntegerProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
+import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -42,10 +49,12 @@ import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import jodd.typeconverter.Convert;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -58,8 +67,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -369,6 +381,11 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
+            APIContent content = generateAPIContent(guidList);
+            String organizationURL = SSOConfig.getOrganizationURL();
+            Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
+            SSLClient.doPost(organizationURL, dataMap);
+
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -399,99 +416,167 @@ public class DataShareService {
     }
 
     public String generateSwaggerContent(APIInfo info) throws AtlasException,Exception {
-        Configuration configuration = ApplicationProperties.get();
-        String host = configuration.getString(ATLAS_REST_ADDRESS);
-        Swagger swagger = new Swagger();
-        //host
-        swagger.setHost(host);
-        //scheme
-        swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
-        //path
-        String version = info.getVersion();
-        String pathStr = info.getPath();
-        StringJoiner pathJoiner = new StringJoiner("/");
-        pathJoiner.add("api").add(version).add("share").add(pathStr);
-        pathStr = "/" + pathJoiner.toString();
-        Map pathMap = new HashMap();
-        Path path = new Path();
-        pathMap.put(pathStr, path);
-        swagger.setPaths(pathMap);
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            String host = configuration.getString(ATLAS_REST_ADDRESS);
+            Swagger swagger = new Swagger();
+            //host
+            swagger.setHost(host);
+            //scheme
+            swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
+            //path
+            String version = info.getVersion();
+            String pathStr = info.getPath();
+            StringJoiner pathJoiner = new StringJoiner("/");
+            pathJoiner.add("api").add(version).add("share").add(pathStr);
+            pathStr = "/" + pathJoiner.toString();
+            Map pathMap = new HashMap();
+            Path path = new Path();
+            pathMap.put(pathStr, path);
+            swagger.setPaths(pathMap);
 
-        Operation operation = new Operation();
-        operation.setConsumes(Collections.singletonList("application/json"));
-        operation.setProduces(Collections.singletonList("application/json"));
+            Operation operation = new Operation();
+            operation.setConsumes(Collections.singletonList("application/json"));
+            operation.setProduces(Collections.singletonList("application/json"));
 
-        //description
-        String desc = info.getDescription();
-        operation.setSummary(desc);
+            List<Parameter> parameters = new ArrayList<>();
+            //description
+            String desc = info.getDescription();
+            operation.setSummary(desc);
 
-        BodyParameter parameter = new BodyParameter();
-        parameter.setIn("body");
-        parameter.setRequired(true);
-        ModelImpl model = new ModelImpl();
+            BodyParameter parameter = new BodyParameter();
+            parameter.setIn("body");
+            parameter.setRequired(true);
+            ModelImpl model = new ModelImpl();
 
-        model.setRequired(Arrays.asList("columns", "filters", "offset", "limit"));
-        Map<String,Property> propertyMap = new HashMap<>();
+            model.setRequired(Arrays.asList("columns", "filters", "offset", "limit"));
+            Map<String, Property> propertyMap = new HashMap<>();
 
-        List<APIInfo.Field> fields = info.getFields();
-        for(APIInfo.Field field : fields) {
-            String columnName = field.getColumnName();
-            boolean filter = field.getFilter();
-            boolean fill = field.getFill();
-            String value = field.getDefaultValue();
-            String type = field.getType();
+            List<String> columnList = new ArrayList<>();
 
+            List<APIInfo.Field> values = new ArrayList<>();
 
-            ObjectProperty columnProperty = new ObjectProperty();
-            columnProperty.setRequired(true);
-            columnProperty.setType("Object");
+            Gson gson = new Gson();
+            for (Object obj : info.getFields()) {
+                Type type = new TypeToken<APIInfo.Field>() {
+                }.getType();
+                APIInfo.Field field = gson.fromJson(gson.toJson(obj), type);
+                values.add(field);
+            }
 
-            //columnProperty.setProperties();
-            ArrayProperty valueProperty = new ArrayProperty();
+            values.stream().forEach(field -> columnList.add(field.getColumnName()));
 
-            propertyMap.put(columnName, columnProperty);
+            //columns
+            ArrayProperty columnsProperty = new ArrayProperty();
+            columnsProperty.setRequired(true);
+            columnsProperty.setType("Array");
+            StringProperty columnItem = new StringProperty();
+            columnItem.setType("String");
+            columnItem.setEnum(columnList);
+            columnsProperty.setItems(columnItem);
+            propertyMap.put("columns", columnsProperty);
+
+            //filters
+            ObjectProperty filtersProperty = new ObjectProperty();
+            filtersProperty.setRequired(true);
+            filtersProperty.setType("Object");
+            Map<String, Property> filterPropertyMap = new HashMap<>();
+            for (APIInfo.Field field : values) {
+                String columnName = field.getColumnName();
+                String type = field.getType();
+                Boolean filter = field.getFilter();
+                Boolean fill = field.getFill();
+                if (filter) {
+                    DataType dataType = DataType.parseOf(type);
+                    if (DataType.BOOLEAN == dataType) {
+                        BooleanProperty filterProperty = new BooleanProperty();
+                        if (fill) {
+                            filterProperty.setRequired(true);
+                        } else {
+                            filterProperty.setDefault(Boolean.valueOf(field.getDefaultValue()));
+                        }
+                        filterProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterProperty);
+                    } else if (DataType.INT == dataType) {
+                        IntegerProperty filterProperty = new IntegerProperty();
+                        if (fill) {
+                            filterProperty.setRequired(true);
+                        } else {
+                            filterProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
+                        }
+                        filterProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterProperty);
+                    } else if (DataType.DOUBLE == dataType) {
+                        DoubleProperty filterProperty = new DoubleProperty();
+                        if (fill) {
+                            filterProperty.setRequired(true);
+                        } else {
+                            filterProperty.setDefault(Double.valueOf(field.getDefaultValue()));
+                        }
+                        filterProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterProperty);
+                    } else if (DataType.FLOAT == dataType) {
+                        FloatProperty filterProperty = new FloatProperty();
+                        if (fill) {
+                            filterProperty.setRequired(true);
+                        } else {
+                            filterProperty.setDefault(Float.valueOf(field.getDefaultValue()));
+                        }
+                        filterProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterProperty);
+                    } else {
+                        StringProperty filterProperty = new StringProperty();
+                        if (fill) {
+                            filterProperty.setRequired(true);
+                        } else {
+                            filterProperty.setDefault(field.getDefaultValue());
+                        }
+                        filterProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterProperty);
+                    }
+                }
+                filtersProperty.setProperties(filterPropertyMap);
+            }
+            propertyMap.put("filters", filtersProperty);
+
+            //offset
+            IntegerProperty offset = new IntegerProperty();
+            offset.setDefault(0);
+            offset.setRequired(true);
+            propertyMap.put("offset", offset);
+            //limit
+            IntegerProperty limit = new IntegerProperty();
+            limit.setRequired(true);
+            limit.setDefault(10);
+            propertyMap.put("limit", limit);
+            //property
+            model.setProperties(propertyMap);
+            //model
+            parameter.setSchema(model);
+            //
+            parameters.add(parameter);
+            operation.setParameters(parameters);
+            path.setPost(operation);
+
+            Map<String, Response> responseMap = new HashMap<>();
+            Response successResponse = new Response();
+            successResponse.setDescription("successful operation");
+            responseMap.put("200", successResponse);
+            Response badResponse = new Response();
+            badResponse.setDescription("Invalid status value");
+            responseMap.put("400", badResponse);
+            operation.setResponses(responseMap);
+            String yamlOutput = Yaml.pretty().writeValueAsString(swagger);
+            System.out.println(yamlOutput.substring(yamlOutput.indexOf("\n") + 1));
+
+            String content = Yaml.pretty().writeValueAsString(swagger);
+            return content;
+        } catch (NumberFormatException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
 
-
-
-        //columns
-        ArrayProperty columnsProperty = new ArrayProperty();
-        columnsProperty.setRequired(true);
-        columnsProperty.setType("Array");
-        StringProperty columnItem = new StringProperty();
-        columnItem.setType("String");
-        columnsProperty.setItems(columnItem);
-        propertyMap.put("columns", columnsProperty);
-        //filters
-        ArrayProperty filtersProperty = new ArrayProperty();
-        filtersProperty.setRequired(true);
-        filtersProperty.setType("Array");
-        ObjectProperty filterItem = new ObjectProperty();
-        filterItem.setType("object");
-        filterItem.setExample("{\"name\": \"name\",\"value\": [\"zhangsan\",\"lisi\"]}");
-        filtersProperty.setItems(filterItem);
-        propertyMap.put("filters", filtersProperty);
-        //offset
-        IntegerProperty offset = new IntegerProperty();
-        offset.setDefault(0);
-        offset.setRequired(true);
-        propertyMap.put("offset", offset);
-        //limit
-        IntegerProperty limit = new IntegerProperty();
-        limit.setRequired(true);
-        limit.setDefault(10);
-        propertyMap.put("limit", limit);
-        //property
-        model.setProperties(propertyMap);
-        //model
-        parameter.setSchema(model);
-        //
-
-
-        String content = Yaml.pretty().writeValueAsString(swagger);
-        return content;
-
     }
+
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
         try {
