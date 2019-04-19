@@ -285,4 +285,7 @@ public interface RoleDAO {
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")
     public List<String> getTopCategoryGuid(int categoryType);
+
+    @Update("update role set description=#{description} where roleid=#{roleId}")
+    public int editRole(Role role);
 }

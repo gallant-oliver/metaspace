@@ -1032,6 +1032,8 @@ INSERT INTO "public"."privilege2module" VALUES ('6', 4);
 INSERT INTO "public"."privilege2module" VALUES ('7', 1);
 INSERT INTO "public"."privilege2module" VALUES ('7', 3);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
+INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL);
+INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL);
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (14, '字段汇总值变化', '相比上一周期，字段汇总值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (15, '字段最小值变化', '相比上一周期，字段最小值变化', 1, '');
