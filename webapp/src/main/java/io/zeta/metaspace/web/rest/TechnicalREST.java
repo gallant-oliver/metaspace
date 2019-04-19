@@ -155,7 +155,7 @@ public class TechnicalREST {
     @Path("/update/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public String updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
