@@ -65,7 +65,7 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
+        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status") || requestURL.contains("api/metaspace/v2/entity/bulk/")) {
             filterChain.doFilter(request, response);
             return;
         }
