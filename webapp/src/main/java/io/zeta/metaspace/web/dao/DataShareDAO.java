@@ -196,4 +196,7 @@ public interface DataShareDAO {
 
     @Select("select count(1) from apiInfo where keeper=#{keeper} and guid=#{guid}")
     public int countUserAPI(@Param("keeper")String keeper, @Param("guid")String apiGuid);
+
+    @Select("select apiGroup.name from apiGroup,apiInfo where apiInfo.groupGuid=apiGroup.guid and apiInfo.guid=#{guid}")
+    public String getGroupByAPIGuid(@Param("guid")String apiGuid);
 }

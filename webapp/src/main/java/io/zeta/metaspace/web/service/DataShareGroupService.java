@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.web.dao.DataShareGroupDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class DataShareGroupService {
 
     public int insertGroup(APIGroup group) throws AtlasBaseException {
         try {
+            String user = AdminUtils.getUserData().getUserId();
             int count = groupDAO.countGroupName(group.getName());
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字分组");
@@ -50,6 +52,7 @@ public class DataShareGroupService {
             String guid = UUID.randomUUID().toString();
             group.setGuid(guid);
             group.setParentGuid("1");
+            group.setGenerator(user);
             return groupDAO.insertGroup(group);
         } catch (AtlasBaseException e) {
             throw e;

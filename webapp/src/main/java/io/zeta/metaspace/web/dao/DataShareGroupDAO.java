@@ -32,7 +32,7 @@ import java.util.List;
  */
 public interface DataShareGroupDAO {
 
-    @Insert("insert into apiGroup(guid,name,parentGuid,description)values(#{guid},#{name},#{parentGuid},#{description})")
+    @Insert("insert into apiGroup(guid,name,parentGuid,description,generator)values(#{guid},#{name},#{parentGuid},#{description},#{generator})")
     public int insertGroup(APIGroup group);
 
     @Select("select count(1) from apiGroup where name=#{name}")

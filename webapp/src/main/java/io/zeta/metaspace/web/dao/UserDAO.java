@@ -69,5 +69,8 @@ public interface UserDAO {
     @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
 
+    @Select("select account from users where userId=#{userId}")
+    public String getUserAccount(@Param("userId") String userId);
+
 
 }
