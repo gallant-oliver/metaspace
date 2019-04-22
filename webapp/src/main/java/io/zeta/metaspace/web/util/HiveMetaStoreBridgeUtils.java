@@ -538,7 +538,12 @@ public class HiveMetaStoreBridgeUtils {
         AtlasEntity ret = new AtlasEntity(HiveDataTypes.HIVE_STORAGEDESC.getName());
         //保持Guid一致，如果不一致，更新元数据时会当成存在变动
         HashMap sd = (HashMap)tableEntity.getAttribute("sd");
-        ret.setGuid(sd.get("guid").toString());
+        if (null != sd) {
+            Object guid = sd.get("guid");
+            if (guid != null) {
+                ret.setGuid(guid.toString());
+            }
+        }
         ret.setAttribute(ATTRIBUTE_TABLE, BaseHiveEvent.getObjectId(tableEntity));
         ret.setAttribute(ATTRIBUTE_QUALIFIED_NAME, sdQualifiedName);
         ret.setAttribute(ATTRIBUTE_PARAMETERS, storageDesc.getParameters());
@@ -594,9 +599,17 @@ public class HiveMetaStoreBridgeUtils {
             LOG.debug("Processing field {}", fs);
 
             AtlasEntity column = new AtlasEntity(HiveDataTypes.HIVE_COLUMN.getName());
-            HashMap columnMap = (HashMap) ((ArrayList) table.getAttributes().get(attributeName)).get(columnPosition);
-            //保持Guid一致
-            column.setGuid(columnMap.get("guid").toString());
+            ArrayList columns = (ArrayList) table.getAttributes().get(attributeName);
+            if (CollectionUtils.isNotEmpty(columns)) {
+                HashMap columnMap = (HashMap) columns.get(columnPosition);
+                if (MapUtils.isNotEmpty(columnMap)) {
+                    //保持Guid一致
+                    Object guid = columnMap.get("guid");
+                    if (guid != null) {
+                        column.setGuid(guid.toString());
+                    }
+                }
+            }
             column.setAttribute(ATTRIBUTE_TABLE, BaseHiveEvent.getObjectId(table));
             column.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), fs.getName()));
             column.setAttribute(ATTRIBUTE_NAME, fs.getName());
