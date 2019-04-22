@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.FilterUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.json.simple.JSONObject;
@@ -44,7 +45,7 @@ public class PrivilegeFilter implements Filter {
         RoleService roleService = (RoleService) requiredWebApplicationContext.getBean("getRoleService");
 
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
+        if (FilterUtils.isSkipUrl(requestURL)) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
