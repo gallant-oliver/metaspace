@@ -880,6 +880,9 @@ public class DataShareService {
         for (String columnName : columSet) {
             if (columnMap.containsKey(columnName)) {
                 String type = columnMap.get(columnName);
+                if(type.contains("char")) {
+                    type = "string";
+                }
                 columnTypeMap.put(columnName, type);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未知的查询字段");
