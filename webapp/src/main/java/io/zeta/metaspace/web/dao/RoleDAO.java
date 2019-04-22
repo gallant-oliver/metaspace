@@ -202,7 +202,7 @@ public interface RoleDAO {
     public List<String> getCategorysByTypeIds(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
 
     //查找权限节点
-    @Select("select categoryid guid,name,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,description from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
+    @Select("select * from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
     public List<RoleModulesCategories.Category> getCategorysByType(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
 
     @Select("select * from category where categoryType=#{categoryType}")
