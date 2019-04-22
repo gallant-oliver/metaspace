@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.dao.CategoryDAO;
@@ -174,16 +175,46 @@ public class SearchService {
         return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
     }
 
+
+    public List<String> getPermissionCategoryIds() throws AtlasBaseException {
+        try {
+            User user = AdminUtils.getUserData();
+            Role role = roleDAO.getRoleByUsersId(user.getUserId());
+            if (role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
+            List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
+            List<String> categoryIds = new ArrayList<>();
+            for (UserInfo.Module module : moduleByRoleId) {
+                //有管理技术目录权限
+                if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+
+                    //admin有全部目录权限，且可以给一级目录加关联
+                    if (roleId.equals(SystemRole.ADMIN.getCode())) {
+                        categoryIds = roleDAO.getTopCategoryGuid(0);
+                    } else {
+                        categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+                    }
+                }
+            }
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
+            ArrayList<String> strings = new ArrayList<>();
+            for (RoleModulesCategories.Category child : childs) {
+                strings.add(child.getGuid());
+            }
+            return categoryIds;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
-            long limit = parameters.getLimit();
-            long offset = parameters.getOffset();
-            String query = parameters.getQuery();
+            List<String> categoryIds = getPermissionCategoryIds();
+            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
             PageResult<TableInfo> pageResult = new PageResult<>();
-            List<TableInfo> tableList = relationDAO.getDbTablesWithoutTmp(databaseId, query, limit, offset);
-            int countDbTable = relationDAO.countDbTablesWithoutTmp(databaseId, query);
             pageResult.setLists(tableList);
-            pageResult.setSum(countDbTable);
+            pageResult.setSum(tableList.size());
             pageResult.setCount(tableList.size());
             return pageResult;
         } catch (Exception e) {
@@ -439,4 +470,66 @@ public class SearchService {
         }
         return lists;
     }
+
+
+
+    @Transactional
+    public PageResult<Database> getDatabasePageResultV2(Parameters parameters) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if (role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
+        List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
+        for (UserInfo.Module module : moduleByRoleId) {
+            //有管理技术目录权限
+            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                //admin有全部目录权限，且可以给一级目录加关联
+                if (roleId.equals(SystemRole.ADMIN.getCode())) {
+                    List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+                    return getDatabaseV2(parameters, topCategoryGuid);
+                } else {
+                    List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+                    if (categorysByTypeIds.size() > 0) {
+                        return getDatabaseV2(parameters, categorysByTypeIds);
+                    }
+                }
+            }
+        }
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
+    }
+
+    @Transactional
+    public PageResult<Database> getDatabaseV2(Parameters parameters, List<String> categoryIds) {
+        List<DatabaseHeader> dbName = null;
+        PageResult<Database> databasePageResult = new PageResult<>();
+        if (categoryIds.size() > 0) {
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
+            ArrayList<String> strings = new ArrayList<>();
+            for (RoleModulesCategories.Category child : childs) {
+                strings.add(child.getGuid());
+            }
+            //如果没目录
+            if (strings.size() == 0) {
+                databasePageResult.setOffset(parameters.getOffset());
+                databasePageResult.setCount(0);
+                databasePageResult.setSum(0);
+                return databasePageResult;
+            }
+            dbName = roleDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            List<Database> lists = new ArrayList<>();
+            for (DatabaseHeader db : dbName) {
+                Database database = new Database();
+                database.setDatabaseId(db.getDatabaseGuid());
+                database.setDatabaseName(db.getDbName());
+                lists.add(database);
+            }
+            databasePageResult.setLists(lists);
+            databasePageResult.setOffset(parameters.getOffset());
+            databasePageResult.setCount(dbName.size());
+            databasePageResult.setSum(roleDAO.getDBCountV2(strings, parameters.getQuery()));
+        }
+        return databasePageResult;
+    }
+
 }

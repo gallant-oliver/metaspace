@@ -26,6 +26,7 @@ public class APIGroup {
     private String name;
     private String parentGuid;
     private String description;
+    private String generator;
 
     public String getGuid() {
         return guid;
@@ -57,5 +58,13 @@ public class APIGroup {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getGenerator() {
+        return generator;
+    }
+
+    public void setGenerator(String generator) {
+        this.generator = generator;
     }
 }
