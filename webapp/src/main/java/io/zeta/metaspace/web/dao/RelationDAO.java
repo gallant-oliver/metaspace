@@ -146,8 +146,8 @@ public interface RelationDAO {
              " </script>"})
     public int countDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query);
 
-    @Delete("delete from table_relation where tableguid=#{guid}")
-    public int deleteByTableGuid(String guid);
+    @Delete("delete from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
+    public int deleteByTableGuid(@Param("categoryGuid") String categoryGuid,@Param("tableGuid") String tableGuid);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);
@@ -166,4 +166,7 @@ public interface RelationDAO {
     @Select("select * from table_relation where relationshipguid=#{guid}")
     public RelationEntityV2 getRelationInfoByGuid(String guid);
 
+    //判断关联是否已存在
+    @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
+    public int ifRelationExists(@Param("categoryGuid") String categoryGuid,@Param("tableGuid") String tableGuid);
 }

@@ -425,12 +425,15 @@ public class SearchService {
             tb.setTableName(table.getTableName());
             tb.setDatabaseName(table.getDbName());
             tb.setCreateTime(table.getCreateTime());
+            tb.setDatabaseId(table.getDatabaseGuid());
             tb.setStatus(table.getStatus());
-            String categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
+            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
             if (categoryGuidByTableGuid == null) {
                 tb.setPath("");
-            } else {
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
+            } else if(categoryGuidByTableGuid.size()!=1){
+                tb.setPath("");
+            }else{
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
             }
             lists.add(tb);
         }

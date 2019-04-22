@@ -37,6 +37,7 @@ public class TechnologyInfo {
         private String status;
         private String createTime;
         private boolean trust;
+        private String databaseGuid;
 
         public String getTableGuid() {
             return tableGuid;
@@ -84,6 +85,14 @@ public class TechnologyInfo {
 
         public void setTrust(boolean trust) {
             this.trust = trust;
+        }
+
+        public String getDatabaseGuid() {
+            return databaseGuid;
+        }
+
+        public void setDatabaseGuid(String databaseGuid) {
+            this.databaseGuid = databaseGuid;
         }
     }
 

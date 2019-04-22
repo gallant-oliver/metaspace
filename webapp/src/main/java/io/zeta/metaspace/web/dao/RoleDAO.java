@@ -267,7 +267,7 @@ public interface RoleDAO {
             "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
     public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.databaseguid,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +

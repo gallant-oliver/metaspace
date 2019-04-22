@@ -349,10 +349,13 @@ public class DataManageService {
             String generateTime = format.format(time);
             for (RelationEntityV2 relation : relations) {
                 //删除旧的
-                relationDao.deleteByTableGuid(relation.getTableGuid());
+                String topGuid = relationDao.getTopGuidByGuid(categoryGuid);
+                relationDao.deleteByTableGuid(topGuid,relation.getTableGuid());
                 relation.setCategoryGuid(categoryGuid);
                 relation.setGenerateTime(generateTime);
-                addRelation(relation);
+                if(relationDao.ifRelationExists(categoryGuid,relation.getTableGuid())==0) {
+                    addRelation(relation);
+                }
             }
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -407,13 +410,16 @@ public class DataManageService {
                     String relationshipGuid = relationship.getRelationshipGuid();
                     RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
                     relationDao.delete(relationInfo.getRelationshipGuid());
-                    TableRelation tableRelation = new TableRelation();
-                    tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-                    String guid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
-                    tableRelation.setCategoryGuid(guid);
-                    tableRelation.setTableGuid(relationInfo.getTableGuid());
-                    tableRelation.setGenerateTime(DateUtils.getNow());
-                    relationDao.addRelation(tableRelation);
+                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
+                    //当贴源层没有关联该表时
+                    if(relationDao.ifRelationExists(topGuid,relationInfo.getTableGuid())==0){
+                        TableRelation tableRelation = new TableRelation();
+                        tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+                        tableRelation.setCategoryGuid(topGuid);
+                        tableRelation.setTableGuid(relationInfo.getTableGuid());
+                        tableRelation.setGenerateTime(DateUtils.getNow());
+                        relationDao.addRelation(tableRelation);
+                    }
                 }
             }
         } catch (Exception e) {

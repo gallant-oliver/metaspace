@@ -161,6 +161,6 @@ public interface CategoryDAO {
     public int addTableOwners(TableOwner owner) throws SQLException;
 
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid")
-    public String getCategoryGuidByTableGuid(String guid);
+    public List<String> getCategoryGuidByTableGuid(String guid);
 
 }
