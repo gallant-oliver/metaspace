@@ -26,18 +26,21 @@ public class FilterColumn {
     private String value;
     private Boolean fill;
     private String type;
+    private Boolean useDefaultValue;
 
-    public FilterColumn(String columnName, String value, Boolean fill, String type) {
+    public FilterColumn(String columnName, String value, Boolean fill, String type, Boolean useDefaultValue) {
         this.columnName = columnName;
         this.value = value;
         this.fill = fill;
         this.type = type;
+        this.useDefaultValue = useDefaultValue;
     }
 
-    public FilterColumn(String columnName, String value, Boolean fill) {
+    public FilterColumn(String columnName, String value, Boolean fill, Boolean useDefaultValue) {
         this.columnName = columnName;
         this.value = value;
         this.fill = fill;
+        this.useDefaultValue = useDefaultValue;
     }
 
     public String getColumnName() {
@@ -70,5 +73,13 @@ public class FilterColumn {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Boolean getUseDefaultValue() {
+        return useDefaultValue;
+    }
+
+    public void setUseDefaultValue(Boolean useDefaultValue) {
+        this.useDefaultValue = useDefaultValue;
     }
 }

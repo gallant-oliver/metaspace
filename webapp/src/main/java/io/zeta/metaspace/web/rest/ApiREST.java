@@ -22,10 +22,8 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/4/12 17:14
  */
 
-import io.zeta.metaspace.web.service.DataShareGroupService;
+import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.web.service.DataShareService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -39,6 +37,7 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -54,13 +53,27 @@ public class ApiREST {
     @Context
     private HttpServletRequest httpServletRequest;
 
-    @GET
+    /*@GET
     @Path("/{version}/share/{url}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
         try {
             return shareService.queryAPIData(url, httpServletRequest);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }*/
+
+    @POST
+    @Path("/{version}/share/{url}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Map> queryAPIData(@PathParam("url") String url, QueryInfo info) throws Exception {
+        try {
+            return shareService.queryAPIData(url, info);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
