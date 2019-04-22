@@ -476,14 +476,15 @@ public class DataShareService {
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
             String userId = info.getKeeper();
-            String api_owner = userDAO.getUserAccount(userId);
+            //String api_owner = userDAO.getUserAccount(userId);
+            List<APIContent.APIDetail.Organization> organizations = new ArrayList<>();
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
             String upstream_url = configuration.getString(ATLAS_REST_ADDRESS);
             String swagger_content = generateSwaggerContent(info);
-            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version,organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
         }
         content.setApis_detail(contentList);
@@ -1201,6 +1202,9 @@ public class DataShareService {
         for (String columnName : columSet) {
             if (columnMap.containsKey(columnName)) {
                 String type = columnMap.get(columnName);
+                if(type.contains("char")) {
+                    type = "string";
+                }
                 columnTypeMap.put(columnName, type);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未知的查询字段");
