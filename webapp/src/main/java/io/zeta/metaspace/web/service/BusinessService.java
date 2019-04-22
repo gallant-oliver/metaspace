@@ -369,6 +369,7 @@ public class BusinessService {
             }
             businessDao.deleteRelationByBusinessId(businessId);
 
+            businessDao.updateTrustTable(businessId);
 
             if(Objects.nonNull(list) && list.size()>0) {
                 businessDao.insertTableRelation(businessId, list);

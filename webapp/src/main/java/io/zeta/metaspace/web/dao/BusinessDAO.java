@@ -193,6 +193,9 @@ public interface BusinessDAO {
     @Delete("delete from business2table where businessId=#{businessId}")
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
 
+    @Update("UPDATE businessinfo SET trusttable=null where businessId=#{businessId}")
+    public int updateTrustTable(@Param("businessId")String businessId);
+
     //添加业务信息与表的关联
     @Insert({" <script>",
             " insert into business2table(businessId, tableGuid)values",
