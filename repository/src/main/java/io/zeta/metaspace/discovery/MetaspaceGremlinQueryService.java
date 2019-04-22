@@ -431,12 +431,12 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
     }
 
-    private void setVirtualTable(Table table) {
+    /*private void setVirtualTable(Table table) {
         if(table.getTableName().contains("values__tmp__table"))
             table.setVirtualTable(true);
         else
             table.setVirtualTable(false);
-    }
+    }*/
 
     @Override
     public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
@@ -494,13 +494,19 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         attributes.add("comment");
         attributes.add("description");
         attributes.add("createTime");
+        attributes.add("temporary");
         Table table = new Table();
         if (Objects.nonNull(tableVertex)) {
             AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
             AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
             table.setTableId(tableEntity.getGuid());
             table.setTableName(tableEntity.getAttribute("name").toString());
-            setVirtualTable(table);
+            if(Boolean.getBoolean(tableEntity.getAttribute("temporary").toString()) == true) {
+                table.setVirtualTable(true);
+            } else {
+                table.setVirtualTable(false);
+            }
+            //setVirtualTable(table);
             table.setStatus(tableEntity.getStatus().name());
             table.setDescription(tableEntity.getAttribute("comment") == null ? "null" : tableEntity.getAttribute("comment").toString());
             Date createTime = tableEntity.getCreateTime();
@@ -626,11 +632,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             List<String> attributes = new ArrayList<>();
             attributes.add("name");
             attributes.add("comment");
+            attributes.add("temporary");
             if (Objects.nonNull(table)) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
                 AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
                 tb.setTableName(dbEntity.getAttribute("name").toString());
-                setVirtualTable(tb);
+                if(Boolean.getBoolean(dbEntity.getAttribute("temporary").toString()) == true) {
+                    tb.setVirtualTable(true);
+                } else {
+                    tb.setVirtualTable(false);
+                }
+                //setVirtualTable(tb);
                 tb.setTableId(dbEntity.getGuid());
                 tb.setStatus(dbEntity.getStatus().name());
                 tb.setDescription(dbEntity.getAttribute("comment")==null?"-":dbEntity.getAttribute("comment").toString());

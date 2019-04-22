@@ -137,7 +137,12 @@ public class MetaDataService {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
             //判断是否为虚拟表
-            extractVirtualTable(entity, table);
+            if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
+                table.setVirtualTable(true);
+            } else {
+                table.setVirtualTable(false);
+            }
+            //extractVirtualTable(entity, table);
             //状态
             table.setStatus(entity.getStatus().name());
             //创建人
