@@ -60,16 +60,22 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.json.simple.JSONObject;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
@@ -392,60 +398,46 @@ public class DataShareService {
             postMethod.setRequestEntity(requestEntity);
             int result = httpClient.executeMethod(postMethod);
             if (result == HttpStatus.SC_OK) {
-                System.out.println("success");
-                /*InputStream in = method.getResponseBodyAsStream();
+                InputStream in = postMethod.getResponseBodyAsStream();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int len = 0;
                 while ((len = in.read(buffer)) != -1) {
                     baos.write(buffer, 0, len);
                 }
-                return URLDecoder.decode(baos.toString(), "UTF-8");*/
+                return URLDecoder.decode(baos.toString(), "UTF-8");
             } else {
                 throw new Exception("HTTP ERROR Status: " + postMethod.getStatusCode() + ":" + postMethod.getStatusText());
             }
-            /*// 实例化HTTP方法
-            HttpPost httpPost = new HttpPost();
-            httpPost.setURI(new URI(url));
-            //ticket
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-            //设置参数
-            httpPost.setHeader("ticket", ticket);
-            httpPost.setHeader("Accept", "application/json");
-            httpPost.setHeader("Content-Type", "application/json");
-            HttpResponse response = client.execute(httpPost);*/
+    public static String doDelete(String url, List<String> ids) {
+        try {
+            // 定义HttpClient
+            org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
+            DeleteMethod deleteMethod = new DeleteMethod(url);
+            String ticket = AdminUtils.getSSOTicket();
+            deleteMethod.addRequestHeader(new Header("ticket", ticket));
+            HttpMethodParams params = new HttpMethodParams();
+            params.setParameter("", ids);
 
-            /*response.setEntity();
-
-
-            PrintWriter writer = response;
-            HashMap<String, String> hashMap = new HashMap();
-            hashMap.put("error", "请检查用户登陆状态");
-            hashMap.put("data", loginURL + "?service=");
-            String j = new Gson().toJson(hashMap);
-            writer.print(j);*/
-
-
-            /*int code = response.getStatusLine().getStatusCode();
-            if(code == 200){	//请求成功
-                in = new BufferedReader(new InputStreamReader(response.getEntity()
-                                                                      .getContent(), "utf-8"));
-                StringBuffer sb = new StringBuffer("");
-                String line = "";
-                String NL = System.getProperty("line.separator");
-                while ((line = in.readLine()) != null) {
-                    sb.append(line + NL);
+            int result = httpClient.executeMethod(deleteMethod);
+            if (result == HttpStatus.SC_OK) {
+                InputStream in = deleteMethod.getResponseBodyAsStream();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = in.read(buffer)) != -1) {
+                    baos.write(buffer, 0, len);
                 }
-
-                in.close();
-
-                return sb.toString();
+                return URLDecoder.decode(baos.toString(), "UTF-8");
+            } else {
+                throw new Exception("HTTP ERROR Status: " + deleteMethod.getStatusCode() + ":" + deleteMethod.getStatusText());
             }
-            else{	//
-                System.out.println("状态码：" + code);
-                return null;
-            }*/
-            return "success";
         } catch(Exception e) {
             e.printStackTrace();
             return null;
@@ -461,6 +453,19 @@ public class DataShareService {
             String res = doPost(mobiusURL, dataMap);
             System.out.println(res);
             return shareDAO.updatePublishStatus(guidList, true);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS);
+            String res = doDelete(mobiusURL, apiGuid);
+            LOG.info(res);
+            return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
@@ -800,16 +805,6 @@ public class DataShareService {
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
-        }
-    }
-
-
-    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
-        try {
-            return shareDAO.updatePublishStatus(apiGuid, false);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
     }
 
