@@ -381,10 +381,10 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
-            APIContent content = generateAPIContent(guidList);
+            /*APIContent content = generateAPIContent(guidList);
             String organizationURL = SSOConfig.getOrganizationURL();
             Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
-            SSLClient.doPost(organizationURL, dataMap);
+            SSLClient.doPost(organizationURL, dataMap);*/
 
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
