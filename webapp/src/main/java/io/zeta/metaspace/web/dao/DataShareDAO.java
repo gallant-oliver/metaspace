@@ -200,6 +200,6 @@ public interface DataShareDAO {
     @Select("select apiGroup.name from apiGroup,apiInfo where apiInfo.groupGuid=apiGroup.guid and apiInfo.guid=#{guid}")
     public String getGroupByAPIGuid(@Param("guid")String apiGuid);
 
-    @Select("")
-    public Object getDataOwner(@Param("guid")String apiGuid);
+    @Select("select dataOwner from tableInfo,apiInfo where apiInfo.guid=#{guid} and tableInfo.tableGuid=apiInfo.tableGuid")
+    public Object getDataOwnerByApiGuid(@Param("guid")String apiGuid);
 }

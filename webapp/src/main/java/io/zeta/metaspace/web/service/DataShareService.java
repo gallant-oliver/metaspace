@@ -39,6 +39,7 @@ import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
@@ -475,9 +476,9 @@ public class DataShareService {
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
-            String userId = info.getKeeper();
+            //String userId = info.getKeeper();
             //String api_owner = userDAO.getUserAccount(userId);
-            List<APIContent.APIDetail.Organization> organizations = new ArrayList<>();
+            List<APIContent.APIDetail.Organization> organizations = getOrganization(api_id);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
@@ -490,6 +491,25 @@ public class DataShareService {
         content.setApis_detail(contentList);
         return content;
     }
+
+    public List<APIContent.APIDetail.Organization> getOrganization(String guid) {
+        Gson gson = new Gson();
+        Object dataOwnerObject = shareDAO.getDataOwnerByApiGuid(guid);
+        PGobject pGobject = (PGobject)dataOwnerObject;
+        List<APIContent.APIDetail.Organization> list = new ArrayList<>();
+        if(Objects.nonNull(pGobject)) {
+            String value = pGobject.getValue();
+            List<Map> owners = gson.fromJson(value, List.class);
+            for(Map owner : owners) {
+                String id = owner.get("id").toString();
+                String type = owner.get("type").toString();
+                APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(id, type);
+                list.add(organization);
+            }
+        }
+        return list;
+    }
+
 
     public String getURL(APIInfo info) {
         String version = info.getVersion();

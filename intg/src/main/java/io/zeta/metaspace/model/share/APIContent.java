@@ -82,6 +82,11 @@ public class APIContent {
             private String organization;
             private String organization_type;
 
+            public Organization(String organization, String organization_type) {
+                this.organization = organization;
+                this.organization_type = organization_type;
+            }
+
             public String getOrganization() {
                 return organization;
             }
