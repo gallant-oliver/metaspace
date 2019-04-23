@@ -284,6 +284,7 @@ public class DataShareService {
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             String query = parameters.getQuery();
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {

@@ -468,6 +468,8 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
+            tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
 
             getPath(list);

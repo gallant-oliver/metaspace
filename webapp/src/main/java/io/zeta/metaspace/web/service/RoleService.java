@@ -93,8 +93,10 @@ public class RoleService {
         PageResult<User> userPageResult = new PageResult<>();
         List<User> users;
         if (limit == -1) {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
         } else {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
         }
         long usersCount = roleDAO.getUsersCount(roleId, query);
@@ -108,6 +110,7 @@ public class RoleService {
     @Transactional
     public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
         PageResult<Role> rolePageResult = new PageResult<>();
+        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         List<Role> roles = roleDAO.getRoles(query, offset, limit);
         long rolesCount = roleDAO.getRolesCount(query);
         rolePageResult.setLists(roles);
