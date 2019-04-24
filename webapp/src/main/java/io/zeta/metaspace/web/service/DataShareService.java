@@ -463,7 +463,7 @@ public class DataShareService {
             APIContent content = generateAPIContent(guidList);
             Gson gson = new Gson();
             String jsonStr = gson.toJson(content, APIContent.class);
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/create";
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
             String res = SSLClient.doPost(mobiusURL, jsonStr);
             System.out.println(res);
             return shareDAO.updatePublishStatus(guidList, true);
@@ -476,7 +476,7 @@ public class DataShareService {
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/delete";
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
             Map param = new HashMap();
             param.put("api_id_list", apiGuid);
             Gson gson = new Gson();
