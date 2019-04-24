@@ -626,7 +626,6 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-annotations</artifactId>
         </dependency>
-<<<<<<< HEAD
 
       <dependency>
         <groupId>io.swagger</groupId>
