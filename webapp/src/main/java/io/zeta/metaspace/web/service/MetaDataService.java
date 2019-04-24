@@ -245,7 +245,8 @@ public class MetaDataService {
                 //目录管理员
 //                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
-                table.setRelationTime(tableDAO.getDateByTableguid(guid));
+                if(relations.size()==1)
+                        table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
