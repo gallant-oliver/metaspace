@@ -6,7 +6,8 @@ CREATE TABLE "public"."apigroup" (
   "guid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
   "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "parentguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
