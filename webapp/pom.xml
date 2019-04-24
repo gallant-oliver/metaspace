@@ -222,12 +222,6 @@
         <dependency>
             <groupId>org.apache.atlas</groupId>
             <artifactId>atlas-repository</artifactId>
-          <exclusions>
-            <exclusion>
-              <artifactId>snakeyaml</artifactId>
-              <groupId>org.yaml</groupId>
-            </exclusion>
-          </exclusions>
         </dependency>
 
         <dependency>
@@ -499,12 +493,6 @@
             <artifactId>atlas-repository</artifactId>
             <classifier>tests</classifier>
             <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <artifactId>snakeyaml</artifactId>
-              <groupId>org.yaml</groupId>
-            </exclusion>
-          </exclusions>
         </dependency>
 
         <dependency>
@@ -638,6 +626,7 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-annotations</artifactId>
         </dependency>
+<<<<<<< HEAD
 
       <dependency>
         <groupId>io.swagger</groupId>
@@ -650,6 +639,24 @@
         <version>3.1</version>
         <scope>compile</scope>
       </dependency>
+=======
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-hbase-handler</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-core</artifactId>
+            <version>1.5.22</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+            <scope>compile</scope>
+        </dependency>
+>>>>>>> feature/metaspace-1.4-test
     </dependencies>
 
     <build>

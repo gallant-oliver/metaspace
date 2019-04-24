@@ -298,6 +298,7 @@ public class DataShareService {
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             String query = parameters.getQuery();
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
@@ -465,7 +466,7 @@ public class DataShareService {
             String jsonStr = gson.toJson(content, APIContent.class);
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
             String res = SSLClient.doPost(mobiusURL, jsonStr);
-            System.out.println(res);
+            LOG.info(res);
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
             LOG.error(e.getMessage());

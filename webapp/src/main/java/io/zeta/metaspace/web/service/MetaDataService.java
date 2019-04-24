@@ -137,7 +137,12 @@ public class MetaDataService {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
             //判断是否为虚拟表
-            extractVirtualTable(entity, table);
+            if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
+                table.setVirtualTable(true);
+            } else {
+                table.setVirtualTable(false);
+            }
+            //extractVirtualTable(entity, table);
             //状态
             table.setStatus(entity.getStatus().name());
             //创建人
@@ -240,7 +245,8 @@ public class MetaDataService {
                 //目录管理员
 //                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
-                table.setRelationTime(tableDAO.getDateByTableguid(guid));
+                if(relations.size()==1)
+                        table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }

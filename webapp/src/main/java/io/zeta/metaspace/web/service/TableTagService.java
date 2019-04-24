@@ -35,6 +35,7 @@ public class TableTagService {
 
     public List<Tag> getTags(String query,long offset,long limit) {
         List<Tag> tags=null;
+        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         if(limit==-1)
             tags = tableTagDAO.getTag(query, offset);
             else

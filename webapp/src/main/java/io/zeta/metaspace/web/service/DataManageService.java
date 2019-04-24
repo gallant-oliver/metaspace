@@ -33,11 +33,11 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
+import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
@@ -46,6 +46,7 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.ApplicationProperties;
@@ -87,6 +88,8 @@ public class DataManageService {
     DataShareDAO shareDAO;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
+    @Autowired
+    UserDAO userDAO;
 
     /**
      * 获取用户有权限的全部目录
@@ -123,7 +126,7 @@ public class DataManageService {
      * @throws Exception
      */
     @Transactional
-    public CategoryEntityV2 createCategory(CategoryInfoV2 info, Integer type) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 info, Integer type) throws Exception {
         try {
             String currentCategoryGuid = info.getGuid();
             CategoryEntityV2 entity = new CategoryEntityV2();
@@ -153,9 +156,12 @@ public class DataManageService {
                 entity.setQualifiedName(qualifiedName.toString());
                 entity.setLevel(1);
                 categoryDao.add(entity);
-                CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
-                returnEntity.setShow(true);
-                returnEntity.setStatus(2);
+                CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                if(type==0){
+                    privilege.setDeleteRelation(false);
+                }
+                returnEntity.setPrivilege(privilege);
                 return returnEntity;
             }
 
@@ -218,9 +224,28 @@ public class DataManageService {
                 }
             }
             categoryDao.add(entity);
-            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(newCategoryGuid);
-            returnEntity.setShow(true);
-            returnEntity.setStatus(2);
+            CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+            User user = AdminUtils.getUserData();
+            List<Module> moduleByUserId = userDAO.getModuleByUserId(user.getUserId());
+            List<Integer> modules = new ArrayList<>();
+            for (Module module : moduleByUserId) {
+                modules.add(module.getModuleId());
+            }
+            CategoryPrivilege.Privilege privilege =null;
+            if(type==0) {
+                if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                }else{
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, false, true);
+                }
+                }else{
+                if(modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                }else{
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, true, false, true);
+                }
+            }
+            returnEntity.setPrivilege(privilege);
             return returnEntity;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -287,7 +312,7 @@ public class DataManageService {
      * @return
      * @throws AtlasBaseException
      */
-    public CategoryEntityV2 updateCategory(CategoryInfoV2 info, int type) throws AtlasBaseException {
+    public String updateCategory(CategoryInfoV2 info, int type) throws AtlasBaseException {
         try {
             String guid = info.getGuid();
             String name = info.getName();
@@ -312,10 +337,7 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             categoryDao.updateCategoryInfo(entity);
-            CategoryEntityV2 returnEntity = categoryDao.queryByGuid(guid);
-            returnEntity.setShow(true);
-            returnEntity.setStatus(2);
-            return returnEntity;
+            return "success";
         } catch (SQLException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -337,10 +359,13 @@ public class DataManageService {
             String generateTime = format.format(time);
             for (RelationEntityV2 relation : relations) {
                 //删除旧的
-                relationDao.deleteByTableGuid(relation.getTableGuid());
+                String topGuid = relationDao.getTopGuidByGuid(categoryGuid);
+                relationDao.deleteByTableGuid(topGuid,relation.getTableGuid());
                 relation.setCategoryGuid(categoryGuid);
                 relation.setGenerateTime(generateTime);
-                addRelation(relation);
+                if(relationDao.ifRelationExists(categoryGuid,relation.getTableGuid())==0) {
+                    addRelation(relation);
+                }
             }
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -395,13 +420,16 @@ public class DataManageService {
                     String relationshipGuid = relationship.getRelationshipGuid();
                     RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
                     relationDao.delete(relationInfo.getRelationshipGuid());
-                    TableRelation tableRelation = new TableRelation();
-                    tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-                    String guid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
-                    tableRelation.setCategoryGuid(guid);
-                    tableRelation.setTableGuid(relationInfo.getTableGuid());
-                    tableRelation.setGenerateTime(DateUtils.getNow());
-                    relationDao.addRelation(tableRelation);
+                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
+                    //当贴源层没有关联该表时
+                    if(relationDao.ifRelationExists(topGuid,relationInfo.getTableGuid())==0){
+                        TableRelation tableRelation = new TableRelation();
+                        tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+                        tableRelation.setCategoryGuid(topGuid);
+                        tableRelation.setTableGuid(relationInfo.getTableGuid());
+                        tableRelation.setGenerateTime(DateUtils.getNow());
+                        relationDao.addRelation(tableRelation);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -450,6 +478,8 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
+            tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
 
             getPath(list);
@@ -483,8 +513,9 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
-            if (typeName.contains("table"))
+            if (typeName.contains("table")) {
                 relationDao.updateTableStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -560,11 +591,13 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                 String guid = entity.getGuid();
+                String name = getEntityAttribute(entity, "name");
                 if (tableDAO.ifTableExists(guid).size() == 0) {
                     TableInfo tableInfo = new TableInfo();
                     tableInfo.setTableGuid(guid);
-                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    tableInfo.setTableName(name);
                     Object createTime = entity.getAttribute("createTime");
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(createTime);
@@ -574,6 +607,7 @@ public class DataManageService {
                     tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.addTable(tableInfo);
+                }
                 }
             }
         }
@@ -623,12 +657,14 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
-                TableInfo tableInfo = new TableInfo();
-                tableInfo.setTableGuid(entity.getGuid());
-                tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                tableInfo.setDbName(relatedDB.getDisplayText());
-                tableDAO.updateTable(tableInfo);
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(entity.getGuid());
+                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableDAO.updateTable(tableInfo);
+                }
             }
         }
     }
@@ -636,8 +672,12 @@ public class DataManageService {
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-            Object obj = entity.getRelationshipAttribute("db");
+        String store="db";
+        if(entity.getTypeName().equals("hbase_table")){
+            store="namespace";
+        }
+        if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {
+            Object obj = entity.getRelationshipAttribute(store);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }

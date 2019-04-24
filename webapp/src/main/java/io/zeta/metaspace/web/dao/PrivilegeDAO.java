@@ -88,7 +88,7 @@ public interface PrivilegeDAO {
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select({" <script>",
-             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%' order by privilegeId",
+             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%' ESCAPE '/' order by privilegeId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -100,7 +100,7 @@ public interface PrivilegeDAO {
     @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
     public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%'")
+    @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%' ESCAPE '/'")
     public long getRolesCount(@Param("query") String query);
 
     @Select("select * from privilege where privilegeId = #{privilegeId} order by privilegeId")

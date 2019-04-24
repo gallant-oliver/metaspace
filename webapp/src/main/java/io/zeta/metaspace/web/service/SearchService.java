@@ -352,6 +352,8 @@ public class SearchService {
     @Transactional
     public PageResult<Database> getDatabaseResultV2(Parameters parameters, List<String> categoryIds) {
         List<String> dbName = null;
+        String query = parameters.getQuery();
+        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         PageResult<Database> databasePageResult = new PageResult<>();
         if (categoryIds.size() > 0) {
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
@@ -366,7 +368,7 @@ public class SearchService {
                 databasePageResult.setSum(0);
                 return databasePageResult;
             }
-            dbName = roleDAO.getDBNamesV2(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            dbName = roleDAO.getDBNamesV2(strings, query, parameters.getOffset(), parameters.getLimit());
             List<Database> lists = new ArrayList<>();
             for (String s : dbName) {
                 Database database = new Database();
@@ -437,6 +439,7 @@ public class SearchService {
                 tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> lists = getTables(tableInfo);
             tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
@@ -456,12 +459,15 @@ public class SearchService {
             tb.setTableName(table.getTableName());
             tb.setDatabaseName(table.getDbName());
             tb.setCreateTime(table.getCreateTime());
+            tb.setDatabaseId(table.getDatabaseGuid());
             tb.setStatus(table.getStatus());
-            String categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
+            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
             if (categoryGuidByTableGuid == null) {
                 tb.setPath("");
-            } else {
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
+            } else if(categoryGuidByTableGuid.size()!=1){
+                tb.setPath("");
+            }else{
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
             }
             lists.add(tb);
         }

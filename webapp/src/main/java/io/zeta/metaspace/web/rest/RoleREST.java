@@ -266,4 +266,24 @@ public class RoleREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取全部用户失败");
         }
     }
+
+    /**
+     * 编辑角色
+     */
+    @PUT
+    @Path("/{roleId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String editRole(Role role) throws AtlasBaseException {
+        try {
+            return roleService.editRole(role);
+        }
+        catch(AtlasBaseException e){
+            throw e;
+        }
+        catch (Exception e) {
+            LOG.error("编辑角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"编辑角色失败");
+        }
+    }
+
 }

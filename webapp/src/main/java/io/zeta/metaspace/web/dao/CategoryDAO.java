@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
@@ -50,6 +51,9 @@ public interface CategoryDAO {
 
     @Select("select * from category where guid=#{guid}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
+
+    @Select("select * from category where guid=#{guid}")
+    public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid) throws SQLException;
 
     @Select("select name from category where guid=#{guid}")
     public String queryNameByGuid(@Param("guid") String categoryGuid) throws SQLException;
@@ -157,6 +161,6 @@ public interface CategoryDAO {
     public int addTableOwners(TableOwner owner) throws SQLException;
 
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid")
-    public String getCategoryGuidByTableGuid(String guid);
+    public List<String> getCategoryGuidByTableGuid(String guid);
 
 }
