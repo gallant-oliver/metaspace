@@ -501,8 +501,9 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
-            if (typeName.contains("table"))
+            if (typeName.contains("table")) {
                 relationDao.updateTableStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -553,11 +554,13 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                 String guid = entity.getGuid();
+                String name = getEntityAttribute(entity, "name");
                 if (tableDAO.ifTableExists(guid).size() == 0) {
                     TableInfo tableInfo = new TableInfo();
                     tableInfo.setTableGuid(guid);
-                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    tableInfo.setTableName(name);
                     Object createTime = entity.getAttribute("createTime");
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(createTime);
@@ -567,6 +570,7 @@ public class DataManageService {
                     tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.addTable(tableInfo);
+                }
                 }
             }
         }
@@ -616,12 +620,14 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
-                TableInfo tableInfo = new TableInfo();
-                tableInfo.setTableGuid(entity.getGuid());
-                tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                tableInfo.setDbName(relatedDB.getDisplayText());
-                tableDAO.updateTable(tableInfo);
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(entity.getGuid());
+                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableDAO.updateTable(tableInfo);
+                }
             }
         }
     }
@@ -629,8 +635,12 @@ public class DataManageService {
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-            Object obj = entity.getRelationshipAttribute("db");
+        String store="db";
+        if(entity.getTypeName().equals("hbase_table")){
+            store="namespace";
+        }
+        if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {
+            Object obj = entity.getRelationshipAttribute(store);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }
