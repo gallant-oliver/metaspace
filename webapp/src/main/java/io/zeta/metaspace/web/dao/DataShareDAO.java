@@ -202,4 +202,12 @@ public interface DataShareDAO {
 
     @Select("select dataOwner from tableInfo,apiInfo where apiInfo.guid=#{guid} and tableInfo.tableGuid=apiInfo.tableGuid")
     public Object getDataOwnerByApiGuid(@Param("guid")String apiGuid);
+
+    @Select({"<script>",
+             "select guid from apiInfo where tableGuid in",
+             " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
+             " #{tableGuid}",
+             " </foreach>",
+             " </script>"})
+    public List<String> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
 }

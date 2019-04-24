@@ -36,6 +36,7 @@ import io.swagger.models.properties.IntegerProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
+import io.swagger.util.Json;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -49,6 +50,7 @@ import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -60,11 +62,14 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.hadoop.hbase.client.Put;
 import org.json.simple.JSONObject;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
@@ -387,14 +392,14 @@ public class DataShareService {
         }
     }
 
-    public static String doPost(String url, Map params) {
+    /*public static String doPost(String url, String json) {
         try {
             // 定义HttpClient
             org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
             PostMethod postMethod = new PostMethod(url);
             String ticket = AdminUtils.getSSOTicket();
-            postMethod.addRequestHeader(new Header("ticket", ticket));
-            RequestEntity requestEntity = new StringRequestEntity(JSONObject.toJSONString(params));
+            postMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
+            RequestEntity requestEntity = new StringRequestEntity(json);
             postMethod.setRequestEntity(requestEntity);
             int result = httpClient.executeMethod(postMethod);
             if (result == HttpStatus.SC_OK) {
@@ -413,21 +418,29 @@ public class DataShareService {
             e.printStackTrace();
             return null;
         }
-    }
+    }*/
 
-    public static String doDelete(String url, List<String> ids) {
+    /*public static String doPut(String url, List<String> list) {
         try {
+            PutMethod putMethod = new PutMethod(url);
+
             // 定义HttpClient
             org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
-            DeleteMethod deleteMethod = new DeleteMethod(url);
-            String ticket = AdminUtils.getSSOTicket();
-            deleteMethod.addRequestHeader(new Header("ticket", ticket));
-            HttpMethodParams params = new HttpMethodParams();
-            params.setParameter("", ids);
 
-            int result = httpClient.executeMethod(deleteMethod);
+            String ticket = AdminUtils.getSSOTicket();
+            putMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
+
+            Map kv = new HashMap();
+            kv.put("api_id_list", list);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(kv, Map.class);
+
+            RequestEntity requestEntity = new StringRequestEntity(jsonStr);
+            putMethod.setRequestEntity(requestEntity);
+
+            int result = httpClient.executeMethod(putMethod);
             if (result == HttpStatus.SC_OK) {
-                InputStream in = deleteMethod.getResponseBodyAsStream();
+                InputStream in = putMethod.getResponseBodyAsStream();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int len = 0;
@@ -436,21 +449,22 @@ public class DataShareService {
                 }
                 return URLDecoder.decode(baos.toString(), "UTF-8");
             } else {
-                throw new Exception("HTTP ERROR Status: " + deleteMethod.getStatusCode() + ":" + deleteMethod.getStatusText());
+                throw new Exception("HTTP ERROR Status: " + putMethod.getStatusCode() + ":" + putMethod.getStatusText());
             }
         } catch(Exception e) {
             e.printStackTrace();
             return null;
         }
-    }
+    }*/
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS);
-            Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
-            String res = doPost(mobiusURL, dataMap);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(content, APIContent.class);
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/create";
+            String res = SSLClient.doPost(mobiusURL, jsonStr);
             System.out.println(res);
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (Exception e) {
@@ -462,8 +476,12 @@ public class DataShareService {
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS);
-            String res = doDelete(mobiusURL, apiGuid);
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/delete";
+            Map param = new HashMap();
+            param.put("api_id_list", apiGuid);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(param, Map.class);
+            String res = SSLClient.doPut(mobiusURL, jsonStr);
             LOG.info(res);
             return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
@@ -483,6 +501,7 @@ public class DataShareService {
             String api_version = info.getVersion();
             //String userId = info.getKeeper();
             //String api_owner = userDAO.getUserAccount(userId);
+            List<String> owners = new ArrayList<>();
             List<APIContent.APIDetail.Organization> organizations = getOrganization(api_id);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
@@ -490,7 +509,7 @@ public class DataShareService {
             String method = info.getRequestMode();
             String upstream_url = configuration.getString(ATLAS_REST_ADDRESS);
             String swagger_content = generateSwaggerContent(info);
-            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version,organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
         }
         content.setApis_detail(contentList);

@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
+import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
@@ -35,14 +37,18 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIContent;
+import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -50,6 +56,7 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
+import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -76,6 +83,8 @@ public class DataManageService {
     RoleService roleService;
     @Autowired
     TableDAO tableDAO;
+    @Autowired
+    DataShareDAO shareDAO;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
 
@@ -490,6 +499,30 @@ public class DataManageService {
 
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
+            Configuration configuration = ApplicationProperties.get();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/delete";
+            List<String> tableList = tableOwner.getTables();
+            APIDataOwner dataOwner = new APIDataOwner();
+
+            //api
+            List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
+            dataOwner.setApi_id_list(apiList);
+            //organization
+            List<TableOwner.Owner> tableOwners = tableOwner.getOwners();
+            List<APIDataOwner.Organization> organizations = new ArrayList<>();
+            for(TableOwner.Owner owner : tableOwners) {
+                APIDataOwner.Organization organization = new APIDataOwner.Organization();
+                organization.setOrganization(owner.getId());
+                organization.setOrganization_type(owner.getType());
+                organizations.add(organization);
+            }
+            //owner
+            dataOwner.setOrganization_list(organizations);
+            List<String> api_owner = new ArrayList<>();
+            dataOwner.setApi_owner(api_owner);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(dataOwner, APIContent.class);
+            String res = SSLClient.doPut(mobiusURL, jsonStr);
             return categoryDao.addTableOwners(tableOwner);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
