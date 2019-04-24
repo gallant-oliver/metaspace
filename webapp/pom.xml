@@ -654,7 +654,6 @@
             <version>3.1</version>
             <scope>compile</scope>
         </dependency>
->>>>>>> feature/metaspace-1.4-test
     </dependencies>
 
     <build>
