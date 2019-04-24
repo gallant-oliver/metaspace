@@ -523,6 +523,7 @@ public class DataManageService {
             Gson gson = new Gson();
             String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
             String res = SSLClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
             return categoryDao.addTableOwners(tableOwner);
         } catch (SQLException e) {
             LOG.error(e.getMessage());

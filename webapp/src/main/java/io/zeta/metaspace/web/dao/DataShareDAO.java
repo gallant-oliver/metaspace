@@ -208,6 +208,7 @@ public interface DataShareDAO {
              " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
              " #{tableGuid}",
              " </foreach>",
+             " and publish=true",
              " </script>"})
     public List<String> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
 }
