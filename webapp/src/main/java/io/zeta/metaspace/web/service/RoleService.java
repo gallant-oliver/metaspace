@@ -429,13 +429,13 @@ public class RoleService {
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, true);
 
                         } else if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, false, true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, false, true);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, false, false, false, true);
                         } else if (modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, true, false);
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, true, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                         } else {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
