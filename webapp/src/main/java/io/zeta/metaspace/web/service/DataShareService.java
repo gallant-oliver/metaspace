@@ -1239,6 +1239,12 @@ public class DataShareService {
                 String type = columnMap.get(columnName);
                 if(type.contains("char")) {
                     type = "string";
+                } else if(type.contains("smallint")) {
+                    type = "int";
+                } else if(type.contains("tinyint")) {
+                    type = "int";
+                } else if(type.contains("decimal")) {
+                    type = "decimal";
                 }
                 columnTypeMap.put(columnName, type);
             } else {
@@ -1258,6 +1264,7 @@ public class DataShareService {
      * @return
      */
     public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+        String columnName = null;
         try {
             StringBuffer sb = new StringBuffer();
             sb.append("select ");
@@ -1273,12 +1280,14 @@ public class DataShareService {
                 for (QueryParameter.Parameter kv : kvList) {
                     StringBuffer valueBuffer = new StringBuffer();
                     StringJoiner valueJoiner = new StringJoiner(",");
-                    String type = columnTypeMap.get(kv.getColumnName());
+                    columnName = kv.getColumnName();
+                    String type = columnTypeMap.get(columnName);
                     DataType dataType = DataType.parseOf(type);
 
                     List<Object> valueList = kv.getValue();
                     //验证设置取值是否正确
-                    valueList.stream().forEach(value -> dataType.valueOf(value).get());
+                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+                        valueList.stream().forEach(value -> dataType.valueOf(value).get());
                     if(DataType.BOOLEAN == dataType) {
                         for(Object value : valueList) {
                             if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
@@ -1286,11 +1295,11 @@ public class DataShareService {
                             }
                         }
                     }
-                    if (DataType.STRING == dataType) {
-                        kv.getValue().forEach(value -> valueJoiner.add("\"" + value.toString() + "\""));
-                    } else {
-                        kv.getValue().forEach(value -> valueJoiner.add(value.toString()));
-                    }
+                    kv.getValue().forEach(value -> {
+                        String str = (DataType.STRING == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
+                        valueJoiner.add(str);
+                    });
+
                     if (valueList.size() > 1) {
                         valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
                     } else {
@@ -1311,7 +1320,7 @@ public class DataShareService {
             LOG.info("SQL：" + sb.toString());
             return sb.toString();
         } catch (NumberFormatException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据类型错误");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
