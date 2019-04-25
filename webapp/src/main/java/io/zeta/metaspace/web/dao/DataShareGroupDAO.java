@@ -50,6 +50,6 @@ public interface DataShareGroupDAO {
     @Update("update apiGroup set name=#{name},description=#{description},updater=#{updater},updateTime=#{updateTime} where guid=#{guid}")
     public int updateGroup(APIGroup group);
 
-    @Select("select * from apiGroup order by guid asc")
+    @Select("select * from apiGroup order by generateTime desc")
     public List<APIGroup> getGroupList();
 }
