@@ -505,7 +505,7 @@ public class BusinessService {
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
-                    List<String> dataOwner = shareService.getDataOwner(api.getTableGuid());
+                    List<String> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
                     api.setDataOwner(dataOwner);
                 }
                 apiCount = shareDAO.countTableRelatedAPI(tableList);

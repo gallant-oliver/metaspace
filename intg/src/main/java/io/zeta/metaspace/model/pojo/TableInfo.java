@@ -14,7 +14,7 @@ public class TableInfo {
     private String dbName;
     private String status;
     private String createTime;
-    private PGobject dataOwner;
+    private List<String> dataOwner;
     private String databaseGuid;
 
     public String getDatabaseGuid() {
@@ -65,16 +65,16 @@ public class TableInfo {
         this.createTime = createTime;
     }
 
-    public List<Map> getDataOwner() {
-        List<Map> list = new ArrayList<>();
+    public List<String> getDataOwner() {
+        /*List<Map> list = new ArrayList<>();
         if (dataOwner != null) {
             Gson gson = new Gson();
             list = gson.fromJson(dataOwner.getValue(), List.class);
-        }
-        return list;
+        }*/
+        return dataOwner;
     }
 
-    public void setDataOwner(Object dataOwner) {
-        this.dataOwner = (PGobject) dataOwner;
+    public void setDataOwner(List<String> dataOwner) {
+        this.dataOwner = dataOwner;
     }
 }

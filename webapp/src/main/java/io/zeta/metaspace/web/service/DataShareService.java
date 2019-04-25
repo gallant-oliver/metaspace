@@ -240,7 +240,7 @@ public class DataShareService {
             pathJoiner.add("api").add(version).add("share").add(path);
             info.setPath("/" + pathJoiner.toString());
             List<APIInfo.Field> fields = getQueryFileds(guid);
-            List<String> dataOwner = getDataOwner(info.getTableGuid());
+            List<String> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
             info.setDataOwner(dataOwner);
             info.setFields(fields);
             int count = shareDAO.getStarCount(userId, guid);
@@ -304,7 +304,7 @@ public class DataShareService {
                 } else {
                     header.setStar(false);
                 }
-                List<String> dataOwner = getDataOwner(header.getTableGuid());
+                List<String> dataOwner = metaDataService.getDataOwner(header.getTableGuid());
                 header.setDataOwner(dataOwner);
             }
 
@@ -327,33 +327,6 @@ public class DataShareService {
             String value = pGobject.getValue();
             List<APIInfo.Field> values = gson.fromJson(value, List.class);
             return values;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
-    }
-
-    public List<String> getDataOwner(String guid) throws AtlasBaseException {
-        try {
-            Gson gson = new Gson();
-            Object dataOwnerObject = shareDAO.getDataOwnerByGuid(guid);
-            PGobject pGobject = (PGobject)dataOwnerObject;
-            List<String> dataOwner = new ArrayList<>();
-            if(Objects.nonNull(pGobject)) {
-                String value = pGobject.getValue();
-                List<Map> onwers = gson.fromJson(value, List.class);
-                List<LinkedTreeMap> organization = dataManageService.getOrganization();
-                for (LinkedTreeMap map : organization) {
-                    String id = map.get("id").toString();
-                    String type = map.get("type").toString();
-                    for(Map owner : onwers) {
-                        if(owner.get("id").toString().equals(id) && owner.get("type").toString().equals(type)) {
-                            dataOwner.add(map.get("name").toString());
-                        }
-                    }
-                }
-            }
-            return dataOwner;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");

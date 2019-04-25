@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
@@ -515,12 +516,31 @@ public class DataManageService {
         }
     }
 
+    @Transactional
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            return categoryDao.addTableOwners(tableOwner);
-        } catch (SQLException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
+            List<String> tableList = tableOwner.getTables();
+            List<TableOwner.Owner> ownerList = tableOwner.getOwners();
+            //删除旧的关系
+            categoryDao.deleteDataOwner(tableOwner.getTables());
+
+            String keeper = AdminUtils.getUserData().getUserId();
+            long time = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String generateTime = format.format(time);
+            List<DataOwner> table2OwnerList = new ArrayList<>();
+            for(String tableGuid : tableList) {
+                for(TableOwner.Owner owner : ownerList) {
+                    DataOwner dataOwner = new DataOwner();
+                    dataOwner.setTableGuid(tableGuid);
+                    dataOwner.setOwnerId(owner.getId());
+                    dataOwner.setKeeper(keeper);
+                    dataOwner.setGenerateTime(generateTime);
+                    table2OwnerList.add(dataOwner);
+                }
+            }
+            //添加新的owner
+            return categoryDao.addDataOwner(table2OwnerList);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
