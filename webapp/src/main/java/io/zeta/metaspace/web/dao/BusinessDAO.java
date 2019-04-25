@@ -86,7 +86,7 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%'",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -110,7 +110,7 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%'",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -132,7 +132,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -155,7 +155,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/'",
              " </script>"})
     public long queryBusinessCountByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                               @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter);
@@ -192,6 +192,9 @@ public interface BusinessDAO {
     //删除业务信息与表的关联
     @Delete("delete from business2table where businessId=#{businessId}")
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
+
+    @Update("UPDATE businessinfo SET trusttable=null where businessId=#{businessId}")
+    public int updateTrustTable(@Param("businessId")String businessId);
 
     //添加业务信息与表的关联
     @Insert({" <script>",

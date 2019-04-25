@@ -64,11 +64,11 @@ public interface RelationDAO {
             " </foreach>",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%'",
+            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%') order by tableinfo.tablename",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') order by tableinfo.tablename",
             " </if>",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -88,11 +88,11 @@ public interface RelationDAO {
             " </foreach>",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%'",
+            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%')",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/')",
             " </if>",
             " </script>"})
     public int queryTotalNumByName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds);
@@ -114,7 +114,7 @@ public interface RelationDAO {
     public int addTableInfo(RelationEntityV2 entity) throws SQLException;
 
     @Select({" <script>",
-             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' ESCAPE '/'",
              " and status='ACTIVE'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
@@ -126,7 +126,7 @@ public interface RelationDAO {
 
 
     @Select({" <script>",
-             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' and tableName not like 'values__tmp__table__%'",
+             " select * from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' ESCAPE '/' and tableName not like 'values__tmp__table__%' ESCAPE '/'",
              " and status='ACTIVE'",
              " <if test='limit!= -1'>",
              " limit #{limit}",
@@ -136,13 +136,13 @@ public interface RelationDAO {
     public List<TableInfo> getDbTablesWithoutTmp(@Param("databaseGuid")String databaseId, @Param("query")String query , @Param("limit")Long limit, @Param("offset")Long offset);
 
     @Select({" <script>",
-             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' and tableName not like 'values_tmp_table_%'",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' ESCAPE '/' and tableName not like 'values_tmp_table_%' ESCAPE '/'",
              " and status='ACTIVE'",
              " </script>"})
     public int countDbTablesWithoutTmp(@Param("databaseGuid")String databaseId, @Param("query")String query);
 
     @Select({" <script>",
-             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%'  and status='ACTIVE'",
+             " select count(1) from tableinfo where databaseGuid=#{databaseGuid} and tableName like '%'||#{query}||'%' ESCAPE '/' and status='ACTIVE'",
              " </script>"})
     public int countDbTables(@Param("databaseGuid")String databaseId, @Param("query")String query);
 

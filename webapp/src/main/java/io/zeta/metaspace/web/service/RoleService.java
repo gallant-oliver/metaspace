@@ -93,8 +93,10 @@ public class RoleService {
         PageResult<User> userPageResult = new PageResult<>();
         List<User> users;
         if (limit == -1) {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
         } else {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
         }
         long usersCount = roleDAO.getUsersCount(roleId, query);
@@ -108,6 +110,7 @@ public class RoleService {
     @Transactional
     public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
         PageResult<Role> rolePageResult = new PageResult<>();
+        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         List<Role> roles = roleDAO.getRoles(query, offset, limit);
         long rolesCount = roleDAO.getRolesCount(query);
         rolePageResult.setLists(roles);
@@ -426,13 +429,13 @@ public class RoleService {
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, true);
 
                         } else if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, false, true);
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, false, true);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, false, false, false, true);
                         } else if (modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, true, false);
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, true, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                         } else {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);

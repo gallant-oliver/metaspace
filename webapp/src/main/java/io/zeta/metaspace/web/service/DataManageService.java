@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
+import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
@@ -36,14 +38,19 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.utils.SSLClient;
-import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -51,6 +58,7 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
+import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -77,6 +85,8 @@ public class DataManageService {
     RoleService roleService;
     @Autowired
     TableDAO tableDAO;
+    @Autowired
+    DataShareDAO shareDAO;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
@@ -469,6 +479,8 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
+            tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
 
             getPath(list);
@@ -502,8 +514,9 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
-            if (typeName.contains("table"))
+            if (typeName.contains("table")) {
                 relationDao.updateTableStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -573,11 +586,13 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                 String guid = entity.getGuid();
+                String name = getEntityAttribute(entity, "name");
                 if (tableDAO.ifTableExists(guid).size() == 0) {
                     TableInfo tableInfo = new TableInfo();
                     tableInfo.setTableGuid(guid);
-                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    tableInfo.setTableName(name);
                     Object createTime = entity.getAttribute("createTime");
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(createTime);
@@ -587,6 +602,7 @@ public class DataManageService {
                     tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.addTable(tableInfo);
+                }
                 }
             }
         }
@@ -636,12 +652,14 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
-                TableInfo tableInfo = new TableInfo();
-                tableInfo.setTableGuid(entity.getGuid());
-                tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                tableInfo.setDbName(relatedDB.getDisplayText());
-                tableDAO.updateTable(tableInfo);
+                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(entity.getGuid());
+                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableDAO.updateTable(tableInfo);
+                }
             }
         }
     }
@@ -649,8 +667,12 @@ public class DataManageService {
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-            Object obj = entity.getRelationshipAttribute("db");
+        String store="db";
+        if(entity.getTypeName().equals("hbase_table")){
+            store="namespace";
+        }
+        if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {
+            Object obj = entity.getRelationshipAttribute(store);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }

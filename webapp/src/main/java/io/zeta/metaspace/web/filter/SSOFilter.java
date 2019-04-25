@@ -86,6 +86,7 @@ public class SSOFilter implements Filter {
             WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
             UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
             usersService.addUser(data);
+
         } catch (Exception e) {
             LOG.error("权限校验失败",e);
             loginSkip(httpServletResponse, loginURL);

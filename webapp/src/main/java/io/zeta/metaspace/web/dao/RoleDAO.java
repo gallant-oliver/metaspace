@@ -25,19 +25,19 @@ public interface RoleDAO {
     @Delete("delete from role where roleid=#{roleId}")
     public int deleteRole(String roleId);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username limit #{limit} offset #{offset}")
+    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username limit #{limit} offset #{offset}")
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' order by username offset #{offset}")
+    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username offset #{offset}")
     public List<User> getUser(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
 
-    @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%'")
+    @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
-    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
+    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/' order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select count(1) from role where rolename like '%'||#{query}||'%'")
+    @Select("select count(1) from role where rolename like '%'||#{query}||'%' ESCAPE '/'")
     public long getRolesCount(@Param("query") String query);
 
     //添加成员&更换一批人的角色
@@ -63,7 +63,6 @@ public interface RoleDAO {
     //获取角色方案
     @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId}")
     public PrivilegeInfo getPrivilegeByRoleId(String roleId);
-
 
     //修改角色方案
     @Update("update role set privilegeid=#{privilegeId},updatetime=#{updateTime} where roleid=#{roleId}")
@@ -204,7 +203,7 @@ public interface RoleDAO {
     public List<String> getCategorysByTypeIds(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
 
     //查找权限节点
-    @Select("select categoryid guid,name,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,description from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
+    @Select("select * from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
     public List<RoleModulesCategories.Category> getCategorysByType(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
 
     @Select("select * from category where categoryType=#{categoryType}")
@@ -220,16 +219,16 @@ public interface RoleDAO {
     })
     public int updatePrivilege(@Param("roleId") String roleId);
 
-    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<String> getDBNames(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ")
+    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'")
     public long getDBCount(@Param("guid") String guid, @Param("query") String query);
 
-    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfos(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%'")
+    @Select("select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'")
     public long getTableCount(@Param("guid") String guid, @Param("query") String query);
 
     @Select("select * from category where guid=#{guid}")
@@ -249,7 +248,7 @@ public interface RoleDAO {
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<String> getDBNamesV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
 
@@ -258,7 +257,7 @@ public interface RoleDAO {
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<DatabaseHeader> getDBInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
 
@@ -267,7 +266,7 @@ public interface RoleDAO {
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' </script>")
+            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
 
@@ -287,13 +286,12 @@ public interface RoleDAO {
             "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
     public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-
     @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "     and tableinfo.tablename like '%'||#{query}||'%' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
     @Select("<script>select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
@@ -301,7 +299,7 @@ public interface RoleDAO {
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            "     and tableinfo.tablename like '%'||#{query}||'%'</script>")
+            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'</script>")
     public long getTableCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")

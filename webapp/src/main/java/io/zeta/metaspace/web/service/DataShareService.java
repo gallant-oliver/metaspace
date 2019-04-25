@@ -36,9 +36,11 @@ import io.swagger.models.properties.IntegerProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
+import io.swagger.util.Json;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
@@ -48,6 +50,7 @@ import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -59,16 +62,25 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NameValuePair;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.hadoop.hbase.client.Put;
 import org.json.simple.JSONObject;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
@@ -286,6 +298,7 @@ public class DataShareService {
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             String query = parameters.getQuery();
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
@@ -353,86 +366,98 @@ public class DataShareService {
         }
     }
 
-    public static String doPost(String url, Map params) {
+    /*public static String doPost(String url, String json) {
         try {
             // 定义HttpClient
             org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
             PostMethod postMethod = new PostMethod(url);
             String ticket = AdminUtils.getSSOTicket();
-            postMethod.addRequestHeader(new Header("ticket", ticket));
-            RequestEntity requestEntity = new StringRequestEntity(JSONObject.toJSONString(params));
+            postMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
+            RequestEntity requestEntity = new StringRequestEntity(json);
             postMethod.setRequestEntity(requestEntity);
             int result = httpClient.executeMethod(postMethod);
             if (result == HttpStatus.SC_OK) {
-                System.out.println("success");
-                /*InputStream in = method.getResponseBodyAsStream();
+                InputStream in = postMethod.getResponseBodyAsStream();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int len = 0;
                 while ((len = in.read(buffer)) != -1) {
                     baos.write(buffer, 0, len);
                 }
-                return URLDecoder.decode(baos.toString(), "UTF-8");*/
+                return URLDecoder.decode(baos.toString(), "UTF-8");
             } else {
                 throw new Exception("HTTP ERROR Status: " + postMethod.getStatusCode() + ":" + postMethod.getStatusText());
             }
-            /*// 实例化HTTP方法
-            HttpPost httpPost = new HttpPost();
-            httpPost.setURI(new URI(url));
-            //ticket
-
-            //设置参数
-            httpPost.setHeader("ticket", ticket);
-            httpPost.setHeader("Accept", "application/json");
-            httpPost.setHeader("Content-Type", "application/json");
-            HttpResponse response = client.execute(httpPost);*/
-
-            /*response.setEntity();
-
-
-            PrintWriter writer = response;
-            HashMap<String, String> hashMap = new HashMap();
-            hashMap.put("error", "请检查用户登陆状态");
-            hashMap.put("data", loginURL + "?service=");
-            String j = new Gson().toJson(hashMap);
-            writer.print(j);*/
-
-
-            /*int code = response.getStatusLine().getStatusCode();
-            if(code == 200){	//请求成功
-                in = new BufferedReader(new InputStreamReader(response.getEntity()
-                                                                      .getContent(), "utf-8"));
-                StringBuffer sb = new StringBuffer("");
-                String line = "";
-                String NL = System.getProperty("line.separator");
-                while ((line = in.readLine()) != null) {
-                    sb.append(line + NL);
-                }
-
-                in.close();
-
-                return sb.toString();
-            }
-            else{	//
-                System.out.println("状态码：" + code);
-                return null;
-            }*/
-            return "success";
         } catch(Exception e) {
             e.printStackTrace();
             return null;
         }
-    }
+    }*/
+
+    /*public static String doPut(String url, List<String> list) {
+        try {
+            PutMethod putMethod = new PutMethod(url);
+
+            // 定义HttpClient
+            org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
+
+            String ticket = AdminUtils.getSSOTicket();
+            putMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
+
+            Map kv = new HashMap();
+            kv.put("api_id_list", list);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(kv, Map.class);
+
+            RequestEntity requestEntity = new StringRequestEntity(jsonStr);
+            putMethod.setRequestEntity(requestEntity);
+
+            int result = httpClient.executeMethod(putMethod);
+            if (result == HttpStatus.SC_OK) {
+                InputStream in = putMethod.getResponseBodyAsStream();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = in.read(buffer)) != -1) {
+                    baos.write(buffer, 0, len);
+                }
+                return URLDecoder.decode(baos.toString(), "UTF-8");
+            } else {
+                throw new Exception("HTTP ERROR Status: " + putMethod.getStatusCode() + ":" + putMethod.getStatusText());
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }*/
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS);
-            Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
-            String res = doPost(mobiusURL, dataMap);
-            System.out.println(res);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(content, APIContent.class);
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
+            String res = SSLClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
             return shareDAO.updatePublishStatus(guidList, true);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
+            Map param = new HashMap();
+            param.put("api_id_list", apiGuid);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(param, Map.class);
+            String res = SSLClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
@@ -448,20 +473,41 @@ public class DataShareService {
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
-            String userId = info.getKeeper();
-            String api_owner = userDAO.getUserAccount(userId);
+            //String userId = info.getKeeper();
+            //String api_owner = userDAO.getUserAccount(userId);
+            List<String> owners = new ArrayList<>();
+            List<APIContent.APIDetail.Organization> organizations = getOrganization(api_id);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
             String upstream_url = configuration.getString(ATLAS_REST_ADDRESS);
             String swagger_content = generateSwaggerContent(info);
-            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
         }
         content.setApis_detail(contentList);
         return content;
     }
+
+    public List<APIContent.APIDetail.Organization> getOrganization(String guid) {
+        Gson gson = new Gson();
+        Object dataOwnerObject = shareDAO.getDataOwnerByApiGuid(guid);
+        PGobject pGobject = (PGobject)dataOwnerObject;
+        List<APIContent.APIDetail.Organization> list = new ArrayList<>();
+        if(Objects.nonNull(pGobject)) {
+            String value = pGobject.getValue();
+            List<Map> owners = gson.fromJson(value, List.class);
+            for(Map owner : owners) {
+                String id = owner.get("id").toString();
+                String type = owner.get("type").toString();
+                APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(id, type);
+                list.add(organization);
+            }
+        }
+        return list;
+    }
+
 
     public String getURL(APIInfo info) {
         String version = info.getVersion();
@@ -752,16 +798,6 @@ public class DataShareService {
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
-        }
-    }
-
-
-    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
-        try {
-            return shareDAO.updatePublishStatus(apiGuid, false);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
     }
 
@@ -1174,6 +1210,15 @@ public class DataShareService {
         for (String columnName : columSet) {
             if (columnMap.containsKey(columnName)) {
                 String type = columnMap.get(columnName);
+                if(type.contains("char")) {
+                    type = "string";
+                } else if(type.contains("smallint")) {
+                    type = "int";
+                } else if(type.contains("tinyint")) {
+                    type = "int";
+                } else if(type.contains("decimal")) {
+                    type = "decimal";
+                }
                 columnTypeMap.put(columnName, type);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未知的查询字段");
@@ -1192,6 +1237,7 @@ public class DataShareService {
      * @return
      */
     public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+        String columnName = null;
         try {
             StringBuffer sb = new StringBuffer();
             sb.append("select ");
@@ -1207,12 +1253,14 @@ public class DataShareService {
                 for (QueryParameter.Parameter kv : kvList) {
                     StringBuffer valueBuffer = new StringBuffer();
                     StringJoiner valueJoiner = new StringJoiner(",");
-                    String type = columnTypeMap.get(kv.getColumnName());
+                    columnName = kv.getColumnName();
+                    String type = columnTypeMap.get(columnName);
                     DataType dataType = DataType.parseOf(type);
 
                     List<Object> valueList = kv.getValue();
                     //验证设置取值是否正确
-                    valueList.stream().forEach(value -> dataType.valueOf(value).get());
+                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+                        valueList.stream().forEach(value -> dataType.valueOf(value).get());
                     if(DataType.BOOLEAN == dataType) {
                         for(Object value : valueList) {
                             if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
@@ -1220,11 +1268,11 @@ public class DataShareService {
                             }
                         }
                     }
-                    if (DataType.STRING == dataType) {
-                        kv.getValue().forEach(value -> valueJoiner.add("\"" + value.toString() + "\""));
-                    } else {
-                        kv.getValue().forEach(value -> valueJoiner.add(value.toString()));
-                    }
+                    kv.getValue().forEach(value -> {
+                        String str = (DataType.STRING == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
+                        valueJoiner.add(str);
+                    });
+
                     if (valueList.size() > 1) {
                         valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
                     } else {
@@ -1245,7 +1293,7 @@ public class DataShareService {
             LOG.info("SQL：" + sb.toString());
             return sb.toString();
         } catch (NumberFormatException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据类型错误");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

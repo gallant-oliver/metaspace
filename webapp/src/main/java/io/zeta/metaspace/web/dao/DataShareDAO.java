@@ -59,7 +59,7 @@ public interface DataShareDAO {
              " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " tableInfo.tableName,apiGroup.name as groupName",
              " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%'",
+             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
@@ -82,7 +82,7 @@ public interface DataShareDAO {
     @Select({" <script>",
              " select count(1)",
              " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%'",
+             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
@@ -199,4 +199,16 @@ public interface DataShareDAO {
 
     @Select("select apiGroup.name from apiGroup,apiInfo where apiInfo.groupGuid=apiGroup.guid and apiInfo.guid=#{guid}")
     public String getGroupByAPIGuid(@Param("guid")String apiGuid);
+
+    @Select("select dataOwner from tableInfo,apiInfo where apiInfo.guid=#{guid} and tableInfo.tableGuid=apiInfo.tableGuid")
+    public Object getDataOwnerByApiGuid(@Param("guid")String apiGuid);
+
+    @Select({"<script>",
+             "select guid from apiInfo where tableGuid in",
+             " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
+             " #{tableGuid}",
+             " </foreach>",
+             " and publish=true",
+             " </script>"})
+    public List<String> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
 }
