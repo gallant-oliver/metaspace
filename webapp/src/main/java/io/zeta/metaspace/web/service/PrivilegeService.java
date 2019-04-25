@@ -195,7 +195,8 @@ public class PrivilegeService {
         try {
             PageResult<PrivilegeInfo> rolePageResult = new PageResult<>();
             List<PrivilegeInfo> privilegeList = null;
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             privilegeList = privilegeDAO.getPrivilegeList(query, limit, offset);
             for(PrivilegeInfo info : privilegeList) {
                 List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
