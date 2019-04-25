@@ -32,7 +32,7 @@ import java.util.List;
  */
 public interface DataShareGroupDAO {
 
-    @Insert("insert into apiGroup(guid,name,parentGuid,description,generator)values(#{guid},#{name},#{parentGuid},#{description},#{generator})")
+    @Insert("insert into apiGroup(guid,name,parentGuid,description,generator,generateTime,updater,updateTime)values(#{guid},#{name},#{parentGuid},#{description},#{generator},#{generateTime},#{updater},#{updateTime})")
     public int insertGroup(APIGroup group);
 
     @Select("select count(1) from apiGroup where name=#{name}")
@@ -47,9 +47,9 @@ public interface DataShareGroupDAO {
     @Select("select name from apiGroup where guid=#{guid}")
     public String getGroupNameById(@Param("guid") String guid);
 
-    @Update("update apiGroup set name=#{name},description=#{description} where guid=#{guid}")
+    @Update("update apiGroup set name=#{name},description=#{description},updater=#{updater},updateTime=#{updateTime} where guid=#{guid}")
     public int updateGroup(APIGroup group);
 
-    @Select("select * from apiGroup")
+    @Select("select * from apiGroup order by guid asc")
     public List<APIGroup> getGroupList();
 }

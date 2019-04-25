@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,6 +46,9 @@ public class DataShareGroupService {
     public int insertGroup(APIGroup group) throws AtlasBaseException {
         try {
             String user = AdminUtils.getUserData().getUserId();
+            long timestamp = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String time = format.format(timestamp);
             int count = groupDAO.countGroupName(group.getName());
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字分组");
@@ -53,6 +57,9 @@ public class DataShareGroupService {
             group.setGuid(guid);
             group.setParentGuid("1");
             group.setGenerator(user);
+            group.setGenerateTime(time);
+            group.setUpdater(user);
+            group.setUpdateTime(time);
             return groupDAO.insertGroup(group);
         } catch (AtlasBaseException e) {
             throw e;
@@ -83,6 +90,12 @@ public class DataShareGroupService {
     public int updateGroup(String guid, APIGroup group) throws AtlasBaseException {
         try {
             group.setGuid(guid);
+            String user = AdminUtils.getUserData().getUserId();
+            long timestamp = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String time = format.format(timestamp);
+            group.setUpdater(user);
+            group.setUpdateTime(time);
             String currentName = groupDAO.getGroupNameById(group.getGuid());
             int count = groupDAO.countGroupName(group.getName());
             if(count > 0 && !currentName.equals(group.getName())) {
@@ -103,7 +116,7 @@ public class DataShareGroupService {
             return groupDAO.getGroupList();
         }  catch (Exception e) {
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 }
