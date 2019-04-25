@@ -11,6 +11,7 @@ public class MetaspaceConfig {
     private static String hiveUrl;
     private static String hbaseConf;
     private static String hiveConfig;
+    private static String metaspaceTest;
 
     public static String getHiveConfig() {
         return hiveConfig;
@@ -28,6 +29,10 @@ public class MetaspaceConfig {
         return hiveUrl;
     }
 
+    public static String getMetaspaceTest() {
+        return metaspaceTest;
+    }
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -35,6 +40,7 @@ public class MetaspaceConfig {
             hiveUrl = conf.getString("metaspace.hive.url");
             hbaseConf = conf.getString("metaspace.hbase.conf");
             hiveConfig = conf.getString("metaspace.hive.conf");
+            metaspaceTest = conf.getString("metaspace.test");
             if (hdfsConf == null || hdfsConf.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hdfs.conf未正确配置");
             }
@@ -46,6 +52,9 @@ public class MetaspaceConfig {
             }
             if (hiveConfig == null || hiveConfig.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.conf未正确配置");
+            }
+            if (metaspaceTest == null || (!metaspaceTest.equals("true"))) {
+                metaspaceTest="false";
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

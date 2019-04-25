@@ -19,6 +19,7 @@ package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.zeta.metaspace.MetaspaceConfig;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
@@ -356,7 +357,13 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             long             startTime   = System.currentTimeMillis();
             boolean          isFailedMsg = false;
             AuditLog         auditLog = null;
-
+            if(MetaspaceConfig.getMetaspaceTest().equals("true")){
+                try {
+                    sleep(3000);
+                } catch (InterruptedException e) {
+                    LOG.error("调试模式异常",e);
+                }
+            }
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, message.getType().name());
             }
