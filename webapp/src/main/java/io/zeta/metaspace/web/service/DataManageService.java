@@ -532,10 +532,10 @@ public class DataManageService {
     @Transactional
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            List<String> tableList = tableOwner.getTables();
+            List<String> tableList = new ArrayList<>(new HashSet<>(tableOwner.getTables()));
             List<TableOwner.Owner> ownerList = tableOwner.getOwners();
             //删除旧的关系
-            categoryDao.deleteDataOwner(tableOwner.getTables());
+            categoryDao.deleteDataOwner(tableList);
 
             String keeper = AdminUtils.getUserData().getUserId();
             long time = System.currentTimeMillis();
