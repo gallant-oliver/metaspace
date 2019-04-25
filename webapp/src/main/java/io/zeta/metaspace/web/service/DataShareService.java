@@ -490,11 +490,12 @@ public class DataShareService {
         return content;
     }
 
-    public List<APIContent.APIDetail.Organization> getOrganization(String guid) {
-        Gson gson = new Gson();
+    public List<APIContent.APIDetail.Organization> getOrganization(String guid) throws AtlasBaseException {
+        List<APIContent.APIDetail.Organization> list = new ArrayList<>();
+        /*Gson gson = new Gson();
         Object dataOwnerObject = shareDAO.getDataOwnerByApiGuid(guid);
         PGobject pGobject = (PGobject)dataOwnerObject;
-        List<APIContent.APIDetail.Organization> list = new ArrayList<>();
+
         if(Objects.nonNull(pGobject)) {
             String value = pGobject.getValue();
             List<Map> owners = gson.fromJson(value, List.class);
@@ -504,6 +505,11 @@ public class DataShareService {
                 APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(id, type);
                 list.add(organization);
             }
+        }*/
+        List<String> owners = metaDataService.getDataOwner(guid);
+        for(String owner : owners) {
+            APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(owner, null);
+            list.add(organization);
         }
         return list;
     }
