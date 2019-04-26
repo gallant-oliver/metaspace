@@ -503,7 +503,7 @@ public class DataShareService {
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url = configuration.getString(ATLAS_REST_ADDRESS);
+            String upstream_url = configuration.getString(ATLAS_REST_ADDRESS) + "/metaspace";
             String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
