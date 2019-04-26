@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
@@ -55,6 +56,7 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import jnr.ffi.Struct;
 import jodd.util.StringUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -440,11 +442,25 @@ public class DataShareService {
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
             String res = SSLClient.doPost(mobiusURL, jsonStr);
             LOG.info(res);
+            Map response = convertMobiusResponse(res);
+            String error_id = String.valueOf(response.get("error-id"));
+            String error_reason = String.valueOf(response.get("reason"));
+            if(!"0.0".equals(error_id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + error_reason);
+            }
             return shareDAO.updatePublishStatus(guidList, true);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
+    }
+
+    public Map convertMobiusResponse(String message) {
+        Gson gson = new Gson();
+        Map response = gson.fromJson(message, Map.class);
+        return response;
     }
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
@@ -457,6 +473,12 @@ public class DataShareService {
             String jsonStr = gson.toJson(param, Map.class);
             String res = SSLClient.doPut(mobiusURL, jsonStr);
             LOG.info(res);
+            Map response = convertMobiusResponse(res);
+            String error_id = String.valueOf(response.get("error-id"));
+            String error_reason = String.valueOf(response.get("reason"));
+            if(!"0.0".equals(error_id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
+            }
             return shareDAO.updatePublishStatus(apiGuid, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
