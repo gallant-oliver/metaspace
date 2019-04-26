@@ -278,7 +278,8 @@ public class BusinessService {
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-            businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(businessName))
+                businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
             businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset);
 
             for(BusinessInfoHeader infoHeader : businessInfoList) {
@@ -328,9 +329,12 @@ public class BusinessService {
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
             if(Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
-                businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
-                ticketNumber = ticketNumber.replaceAll("%", "/%").replaceAll("_", "/_");
-                submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
+                if(Objects.nonNull(businessName))
+                    businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
+                if(Objects.nonNull(ticketNumber))
+                    ticketNumber = ticketNumber.replaceAll("%", "/%").replaceAll("_", "/_");
+                if(Objects.nonNull(submitter))
+                    submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
                 List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset);
                 for (BusinessInfoHeader infoHeader : businessInfoList) {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());

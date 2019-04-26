@@ -353,7 +353,8 @@ public class SearchService {
     public PageResult<Database> getDatabaseResultV2(Parameters parameters, List<String> categoryIds) {
         List<String> dbName = null;
         String query = parameters.getQuery();
-        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+        if(Objects.nonNull(query))
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         PageResult<Database> databasePageResult = new PageResult<>();
         if (categoryIds.size() > 0) {
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
@@ -439,7 +440,8 @@ public class SearchService {
                 tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> lists = getTables(tableInfo);
             tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));

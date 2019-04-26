@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 @AtlasService
 public class TableTagService {
@@ -35,7 +36,8 @@ public class TableTagService {
 
     public List<Tag> getTags(String query,long offset,long limit) {
         List<Tag> tags=null;
-        query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+        if(Objects.nonNull(query))
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         if(limit==-1)
             tags = tableTagDAO.getTag(query, offset);
             else
