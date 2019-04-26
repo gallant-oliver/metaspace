@@ -47,11 +47,24 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select({"<script>",
+            " select table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
+            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' order by tableinfo.tablename",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
+
     @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
+
+    @Select("select count(*) from table_relation,tableinfo where tableinfo.tableguid=table_relation.tableguid and categoryGuid=#{categoryGuid} and status !='DELETED'")
+    public int queryTotalNumByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid);
 
     @Select({"<script>",
             " select * from table_relation",
@@ -68,14 +81,41 @@ public interface RelationDAO {
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') order by tableinfo.tablename",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
             " </if>",
+            " order by tableinfo.tablename ",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
     public List<RelationEntityV2> queryByTableName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select({"<script>",
+            " select * from table_relation",
+            " join tableInfo on",
+            " table_relation.tableGuid=tableInfo.tableGuid",
+            " where",
+            " categoryGuid in",
+            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+            " #{categoryGuid}",
+            " </foreach>",
+            " <if test=\"tableName != null and tableName!=''\">",
+            " and",
+            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " </if>",
+            " <if test=\"tagName != null and tagName!=''\">",
+            " and",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+            " </if>",
+            " and status !='DELETED' ",
+            " order by tableinfo.tablename ",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    public List<RelationEntityV2> queryByTableNameFilter(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
             " select count(*) from table_relation",
@@ -95,7 +135,28 @@ public interface RelationDAO {
             " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/')",
             " </if>",
             " </script>"})
-    public int queryTotalNumByName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds);
+    public long queryTotalNumByName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds);
+
+    @Select({"<script>",
+            " select count(*) from table_relation",
+            " join tableInfo on",
+            " table_relation.tableGuid=tableInfo.tableGuid",
+            " where",
+            " categoryGuid in",
+            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+            " #{categoryGuid}",
+            " </foreach>",
+            " <if test=\"tableName != null and tableName!=''\">",
+            " and",
+            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " </if>",
+            " and status !='DELETED' ",
+            " <if test=\"tagName != null and tagName!=''\">",
+            " and",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/')",
+            " </if>",
+            " </script>"})
+    public long queryTotalNumByNameFilter(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
@@ -169,4 +230,5 @@ public interface RelationDAO {
     //判断关联是否已存在
     @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
     public int ifRelationExists(@Param("categoryGuid") String categoryGuid,@Param("tableGuid") String tableGuid);
+
 }
