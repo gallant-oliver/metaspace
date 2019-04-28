@@ -427,7 +427,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, TECHNICAL_CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -451,7 +451,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelation(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
+            return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

@@ -454,7 +454,32 @@ public class DataManageService {
             throw e;
         }
     }
-
+    /**
+     * @param categoryGuid
+     * @param query
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<RelationEntityV2> getRelationsByCategoryGuidFilter(String categoryGuid, RelationQuery query) throws AtlasBaseException {
+        try {
+            int limit = query.getLimit();
+            int offset = query.getOffset();
+            PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            List<RelationEntityV2> relations = null;
+            int totalNum = 0;
+            relations = relationDao.queryRelationByCategoryGuidFilter(categoryGuid, limit, offset);
+            totalNum = relationDao.queryTotalNumByCategoryGuidFilter(categoryGuid);
+            getPath(relations);
+            pageResult.setCount(relations.size());
+            pageResult.setLists(relations);
+            pageResult.setOffset(query.getOffset());
+            pageResult.setSum(totalNum);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+    }
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
@@ -475,7 +500,7 @@ public class DataManageService {
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
 
             getPath(list);
-            int totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
+            long totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
             pageResult.setOffset(query.getOffset());
@@ -489,7 +514,40 @@ public class DataManageService {
             throw e;
         }
     }
+    public PageResult<RelationEntityV2> getRelationsByTableNameFilter(RelationQuery query, int type) throws AtlasBaseException {
+        try {
+            User user = AdminUtils.getUserData();
+            Role role = roleDao.getRoleByUsersId(user.getUserId());
+            if (role.getStatus() == 0)
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            String roleId = role.getRoleId();
+            String tableName = query.getFilterTableName();
+            String tag = query.getTag();
+            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
+            int limit = query.getLimit();
+            int offset = query.getOffset();
+            PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            if(Objects.nonNull(tableName))
+                tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(tag))
+                tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
+            List<RelationEntityV2> list = relationDao.queryByTableNameFilter(tableName, tag, categoryIds, limit, offset);
 
+            getPath(list);
+            long totalNum = relationDao.queryTotalNumByNameFilter(tableName, tag, categoryIds);
+            pageResult.setCount(list.size());
+            pageResult.setLists(list);
+            pageResult.setOffset(query.getOffset());
+            pageResult.setSum(totalNum);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+    }
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
             StringJoiner joiner = new StringJoiner(("."));
