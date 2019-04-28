@@ -287,8 +287,10 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public Integer getLineageDepth(String guid, AtlasLineageInfo.LineageDirection direction) throws AtlasBaseException {
         String lineageQuery = getLineageDepthQuery(guid, direction);
         List depthList = (List) graph.executeGremlinScript(lineageQuery, false);
-        if (Objects.nonNull(depthList) && depthList.size() > 0)
+        LOG.info("query:" + lineageQuery);
+        if (Objects.nonNull(depthList) && depthList.size() > 0) {
             return Integer.parseInt(depthList.get(0).toString());
+        }
         else
             return 0;
     }
@@ -296,13 +298,21 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     private String getLineageDepthQuery(String entityGuid, AtlasLineageInfo.LineageDirection direction) {
         String lineageQuery = null;
 
-        if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
+        /*if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
             String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
             lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
 
         } else if (direction.equals(AtlasLineageInfo.LineageDirection.OUTPUT)) {
             String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
             lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
+        }*/
+        if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH_V2);
+            lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
+
+        } else if (direction.equals(AtlasLineageInfo.LineageDirection.OUTPUT)) {
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH_V2);
+            lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
         }
         return lineageQuery;
     }

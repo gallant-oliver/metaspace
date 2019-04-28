@@ -33,6 +33,10 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
                         ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
 
+            case LINEAGE_DEPTH_V2:
+                return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s').outV().outE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
+                       ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
+
             case DIRECT_ENTITY_NUM:
                 return "g.withSack(0).V().has('__guid','%s').inE('%s').outV().outE('%s').inV().count().toList()";
 
