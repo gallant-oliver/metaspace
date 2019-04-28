@@ -7,7 +7,10 @@ CREATE TABLE "public"."apigroup" (
   "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "parentguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL
+  "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "updater" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -606,6 +609,22 @@ CREATE TABLE "public"."user2apistar" (
   "userid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL
 )
 ;
+-- ----------------------------
+-- Table structure for table2owner
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."table2owner";
+CREATE TABLE "public"."table2owner" (
+  "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "ownerid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table table2owner
+-- ----------------------------
+ALTER TABLE "public"."table2owner" ADD CONSTRAINT "table2owner_pkey" PRIMARY KEY ("tableguid", "ownerid");
 
 -- ----------------------------
 -- Table structure for users
@@ -1034,8 +1053,8 @@ INSERT INTO "public"."privilege2module" VALUES ('7', 1);
 INSERT INTO "public"."privilege2module" VALUES ('7', 3);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
-INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL);
-INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL);
+INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (14, '字段汇总值变化', '相比上一周期，字段汇总值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (15, '字段最小值变化', '相比上一周期，字段最小值变化', 1, '');

@@ -37,6 +37,7 @@ public abstract class MetaspaceGremlinQueryProvider {
         PARTIAL_COLUMN_LINEAGE,
         DIRECT_ENTITY_NUM,
         LINEAGE_DEPTH,
+        LINEAGE_DEPTH_V2,
 
         FULL_COLUMN_RELATED_TABLE,
         PARTIAL_COLUMN_RELATED_TABLE,

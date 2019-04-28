@@ -27,6 +27,9 @@ public class APIGroup {
     private String parentGuid;
     private String description;
     private String generator;
+    private String generateTime;
+    private String updater;
+    private String updateTime;
 
     public String getGuid() {
         return guid;
@@ -66,5 +69,29 @@ public class APIGroup {
 
     public void setGenerator(String generator) {
         this.generator = generator;
+    }
+
+    public String getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(String generateTime) {
+        this.generateTime = generateTime;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
+    }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
     }
 }

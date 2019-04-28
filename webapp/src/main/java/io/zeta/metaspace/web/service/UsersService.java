@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class UsersService {
@@ -137,7 +138,8 @@ public class UsersService {
         int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
@@ -191,7 +193,8 @@ public class UsersService {
         int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
