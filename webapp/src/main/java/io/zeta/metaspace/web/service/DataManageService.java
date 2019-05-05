@@ -606,7 +606,7 @@ public class DataManageService {
                 for(TableOwner.Owner owner : ownerList) {
                     DataOwner dataOwner = new DataOwner();
                     dataOwner.setTableGuid(tableGuid);
-                    dataOwner.setOwnerId(owner.getId());
+                    dataOwner.setOwnerId(owner.getPkid());
                     dataOwner.setKeeper(keeper);
                     dataOwner.setGenerateTime(generateTime);
                     table2OwnerList.add(dataOwner);
@@ -622,6 +622,11 @@ public class DataManageService {
 
     public List getOrganization() {
         String organizationURL = SSOConfig.getOrganizationURL();
+        long currentTime = System.currentTimeMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String endTime = sdf.format(currentTime);
+        organizationURL += "?endTime=" + endTime;
+        organizationURL = organizationURL.replaceAll(" ", "%20");
         HashMap<String, String> header = new HashMap<>();
         String session = SSLClient.doGet(organizationURL, header);
         Gson gson = new Gson();
@@ -629,7 +634,6 @@ public class DataManageService {
         List data = (List) body.get("data");
         return data;
     }
-
 
     /*public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
         try {

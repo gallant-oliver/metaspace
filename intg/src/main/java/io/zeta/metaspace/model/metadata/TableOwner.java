@@ -46,6 +46,7 @@ public class TableOwner {
     public static class Owner {
         private String id;
         private String type;
+        private String pkid;
 
         public String getId() {
             return id;
@@ -63,8 +64,25 @@ public class TableOwner {
 
         public void setType(int type) {
             this.type = String.valueOf(type);
+        }
 
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getPkid() {
+            return pkid;
+        }
+
+        public void setPkid(String pkid) {
+            this.pkid = pkid;
         }
     }
+
+
 
 }
