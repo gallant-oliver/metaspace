@@ -16,9 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import io.swagger.models.Info;
 import io.swagger.models.ModelImpl;
@@ -37,7 +35,6 @@ import io.swagger.models.properties.IntegerProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
-import io.swagger.util.Json;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -369,71 +366,6 @@ public class DataShareService {
         }
     }
 
-    /*public static String doPost(String url, String json) {
-        try {
-            // 定义HttpClient
-            org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
-            PostMethod postMethod = new PostMethod(url);
-            String ticket = AdminUtils.getSSOTicket();
-            postMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
-            RequestEntity requestEntity = new StringRequestEntity(json);
-            postMethod.setRequestEntity(requestEntity);
-            int result = httpClient.executeMethod(postMethod);
-            if (result == HttpStatus.SC_OK) {
-                InputStream in = postMethod.getResponseBodyAsStream();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int len = 0;
-                while ((len = in.read(buffer)) != -1) {
-                    baos.write(buffer, 0, len);
-                }
-                return URLDecoder.decode(baos.toString(), "UTF-8");
-            } else {
-                throw new Exception("HTTP ERROR Status: " + postMethod.getStatusCode() + ":" + postMethod.getStatusText());
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }*/
-
-    /*public static String doPut(String url, List<String> list) {
-        try {
-            PutMethod putMethod = new PutMethod(url);
-
-            // 定义HttpClient
-            org.apache.commons.httpclient.HttpClient httpClient = new org.apache.commons.httpclient.HttpClient();
-
-            String ticket = AdminUtils.getSSOTicket();
-            putMethod.addRequestHeader(new Header(TICKET_KEY, ticket));
-
-            Map kv = new HashMap();
-            kv.put("api_id_list", list);
-            Gson gson = new Gson();
-            String jsonStr = gson.toJson(kv, Map.class);
-
-            RequestEntity requestEntity = new StringRequestEntity(jsonStr);
-            putMethod.setRequestEntity(requestEntity);
-
-            int result = httpClient.executeMethod(putMethod);
-            if (result == HttpStatus.SC_OK) {
-                InputStream in = putMethod.getResponseBodyAsStream();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int len = 0;
-                while ((len = in.read(buffer)) != -1) {
-                    baos.write(buffer, 0, len);
-                }
-                return URLDecoder.decode(baos.toString(), "UTF-8");
-            } else {
-                throw new Exception("HTTP ERROR Status: " + putMethod.getStatusCode() + ":" + putMethod.getStatusText());
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }*/
-
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
@@ -719,70 +651,10 @@ public class DataShareService {
                         filterPropertyMap.put(columnName, filterColumnProperty);
                     }
                 }
-
-
-                /*if (filter) {
-                    DataType dataType = DataType.parseOf(type);
-                    if (DataType.BOOLEAN == dataType) {
-                        BooleanProperty filterColumnProperty = new BooleanProperty();
-                        if (fill) {
-                            filterColumnProperty.setRequired(true);
-                        } else {
-                            if(StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));
-                        }
-                        filterColumnProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterColumnProperty);
-                    } else if (DataType.INT == dataType) {
-                        IntegerProperty filterColumnProperty = new IntegerProperty();
-                        if (fill) {
-                            filterColumnProperty.setRequired(true);
-                        } else {
-                            if(StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
-                        }
-                        filterColumnProperty.setType("integer");
-                        filterPropertyMap.put(columnName, filterColumnProperty);
-                    } else if (DataType.DOUBLE == dataType) {
-                        DoubleProperty filterColumnProperty = new DoubleProperty();
-                        if (fill) {
-                            filterColumnProperty.setRequired(true);
-                        } else {
-                            if(StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));
-                        }
-                        filterColumnProperty.setType("number");
-                        filterColumnProperty.setFormat(type);
-                        filterPropertyMap.put(columnName, filterColumnProperty);
-                    } else if (DataType.FLOAT == dataType) {
-                        FloatProperty filterColumnProperty = new FloatProperty();
-                        if (fill) {
-                            filterColumnProperty.setRequired(true);
-                        } else {
-                            if(StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));
-                        }
-                        filterColumnProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterColumnProperty);
-                    } else {
-                        StringProperty filterColumnProperty = new StringProperty();
-                        if (fill) {
-                            filterColumnProperty.setRequired(true);
-                        } else {
-                            if(Objects.nonNull(defaultValue))
-                                filterColumnProperty.setDefault(field.getDefaultValue());
-                        }
-                        filterColumnProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterColumnProperty);
-                    }
-                }*/
             }
-
-
             columnItem.setEnum(columnList);
             columnsProperty.setItems(columnItem);
             propertyMap.put("columns", columnsProperty);
-
 
             //response
             resObjectProperty.setProperties(responsePropertyMap);
@@ -810,6 +682,11 @@ public class DataShareService {
             path.setPost(operation);
 
             responseModel.setProperties(responsePropertyMap);
+
+            //tags
+            List<String> tags = new ArrayList<>();
+            tags.add(info.getName());
+            operation.setTags(tags);
 
             Map<String, Response> responseMap = new HashMap<>();
             Response successResponse = new Response();
@@ -1078,40 +955,11 @@ public class DataShareService {
                 }
             }
 
-
-
-
             //请求中查询字段
-            /*Object columnObj = parameterMap.get("columns");
-            String columnStr = "";
-            if(columnObj instanceof String[]) {
-                String[] str = (String[])columnObj;
-                columnStr = str[0];
-            }
-            String[] columnArr = columnStr.substring(1, columnStr.length()-1).split(",");*/
             List<String> queryFiles = queryInfo.getColumns();
             //请求中过滤字段
-           /* Object filterColumnObj = parameterMap.get("filters");
-            String filterColumnStr = "";
-            if(filterColumnObj instanceof String[]) {
-                String[] str = (String[])filterColumnObj;
-                filterColumnStr = str[0];
-            }
-            String[] filterColumnArr = filterColumnStr.substring(1, filterColumnStr.length()-1).split(";");*/
             Map filterColumnMap = queryInfo.getFilters();
-            /*for(String filterColumn : filterColumnArr) {
-                String[] kvArr = filterColumn.split(":");
-                String columnName = kvArr[0];
-                List<String> valueList = new ArrayList<>();
-                if(kvArr[1].contains("{")) {
-                    String valueStr = kvArr[1];
-                    String[] valueArr = valueStr.substring(1, valueStr.length()-1).split(",");
-                    valueList = Arrays.asList(valueArr);
-                } else {
-                    valueList.add(kvArr[1]);
-                }
-                filterColumnMap.put(columnName, valueList);
-            }*/
+
             //检查请求中查询字段是否包含于详情中字段
             checkFieldName(fields, queryFiles);
             //获取字段类型
@@ -1298,7 +1146,7 @@ public class DataShareService {
                         }
                     }
                     kv.getValue().forEach(value -> {
-                        String str = (DataType.STRING == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
+                        String str = (DataType.STRING == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
                         valueJoiner.add(str);
                     });
 
