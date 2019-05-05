@@ -1184,7 +1184,7 @@ public class MetaDataService {
             List<String> owners = tableDAO.getDataOwnerList(guid);
             List<Map> organization = dataManageService.getOrganization();
             for (Map map : organization) {
-                String id = String.valueOf(((Double)map.get("id")).intValue());
+                String id = String.valueOf(map.get("id"));
                 for (String owner : owners) {
                     if (owner.equals(id))
                         dataOwner.add(map.get("name").toString());

@@ -728,8 +728,8 @@ public class DataShareService {
             List<String> queryColumns = parameter.getQueryFields();
             long maxRowNumber = parameter.getMaxRowNumber();
             limit = Math.min(limit, maxRowNumber);
-            String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
-
+            Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
+            String sql = sqlMap.get("query").toString();
             APITask task = new APITask(randomName, sql, dbName);
             Future<List<Map>> futureResult = pool.submit(task);
             List<Map> result = futureResult.get();
@@ -920,7 +920,7 @@ public class DataShareService {
         }
     }*/
 
-    public List<Map> queryAPIData(String path, QueryInfo queryInfo) throws AtlasBaseException {
+    public PageResult queryAPIData(String path, QueryInfo queryInfo) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
             if(Objects.isNull(info)) {
@@ -980,13 +980,27 @@ public class DataShareService {
             String tableName = shareDAO.queryTableNameByGuid(tableGuid);
             String dbName = shareDAO.querydbNameByGuid(tableGuid);
             //sql
-            String sql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
-            //任务
-            String randomName = String.valueOf(System.currentTimeMillis());
-            APITask task = new APITask(randomName, sql, dbName);
-            Future<List<Map>> futureResult = pool.submit(task);
-            List<Map> result = futureResult.get();
-            return result;
+            Map sqlMap  = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
+            String querySql = sqlMap.get("query").toString();
+
+            String countSql = sqlMap.get("count").toString();
+            //query任务
+            String queryName = String.valueOf(System.currentTimeMillis());
+            APITask queryTask = new APITask(queryName, querySql, dbName);
+            Future<List<Map>> queryResult = pool.submit(queryTask);
+            List<Map> queryData = queryResult.get();
+
+            //count
+            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(countSql, dbName);
+            long count = queryData.size();
+            while(resultSet.next()) {
+                count = resultSet.getLong(1);
+            }
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(queryData);
+            pageResult.setSum(queryData.size());
+            pageResult.setCount(count);
+            return pageResult;
         } catch (ExecutionException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , e.getCause().getMessage());
@@ -1113,19 +1127,24 @@ public class DataShareService {
      * @param offset
      * @return
      */
-    public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+    public Map<String,String> getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
         String columnName = null;
         try {
-            StringBuffer sb = new StringBuffer();
-            sb.append("select ");
+            StringBuffer querySql = new StringBuffer();
+            StringBuffer countSql = new StringBuffer();
+            querySql.append("select ");
+            countSql.append("select count(1) ");
             StringJoiner columnJoiner = new StringJoiner(",");
             queryColumns.stream().forEach(column -> columnJoiner.add(column));
-            sb.append(columnJoiner.toString());
-            sb.append(" from ");
-            sb.append(tableName);
+            querySql.append(columnJoiner.toString());
+            querySql.append(" from ");
+            querySql.append(tableName);
+            countSql.append(" from ");
+            countSql.append(tableName);
             //过滤条件
             if (Objects.nonNull(kvList) && kvList.size() > 0) {
-                sb.append(" where ");
+                querySql.append(" where ");
+                countSql.append(" where ");
                 StringJoiner filterJoiner = new StringJoiner(" and ");
                 for (QueryParameter.Parameter kv : kvList) {
                     StringBuffer valueBuffer = new StringBuffer();
@@ -1157,18 +1176,23 @@ public class DataShareService {
                     }
                     filterJoiner.add(valueBuffer.toString());
                 }
-                sb.append(filterJoiner.toString());
+                querySql.append(filterJoiner.toString());
+                countSql.append(filterJoiner.toString());
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
-                sb.append(" limit ");
-                sb.append(limit);
+                querySql.append(" limit ");
+                querySql.append(limit);
             }
             //offset
-            sb.append(" offset ");
-            sb.append(offset);
-            LOG.info("SQL：" + sb.toString());
-            return sb.toString();
+            querySql.append(" offset ");
+            querySql.append(offset);
+            LOG.info("querySQL：" + querySql.toString());
+            LOG.info("countSQL：" + querySql.toString());
+            Map result = new HashMap();
+            result.put("query", querySql.toString());
+            result.put("count", countSql.toString());
+            return result;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
         } catch (AtlasBaseException e) {
