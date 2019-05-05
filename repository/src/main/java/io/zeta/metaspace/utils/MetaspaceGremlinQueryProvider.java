@@ -58,8 +58,8 @@ public abstract class MetaspaceGremlinQueryProvider {
         TABLE_BY_DB,
         FULL_TABLE,
         TABLE_TOTAL_BY_DB,
-        ALL_TABLE
-
-
+        ALL_TABLE,
+        DB_TABLE_BY_STATE,
+        FULL_DB_BY_STATE
     }
 }
