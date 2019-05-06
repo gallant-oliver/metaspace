@@ -38,7 +38,6 @@ import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
@@ -46,7 +45,6 @@ import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryInfo;
-import io.zeta.metaspace.model.share.QueryInfoV2;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
@@ -54,33 +52,18 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import jnr.ffi.Struct;
 import jodd.util.StringUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.hadoop.hbase.client.Put;
-import org.json.simple.JSONObject;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.net.URLDecoder;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
@@ -100,8 +83,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import javax.servlet.http.HttpServletRequest;
 
 /*
  * @description
@@ -1014,20 +995,6 @@ public class DataShareService {
         }
     }
 
-
-    public PageResult queryAPIDataV2(String path, QueryInfo queryInfo) throws AtlasBaseException {
-        try {
-            PageResult pageResult = new PageResult();
-            return pageResult;
-        }  catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
-        }
-    }
-
-
-
-
     /**
      * 查询字段是否在允许范围内
      * @param fields
@@ -1108,103 +1075,6 @@ public class DataShareService {
         return kvList;
     }
 
-    /**
-     * 校验查询字段取值
-     * @param filterFields
-     * @param queryFilterFields
-     * @return
-     * @throws AtlasBaseException
-     */
-    public List<QueryParameter.Parameter> checkFieldValueV2(List<FilterColumn> filterFields, Map queryFilterFields, Map columnTypeMap) throws AtlasBaseException {
-        List<QueryParameter.Parameter> kvList = new ArrayList<>();
-        for(FilterColumn field : filterFields) {
-            //必传值
-            if(field.getFill()) {
-                //未传值
-                if(!queryFilterFields.containsKey(field.getColumnName())) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求错误，未填必传值字段:" + field.getColumnName());
-                } else {
-                    QueryParameter.Parameter parameter = new QueryParameter.Parameter();
-                    parameter.setColumnName(field.getColumnName());
-                    String key = field.getColumnName();
-                    Object value = queryFilterFields.get(key);
-                    if(value instanceof String[]) {
-                        String[] values = (String[])value;
-                        parameter.setValue(Arrays.asList(values));
-                    } else if(value instanceof List) {
-                        parameter.setValue((List<Object>) value);
-                    } else {
-                        List<Object> values = new ArrayList<>();
-                        values.add(value);
-                        parameter.setValue(values);
-                    }
-
-                    //校验取值
-                    List<Object> valueList = parameter.getValue();
-                    String type = columnTypeMap.get(key).toString();
-                    DataType dataType = DataType.parseOf(type);
-                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
-                        valueList.stream().forEach(v -> dataType.valueOf(v).get());
-                    if(DataType.BOOLEAN == dataType) {
-                        for(Object v : valueList) {
-                            if(!v.equals(true) && !v.equals(false) && !value.equals("true") && !v.equals("false") && !v.equals("0") && !v.equals("1")) {
-                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, parameter.getColumnName() + "取值需为bool类型");
-                            }
-                        }
-                    }
-
-
-                    kvList.add(parameter);
-                }
-                //非必传
-            } else {
-                QueryParameter.Parameter parameter = new QueryParameter.Parameter();
-                parameter.setColumnName(field.getColumnName());
-
-                //已传值
-                if(queryFilterFields.containsKey(field.getColumnName())) {
-                    String key = field.getColumnName();
-                    Object value = queryFilterFields.get(key);
-                    if(value instanceof String[]) {
-                        String[] values = (String[])value;
-                        parameter.setValue(Arrays.asList(values));
-                    } else if(value instanceof List) {
-                        parameter.setValue((List<Object>) value);
-                    } else {
-                        List<Object> values = new ArrayList<>();
-                        values.add(value);
-                        parameter.setValue(values);
-                    }
-                    //未传值
-                } else {
-                    Boolean use = field.getUseDefaultValue();
-                    //使用默认值
-                    if(use) {
-                        parameter.setValue(Arrays.asList(field.getValue()));
-                    }
-                }
-                if(Objects.nonNull(parameter.getValue()))
-                    kvList.add(parameter);
-            }
-        }
-        return kvList;
-    }
-
-    public void checkValue(QueryParameter.Parameter parameter, Map columnTypeMap) throws AtlasBaseException {
-        String columnName = parameter.getColumnName();
-        List<Object> valueList = parameter.getValue();
-        String type = columnTypeMap.get(columnName).toString();
-        DataType dataType = DataType.parseOf(type);
-        if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
-            valueList.stream().forEach(v -> dataType.valueOf(v).get());
-        if(DataType.BOOLEAN == dataType) {
-            for(Object value : valueList) {
-                if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, parameter.getColumnName() + "取值需为bool类型");
-                }
-            }
-        }
-    }
 
     public Map<String, String> getColumnType(String tableGuid, Set<String> columSet) throws AtlasBaseException {
         Map<String, String> columnTypeMap = new HashMap();
