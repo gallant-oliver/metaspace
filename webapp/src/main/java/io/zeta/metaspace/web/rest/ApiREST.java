@@ -81,4 +81,18 @@ public class ApiREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
         }
     }
+
+    @POST
+    @Path("/sep/share/{url}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult queryAPIDataWithSeparator(@PathParam("url") String url, QueryInfo info) throws Exception {
+        try {
+            return shareService.queryAPIData(url, info);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
 }
