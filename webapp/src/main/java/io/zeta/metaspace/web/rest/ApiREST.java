@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.QueryInfo;
+import io.zeta.metaspace.model.share.QueryInfoV2;
 import io.zeta.metaspace.web.service.DataShareService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -86,9 +87,9 @@ public class ApiREST {
     @Path("/sep/share/{url}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult queryAPIDataWithSeparator(@PathParam("url") String url, QueryInfo info) throws Exception {
+    public PageResult queryAPIDataWithSeparator(@PathParam("url") String url, QueryInfoV2 info) throws Exception {
         try {
-            return shareService.queryAPIData(url, info);
+            return shareService.queryAPIDataV2(url, info);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

@@ -46,6 +46,7 @@ import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
 import io.zeta.metaspace.model.share.QueryInfo;
+import io.zeta.metaspace.model.share.QueryInfoV2;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
@@ -1013,6 +1014,20 @@ public class DataShareService {
         }
     }
 
+
+    public PageResult queryAPIDataV2(String path, QueryInfo queryInfo) throws AtlasBaseException {
+        try {
+            PageResult pageResult = new PageResult();
+            return pageResult;
+        }  catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
+        }
+    }
+
+
+
+
     /**
      * 查询字段是否在允许范围内
      * @param fields
@@ -1091,6 +1106,104 @@ public class DataShareService {
             }
         }
         return kvList;
+    }
+
+    /**
+     * 校验查询字段取值
+     * @param filterFields
+     * @param queryFilterFields
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<QueryParameter.Parameter> checkFieldValueV2(List<FilterColumn> filterFields, Map queryFilterFields, Map columnTypeMap) throws AtlasBaseException {
+        List<QueryParameter.Parameter> kvList = new ArrayList<>();
+        for(FilterColumn field : filterFields) {
+            //必传值
+            if(field.getFill()) {
+                //未传值
+                if(!queryFilterFields.containsKey(field.getColumnName())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求错误，未填必传值字段:" + field.getColumnName());
+                } else {
+                    QueryParameter.Parameter parameter = new QueryParameter.Parameter();
+                    parameter.setColumnName(field.getColumnName());
+                    String key = field.getColumnName();
+                    Object value = queryFilterFields.get(key);
+                    if(value instanceof String[]) {
+                        String[] values = (String[])value;
+                        parameter.setValue(Arrays.asList(values));
+                    } else if(value instanceof List) {
+                        parameter.setValue((List<Object>) value);
+                    } else {
+                        List<Object> values = new ArrayList<>();
+                        values.add(value);
+                        parameter.setValue(values);
+                    }
+
+                    //校验取值
+                    List<Object> valueList = parameter.getValue();
+                    String type = columnTypeMap.get(key).toString();
+                    DataType dataType = DataType.parseOf(type);
+                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+                        valueList.stream().forEach(v -> dataType.valueOf(v).get());
+                    if(DataType.BOOLEAN == dataType) {
+                        for(Object v : valueList) {
+                            if(!v.equals(true) && !v.equals(false) && !value.equals("true") && !v.equals("false") && !v.equals("0") && !v.equals("1")) {
+                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, parameter.getColumnName() + "取值需为bool类型");
+                            }
+                        }
+                    }
+
+
+                    kvList.add(parameter);
+                }
+                //非必传
+            } else {
+                QueryParameter.Parameter parameter = new QueryParameter.Parameter();
+                parameter.setColumnName(field.getColumnName());
+
+                //已传值
+                if(queryFilterFields.containsKey(field.getColumnName())) {
+                    String key = field.getColumnName();
+                    Object value = queryFilterFields.get(key);
+                    if(value instanceof String[]) {
+                        String[] values = (String[])value;
+                        parameter.setValue(Arrays.asList(values));
+                    } else if(value instanceof List) {
+                        parameter.setValue((List<Object>) value);
+                    } else {
+                        List<Object> values = new ArrayList<>();
+                        values.add(value);
+                        parameter.setValue(values);
+                    }
+                    //未传值
+                } else {
+                    Boolean use = field.getUseDefaultValue();
+                    //使用默认值
+                    if(use) {
+                        parameter.setValue(Arrays.asList(field.getValue()));
+                    }
+                }
+                if(Objects.nonNull(parameter.getValue()))
+                    kvList.add(parameter);
+            }
+        }
+        return kvList;
+    }
+
+    public void checkValue(QueryParameter.Parameter parameter, Map columnTypeMap) throws AtlasBaseException {
+        String columnName = parameter.getColumnName();
+        List<Object> valueList = parameter.getValue();
+        String type = columnTypeMap.get(columnName).toString();
+        DataType dataType = DataType.parseOf(type);
+        if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+            valueList.stream().forEach(v -> dataType.valueOf(v).get());
+        if(DataType.BOOLEAN == dataType) {
+            for(Object value : valueList) {
+                if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, parameter.getColumnName() + "取值需为bool类型");
+                }
+            }
+        }
     }
 
     public Map<String, String> getColumnType(String tableGuid, Set<String> columSet) throws AtlasBaseException {
