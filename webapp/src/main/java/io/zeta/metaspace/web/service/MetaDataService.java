@@ -107,6 +107,8 @@ public class MetaDataService {
     @Autowired
     DataManageService dataManageService;
     private String errorMessage;
+    @Autowired
+    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
@@ -892,12 +894,9 @@ public class MetaDataService {
             LOG.error(errorMessage);
             return;
         }
-        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
-        try {
-            hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
-        } catch (Exception e) {
-            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: %s", e.getMessage());
-            LOG.error("get hiveMetaStoreBridgeUtils instance error", e);
+        if (hiveMetaStoreBridgeUtils == null) {
+            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
+            LOG.error(errorMessage);
             return;
         }
         errorMessage = "";
@@ -934,10 +933,17 @@ public class MetaDataService {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
-            progress.setError(String.format("not support database type %s", databaseType));
+            errorMessage = String.format("not support database type %s", databaseType);
+            LOG.error(errorMessage);
+            progress.setError(errorMessage);
             return progress;
         }
-        HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = HiveMetaStoreBridgeUtils.getInstance();
+        if (hiveMetaStoreBridgeUtils == null) {
+            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
+            LOG.error(errorMessage);
+            progress.setError(errorMessage);
+            return progress;
+        }
         switch (databaseTypeEntity) {
             case HIVE:
                 AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
