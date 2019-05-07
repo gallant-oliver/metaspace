@@ -620,14 +620,21 @@ public class DataManageService {
         }
     }
 
-    public List<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
         try {
             String query = parameters.getQuery();
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
-            return organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+            List<Organization> list = organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+            long sum = organizationDAO.countOrganizationByPid(pId, query);
+            long count = list.size();
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(list);
+            pageResult.setCount(count);
+            pageResult.setSum(sum);
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }

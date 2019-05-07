@@ -53,4 +53,9 @@ public interface OrganizationDAO {
              " </if>",
              " </script>"})
     public List<Organization> getOrganizationByPid(@Param("pId")String pId, @Param("query")String query, @Param("limit")Integer limit, @Param("offset")Integer offset);
+
+    @Select({" <script>",
+             " select count(1) from organization where pId=#{pId} and name like '%'||#{query}||'%' ESCAPE '/' order by name",
+             " </script>"})
+    public long countOrganizationByPid(@Param("pId")String pId, @Param("query")String query);
 }
