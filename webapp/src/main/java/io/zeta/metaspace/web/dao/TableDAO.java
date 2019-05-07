@@ -44,8 +44,8 @@ public interface TableDAO {
     @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
     public List<Integer> ifTableExists(String tableGuid);
 
-    @Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
+    //@Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
+    @Select("select name from organization where pkId in (select ownerId from table2owner where tableGuid=#{tableGuid})")
     public List<String> getDataOwnerList(@Param("tableGuid") String tableGuid);
-
 
 }

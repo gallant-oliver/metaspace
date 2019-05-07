@@ -1186,17 +1186,17 @@ public class MetaDataService {
 
     public List<String> getDataOwner(String guid) throws AtlasBaseException {
         try {
-            List<String> dataOwner = new ArrayList<>();
+            //List<String> dataOwner = new ArrayList<>();
             List<String> owners = tableDAO.getDataOwnerList(guid);
-            List<Map> organization = dataManageService.getOrganization();
+            /*List<Map> organization = dataManageService.getOrganization();
             for (Map map : organization) {
                 String id = String.valueOf(map.get("id"));
                 for (String owner : owners) {
                     if (owner.equals(id))
                         dataOwner.add(map.get("name").toString());
                 }
-            }
-            return dataOwner;
+            }*/
+            return owners;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
