@@ -292,18 +292,36 @@ public class TechnicalREST {
         return Response.status(200).entity("success").build();
     }
 
-    @GET
-    @Path("/organization")
+    @POST
+    @Path("/organization/{pId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List getOrganization() {
+    public List getOrganization(@PathParam("pId") String pId, Parameters parameters) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganization()");
             }
-            return dataManageService.getOrganization();
+            return dataManageService.getOrganizationByPid(pId, parameters);
         } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @PUT
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateOrganization() throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateOrganization()");
+            }
+            dataManageService.updateOrganization();
+        } catch (AtlasBaseException e) {
             throw e;
         } finally {
             AtlasPerfTracer.log(perf);

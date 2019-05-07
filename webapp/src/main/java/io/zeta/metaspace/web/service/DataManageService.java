@@ -22,13 +22,12 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
-import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
-
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
@@ -39,18 +38,18 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.share.APIDataOwner;
+import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.OrganizationDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
-import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -58,7 +57,6 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
-import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -91,6 +89,8 @@ public class DataManageService {
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    OrganizationDAO organizationDAO;
 
     /**
      * 获取用户有权限的全部目录
@@ -620,6 +620,19 @@ public class DataManageService {
         }
     }
 
+    public List<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
+        try {
+            String query = parameters.getQuery();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
+            return organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
     public List getOrganization() {
         String organizationURL = SSOConfig.getOrganizationURL();
         long currentTime = System.currentTimeMillis();
@@ -635,13 +648,31 @@ public class DataManageService {
         return data;
     }
 
-    /*public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
+    @Transactional
+    public void updateOrganization() throws AtlasBaseException {
         try {
-
+            organizationDAO.deleteOrganization();
+            List<Map> data = getOrganization();
+            List<Organization> list = toOrganization(data);
+            organizationDAO.addOrganizations(list);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
         }
-    }*/
+    }
+
+    public List<Organization> toOrganization(List<Map> dataList) {
+        List<Organization> list = new ArrayList<>();
+        for(Map data : dataList) {
+            Organization organization = parseMap2Object(data, Organization.class);
+            list.add(organization);
+        }
+        return list;
+    }
+
+    public static <T> T parseMap2Object(Map paramMap, Class<T> cls) {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(paramMap),cls);
+    }
 
 
     @Transactional
