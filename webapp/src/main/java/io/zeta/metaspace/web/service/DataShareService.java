@@ -233,6 +233,7 @@ public class DataShareService {
             pathJoiner.add("api").add(version).add("share").add(path);
             info.setPath("/" + pathJoiner.toString());
             List<APIInfo.Field> fields = getQueryFileds(guid);
+            //owner.name
             List<String> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
             info.setDataOwner(dataOwner);
             info.setFields(fields);
@@ -429,21 +430,8 @@ public class DataShareService {
 
     public List<APIContent.APIDetail.Organization> getOrganization(String guid) throws AtlasBaseException {
         List<APIContent.APIDetail.Organization> list = new ArrayList<>();
-        /*Gson gson = new Gson();
-        Object dataOwnerObject = shareDAO.getDataOwnerByApiGuid(guid);
-        PGobject pGobject = (PGobject)dataOwnerObject;
-
-        if(Objects.nonNull(pGobject)) {
-            String value = pGobject.getValue();
-            List<Map> owners = gson.fromJson(value, List.class);
-            for(Map owner : owners) {
-                String id = owner.get("id").toString();
-                String type = owner.get("type").toString();
-                APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(id, type);
-                list.add(organization);
-            }
-        }*/
-        List<String> owners = metaDataService.getDataOwner(guid);
+        //pkId
+        List<String> owners = metaDataService.getDataOwnerId(guid);
         for(String owner : owners) {
             APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(owner, null);
             list.add(organization);

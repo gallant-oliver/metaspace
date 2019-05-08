@@ -24,6 +24,7 @@ package io.zeta.metaspace.model.metadata;
 public class DataOwner {
     private String tableGuid;
     private String ownerId;
+    private String pkId;
     private String keeper;
     private String generateTime;
 
@@ -57,5 +58,13 @@ public class DataOwner {
 
     public void setGenerateTime(String generateTime) {
         this.generateTime = generateTime;
+    }
+
+    public String getPkId() {
+        return pkId;
+    }
+
+    public void setPkId(String pkId) {
+        this.pkId = pkId;
     }
 }

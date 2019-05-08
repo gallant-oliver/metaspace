@@ -606,7 +606,8 @@ public class DataManageService {
                 for(TableOwner.Owner owner : ownerList) {
                     DataOwner dataOwner = new DataOwner();
                     dataOwner.setTableGuid(tableGuid);
-                    dataOwner.setOwnerId(owner.getPkid());
+                    dataOwner.setOwnerId(owner.getId());
+                    dataOwner.setPkId(owner.getPkid());
                     dataOwner.setKeeper(keeper);
                     dataOwner.setGenerateTime(generateTime);
                     table2OwnerList.add(dataOwner);

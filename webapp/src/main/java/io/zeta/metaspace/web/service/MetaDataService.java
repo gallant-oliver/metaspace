@@ -199,7 +199,7 @@ public class MetaDataService {
 
             //1.4新增
             try {
-                //ownerId
+                //owner.name
                 List<String> owners = getDataOwner(guid);
                 table.setDataOwner(owners);
                 //更新时间
@@ -1186,20 +1186,21 @@ public class MetaDataService {
 
     public List<String> getDataOwner(String guid) throws AtlasBaseException {
         try {
-            //List<String> dataOwner = new ArrayList<>();
             List<String> owners = tableDAO.getDataOwnerList(guid);
-            /*List<Map> organization = dataManageService.getOrganization();
-            for (Map map : organization) {
-                String id = String.valueOf(map.get("id"));
-                for (String owner : owners) {
-                    if (owner.equals(id))
-                        dataOwner.add(map.get("name").toString());
-                }
-            }*/
             return owners;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    public List<String> getDataOwnerId(String guid) throws AtlasBaseException {
+        try {
+            List<String> ownerIdList = tableDAO.getDataOwnerIdList(guid);
+            return ownerIdList;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
 }
