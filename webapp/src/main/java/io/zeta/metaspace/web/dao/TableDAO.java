@@ -45,10 +45,10 @@ public interface TableDAO {
     public List<Integer> ifTableExists(String tableGuid);
 
     //@Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
-    @Select("select name from organization where pkId in (select ownerId from table2owner where tableGuid=#{tableGuid})")
+    @Select("select name from organization where pkId in (select pkId from table2owner where tableGuid=#{tableGuid})")
     public List<String> getDataOwnerList(@Param("tableGuid") String tableGuid);
 
-    @Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
+    @Select("select pkId from table2owner where tableGuid=#{tableGuid}")
     public List<String> getDataOwnerIdList(@Param("tableGuid") String tableGuid);
 
 }

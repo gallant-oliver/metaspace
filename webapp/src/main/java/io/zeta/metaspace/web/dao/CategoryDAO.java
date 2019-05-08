@@ -162,9 +162,9 @@ public interface CategoryDAO {
     public int addTableOwners(TableOwner owner) throws SQLException;
 
     @Update({" <script>",
-             " insert into table2owner(tableGuid,ownerId,keeper,generateTime)values",
+             " insert into table2owner(tableGuid,ownerId,keeper,generateTime,pkid)values",
              " <foreach item='owner' index='index' collection='ownerList' separator=',' close=';'>",
-             " (#{owner.tableGuid},#{owner.ownerId},#{owner.keeper},#{owner.generateTime})",
+             " (#{owner.tableGuid},#{owner.ownerId},#{owner.keeper},#{owner.generateTime},#{owner.pkId})",
              " </foreach>",
              " </script>"})
     public int addDataOwner(@Param("ownerList")List<DataOwner> ownerList);
