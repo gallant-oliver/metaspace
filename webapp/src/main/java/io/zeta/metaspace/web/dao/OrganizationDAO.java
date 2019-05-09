@@ -62,4 +62,18 @@ public interface OrganizationDAO {
              " select count(1) from organization where pId=#{pId} and name like '%'||#{query}||'%' ESCAPE '/'",
              " </script>"})
     public long countOrganizationByPid(@Param("pId")String pId, @Param("query")String query);
+
+    @Select({" <script>",
+             " select * from organization",
+             " <if test=\"query != null and query!=''\">",
+             " where name like '%${query}%' ESCAPE '/'",
+             " </if>",
+             " order by name",
+             " </script>"})
+    public List<Organization> getOrganizationByName(@Param("query")String query);
+
+    @Select({" <script>",
+             " select count(1) from organization where name like '%'||#{query}||'%' ESCAPE '/'",
+             " </script>"})
+    public long countOrganizationByName(@Param("query")String query);
 }

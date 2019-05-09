@@ -311,6 +311,25 @@ public class TechnicalREST {
         }
     }
 
+    @POST
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Organization> getOrganizationByName(Parameters parameters) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganizationByName()");
+            }
+            return dataManageService.getOrganizationByName(parameters);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
     @PUT
     @Path("/organization")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

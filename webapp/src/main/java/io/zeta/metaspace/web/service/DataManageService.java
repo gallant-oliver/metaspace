@@ -641,6 +641,24 @@ public class DataManageService {
         }
     }
 
+    public PageResult<Organization> getOrganizationByName(Parameters parameters) throws AtlasBaseException {
+        try {
+            String query = parameters.getQuery();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            List<Organization> list = organizationDAO.getOrganizationByName(query);
+            long sum = organizationDAO.countOrganizationByName(query);
+            long count = list.size();
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(list);
+            pageResult.setCount(count);
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
     public List getOrganization() {
         String organizationURL = SSOConfig.getOrganizationURL();
         long currentTime = System.currentTimeMillis();
