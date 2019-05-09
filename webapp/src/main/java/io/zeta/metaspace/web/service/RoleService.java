@@ -329,77 +329,9 @@ public class RoleService {
      * @param categorytype
      * @return
      */
-    @Transactional
-    public ArrayList<RoleModulesCategories.Category> getUserCategory(String userRoleId, int categorytype) {
-        Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
-        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
-            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            setMap(userCategorys, allCategorys, 2, true);
-        } else {
-            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
-            if (userBusinessCategories.size() > 0) {
-                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
-                //按角色方案
-                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
-                List<Integer> modules = new ArrayList<>();
-                for (UserInfo.Module module : moduleByRoleId) {
-                    modules.add(module.getModuleId());
-                }
-                //技术目录
-                switch (categorytype) {
-                    //技术目录
-                    case 0: {
-                        //按角色方案
-                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-                            //按勾选的目录
-                            setMap(userCategorys, userChildCategorys, 2, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
-                        } else {
-                            setMap(userCategorys, userChildCategorys, 0, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
-                        }
-                        break;
-                    }
-                    //业务目录
-                    case 1: {
-                        //按角色方案
-                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
-                            setMap(userCategorys, userChildCategorys, 2, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 1, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
-                            setMap(userCategorys, userChildCategorys, 3, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 4, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
-                            setMap(userCategorys, userChildCategorys, 5, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 5, true);
-                        } else {
-                            setMap(userCategorys, userChildCategorys, 0, true);
-                            setMap(userCategorys, userParentCategorys, 0, false);
-                            setMap(userCategorys, userPrivilegeCategorys, 0, true);
-                        }
-                        break;
-                    }
-                }
-
-            }
-        }
-
-        Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-        ArrayList<RoleModulesCategories.Category> categories = new ArrayList<>(valueCollection);
-        setOtherCategory(categorytype, categories);
-
-        return categories;
-    }
 
     @Transactional
-    public List<CategoryPrivilege> getUserCategory2(String userRoleId, int categorytype) {
+    public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
@@ -425,17 +357,17 @@ public class RoleService {
                     //技术目录
                     case 0: {
                         //按角色方案
-                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && modules.contains(SystemModule.TECHNICAL_CATALOG.getCode())) {
                             //按勾选的目录
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, true);
 
-                        } else if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
+                        } else if (modules.contains(SystemModule.TECHNICAL_CATALOG.getCode())) {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, false, false, false, true);
-                        } else if (modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                        } else if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
@@ -449,18 +381,18 @@ public class RoleService {
                     //业务目录
                     case 1: {
                         //按角色方案
-                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_CATALOG.getCode())) {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                        } else if (modules.contains(SystemModule.BUSINESSE_CATALOG.getCode())) {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, true, true);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
                             ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, true, false, true, true);
-                        } else if (modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
-                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, false);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
-                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
                         } else {
                             childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
                             parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);

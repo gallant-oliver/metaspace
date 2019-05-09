@@ -95,7 +95,7 @@ public class DataManageService {
             if (role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String roleId = role.getRoleId();
-            List<CategoryPrivilege> valueList = roleService.getUserCategory2(roleId, type);
+            List<CategoryPrivilege> valueList = roleService.getUserCategory(roleId, type);
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error(e.getMessage());
@@ -223,16 +223,16 @@ public class DataManageService {
             }
             CategoryPrivilege.Privilege privilege =null;
             if(type==0) {
-                if(modules.contains(SystemModule.TECHNICAL_EDIT.getCode())) {
+                if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
                     privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
                 }
                 }else{
-                if(modules.contains(SystemModule.BUSINESSE_EDIT.getCode())) {
+                if(modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
                     privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, true, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
                 }
             }
             returnEntity.setPrivilege(privilege);
@@ -349,8 +349,7 @@ public class DataManageService {
             String generateTime = format.format(time);
             for (RelationEntityV2 relation : relations) {
                 //删除旧的
-                String topGuid = relationDao.getTopGuidByGuid(categoryGuid);
-                relationDao.deleteByTableGuid(topGuid,relation.getTableGuid());
+                relationDao.deleteByTableGuid(relation.getTableGuid());
                 relation.setCategoryGuid(categoryGuid);
                 relation.setGenerateTime(generateTime);
                 if(relationDao.ifRelationExists(categoryGuid,relation.getTableGuid())==0) {
@@ -375,31 +374,7 @@ public class DataManageService {
         }
     }
 
-    /**
-     * 删除表关联
-     *
-     * @param relationshipList
-     * @throws AtlasBaseException
-     */
-    @Transactional
-    public void removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
-        try {
-            if (Objects.nonNull(relationshipList)) {
-                for (RelationEntityV2 relationship : relationshipList) {
-                    String relationShipGuid = relationship.getRelationshipGuid();
-                    RelationEntityV2 entity = categoryDao.getRelationByGuid(relationShipGuid);
-                    String categoryGuid = entity.getCategoryGuid();
-                    String tableGuid = entity.getTableGuid();
-                    List<String> childrenCategoryList = categoryDao.queryChildrenCategoryId(categoryGuid);
-                    childrenCategoryList.add(categoryGuid);
-                    categoryDao.deleteChildrenRelation(tableGuid, childrenCategoryList);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联出错");
-        }
-    }
+
 
     //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
     @Transactional
@@ -600,14 +575,6 @@ public class DataManageService {
         return data;
     }
 
-
-    /*public PageResult<TableInfo> getTableByDBWithQuery(String databaseId, String query, long offset, long limit) throws AtlasBaseException {
-        try {
-
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
-        }
-    }*/
 
 
     @Transactional

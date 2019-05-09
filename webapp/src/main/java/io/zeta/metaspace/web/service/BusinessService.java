@@ -177,7 +177,7 @@ public class BusinessService {
             if(role.getStatus() == 0)
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String userId = user.getUserId();
-            boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_EDIT.getCode()) == 0 ? false:true;
+            boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_OPERATE.getCode()) == 0 ? false:true;
             info.setEditBusiness(editBusiness);
             String categoryGuid = info.getDepartmentId();
             String departmentName = categoryDao.queryNameByGuid(categoryGuid);
@@ -202,7 +202,7 @@ public class BusinessService {
             //editTechnical
             if(Objects.isNull(info))
                 info = new TechnologyInfo();
-            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_EDIT.getCode()) == 0 ? false : true;
+            boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
             info.setEditTechnical(editTechnical);
 
             //tables
