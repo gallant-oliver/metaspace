@@ -530,4 +530,16 @@ public class BusinessService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
+
+    @Transactional
+    public void updateBusinessTrustTable() {
+        List<String> nonTrustBusinessList = businessDao.getNonTrustBusiness();
+        for(String businessId : nonTrustBusinessList) {
+            List<TechnologyInfo.Table> tableList = businessDao.queryTablesByBusinessId(businessId);
+            if(Objects.nonNull(tableList) && tableList.size()>0) {
+                String tableGuid = tableList.get(0).getTableGuid();
+                businessDao.setBusinessTrustTable(businessId, tableGuid);
+            }
+        }
+    }
 }
