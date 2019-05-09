@@ -227,7 +227,8 @@ public class SearchService {
         List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
         for (UserInfo.Module module : moduleByRoleId) {
             //有管理技术目录权限
-            if (module.getModuleId() == SystemModule.TECHNICAL_CATALOG.getCode()) {
+            //如果因为校验过多影响性能，可以取消校验
+            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
                 //admin有全部目录权限，且可以给一级目录加关联
                 if (roleId.equals(SystemRole.ADMIN.getCode())) {
                     List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
@@ -243,7 +244,6 @@ public class SearchService {
                             }
                         }
                     }
-
                 }
             }
         }
