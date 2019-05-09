@@ -44,7 +44,11 @@ public interface OrganizationDAO {
     public int deleteOrganization();
 
     @Select({" <script>",
-             " select * from organization where pId=#{pId} and name like '%'||#{query}||'%' ESCAPE '/' order by name",
+             " select * from organization where pId=#{pId}",
+            " <if test=\"query != null and query!=''\">",
+             " and name like '%${query}%' ESCAPE '/'",
+             " </if>",
+             " order by name",
              " <if test='limit!=null and limit!= -1'>",
              " limit #{limit}",
              " </if>",
