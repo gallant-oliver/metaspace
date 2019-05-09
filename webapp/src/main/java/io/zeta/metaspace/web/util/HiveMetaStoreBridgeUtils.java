@@ -21,15 +21,24 @@ package io.zeta.metaspace.web.util;
 import com.google.common.annotations.VisibleForTesting;
 import com.sun.jersey.api.client.ClientResponse;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.model.TableSchema;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.AtlasServiceException;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.repository.graphdb.AtlasVertex;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
+import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.HdfsNameServiceResolver;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -47,7 +56,9 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -62,7 +73,7 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  * A Bridge Utility that imports metadata from the Hive Meta Store
  * and registers them in Atlas.
  */
-
+@Component
 public class HiveMetaStoreBridgeUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
 
@@ -85,10 +96,14 @@ public class HiveMetaStoreBridgeUtils {
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private final String                  clusterName;
-    private final Hive hiveMetaStoreClient;
-    private final AtlasClientV2           atlasClientV2;
-    private final boolean                 convertHdfsPathToLowerCase;
-    private static HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils = null;
+    private Hive hiveMetaStoreClient = null;
+    private AtlasClientV2           atlasClientV2 = null;
+    private final boolean convertHdfsPathToLowerCase;
+    private final AtlasGraph graph;
+    private final MetaspaceGremlinQueryProvider gremlinQueryProvider;
+    private final EntityGraphRetriever entityRetriever;
+    private final AtlasTypeRegistry atlasTypeRegistry;
+    private final AtlasEntityStore atlasEntityStore;
 
     public AtomicInteger getTotalTables() {
         return totalTables;
@@ -106,22 +121,41 @@ public class HiveMetaStoreBridgeUtils {
         return endTime;
     }
 
-    private HiveMetaStoreBridgeUtils() throws AtlasException, HiveException {
-        Configuration atlasConf        = ApplicationProperties.get();
+    @Inject
+    private HiveMetaStoreBridgeUtils(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph, AtlasEntityStore atlasEntityStore) {
+        Configuration atlasConf        = null;
+        try {
+            atlasConf = ApplicationProperties.get();
+        } catch (AtlasException e) {
+            LOG.error("init config error,", e);
+        }
         String[]      atlasEndpoint    = atlasConf.getStringArray(ATLAS_ENDPOINT);
 
         if (atlasEndpoint == null || atlasEndpoint.length == 0) {
             atlasEndpoint = new String[] { DEFAULT_ATLAS_URL };
         }
-        atlasClientV2 = new AtlasClientV2(atlasEndpoint);
+        try {
+            atlasClientV2 = new AtlasClientV2(atlasEndpoint);
+        } catch (AtlasException e) {
+            LOG.error("init atlasClientV2 error,", e);
+        }
         clusterName = atlasConf.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
 
         HiveConf hiveConf = new HiveConf();
         hiveConf.addResource(MetaspaceConfig.getHiveConfig()+ File.separator + "hive-site.xml");
         String metastoreUris = atlasConf.getString(METASPACE_HIVE_METASTORE_URIS, "thrift:127.0.0.1:9083");
         hiveConf.set(HIVE_METASTORE_URIS, metastoreUris);
-        hiveMetaStoreClient = Hive.get(hiveConf);
+        try {
+            hiveMetaStoreClient = Hive.get(hiveConf);
+        } catch (HiveException e) {
+            LOG.error("init hive metastore client error,", e);
+        }
         convertHdfsPathToLowerCase = atlasConf.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true);
+        this.graph = atlasGraph;
+        this.gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
+        this.entityRetriever = new EntityGraphRetriever(typeRegistry);
+        this.atlasTypeRegistry = typeRegistry;
+        this.atlasEntityStore = atlasEntityStore;
     }
 
 
@@ -133,16 +167,6 @@ public class HiveMetaStoreBridgeUtils {
         return convertHdfsPathToLowerCase;
     }
 
-    public static HiveMetaStoreBridgeUtils getInstance() throws AtlasException, HiveException {
-        if (null == hiveMetaStoreBridgeUtils) {
-            synchronized (HiveMetaStoreBridgeUtils.class) {
-                if (null == hiveMetaStoreBridgeUtils) {
-                    hiveMetaStoreBridgeUtils = new HiveMetaStoreBridgeUtils();
-                }
-            }
-        }
-        return hiveMetaStoreBridgeUtils;
-    }
     /**
      * import all database
      * @throws Exception
@@ -181,6 +205,21 @@ public class HiveMetaStoreBridgeUtils {
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
+            //删除JanusGraph中已经不存在的database,以及database中的table
+            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.DELETED);
+            List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
+            for (AtlasVertex vertex : dbVertices) {
+                if (Objects.nonNull(vertex)) {
+                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithExtInfo(vertex, true);
+                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                    String databaseInGraph = dbEntity.getAttribute("name").toString();
+                    AtlasEntity.Status status = dbEntity.getStatus();
+                    if (!databaseNames.contains(databaseInGraph) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                        deleteTableEntity(databaseInGraph, new ArrayList<>());
+                        deleteEntity(dbEntity);
+                    }
+                }
+            }
             for (String databaseName : databaseNames) {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
 
@@ -217,6 +256,9 @@ public class HiveMetaStoreBridgeUtils {
             LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
 
             try {
+                //删除JanusGraph中已经不存在table
+                deleteTableEntity(databaseName, tableNames);
+
                 for (String tableName : tableNames) {
                     int imported = importTable(dbEntity, databaseName, tableName, failOnError);
 
@@ -235,6 +277,28 @@ public class HiveMetaStoreBridgeUtils {
         }
 
         return tablesImported;
+    }
+
+    private void deleteTableEntity(String databaseName, List<String> tableNames) throws AtlasBaseException {
+        String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_STATE), databaseName, AtlasEntity.Status.DELETED);
+        List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
+        for (AtlasVertex vertex : vertices) {
+            if (Objects.nonNull(vertex)) {
+                AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithExtInfo(vertex, true);
+                AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
+                String tableNameInGraph = tableEntity.getAttribute("name").toString();
+                AtlasEntity.Status status = tableEntity.getStatus();
+                if (!tableNames.contains(tableNameInGraph) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                    deleteEntity(tableEntity);
+                }
+            }
+        }
+    }
+
+    private void deleteEntity(AtlasEntity tableEntity) throws AtlasBaseException {
+        AtlasEntityType type = (AtlasEntityType) atlasTypeRegistry.getType(tableEntity.getTypeName());
+        final AtlasObjectId objectId = getObjectId(tableEntity);
+        atlasEntityStore.deleteByUniqueAttributes(type, objectId.getUniqueAttributes());
     }
 
     @VisibleForTesting
