@@ -76,4 +76,14 @@ public interface OrganizationDAO {
              " select count(1) from organization where name like '%'||#{query}||'%' ESCAPE '/'",
              " </script>"})
     public long countOrganizationByName(@Param("query")String query);
+
+    @Select({"WITH RECURSIVE T(id, name, pid, PATH, DEPTH)  AS" +
+            "(SELECT id,name,pid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            "FROM organization WHERE pid='0' " +
+            "UNION ALL " +
+            "SELECT D.id, D.name, D.pid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            "FROM organization D JOIN T ON D.pid = T.id) " +
+            "SELECT  PATH FROM T WHERE id=#{id} " +
+            "ORDER BY PATH"})
+    public String getPathById(@Param("id")String id);
 }

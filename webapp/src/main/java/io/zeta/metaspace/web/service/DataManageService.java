@@ -647,6 +647,13 @@ public class DataManageService {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<Organization> list = organizationDAO.getOrganizationByName(query);
+
+            for(Organization organization : list) {
+                String pathStr = organizationDAO.getPathById(organization.getId());
+                String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
+                organization.setPath(path);
+            }
+
             long sum = organizationDAO.countOrganizationByName(query);
             long count = list.size();
             PageResult pageResult = new PageResult();
