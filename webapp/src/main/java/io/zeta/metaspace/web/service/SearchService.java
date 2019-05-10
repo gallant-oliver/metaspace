@@ -143,7 +143,7 @@ public class SearchService {
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
         AtlasEntity entity = info.getEntity();
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        if (name == "") {
+        if (name.equals("") ) {
             System.out.println("该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
@@ -192,7 +192,7 @@ public class SearchService {
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
 
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        if (name == "") {
+        if (name.equals("") ) {
             System.out.println("该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(tableId, true);

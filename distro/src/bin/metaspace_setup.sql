@@ -1,4 +1,29 @@
 -- ----------------------------
+-- Table structure for organization
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."organization";
+CREATE TABLE "public"."organization" (
+  "checked" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "disable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "id" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "isopen" bool DEFAULT NULL,
+  "isvm" int8 DEFAULT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "open" bool DEFAULT NULL,
+  "pid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "ptype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "type" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table organization
+-- ----------------------------
+ALTER TABLE "public"."organization" ADD CONSTRAINT "organization_pkey" PRIMARY KEY ("pkid")
+
+-- ----------------------------
 -- Table structure for apigroup
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."apigroup";
@@ -1007,15 +1032,15 @@ INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '
 INSERT INTO "public"."role" VALUES ('3', '管理员', '管理员', '3', NULL, 1, NULL, 1, 0, 1);
 INSERT INTO "public"."role" VALUES ('6', '业务目录管理员', '业务目录管理员', '6', NULL, 1, NULL, 1, 0, 1);
 INSERT INTO "public"."role" VALUES ('7', '技术目录管理员', '技术目录管理员', '7', NULL, 1, NULL, 1, 0, 1);
-INSERT INTO "public"."module" VALUES (1, '技术信息', 1);
-INSERT INTO "public"."module" VALUES (2, '业务信息', 1);
+INSERT INTO "public"."module" VALUES (1, '技术数据', 1);
+INSERT INTO "public"."module" VALUES (2, '业务对象', 1);
+INSERT INTO "public"."module" VALUES (3, '技术信息', 0);
+INSERT INTO "public"."module" VALUES (4, '业务信息', 0);
 INSERT INTO "public"."module" VALUES (5, '业务对象管理', 1);
 INSERT INTO "public"."module" VALUES (6, '权限', 1);
 INSERT INTO "public"."module" VALUES (7, '元数据管理', 1);
-INSERT INTO "public"."module" VALUES (3, '管理技术目录', 0);
-INSERT INTO "public"."module" VALUES (8, '编辑技术信息', 0);
-INSERT INTO "public"."module" VALUES (4, '管理业务目录', 0);
-INSERT INTO "public"."module" VALUES (9, '编辑业务目录', 0);
+INSERT INTO "public"."module" VALUES (8, '技术目录', 0);
+INSERT INTO "public"."module" VALUES (9, '业务目录', 0);
 INSERT INTO "public"."module" VALUES (10, 'API信息', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 2);
@@ -1048,9 +1073,9 @@ INSERT INTO "public"."privilege2module" VALUES ('5', 7);
 INSERT INTO "public"."privilege2module" VALUES ('5', 8);
 INSERT INTO "public"."privilege2module" VALUES ('5', 10);
 INSERT INTO "public"."privilege2module" VALUES ('6', 2);
-INSERT INTO "public"."privilege2module" VALUES ('6', 4);
+INSERT INTO "public"."privilege2module" VALUES ('6', 9);
 INSERT INTO "public"."privilege2module" VALUES ('7', 1);
-INSERT INTO "public"."privilege2module" VALUES ('7', 3);
+INSERT INTO "public"."privilege2module" VALUES ('7', 8);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
 INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
