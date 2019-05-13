@@ -202,7 +202,7 @@ public class SearchService {
             for (RoleModulesCategories.Category child : childs) {
                 strings.add(child.getGuid());
             }
-            return categoryIds;
+            return strings;
         } catch (AtlasBaseException e) {
             throw e;
         }
@@ -501,7 +501,7 @@ public class SearchService {
                 }
             }
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无获取库表权限");
     }
 
     @Transactional

@@ -36,6 +36,8 @@ public class Organization {
     private String updateTime;
     private String path;
 
+    public Organization() { }
+
     public Organization(String checked, String disable, String id, Boolean isOpen, Long isVm, String name, Boolean open, String pId, String pkid, String ptype, String type, String updateTime) {
         this.checked = checked;
         this.disable = disable;

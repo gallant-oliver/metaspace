@@ -629,6 +629,11 @@ public class DataManageService {
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
             List<Organization> list = organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+            for(Organization organization : list) {
+                String pathStr = organizationDAO.getPathById(organization.getId());
+                String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
+                organization.setPath(path);
+            }
             long sum = organizationDAO.countOrganizationByPid(pId, query);
             long count = list.size();
             PageResult pageResult = new PageResult();
@@ -687,6 +692,77 @@ public class DataManageService {
             organizationDAO.deleteOrganization();
             List<Map> data = getOrganization();
             List<Organization> list = toOrganization(data);
+            organizationDAO.addOrganizations(list);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public void addOrganization(int s) throws AtlasBaseException {
+        try {
+            int id = 161826;
+            String name = "组织架构";
+            List<String> pIds = new ArrayList<>();
+            pIds.add("0");
+            List<Organization> list = new ArrayList<>();
+            for(int i=0; i<s; i++) {
+                id++;
+                String idStr = "00" + id;
+                Organization organization = new Organization();
+                organization.setId(idStr);
+                String pkId = UUID.randomUUID().toString();
+                organization.setPkid(pkId);
+                Random random = new Random();
+                int index = 0;
+
+                int size = pIds.size();
+                index = Math.abs(random.nextInt())%size;
+                String pId = "0";
+                pId=pIds.get(index);
+                organization.setpId(pId);
+                organization.setName(name +  id);
+                organization.setIsVm(1L);
+                organization.setIsOpen(false);
+                organization.setOpen(false);
+                organization.setChecked("");
+                organization.setDisable("");
+                organization.setPtype("60");
+                list.add(organization);
+                pIds.add(idStr);
+            }
+            organizationDAO.addOrganizations(list);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
+    public void addOrganization2(int s) throws AtlasBaseException {
+        try {
+            int id = 170826;
+            String name = "组织架构";
+            List<Organization> pIds = organizationDAO.getOrganizationByName("");
+            List<Organization> list = new ArrayList<>();
+            for(int i=0; i<s; i++) {
+                id++;
+                String idStr = "00" + id;
+                Organization organization = new Organization();
+                organization.setId(idStr);
+                String pkId = UUID.randomUUID().toString();
+                organization.setPkid(pkId);
+                Random random = new Random();
+                int size = pIds.size();
+                int index = Math.abs(random.nextInt())%size;
+                String pId = pIds.get(index).getId();
+                organization.setpId(pId);
+                organization.setName(name +  id);
+                organization.setIsVm(1L);
+                organization.setIsOpen(false);
+                organization.setOpen(false);
+                organization.setChecked("");
+                organization.setDisable("");
+                organization.setPtype("60");
+                list.add(organization);
+            }
             organizationDAO.addOrganizations(list);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");

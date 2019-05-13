@@ -348,4 +348,28 @@ public class TechnicalREST {
         }
     }
 
+    @GET
+    @Path("/organization/test/{size}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void addOrganization(@PathParam("size") int size) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.addOrganization()");
+            }
+            if(size == -1) {
+                dataManageService.addOrganization2(2000);
+            } else {
+                dataManageService.addOrganization(size);
+            }
+        } catch (AtlasBaseException e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+
 }
