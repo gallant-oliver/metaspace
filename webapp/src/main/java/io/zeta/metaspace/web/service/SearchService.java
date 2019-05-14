@@ -389,21 +389,15 @@ public class SearchService {
         if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String roleId = role.getRoleId();
-        List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
-        for (UserInfo.Module module : moduleByRoleId) {
-            //有管理技术目录权限
-            if (module.getModuleId() == SystemModule.TECHNICAL_CATALOG.getCode()) {
-                //admin有全部目录权限，且可以给一级目录加关联
-                if (roleId.equals(SystemRole.ADMIN.getCode())) {
-                    List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
-                    return getDatabaseV2(parameters, topCategoryGuid);
-                } else {
-                    List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-                    if (categorysByTypeIds.size() > 0) {
-                        return getDatabaseV2(parameters, categorysByTypeIds);
-                    }
+        //admin有全部目录权限，且可以给一级目录加关联
+        if (roleId.equals(SystemRole.ADMIN.getCode())) {
+            List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+            return getDatabaseV2(parameters, topCategoryGuid);
+        } else {
+            List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+            if (categorysByTypeIds.size() > 0) {
+                return getDatabaseV2(parameters, categorysByTypeIds);
                 }
-            }
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无获取库表权限");
     }
