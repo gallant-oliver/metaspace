@@ -651,7 +651,9 @@ public class DataManageService {
             String query = parameters.getQuery();
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-            List<Organization> list = organizationDAO.getOrganizationByName(query);
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
+            List<Organization> list = organizationDAO.getOrganizationByName(query, limit, offset);
 
             for(Organization organization : list) {
                 String pathStr = organizationDAO.getPathById(organization.getId());

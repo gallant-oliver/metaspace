@@ -59,7 +59,10 @@ public interface OrganizationDAO {
     public List<Organization> getOrganizationByPid(@Param("pId")String pId, @Param("query")String query, @Param("limit")Integer limit, @Param("offset")Integer offset);
 
     @Select({" <script>",
-             " select count(1) from organization where pId=#{pId} and name like '%'||#{query}||'%' ESCAPE '/'",
+             " select count(*) from organization where pId=#{pId}",
+             " <if test=\"query != null and query!=''\">",
+             " and name like '%${query}%' ESCAPE '/'",
+             " </if>",
              " </script>"})
     public long countOrganizationByPid(@Param("pId")String pId, @Param("query")String query);
 
@@ -69,8 +72,14 @@ public interface OrganizationDAO {
              " where name like '%${query}%' ESCAPE '/'",
              " </if>",
              " order by name",
+             " <if test='limit!=null and limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " <if test='offset!=null'>",
+             " offset #{offset}",
+             " </if>",
              " </script>"})
-    public List<Organization> getOrganizationByName(@Param("query")String query);
+    public List<Organization> getOrganizationByName(@Param("query")String query, @Param("limit")Integer limit, @Param("offset")Integer offset);
 
     @Select({" <script>",
              " select count(1) from organization where name like '%'||#{query}||'%' ESCAPE '/'",
