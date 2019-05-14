@@ -456,8 +456,10 @@ public class DataShareService {
             String[] hostArr = hostStr.split("http://");
             Swagger swagger = new Swagger();
             //host
-            String host = hostArr[1] + "/metaspace";
+            String host = hostArr[1];
             swagger.setHost(host);
+            //basePath
+            swagger.setBasePath("/metaspace");
             //scheme
             swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
             //path
