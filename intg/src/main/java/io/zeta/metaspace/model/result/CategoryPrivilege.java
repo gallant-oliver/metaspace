@@ -116,14 +116,23 @@ public class CategoryPrivilege {
 
 
     public static class Privilege{
+        //目录是否隐藏
         private boolean hide;
+        //目录是否置灰
         private boolean ash;
+        //添加同级目录
         private boolean addSibling;
+        //添加子集目录
         private boolean addChildren;
+        //删除目录
         private boolean delete;
+        //编辑目录
         private boolean edit;
+        //添加关联
         private boolean createRelation;
+        //删除关联
         private boolean deleteRelation;
+        //添加owner
         private boolean addOwner;
 
         public Privilege() {

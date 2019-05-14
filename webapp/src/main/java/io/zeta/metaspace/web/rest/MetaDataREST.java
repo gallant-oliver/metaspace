@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
@@ -68,6 +69,9 @@ public class MetaDataREST {
     private DataManageService dataManageService;
 
     private final MetaDataService metadataService;
+
+    @Autowired
+    private BusinessService businessService;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -488,6 +492,19 @@ public class MetaDataREST {
     public Response importProgress(@PathParam("databaseType") String databaseType) throws Exception {
         Progress progress = metadataService.importProgress(databaseType);
         return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/business/trust")
+    public Response updateTrustTable() throws AtlasBaseException {
+        try {
+            businessService.updateBusinessTrustTable();
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
 }

@@ -186,7 +186,7 @@ public class MetaDataService {
             try {
                 List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
                 for (Module module : modules) {
-                    if (module.getModuleId() == SystemModule.TECHNICAL_EDIT.getCode()) {
+                    if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
                         table.setEditTag(true);
                         if (table.getTablePermission().isWRITE()) {
                             table.setEdit(true);
