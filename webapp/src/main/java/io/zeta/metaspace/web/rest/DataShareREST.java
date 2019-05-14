@@ -410,6 +410,8 @@ public class DataShareREST {
             shareService.publishAPI(apiGuidList);
         } catch (AtlasBaseException e) {
             throw e;
+        } catch (Exception e) {
+            throw e;
         }
         return Response.status(200).entity("success").build();
     }

@@ -530,6 +530,7 @@ public class DataShareService {
                 Boolean filter = field.getFilter();
                 Boolean fill = field.getFill();
                 String defaultValue = field.getDefaultValue();
+                Boolean userDefaultValue = field.getUseDefaultValue();
                 //column
                 columnList.add(columnName);
                 DataType dataType = DataType.parseOf(type);
@@ -544,8 +545,11 @@ public class DataShareService {
                         if (fill) {
                             filterColumnProperty.setRequired(true);
                         } else {
-                            if (StringUtil.isEmpty(defaultValue))
+                            if(userDefaultValue) {
                                 filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));*/
                         }
                         filterColumnProperty.setType(type);
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -562,8 +566,11 @@ public class DataShareService {
                         if (fill) {
                             filterColumnProperty.setRequired(true);
                         } else {
-                            if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Integer.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("integer");
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -580,8 +587,11 @@ public class DataShareService {
                         if (fill) {
                             filterColumnProperty.setRequired(true);
                         } else {
-                            if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Double.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("number");
                         filterColumnProperty.setFormat(type);
@@ -598,8 +608,11 @@ public class DataShareService {
                         if (fill) {
                             filterColumnProperty.setRequired(true);
                         } else {
-                            if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Float.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("number");
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -616,8 +629,11 @@ public class DataShareService {
                         if (fill) {
                             filterColumnProperty.setRequired(true);
                         } else {
-                            if (Objects.nonNull(defaultValue))
-                                filterColumnProperty.setDefault(field.getDefaultValue());
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(defaultValue);
+                            }
+                            /*if (Objects.nonNull(defaultValue))
+                                filterColumnProperty.setDefault(field.getDefaultValue());*/
                         }
                         filterColumnProperty.setType(type);
                         filterPropertyMap.put(columnName, filterColumnProperty);
