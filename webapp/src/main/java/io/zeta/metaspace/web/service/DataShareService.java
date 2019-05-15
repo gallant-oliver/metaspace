@@ -195,6 +195,9 @@ public class DataShareService {
             if(count > 0 && !currentAPI.getName().equals(apiName)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
             }
+            String[] pathList = info.getPath().split("/");
+            String path = pathList[pathList.length-1];
+            info.setPath(path);
             info.setGuid(guid);
             String user = AdminUtils.getUserData().getUserId();
             //updater
