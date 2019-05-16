@@ -752,11 +752,15 @@ public class DataShareService {
             Map columnTypeMap = getColumnType(tableGuid, columnMap.keySet());
             String tableName = shareDAO.queryTableNameByGuid(tableGuid);
             String dbName = shareDAO.querydbNameByGuid(tableGuid);
-            long limit = parameter.getLimit();
-            long offset = parameter.getOffset();
+            Long limit = parameter.getLimit();
+            Long offset = parameter.getOffset();
+            if(Objects.isNull(limit) || Objects.isNull(offset)) {
+                throw new AtlasBaseException("limit和offset不允许为空");
+            }
             List<String> queryColumns = parameter.getQueryFields();
             long maxRowNumber = parameter.getMaxRowNumber();
-            limit = Math.min(limit, maxRowNumber);
+            limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
+            offset = Objects.nonNull(offset)?offset:0;
             Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
             String sql = sqlMap.get("query").toString();
             APITask task = new APITask(randomName, sql, dbName);
@@ -1216,8 +1220,10 @@ public class DataShareService {
                 querySql.append(limit);
             }
             //offset
-            querySql.append(" offset ");
-            querySql.append(offset);
+            if(Objects.nonNull(offset)) {
+                querySql.append(" offset ");
+                querySql.append(offset);
+            }
             LOG.info("querySQL：" + querySql.toString());
             LOG.info("countSQL：" + querySql.toString());
             Map result = new HashMap();
