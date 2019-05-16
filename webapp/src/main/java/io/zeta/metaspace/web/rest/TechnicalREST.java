@@ -1,13 +1,12 @@
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
@@ -46,17 +45,29 @@ public class TechnicalREST {
     /**
      * 添加关联表时搜库
      *
-     * @return List<Database>
+     * @return List<DatabaseHeader>
      */
     @POST
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<Database> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
+    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
+        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
         return pageResult;
     }
-
+    /**
+     * 添加关联表时根据库搜表
+     *
+     * @return List<AddRelationTable>
+     */
+    @POST
+    @Path("/search/database/{databaseGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid ) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid);
+        return pageResult;
+    }
     /**
      * 添加关联表时搜表
      *

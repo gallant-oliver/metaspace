@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
+import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -243,7 +244,7 @@ public interface RoleDAO {
     @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
     public List<TechnologyInfo.Table> getTableInfosByDB(@Param("guid") String guid, @Param("DB") String DB);
 
-    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select DISTINCT tableinfo.dbname,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -311,4 +312,20 @@ public interface RoleDAO {
 
     @Update("update role set description=#{description} where roleid=#{roleId}")
     public int editRole(Role role);
+
+    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    public List<TechnologyInfo.Table> getTableInfosByDBIdByParameters(@Param("guids") List<String> guids, @Param("DB") String DB, @Param("offset") long offset, @Param("limit") long limit);
+
+    @Select("<script>select count(distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.databaseGuid=#{DB} </script>")
+    public long getTableInfosByDBIdCount(@Param("guids") List<String> guids, @Param("DB") String DB);
 }
