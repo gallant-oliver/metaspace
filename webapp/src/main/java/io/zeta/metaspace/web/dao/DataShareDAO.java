@@ -166,14 +166,15 @@ public interface DataShareDAO {
     public Object getAPIFields(@Param("path")String path);
 
     @Select({" <script>",
-             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,",
+             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
              " tableInfo.tableName,apiGroup.name as groupName",
-             " from apiInfo,tableInfo,apiGroup where",
+             " from apiInfo,tableInfo,apiGroup,users where",
              " apiInfo.tableGuid in",
              " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
              " #{tableGuid}",
              " </foreach>",
              " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
+             " and users.userId=apiInfo.keeper",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",
