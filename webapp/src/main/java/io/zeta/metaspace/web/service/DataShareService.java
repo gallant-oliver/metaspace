@@ -64,6 +64,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
@@ -399,6 +401,8 @@ public class DataShareService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
             }
             return shareDAO.updatePublishStatus(apiGuid, false);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
@@ -452,17 +456,42 @@ public class DataShareService {
         return pathStr;
     }
 
+    public static String getLocalIP(){
+        InetAddress addr = null;
+        try {
+            addr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        byte[] ipAddr = addr.getAddress();
+        String ipAddrStr = "";
+        for (int i = 0; i < ipAddr.length; i++) {
+            if (i > 0) {
+                ipAddrStr += ".";
+            }
+            ipAddrStr += ipAddr[i] & 0xFF;
+        }
+        //System.out.println(ipAddrStr);
+        return ipAddrStr;
+    }
+
     public String generateSwaggerContent(APIInfo info) throws Exception {
         try {
             Configuration configuration = ApplicationProperties.get();
+            String ip=getLocalIP();
             String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
-            String[] hostArr = hostStr.split("http://");
+            /*String[] hostArr = hostStr.split("http://");*/
+            String[] hostArr = hostStr.split(":");
             Swagger swagger = new Swagger();
             //host
-            String host = hostArr[1];
-            swagger.setHost(host);
+            /*String host = hostArr[1];*/
+            String port = hostArr[hostArr.length-1];
+            ip += ":" + port;
+            swagger.setHost(ip);
             //basePath
-            swagger.setBasePath("/metaspace");
+            swagger.setBasePath("/api/metaspace");
             //scheme
             swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
             //path
@@ -935,12 +964,13 @@ public class DataShareService {
             List<FilterColumn> filterFileds = new ArrayList<>();
             for (Map map : values) {
                 String columnName = map.get("columnName").toString();
-                String defaultValue = map.get("defaultValue").toString();
                 Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
-                Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
-                Boolean useDefault = Boolean.parseBoolean(map.get("useDefaultValue").toString());
+
                 fields.add(columnName);
                 if (filter) {
+                    Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
+                    String defaultValue = Objects.nonNull(map.get("defaultValue"))?map.get("defaultValue").toString():String.valueOf("");
+                    Boolean useDefault = Objects.nonNull(map.get("useDefaultValue"))?Boolean.parseBoolean(map.get("useDefaultValue").toString()):false;
                     FilterColumn column = new FilterColumn(columnName, defaultValue, fill, useDefault);
                     filterFileds.add(column);
                 }

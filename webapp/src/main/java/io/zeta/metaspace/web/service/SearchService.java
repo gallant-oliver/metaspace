@@ -89,17 +89,12 @@ public class SearchService {
             String roleId = role.getRoleId();
             List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
             List<String> categoryIds = new ArrayList<>();
-            for (UserInfo.Module module : moduleByRoleId) {
-                //有管理技术目录权限
-                if (module.getModuleId() == SystemModule.TECHNICAL_CATALOG.getCode()) {
 
-                    //admin有全部目录权限，且可以给一级目录加关联
-                    if (roleId.equals(SystemRole.ADMIN.getCode())) {
-                        categoryIds = roleDAO.getTopCategoryGuid(0);
-                    } else {
-                        categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-                    }
-                }
+            //admin有全部目录权限，且可以给一级目录加关联
+            if (roleId.equals(SystemRole.ADMIN.getCode())) {
+                categoryIds = roleDAO.getTopCategoryGuid(0);
+                } else {
+                categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             }
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
             ArrayList<String> strings = new ArrayList<>();
@@ -115,8 +110,12 @@ public class SearchService {
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
             List<String> categoryIds = getPermissionCategoryIds();
-            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
             PageResult<TableInfo> pageResult = new PageResult<>();
+            if(Objects.isNull(categoryIds) || categoryIds.size()==0) {
+                return pageResult;
+            }
+            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
+
             pageResult.setLists(tableList);
             pageResult.setSum(tableList.size());
             pageResult.setCount(tableList.size());
