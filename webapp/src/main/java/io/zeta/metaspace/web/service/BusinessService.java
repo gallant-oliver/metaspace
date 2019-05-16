@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -514,8 +515,12 @@ public class BusinessService {
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
-                    List<String> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
-                    api.setDataOwner(dataOwner);
+                    List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
+                    List<String> dataOwnerName = new ArrayList<>();
+                    if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                        dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                    }
+                    api.setDataOwner(dataOwnerName);
                 }
                 apiCount = shareDAO.countTableRelatedAPI(tableList);
             }

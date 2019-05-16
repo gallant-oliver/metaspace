@@ -200,7 +200,7 @@ public class MetaDataService {
             //1.4新增
             try {
                 //owner.name
-                List<String> owners = getDataOwner(guid);
+                List<DataOwnerHeader> owners = getDataOwner(guid);
                 table.setDataOwner(owners);
                 //更新时间
                 //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
@@ -1184,9 +1184,9 @@ public class MetaDataService {
         }
     }
 
-    public List<String> getDataOwner(String guid) throws AtlasBaseException {
+    public List<DataOwnerHeader> getDataOwner(String guid) throws AtlasBaseException {
         try {
-            List<String> owners = tableDAO.getDataOwnerList(guid);
+            List<DataOwnerHeader> owners = tableDAO.getDataOwnerList(guid);
             return owners;
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -1201,6 +1201,14 @@ public class MetaDataService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public int deleteTableOwner(String tableGuid, List<String> ownerList) {
+        try {
+            return tableDAO.deleteTableOwner(tableGuid, ownerList);
+        } catch (Exception e) {
+            throw e;
         }
     }
 }

@@ -37,6 +37,7 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
@@ -239,8 +240,12 @@ public class DataShareService {
             info.setPath("/" + pathJoiner.toString());
             List<APIInfo.Field> fields = getQueryFileds(guid);
             //owner.name
-            List<String> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
-            info.setDataOwner(dataOwner);
+            List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
+            List<String> dataOwnerName = new ArrayList<>();
+            if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+            }
+            info.setDataOwner(dataOwnerName);
             info.setFields(fields);
             int count = shareDAO.getStarCount(userId, guid);
             if(count > 0) {
@@ -305,8 +310,12 @@ public class DataShareService {
                 } else {
                     header.setStar(false);
                 }
-                List<String> dataOwner = metaDataService.getDataOwner(header.getTableGuid());
-                header.setDataOwner(dataOwner);
+                List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(header.getTableGuid());
+                List<String> dataOwnerName = new ArrayList<>();
+                if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                    dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                }
+                header.setDataOwner(dataOwnerName);
             }
 
             int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);

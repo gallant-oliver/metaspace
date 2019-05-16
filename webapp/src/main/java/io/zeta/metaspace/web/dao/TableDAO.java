@@ -1,8 +1,11 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.DataOwner;
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -45,10 +48,18 @@ public interface TableDAO {
     public List<Integer> ifTableExists(String tableGuid);
 
     //@Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
-    @Select("select name from organization where pkId in (select pkId from table2owner where tableGuid=#{tableGuid})")
-    public List<String> getDataOwnerList(@Param("tableGuid") String tableGuid);
+    @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
+    public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
 
     @Select("select pkId from table2owner where tableGuid=#{tableGuid}")
     public List<String> getDataOwnerIdList(@Param("tableGuid") String tableGuid);
+
+    @Delete({"<script>",
+             "delete from table2owner where tableGuid=#{tableGuid} and pkId in ",
+             "<foreach item='guid' index='index' collection='ownerList' separator=',' open='(' close=')'>" ,
+             "#{guid}",
+             "</foreach>",
+             "</script>"})
+    public int deleteTableOwner(@Param("tableGuid")String tableGuid, @Param("ownerList")List<String> ownerList);
 
 }

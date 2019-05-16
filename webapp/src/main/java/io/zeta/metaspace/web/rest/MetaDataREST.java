@@ -507,4 +507,17 @@ public class MetaDataREST {
         }
     }
 
+    @Path("/owner/{tableGuid}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String deleteOwner(@PathParam("tableGuid") String tableGuid, List<String> ownerList) throws AtlasBaseException {
+        try {
+            metadataService.deleteTableOwner(tableGuid, ownerList);
+            return "success";
+        }  catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
+
 }
