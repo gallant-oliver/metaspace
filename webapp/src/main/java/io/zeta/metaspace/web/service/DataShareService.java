@@ -39,6 +39,7 @@ import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
@@ -108,6 +109,8 @@ public class DataShareService {
     DataManageService dataManageService;
     @Autowired
     private MetaDataService metaDataService;
+    @Autowired
+    private SearchService searchService;
     @Autowired
     private UserDAO userDAO;
 
@@ -285,6 +288,14 @@ public class DataShareService {
      */
     public PageResult<APIInfoHeader> getAPIList(String guid, Integer my, String publish, Parameters parameters) throws AtlasBaseException {
         try {
+            Parameters tablePara = new Parameters();
+            tablePara.setLimit(-1);
+            tablePara.setOffset(0);
+            tablePara.setQuery("");
+            PageResult<AddRelationTable> tablePageResult = searchService.getPermissionTablePageResultV2(tablePara);
+            List<String> permissionTableList = new ArrayList<>();
+            List<AddRelationTable>  tableList = tablePageResult.getLists();
+            tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             String userId = AdminUtils.getUserData().getUserId();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
@@ -295,6 +306,11 @@ public class DataShareService {
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
+                if(permissionTableList.contains(header.getTableGuid())) {
+                    header.setEnableClone(true);
+                } else {
+                    header.setEnableClone(false);
+                }
                 //keeper
                 String keeperGuid = header.getKeeper();
                 User keeperUser = userDAO.getUser(keeperGuid);
@@ -317,7 +333,6 @@ public class DataShareService {
                 }
                 header.setDataOwner(dataOwnerName);
             }
-
             int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
             pageResult.setSum(apiCount);
             pageResult.setCount(list.size());

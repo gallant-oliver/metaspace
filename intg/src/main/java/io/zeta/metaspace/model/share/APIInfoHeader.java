@@ -37,6 +37,7 @@ public class APIInfoHeader {
     private String updater;
     private String updateTime;
     private Boolean star;
+    private Boolean enableClone;
 
     public String getGuid() {
         return guid;
@@ -140,5 +141,13 @@ public class APIInfoHeader {
 
     public void setStar(Boolean star) {
         this.star = star;
+    }
+
+    public Boolean getEnableClone() {
+        return enableClone;
+    }
+
+    public void setEnableClone(Boolean enableClone) {
+        this.enableClone = enableClone;
     }
 }

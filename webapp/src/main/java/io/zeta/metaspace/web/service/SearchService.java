@@ -322,6 +322,29 @@ public class SearchService {
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
     }
 
+
+    @Transactional
+    public PageResult<AddRelationTable> getPermissionTablePageResultV2(Parameters parameters) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        Role role = roleDAO.getRoleByUsersId(user.getUserId());
+        if (role.getStatus() == 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        String roleId = role.getRoleId();
+
+        //admin有全部目录权限，且可以给一级目录加关联
+        if (roleId.equals(SystemRole.ADMIN.getCode())) {
+            List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+            return getTableResultV2(parameters, topCategoryGuid);
+            } else {
+            List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+            if (categorysByTypeIds.size() > 0) {
+                return getTableResultV2(parameters, categorysByTypeIds);
+            }
+        }
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
+    }
+
+
     //一组目录查子表
     @Transactional
     public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds) {
