@@ -17,8 +17,8 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
-import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
+import io.swagger.models.Info;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
@@ -29,8 +29,6 @@ import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.BooleanProperty;
-import io.swagger.models.properties.DateProperty;
-import io.swagger.models.properties.DecimalProperty;
 import io.swagger.models.properties.DoubleProperty;
 import io.swagger.models.properties.FloatProperty;
 import io.swagger.models.properties.IntegerProperty;
@@ -38,8 +36,8 @@ import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
-import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
@@ -47,6 +45,7 @@ import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
+import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
@@ -54,13 +53,11 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import jodd.typeconverter.Convert;
+import jodd.util.StringUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
-import org.junit.Test;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,10 +65,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
-import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,19 +87,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.servlet.http.HttpServletRequest;
-
 /*
  * @description
  * @author sunhaoning
  * @date 2019/3/26 19:56
  */
+@SuppressWarnings("CheckStyle")
 @Service
 public class DataShareService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataShareService.class);
 
     public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
+    public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
+    private static final String TICKET_KEY = "X-SSO-FullticketId";
 
     @Autowired
     DataShareDAO shareDAO;
@@ -200,6 +198,9 @@ public class DataShareService {
             if(count > 0 && !currentAPI.getName().equals(apiName)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
             }
+            String[] pathList = info.getPath().split("/");
+            String path = pathList[pathList.length-1];
+            info.setPath(path);
             info.setGuid(guid);
             String user = AdminUtils.getUserData().getUserId();
             //updater
@@ -238,8 +239,13 @@ public class DataShareService {
             pathJoiner.add("api").add(version).add("share").add(path);
             info.setPath("/" + pathJoiner.toString());
             List<APIInfo.Field> fields = getQueryFileds(guid);
-            List<String> dataOwner = getDataOwner(info.getTableGuid());
-            info.setDataOwner(dataOwner);
+            //owner.name
+            List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
+            List<String> dataOwnerName = new ArrayList<>();
+            if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+            }
+            info.setDataOwner(dataOwnerName);
             info.setFields(fields);
             int count = shareDAO.getStarCount(userId, guid);
             if(count > 0) {
@@ -304,8 +310,12 @@ public class DataShareService {
                 } else {
                     header.setStar(false);
                 }
-                List<String> dataOwner = getDataOwner(header.getTableGuid());
-                header.setDataOwner(dataOwner);
+                List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(header.getTableGuid());
+                List<String> dataOwnerName = new ArrayList<>();
+                if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                    dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                }
+                header.setDataOwner(dataOwnerName);
             }
 
             int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
@@ -333,34 +343,6 @@ public class DataShareService {
         }
     }
 
-    public List<String> getDataOwner(String guid) throws AtlasBaseException {
-        try {
-            Gson gson = new Gson();
-            Object dataOwnerObject = shareDAO.getDataOwnerByGuid(guid);
-            PGobject pGobject = (PGobject)dataOwnerObject;
-            List<String> dataOwner = new ArrayList<>();
-            if(Objects.nonNull(pGobject)) {
-                String value = pGobject.getValue();
-                List<Map> onwers = gson.fromJson(value, List.class);
-                List<LinkedTreeMap> organization = dataManageService.getOrganization();
-                for (LinkedTreeMap map : organization) {
-                    String id = map.get("id").toString();
-                    String type = map.get("type").toString();
-                    for(Map owner : onwers) {
-                        if(owner.get("id").toString().equals(id) && owner.get("type").toString().equals(type)) {
-                            dataOwner.add(map.get("name").toString());
-                        }
-                    }
-                }
-            }
-            return dataOwner;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
-    }
-
-
     public int starAPI(String apiGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -383,11 +365,53 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
-            /*APIContent content = generateAPIContent(guidList);
-            String organizationURL = SSOConfig.getOrganizationURL();
-            Map dataMap = new org.apache.commons.beanutils.BeanMap(content);
-            SSLClient.doPost(organizationURL, dataMap);*/
+            Configuration configuration = ApplicationProperties.get();
+            APIContent content = generateAPIContent(guidList);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(content, APIContent.class);
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
+            String res = SSLClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
+            Map response = convertMobiusResponse(res);
+            String error_id = String.valueOf(response.get("error-id"));
+            String error_reason = String.valueOf(response.get("reason"));
+            if(!"0.0".equals(error_id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + error_reason);
+            }
             return shareDAO.updatePublishStatus(guidList, true);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public Map convertMobiusResponse(String message) {
+        Gson gson = new Gson();
+        Map response = gson.fromJson(message, Map.class);
+        return response;
+    }
+
+    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
+            Map param = new HashMap();
+            param.put("api_id_list", apiGuid);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(param, Map.class);
+            String res = SSLClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            Map response = convertMobiusResponse(res);
+            String error_id = String.valueOf(response.get("error-id"));
+            String error_reason = String.valueOf(response.get("reason"));
+            if(!"0.0".equals(error_id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
+            }
+            return shareDAO.updatePublishStatus(apiGuid, false);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
@@ -395,6 +419,7 @@ public class DataShareService {
     }
 
     public APIContent generateAPIContent(List<String> guidList) throws Exception {
+        Configuration configuration = ApplicationProperties.get();
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
@@ -402,39 +427,95 @@ public class DataShareService {
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
-            String api_owner = info.getKeeper();
-            String api_catalog = "";
+            //String userId = info.getKeeper();
+            //String api_owner = userDAO.getUserAccount(userId);
+            List<String> owners = new ArrayList<>();
+            List<APIContent.APIDetail.Organization> organizations = getOrganization(api_id);
+            String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
-            String uri = info.getPath();
+            String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url = "";
+            String upstream_url = configuration.getString(ATLAS_REST_ADDRESS) + "/metaspace";
             String swagger_content = generateSwaggerContent(info);
-            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, api_owner, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
         }
         content.setApis_detail(contentList);
         return content;
     }
 
-    public String generateSwaggerContent(APIInfo info) throws AtlasException,Exception {
+    public List<APIContent.APIDetail.Organization> getOrganization(String guid) throws AtlasBaseException {
+        List<APIContent.APIDetail.Organization> list = new ArrayList<>();
+        //pkId
+        List<String> owners = metaDataService.getDataOwnerId(guid);
+        for(String owner : owners) {
+            APIContent.APIDetail.Organization organization = new APIContent.APIDetail.Organization(owner, null);
+            list.add(organization);
+        }
+        return list;
+    }
+
+
+    public String getURL(APIInfo info) {
+        String version = info.getVersion();
+        String pathStr = info.getPath();
+        StringJoiner pathJoiner = new StringJoiner("/");
+        pathJoiner.add("api").add(version).add("share").add(pathStr);
+        pathStr = "/" + pathJoiner.toString();
+        return pathStr;
+    }
+
+    public static String getLocalIP(){
+        InetAddress addr = null;
+        try {
+            addr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        byte[] ipAddr = addr.getAddress();
+        String ipAddrStr = "";
+        for (int i = 0; i < ipAddr.length; i++) {
+            if (i > 0) {
+                ipAddrStr += ".";
+            }
+            ipAddrStr += ipAddr[i] & 0xFF;
+        }
+        //System.out.println(ipAddrStr);
+        return ipAddrStr;
+    }
+
+    public String generateSwaggerContent(APIInfo info) throws Exception {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String host = configuration.getString(ATLAS_REST_ADDRESS);
+            String ip=getLocalIP();
+            String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
+            /*String[] hostArr = hostStr.split("http://");*/
+            String[] hostArr = hostStr.split(":");
             Swagger swagger = new Swagger();
             //host
-            swagger.setHost(host);
+            /*String host = hostArr[1];*/
+            String port = hostArr[hostArr.length-1];
+            ip += ":" + port;
+            swagger.setHost(ip);
+            //basePath
+            swagger.setBasePath("/api/metaspace");
             //scheme
             swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
             //path
-            String version = info.getVersion();
-            String pathStr = info.getPath();
-            StringJoiner pathJoiner = new StringJoiner("/");
-            pathJoiner.add("api").add(version).add("share").add(pathStr);
-            pathStr = "/" + pathJoiner.toString();
+            String pathStr = getURL(info);
             Map pathMap = new HashMap();
             Path path = new Path();
             pathMap.put(pathStr, path);
             swagger.setPaths(pathMap);
+
+            Info swaggerInfo = new Info();
+            //title
+            swaggerInfo.setTitle("DataShare");
+            //version
+            swaggerInfo.setVersion(info.getVersion());
+            swagger.setInfo(swaggerInfo);
 
             Operation operation = new Operation();
             operation.setConsumes(Collections.singletonList("application/json"));
@@ -446,100 +527,170 @@ public class DataShareService {
             operation.setSummary(desc);
 
             BodyParameter parameter = new BodyParameter();
+            parameter.setName(info.getName());
             parameter.setIn("body");
             parameter.setRequired(true);
-            ModelImpl model = new ModelImpl();
+            ModelImpl requestModel = new ModelImpl();
+            ModelImpl responseModel = new ModelImpl();
 
-            model.setRequired(Arrays.asList("columns", "filters", "offset", "limit"));
+            requestModel.setRequired(Arrays.asList("columns", "filters", "offset", "limit"));
             Map<String, Property> propertyMap = new HashMap<>();
 
             List<String> columnList = new ArrayList<>();
-
             List<APIInfo.Field> values = new ArrayList<>();
 
             Gson gson = new Gson();
-            for (Object obj : info.getFields()) {
+            for (Object obj : getQueryFileds(info.getGuid())) {
                 Type type = new TypeToken<APIInfo.Field>() {
                 }.getType();
                 APIInfo.Field field = gson.fromJson(gson.toJson(obj), type);
                 values.add(field);
             }
 
-            values.stream().forEach(field -> columnList.add(field.getColumnName()));
+            //response
+            ArrayProperty responseProperty = new ArrayProperty();
+            Map<String, Property> responsePropertyMap = new HashMap<>();
+            ObjectProperty resObjectProperty = new ObjectProperty();
 
             //columns
             ArrayProperty columnsProperty = new ArrayProperty();
             columnsProperty.setRequired(true);
-            columnsProperty.setType("Array");
+            columnsProperty.setType("array");
             StringProperty columnItem = new StringProperty();
-            columnItem.setType("String");
-            columnItem.setEnum(columnList);
-            columnsProperty.setItems(columnItem);
-            propertyMap.put("columns", columnsProperty);
+            columnItem.setType("string");
 
             //filters
+            Map<String, Property> filterPropertyMap = new HashMap<>();
             ObjectProperty filtersProperty = new ObjectProperty();
             filtersProperty.setRequired(true);
-            filtersProperty.setType("Object");
-            Map<String, Property> filterPropertyMap = new HashMap<>();
+            filtersProperty.setType("object");
+
             for (APIInfo.Field field : values) {
                 String columnName = field.getColumnName();
                 String type = field.getType();
                 Boolean filter = field.getFilter();
                 Boolean fill = field.getFill();
-                if (filter) {
-                    DataType dataType = DataType.parseOf(type);
-                    if (DataType.BOOLEAN == dataType) {
-                        BooleanProperty filterProperty = new BooleanProperty();
+                String defaultValue = field.getDefaultValue();
+                Boolean userDefaultValue = field.getUseDefaultValue();
+                //column
+                columnList.add(columnName);
+                DataType dataType = DataType.parseOf(type);
+                if (DataType.BOOLEAN == dataType) {
+                    //response
+                    BooleanProperty resColumnProperty = new BooleanProperty();
+                    resColumnProperty.setType(type);
+                    responsePropertyMap.put(columnName, resColumnProperty);
+                    //filter
+                    if(filter) {
+                        BooleanProperty filterColumnProperty = new BooleanProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            filterColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Boolean.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));*/
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
-                    } else if (DataType.INT == dataType) {
-                        IntegerProperty filterProperty = new IntegerProperty();
+                        filterColumnProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterColumnProperty);
+                    }
+                } else if (DataType.INT == dataType) {
+                    //response
+                    IntegerProperty resColumnProperty = new IntegerProperty();
+                    resColumnProperty.setType("integer");
+                    responsePropertyMap.put(columnName, resColumnProperty);
+
+                    //filter
+                    if(filter) {
+                        IntegerProperty filterColumnProperty = new IntegerProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            filterColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Integer.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Integer.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));*/
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
-                    } else if (DataType.DOUBLE == dataType) {
-                        DoubleProperty filterProperty = new DoubleProperty();
+                        filterColumnProperty.setType("integer");
+                        filterPropertyMap.put(columnName, filterColumnProperty);
+                    }
+                } else if (DataType.DOUBLE == dataType) {
+                    //response
+                    DoubleProperty resColumnProperty = new DoubleProperty();
+                    resColumnProperty.setType("number");
+                    responsePropertyMap.put(columnName, resColumnProperty);
+
+                    //filter
+                    if(filter) {
+                        DoubleProperty filterColumnProperty = new DoubleProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            filterColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Double.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Double.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));*/
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
-                    } else if (DataType.FLOAT == dataType) {
-                        FloatProperty filterProperty = new FloatProperty();
+                        filterColumnProperty.setType("number");
+                        filterColumnProperty.setFormat(type);
+                        filterPropertyMap.put(columnName, filterColumnProperty);
+                    }
+                } else if (DataType.FLOAT == dataType) {
+                    //response
+                    FloatProperty resColumnProperty = new FloatProperty();
+                    resColumnProperty.setType("number");
+                    responsePropertyMap.put(columnName, resColumnProperty);
+
+                    if(filter) {
+                        FloatProperty filterColumnProperty = new FloatProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            filterColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(Float.valueOf(field.getDefaultValue()));
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(Float.valueOf(defaultValue));
+                            }
+                            /*if (StringUtil.isEmpty(defaultValue))
+                                filterColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));*/
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
-                    } else {
-                        StringProperty filterProperty = new StringProperty();
+                        filterColumnProperty.setType("number");
+                        filterPropertyMap.put(columnName, filterColumnProperty);
+                    }
+                } else {
+                    //response
+                    StringProperty resColumnProperty = new StringProperty();
+                    resColumnProperty.setType("string");
+                    responsePropertyMap.put(columnName, resColumnProperty);
+
+                    //filter
+                    if(filter) {
+                        StringProperty filterColumnProperty = new StringProperty();
                         if (fill) {
-                            filterProperty.setRequired(true);
+                            filterColumnProperty.setRequired(true);
                         } else {
-                            filterProperty.setDefault(field.getDefaultValue());
+                            if(userDefaultValue) {
+                                filterColumnProperty.setDefault(defaultValue);
+                            }
+                            /*if (Objects.nonNull(defaultValue))
+                                filterColumnProperty.setDefault(field.getDefaultValue());*/
                         }
-                        filterProperty.setType(type);
-                        filterPropertyMap.put(columnName, filterProperty);
+                        filterColumnProperty.setType(type);
+                        filterPropertyMap.put(columnName, filterColumnProperty);
                     }
                 }
-                filtersProperty.setProperties(filterPropertyMap);
             }
-            propertyMap.put("filters", filtersProperty);
+            columnItem.setEnum(columnList);
+            columnsProperty.setItems(columnItem);
+            propertyMap.put("columns", columnsProperty);
 
+            //response
+            resObjectProperty.setProperties(responsePropertyMap);
+            responseProperty.setItems(resObjectProperty);
+
+            filtersProperty.setProperties(filterPropertyMap);
+            propertyMap.put("filters", filtersProperty);
             //offset
             IntegerProperty offset = new IntegerProperty();
             offset.setDefault(0);
@@ -551,16 +702,24 @@ public class DataShareService {
             limit.setDefault(10);
             propertyMap.put("limit", limit);
             //property
-            model.setProperties(propertyMap);
+            requestModel.setProperties(propertyMap);
             //model
-            parameter.setSchema(model);
-            //
+            parameter.setSchema(requestModel);
+
             parameters.add(parameter);
             operation.setParameters(parameters);
             path.setPost(operation);
 
+            responseModel.setProperties(responsePropertyMap);
+
+            //tags
+            List<String> tags = new ArrayList<>();
+            tags.add(info.getName());
+            operation.setTags(tags);
+
             Map<String, Response> responseMap = new HashMap<>();
             Response successResponse = new Response();
+            successResponse.setSchema(responseProperty);
             successResponse.setDescription("successful operation");
             responseMap.put("200", successResponse);
             Response badResponse = new Response();
@@ -568,23 +727,12 @@ public class DataShareService {
             responseMap.put("400", badResponse);
             operation.setResponses(responseMap);
             String yamlOutput = Yaml.pretty().writeValueAsString(swagger);
-            System.out.println(yamlOutput.substring(yamlOutput.indexOf("\n") + 1));
-
-            String content = Yaml.pretty().writeValueAsString(swagger);
+            String content = yamlOutput.substring(yamlOutput.indexOf("\n") + 1);
+            System.out.println(content);
+            LOG.info(content);
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
-        }
-
-    }
-
-
-    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
-        try {
-            return shareDAO.updatePublishStatus(apiGuid, false);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
     }
 
@@ -604,13 +752,17 @@ public class DataShareService {
             Map columnTypeMap = getColumnType(tableGuid, columnMap.keySet());
             String tableName = shareDAO.queryTableNameByGuid(tableGuid);
             String dbName = shareDAO.querydbNameByGuid(tableGuid);
-            long limit = parameter.getLimit();
-            long offset = parameter.getOffset();
+            Long limit = parameter.getLimit();
+            Long offset = parameter.getOffset();
+            if(Objects.isNull(limit) || Objects.isNull(offset)) {
+                throw new AtlasBaseException("limit和offset不允许为空");
+            }
             List<String> queryColumns = parameter.getQueryFields();
             long maxRowNumber = parameter.getMaxRowNumber();
-            limit = Math.min(limit, maxRowNumber);
-            String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
-
+            limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
+            offset = Objects.nonNull(offset)?offset:0;
+            Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
+            String sql = sqlMap.get("query").toString();
             APITask task = new APITask(randomName, sql, dbName);
             Future<List<Map>> futureResult = pool.submit(task);
             List<Map> result = futureResult.get();
@@ -686,14 +838,7 @@ public class DataShareService {
         }
     }
 
-    /**
-     * API请求数据
-     * @param path
-     * @param request
-     * @return
-     * @throws AtlasBaseException
-     */
-    public List<Map> queryAPIData(String path, HttpServletRequest request) throws AtlasBaseException {
+    /*public List<Map> queryAPIData(String path, HttpServletRequest request) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
             if(Objects.isNull(info)) {
@@ -720,9 +865,10 @@ public class DataShareService {
                 String defaultValue = map.get("defaultValue").toString();
                 Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
                 Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
+                Boolean useDefault = Boolean.parseBoolean(map.get("useDefaultValue").toString());
                 fields.add(columnName);
                 if (filter) {
-                    FilterColumn column = new FilterColumn(columnName, defaultValue, fill);
+                    FilterColumn column = new FilterColumn(columnName, defaultValue, fill, useDefault);
                     filterFileds.add(column);
                 }
             }
@@ -805,6 +951,100 @@ public class DataShareService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
         }
+    }*/
+
+    public PageResult queryAPIData(String path, QueryInfo queryInfo) throws AtlasBaseException {
+        try {
+            APIInfo info = shareDAO.getAPIInfo(path);
+            if(Objects.isNull(info)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "路径错误，未查询到相关API信息");
+            }
+            String tableGuid = info.getTableGuid();
+            Boolean publish = info.getPublish();
+            if(Objects.isNull(publish)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API发布情况未知");
+            }
+            if (Objects.nonNull(publish) && !publish) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未发布");
+            }
+            //查询数据分享API字段详情
+            Object fieldsObject = shareDAO.getAPIFields(path);
+            PGobject pGobject = (PGobject) fieldsObject;
+            String valueObject = pGobject.getValue();
+            Gson gson = new Gson();
+            List<Map> values = gson.fromJson(valueObject, List.class);
+            Set<String> fields = new HashSet<>();
+            List<FilterColumn> filterFileds = new ArrayList<>();
+            for (Map map : values) {
+                String columnName = map.get("columnName").toString();
+                Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
+
+                fields.add(columnName);
+                if (filter) {
+                    Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
+                    String defaultValue = Objects.nonNull(map.get("defaultValue"))?map.get("defaultValue").toString():String.valueOf("");
+                    Boolean useDefault = Objects.nonNull(map.get("useDefaultValue"))?Boolean.parseBoolean(map.get("useDefaultValue").toString()):false;
+                    FilterColumn column = new FilterColumn(columnName, defaultValue, fill, useDefault);
+                    filterFileds.add(column);
+                }
+            }
+
+            //请求中查询字段
+            List<String> queryFiles = queryInfo.getColumns();
+            //请求中过滤字段
+            Map filterColumnMap = queryInfo.getFilters();
+
+            //检查请求中查询字段是否包含于详情中字段
+            checkFieldName(fields, queryFiles);
+            //获取字段类型
+            Map columnTypeMap = getColumnType(tableGuid, fields);
+            //校验过滤参数列表
+            List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, filterColumnMap);
+            //limit
+            Long limit = queryInfo.getLimit();
+            //offset
+            Long offset = queryInfo.getOffset();
+            //对比limit和maxRowNumber
+            long maxRowNumber = info.getMaxRowNumber();
+            if(Objects.nonNull(limit)) {
+                limit = Math.min(limit, maxRowNumber);
+            } else {
+                limit = maxRowNumber;
+            }
+            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
+            String dbName = shareDAO.querydbNameByGuid(tableGuid);
+            //sql
+            Map sqlMap  = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
+            String querySql = sqlMap.get("query").toString();
+
+            String countSql = sqlMap.get("count").toString();
+            //query任务
+            String queryName = String.valueOf(System.currentTimeMillis());
+            APITask queryTask = new APITask(queryName, querySql, dbName);
+            Future<List<Map>> queryResult = pool.submit(queryTask);
+            List<Map> queryData = queryResult.get();
+
+            //count
+            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(countSql, dbName);
+            long count = queryData.size();
+            while(resultSet.next()) {
+                count = resultSet.getLong(1);
+            }
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(queryData);
+            pageResult.setSum(queryData.size());
+            pageResult.setCount(count);
+            return pageResult;
+        } catch (ExecutionException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , e.getCause().getMessage());
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
+        }
     }
 
     /**
@@ -823,29 +1063,33 @@ public class DataShareService {
 
     /**
      * 校验查询字段取值
-     * @param filterFileds
-     * @param filterColumnMap
+     * @param filterFields
+     * @param queryFilterFields
      * @return
      * @throws AtlasBaseException
      */
-    public List<QueryParameter.Parameter> checkFieldValue(List<FilterColumn> filterFileds, Map filterColumnMap) throws AtlasBaseException {
+    public List<QueryParameter.Parameter> checkFieldValue(List<FilterColumn> filterFields, Map queryFilterFields) throws AtlasBaseException {
         List<QueryParameter.Parameter> kvList = new ArrayList<>();
-        for(FilterColumn field : filterFileds) {
+        for(FilterColumn field : filterFields) {
             //必传值
             if(field.getFill()) {
                 //未传值
-                if(!filterColumnMap.containsKey(field.getColumnName())) {
+                if(!queryFilterFields.containsKey(field.getColumnName())) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求错误，未填必传值字段:" + field.getColumnName());
                 } else {
                     QueryParameter.Parameter parameter = new QueryParameter.Parameter();
                     parameter.setColumnName(field.getColumnName());
                     String key = field.getColumnName();
-                    Object value = filterColumnMap.get(key);
+                    Object value = queryFilterFields.get(key);
                     if(value instanceof String[]) {
                         String[] values = (String[])value;
                         parameter.setValue(Arrays.asList(values));
                     } else if(value instanceof List) {
                         parameter.setValue((List<Object>) value);
+                    } else {
+                        List<Object> values = new ArrayList<>();
+                        values.add(value);
+                        parameter.setValue(values);
                     }
                     kvList.add(parameter);
                 }
@@ -853,25 +1097,36 @@ public class DataShareService {
             } else {
                 QueryParameter.Parameter parameter = new QueryParameter.Parameter();
                 parameter.setColumnName(field.getColumnName());
+
                 //已传值
-                if(filterColumnMap.containsKey(field.getColumnName())) {
+                if(queryFilterFields.containsKey(field.getColumnName())) {
                     String key = field.getColumnName();
-                    Object value = filterColumnMap.get(key);
+                    Object value = queryFilterFields.get(key);
                     if(value instanceof String[]) {
                         String[] values = (String[])value;
                         parameter.setValue(Arrays.asList(values));
                     } else if(value instanceof List) {
                         parameter.setValue((List<Object>) value);
+                    } else {
+                        List<Object> values = new ArrayList<>();
+                        values.add(value);
+                        parameter.setValue(values);
                     }
-                //默认值
+                //未传值
                 } else {
-                    parameter.setValue(Arrays.asList(field.getValue()));
+                    Boolean use = field.getUseDefaultValue();
+                    //使用默认值
+                    if(use) {
+                        parameter.setValue(Arrays.asList(field.getValue()));
+                    }
                 }
-                kvList.add(parameter);
+                if(Objects.nonNull(parameter.getValue()))
+                    kvList.add(parameter);
             }
         }
         return kvList;
     }
+
 
     public Map<String, String> getColumnType(String tableGuid, Set<String> columSet) throws AtlasBaseException {
         Map<String, String> columnTypeMap = new HashMap();
@@ -883,6 +1138,12 @@ public class DataShareService {
                 String type = columnMap.get(columnName);
                 if(type.contains("char")) {
                     type = "string";
+                } else if(type.contains("smallint")) {
+                    type = "int";
+                } else if(type.contains("tinyint")) {
+                    type = "int";
+                } else if(type.contains("decimal")) {
+                    type = "decimal";
                 }
                 columnTypeMap.put(columnName, type);
             } else {
@@ -901,28 +1162,36 @@ public class DataShareService {
      * @param offset
      * @return
      */
-    public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+    public Map<String,String> getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+        String columnName = null;
         try {
-            StringBuffer sb = new StringBuffer();
-            sb.append("select ");
+            StringBuffer querySql = new StringBuffer();
+            StringBuffer countSql = new StringBuffer();
+            querySql.append("select ");
+            countSql.append("select count(1) ");
             StringJoiner columnJoiner = new StringJoiner(",");
             queryColumns.stream().forEach(column -> columnJoiner.add(column));
-            sb.append(columnJoiner.toString());
-            sb.append(" from ");
-            sb.append(tableName);
+            querySql.append(columnJoiner.toString());
+            querySql.append(" from ");
+            querySql.append(tableName);
+            countSql.append(" from ");
+            countSql.append(tableName);
             //过滤条件
             if (Objects.nonNull(kvList) && kvList.size() > 0) {
-                sb.append(" where ");
+                querySql.append(" where ");
+                countSql.append(" where ");
                 StringJoiner filterJoiner = new StringJoiner(" and ");
                 for (QueryParameter.Parameter kv : kvList) {
                     StringBuffer valueBuffer = new StringBuffer();
                     StringJoiner valueJoiner = new StringJoiner(",");
-                    String type = columnTypeMap.get(kv.getColumnName());
+                    columnName = kv.getColumnName();
+                    String type = columnTypeMap.get(columnName);
                     DataType dataType = DataType.parseOf(type);
 
                     List<Object> valueList = kv.getValue();
                     //验证设置取值是否正确
-                    valueList.stream().forEach(value -> dataType.valueOf(value).get());
+                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+                        valueList.stream().forEach(value -> dataType.valueOf(value).get());
                     if(DataType.BOOLEAN == dataType) {
                         for(Object value : valueList) {
                             if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
@@ -930,11 +1199,11 @@ public class DataShareService {
                             }
                         }
                     }
-                    if (DataType.STRING == dataType) {
-                        kv.getValue().forEach(value -> valueJoiner.add("\"" + value.toString() + "\""));
-                    } else {
-                        kv.getValue().forEach(value -> valueJoiner.add(value.toString()));
-                    }
+                    kv.getValue().forEach(value -> {
+                        String str = (DataType.STRING == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
+                        valueJoiner.add(str);
+                    });
+
                     if (valueList.size() > 1) {
                         valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
                     } else {
@@ -942,20 +1211,27 @@ public class DataShareService {
                     }
                     filterJoiner.add(valueBuffer.toString());
                 }
-                sb.append(filterJoiner.toString());
+                querySql.append(filterJoiner.toString());
+                countSql.append(filterJoiner.toString());
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
-                sb.append(" limit ");
-                sb.append(limit);
+                querySql.append(" limit ");
+                querySql.append(limit);
             }
             //offset
-            sb.append(" offset ");
-            sb.append(offset);
-            LOG.info("SQL：" + sb.toString());
-            return sb.toString();
+            if(Objects.nonNull(offset)) {
+                querySql.append(" offset ");
+                querySql.append(offset);
+            }
+            LOG.info("querySQL：" + querySql.toString());
+            LOG.info("countSQL：" + querySql.toString());
+            Map result = new HashMap();
+            result.put("query", querySql.toString());
+            result.put("count", countSql.toString());
+            return result;
         } catch (NumberFormatException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据类型错误");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

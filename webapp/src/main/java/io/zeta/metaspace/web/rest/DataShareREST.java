@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIGroup;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -41,6 +42,8 @@ import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -354,19 +357,6 @@ public class DataShareREST {
         }
     }
 
-    /*@PUT
-    @Path("/star/{apiGuid}/{status}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updateStarStatus(@PathParam("apiGuid") String apiGuid, @PathParam("status") Integer status) throws AtlasBaseException {
-        try {
-            shareService.updateStarStatus(apiGuid, status);
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-        return Response.status(200).entity("success").build();
-    }*/
-
     /**
      * 收藏API
      * @param apiGuid
@@ -405,19 +395,6 @@ public class DataShareREST {
         return Response.status(200).entity("success").build();
     }
 
-    /*@PUT
-    @Path("/publish/{status}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updatePublishStatus(@PathParam("status") Integer status, List<String> apiGuidList) throws AtlasBaseException {
-        try {
-            shareService.updatePublishStatus(apiGuidList, status);
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-        return Response.status(200).entity("success").build();
-    }*/
-
     /**
      * 发布API
      * @param apiGuidList
@@ -432,6 +409,8 @@ public class DataShareREST {
         try {
             shareService.publishAPI(apiGuidList);
         } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
             throw e;
         }
         return Response.status(200).entity("success").build();
@@ -488,7 +467,7 @@ public class DataShareREST {
         }
     }
 
-    @GET
+    /*@GET
     @Path("/data/{version}/{url}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -500,30 +479,17 @@ public class DataShareREST {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
         }
-    }
-
-    @POST
-    @Path("/data/{version}/{url}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> queryAPIData(@PathParam("url") String url, Map dataMap) throws Exception {
-        try {
-            return shareService.queryAPIData(url, httpServletRequest);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
-        }
-    }
+    }*/
 
     @GET
     @Path("/swagger/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String getSwagger(@PathParam("guid") String guid) throws Exception {
+    public APIContent getSwagger(@PathParam("guid") String guid) throws Exception {
         try {
-            APIInfo info = shareService.getAPIInfo(guid);
-            String content = shareService.generateSwaggerContent(info);
+            List<String> list = new ArrayList<>();
+            list.add(guid);
+            APIContent content = shareService.generateAPIContent(list);
             return content;
         } catch (AtlasBaseException e) {
             throw e;

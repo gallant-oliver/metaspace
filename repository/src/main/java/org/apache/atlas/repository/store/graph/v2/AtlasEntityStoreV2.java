@@ -658,6 +658,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     }
 
     private EntityMutationResponse createOrUpdate(EntityStream entityStream, boolean isPartialUpdate, boolean replaceClassifications) throws AtlasBaseException {
+        long start = System.currentTimeMillis();
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> createOrUpdate()");
         }
@@ -683,7 +684,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                                                          "create entity: type=", entity.getTypeName());
                 }
             }
-
+            long end1 = System.currentTimeMillis();
+            LOG.info("createOrUpdate_1==================================" + (end1-start));
             // for existing entities, skip update if incoming entity doesn't have any change
             if (CollectionUtils.isNotEmpty(context.getUpdatedEntities())) {
                 List<AtlasEntity> entitiesToSkipUpdate = null;
@@ -718,14 +720,17 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     }
                 }
             }
-
+            long end2 = System.currentTimeMillis();
+            LOG.info("createOrUpdate_2==================================" + (end2-start));
             EntityMutationResponse ret = entityGraphMapper.mapAttributesAndClassifications(context, isPartialUpdate, replaceClassifications);
-
+            long end3 = System.currentTimeMillis();
+            LOG.info("createOrUpdate_3==================================" + (end3-start));
             ret.setGuidAssignments(context.getGuidAssignments());
 
             // Notify the change listeners
             entityChangeNotifier.onEntitiesMutated(ret, isImport);
-
+            long end4 = System.currentTimeMillis();
+            LOG.info("createOrUpdate_4==================================" + (end4-start));
             if (LOG.isDebugEnabled()) {
                 LOG.debug("<== createOrUpdate()");
             }

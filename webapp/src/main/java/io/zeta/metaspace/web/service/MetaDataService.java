@@ -199,20 +199,9 @@ public class MetaDataService {
 
             //1.4新增
             try {
-                TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(guid);
-                //ownerId
-                List<Map> owners = tableInfoByTableguid.getDataOwner();
-                List<Map> organization = dataManageService.getOrganization();
-                List<String> strings = new ArrayList<>();
-                for (Map map : organization) {
-                    String id = String.valueOf(((Double)map.get("id")).intValue());
-                    String type =String.valueOf(((Double)map.get("type")).intValue()) ;
-                    for (Map owner : owners) {
-                        if (owner.get("id").equals(id) && owner.get("type").equals(type))
-                            strings.add(map.get("name").toString());
-                    }
-                }
-                table.setDataOwner(strings);
+                //owner.name
+                List<DataOwnerHeader> owners = getDataOwner(guid);
+                table.setDataOwner(owners);
                 //更新时间
                 //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
                 table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
@@ -1192,6 +1181,34 @@ public class MetaDataService {
                 LOGGER.error("create avro schema failed", e);
             }
             return schemaJson.toString();
+        }
+    }
+
+    public List<DataOwnerHeader> getDataOwner(String guid) throws AtlasBaseException {
+        try {
+            List<DataOwnerHeader> owners = tableDAO.getDataOwnerList(guid);
+            return owners;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    public List<String> getDataOwnerId(String guid) throws AtlasBaseException {
+        try {
+            List<String> ownerIdList = tableDAO.getDataOwnerIdList(guid);
+            return ownerIdList;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
+
+    public int deleteTableOwner(String tableGuid, List<String> ownerList) {
+        try {
+            return tableDAO.deleteTableOwner(tableGuid, ownerList);
+        } catch (Exception e) {
+            throw e;
         }
     }
 }

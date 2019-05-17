@@ -40,7 +40,8 @@ public class APIContent {
         private String api_name;
         private String api_desc;
         private String api_version;
-        private String api_owner;
+        private List<String> api_owner;
+        private List<Organization> organization_list;
         private String api_catalog;
         private String create_time;
         private String uri;
@@ -48,18 +49,59 @@ public class APIContent {
         private String upstream_url;
         private String swagger_content;
 
-        public APIDetail(String api_id, String api_name, String api_desc, String api_version, String api_owner, String api_catalog, String create_time, String uri, String method, String upstream_url, String swagger_content) {
+        public APIDetail(String api_id, String api_name, String api_desc, String api_version, List<String> api_owner, List<Organization> organization_list, String api_catalog, String create_time, String uri, String method, String upstream_url, String swagger_content) {
             this.api_id = api_id;
             this.api_name = api_name;
             this.api_desc = api_desc;
             this.api_version = api_version;
             this.api_owner = api_owner;
+            this.organization_list = organization_list;
             this.api_catalog = api_catalog;
             this.create_time = create_time;
             this.uri = uri;
             this.method = method;
             this.upstream_url = upstream_url;
             this.swagger_content = swagger_content;
+        }
+
+        public APIDetail(String api_id, String api_name, String api_desc, String api_version, List<Organization> organization_list, String api_catalog, String create_time, String uri, String method, String upstream_url, String swagger_content) {
+            this.api_id = api_id;
+            this.api_name = api_name;
+            this.api_desc = api_desc;
+            this.api_version = api_version;
+            this.organization_list = organization_list;
+            this.api_catalog = api_catalog;
+            this.create_time = create_time;
+            this.uri = uri;
+            this.method = method;
+            this.upstream_url = upstream_url;
+            this.swagger_content = swagger_content;
+        }
+
+        public static class Organization {
+            private String organization;
+            private String organization_type;
+
+            public Organization(String organization, String organization_type) {
+                this.organization = organization;
+                this.organization_type = organization_type;
+            }
+
+            public String getOrganization() {
+                return organization;
+            }
+
+            public void setOrganization(String organization) {
+                this.organization = organization;
+            }
+
+            public String getOrganization_type() {
+                return organization_type;
+            }
+
+            public void setOrganization_type(String organization_type) {
+                this.organization_type = organization_type;
+            }
         }
 
         public String getApi_id() {
@@ -94,12 +136,20 @@ public class APIContent {
             this.api_version = api_version;
         }
 
-        public String getApi_owner() {
+        public List<String> getApi_owner() {
             return api_owner;
         }
 
-        public void setApi_owner(String api_owner) {
+        public void setApi_owner(List<String> api_owner) {
             this.api_owner = api_owner;
+        }
+
+        public List<Organization> getOrganization_list() {
+            return organization_list;
+        }
+
+        public void setOrganization_list(List<Organization> organization_list) {
+            this.organization_list = organization_list;
         }
 
         public String getApi_catalog() {

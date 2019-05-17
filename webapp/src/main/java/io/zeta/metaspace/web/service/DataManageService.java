@@ -26,6 +26,8 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import io.zeta.metaspace.model.metadata.DataOwner;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
@@ -35,12 +37,17 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.utils.SSLClient;
-import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.OrganizationDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -77,9 +84,13 @@ public class DataManageService {
     @Autowired
     TableDAO tableDAO;
     @Autowired
+    DataShareDAO shareDAO;
+    @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
     UserDAO userDAO;
+    @Autowired
+    OrganizationDAO organizationDAO;
 
     /**
      * 获取用户有权限的全部目录
@@ -553,20 +564,97 @@ public class DataManageService {
         }
     }
 
+    @Transactional
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            return categoryDao.addTableOwners(tableOwner);
-        } catch (SQLException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
+            List<String> tableList = new ArrayList<>(new HashSet<>(tableOwner.getTables()));
+            List<TableOwner.Owner> ownerList = tableOwner.getOwners();
+            //删除旧的关系
+            categoryDao.deleteDataOwner(tableList);
+
+            String keeper = AdminUtils.getUserData().getUserId();
+            long time = System.currentTimeMillis();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String generateTime = format.format(time);
+            List<DataOwner> table2OwnerList = new ArrayList<>();
+            for(String tableGuid : tableList) {
+                for(TableOwner.Owner owner : ownerList) {
+                    DataOwner dataOwner = new DataOwner();
+                    dataOwner.setTableGuid(tableGuid);
+                    dataOwner.setOwnerId(owner.getId());
+                    dataOwner.setPkId(owner.getPkid());
+                    dataOwner.setKeeper(keeper);
+                    dataOwner.setGenerateTime(generateTime);
+                    table2OwnerList.add(dataOwner);
+                }
+            }
+            //添加新的owner
+            return categoryDao.addDataOwner(table2OwnerList);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
     }
 
+    public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
+        try {
+            String query = parameters.getQuery();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
+            List<Organization> list = organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+            for(Organization organization : list) {
+                String pathStr = organizationDAO.getPathById(organization.getId());
+                String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
+                organization.setPath(path);
+            }
+            long sum = organizationDAO.countOrganizationByPid(pId, query);
+            long count = list.size();
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(list);
+            pageResult.setCount(count);
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    public PageResult<Organization> getOrganizationByName(Parameters parameters) throws AtlasBaseException {
+        try {
+            String query = parameters.getQuery();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
+            List<Organization> list = organizationDAO.getOrganizationByName(query, limit, offset);
+
+            for(Organization organization : list) {
+                String pathStr = organizationDAO.getPathById(organization.getId());
+                String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
+                organization.setPath(path);
+            }
+
+            long sum = organizationDAO.countOrganizationByName(query);
+            long count = list.size();
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(list);
+            pageResult.setCount(count);
+            pageResult.setSum(sum);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
     public List getOrganization() {
         String organizationURL = SSOConfig.getOrganizationURL();
+        long currentTime = System.currentTimeMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String endTime = sdf.format(currentTime);
+        organizationURL += "?endTime=" + endTime;
+        organizationURL = organizationURL.replaceAll(" ", "%20");
         HashMap<String, String> header = new HashMap<>();
         String session = SSLClient.doGet(organizationURL, header);
         Gson gson = new Gson();
@@ -575,7 +663,31 @@ public class DataManageService {
         return data;
     }
 
+    @Transactional
+    public void updateOrganization() throws AtlasBaseException {
+        try {
+            organizationDAO.deleteOrganization();
+            List<Map> data = getOrganization();
+            List<Organization> list = toOrganization(data);
+            organizationDAO.addOrganizations(list);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
 
+    public List<Organization> toOrganization(List<Map> dataList) {
+        List<Organization> list = new ArrayList<>();
+        for(Map data : dataList) {
+            Organization organization = parseMap2Object(data, Organization.class);
+            list.add(organization);
+        }
+        return list;
+    }
+
+    public static <T> T parseMap2Object(Map paramMap, Class<T> cls) {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(paramMap),cls);
+    }
 
     @Transactional
     public void addTable(List<AtlasEntity> entities) {

@@ -279,9 +279,6 @@ public interface RoleDAO {
             "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
     public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-
-
-
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
@@ -289,7 +286,6 @@ public interface RoleDAO {
             "    </foreach>" +
             "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
     public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);
-
 
     @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
@@ -321,7 +317,7 @@ public interface RoleDAO {
             "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfosByDBIdByParameters(@Param("guids") List<String> guids, @Param("DB") String DB, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("<script>select count(distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select count(distinct tableinfo.tableGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +

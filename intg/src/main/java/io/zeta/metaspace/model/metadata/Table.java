@@ -22,7 +22,7 @@ public class Table implements Serializable {
     private String tableId;
     private String tableName;
     private String owner;
-    private List<String> dataOwner;
+    private List<DataOwnerHeader> dataOwner;
     private String updateTime;
     private String databaseId;
     private String databaseName;
@@ -270,11 +270,11 @@ public class Table implements Serializable {
         this.virtualTable = virtualTable;
     }
 
-    public List<String> getDataOwner() {
+    public List<DataOwnerHeader> getDataOwner() {
         return dataOwner;
     }
 
-    public void setDataOwner(List<String> dataOwner) {
+    public void setDataOwner(List<DataOwnerHeader> dataOwner) {
         this.dataOwner = dataOwner;
     }
 

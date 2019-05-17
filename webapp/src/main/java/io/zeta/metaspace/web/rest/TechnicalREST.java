@@ -1,17 +1,17 @@
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -61,7 +61,7 @@ public class TechnicalREST {
      * @return List<AddRelationTable>
      */
     @POST
-    @Path("/search/database/{databaseGuid}")
+    @Path("/search/database/table/{databaseGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid ) throws AtlasBaseException {
@@ -303,17 +303,17 @@ public class TechnicalREST {
         return Response.status(200).entity("success").build();
     }
 
-    @GET
-    @Path("/organization")
+    @POST
+    @Path("/organization/{pId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List getOrganization() {
+    public PageResult<Organization> getOrganization(@PathParam("pId") String pId, Parameters parameters) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganization()");
             }
-            return dataManageService.getOrganization();
+            return dataManageService.getOrganizationByPid(pId, parameters);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -321,4 +321,40 @@ public class TechnicalREST {
         }
     }
 
+    @POST
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Organization> getOrganizationByName(Parameters parameters) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getOrganizationByName()");
+            }
+            return dataManageService.getOrganizationByName(parameters);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    @PUT
+    @Path("/organization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateOrganization() throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateOrganization()");
+            }
+            dataManageService.updateOrganization();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }

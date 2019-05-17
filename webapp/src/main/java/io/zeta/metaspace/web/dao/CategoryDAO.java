@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -159,6 +160,22 @@ public interface CategoryDAO {
              "</foreach>",
              "</script>"})
     public int addTableOwners(TableOwner owner) throws SQLException;
+
+    @Update({" <script>",
+             " insert into table2owner(tableGuid,ownerId,keeper,generateTime,pkid)values",
+             " <foreach item='owner' index='index' collection='ownerList' separator=',' close=';'>",
+             " (#{owner.tableGuid},#{owner.ownerId},#{owner.keeper},#{owner.generateTime},#{owner.pkId})",
+             " </foreach>",
+             " </script>"})
+    public int addDataOwner(@Param("ownerList")List<DataOwner> ownerList);
+
+    @Update({" <script>",
+             " delete from table2owner where tableGuid in",
+             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+             " #{tableGuid}",
+             " </foreach>",
+             " </script>"})
+    public int deleteDataOwner(@Param("tableList")List<String> tableList);
 
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid")
     public List<String> getCategoryGuidByTableGuid(String guid);
