@@ -422,7 +422,7 @@ public class SearchService {
             } else if(categoryGuidByTableGuid.size()!=1){
                 tb.setPath("");
             }else{
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", ".").replace("\"", "").replace("{", "").replace("}", ""));
+                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", "/").replace("\"", "").replace("{", "").replace("}", ""));
             }
             lists.add(tb);
         }

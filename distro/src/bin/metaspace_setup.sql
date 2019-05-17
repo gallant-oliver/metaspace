@@ -1025,7 +1025,7 @@ INSERT INTO "public"."statisticaltype" VALUES (2, '数据表总量');
 INSERT INTO "public"."statisticaltype" VALUES (3, '业务对象总量');
 INSERT INTO "public"."statisticaltype" VALUES (4, '业务对象已补充');
 INSERT INTO "public"."statisticaltype" VALUES (5, '业务对象未补充');
-INSERT INTO "public"."role" VALUES ('2', '访客', '访客', '2', NULL, 1, NULL, 0, 0, 0);
+INSERT INTO "public"."role" VALUES ('2', '访客', '访客', '2', NULL, 1, NULL, 0, 0, 1);
 INSERT INTO "public"."role" VALUES ('4', '业务', '业务数据负责人', '4', NULL, 1, NULL, 1, 0, 1);
 INSERT INTO "public"."role" VALUES ('5', '技术', '技术数据负责人', '5', NULL, 1, NULL, 1, 0, 1);
 INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '1', NULL, 1, NULL, 0, 0, 0);
