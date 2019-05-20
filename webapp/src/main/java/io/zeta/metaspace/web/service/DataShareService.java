@@ -57,6 +57,7 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import jodd.util.StringUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.postgresql.util.PGobject;
@@ -451,7 +452,7 @@ public class DataShareService {
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url = configuration.getString(ATLAS_REST_ADDRESS) + "/metaspace";
+            String upstream_url ="http://" + getLocalIP() + "/api/metaspace";
             String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
@@ -481,39 +482,53 @@ public class DataShareService {
         return pathStr;
     }
 
-    public static String getLocalIP(){
-        InetAddress addr = null;
-        try {
-            addr = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        byte[] ipAddr = addr.getAddress();
-        String ipAddrStr = "";
-        for (int i = 0; i < ipAddr.length; i++) {
-            if (i > 0) {
-                ipAddrStr += ".";
+    public static String getLocalIP() throws AtlasException {
+            InetAddress addr = null;
+        Configuration configuration = null;
+            try {
+                configuration = ApplicationProperties.get();
+                addr = InetAddress.getLocalHost();
+            } catch (UnknownHostException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (AtlasException e) {
+                throw e;
             }
-            ipAddrStr += ipAddr[i] & 0xFF;
-        }
-        //System.out.println(ipAddrStr);
-        return ipAddrStr;
-    }
 
-    public String generateSwaggerContent(APIInfo info) throws Exception {
-        try {
-            Configuration configuration = ApplicationProperties.get();
-            String ip=getLocalIP();
+
+            byte[] ipAddr = addr.getAddress();
+            String ipAddrStr = "";
+            for (int i = 0; i < ipAddr.length; i++) {
+                if (i > 0) {
+                    ipAddrStr += ".";
+                }
+                ipAddrStr += ipAddr[i] & 0xFF;
+            }
+            //System.out.println(ipAddrStr);
             String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
             /*String[] hostArr = hostStr.split("http://");*/
             String[] hostArr = hostStr.split(":");
             Swagger swagger = new Swagger();
             //host
             /*String host = hostArr[1];*/
+            String port = hostArr[hostArr.length - 1];
+            ipAddrStr += ":" + port;
+            return ipAddrStr;
+    }
+
+    public String generateSwaggerContent(APIInfo info) throws Exception {
+        try {
+
+            String ip=getLocalIP();
+            Swagger swagger = new Swagger();
+            /*String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
+            *//*String[] hostArr = hostStr.split("http://");*//*
+            String[] hostArr = hostStr.split(":");
+
+            //host
+            *//*String host = hostArr[1];*//*
             String port = hostArr[hostArr.length-1];
-            ip += ":" + port;
+            ip += ":" + port;*/
             swagger.setHost(ip);
             //basePath
             swagger.setBasePath("/api/metaspace");
