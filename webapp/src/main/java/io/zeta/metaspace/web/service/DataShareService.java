@@ -439,13 +439,14 @@ public class DataShareService {
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
             APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
+            String tableGuid = info.getTableGuid();
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
             //String userId = info.getKeeper();
             //String api_owner = userDAO.getUserAccount(userId);
             List<String> owners = new ArrayList<>();
-            List<APIContent.APIDetail.Organization> organizations = getOrganization(api_id);
+            List<APIContent.APIDetail.Organization> organizations = getOrganization(tableGuid);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
