@@ -542,7 +542,7 @@ public class DataManageService {
     }
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
-            StringJoiner joiner = new StringJoiner(("."));
+            StringJoiner joiner = new StringJoiner(("/"));
             String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
             //joiner.add(path).add(entity.getTableName());
             joiner.add(path);

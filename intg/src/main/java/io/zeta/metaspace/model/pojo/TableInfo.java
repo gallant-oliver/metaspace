@@ -1,12 +1,6 @@
 package io.zeta.metaspace.model.pojo;
 
-import com.google.gson.Gson;
-import io.zeta.metaspace.model.metadata.TableOwner;
-import org.postgresql.util.PGobject;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class TableInfo {
     private String tableGuid;
