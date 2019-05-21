@@ -29,7 +29,9 @@ import io.zeta.metaspace.web.service.TableTagService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
@@ -72,6 +74,9 @@ public class MetaDataREST {
 
     @Autowired
     private BusinessService businessService;
+
+    @Autowired
+    private AtlasEntityStore entitiesStore;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -510,6 +515,7 @@ public class MetaDataREST {
     @Path("/owner/{tableGuid}")
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public String deleteOwner(@PathParam("tableGuid") String tableGuid, List<String> ownerList) throws AtlasBaseException {
         try {
             metadataService.deleteTableOwner(tableGuid, ownerList);
@@ -517,6 +523,32 @@ public class MetaDataREST {
         }  catch (Exception e) {
             PERF_LOG.error(e.getMessage(), e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
+
+
+    /**
+     * Delete an entity identified by its GUID.
+     * @param  guid GUID for the entity
+     * @return EntityMutationResponse
+     */
+    @DELETE
+    @Path("/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteByGuid(" + guid + ")");
+            }
+
+            return entitiesStore.hardDeleteById(guid);
+        } finally {
+            AtlasPerfTracer.log(perf);
         }
     }
 

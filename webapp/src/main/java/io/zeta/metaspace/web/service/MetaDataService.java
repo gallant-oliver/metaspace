@@ -45,11 +45,14 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
+import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.utils.AtlasPerfTracer;
+import org.apache.atlas.web.util.Servlets;
 import org.apache.avro.Schema;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -76,6 +79,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
+
+import javax.ws.rs.PathParam;
 
 /*
  * @description
@@ -1209,6 +1214,20 @@ public class MetaDataService {
             return tableDAO.deleteTableOwner(tableGuid, ownerList);
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
+        try {
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
+            AtlasEntity entity = info.getEntity();
+            AtlasEntity.Status status = entity.getStatus();
+            if(AtlasEntity.Status.DELETED != status) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
+            }
+            return entitiesStore.hardDeleteById(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
         }
     }
 }

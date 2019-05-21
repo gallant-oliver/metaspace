@@ -34,6 +34,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.EntityGraphDiscovery;
 import org.apache.atlas.repository.store.graph.EntityGraphDiscoveryContext;
 import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.HardDeleteHandlerV1;
 import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
@@ -377,6 +378,34 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         }
 
         EntityMutationResponse ret = deleteVertices(deletionCandidates);
+
+        // Notify the change listeners
+        entityChangeNotifier.onEntitiesMutated(ret, false);
+
+        return ret;
+    }
+
+    @Override
+    @GraphTransaction
+    public EntityMutationResponse hardDeleteById(final String guid) throws AtlasBaseException {
+        if (StringUtils.isEmpty(guid)) {
+            throw new AtlasBaseException(AtlasErrorCode.INSTANCE_GUID_NOT_FOUND, guid);
+        }
+
+        Collection<AtlasVertex> deletionCandidates = new ArrayList<>();
+        AtlasVertex             vertex             = AtlasGraphUtilsV2.findByGuid(guid);
+
+        if (vertex != null) {
+            AtlasEntityHeader entityHeader = entityRetriever.toAtlasEntityHeaderWithClassifications(vertex);
+
+            AtlasAuthorizationUtils.verifyAccess(new AtlasEntityAccessRequest(typeRegistry, AtlasPrivilege.ENTITY_DELETE, entityHeader), "delete entity: guid=", guid);
+
+            deletionCandidates.add(vertex);
+        } else {
+
+        }
+
+        EntityMutationResponse ret = hardDeleteVertices(deletionCandidates);
 
         // Notify the change listeners
         entityChangeNotifier.onEntitiesMutated(ret, false);
@@ -804,6 +833,23 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         RequestContext         req      = RequestContext.get();
 
         deleteHandler.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
+
+        for (AtlasObjectId entity : req.getDeletedEntities()) {
+            response.addEntity(DELETE, entity);
+        }
+
+        for (AtlasObjectId entity : req.getUpdatedEntities()) {
+            response.addEntity(UPDATE, entity);
+        }
+
+        return response;
+    }
+
+    private EntityMutationResponse hardDeleteVertices(Collection<AtlasVertex> deletionCandidates) throws AtlasBaseException {
+        EntityMutationResponse response = new EntityMutationResponse();
+        RequestContext         req      = RequestContext.get();
+        DeleteHandlerV1 delete = new HardDeleteHandlerV1(typeRegistry);
+        delete.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
 
         for (AtlasObjectId entity : req.getDeletedEntities()) {
             response.addEntity(DELETE, entity);
