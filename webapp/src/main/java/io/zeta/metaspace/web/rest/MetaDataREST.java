@@ -546,7 +546,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteByGuid(" + guid + ")");
             }
 
-            return entitiesStore.hardDeleteById(guid);
+            return metadataService.hardDeleteByGuid(guid);
         } finally {
             AtlasPerfTracer.log(perf);
         }

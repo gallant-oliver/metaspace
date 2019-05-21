@@ -110,6 +110,8 @@ public class MetaDataService {
     @Autowired
     TableDAO tableDAO;
     @Autowired
+    BusinessDAO businessDAO;
+    @Autowired
     DataManageService dataManageService;
     private String errorMessage;
     @Autowired
@@ -1217,6 +1219,7 @@ public class MetaDataService {
         }
     }
 
+    @Transactional
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
@@ -1225,7 +1228,21 @@ public class MetaDataService {
             if(AtlasEntity.Status.DELETED != status) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
             }
-            return entitiesStore.hardDeleteById(guid);
+            EntityMutationResponse response = entitiesStore.hardDeleteById(guid);
+            //表详情
+            tableDAO.deleteTableInfo(guid);
+            //owner
+            tableDAO.deleteTableRelatedOwner(guid);
+            //关联关系
+            relationDAO.deleteByTableGuid(guid);
+            //business2table
+            businessDAO.deleteBusinessRelationByTableGuid(guid);
+            //表标签
+            tableTagDAO.delAllTable2Tag(guid);
+
+            return response;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
         }

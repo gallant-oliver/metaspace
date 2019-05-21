@@ -62,4 +62,10 @@ public interface TableDAO {
              "</script>"})
     public int deleteTableOwner(@Param("tableGuid")String tableGuid, @Param("ownerList")List<String> ownerList);
 
+    @Delete("delete from tableInfo where tableGuid=#{tableGuid}")
+    public int deleteTableInfo(@Param("tableGuid")String tableGuid);
+
+    @Delete("delete from table2owner where tableGuid=#{tableGuid}")
+    public int deleteTableRelatedOwner(@Param("tableGuid")String tableGuid);
+
 }

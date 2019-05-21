@@ -849,7 +849,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         EntityMutationResponse response = new EntityMutationResponse();
         RequestContext         req      = RequestContext.get();
         DeleteHandlerV1 delete = new HardDeleteHandlerV1(typeRegistry);
-        delete.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
+        delete.completeDeleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
 
         for (AtlasObjectId entity : req.getDeletedEntities()) {
             response.addEntity(DELETE, entity);

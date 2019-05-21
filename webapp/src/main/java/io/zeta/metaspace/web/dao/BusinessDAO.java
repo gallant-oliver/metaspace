@@ -217,4 +217,7 @@ public interface BusinessDAO {
     @Select("select businessId from businessInfo where trustTable is null or trustTable=''")
     public List<String> getNonTrustBusiness();
 
+    @Delete("delete from business2Table where tableGuid=#{tableGuid}")
+    public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);
+
 }
