@@ -44,12 +44,21 @@ import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+
+import org.apache.commons.lang.ObjectUtils;
 import org.postgresql.util.PGobject;
+import org.postgresql.util.PGobject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+
+import java.lang.reflect.Type;
+import java.sql.SQLException;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 

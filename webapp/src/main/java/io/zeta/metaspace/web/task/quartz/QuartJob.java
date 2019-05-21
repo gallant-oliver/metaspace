@@ -22,7 +22,15 @@ import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+
+import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
+import io.zeta.metaspace.web.util.QualityEngine;
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+
 import org.apache.commons.lang.StringUtils;
+
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -46,11 +54,24 @@ public class QuartJob implements Job {
     private static final Integer STATUS_START = 1;
     @Autowired
     private DataQualityDAO qualityDao;
+
+    private static String engine;
+
     @Autowired
     DataQualityService qualityService;
     Map<UserRule, List<Double>> resultMap = new LinkedHashMap<>();
+
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
+
+    static {
+        try {
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
+        }  catch (Exception e) {
+
+        }
+    }
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
@@ -245,7 +266,13 @@ public class QuartJob implements Job {
             } else {
                 sql = String.format(query, tableName);
             }
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet;
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            } else {
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            }
+
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 resultValue = Double.valueOf(object.toString());
@@ -312,7 +339,12 @@ public class QuartJob implements Job {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
-            TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
+            TableMetadata metadata;
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                metadata = ImpalaJdbcUtils.systemMetadata(source);
+            } else {
+                metadata = HiveJdbcUtils.systemMetadata(source);
+            }
             //表数据量
             totalSize = metadata.getTotalSize();
             return totalSize;
@@ -383,7 +415,12 @@ public class QuartJob implements Job {
             Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet;
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            } else {
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            }
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 totalNum = Double.valueOf(object.toString());
