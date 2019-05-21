@@ -60,7 +60,10 @@ public interface RelationDAO {
     @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
 
-    @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
+    @Select({"<script>",
+             " select count(*)",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED'",
+             " </script>"})
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
     @Select("select count(*) from table_relation,tableinfo where tableinfo.tableguid=table_relation.tableguid and categoryGuid=#{categoryGuid} and status !='DELETED'")

@@ -27,6 +27,7 @@ import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
@@ -428,6 +429,11 @@ public class DataManageService {
             List<RelationEntityV2> relations = null;
             int totalNum = 0;
             relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
+            for(RelationEntityV2 entity : relations) {
+                String tableGuid = entity.getTableGuid();
+                List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
+                entity.setDataOwner(ownerHeaders);
+            }
             totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
             getPath(relations);
             pageResult.setCount(relations.size());
