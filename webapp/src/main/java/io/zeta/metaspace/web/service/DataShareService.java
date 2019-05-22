@@ -32,6 +32,7 @@ import io.swagger.models.properties.BooleanProperty;
 import io.swagger.models.properties.DoubleProperty;
 import io.swagger.models.properties.FloatProperty;
 import io.swagger.models.properties.IntegerProperty;
+import io.swagger.models.properties.LongProperty;
 import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
@@ -728,9 +729,14 @@ public class DataShareService {
             offset.setRequired(true);
             propertyMap.put("offset", offset);
             //limit
-            IntegerProperty limit = new IntegerProperty();
+            LongProperty limit = new LongProperty();
             limit.setRequired(true);
-            limit.setDefault(10);
+            Long max = info.getMaxRowNumber();
+            if(Objects.nonNull(max)) {
+                limit.setDefault(max);
+            } else {
+                limit.setDefault(10L);
+            }
             propertyMap.put("limit", limit);
             //property
             requestModel.setProperties(propertyMap);
@@ -1029,7 +1035,9 @@ public class DataShareService {
             checkFieldName(fields, queryFiles);
             //获取字段类型
             Map columnTypeMap = getColumnType(tableGuid, fields);
-            //校验过滤参数列表
+            //校验过滤字段范围
+            checkFilterField(filterFileds, filterColumnMap);
+            //校验过滤字段取值
             List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, filterColumnMap);
             //limit
             Long limit = queryInfo.getLimit();
@@ -1087,7 +1095,17 @@ public class DataShareService {
     public void checkFieldName(Set<String> fields, List<String> queryFields) throws AtlasBaseException {
         for(String field : queryFields) {
             if(!fields.contains(field)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + field);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的查询字段:" + field);
+            }
+        }
+    }
+
+    public void checkFilterField(List<FilterColumn> filterFields, Map queryFilterFields) throws AtlasBaseException {
+        List<String> filterFieldList = new ArrayList<>();
+        filterFields.stream().forEach(column -> filterFieldList.add(column.getColumnName()));
+        for(Object field : queryFilterFields.keySet()) {
+            if(!filterFieldList.contains(field.toString())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + field.toString());
             }
         }
     }
@@ -1106,7 +1124,7 @@ public class DataShareService {
             if(field.getFill()) {
                 //未传值
                 if(!queryFilterFields.containsKey(field.getColumnName())) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求错误，未填必传值字段:" + field.getColumnName());
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败，请在请求参数中给出必传过滤字段:" + field.getColumnName());
                 } else {
                     QueryParameter.Parameter parameter = new QueryParameter.Parameter();
                     parameter.setColumnName(field.getColumnName());
@@ -1196,6 +1214,15 @@ public class DataShareService {
     public Map<String,String> getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
         String columnName = null;
         try {
+            if(offset<0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
+            }
+            if(limit<0 && limit!=-1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "limit取值异常，需大于等于0或未-1");
+            }
+            if(Objects.isNull(queryColumns) || queryColumns.size()==0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段columns不能为空");
+            }
             StringBuffer querySql = new StringBuffer();
             StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
