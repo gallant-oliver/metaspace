@@ -26,6 +26,8 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.common.filetable.*;
 import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.*;
@@ -1222,6 +1224,11 @@ public class MetaDataService {
     @Transactional
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
+            User user = AdminUtils.getUserData();
+            String id = user.getRoleId();
+            if(!"1".equals(id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限使用该接口");
+            }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
