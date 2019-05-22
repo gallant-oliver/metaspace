@@ -301,9 +301,11 @@ public class DataQualityService {
             String jobGroupName = JOB_GROUP_NAME + jobName;
             quartzManager.pauseJob(jobName, jobGroupName);
             String cron = qualityDao.getCronByTemplateId(templateId);
+
             if(Objects.isNull(cron) || StringUtils.isEmpty(cron)) {
                 qualityDao.deleteTemplate2QrtzByTemplateId(templateId);
             }
+            qualityDao.updateFinishedPercent(templateId, 0F);
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
