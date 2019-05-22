@@ -19,7 +19,9 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.DownloadUri;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.web.service.DataQualityService;
@@ -231,7 +233,7 @@ public class DataQualityREST {
      *
      * @return List<ReportResult>
      */
-    @GET
+    /*@GET
     @Path("/reports/{templateId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -239,6 +241,19 @@ public class DataQualityREST {
         try {
             Map reports = dataQualityService.getReports(templateId, offset, limit);
             return reports;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模块报表失败");
+        }
+    }*/
+    @POST
+    @Path("/reports/{tableGuid}/{templateId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getReports(@PathParam("tableGuid") String tableGuid, @PathParam("templateId") String templateId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult pageResult = dataQualityService.getReports(tableGuid, templateId, parameters);
+            return pageResult;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模块报表失败");
