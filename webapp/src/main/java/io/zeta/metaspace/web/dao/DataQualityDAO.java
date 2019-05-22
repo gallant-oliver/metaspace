@@ -338,10 +338,34 @@ public interface DataQualityDAO {
     public List<Report.ReportRule> getReportRule(String reportId) throws SQLException;
     @Select("select thresholdvalue from report_userrule2threshold where ruleid = #{ruleId} order by thresholdvalue asc")
     public List<Double> getReportThresholdValue(String ruleId) throws SQLException;
-    @Select("select reportid,reportname,orangealerts,redalerts,reportproducedate from report where templateid = #{templateId} order by reportproducedate desc limit #{limit} offset #{offset}")
-    public List<ReportResult> getReports(@Param("templateId") String templateId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
-    @Select("select count(*) from report where templateid = #{templateId}")
-    public long getCount(@Param("templateId") String templateId) throws SQLException;
+
+
+    @Select({"<script>",
+             " select reportid,reportname,orangealerts,redalerts,reportproducedate from report,template",
+             " where template.templateId=#{templateId} and template.tableId=#{tableId} and report.templateid = template.templateId order by reportproducedate desc",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<ReportResult> getReports(@Param("tableId") String tableId, @Param("templateId") String templateId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
+
+    @Select("select count(*) from report,template where template.templateId=#{templateId} and template.tableId=#{tableId} and report.templateid = template.templateId")
+    public long getCount(@Param("tableId") String tableId, @Param("templateId") String templateId) throws SQLException;
+
+    @Select({"<script>",
+             " select reportid,reportname,orangealerts,redalerts,reportproducedate from report,template",
+             " where template.tableId=#{tableId} and report.templateid = template.templateId order by reportproducedate desc",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<ReportResult> getReportsByTableGuid(@Param("tableId") String tableId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
+
+    @Select("select count(*) from report,template where template.tableId=#{tableId} and report.templateid = template.templateId")
+    public long getCountByTableGuid(@Param("tableId") String tableId) throws SQLException;
+
     @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2datatype,rule2buildtype where systemrule.ruleid=rule2datatype.ruleid  and systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and datatype=#{dataType} and ruletype=#{ruleType} order by ruleid")
     public List<TableColumnRules.SystemRule> getColumnSystemRules(@Param("ruleType") int ruleType, @Param("dataType") int dataType, @Param("buildType") int buildType) throws SQLException;
     @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2buildtype where systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and ruletype=#{ruleType} order by ruleid")

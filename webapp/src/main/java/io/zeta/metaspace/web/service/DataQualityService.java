@@ -35,7 +35,9 @@ import io.zeta.metaspace.model.dataquality.UserRule;
 import io.zeta.metaspace.model.dataquality.RuleStatus;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.ReportResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
@@ -474,13 +476,38 @@ public class DataQualityService {
         return templateResults;
     }
 
-    public Map getReports(String templateId, int offset, int limit) throws SQLException {
+    /*public Map getReports(String templateId, int offset, int limit) throws SQLException {
         Map<String, Object> map = new HashMap<>();
         List<ReportResult> reports = qualityDao.getReports(templateId, offset, limit);
         long count = qualityDao.getCount(templateId);
         map.put("reports",reports);
         map.put("total",count);
         return map;
+    }*/
+    public PageResult<ReportResult> getReports(String tableGuid, String templateId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<ReportResult> pageResult = new PageResult<>();
+            Integer offset = parameters.getOffset();
+            Integer limit = parameters.getLimit();
+            List<ReportResult> reports = null;
+            long total = 0;
+            if ("-1".equals(templateId)) {
+                reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit);
+                total = qualityDao.getCountByTableGuid(tableGuid);
+            } else {
+                reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
+                total = qualityDao.getCount(tableGuid, templateId);
+            }
+            pageResult.setLists(reports);
+            pageResult.setCount(reports.size());
+            pageResult.setSum(total);
+            /*map.put("reports", reports);
+            map.put("total", count);*/
+            return pageResult;
+        } catch (Exception e) {
+            LOG.info(e.toString());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
     public Report getReport(String reportId) throws SQLException, AtlasBaseException {
