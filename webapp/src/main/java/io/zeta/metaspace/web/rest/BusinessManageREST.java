@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -158,9 +159,9 @@ public class BusinessManageREST {
     @Path("/datashare/test/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
         try {
-            List<Map> result = shareService.testAPI(randomName, parameter);
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
             return result;
         } catch (AtlasBaseException e) {
             throw e;

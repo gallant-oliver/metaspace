@@ -78,6 +78,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -780,7 +781,7 @@ public class DataShareService {
      * @return
      * @throws AtlasBaseException
      */
-    public List<Map> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
+    public List<LinkedHashMap> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
         try {
             String tableGuid = parameter.getTableGuid();
             HashMap<String, List> columnMap = new HashMap<>();
@@ -801,8 +802,8 @@ public class DataShareService {
             Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
             String sql = sqlMap.get("query").toString();
             APITask task = new APITask(randomName, sql, dbName);
-            Future<List<Map>> futureResult = pool.submit(task);
-            List<Map> result = futureResult.get();
+            Future<List<LinkedHashMap>> futureResult = pool.submit(task);
+            List<LinkedHashMap> result = futureResult.get();
             return result;
         } catch (AtlasBaseException e) {
             throw e;
@@ -812,7 +813,7 @@ public class DataShareService {
         }
     }
 
-    class APITask implements Callable<List<Map>> {
+    class APITask implements Callable<List<LinkedHashMap>> {
         private String name;
         private String sql;
         private String dbName;
@@ -822,18 +823,18 @@ public class DataShareService {
             this.dbName = dbName;
         }
         @Override
-        public List<Map> call() throws Exception {
+        public List<LinkedHashMap> call() throws Exception {
             try {
                 if (Objects.nonNull(name)) {
                     Thread.currentThread().setName(name);
                 }
                 ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
 
-                List<Map> result = new ArrayList<>();
+                List<LinkedHashMap> result = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
                 while (resultSet.next()) {
-                    Map map = new HashMap();
+                    LinkedHashMap map = new LinkedHashMap();
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
                         Object value = resultSet.getObject(columnName);
@@ -1060,8 +1061,8 @@ public class DataShareService {
             //query任务
             String queryName = String.valueOf(System.currentTimeMillis());
             APITask queryTask = new APITask(queryName, querySql, dbName);
-            Future<List<Map>> queryResult = pool.submit(queryTask);
-            List<Map> queryData = queryResult.get();
+            Future<List<LinkedHashMap>> queryResult = pool.submit(queryTask);
+            List<LinkedHashMap> queryData = queryResult.get();
 
             //count
             ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(countSql, dbName);
