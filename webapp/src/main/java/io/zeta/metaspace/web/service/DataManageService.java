@@ -714,6 +714,7 @@ public class DataManageService {
                     AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                     tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
                     tableDAO.addTable(tableInfo);
                 }
                 }
@@ -754,9 +755,11 @@ public class DataManageService {
                 tableInfo.setStatus(list.getStatus());
                 tableInfo.setDatabaseGuid(list.getDatabaseId());
                 tableInfo.setDbName(list.getDatabaseName());
+                tableInfo.setDatabaseStatus(list.getDatabaseStatus());
                 tableDAO.addTable(tableInfo);
             }
         }
+
         addFullRelation();
     }
 

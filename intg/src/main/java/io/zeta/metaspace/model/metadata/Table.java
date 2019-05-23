@@ -46,6 +46,16 @@ public class Table implements Serializable {
     private String dataWarehouseAdmin;
     private String dataWarehouseDescription;
 
+    public String getDatabaseStatus() {
+        return databaseStatus;
+    }
+
+    public void setDatabaseStatus(String databaseStatus) {
+        this.databaseStatus = databaseStatus;
+    }
+
+    private String databaseStatus;
+
     private List<String> relations;
     private List<String> catalogAdmin;
     private String relationTime;

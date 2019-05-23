@@ -10,6 +10,15 @@ public class TableInfo {
     private String createTime;
     private List<String> dataOwner;
     private String databaseGuid;
+    private String databaseStatus;
+
+    public String getDatabaseStatus() {
+        return databaseStatus;
+    }
+
+    public void setDatabaseStatus(String databaseStatus) {
+        this.databaseStatus = databaseStatus;
+    }
 
     public String getDatabaseGuid() {
         return databaseGuid;
