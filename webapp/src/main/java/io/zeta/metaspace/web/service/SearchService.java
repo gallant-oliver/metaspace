@@ -265,7 +265,6 @@ public class SearchService {
         if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String roleId = role.getRoleId();
-        List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
 
                 //admin有全部目录权限，且可以给一级目录加关联
                 if (roleId.equals(SystemRole.ADMIN.getCode())) {
