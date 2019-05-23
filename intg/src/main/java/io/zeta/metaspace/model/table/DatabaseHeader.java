@@ -24,6 +24,15 @@ package io.zeta.metaspace.model.table;
 public class DatabaseHeader {
     private String databaseGuid;
     private String dbName;
+    private String databasestatus;
+
+    public String getDatabasestatus() {
+        return databasestatus;
+    }
+
+    public void setDatabasestatus(String databasestatus) {
+        this.databasestatus = databasestatus;
+    }
 
     public String getDatabaseGuid() {
         return databaseGuid;

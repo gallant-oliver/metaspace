@@ -234,4 +234,6 @@ public interface RelationDAO {
     @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
     public int ifRelationExists(@Param("categoryGuid") String categoryGuid,@Param("tableGuid") String tableGuid);
 
+    @Update("update tableInfo set databasestatus=#{status} where databaseGuid=#{databaseGuid}")
+    public int updateDatabaseStatus(@Param("databaseGuid") String databaseGuid, @Param("status") String status);
 }

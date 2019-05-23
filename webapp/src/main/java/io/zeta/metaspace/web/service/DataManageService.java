@@ -556,6 +556,9 @@ public class DataManageService {
             if (typeName.contains("table")) {
                 relationDao.updateTableStatus(guid, "DELETED");
             }
+            if (typeName.contains("hive_db")) {
+                relationDao.updateDatabaseStatus(guid, "DELETED");
+            }
         }
     }
 
