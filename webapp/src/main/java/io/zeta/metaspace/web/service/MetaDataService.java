@@ -1254,4 +1254,12 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
         }
     }
+
+    public int updateTableEditInfo(Table table) {
+        try {
+
+        } catch (Exception e) {
+
+        }
+    }
 }
