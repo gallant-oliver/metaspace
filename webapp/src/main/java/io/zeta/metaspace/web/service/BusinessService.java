@@ -47,11 +47,13 @@ import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
@@ -657,12 +659,14 @@ public class BusinessService {
     public void editTableColumnDisplayName(String tableGuid, List<Column> columns) throws AtlasBaseException {
         try {
             entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
+            AtlasStruct serdeInstance = new AtlasStruct("hive_column");
             for(Column column : columns) {
 
                 //AtlasEntity tableEntity = entityStore.getById(tableGuid).getEntity();
                 String columnGuid = column.getColumnId();
                 String displayText = column.getDisplayName();
                 AtlasEntity columnEntity = entityStore.getById(columnGuid).getEntity();
+
                 columnEntity.setGuid(columnGuid);
                 columnEntity.setAttribute("description", displayText);
                 AtlasEntity.AtlasEntityWithExtInfo colWithExtendedInfo = new AtlasEntity.AtlasEntityWithExtInfo(columnEntity);
@@ -671,10 +675,15 @@ public class BusinessService {
                 // fail full update if required attributes are not specified.
                 try {
                     //EntityMutationResponse response = entityStore.createOrUpdate(columnEntityStream, true);
+                    RequestContext.get().setUser("admin", Collections.singleton("ROLE_ADMIN"));
+                    EntityMutationResponse response = entityStore.createOrUpdate(new AtlasEntityStream(columnEntity), false);
                     //entityStore.updateEntityAttributeByGuid(columnGuid, "alias", displayText);
-                    AtlasObjectId atlasObjectId = new AtlasObjectId(columnEntity.getGuid(), columnEntity.getTypeName());
-                    entityStore.updateEntity(atlasObjectId, colWithExtendedInfo, false);
-                    //entityStore.updateEntityAttributeByGuid(columnGuid, "name", "df");
+                    //AtlasObjectId atlasObjectId = new AtlasObjectId(columnEntity.getGuid(), columnEntity.getTypeName());
+                    /*RequestContext.get().setUser("admin", Collections.singleton("ROLE_ADMIN"));
+                    RequestContext.get().setClientIPAddress("10.136.76.88");*/
+                    //entityStore.updateEntity(atlasObjectId, colWithExtendedInfo, false);
+                    //entityStore.updateEntityAttributeByGuid(columnGuid, "description", displayText);
+                    RequestContext.clear();
                 } catch (AtlasBaseException ex) {
                     throw ex;
                 }
