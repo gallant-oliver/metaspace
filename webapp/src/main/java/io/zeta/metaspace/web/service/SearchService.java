@@ -23,6 +23,7 @@ import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.commons.logging.Log;
@@ -37,6 +38,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @AtlasService
 public class SearchService {
@@ -93,7 +96,7 @@ public class SearchService {
             //admin有全部目录权限，且可以给一级目录加关联
             if (roleId.equals(SystemRole.ADMIN.getCode())) {
                 categoryIds = roleDAO.getTopCategoryGuid(0);
-                } else {
+            } else {
                 categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             }
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
@@ -111,7 +114,7 @@ public class SearchService {
         try {
             List<String> categoryIds = getPermissionCategoryIds();
             PageResult<TableInfo> pageResult = new PageResult<>();
-            if(Objects.isNull(categoryIds) || categoryIds.size()==0) {
+            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
                 return pageResult;
             }
             List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
@@ -142,7 +145,7 @@ public class SearchService {
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
         AtlasEntity entity = info.getEntity();
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        if (name.equals("") ) {
+        if (name.equals("")) {
             System.out.println("该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
@@ -191,7 +194,7 @@ public class SearchService {
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
 
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        if (name.equals("") ) {
+        if (name.equals("")) {
             System.out.println("该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(tableId, true);
@@ -231,7 +234,7 @@ public class SearchService {
                 //admin有全部目录权限，且可以给一级目录加关联
                 if (roleId.equals(SystemRole.ADMIN.getCode())) {
                     List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
-                    return getDatabaseResultV2(parameters, topCategoryGuid);
+                    return getDatabaseResultV2(parameters, topCategoryGuid, categoryId);
                 } else {
                     List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
                     if (categorysByTypeIds.size() > 0) {
@@ -239,7 +242,7 @@ public class SearchService {
                         for (RoleModulesCategories.Category child : childs) {
                             //当该目录是用户有权限目录的子目录时
                             if (child.getGuid().equals(categoryId)) {
-                                return getDatabaseResultV2(parameters, categorysByTypeIds);
+                                return getDatabaseResultV2(parameters, categorysByTypeIds, categoryId);
                             }
                         }
                     }
@@ -253,40 +256,41 @@ public class SearchService {
 
     /**
      * 1.4获取关联表，根据库获取表
+     *
      * @param parameters
-     * @param categoryId
      * @return
      * @throws AtlasBaseException
      */
     @Transactional
-    public PageResult<AddRelationTable> getTechnicalTablePageResultByDB(Parameters parameters, String databaseGuid) throws AtlasBaseException {
+    public PageResult<AddRelationTable> getTechnicalTablePageResultByDB(Parameters parameters, String databaseGuid, String categoryId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         Role role = roleDAO.getRoleByUsersId(user.getUserId());
         if (role.getStatus() == 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
         String roleId = role.getRoleId();
 
-                //admin有全部目录权限，且可以给一级目录加关联
-                if (roleId.equals(SystemRole.ADMIN.getCode())) {
-                    List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
-                    return getTablesByDatabaseGuid(parameters, topCategoryGuid,databaseGuid);
-                } else {
-                    List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
-                    if (categorysByTypeIds.size() > 0) {
-                                return getTablesByDatabaseGuid(parameters, categorysByTypeIds,databaseGuid);
-                            }
-                        }
+        //admin有全部目录权限，且可以给一级目录加关联
+        if (roleId.equals(SystemRole.ADMIN.getCode())) {
+            List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
+            return getTablesByDatabaseGuid(parameters, topCategoryGuid, databaseGuid, categoryId);
+        } else {
+            List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
+            if (categorysByTypeIds.size() > 0) {
+                return getTablesByDatabaseGuid(parameters, categorysByTypeIds, databaseGuid, categoryId);
+            }
+        }
 
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
 
 
     }
+
     //备用，一组目录查子库加表
     @Transactional
-    public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> categoryIds) {
+    public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> categoryIds, String categoryGuid) {
         List<DatabaseHeader> databaseHeaders = null;
         String query = parameters.getQuery();
-        if(Objects.nonNull(query))
+        if (Objects.nonNull(query))
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         PageResult<DatabaseHeader> databasePageResult = new PageResult<>();
         if (categoryIds.size() > 0) {
@@ -303,6 +307,27 @@ public class SearchService {
                 return databasePageResult;
             }
             databaseHeaders = roleDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit());
+            //获取用户有权限的全部表和该目录已加关联的全部表
+            List<TechnologyInfo.Table> tables = roleDAO.getTableInfosV2(strings, "", 0, -1);
+            List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
+            Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
+            databaseHeaders.forEach(e->{
+                String databaseGuid = e.getDatabaseGuid();
+                List<String> table = collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+                if (relationTableGuids.containsAll(table)) {
+                    //全被勾选
+                    e.setCheck(1);
+                } else {
+                    table.retainAll(relationTableGuids);
+                    if (table.size() > 0) {
+                        //勾选了部分
+                        e.setCheck(2);
+                    } else {
+                        //全部未勾选
+                        e.setCheck(0);
+                    }
+                }
+            });
             databasePageResult.setLists(databaseHeaders);
             databasePageResult.setOffset(parameters.getOffset());
             databasePageResult.setCount(databaseHeaders.size());
@@ -311,7 +336,7 @@ public class SearchService {
         return databasePageResult;
     }
 
-    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> categoryIds,String databaseGuid) {
+    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> categoryIds, String databaseGuid, String categoryId) {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         if (categoryIds.size() > 0) {
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
@@ -327,8 +352,14 @@ public class SearchService {
                 return tablePageResult;
             }
 
-            List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings,databaseGuid,parameters.getOffset(),parameters.getLimit());
+            List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit());
+            List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
             List<AddRelationTable> tables = getTables(tableInfos);
+            tables.forEach(e -> {
+                String tableGuid = e.getTableId();
+                if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
+                else e.setCheck(0);
+            });
             tablePageResult.setLists(tables);
             tablePageResult.setOffset(parameters.getOffset());
             tablePageResult.setCount(tableInfos.size());
@@ -337,7 +368,6 @@ public class SearchService {
         return tablePageResult;
 
     }
-    //根据库获取表
 
     @Transactional
     public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId) throws AtlasBaseException {
@@ -353,7 +383,7 @@ public class SearchService {
                 //admin有全部目录权限，且可以给一级目录加关联
                 if (roleId.equals(SystemRole.ADMIN.getCode())) {
                     List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
-                    return getTableResultV2(parameters, topCategoryGuid);
+                    return getTableResultV3(parameters, topCategoryGuid,categoryId);
                 } else {
                     List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
                     if (categorysByTypeIds.size() > 0) {
@@ -361,7 +391,7 @@ public class SearchService {
                         for (RoleModulesCategories.Category child : childs) {
                             //当该目录是用户有权限目录的子目录时
                             if (child.getGuid().equals(categoryId)) {
-                                return getTableResultV2(parameters, categorysByTypeIds);
+                                return getTableResultV3(parameters, categorysByTypeIds,categoryId);
                             }
                         }
                     }
@@ -384,7 +414,7 @@ public class SearchService {
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
             List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0);
             return getTableResultV2(parameters, topCategoryGuid);
-            } else {
+        } else {
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             if (categorysByTypeIds.size() > 0) {
                 return getTableResultV2(parameters, categorysByTypeIds);
@@ -394,6 +424,43 @@ public class SearchService {
     }
 
 
+    //一组目录查子表,找出目录已勾选的表
+    @Transactional
+    public PageResult<AddRelationTable> getTableResultV3(Parameters parameters, List<String> categoryIds,String categoryId) {
+        PageResult<AddRelationTable> tablePageResult = new PageResult<>();
+        String query = parameters.getQuery();
+        int limit = parameters.getLimit();
+        int offset = parameters.getOffset();
+        List<TechnologyInfo.Table> tableInfo = null;
+        if (categoryIds.size() > 0) {
+            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
+            ArrayList<String> strings = new ArrayList<>();
+            for (RoleModulesCategories.Category child : childs) {
+                strings.add(child.getGuid());
+            }
+            if (strings.size() == 0) {
+                tablePageResult.setSum(0);
+                tablePageResult.setCount(0);
+                tablePageResult.setOffset(offset);
+                return tablePageResult;
+            }
+            if (Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
+            List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
+            List<AddRelationTable> tables = getTables(tableInfo);
+            tables.forEach(e -> {
+                String tableGuid = e.getTableId();
+                if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
+                else e.setCheck(0);
+            });
+            tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
+            tablePageResult.setCount(tableInfo.size());
+            tablePageResult.setOffset(offset);
+            tablePageResult.setLists(tables);
+        }
+        return tablePageResult;
+    }
     //一组目录查子表
     @Transactional
     public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds) {
@@ -415,18 +482,17 @@ public class SearchService {
                 tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
-            if(Objects.nonNull(query))
+            if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
-            List<AddRelationTable> lists = getTables(tableInfo);
+            List<AddRelationTable> tables = getTables(tableInfo);
             tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
             tablePageResult.setCount(tableInfo.size());
             tablePageResult.setOffset(offset);
-            tablePageResult.setLists(lists);
+            tablePageResult.setLists(tables);
         }
         return tablePageResult;
     }
-
     @Transactional
     public List<AddRelationTable> getTables(List<TechnologyInfo.Table> tableInfo) {
         List<AddRelationTable> lists = new ArrayList<>();
@@ -441,16 +507,15 @@ public class SearchService {
             List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
             if (categoryGuidByTableGuid == null) {
                 tb.setPath("");
-            } else if(categoryGuidByTableGuid.size()!=1){
+            } else if (categoryGuidByTableGuid.size() != 1) {
                 tb.setPath("");
-            }else{
+            } else {
                 tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", "/").replace("\"", "").replace("{", "").replace("}", ""));
             }
             lists.add(tb);
         }
         return lists;
     }
-
 
 
     @Transactional
@@ -468,7 +533,7 @@ public class SearchService {
             List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             if (categorysByTypeIds.size() > 0) {
                 return getDatabaseV2(parameters, categorysByTypeIds);
-                }
+            }
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无获取库表权限");
     }
