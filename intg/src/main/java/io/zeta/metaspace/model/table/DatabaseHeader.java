@@ -20,11 +20,22 @@ package io.zeta.metaspace.model.table;
  * @description
  * @author sunhaoning
  * @date 2019/4/18 15:09
+ * check 0 未勾选，1 全选 ，2 半选
  */
 public class DatabaseHeader {
+
     private String databaseGuid;
     private String dbName;
     private String databasestatus;
+    private int check;
+
+    public int getCheck() {
+        return check;
+    }
+
+    public void setCheck(int check) {
+        this.check = check;
+    }
 
     public String getDatabasestatus() {
         return databasestatus;

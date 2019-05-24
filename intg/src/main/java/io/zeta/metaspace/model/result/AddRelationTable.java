@@ -7,7 +7,8 @@ public class AddRelationTable {
     private String databaseId;
     private String createTime;
     private String status;
-    private String Path;
+    private String path;
+    private int check;
 
     public String getTableId() {
         return tableId;
@@ -50,11 +51,19 @@ public class AddRelationTable {
     }
 
     public String getPath() {
-        return Path;
+        return path;
     }
 
     public void setPath(String path) {
-        Path = path;
+        this.path = path;
+    }
+
+    public int getCheck() {
+        return check;
+    }
+
+    public void setCheck(int check) {
+        this.check = check;
     }
 
     public String getDatabaseId() {

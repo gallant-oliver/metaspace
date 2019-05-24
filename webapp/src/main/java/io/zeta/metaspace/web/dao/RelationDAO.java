@@ -236,4 +236,8 @@ public interface RelationDAO {
 
     @Update("update tableInfo set databasestatus=#{status} where databaseGuid=#{databaseGuid}")
     public int updateDatabaseStatus(@Param("databaseGuid") String databaseGuid, @Param("status") String status);
+
+    @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}" })
+    public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);
+
 }
