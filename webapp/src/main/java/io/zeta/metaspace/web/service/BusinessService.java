@@ -55,15 +55,27 @@ import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.atlas.model.instance.EntityMutations;
+import org.apache.atlas.model.typedef.AtlasEntityDef;
+import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.repository.store.graph.EntityGraphDiscovery;
+import org.apache.atlas.repository.store.graph.EntityGraphDiscoveryContext;
 import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityGraphDiscoveryV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
+import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
+import org.apache.atlas.repository.store.graph.v2.AttributeMutationContext;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasTypeRegistry;
+import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.commons.lang.ObjectUtils;
 import org.mockito.Mockito;
 import org.postgresql.util.PGobject;
@@ -662,13 +674,13 @@ public class BusinessService {
             AtlasStruct serdeInstance = new AtlasStruct("hive_column");
             for(Column column : columns) {
 
-                //AtlasEntity tableEntity = entityStore.getById(tableGuid).getEntity();
+                AtlasEntity tableEntity = entityStore.getById(tableGuid).getEntity();
                 String columnGuid = column.getColumnId();
                 String displayText = column.getDisplayName();
                 AtlasEntity columnEntity = entityStore.getById(columnGuid).getEntity();
 
                 columnEntity.setGuid(columnGuid);
-                columnEntity.setAttribute("description", displayText);
+                columnEntity.setAttribute("alias", displayText);
                 AtlasEntity.AtlasEntityWithExtInfo colWithExtendedInfo = new AtlasEntity.AtlasEntityWithExtInfo(columnEntity);
                 //colWithExtendedInfo.addReferredEntity(tableEntity);
                 AtlasEntityStream columnEntityStream = new AtlasEntityStream(colWithExtendedInfo);
@@ -683,7 +695,30 @@ public class BusinessService {
                     RequestContext.get().setClientIPAddress("10.136.76.88");*/
                     //entityStore.updateEntity(atlasObjectId, colWithExtendedInfo, false);
                     //entityStore.updateEntityAttributeByGuid(columnGuid, "description", displayText);
+
+
+
+                    EntityGraphDiscovery graphDiscoverer  = new AtlasEntityGraphDiscoveryV2(typeRegistry, columnEntityStream);
+                    EntityGraphDiscoveryContext discoveryContext = graphDiscoverer.discoverEntities();
+
+                    AtlasVertex vertex = discoveryContext.getResolvedEntityVertex(columnGuid);
+
+
+                    /*AtlasEntityDef invalidAttrNameType =
+                            AtlasTypeUtil.createClassTypeDef("alias", "description", Collections.emptySet());
+                    AtlasTypesDef typesToCreate = new AtlasTypesDef();
+                    typesToCreate.getEntityDefs().add(invalidAttrNameType);
+                    graph.commit();
+                    AtlasEntityType entityType = typeRegistry.getEntityTypeByName("alias");
+                    AtlasStructType structType = getStructType(struct.getTypeName());
+                    AtlasStructType.AtlasAttribute attribute = structType.getAttribute(attrName);
+
+                    AttributeMutationContext ctx = new AttributeMutationContext(EntityMutations.EntityOperation.CREATE, vertex, attribute, "sun");
+                    AtlasVertex refvertex = ctx.getReferringVertex();*/
+                    /*AtlasGraphUtilsV2.addEncodedProperty(refvertex, "alias", "sun");*/
+                    graph.commit();
                     RequestContext.clear();
+
                 } catch (AtlasBaseException ex) {
                     throw ex;
                 }
