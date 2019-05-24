@@ -247,7 +247,7 @@ public class BusinessService {
             List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset);
             String path = CategoryRelationUtils.getPath(categoryId);
             StringJoiner joiner = null;
-            String[] pathArr = path.split("\\.");
+            String[] pathArr = path.split("/");
             String level2Category = "";
             if(pathArr.length >= 2)
                 level2Category = pathArr[1];
@@ -298,7 +298,7 @@ public class BusinessService {
                 //joiner.add(path).add(infoHeader.getName());
                 joiner.add(path);
                 infoHeader.setPath(joiner.toString());
-                String[] pathArr = path.split("\\.");
+                String[] pathArr = path.split("/");
                 String level2Category = "";
                 if(pathArr.length >= 2)
                     level2Category = pathArr[1];
@@ -350,7 +350,7 @@ public class BusinessService {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
                     String path = CategoryRelationUtils.getPath(categoryId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
-                    String[] pathArr = path.split("\\.");
+                    String[] pathArr = path.split("/");
                     if (pathArr.length >= 2)
                         infoHeader.setLevel2Category(pathArr[1]);
                 }
