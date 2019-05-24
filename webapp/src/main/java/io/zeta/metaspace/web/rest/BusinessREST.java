@@ -24,17 +24,15 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
-import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
@@ -44,7 +42,6 @@ import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -58,8 +55,6 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -473,6 +468,49 @@ public class BusinessREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+    }
+
+    @POST
+    @Path("/tables")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<TableHeader> getBussinessRelatedTableList(Parameters parameters) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBussinessRelatedTableList()");
+            }
+            return businessService.getPermissionBusinessRelatedTableList(parameters);
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @POST
+    @Path("/table/{guid}/columns")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return businessService.getTableColumnList(tableGuid, parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/table/{guid}/columns")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, List<Column> columnList) throws AtlasBaseException {
+        try {
+            businessService.editTableColumnDisplayName(tableGuid, columnList);
+            return "success";
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 

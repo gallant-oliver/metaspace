@@ -552,17 +552,25 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 修改表信息
+     * @param guid
+     * @param table
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/table/{guid}")
-    public String updateTableEditInfo(Table table) throws AtlasBaseException {
+    public String updateTableEditInfo(@PathParam("guid") final String guid, Table table) throws AtlasBaseException {
         try {
-
+            metadataService.updateTableEditInfo(guid, table);
+            return "success";
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
 

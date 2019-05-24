@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.web.service;
 
+import static org.apache.atlas.examples.QuickStartV2.COLUMN_TYPE;
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -27,9 +29,11 @@ import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -45,9 +49,24 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasEntityHeader;
+import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
+import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
+import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.lang.ObjectUtils;
+import org.mockito.Mockito;
 import org.postgresql.util.PGobject;
-import org.postgresql.util.PGobject;
+
+import static org.mockito.Mockito.mock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +81,14 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+
+import javax.inject.Inject;
 
 /*
  * @description
@@ -75,6 +98,7 @@ import java.util.UUID;
 @Service
 public class BusinessService {
     private static final Logger LOG = LoggerFactory.getLogger(BusinessService.class);
+    public static final String COLUMN_TYPE = "hive_column";
     @Autowired
     BusinessDAO businessDao;
     @Autowired
@@ -93,6 +117,20 @@ public class BusinessService {
     DataShareDAO shareDAO;
     @Autowired
     DataShareService shareService;
+
+    @Inject
+    AtlasTypeRegistry typeRegistry;
+
+    @Inject
+    AtlasEntityStore entityStore;
+    @Inject
+    DeleteHandlerV1 deleteHandler;
+    @Inject
+    private EntityGraphMapper graphMapper;
+    private AtlasEntityChangeNotifier mockChangeNotifier = mock(AtlasEntityChangeNotifier.class);
+
+    @Inject
+    protected AtlasGraph graph;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
@@ -554,6 +592,95 @@ public class BusinessService {
                 String tableGuid = tableList.get(0).getTableGuid();
                 businessDao.setBusinessTrustTable(businessId, tableGuid);
             }
+        }
+    }
+
+    public PageResult getPermissionBusinessRelatedTableList(Parameters parameters) throws AtlasBaseException {
+        try {
+            Parameters businessParam = new Parameters();
+            businessParam.setQuery("");
+            businessParam.setOffset(0);
+            businessParam.setLimit(-1);
+            PageResult businessInfo = getBusinessListByName(businessParam);
+            List<BusinessInfoHeader> businessInfoHeaderList = businessInfo.getLists();
+            List<String> businessList = new ArrayList<>();
+            businessInfoHeaderList.stream().forEach(info -> businessList.add(info.getBusinessId()));
+
+            Integer limit = parameters.getLimit();
+            Integer offset = parameters.getOffset();
+            List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessList, limit, offset);
+            long count = businessDao.getCountBusinessRelatedTable(businessList);
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(tableHeaderList);
+            pageResult.setCount(tableHeaderList.size());
+            pageResult.setSum(count);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+        }
+    }
+
+    public PageResult getTableColumnList(String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            ColumnQuery columnQuery = new ColumnQuery();
+            columnQuery.setGuid(tableGuid);
+            List<Column> columnList = metaDataService.getColumnInfoById(columnQuery, true);
+            PageResult pageResult = new PageResult();
+            int total = columnList.size();
+            int start = 0;
+            int end = total;
+            if(offset < total) {
+                start = offset;
+            } else {
+                return pageResult;
+            }
+            if((start+limit) < total) {
+                end = start + limit;
+            } else {
+                end = total;
+            }
+            columnList.sort(Comparator.comparing(Column::getColumnName).thenComparing(Column::getColumnName));
+            List<Column> limitList = columnList.subList(start, end);
+            pageResult.setLists(limitList);
+            pageResult.setCount(limitList.size());
+            pageResult.setSum(total);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    public void editTableColumnDisplayName(String tableGuid, List<Column> columns) throws AtlasBaseException {
+        try {
+            entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
+            for(Column column : columns) {
+
+                //AtlasEntity tableEntity = entityStore.getById(tableGuid).getEntity();
+                String columnGuid = column.getColumnId();
+                String displayText = column.getDisplayName();
+                AtlasEntity columnEntity = entityStore.getById(columnGuid).getEntity();
+                columnEntity.setGuid(columnGuid);
+                columnEntity.setAttribute("description", displayText);
+                AtlasEntity.AtlasEntityWithExtInfo colWithExtendedInfo = new AtlasEntity.AtlasEntityWithExtInfo(columnEntity);
+                //colWithExtendedInfo.addReferredEntity(tableEntity);
+                AtlasEntityStream columnEntityStream = new AtlasEntityStream(colWithExtendedInfo);
+                // fail full update if required attributes are not specified.
+                try {
+                    //EntityMutationResponse response = entityStore.createOrUpdate(columnEntityStream, true);
+                    //entityStore.updateEntityAttributeByGuid(columnGuid, "alias", displayText);
+                    AtlasObjectId atlasObjectId = new AtlasObjectId(columnEntity.getGuid(), columnEntity.getTypeName());
+                    entityStore.updateEntity(atlasObjectId, colWithExtendedInfo, false);
+                    //entityStore.updateEntityAttributeByGuid(columnGuid, "name", "df");
+                } catch (AtlasBaseException ex) {
+                    throw ex;
+                }
+            }
+        }catch (AtlasBaseException e) {
+            throw e;
         }
     }
 }

@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -220,4 +221,33 @@ public interface BusinessDAO {
     @Delete("delete from business2Table where tableGuid=#{tableGuid}")
     public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);
 
+
+
+    @Select({"<script>",
+             " SELECT DISTINCT tableInfo.tableGuid as tableId,tableInfo.tableName,tableInfo.databaseGuid as databaseId,tableInfo.createTime,tableInfo.status ",
+             " from tableInfo,business2table ",
+             " WHERE business2table.businessid in",
+             " <foreach item='businessGuid' index='index' collection='businessList' separator=',' open='(' close=')'>" ,
+             " #{businessGuid}",
+             " </foreach>",
+             " and tableInfo.tableGuid=business2table.tableGuid",
+             " <if test='limit != null and limit!=-1'>",
+             " limit #{limit}",
+             " </if>",
+             " <if test='offset != null'>",
+             " offset #{offset}",
+             " </if>",
+             " </script>"})
+    public List<TableHeader> getBusinessRelatedTableList(@Param("businessList")List<String> businessList, @Param("limit")Integer limit,@Param("offset") Integer offset);
+
+    @Select({"<script>",
+             " SELECT count(DISTINCT tableInfo.tableGuid)",
+             " from tableInfo,business2table ",
+             " WHERE business2table.businessid in",
+             " <foreach item='businessGuid' index='index' collection='businessList' separator=',' open='(' close=')'>" ,
+             " #{businessGuid}",
+             " </foreach>",
+             " and tableInfo.tableGuid=business2table.tableGuid",
+             " </script>"})
+    public long getCountBusinessRelatedTable(@Param("businessList")List<String> businessList);
 }

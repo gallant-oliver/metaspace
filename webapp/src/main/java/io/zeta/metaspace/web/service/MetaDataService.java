@@ -1255,11 +1255,11 @@ public class MetaDataService {
         }
     }
 
-    public int updateTableEditInfo(Table table) {
+    public int updateTableEditInfo(String tableGuid,Table info) throws AtlasBaseException {
         try {
-
+            return tableDAO.updateTableEditInfo(tableGuid, info);
         } catch (Exception e) {
-
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
         }
     }
 }
