@@ -205,15 +205,15 @@ public class HiveMetaStoreBridgeUtils {
             LOG.info("Found {} databases", databaseNames.size());
 
             //删除JanusGraph中已经不存在的database,以及database中的table
-            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.DELETED);
+            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
             List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
             for (AtlasVertex vertex : dbVertices) {
                 if (Objects.nonNull(vertex)) {
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithExtInfo(vertex, true);
+                    List<String> attributes = Collections.singletonList("name");
+                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
                     AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
                     String databaseInGraph = dbEntity.getAttribute("name").toString();
-                    AtlasEntity.Status status = dbEntity.getStatus();
-                    if (!databaseNames.contains(databaseInGraph) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                    if (!databaseNames.contains(databaseInGraph)) {
                         deleteTableEntity(databaseInGraph, new ArrayList<>());
                         deleteEntity(dbEntity);
                     }
@@ -279,15 +279,15 @@ public class HiveMetaStoreBridgeUtils {
     }
 
     private void deleteTableEntity(String databaseName, List<String> tableNames) throws AtlasBaseException {
-        String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_STATE), databaseName, AtlasEntity.Status.DELETED);
+        String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_STATE), databaseName, AtlasEntity.Status.ACTIVE);
         List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
         for (AtlasVertex vertex : vertices) {
             if (Objects.nonNull(vertex)) {
-                AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithExtInfo(vertex, true);
+                List<String> attributes = Collections.singletonList("name");
+                AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
                 AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
                 String tableNameInGraph = tableEntity.getAttribute("name").toString();
-                AtlasEntity.Status status = tableEntity.getStatus();
-                if (!tableNames.contains(tableNameInGraph) && status.equals(AtlasEntity.Status.ACTIVE)) {
+                if (!tableNames.contains(tableNameInGraph)) {
                     deleteEntity(tableEntity);
                 }
             }
