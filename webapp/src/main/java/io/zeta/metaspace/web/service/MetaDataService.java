@@ -135,6 +135,7 @@ public class MetaDataService {
             }
             //table
             Table table = extractTableInfo(entity, guid);
+
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
@@ -431,6 +432,13 @@ public class MetaDataService {
             column.setDescription(attributes.get("comment").toString());
         } else {
             column.setDescription("");
+        }
+        if (attributes.containsKey("displayChineseText") && Objects.nonNull(attributes.get("displayChineseText"))) {
+            String columnName = column.getColumnName();
+            String displayName = attributes.get("displayChineseText").toString();
+            column.setDisplayName(displayName + "(" + columnName + ")");
+        } else {
+            column.setDisplayName(column.getColumnName());
         }
     }
 

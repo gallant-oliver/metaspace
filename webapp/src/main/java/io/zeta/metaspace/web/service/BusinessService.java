@@ -16,8 +16,6 @@
  */
 package io.zeta.metaspace.web.service;
 
-import static org.apache.atlas.examples.QuickStartV2.COLUMN_TYPE;
-
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -51,13 +49,8 @@ import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.instance.EntityMutationResponse;
-import org.apache.atlas.model.instance.EntityMutations;
-import org.apache.atlas.model.typedef.AtlasEntityDef;
-import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
@@ -68,18 +61,10 @@ import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityGraphDiscoveryV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
-import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
-import org.apache.atlas.repository.store.graph.v2.AttributeMutationContext;
+import org.apache.atlas.repository.store.graph.v2.AtlasTypeDefGraphStoreV2;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
-import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.type.AtlasTypeUtil;
-import org.apache.commons.lang.ObjectUtils;
-import org.mockito.Mockito;
 import org.postgresql.util.PGobject;
-
 import static org.mockito.Mockito.mock;
 
 import org.slf4j.Logger;
@@ -88,9 +73,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
-import java.lang.reflect.Type;
-import java.sql.SQLException;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -145,6 +127,9 @@ public class BusinessService {
 
     @Inject
     protected AtlasGraph graph;
+
+    @Inject
+    protected AtlasTypeDefGraphStoreV2 typeDefStore;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
@@ -671,51 +656,11 @@ public class BusinessService {
     public void editTableColumnDisplayName(String tableGuid, List<Column> columns) throws AtlasBaseException {
         try {
             entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
-            AtlasStruct serdeInstance = new AtlasStruct("hive_column");
             for(Column column : columns) {
-
-                AtlasEntity tableEntity = entityStore.getById(tableGuid).getEntity();
                 String columnGuid = column.getColumnId();
                 String displayText = column.getDisplayName();
-                AtlasEntity columnEntity = entityStore.getById(columnGuid).getEntity();
-
-                columnEntity.setGuid(columnGuid);
-                columnEntity.setAttribute("alias", displayText);
-                AtlasEntity.AtlasEntityWithExtInfo colWithExtendedInfo = new AtlasEntity.AtlasEntityWithExtInfo(columnEntity);
-                //colWithExtendedInfo.addReferredEntity(tableEntity);
-                AtlasEntityStream columnEntityStream = new AtlasEntityStream(colWithExtendedInfo);
-                // fail full update if required attributes are not specified.
                 try {
-                    //EntityMutationResponse response = entityStore.createOrUpdate(columnEntityStream, true);
-                    RequestContext.get().setUser("admin", Collections.singleton("ROLE_ADMIN"));
-                    EntityMutationResponse response = entityStore.createOrUpdate(new AtlasEntityStream(columnEntity), false);
-                    //entityStore.updateEntityAttributeByGuid(columnGuid, "alias", displayText);
-                    //AtlasObjectId atlasObjectId = new AtlasObjectId(columnEntity.getGuid(), columnEntity.getTypeName());
-                    /*RequestContext.get().setUser("admin", Collections.singleton("ROLE_ADMIN"));
-                    RequestContext.get().setClientIPAddress("10.136.76.88");*/
-                    //entityStore.updateEntity(atlasObjectId, colWithExtendedInfo, false);
-                    //entityStore.updateEntityAttributeByGuid(columnGuid, "description", displayText);
-
-
-
-                    EntityGraphDiscovery graphDiscoverer  = new AtlasEntityGraphDiscoveryV2(typeRegistry, columnEntityStream);
-                    EntityGraphDiscoveryContext discoveryContext = graphDiscoverer.discoverEntities();
-
-                    AtlasVertex vertex = discoveryContext.getResolvedEntityVertex(columnGuid);
-
-
-                    /*AtlasEntityDef invalidAttrNameType =
-                            AtlasTypeUtil.createClassTypeDef("alias", "description", Collections.emptySet());
-                    AtlasTypesDef typesToCreate = new AtlasTypesDef();
-                    typesToCreate.getEntityDefs().add(invalidAttrNameType);
-                    graph.commit();
-                    AtlasEntityType entityType = typeRegistry.getEntityTypeByName("alias");
-                    AtlasStructType structType = getStructType(struct.getTypeName());
-                    AtlasStructType.AtlasAttribute attribute = structType.getAttribute(attrName);
-
-                    AttributeMutationContext ctx = new AttributeMutationContext(EntityMutations.EntityOperation.CREATE, vertex, attribute, "sun");
-                    AtlasVertex refvertex = ctx.getReferringVertex();*/
-                    /*AtlasGraphUtilsV2.addEncodedProperty(refvertex, "alias", "sun");*/
+                    entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
                     graph.commit();
                     RequestContext.clear();
 
