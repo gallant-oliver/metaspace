@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.notification;
 
+import io.zeta.metaspace.web.dao.TableDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -67,6 +68,8 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Autowired
     DataManageService dataManageService;
 
+
+
     @Inject
     public EntityNotificationListenerV2(AtlasTypeRegistry typeRegistry,
                                         NotificationInterface notificationInterface,
@@ -78,11 +81,13 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Override
     public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_CREATE);
+        dataManageService.addTable(entities);
     }
 
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_UPDATE);
+        dataManageService.updateTable(entities);
     }
 
     @Override

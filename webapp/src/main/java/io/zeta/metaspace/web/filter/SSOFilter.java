@@ -86,9 +86,9 @@ public class SSOFilter implements Filter {
             WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
             UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
             usersService.addUser(data);
-            filterChain.doFilter(request, response);
+
         } catch (Exception e) {
-            LOG.error("sso校验失败",e);
+            LOG.error("权限校验失败",e);
             loginSkip(httpServletResponse, loginURL);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
@@ -98,7 +98,7 @@ public class SSOFilter implements Filter {
             }
             AUDIT_LOG.info(auditLog.toString());
         }
-
+        filterChain.doFilter(request, response);
     }
 
 

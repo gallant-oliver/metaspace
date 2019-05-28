@@ -78,7 +78,7 @@ public class TestAtlasDateType {
         assertNull(dateType.getNormalizedValue(null), "value=" + null);
 
         for (Object value : validValues) {
-            if (value == null || value == "") {
+            if (value == null || value.equals("")) {
                 continue;
             }
 

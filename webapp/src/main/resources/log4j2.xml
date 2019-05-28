@@ -7,7 +7,7 @@
                 /> -->
             <!-- 输出日志的格式 -->
             <PatternLayout
-                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
+                pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
         </Console>
     </Appenders>
     <Loggers>

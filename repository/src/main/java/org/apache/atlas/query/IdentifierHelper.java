@@ -165,7 +165,7 @@ public class IdentifierHelper {
         }
 
         private void updateEdgeInfo(org.apache.atlas.query.Lookup lookup, GremlinQueryComposer.Context context) {
-            if (!isPrimitive && !isTrait && typeName != attributeName) {
+            if (!isPrimitive && !isTrait && (!typeName .equals(attributeName)) ) {
                 edgeLabel = lookup.getRelationshipEdgeLabel(context, attributeName);
                 typeName = lookup.getTypeFromEdge(context, attributeName);
             }
