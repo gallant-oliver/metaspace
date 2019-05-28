@@ -17,13 +17,8 @@
  */
 package org.apache.atlas.repository.graphdb.janus;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasElement;
 import org.apache.atlas.repository.graphdb.AtlasSchemaViolationException;
@@ -34,11 +29,10 @@ import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import org.janusgraph.core.SchemaViolationException;
 import org.janusgraph.core.JanusGraphElement;
+import org.janusgraph.core.SchemaViolationException;
+
+import java.util.*;
 
 /**
  * Janus implementation of AtlasElement.
