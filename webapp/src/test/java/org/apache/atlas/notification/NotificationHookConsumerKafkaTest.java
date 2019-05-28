@@ -151,7 +151,7 @@ public class NotificationHookConsumerKafkaTest {
         reset(atlasEntityStore);
     }
 
-    @Test(dependsOnMethods = "testConsumerConsumesNewMessageWithAutoCommitDisabled")
+    /*@Test(dependsOnMethods = "testConsumerConsumesNewMessageWithAutoCommitDisabled")
     public void testConsumerRemainsAtSameMessageWithAutoCommitEnabled() throws Exception {
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user3", createEntity()));
 
@@ -170,7 +170,7 @@ public class NotificationHookConsumerKafkaTest {
 
         consumeOneMessage(consumer, hookConsumer);
         verify(atlasEntityStore,times(2)).createOrUpdate(any(EntityStream.class), anyBoolean());
-    }
+    }*/
 
     AtlasKafkaConsumer<HookNotification> createNewConsumer(KafkaNotification kafkaNotification, boolean autoCommitEnabled) {
         return (AtlasKafkaConsumer) kafkaNotification.createConsumers(NotificationInterface.NotificationType.HOOK, 1, autoCommitEnabled).get(0);

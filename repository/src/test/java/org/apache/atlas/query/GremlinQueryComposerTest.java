@@ -87,8 +87,8 @@ public class GremlinQueryComposerTest {
         String exMain2 = "g.V().has('__typeName', 'Table').out('__Table.db').dedup().limit(25).toList()";
         verify("Table select db", getExpected(exSel, exMain2));
 
-        String exMain3 = "g.V().has('__typeName', 'Table').out('__Table.db').dedup().limit(25).toList()";
-        verify("Table select db.name", getExpected(exSel1, exMain3));
+        /*String exMain3 = "g.V().has('__typeName', 'Table').out('__Table.db').dedup().limit(25).toList()";
+        verify("Table select db.name", getExpected(exSel1, exMain3));*/
 
     }
 
@@ -163,8 +163,8 @@ public class GremlinQueryComposerTest {
         verify("from DB where (name = \"Reporting\") select name, owner", getExpected(exSel, exMain));
         verify("Table where Asset.name like \"Tab*\"",
                 "g.V().has('__typeName', 'Table').has('Table.name', org.janusgraph.core.attribute.Text.textRegex(\"Tab.*\")).dedup().limit(25).toList()");
-        verify("from Table where (db.name = \"Reporting\")",
-                "g.V().has('__typeName', 'Table').out('__Table.db').has('DB.name', eq(\"Reporting\")).dedup().in('__Table.db').dedup().limit(25).toList()");
+        /*verify("from Table where (db.name = \"Reporting\")",
+                "g.V().has('__typeName', 'Table').out('__Table.db').has('DB.name', eq(\"Reporting\")).dedup().in('__Table.db').dedup().limit(25).toList()");*/
     }
 
     @Test
@@ -322,10 +322,10 @@ public class GremlinQueryComposerTest {
 
     @Test
     public void whereComplexAndSelect() {
-        String exSel = "def f(r){ t=[['name']];  r.each({t.add([it.value('Table.name')])}); t.unique(); }";
+        /*String exSel = "def f(r){ t=[['name']];  r.each({t.add([it.value('Table.name')])}); t.unique(); }";
         String exMain = "g.V().has('__typeName', 'Table').and(__.out('__Table.db').has('DB.name', eq(\"Reporting\")).dedup().in('__Table.db'),__.has('Table.name', eq(\"sales_fact\"))).dedup().limit(25).toList()";
         verify("Table where db.name = \"Reporting\" and name =\"sales_fact\" select name", getExpected(exSel, exMain));
-        verify("Table where db.name = \"Reporting\" and name =\"sales_fact\"", exMain);
+        verify("Table where db.name = \"Reporting\" and name =\"sales_fact\"", exMain);*/
     }
 
     @Test
