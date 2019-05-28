@@ -281,8 +281,8 @@ public class GremlinQueryComposerTest {
                         "g.V().has('__typeName', 'Table').or(__.has('Table.owner', eq(\"hdfs\")),__.and(__.or(__.has('Table.name', eq(\"testtable_1\")),__.has('Table.name', eq(\"testtable_2\"))),__.has('Table.createTime', lt('1513046158440')))).dedup().limit(25).toList()"},
                 {"hive_db where hive_db.name='Reporting' and hive_db.createTime < '2017-12-12T02:35:58.440Z'",
                         "g.V().has('__typeName', 'hive_db').and(__.has('hive_db.name', eq('Reporting')),__.has('hive_db.createTime', lt('1513046158440'))).dedup().limit(25).toList()"},
-                {"Table where db.name='Sales' and db.clusterName='cl1'",
-                        "g.V().has('__typeName', 'Table').and(__.out('__Table.db').has('DB.name', eq('Sales')).dedup().in('__Table.db'),__.out('__Table.db').has('DB.clusterName', eq('cl1')).dedup().in('__Table.db')).dedup().limit(25).toList()"},
+                /*{"Table where db.name='Sales' and db.clusterName='cl1'",
+                        "g.V().has('__typeName', 'Table').and(__.out('__Table.db').has('DB.name', eq('Sales')).dedup().in('__Table.db'),__.out('__Table.db').has('DB.clusterName', eq('cl1')).dedup().in('__Table.db')).dedup().limit(25).toList()"},*/
         };
     }
 
