@@ -80,7 +80,7 @@ public interface BusinessDAO {
     public String getTrustTableGuid(@Param("businessId")String businessId);
 
 
-    //根据业务信息名称查询列表
+    //根据业务信息名称查询列表(有权限)
     @Select({"<script>",
              " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation on",
@@ -99,6 +99,29 @@ public interface BusinessDAO {
              " </script>"})
     //@Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset);
+
+
+    @Select({"<script>",
+             " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
+             " join business_relation on",
+             " business_relation.businessId=businessInfo.businessId",
+             " where",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<BusinessInfoHeader> queryBusinessByNameWithoutPrivilege(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset);
+
+
+    //根据业务信息名称查询列表总数
+    @Select({"<script>",
+             " select count(*) from businessInfo",
+             " where",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " </script>"})
+    public long queryBusinessCountByNameWithoutPrivilege(@Param("businessName")String businessName);
 
     //查询业务信息所属目录Id
     @Select("select departmentId from businessInfo where businessId = #{businessId}")
