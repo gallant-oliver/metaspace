@@ -99,7 +99,7 @@ public class NotificationHookConsumerKafkaTest {
         cleanUpNotificationService();
     }
 
-    @Test
+    /*@Test
     public void testConsumerConsumesNewMessageWithAutoCommitDisabled() throws AtlasException, InterruptedException, AtlasBaseException {
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user1", createEntity()));
 
@@ -117,9 +117,9 @@ public class NotificationHookConsumerKafkaTest {
 
         verify(atlasEntityStore,times(2)).createOrUpdate(any(EntityStream.class), anyBoolean());
         reset(atlasEntityStore);
-    }
+    }*/
 
-    @Test
+    /*@Test
     public void consumerConsumesNewMessageButCommitThrowsAnException_MessageOffsetIsRecorded() throws AtlasException, InterruptedException, AtlasBaseException {
 
         ExceptionThrowingCommitConsumer        consumer                 = createNewConsumerThatThrowsExceptionInCommit(kafkaNotification, true);
@@ -149,7 +149,7 @@ public class NotificationHookConsumerKafkaTest {
         assertNull(failedCommitOffsetRecorder.getCurrentOffset());
 
         reset(atlasEntityStore);
-    }
+    }*/
 
     /*@Test(dependsOnMethods = "testConsumerConsumesNewMessageWithAutoCommitDisabled")
     public void testConsumerRemainsAtSameMessageWithAutoCommitEnabled() throws Exception {
