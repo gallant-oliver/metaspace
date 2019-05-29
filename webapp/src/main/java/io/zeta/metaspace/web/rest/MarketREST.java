@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -205,6 +206,18 @@ public class MarketREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
         return metadataService.getTableInfoById(guid);
+    }
+
+    @GET
+    @Path("/datashare/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
     }
 
 }
