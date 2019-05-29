@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.TechnologyInfo;
@@ -25,16 +26,20 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.web.dao.UserDao;
 import org.mybatis.spring.MyBatisSystemException;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +70,8 @@ public class MarketService {
     DataShareDAO shareDao;
     @Autowired
     MetaDataService metaDataService;
+    @Autowired
+    UserDAO userDao;
 
 
     /**
@@ -200,6 +207,69 @@ public class MarketService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * API详情
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    public APIInfo getAPIInfo(String guid) throws AtlasBaseException {
+        try {
+            APIInfo info = shareDao.getAPIInfoByGuid(guid);
+            if(Objects.isNull(info)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
+            }
+            String version = info.getVersion();
+            String path = info.getPath();
+            StringJoiner pathJoiner = new StringJoiner("/");
+            pathJoiner.add("api").add(version).add("share").add(path);
+            info.setPath("/" + pathJoiner.toString());
+            List<APIInfo.Field> fields = getQueryFileds(guid);
+            //owner.name
+            List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
+            List<String> dataOwnerName = new ArrayList<>();
+            if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+            }
+            info.setDataOwner(dataOwnerName);
+            info.setFields(fields);
+
+            info.setStar(false);
+            info.setEdit(false);
+            //keeper
+            String keeperGuid = info.getKeeper();
+            User keeperUser = userDao.getUser(keeperGuid);
+            String keeper = keeperUser.getUsername();
+            info.setKeeper(keeper);
+            //updater
+            String updaterGuid = info.getUpdater();
+            User updaterUser = userDao.getUser(updaterGuid);
+            String updater = updaterUser.getUsername();
+            info.setUpdater(updater);
+            return info;
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取信息失败");
+        }
+    }
+
+    public List<APIInfo.Field> getQueryFileds(String guid) throws AtlasBaseException {
+        try {
+            Gson gson = new Gson();
+            Object fields = shareDao.getQueryFiledsByGuid(guid);
+            PGobject pGobject = (PGobject)fields;
+            String value = pGobject.getValue();
+            List<APIInfo.Field> values = gson.fromJson(value, List.class);
+            return values;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 }

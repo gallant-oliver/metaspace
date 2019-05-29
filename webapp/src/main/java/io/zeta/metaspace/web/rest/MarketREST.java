@@ -214,7 +214,7 @@ public class MarketREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
         try {
-            return shareService.getAPIInfo(guid);
+            return marketService.getAPIInfo(guid);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
