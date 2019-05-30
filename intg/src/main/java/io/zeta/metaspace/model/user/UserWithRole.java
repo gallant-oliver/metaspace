@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class UserWithRole {
     private List<String> userIds;
-    private String roleId;
+    private List<String> roleId;
 
     public List<String> getUserIds() {
         return userIds;
@@ -35,11 +35,11 @@ public class UserWithRole {
         this.userIds = userIds;
     }
 
-    public String getRoleId() {
+    public List<String> getRoleId() {
         return roleId;
     }
 
-    public void setRoleId(String roleId) {
+    public void setRoleId(List<String> roleId) {
         this.roleId = roleId;
     }
 }

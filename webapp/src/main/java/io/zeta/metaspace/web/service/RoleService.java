@@ -137,28 +137,36 @@ public class RoleService {
     }
 
     @Transactional
-    public String addRoleToUser(UserWithRole userWithRole) throws AtlasBaseException {
-        String roleId = userWithRole.getRoleId();
-        List<String> users = userWithRole.getUserIds();
-        List<String> userIds = new ArrayList<>();
-        for (String userId : users) {
-            if(Objects.isNull(userId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Id不能为空");
+    public String addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
+        for(UserWithRole userWithRole: userWithRoleList) {
+            List<String> roleIds = userWithRole.getRoleId();
+            if(Objects.nonNull(roleIds) && roleIds.size() > 1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
+            } else if(Objects.nonNull(roleIds) && roleIds.size() == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
             }
-            String role = usersService.getRoleIdByUserId(userId);
-            if(Objects.isNull(role)) {
-                User user = new User();
-                user.setUserId(userId);
-                user.setRoleId(roleId);
-                userDAO.addUser(user);
-            } else if (role.equals("1")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
-            }  else {
-                userIds.add(userId);
+            String roleId = roleIds.get(0);
+            List<String> users = userWithRole.getUserIds();
+            List<String> userIds = new ArrayList<>();
+            for (String userId : users) {
+                if (Objects.isNull(userId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Id不能为空");
+                }
+                String role = usersService.getRoleIdByUserId(userId);
+                if (Objects.isNull(role)) {
+                    User user = new User();
+                    user.setUserId(userId);
+                    user.setRoleId(roleId);
+                    userDAO.addUser(user);
+                } else if (role.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                } else {
+                    userIds.add(userId);
+                }
             }
-        }
-        if (userIds.size() > 0) {
-            roleDAO.updateUsers(roleId, userIds);
+            if (userIds.size() > 0) {
+                roleDAO.updateUsers(roleId, userIds);
+            }
         }
         return "success";
     }

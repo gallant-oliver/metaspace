@@ -313,7 +313,7 @@ public class RoleREST {
     @Path("/users/sso")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String addUsers(UserWithRole userWithRole) throws AtlasBaseException {
+    public String addUsers(List<UserWithRole> userWithRole) throws AtlasBaseException {
         try {
             return roleService.addRoleToUser(userWithRole);
         } catch(AtlasBaseException e) {
