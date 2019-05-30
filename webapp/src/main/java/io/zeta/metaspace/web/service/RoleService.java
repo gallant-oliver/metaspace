@@ -137,7 +137,7 @@ public class RoleService {
     }
 
     @Transactional
-    public String addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
+    public void addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
         for(UserWithRole userWithRole: userWithRoleList) {
             List<String> roleIds = userWithRole.getRoleId();
             if(Objects.nonNull(roleIds) && roleIds.size() > 1) {
@@ -168,7 +168,6 @@ public class RoleService {
                 roleDAO.updateUsers(roleId, userIds);
             }
         }
-        return "success";
     }
 
 

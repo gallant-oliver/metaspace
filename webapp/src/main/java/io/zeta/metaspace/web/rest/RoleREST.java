@@ -22,7 +22,9 @@ import javax.inject.Singleton;
 import javax.ws.rs.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Path("role")
 @Singleton
@@ -313,14 +315,42 @@ public class RoleREST {
     @Path("/users/sso")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String addUsers(List<UserWithRole> userWithRole) throws AtlasBaseException {
+    public Map addUsers(List<UserWithRole> userWithRole) throws AtlasBaseException {
         try {
-            return roleService.addRoleToUser(userWithRole);
+            roleService.addRoleToUser(userWithRole);
+            Map result = new HashMap();
+            result.put("errorCode", "200");
+            result.put("message", "Success");
+            return result;
         } catch(AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
             LOG.error("添加成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
+        }
+    }
+
+    /**
+     * 移除成员
+     *
+     * @return List<Database>
+     */
+    @PUT
+    @Path("/{roleId}/users/sso")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map removeUsers(@PathParam("roleId") String roleId, List<String> users) throws AtlasBaseException {
+        try {
+            roleService.removeUser(users);
+            Map result = new HashMap();
+            result.put("errorCode","200");
+            result.put("message","Success");
+            return result;
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("删除成员失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除成员失败");
         }
     }
 }
