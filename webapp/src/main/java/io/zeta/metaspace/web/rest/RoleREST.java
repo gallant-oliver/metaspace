@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserWithRole;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
@@ -19,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
+
+import java.util.Arrays;
 import java.util.List;
 
 @Path("role")
@@ -134,8 +137,8 @@ public class RoleREST {
             throw e;
         }
         catch (Exception e) {
-            LOG.error("搜索角色失败失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败失败");
+            LOG.error("搜索角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
         }
     }
 
@@ -147,7 +150,7 @@ public class RoleREST {
     @POST
     @Path("/{roleId}/user")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String addUsers(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
+    public String addUserList(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
             return roleService.addUsers(roleId,users) ;
         }
@@ -286,4 +289,39 @@ public class RoleREST {
         }
     }
 
+    @GET
+    @Path("/roles/sso")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Role> getRoles(@QueryParam("query") @DefaultValue("")String query, @QueryParam("offset") @DefaultValue("0")Long offset, @QueryParam("limit") @DefaultValue("-1")Long limit) throws AtlasBaseException {
+        try {
+            return roleService.getRoles(query, offset, limit);
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("搜索角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
+        }
+    }
+
+    /**
+     * 添加成员
+     *
+     * @return List<Database>
+     */
+    @POST
+    @Path("/users/sso")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public String addUsers(UserWithRole userWithRole) throws AtlasBaseException {
+        try {
+            List users = Arrays.asList(userWithRole.getUserIds());
+            String roleId = userWithRole.getRoleId();
+            return roleService.addUsers(roleId,users);
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("添加成员失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
+        }
+    }
 }
