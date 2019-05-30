@@ -11,6 +11,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.model.user.UserWithRole;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
@@ -134,6 +135,34 @@ public class RoleService {
             roleDAO.updateUsers(roleId, users);
         return "success";
     }
+
+    @Transactional
+    public String addRoleToUser(UserWithRole userWithRole) throws AtlasBaseException {
+        String roleId = userWithRole.getRoleId();
+        List<String> users = userWithRole.getUserIds();
+        List<String> userIds = new ArrayList<>();
+        for (String userId : users) {
+            if(Objects.isNull(userId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Id不能为空");
+            }
+            String role = usersService.getRoleIdByUserId(userId);
+            if(Objects.isNull(role)) {
+                User user = new User();
+                user.setUserId(userId);
+                user.setRoleId(roleId);
+                userDAO.addUser(user);
+            } else if (role.equals("1")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+            }  else {
+                userIds.add(userId);
+            }
+        }
+        if (userIds.size() > 0) {
+            roleDAO.updateUsers(roleId, userIds);
+        }
+        return "success";
+    }
+
 
     public String removeUser(List<String> users) throws AtlasBaseException {
         for (String user : users) {

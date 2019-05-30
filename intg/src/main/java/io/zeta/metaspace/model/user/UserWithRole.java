@@ -16,20 +16,22 @@
  */
 package io.zeta.metaspace.model.user;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/5/30 11:34
  */
 public class UserWithRole {
-    private String[] userIds;
+    private List<String> userIds;
     private String roleId;
 
-    public String[] getUserIds() {
+    public List<String> getUserIds() {
         return userIds;
     }
 
-    public void setUserIds(String[] userIds) {
+    public void setUserIds(List<String> userIds) {
         this.userIds = userIds;
     }
 
