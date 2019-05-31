@@ -86,7 +86,7 @@ public class CreateHiveProcess extends BaseHiveEvent {
                     processOutputs(ret, outputs, processedNames, writeEntities);
                     AtlasEntity process = getHiveProcessEntity(outputs);
                     ret.addEntity(process);
-                    ret.compact();
+                    addProcessedEntities(ret);
                     return ret;
                 }
             }
