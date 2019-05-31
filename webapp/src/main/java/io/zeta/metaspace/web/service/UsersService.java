@@ -59,7 +59,7 @@ public class UsersService {
                 user.setRoleId(SystemRole.GUEST.getCode());
             }
             userDAO.addUser(user);
-        } else {
+        } /*else {
             User user = userDAO.getUser(userId);
             if(!account.equals(user.getAccount()) || !displayName.equals(user.getUsername())) {
                 User userInfo = new User();
@@ -68,7 +68,7 @@ public class UsersService {
                 userInfo.setUsername(displayName);
                 userDAO.updateUserInfo(userInfo);
             }
-        }
+        }*/
     }
 
     @Transactional
