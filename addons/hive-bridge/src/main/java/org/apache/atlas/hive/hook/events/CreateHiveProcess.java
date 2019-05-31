@@ -24,6 +24,7 @@ import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV2;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.ql.hooks.Entity;
 import org.apache.hadoop.hive.ql.hooks.HookContext;
 import org.apache.hadoop.hive.ql.hooks.LineageInfo;
@@ -76,9 +77,22 @@ public class CreateHiveProcess extends BaseHiveEvent {
             Set<String>       processedNames = new HashSet<>();
 
             ret = new AtlasEntitiesWithExtInfo();
+            Set<ReadEntity> readEntities = hiveContext.getInputs();
+            Set<WriteEntity> writeEntities = hiveContext.getOutputs();
+            // skip insert into tbl_x values() statements
+            if (CollectionUtils.isNotEmpty(readEntities) && readEntities.size() == 1) {
+                ReadEntity input = readEntities.iterator().next();
+                if (input.getType() == Entity.Type.TABLE && input.getTable().isTemporary()) {
+                    processOutputs(ret, outputs, processedNames, writeEntities);
+                    AtlasEntity process = getHiveProcessEntity(outputs);
+                    ret.addEntity(process);
+                    ret.compact();
+                    return ret;
+                }
+            }
 
-            if (hiveContext.getInputs() != null) {
-                for (ReadEntity input : hiveContext.getInputs()) {
+            if (readEntities != null) {
+                for (ReadEntity input : readEntities) {
                     String qualifiedName = getQualifiedName(input);
 
                     if (qualifiedName == null || !processedNames.add(qualifiedName)) {
@@ -97,21 +111,8 @@ public class CreateHiveProcess extends BaseHiveEvent {
                 }
             }
 
-            if (hiveContext.getOutputs() != null) {
-                for (WriteEntity output : hiveContext.getOutputs()) {
-                    String qualifiedName = getQualifiedName(output);
 
-                    if (qualifiedName == null || !processedNames.add(qualifiedName)) {
-                        continue;
-                    }
-
-                    AtlasEntity entity = getInputOutputEntity(output, ret);
-
-                    if (entity != null) {
-                        outputs.add(entity);
-                    }
-                }
-            }
+            processOutputs(ret, outputs, processedNames, writeEntities);
 
             if (!inputs.isEmpty() || !outputs.isEmpty()) {
                 AtlasEntity process = getHiveProcessEntity(inputs, outputs);
@@ -127,6 +128,33 @@ public class CreateHiveProcess extends BaseHiveEvent {
         }
 
         return ret;
+    }
+
+    private void processOutputs(AtlasEntitiesWithExtInfo ret, List<AtlasEntity> outputs, Set<String> processedNames, Set<WriteEntity> writeEntities) throws Exception {
+        if (writeEntities != null) {
+            for (WriteEntity output : writeEntities) {
+                String qualifiedName = getQualifiedName(output);
+
+                if (qualifiedName == null || !processedNames.add(qualifiedName)) {
+                    continue;
+                }
+
+                AtlasEntity entity = getInputOutputEntity(output, ret);
+
+                if (entity != null) {
+                    outputs.add(entity);
+                }
+            }
+        }
+    }
+
+    private AtlasEntity getHiveProcessEntity(List<AtlasEntity> outputs) {
+        for (AtlasEntity output : outputs) {
+            if (StringUtils.equalsIgnoreCase(output.getTypeName(), HIVE_TYPE_TABLE)) {
+                return output;
+            }
+        }
+        return null;
     }
 
     private void processColumnLineage(AtlasEntity hiveProcess, AtlasEntitiesWithExtInfo entities) {
