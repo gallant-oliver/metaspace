@@ -626,6 +626,7 @@ public class DataManageService {
             long sum = organizationDAO.countOrganizationByPid(pId, query);
             long count = list.size();
             PageResult pageResult = new PageResult();
+            pageResult.setOffset(offset);
             pageResult.setLists(list);
             pageResult.setCount(count);
             pageResult.setSum(sum);
@@ -654,6 +655,7 @@ public class DataManageService {
             long sum = organizationDAO.countOrganizationByName(query);
             long count = list.size();
             PageResult pageResult = new PageResult();
+            pageResult.setOffset(offset);
             pageResult.setLists(list);
             pageResult.setCount(count);
             pageResult.setSum(sum);
