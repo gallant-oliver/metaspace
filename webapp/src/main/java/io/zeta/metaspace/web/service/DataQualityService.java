@@ -500,6 +500,7 @@ public class DataQualityService {
                 reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
                 total = qualityDao.getCount(tableGuid, templateId);
             }
+            pageResult.setOffset(offset);
             pageResult.setLists(reports);
             pageResult.setCount(reports.size());
             pageResult.setSum(total);

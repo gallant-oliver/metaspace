@@ -152,6 +152,7 @@ public class UsersService {
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;
@@ -207,6 +208,7 @@ public class UsersService {
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;
