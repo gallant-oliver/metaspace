@@ -336,12 +336,12 @@ public class RoleREST {
      * @return List<Database>
      */
     @PUT
-    @Path("/{roleId}/users/sso")
+    @Path("/users/sso")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map removeUsers(@PathParam("roleId") String roleId, List<String> users) throws AtlasBaseException {
+    public Map removeUsers(List<UserWithRole> userWithRole) throws AtlasBaseException {
         try {
-            roleService.removeUser(users);
+            roleService.removeUserRole(userWithRole);
             Map result = new HashMap();
             result.put("errorCode","200");
             result.put("message","Success");

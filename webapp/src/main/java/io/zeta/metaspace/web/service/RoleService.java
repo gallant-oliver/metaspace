@@ -184,6 +184,32 @@ public class RoleService {
     }
 
     @Transactional
+    public void removeUserRole(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
+        for(UserWithRole userWithRole: userWithRoleList) {
+            List<String> roleIds = userWithRole.getRoleId();
+            if (Objects.nonNull(roleIds) && roleIds.size() > 1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
+            } else if (Objects.nonNull(roleIds) && roleIds.size() == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
+            }
+            String roleId = roleIds.get(0);
+            List<String> users = userWithRole.getUserIds();
+            for (String userId : users) {
+                String realRoleId = usersService.getRoleIdByUserId(userId);
+                if (realRoleId.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                }
+                if(!roleId.equals(realRoleId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色错误");
+                }
+            }
+            if (users.size() > 0) {
+                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+            }
+        }
+    }
+
+    @Transactional
     public RoleModulesCategories getPrivileges(String roleId) throws AtlasBaseException {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
         User user = AdminUtils.getUserData();
