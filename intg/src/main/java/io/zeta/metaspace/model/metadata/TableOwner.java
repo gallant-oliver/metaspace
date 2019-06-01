@@ -52,12 +52,6 @@ public class TableOwner {
             return id;
         }
 
-
-        public void setId(int id) {
-            this.id = String.valueOf(id);
-        }
-
-
         public String getType() {
             return type;
         }
