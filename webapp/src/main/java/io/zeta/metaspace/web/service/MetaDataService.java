@@ -39,6 +39,7 @@ import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import io.zeta.metaspace.web.util.*;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -218,12 +219,19 @@ public class MetaDataService {
                 LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
             }
             try {
+                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
                 //所属系统
-                table.setSubordinateSystem("");
+                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
                 //所属数据库
-                table.setSubordinateDatabase("");
+                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
                 //源系统管理员
-                table.setSystemAdmin(new ArrayList<String>());
+                table.setSystemAdmin(tableInfo.getSystemAdmin());
+                //数仓管理员
+                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
+                //数仓描述
+                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
+                //目录管理员
+                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
                 //创建时间
                 Object createTime = entity.getAttribute("createTime");
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1252,6 +1260,15 @@ public class MetaDataService {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
+        }
+    }
+
+    @Transactional
+    public void updateTableInfo(String tableGuid, Table tableInfo) throws AtlasBaseException {
+        try {
+            tableDAO.updateTableInfo(tableGuid, tableInfo);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 }

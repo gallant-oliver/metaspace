@@ -68,4 +68,7 @@ public interface TableDAO {
     @Delete("delete from table2owner where tableGuid=#{tableGuid}")
     public int deleteTableRelatedOwner(@Param("tableGuid")String tableGuid);
 
+    @Update("update tableInfo set subordinatesystem=#{info.subordinateSystem},subordinatedatabase=#{info.subordinateDatabase},systemadmin=#{info.systemAdmin},datawarehouseadmin=#{info.dataWarehouseAdmin},datawarehousedescription=#{info.dataWarehouseDescription},catalogAdmin=#{info.catalogAdmin} where tableGuid=#{tableGuid}")
+    public int updateTableInfo(@Param("tableGuid")String tableGuid, @Param("info")Table info);
+
 }
