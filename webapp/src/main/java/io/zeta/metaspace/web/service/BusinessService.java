@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnCheckMessage;
 import io.zeta.metaspace.model.business.ColumnPrivilege;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
@@ -672,4 +673,47 @@ public class BusinessService {
             throw e;
         }
     }
+
+    public void editTableDisplayName(TableHeader tableHeader) throws AtlasBaseException {
+        try {
+            entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
+            String tableGuid = tableHeader.getTableId();
+            String displayText = tableHeader.getDisplayName();
+            entityStore.updateEntityAttributeByGuid(tableGuid, "displayChineseText", displayText);
+            graph.commit();
+            RequestContext.clear();
+        }catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+
+    public List<ColumnCheckMessage> checkColumnName(String tableGuid, List<String> columnList) throws AtlasBaseException {
+        try {
+            AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
+            if(Objects.isNull(entityWithExtInfo)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表字段信息");
+            }
+            List<Column> columnInfoList = metaDataService.extractColumnInfo(entityWithExtInfo, tableGuid);
+            List<String> tableColumnList = new ArrayList<>();
+            List<ColumnCheckMessage> columnCheckMessageList = new ArrayList<>();
+            columnInfoList.stream().forEach(column -> tableColumnList.add(column.getColumnName()));
+            for(int i=0; i<columnList.size(); i++) {
+                String columnName = columnList.get(i);
+                ColumnCheckMessage columnCheckMessage = new ColumnCheckMessage();
+                columnCheckMessage.setRow(i);
+                columnCheckMessage.setColumnName(columnName);
+                if(tableColumnList.contains(columnName)) {
+                    columnCheckMessage.setErrorMessage("success");
+                } else {
+                    columnCheckMessage.setErrorMessage("not find column name");
+                }
+                columnCheckMessageList.add(columnCheckMessage);
+            }
+            return columnCheckMessageList;
+        }catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
 }

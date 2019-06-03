@@ -25,6 +25,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnCheckMessage;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -509,6 +510,31 @@ public class BusinessREST {
         try {
             businessService.editTableColumnDisplayName(tableGuid, columnList);
             return "success";
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public String editTableDisplayName(TableHeader tableHeader) throws AtlasBaseException {
+        try {
+            businessService.editTableDisplayName(tableHeader);
+            return "success";
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @POST
+    @Path("/table/{guid}/columns/check")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnCheckMessage> checkColumnName(@PathParam("guid") String tableGuid, List<String> columns) throws AtlasBaseException {
+        try {
+            return businessService.checkColumnName(tableGuid, columns);
         } catch (AtlasBaseException e) {
             throw e;
         }
