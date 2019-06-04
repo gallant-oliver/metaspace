@@ -14,7 +14,6 @@ import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +21,8 @@ import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 
-import java.util.Arrays;
-import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -354,9 +353,15 @@ public class RoleREST {
     @Path("/roles/sso/incr")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Role> getIncrRoles(@QueryParam("startTime") String startTime) throws AtlasBaseException {
+    public Map getIncrRoles(@QueryParam("startTime") String startTime) throws AtlasBaseException {
         try {
-            return roleService.getIncrRoles(startTime);
+            Map result = new HashMap();
+            List<Role> roleList =  roleService.getIncrRoles(startTime);
+            result.put("data", roleList);
+            DateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+            String queryTime = df.format(System.currentTimeMillis());
+            result.put("queryTime", queryTime);
+            return result;
         } catch(AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

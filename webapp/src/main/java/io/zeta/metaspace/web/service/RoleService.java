@@ -137,7 +137,11 @@ public class RoleService {
     @Transactional
     public List<Role> getIncrRoles(String startTime) throws AtlasBaseException {
         try {
-            List<Role> roles = roleDAO.getIncrRoles(startTime);
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            DateFormat startDf = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date startDate = startDf.parse(startTime);
+            String formatStartTimeStr = df.format(startDate);
+            List<Role> roles = roleDAO.getIncrRoles(formatStartTimeStr);
             for(int i=0; i<roles.size(); i++) {
                 Role role = roles.get(i);
                 Boolean valid = role.isValid();
@@ -148,8 +152,6 @@ public class RoleService {
                 String createTime = role.getCreateTime();
                 String updateTime = role.getUpdateTime();
                 if(Objects.nonNull(createTime) && Objects.nonNull(updateTime)) {
-                    DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm");
-                    Date startDate = df.parse(startTime);
                     Date createDate = df.parse(createTime);
                     if(createDate.getTime() > startDate.getTime()) {
                         role.setOpType(OpType.ADD.getDesc());
