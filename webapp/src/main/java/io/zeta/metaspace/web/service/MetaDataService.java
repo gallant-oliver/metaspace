@@ -148,6 +148,11 @@ public class MetaDataService {
         if (entity.getTypeName().contains("table")) {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
+            //中文别名
+            table.setDisplayName(getEntityAttribute(entity, "displayChineseText"));
+            if(Objects.isNull(table.getDisplayName())) {
+                table.setDisplayName(table.getTableName());
+            }
             //判断是否为虚拟表
             if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
                 table.setVirtualTable(true);
@@ -434,9 +439,8 @@ public class MetaDataService {
             column.setDescription("");
         }
         if (attributes.containsKey("displayChineseText") && Objects.nonNull(attributes.get("displayChineseText"))) {
-            String columnName = column.getColumnName();
             String displayName = attributes.get("displayChineseText").toString();
-            column.setDisplayName(displayName + "(" + columnName + ")");
+            column.setDisplayName(displayName);
         } else {
             column.setDisplayName(column.getColumnName());
         }

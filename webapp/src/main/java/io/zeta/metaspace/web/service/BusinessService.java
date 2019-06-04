@@ -609,6 +609,19 @@ public class BusinessService {
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
             List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessList, limit, offset);
+            for(int i=0; i<tableHeaderList.size(); i++) {
+                String tableGuid = tableHeaderList.get(i).getTableId();
+                AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
+                if(Objects.isNull(entityWithExtInfo)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表详情");
+                }
+                AtlasEntity entity = entityWithExtInfo.getEntity();
+                if (entity.hasAttribute("displayChineseText") && Objects.nonNull(entity.getAttribute("displayChineseText"))) {
+                    String displayName = entity.getAttribute("displayChineseText").toString();
+                    tableHeaderList.get(i).setDisplayName(displayName);
+                }
+            }
+
             long count = businessDao.getCountBusinessRelatedTable(businessList);
             PageResult pageResult = new PageResult();
             pageResult.setLists(tableHeaderList);
