@@ -37,13 +37,13 @@ public interface RoleDAO {
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
-    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/' and valid!=false order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
+    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/' and valid=true order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select * from role where updateTime>=#{startTime} or startTime>=#{startTime}")
+    @Select("select * from role where updateTime>=#{startTime} or createTime>=#{startTime}")
     public List<Role> getIncrRoles(@Param("startTime") String startTime);
 
-    @Select("select count(1) from role where rolename like '%'||#{query}||'%' ESCAPE '/' and valid!=false")
+    @Select("select count(1) from role where rolename like '%'||#{query}||'%' ESCAPE '/' and valid=true")
     public long getRolesCount(@Param("query") String query);
 
     //添加成员&更换一批人的角色
