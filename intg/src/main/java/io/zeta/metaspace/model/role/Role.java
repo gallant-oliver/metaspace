@@ -23,7 +23,10 @@ public class Role implements Serializable {
     private int disable;
     private int delete;
     private int edit;
-private int members;
+    private int members;
+
+    private boolean valid;
+    private String opType;
 
     public int getMembers() {
         return members;
@@ -111,5 +114,21 @@ private int members;
 
     public void setCreateTime(String createTime) {
         this.createTime = createTime;
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
+    public String getOpType() {
+        return opType;
+    }
+
+    public void setOpType(String opType) {
+        this.opType = opType;
     }
 }

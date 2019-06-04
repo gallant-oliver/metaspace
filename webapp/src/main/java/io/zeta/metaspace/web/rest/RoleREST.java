@@ -14,6 +14,7 @@ import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.*;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +47,9 @@ public class RoleREST {
     public String addRole(Role role) throws AtlasBaseException {
         try {
             return roleService.addRole(role);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("新增角色失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"新增角色失败");
         }
@@ -65,11 +65,9 @@ public class RoleREST {
     public String updateRoleStatus(@PathParam("roleId")String roleId,@PathParam("status") int status) throws AtlasBaseException {
         try {
             return roleService.updateRoleStatus(roleId,status);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             String s="";
             if(status==0)
                 s="禁用角色失败";
@@ -90,11 +88,9 @@ public class RoleREST {
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.deleteRole(roleId);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("删除角色失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除角色失败");
         }
@@ -351,6 +347,21 @@ public class RoleREST {
         } catch (Exception e) {
             LOG.error("删除成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除成员失败");
+        }
+    }
+
+    @GET
+    @Path("/roles/sso/incr")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Role> getIncrRoles(@QueryParam("startTime") String startTime) throws AtlasBaseException {
+        try {
+            return roleService.getIncrRoles(startTime);
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("搜索角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
         }
     }
 }

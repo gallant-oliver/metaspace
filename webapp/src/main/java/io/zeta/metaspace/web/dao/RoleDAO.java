@@ -14,17 +14,19 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 public interface RoleDAO {
-    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit})")
+    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit},#{role.valid})")
     public int addRoles(@Param("role") Role role);
 
     @Select("select 1 from role where rolename=#{roleName}")
     public List<Integer> ifRole(@Param("roleName") String roleName);
 
-    @Update("update role set status=#{status} where roleid=#{roleId}")
-    public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status);
+    @Update("update role set status=#{status},updateTime=#{updateTime} where roleid=#{roleId}")
+    public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status, @Param("updateTime") String updateTime);
 
-    @Delete("delete from role where roleid=#{roleId}")
-    public int deleteRole(String roleId);
+    /*@Delete("delete from role where roleid=#{roleId}")
+    public int deleteRole(String roleId);*/
+    @Update("update role set valid=#{valid} where roleId=#{roleId}")
+    public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid);
 
     @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username limit #{limit} offset #{offset}")
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
@@ -35,10 +37,13 @@ public interface RoleDAO {
     @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/'")
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
-    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/' order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
+    @Select("<script>select role.*,privilegename,(select count(1) from users where users.roleid=role.roleid) members from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/' and valid!=false order by roleid <if test='limit!= -1'> limit #{limit} </if> offset #{offset}</script>")
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select count(1) from role where rolename like '%'||#{query}||'%' ESCAPE '/'")
+    @Select("select * from role where updateTime>=#{startTime} or startTime>=#{startTime}")
+    public List<Role> getIncrRoles(@Param("startTime") String startTime);
+
+    @Select("select count(1) from role where rolename like '%'||#{query}||'%' ESCAPE '/' and valid!=false")
     public long getRolesCount(@Param("query") String query);
 
     //添加成员&更换一批人的角色
@@ -306,7 +311,7 @@ public interface RoleDAO {
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")
     public List<String> getTopCategoryGuid(int categoryType);
 
-    @Update("update role set description=#{description} where roleid=#{roleId}")
+    @Update("update role set description=#{description},updateTime=#{updateTime} where roleid=#{roleId}")
     public int editRole(Role role);
 
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.status,tableinfo.createtime from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
