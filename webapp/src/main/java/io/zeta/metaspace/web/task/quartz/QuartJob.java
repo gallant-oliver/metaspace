@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -51,6 +53,7 @@ public class QuartJob implements Job {
     Map<UserRule, List<Double>> resultMap = new LinkedHashMap<>();
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
+    private Connection conn = null;
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
@@ -90,7 +93,11 @@ public class QuartJob implements Job {
     }
 
     public void executeRuleList(String templateId, String reportId, List<UserRule> rules) throws Exception {
-        int totalStep = rules.size() + 1;
+        String source = qualityDao.querySourceByTemplateId(templateId);
+        String[] sourceInfo = source.split(SEPARATOR);
+        String dbName = sourceInfo[0];
+        conn = HiveJdbcUtils.getConnection(dbName);
+        int totalStep = rules.size();
         for (int i = 0; i < rules.size(); i++) {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
@@ -245,7 +252,7 @@ public class QuartJob implements Job {
             } else {
                 sql = String.format(query, tableName);
             }
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 resultValue = Double.valueOf(object.toString());
@@ -383,7 +390,7 @@ public class QuartJob implements Job {
             Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 totalNum = Double.valueOf(object.toString());
