@@ -319,9 +319,10 @@ public class QuartJob implements Job {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
-            TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
+            String tableName = source.split("\\.")[1];
+            //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
             //表数据量
-            totalSize = metadata.getTotalSize();
+            totalSize = HiveJdbcUtils.getTableSize(conn, tableName);
             return totalSize;
         } catch (Exception e) {
             throw e;
