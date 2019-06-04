@@ -365,8 +365,8 @@ public class RoleREST {
         } catch(AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("搜索角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
+            LOG.error("获取角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
         }
     }
 }
