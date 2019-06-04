@@ -62,7 +62,7 @@ public interface RelationDAO {
 
     @Select({"<script>",
              " select count(*)",
-             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED'",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid",
              " </script>"})
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 

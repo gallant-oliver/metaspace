@@ -4,7 +4,7 @@
 DROP TABLE IF EXISTS "public"."organization";
 CREATE TABLE "public"."organization" (
   "checked" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "disable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "disable" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "id" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "isopen" bool DEFAULT NULL,
   "isvm" int8 DEFAULT NULL,

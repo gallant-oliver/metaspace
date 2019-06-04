@@ -15,8 +15,14 @@ public interface UserDAO {
     @Select("select 1 from users where userid=#{userid}")
     public List<User> ifUserExists(String userid);
 
+    @Select("select 1 from users where userid=#{userid} and (userName is null or  account is null)")
+    public List<User> ifUserInfoNotExist(String userid);
+
     @Insert("insert into users(userid,username,account,roleid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId})")
     public int addUser(@Param("user") User user);
+
+    @Insert("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId})")
+    public int updateUserInfo(@Param("user") User user);
 
     @Select("select * from users where userId=#{userId}")
     public User getUser(@Param("userId") String userId);
