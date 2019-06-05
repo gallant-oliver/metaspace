@@ -239,6 +239,7 @@ public class DataQualityService {
     public void startTemplate(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         try {
+            qualityDao.updateFinishedPercent(templateId, 0F);
             if(templateStatus == TemplateStatus.NOT_RUNNING.code) {
                 addQuartzJob(templateId);
             } else if(templateStatus == TemplateStatus.SUSPENDING.code) {
