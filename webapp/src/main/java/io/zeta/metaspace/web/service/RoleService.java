@@ -55,20 +55,28 @@ public class RoleService {
     }
 
     public String addRole(Role role) throws AtlasBaseException {
-        String now = DateUtils.getNow();
-        role.setRoleId("m" + UUID.randomUUID().toString());
-        role.setCreateTime(now);
-        role.setUpdateTime(now);
-        role.setStatus(1);
-        role.setDisable(1);
-        role.setEdit(1);
-        role.setDelete(1);
-        role.setValid(true);
-        if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+        try {
+            User user = AdminUtils.getUserData();
+            String now = DateUtils.getNow();
+            role.setRoleId("m" + UUID.randomUUID().toString());
+            role.setCreateTime(now);
+            role.setUpdateTime(now);
+            role.setStatus(1);
+            role.setDisable(1);
+            role.setEdit(1);
+            role.setDelete(1);
+            role.setValid(true);
+            String userId = user.getUserId();
+            role.setCreator(userId);
+            role.setUpdater(userId);
+            if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+            }
+            roleDAO.addRoles(role);
+            return "success";
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        roleDAO.addRoles(role);
-        return "success";
     }
 
     public String updateRoleStatus(String roleId, int status) throws AtlasBaseException {
@@ -76,8 +84,9 @@ public class RoleService {
         if (role.getDisable() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许禁用");
         }
-
-        roleDAO.updateRoleStatus(roleId, status, DateUtils.getNow());
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
+        roleDAO.updateRoleStatus(roleId, status, DateUtils.getNow(), userId);
         return "success";
     }
 
@@ -87,9 +96,11 @@ public class RoleService {
         if (role.getDelete() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许删除");
         }
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
         //roleDAO.deleteRole(roleId);
         //删除更新状态
-        roleDAO.updateValidStatus(roleId, false);
+        roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
         roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
         return "success";
@@ -549,15 +560,23 @@ public class RoleService {
 
     @Transactional
     public String editRole(Role role) throws AtlasBaseException {
-        String id = role.getRoleId();
-        role.getDescription();
-        if(id.equals("")||id==null){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"角色id不能为空");
+        try {
+            String id = role.getRoleId();
+            role.getDescription();
+            if (id.equals("") || id == null) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "角色id不能为空");
+            }
+            User user = AdminUtils.getUserData();
+            String userId = user.getUserId();
+            role.setUpdater(userId);
+            String updateTime = DateUtils.getNow();
+            role.setUpdateTime(updateTime);
+            roleDAO.editRole(role);
+            return "success";
+        } catch (Exception e) {
+            LOG.info(e.toString());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        String updateTime = DateUtils.getNow();
-        role.setUpdateTime(updateTime);
-        roleDAO.editRole(role);
-        return "success";
     }
 
 }

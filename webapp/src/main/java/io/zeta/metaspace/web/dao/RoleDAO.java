@@ -14,19 +14,19 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 public interface RoleDAO {
-    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit},#{role.valid})")
+    @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit},#{role.valid},#{role.creator},#{role.updater})")
     public int addRoles(@Param("role") Role role);
 
     @Select("select 1 from role where rolename=#{roleName}")
     public List<Integer> ifRole(@Param("roleName") String roleName);
 
-    @Update("update role set status=#{status},updateTime=#{updateTime} where roleid=#{roleId}")
-    public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status, @Param("updateTime") String updateTime);
+    @Update("update role set status=#{status},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
+    public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status, @Param("updateTime") String updateTime, @Param("updater") String updater);
 
     /*@Delete("delete from role where roleid=#{roleId}")
     public int deleteRole(String roleId);*/
-    @Update("update role set valid=#{valid} where roleId=#{roleId}")
-    public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid);
+    @Update("update role set valid=#{valid},updater=#{updater},updateTime=#{updateTime} where roleId=#{roleId}")
+    public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username limit #{limit} offset #{offset}")
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
@@ -311,7 +311,7 @@ public interface RoleDAO {
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")
     public List<String> getTopCategoryGuid(int categoryType);
 
-    @Update("update role set description=#{description},updateTime=#{updateTime} where roleid=#{roleId}")
+    @Update("update role set description=#{description},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
     public int editRole(Role role);
 
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.status,tableinfo.createtime from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +

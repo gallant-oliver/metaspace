@@ -28,6 +28,9 @@ public class Role implements Serializable {
     private boolean valid;
     private String opType;
 
+    private String creator;
+    private String updater;
+
     public int getMembers() {
         return members;
     }
@@ -130,5 +133,21 @@ public class Role implements Serializable {
 
     public void setOpType(String opType) {
         this.opType = opType;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
     }
 }
