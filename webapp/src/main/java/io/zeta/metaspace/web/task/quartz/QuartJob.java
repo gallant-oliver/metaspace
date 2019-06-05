@@ -96,7 +96,7 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
-        conn = HiveJdbcUtils.getConnection(dbName);
+        conn = HiveJdbcUtils.getSystemConnection(dbName);
         int totalStep = rules.size();
         for (int i = 0; i < rules.size(); i++) {
             //根据模板状态判断是否继续运行

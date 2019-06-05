@@ -71,7 +71,7 @@ public class HiveJdbcUtils {
      * 系统调度
      */
     static Connection connection;
-    private static Connection getSystemConnection(String db) throws SQLException, IOException {
+    public static Connection getSystemConnection(String db) throws SQLException, IOException {
             String user = "hive";
 
             String jdbcUrl;
