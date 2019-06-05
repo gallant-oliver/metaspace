@@ -665,19 +665,55 @@ public class DataManageService {
         }
     }
 
-    public List getOrganization() {
-        String organizationURL = SSOConfig.getOrganizationURL();
-        long currentTime = System.currentTimeMillis();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String endTime = sdf.format(currentTime);
-        organizationURL += "?endTime=" + endTime;
-        organizationURL = organizationURL.replaceAll(" ", "%20");
-        HashMap<String, String> header = new HashMap<>();
-        String session = SSLClient.doGet(organizationURL, header);
-        Gson gson = new Gson();
-        Map body = gson.fromJson(session, Map.class);
-        List data = (List) body.get("data");
-        return data;
+    public List getOrganization() throws AtlasBaseException {
+        try {
+            String organizationURL = SSOConfig.getOrganizationURL();
+            String organizationCountURL = SSOConfig.getOrganizationCountURL();
+            long currentTime = System.currentTimeMillis();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String endTime = sdf.format(currentTime);
+
+            HashMap<String, String> header = new HashMap<>();
+
+            organizationCountURL += "?endTime=" + endTime;
+            organizationCountURL = organizationCountURL.replaceAll(" ", "%20");
+            String countSession = SSLClient.doGet(organizationCountURL, header);
+            Gson gson = new Gson();
+            Map countBody = gson.fromJson(countSession, Map.class);
+            Map countData = (Map) countBody.get("data");
+            double count = (Double) countData.get("count");
+            double pageSize = 500;
+            double countPageSize = Math.ceil(count / pageSize);
+
+            organizationURL +=  "?currentPage=0&pageSize=" + (int) count + "&endTime=" + endTime;
+            organizationURL = organizationURL.replaceAll(" ", "%20");
+            String session = SSLClient.doGet(organizationURL, header);
+            Map body = gson.fromJson(session, Map.class);
+            List data = (List) body.get("data");
+            //organizationURL += "?endTime=" + endTime;
+
+            /*List result = new ArrayList();
+            for (int i = 0; i < countPageSize; i++) {
+                String currentOrganizationURL = organizationURL;
+                if((i+1)*pageSize>=count) {
+                    double currentPageSize = count - (i*pageSize);
+                    currentOrganizationURL +=  "?currentPage=" + i + "&pageSize=" + (int) currentPageSize + "&endTime=" + endTime;
+                } else {
+                    currentOrganizationURL +=  "?currentPage=" + i + "&pageSize=" + (int) pageSize + "&endTime=" + endTime;
+                }
+                currentOrganizationURL = currentOrganizationURL.replaceAll(" ", "%20");
+                String session = SSLClient.doGet(currentOrganizationURL, header);
+                Map body = gson.fromJson(session, Map.class);
+                List data = (List) body.get("data");
+                if(Objects.nonNull(data) && data.size()>0) {
+                    result.addAll(data);
+                }
+            }*/
+
+            return data;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     @Transactional
@@ -686,7 +722,22 @@ public class DataManageService {
             organizationDAO.deleteOrganization();
             List<Map> data = getOrganization();
             List<Organization> list = toOrganization(data);
-            organizationDAO.addOrganizations(list);
+            int size = list.size();
+            int startIndex = 0;
+            int endIndex = startIndex + 200;
+            List insertList = null;
+            while(endIndex < size) {
+                insertList = list.subList(startIndex, endIndex);
+                if(Objects.nonNull(insertList) && insertList.size()>0) {
+                    organizationDAO.addOrganizations(insertList);
+                }
+                startIndex = endIndex;
+                endIndex += 200;
+            }
+            insertList = list.subList(startIndex, size);
+            if(Objects.nonNull(insertList) && insertList.size()>0) {
+                organizationDAO.addOrganizations(insertList);
+            }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
         }
