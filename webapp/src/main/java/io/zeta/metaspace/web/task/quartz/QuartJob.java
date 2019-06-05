@@ -167,6 +167,7 @@ public class QuartJob implements Job {
             //重试
             } while (retryCount < RETRY);
         }
+        conn.close();
     }
 
     public void runJob(UserRule rule) throws Exception {
