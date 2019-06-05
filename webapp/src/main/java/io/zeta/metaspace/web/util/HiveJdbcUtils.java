@@ -170,7 +170,7 @@ public class HiveJdbcUtils {
                 String text = rs.getString(1);
                 if (text.contains("hdfs://")) {
 
-                    String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(":\\d+","").replaceAll(" ", "");
+                    String s = text.replaceAll("'", "").replaceAll("hdfs://", "").replaceAll(".*/","/").replaceAll(" ", "");
                     LOG.info(db + "." + tableName + " location:" + s);
                     return s;
                 }
@@ -187,6 +187,7 @@ public class HiveJdbcUtils {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
+            LOG.info(e.getMessage());
             if(e.getMessage().contains("Permission denied")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }

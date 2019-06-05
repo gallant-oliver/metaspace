@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.FilterUtils;
 import io.zeta.metaspace.web.util.GuavaUtils;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
@@ -65,13 +66,13 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
+        if (FilterUtils.isSkipUrl(requestURL)) {
             filterChain.doFilter(request, response);
             return;
         }
         try {
             String ticket = httpServletRequest.getHeader(TICKET_KEY);
-            if (ticket == null || ticket == "") {
+            if (ticket == null || ticket.equals("")) {
                 ticket = httpServletRequest.getParameter(TICKET_KEY);
             }
             if (ticket == null || ticket.equals("")) {
@@ -85,9 +86,9 @@ public class SSOFilter implements Filter {
             WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
             UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
             usersService.addUser(data);
-            filterChain.doFilter(request, response);
+
         } catch (Exception e) {
-            LOG.error("sso校验失败",e);
+            LOG.error("权限校验失败",e);
             loginSkip(httpServletResponse, loginURL);
         } finally {
             long timeTaken = System.currentTimeMillis() - startTime;
@@ -97,7 +98,7 @@ public class SSOFilter implements Filter {
             }
             AUDIT_LOG.info(auditLog.toString());
         }
-
+        filterChain.doFilter(request, response);
     }
 
 

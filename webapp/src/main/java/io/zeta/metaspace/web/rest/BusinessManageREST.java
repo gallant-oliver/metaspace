@@ -25,13 +25,22 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.business.BusinessTableList;
+import io.zeta.metaspace.model.business.ColumnPrivilege;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.APIInfo;
+import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -45,7 +54,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Singleton;
@@ -81,6 +92,8 @@ public class BusinessManageREST {
     private BusinessService businessService;
     @Autowired
     MetaDataService metadataService;
+    @Autowired
+    DataShareService shareService;
 
     @GET
     @Path("/departments")
@@ -111,6 +124,62 @@ public class BusinessManageREST {
         }
     }
 
+    @POST
+    @Path("/{businessId}/datashare")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId, Parameters parameters) throws AtlasBaseException {
+        try {
+            return businessService.getBusinessTableRelatedAPI(businessId, parameters);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @GET
+    @Path("/datashare/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * 测试API
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+        try {
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
+            return result;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
+        try {
+            shareService.cancelAPIThread(randomName);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
     /**
      * 更新技术
      * @param businessId
@@ -122,7 +191,7 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{businessId}")
-    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, List<String> tableIdList) throws AtlasBaseException {
+    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
         try {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
@@ -140,7 +209,7 @@ public class BusinessManageREST {
     @Path("/technical/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
+    public List<CategoryPrivilege> getAllCategory() throws AtlasBaseException {
         try {
             return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
@@ -164,7 +233,7 @@ public class BusinessManageREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessManageREST.getCategoryRelation(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
+            return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -188,7 +257,7 @@ public class BusinessManageREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessManageREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, TECHNICAL_CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -264,7 +333,7 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableInfoById(guid);
+        return businessService.getTableInfoById(guid);
     }
 
     @DELETE
@@ -278,6 +347,113 @@ public class BusinessManageREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 添加权限字段
+     * @param privilege
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilege(ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 删除权限字段
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response delColumnPrivilege(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            businessService.deleteColumnPrivilege(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @PUT
+    @Path("/privilege/column/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateColumnPrivilege(@PathParam("privilegeId")Integer guid, ColumnPrivilege privilege) throws AtlasBaseException {
+        try {
+            privilege.setGuid(guid);
+            businessService.updateColumnPrivilege(privilege);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @GET
+    @Path("/privilege/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnPrivilege> getColumnPrivilegeList() throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeList();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    @GET
+    @Path("/privilege/{privilegeId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<String> getColumnPrivilegeValue(@PathParam("privilegeId")Integer guid) throws AtlasBaseException {
+        try {
+            return businessService.getColumnPrivilegeValue(guid);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * 添加权限字段关联
+     * @param relation
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/relation/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addColumnPrivilegeRelation(ColumnPrivilegeRelation relation) throws AtlasBaseException {
+        try {
+            businessService.addColumnPrivilegeRelation(relation);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
         return Response.status(200).entity("success").build();
     }

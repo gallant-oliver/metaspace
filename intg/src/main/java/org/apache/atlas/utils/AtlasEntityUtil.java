@@ -19,25 +19,17 @@ package org.apache.atlas.utils;
 
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.type.AtlasArrayType;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.type.AtlasType;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
 
 
 public class AtlasEntityUtil {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasEntityUtil.class);
 
-    public static boolean hasAnyAttributeUpdate(AtlasEntityType entityType, AtlasEntity currEntity, AtlasEntity newEntity) {
+    public static boolean hasAnyAttributeUpdate(AtlasEntityType entityType, AtlasEntity currEntity, AtlasEntity entityInStore) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> hasAnyAttributeUpdate(guid={}, typeName={})", currEntity.getGuid(), currEntity.getTypeName());
         }
@@ -48,14 +40,14 @@ public class AtlasEntityUtil {
             String    attrName  = attribute.getName();
             AtlasType attrType  = attribute.getAttributeType();
             Object    currValue = currEntity.getAttribute(attrName);
-            Object    newValue  = newEntity.getAttribute(attrName);
+            Object    oldValue  = entityInStore.getAttribute(attrName);
 
-            if (!attrType.areEqualValues(currEntity.getAttribute(attrName), newEntity.getAttribute(attrName))) {
+            if (!attrType.areEqualValues(currValue, oldValue)) {
                 ret = true;
 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("hasAnyAttributeUpdate(guid={}, typeName={}): attribute '{}' is found updated - currentValue={}, newValue={}",
-                            currEntity.getGuid(), currEntity.getTypeName(), attrName, currValue, newValue);
+                            currEntity.getGuid(), currEntity.getTypeName(), attrName, currValue, oldValue);
                 }
 
                 break;
