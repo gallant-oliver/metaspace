@@ -224,6 +224,14 @@ public class CreateHiveProcess extends BaseHiveEvent {
                     }
 
                 }
+                // skip insert into tbl_x values() statements
+                if (!ret && CollectionUtils.isNotEmpty(inputs) && inputs.size() == 1) {
+                    ReadEntity input = inputs.iterator().next();
+
+                    if (input.getType() == Entity.Type.TABLE && input.getTable().isTemporary()) {
+                        ret = true;
+                    }
+                }
             }
         }
 
