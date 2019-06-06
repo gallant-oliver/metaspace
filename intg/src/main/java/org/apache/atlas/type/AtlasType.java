@@ -26,8 +26,8 @@ import org.apache.atlas.utils.AtlasJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -41,14 +41,16 @@ public abstract class AtlasType {
 
     private final String       typeName;
     private final TypeCategory typeCategory;
+    private final String       serviceType;
 
     protected AtlasType(AtlasBaseTypeDef typeDef) {
-        this(typeDef.getName(), typeDef.getCategory());
+        this(typeDef.getName(), typeDef.getCategory(), typeDef.getServiceType());
     }
 
-    protected AtlasType(String typeName, TypeCategory typeCategory) {
+    protected AtlasType(String typeName, TypeCategory typeCategory, String serviceType) {
         this.typeName     = typeName;
         this.typeCategory = typeCategory;
+        this.serviceType  = serviceType;
     }
 
     void resolveReferences(AtlasTypeRegistry typeRegistry) throws AtlasBaseException {
@@ -64,6 +66,8 @@ public abstract class AtlasType {
 
     public TypeCategory getTypeCategory() { return typeCategory; }
 
+    public String getServiceType() { return serviceType; }
+
     public abstract Object createDefaultValue();
 
     public Object createOptionalDefaultValue() {
@@ -76,7 +80,7 @@ public abstract class AtlasType {
 
     public abstract boolean isValidValue(Object obj);
 
-    public boolean areEqualValues(Object val1, Object val2) {
+    public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
         final boolean ret;
 
         if (val1 == null) {

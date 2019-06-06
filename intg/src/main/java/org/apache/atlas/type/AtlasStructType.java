@@ -89,7 +89,7 @@ public class AtlasStructType extends AtlasType {
             if (cardinality == Cardinality.LIST || cardinality == Cardinality.SET) {
                 if (!(attrType instanceof AtlasArrayType)) {
                     throw new AtlasBaseException(AtlasErrorCode.INVALID_ATTRIBUTE_TYPE_FOR_CARDINALITY,
-                                                 getTypeName(), attributeDef.getName());
+                            getTypeName(), attributeDef.getName());
                 }
 
                 AtlasArrayType arrayType = (AtlasArrayType)attrType;
@@ -183,7 +183,7 @@ public class AtlasStructType extends AtlasType {
             AtlasAttribute  inverseReference     = referencedEntityType.getAttribute(attribute.getInverseRefAttributeName());
 
             attribute.setInverseRefAttribute(inverseReference);
-         }
+        }
     }
 
     @Override
@@ -244,7 +244,7 @@ public class AtlasStructType extends AtlasType {
     }
 
     @Override
-    public boolean areEqualValues(Object val1, Object val2) {
+    public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
         boolean ret = true;
 
         if (val1 == null) {
@@ -264,21 +264,14 @@ public class AtlasStructType extends AtlasType {
                 } else if (!StringUtils.equalsIgnoreCase(structVal1.getTypeName(), structVal2.getTypeName())) {
                     ret = false;
                 } else {
-                    for (Map.Entry<String, Object> entry : structVal1.getAttributes().entrySet()) {
-                        String         attrName  = entry.getKey();
-                        AtlasAttribute attribute = getAttribute(attrName);
+                    for (AtlasAttribute attribute : getAllAttributes().values()) {
+                        Object attrValue1 = structVal1.getAttribute(attribute.getName());
+                        Object attrValue2 = structVal2.getAttribute(attribute.getName());
 
-                        if (attribute == null) { // ignore unknown attribute
-                            continue;
-                        } else {
-                            Object attrValue1 = entry.getValue();
-                            Object attrValue2 = structVal2.getAttribute(attrName);
+                        if (!attribute.getAttributeType().areEqualValues(attrValue1, attrValue2, guidAssignments)) {
+                            ret = false;
 
-                            if (!attribute.getAttributeType().areEqualValues(attrValue1, attrValue2)) {
-                                ret = false;
-
-                                break;
-                            }
+                            break;
                         }
                     }
                 }
@@ -573,9 +566,9 @@ public class AtlasStructType extends AtlasType {
             if (attribute != null) {
                 AtlasType attrType = attribute.getAttributeType();
 
-                    if (!attrType.isValidValue(value)) {
-                        ret = false; // invalid value
-                    }
+                if (!attrType.isValidValue(value)) {
+                    ret = false; // invalid value
+                }
             }
         } else if (!attributeDef.getIsOptional()) {
             ret = false; // mandatory attribute not present

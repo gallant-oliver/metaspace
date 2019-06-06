@@ -183,7 +183,7 @@ public class AtlasEntityType extends AtlasStructType {
             // validate if RelationshipDefs is defined for all entityDefs
             if (attributeEntityType != null && !hasRelationshipAttribute(attributeName)) {
                 LOG.warn("No RelationshipDef defined between {} and {} on attribute: {}.{}", getTypeName(),
-                         attributeEntityType.getTypeName(), getTypeName(), attributeName);
+                        attributeEntityType.getTypeName(), getTypeName(), attributeName);
             }
         }
 
@@ -362,14 +362,14 @@ public class AtlasEntityType extends AtlasStructType {
     }
 
     @Override
-    public boolean areEqualValues(Object val1, Object val2) {
+    public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
         for (AtlasEntityType superType : superTypes) {
-            if (!superType.areEqualValues(val1, val2)) {
+            if (!superType.areEqualValues(val1, val2, guidAssignments)) {
                 return false;
             }
         }
 
-        return super.areEqualValues(val1, val2);
+        return super.areEqualValues(val1, val2, guidAssignments);
     }
 
     @Override
@@ -562,7 +562,7 @@ public class AtlasEntityType extends AtlasStructType {
                                           List<String> visitedTypes) throws AtlasBaseException {
         if (visitedTypes.contains(entityDef.getName())) {
             throw new AtlasBaseException(AtlasErrorCode.CIRCULAR_REFERENCE, entityDef.getName(),
-                                         visitedTypes.toString());
+                    visitedTypes.toString());
         }
 
         if (CollectionUtils.isNotEmpty(entityDef.getSuperTypes())) {
