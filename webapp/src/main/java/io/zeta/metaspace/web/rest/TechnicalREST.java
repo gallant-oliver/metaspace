@@ -61,11 +61,11 @@ public class TechnicalREST {
      * @return List<AddRelationTable>
      */
     @POST
-    @Path("/search/database/table/{databaseGuid}")
+    @Path("/search/database/table/{databaseGuid}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid ) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid);
+    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid,@PathParam("categoryId") String categotyId ) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid,categotyId);
         return pageResult;
     }
     /**

@@ -66,8 +66,8 @@ public class QuartJob implements Job {
 
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            /*org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");*/
         }  catch (Exception e) {
 
         }

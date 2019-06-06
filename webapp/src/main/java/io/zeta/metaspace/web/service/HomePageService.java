@@ -243,7 +243,7 @@ public class HomePageService {
             DecimalFormat df = new DecimalFormat("0.00");
             tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes() / total))));
             long sum = homePageDAO.getCountBusinessRelatedTable();
-
+            pageResult.setOffset(offset);
             pageResult.setLists(tableList);
             pageResult.setCount(tableList.size());
             pageResult.setSum(sum);
@@ -272,6 +272,7 @@ public class HomePageService {
             DecimalFormat df = new DecimalFormat("0.00");
             roleList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getNumber() / total))));
             long sum = homePageDAO.getCountRole();
+            pageResult.setOffset(offset);
             pageResult.setLists(roleList);
             pageResult.setCount(roleList.size());
             pageResult.setSum(sum);
@@ -300,6 +301,7 @@ public class HomePageService {
             int offset = parameters.getOffset();
             List<User> userList = homePageDAO.getUserListByRoleId(roleId, limit, offset);
             long sum = homePageDAO.getCountUserRelatedRole(roleId);
+            pageResult.setOffset(offset);
             pageResult.setLists(userList);
             pageResult.setCount(userList.size());
             pageResult.setSum(sum);
@@ -351,6 +353,7 @@ public class HomePageService {
             int offset = parameters.getOffset();
 
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, limit, offset);
+            pageResult.setOffset(offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCount(categoryDBInfoList.size());
             long sum = homePageDAO.getCountCategory(sourceLayerCategoryGuid);
@@ -376,6 +379,7 @@ public class HomePageService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getChildSystemDBCount(categoryGuid, limit, offset);
+            pageResult.setOffset(offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCount(categoryDBInfoList.size());
             long sum = homePageDAO.getCountCategory(categoryGuid);

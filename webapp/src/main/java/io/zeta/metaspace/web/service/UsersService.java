@@ -46,9 +46,9 @@ public class UsersService {
 
     public void addUser(Map data) {
         String userId = data.get("AccountGuid").toString();
+        String account = data.get("LoginEmail").toString();
+        String displayName = data.get("DisplayName").toString();
         if (userDAO.ifUserExists(userId).size() == 0) {
-            String account = data.get("LoginEmail").toString();
-            String displayName = data.get("DisplayName").toString();
             User user = new User();
             user.setUserId(userId);
             user.setAccount(account);
@@ -59,7 +59,16 @@ public class UsersService {
                 user.setRoleId(SystemRole.GUEST.getCode());
             }
             userDAO.addUser(user);
-        }
+        } /*else {
+            User user = userDAO.getUser(userId);
+            if(!account.equals(user.getAccount()) || !displayName.equals(user.getUsername())) {
+                User userInfo = new User();
+                userInfo.setUserId(userId);
+                userInfo.setAccount(account);
+                userInfo.setUsername(displayName);
+                userDAO.updateUserInfo(userInfo);
+            }
+        }*/
     }
 
     @Transactional
@@ -143,6 +152,7 @@ public class UsersService {
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;
@@ -198,6 +208,7 @@ public class UsersService {
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;

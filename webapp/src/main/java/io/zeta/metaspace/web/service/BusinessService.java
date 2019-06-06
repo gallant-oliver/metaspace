@@ -285,7 +285,7 @@ public class BusinessService {
             List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset);
             String path = CategoryRelationUtils.getPath(categoryId);
             StringJoiner joiner = null;
-            String[] pathArr = path.split("\\.");
+            String[] pathArr = path.split("/");
             String level2Category = "";
             if(pathArr.length >= 2)
                 level2Category = pathArr[1];
@@ -299,6 +299,7 @@ public class BusinessService {
                 infoHeader.setLevel2Category(level2Category);
             }
             long sum = businessDao.queryBusinessCountByByCatetoryId(categoryId);
+            pageResult.setOffset(offset);
             pageResult.setSum(sum);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
@@ -336,13 +337,14 @@ public class BusinessService {
                 //joiner.add(path).add(infoHeader.getName());
                 joiner.add(path);
                 infoHeader.setPath(joiner.toString());
-                String[] pathArr = path.split("\\.");
+                String[] pathArr = path.split("/");
                 String level2Category = "";
                 if(pathArr.length >= 2)
                     level2Category = pathArr[1];
                 infoHeader.setLevel2Category(level2Category);
             }
             long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
+            pageResult.setOffset(offset);
             pageResult.setSum(businessCount);
             pageResult.setLists(businessInfoList);
             pageResult.setCount(businessInfoList.size());
@@ -388,10 +390,11 @@ public class BusinessService {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
                     String path = CategoryRelationUtils.getPath(categoryId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
-                    String[] pathArr = path.split("\\.");
+                    String[] pathArr = path.split("/");
                     if (pathArr.length >= 2)
                         infoHeader.setLevel2Category(pathArr[1]);
                 }
+                pageResult.setOffset(offset);
                 pageResult.setLists(businessInfoList);
                 long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
                 pageResult.setSum(businessCount);
@@ -571,6 +574,7 @@ public class BusinessService {
                 }
                 apiCount = shareDAO.countTableRelatedAPI(tableList);
             }
+            pageResult.setOffset(offset);
             pageResult.setSum(apiCount);
             pageResult.setLists(APIList);
             pageResult.setCount(APIList.size());

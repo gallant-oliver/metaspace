@@ -529,6 +529,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
             table.setDatabaseName(dbEntity.getAttribute("name").toString());
             table.setDatabaseId(dbEntity.getGuid());
+            table.setDatabaseStatus(dbEntity.getStatus().name());
         }
         return table;
     }

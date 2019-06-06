@@ -62,7 +62,7 @@ public interface RelationDAO {
 
     @Select({"<script>",
              " select count(*)",
-             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED'",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid",
              " </script>"})
     public int queryTotalNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
@@ -233,5 +233,11 @@ public interface RelationDAO {
     //判断关联是否已存在
     @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
     public int ifRelationExists(@Param("categoryGuid") String categoryGuid,@Param("tableGuid") String tableGuid);
+
+    @Update("update tableInfo set databasestatus=#{status} where databaseGuid=#{databaseGuid}")
+    public int updateDatabaseStatus(@Param("databaseGuid") String databaseGuid, @Param("status") String status);
+
+    @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}" })
+    public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
 }

@@ -27,7 +27,7 @@ public interface TableDAO {
     @Select("select businessinfo.name businessObject,category.name department,businessinfo.submitter businessLeader from business2table,businessinfo,category where businessinfo.businessid=business2table.businessid and businessinfo.departmentid=category.guid and business2table.tableguid=#{guid}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(String guid);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus})")
     public int addTable(@Param("table") TableInfo table);
 
     @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName} where tableguid=#{table.tableGuid}")

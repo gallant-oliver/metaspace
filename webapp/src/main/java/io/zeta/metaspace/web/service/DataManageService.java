@@ -51,6 +51,7 @@ import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -58,11 +59,13 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
+import org.apache.commons.configuration.Configuration;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,6 +95,8 @@ public class DataManageService {
     UserDAO userDAO;
     @Autowired
     OrganizationDAO organizationDAO;
+
+    private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
     /**
      * 获取用户有权限的全部目录
@@ -556,6 +561,9 @@ public class DataManageService {
             if (typeName.contains("table")) {
                 relationDao.updateTableStatus(guid, "DELETED");
             }
+            if (typeName.contains("hive_db")) {
+                relationDao.updateDatabaseStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -608,14 +616,17 @@ public class DataManageService {
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
             List<Organization> list = organizationDAO.getOrganizationByPid(pId, query, limit, offset);
+            Configuration configuration = ApplicationProperties.get();
+            String firstPid = configuration.getString(ORGANIZATION_FIRST_PID);
             for(Organization organization : list) {
-                String pathStr = organizationDAO.getPathById(organization.getId());
+                String pathStr = organizationDAO.getPathById(firstPid, organization.getId());
                 String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
                 organization.setPath(path);
             }
             long sum = organizationDAO.countOrganizationByPid(pId, query);
             long count = list.size();
             PageResult pageResult = new PageResult();
+            pageResult.setOffset(offset);
             pageResult.setLists(list);
             pageResult.setCount(count);
             pageResult.setSum(sum);
@@ -633,9 +644,10 @@ public class DataManageService {
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
             List<Organization> list = organizationDAO.getOrganizationByName(query, limit, offset);
-
+            Configuration configuration = ApplicationProperties.get();
+            String firstPid = configuration.getString(ORGANIZATION_FIRST_PID);
             for(Organization organization : list) {
-                String pathStr = organizationDAO.getPathById(organization.getId());
+                String pathStr = organizationDAO.getPathById(firstPid, organization.getId());
                 String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
                 organization.setPath(path);
             }
@@ -643,6 +655,7 @@ public class DataManageService {
             long sum = organizationDAO.countOrganizationByName(query);
             long count = list.size();
             PageResult pageResult = new PageResult();
+            pageResult.setOffset(offset);
             pageResult.setLists(list);
             pageResult.setCount(count);
             pageResult.setSum(sum);
@@ -714,6 +727,7 @@ public class DataManageService {
                     AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                     tableInfo.setDatabaseGuid(relatedDB.getGuid());
                     tableInfo.setDbName(relatedDB.getDisplayText());
+                    tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
                     tableDAO.addTable(tableInfo);
                 }
                 }
@@ -754,9 +768,11 @@ public class DataManageService {
                 tableInfo.setStatus(list.getStatus());
                 tableInfo.setDatabaseGuid(list.getDatabaseId());
                 tableInfo.setDbName(list.getDatabaseName());
+                tableInfo.setDatabaseStatus(list.getDatabaseStatus());
                 tableDAO.addTable(tableInfo);
             }
         }
+
         addFullRelation();
     }
 

@@ -203,6 +203,7 @@ public class PrivilegeService {
                 info.setRoles(roleList);
             }
             long privilegeCount = privilegeDAO.getRolesCount(query);
+            rolePageResult.setOffset(offset);
             rolePageResult.setLists(privilegeList);
             rolePageResult.setCount(privilegeList.size());
             rolePageResult.setSum(privilegeCount);
@@ -238,6 +239,7 @@ public class PrivilegeService {
             PageResult<Role> pageResult = new PageResult<>();
             List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
             long sum = privilegeDAO.getCountAllPermissionRole();
+            pageResult.setOffset(offset);
             pageResult.setLists(roleList);
             pageResult.setCount(roleList.size());
             pageResult.setSum(sum);

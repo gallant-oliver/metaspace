@@ -336,6 +336,7 @@ public class DataShareService {
                 header.setDataOwner(dataOwnerName);
             }
             int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
+            pageResult.setOffset(offset);
             pageResult.setSum(apiCount);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
@@ -1070,6 +1071,7 @@ public class DataShareService {
                 count = resultSet.getLong(1);
             }
             PageResult pageResult = new PageResult();
+            pageResult.setOffset(offset);
             pageResult.setLists(queryData);
             pageResult.setSum(queryData.size());
             pageResult.setCount(count);

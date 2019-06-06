@@ -19,7 +19,6 @@ package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.zeta.metaspace.MetaspaceConfig;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
@@ -102,6 +101,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private final int                    failedMsgCacheSize;
     private final int                    minWaitDuration;
     private final int                    maxWaitDuration;
+    private final boolean testLocal;
 
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
@@ -129,6 +129,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         consumerRetryInterval = applicationProperties.getInt(CONSUMER_RETRY_INTERVAL, 500);
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
+        testLocal = applicationProperties.getBoolean("metaspace.test", false);
     }
 
     @Override
@@ -357,7 +358,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             long             startTime   = System.currentTimeMillis();
             boolean          isFailedMsg = false;
             AuditLog         auditLog = null;
-            if(MetaspaceConfig.getMetaspaceTest().equals("true")){
+            if(testLocal){
                 try {
                     sleep(3000);
                 } catch (InterruptedException e) {
