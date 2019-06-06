@@ -11,6 +11,12 @@ public class TableInfo {
     private List<String> dataOwner;
     private String databaseGuid;
     private String databaseStatus;
+    private String subordinateSystem;
+    private String subordinateDatabase;
+    private String systemAdmin;
+    private String dataWarehouseAdmin;
+    private String dataWarehouseDescription;
+    private String catalogAdmin;
 
     public String getDatabaseStatus() {
         return databaseStatus;
@@ -79,5 +85,53 @@ public class TableInfo {
 
     public void setDataOwner(List<String> dataOwner) {
         this.dataOwner = dataOwner;
+    }
+
+    public String getSubordinateSystem() {
+        return subordinateSystem;
+    }
+
+    public void setSubordinateSystem(String subordinateSystem) {
+        this.subordinateSystem = subordinateSystem;
+    }
+
+    public String getSubordinateDatabase() {
+        return subordinateDatabase;
+    }
+
+    public void setSubordinateDatabase(String subordinateDatabase) {
+        this.subordinateDatabase = subordinateDatabase;
+    }
+
+    public String getSystemAdmin() {
+        return systemAdmin;
+    }
+
+    public void setSystemAdmin(String systemAdmin) {
+        this.systemAdmin = systemAdmin;
+    }
+
+    public String getDataWarehouseAdmin() {
+        return dataWarehouseAdmin;
+    }
+
+    public void setDataWarehouseAdmin(String dataWarehouseAdmin) {
+        this.dataWarehouseAdmin = dataWarehouseAdmin;
+    }
+
+    public String getDataWarehouseDescription() {
+        return dataWarehouseDescription;
+    }
+
+    public void setDataWarehouseDescription(String dataWarehouseDescription) {
+        this.dataWarehouseDescription = dataWarehouseDescription;
+    }
+
+    public String getCatalogAdmin() {
+        return catalogAdmin;
+    }
+
+    public void setCatalogAdmin(String catalogAdmin) {
+        this.catalogAdmin = catalogAdmin;
     }
 }

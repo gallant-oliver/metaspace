@@ -40,7 +40,8 @@ public class Table implements Serializable {
 
     private String subordinateSystem;
     private String subordinateDatabase;
-    private List<String> systemAdmin;
+    /*private List<String> systemAdmin;*/
+    private String systemAdmin;
     private String createTime;
 
     private String dataWarehouseAdmin;
@@ -57,7 +58,8 @@ public class Table implements Serializable {
     private String databaseStatus;
 
     private List<String> relations;
-    private List<String> catalogAdmin;
+    /*private List<String> catalogAdmin;*/
+    private String catalogAdmin;
     private String relationTime;
 
     private List<BusinessObject> businessObjects;
@@ -290,19 +292,19 @@ public class Table implements Serializable {
         this.dataOwner = dataOwner;
     }
 
-    public List<String> getSystemAdmin() {
+    public String getSystemAdmin() {
         return systemAdmin;
     }
 
-    public void setSystemAdmin(List<String> systemAdmin) {
+    public void setSystemAdmin(String systemAdmin) {
         this.systemAdmin = systemAdmin;
     }
 
-    public List<String> getCatalogAdmin() {
+    public String getCatalogAdmin() {
         return catalogAdmin;
     }
 
-    public void setCatalogAdmin(List<String> catalogAdmin) {
+    public void setCatalogAdmin(String catalogAdmin) {
         this.catalogAdmin = catalogAdmin;
     }
 

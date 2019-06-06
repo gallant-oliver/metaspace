@@ -559,7 +559,7 @@ public class MetaDataREST {
      * @return
      * @throws AtlasBaseException
      */
-    @PUT
+    /*@PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/table/{guid}")
@@ -571,6 +571,19 @@ public class MetaDataREST {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }*/
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+
+    @Path("/table/{guid}")
+    public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
+        try {
+            metadataService.updateTableInfo(guid, tableInfo);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
         }
     }
 
