@@ -490,10 +490,7 @@ public class HiveMetaStoreBridgeUtils {
         if (LOG.isDebugEnabled()) {
             LOG.debug("updating {} entity: {}", entity.getEntity().getTypeName(), entity);
         }
-        long start = System.currentTimeMillis();
         atlasClientV2.updateEntity(entity);
-
-        LOG.info("Updated {} entity: name={}, guid={}, take time={}ms", entity.getEntity().getTypeName(), entity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), entity.getEntity().getGuid(), System.currentTimeMillis() - start);
     }
 
     /**

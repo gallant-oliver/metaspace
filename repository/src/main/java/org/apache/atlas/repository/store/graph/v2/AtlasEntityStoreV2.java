@@ -706,8 +706,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             final boolean isImport = entityStream instanceof EntityImportStream;
             final EntityMutationContext context = preCreateOrUpdate(entityStream, entityGraphMapper, isPartialUpdate);
 
-            long end1 = System.currentTimeMillis();
-            LOG.info("preCreateOrUpdate take time={}ms, update size={}", end1- start, context.getUpdatedEntities().size());
             // Check if authorized to create entities
             if (!isImport && CollectionUtils.isNotEmpty(context.getCreatedEntities())) {
                 for (AtlasEntity entity : context.getCreatedEntities()) {
@@ -824,16 +822,10 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     }
                 }
             }
-            long end2 = System.currentTimeMillis();
-            LOG.info("SkipUpdate take time={}ms", end2-end1);
             EntityMutationResponse ret = entityGraphMapper.mapAttributesAndClassifications(context, isPartialUpdate, replaceClassifications);
             ret.setGuidAssignments(context.getGuidAssignments());
-            long end3 = System.currentTimeMillis();
-            LOG.info("update Or Create take time={}ms", end3 - end2);
             // Notify the change listeners
             entityChangeNotifier.onEntitiesMutated(ret, isImport);
-            long end4 = System.currentTimeMillis();
-            LOG.info("notify take time={}ms", end4 - end3);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("<== createOrUpdate()");
             }
