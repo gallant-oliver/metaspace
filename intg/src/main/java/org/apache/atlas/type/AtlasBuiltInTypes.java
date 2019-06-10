@@ -20,6 +20,7 @@ package org.apache.atlas.type;
 
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -29,6 +30,9 @@ import java.math.BigInteger;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
 
 
 /**
@@ -43,7 +47,7 @@ public class AtlasBuiltInTypes {
         private static final Boolean DEFAULT_VALUE = Boolean.FALSE;
 
         public AtlasBooleanType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -77,7 +81,7 @@ public class AtlasBuiltInTypes {
         private static final Byte DEFAULT_VALUE = (byte) 0;
 
         public AtlasByteType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BYTE, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_BYTE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -125,7 +129,7 @@ public class AtlasBuiltInTypes {
         private static final Short DEFAULT_VALUE = (short) 0;
 
         public AtlasShortType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_SHORT, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_SHORT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -169,7 +173,7 @@ public class AtlasBuiltInTypes {
         private static final Integer DEFAULT_VALUE = 0;
 
         public AtlasIntType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_INT, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_INT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -213,7 +217,7 @@ public class AtlasBuiltInTypes {
         private static final Long DEFAULT_VALUE = 0L;
 
         public AtlasLongType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_LONG, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_LONG, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -258,7 +262,7 @@ public class AtlasBuiltInTypes {
         private static final Float FLOAT_EPSILON = 0.00000001f;
 
         public AtlasFloatType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_FLOAT, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_FLOAT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -275,7 +279,8 @@ public class AtlasBuiltInTypes {
             return getNormalizedValue(obj) != null;
         }
 
-        public boolean areEqualValues(Object val1, Object val2) {
+        @Override
+        public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
             final boolean ret;
 
             if (val1 == null) {
@@ -334,7 +339,7 @@ public class AtlasBuiltInTypes {
         private static final Double DOUBLE_EPSILON = 0.00000001d;
 
         public AtlasDoubleType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -351,7 +356,8 @@ public class AtlasBuiltInTypes {
             return getNormalizedValue(obj) != null;
         }
 
-        public boolean areEqualValues(Object val1, Object val2) {
+        @Override
+        public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
             final boolean ret;
 
             if (val1 == null) {
@@ -411,7 +417,7 @@ public class AtlasBuiltInTypes {
         private static final BigInteger DEFAULT_VALUE = BigInteger.ZERO;
 
         public AtlasBigIntegerType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -457,7 +463,7 @@ public class AtlasBuiltInTypes {
         private static final BigDecimal DEFAULT_VALUE = BigDecimal.ZERO;
 
         public AtlasBigDecimalType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -503,7 +509,7 @@ public class AtlasBuiltInTypes {
         private static final Date DEFAULT_VALUE = new Date(0);
 
         public AtlasDateType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_DATE, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_DATE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -557,7 +563,7 @@ public class AtlasBuiltInTypes {
         private static final String OPTIONAL_DEFAULT_VALUE = null;
 
         public AtlasStringType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_STRING, TypeCategory.PRIMITIVE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_STRING, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -594,13 +600,13 @@ public class AtlasBuiltInTypes {
         private final String objectType;
 
         public AtlasObjectIdType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
 
             objectType = AtlasBaseTypeDef.ATLAS_TYPE_ASSET;
         }
 
         public AtlasObjectIdType(String objectType) {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE);
+            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
 
             this.objectType = objectType;
         }
@@ -624,20 +630,68 @@ public class AtlasBuiltInTypes {
         }
 
         @Override
-        public AtlasObjectId getNormalizedValue(Object obj) {
-            if (obj != null) {
-                if (obj instanceof AtlasObjectId) {
-                    return (AtlasObjectId) obj;
-                } else if (obj instanceof Map) {
-                    Map map = (Map) obj;
+        public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
+            boolean ret = true;
 
-                    if (isValidMap(map)) {
-                        return new AtlasObjectId(map);
+            if (val1 == null) {
+                ret = val2 == null;
+            } else if (val2 == null) {
+                ret = false;
+            } else {
+                AtlasObjectId v1 = getNormalizedValue(val1);
+                AtlasObjectId v2 = getNormalizedValue(val2);
+
+                if (v1 == null || v2 == null) {
+                    ret = false;
+                } else {
+                    String guid1 = v1.getGuid();
+                    String guid2 = v2.getGuid();
+
+                    if (guidAssignments != null ) {
+                        if (guidAssignments.containsKey(guid1)) {
+                            guid1 = guidAssignments.get(guid1);
+                        }
+
+                        if (guidAssignments.containsKey(guid2)) {
+                            guid2 = guidAssignments.get(guid2);
+                        }
+                    }
+
+                    boolean isV1AssignedGuid = AtlasTypeUtil.isAssignedGuid(guid1);
+                    boolean isV2AssignedGuid = AtlasTypeUtil.isAssignedGuid(guid2);
+
+                    if (isV1AssignedGuid == isV2AssignedGuid) { // if both have assigned/unassigned guids, compare guids
+                        ret = Objects.equals(guid1, guid2);
+                    } else { // if one has assigned and other unassigned guid, compare typeName and unique-attribute
+                        ret = Objects.equals(v1.getTypeName(), v2.getTypeName()) && Objects.equals(v1.getUniqueAttributes(), v2.getUniqueAttributes());
                     }
                 }
             }
 
-            return null;
+            return ret;
+        }
+
+        @Override
+        public AtlasObjectId getNormalizedValue(Object obj) {
+            AtlasObjectId ret = null;
+
+            if (obj != null) {
+                if (obj instanceof AtlasObjectId) {
+                    ret = (AtlasObjectId) obj;
+                } else if (obj instanceof Map) {
+                    Map map = (Map) obj;
+
+                    if (isValidMap(map)) {
+                        if (map.containsKey(AtlasRelatedObjectId.KEY_RELATIONSHIP_TYPE)) {
+                            ret = new AtlasRelatedObjectId(map);
+                        } else {
+                            ret = new AtlasObjectId(map);
+                        }
+                    }
+                }
+            }
+
+            return ret;
         }
 
         private boolean isValidMap(Map map) {
