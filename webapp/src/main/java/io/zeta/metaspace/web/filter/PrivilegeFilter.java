@@ -10,9 +10,7 @@ import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -177,13 +175,13 @@ public class PrivilegeFilter implements Filter {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
-        };
+        }
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String error) throws IOException {
         httpServletResponse.setStatus(403);
         httpServletResponse.setCharacterEncoding("UTF-8");
-        httpServletResponse.setContentType("text/plain;charset=utf-8");
+        httpServletResponse.setContentType("application/json;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();
         HashMap<String, String> hashMap = new HashMap();
         hashMap.put("errorMessage", error);
