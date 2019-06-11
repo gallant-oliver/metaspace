@@ -563,4 +563,19 @@ public class MetaDataREST {
         }
     }
 
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+
+    @Path("/table/{guid}")
+    public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
+        try {
+            metadataService.updateTableInfo(guid, tableInfo);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+
 }
