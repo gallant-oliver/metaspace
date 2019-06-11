@@ -172,7 +172,7 @@ public class AtlasRelationshipType extends AtlasStructType {
     }
 
     @Override
-    public boolean areEqualValues(Object val1, Object val2) {
+    public boolean areEqualValues(Object val1, Object val2, Map<String, String> guidAssignments) {
         final boolean ret;
 
         if (val1 == null) {
@@ -189,15 +189,15 @@ public class AtlasRelationshipType extends AtlasStructType {
 
                 if (rel2 == null) {
                     ret = false;
-                } else if (!super.areEqualValues(rel1, rel2)) {
+                } else if (!super.areEqualValues(rel1, rel2, guidAssignments)) {
                     ret = false;
                 } else {
                     ret = Objects.equals(rel1.getGuid(), rel2.getGuid()) &&
-                          Objects.equals(rel1.getEnd1(), rel2.getEnd1()) &&
-                          Objects.equals(rel1.getEnd2(), rel2.getEnd2()) &&
-                          Objects.equals(rel1.getLabel(), rel2.getLabel()) &&
-                          Objects.equals(rel1.getPropagateTags(), rel2.getPropagateTags()) &&
-                          Objects.equals(rel1.getStatus(), rel2.getStatus());
+                            Objects.equals(rel1.getEnd1(), rel2.getEnd1()) &&
+                            Objects.equals(rel1.getEnd2(), rel2.getEnd2()) &&
+                            Objects.equals(rel1.getLabel(), rel2.getLabel()) &&
+                            Objects.equals(rel1.getPropagateTags(), rel2.getPropagateTags()) &&
+                            Objects.equals(rel1.getStatus(), rel2.getStatus());
                 }
             }
         }
@@ -316,7 +316,7 @@ public class AtlasRelationshipType extends AtlasStructType {
             }
 
             attribute = new AtlasAttribute(entityType, new AtlasAttributeDef(attrName, attrTypeName),
-                                           typeRegistry.getType(attrTypeName), relationshipLabel);
+                    typeRegistry.getType(attrTypeName), relationshipLabel);
 
         } else {
             // attribute already exists (legacy attribute which is also a relationship attribute)

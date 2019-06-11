@@ -174,7 +174,7 @@ public interface DataShareDAO {
              " #{tableGuid}",
              " </foreach>",
              " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
-             " and users.userId=apiInfo.keeper",
+             " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",

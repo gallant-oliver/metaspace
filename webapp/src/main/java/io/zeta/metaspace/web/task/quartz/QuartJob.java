@@ -38,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -63,6 +65,7 @@ public class QuartJob implements Job {
 
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
+    private Connection conn = null;
 
     static {
         try {
@@ -111,7 +114,11 @@ public class QuartJob implements Job {
     }
 
     public void executeRuleList(String templateId, String reportId, List<UserRule> rules) throws Exception {
-        int totalStep = rules.size() + 1;
+        String source = qualityDao.querySourceByTemplateId(templateId);
+        String[] sourceInfo = source.split(SEPARATOR);
+        String dbName = sourceInfo[0];
+        conn = HiveJdbcUtils.getSystemConnection(dbName);
+        int totalStep = rules.size();
         for (int i = 0; i < rules.size(); i++) {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
@@ -160,6 +167,7 @@ public class QuartJob implements Job {
             //重试
             } while (retryCount < RETRY);
         }
+        conn.close();
     }
 
     public void runJob(UserRule rule) throws Exception {
@@ -266,11 +274,12 @@ public class QuartJob implements Job {
             } else {
                 sql = String.format(query, tableName);
             }
+
             ResultSet resultSet;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
             } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
 
             while (resultSet.next()) {
@@ -339,14 +348,19 @@ public class QuartJob implements Job {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
-            TableMetadata metadata;
+
+            String tableName = source.split("\\.")[1];
+            //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
+
+            /*TableMetadata metadata;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 metadata = ImpalaJdbcUtils.systemMetadata(source);
             } else {
                 metadata = HiveJdbcUtils.systemMetadata(source);
-            }
+            }*/
+
             //表数据量
-            totalSize = metadata.getTotalSize();
+            totalSize = HiveJdbcUtils.getTableSize(conn, tableName);
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -415,12 +429,14 @@ public class QuartJob implements Job {
             Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
+
             ResultSet resultSet;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
             } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
+
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 totalNum = Double.valueOf(object.toString());

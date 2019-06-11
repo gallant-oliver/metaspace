@@ -21,6 +21,7 @@ import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
@@ -37,6 +38,7 @@ import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinali
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef;
 import org.apache.atlas.model.typedef.AtlasTypeDefHeader;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
+import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.v1.model.typedef.AttributeDefinition;
 import org.apache.atlas.v1.model.typedef.ClassTypeDefinition;
 import org.apache.atlas.v1.model.typedef.Multiplicity;
@@ -139,6 +141,24 @@ public class AtlasTypeUtil {
             }
         }
 
+    }
+
+    public static AtlasRelationshipType findRelationshipWithLegacyRelationshipEnd(String entityTypeName, String attributeName, AtlasTypeRegistry typeRegistry) {
+        AtlasRelationshipType ret = null;
+
+        for (AtlasRelationshipDef relationshipDef : typeRegistry.getAllRelationshipDefs()) {
+            AtlasRelationshipEndDef end1Def = relationshipDef.getEndDef1();
+            AtlasRelationshipEndDef end2Def = relationshipDef.getEndDef2();
+
+            if ((end1Def.getIsLegacyAttribute() && StringUtils.equals(end1Def.getType(), entityTypeName) && StringUtils.equals(end1Def.getName(), attributeName)) ||
+                (end2Def.getIsLegacyAttribute() && StringUtils.equals(end2Def.getType(), entityTypeName) && StringUtils.equals(end2Def.getName(), attributeName))) {
+                ret = typeRegistry.getRelationshipTypeByName(relationshipDef.getName());
+
+                break;
+            }
+        }
+
+        return ret;
     }
 
     public static AtlasAttributeDef createOptionalAttrDef(String name, AtlasType dataType) {
@@ -258,6 +278,10 @@ public class AtlasTypeUtil {
         return new AtlasEntityDef(name, description, version, Arrays.asList(attrDefs), superTypes);
     }
 
+    public static AtlasEntityDef createClassTypeDef(String name, String description, String version, Set<String> superTypes, Map<String, String> options, AtlasAttributeDef... attrDefs) {
+        return new AtlasEntityDef(name, description, version, Arrays.asList(attrDefs), superTypes, options);
+    }
+
     public static AtlasRelationshipDef createRelationshipTypeDef(String                  name,
                                                                  String                  description,
                                                                  String                  version,
@@ -270,11 +294,23 @@ public class AtlasTypeUtil {
                                         endDef1, endDef2, Arrays.asList(attrDefs));
     }
 
+    public static AtlasRelationshipEndDef createRelationshipEndDef(String typeName, String name, Cardinality cardinality, boolean isContainer) {
+        return new AtlasRelationshipEndDef(typeName, name, cardinality, isContainer);
+    }
+
     public static AtlasTypesDef getTypesDef(List<AtlasEnumDef> enums,
         List<AtlasStructDef> structs,
         List<AtlasClassificationDef> traits,
         List<AtlasEntityDef> classes) {
         return new AtlasTypesDef(enums, structs, traits, classes);
+    }
+
+    public static AtlasTypesDef getTypesDef(List<AtlasEnumDef> enums,
+                                            List<AtlasStructDef> structs,
+                                            List<AtlasClassificationDef> traits,
+                                            List<AtlasEntityDef> classes,
+                                            List<AtlasRelationshipDef> relations) {
+        return new AtlasTypesDef(enums, structs, traits, classes, relations);
     }
 
     public static List<AtlasTypeDefHeader> toTypeDefHeader(AtlasTypesDef typesDef) {
@@ -308,6 +344,26 @@ public class AtlasTypeUtil {
         return headerList;
     }
 
+    public static AtlasTypesDef getTypesDef(AtlasBaseTypeDef typeDef) {
+        AtlasTypesDef ret = new AtlasTypesDef();
+
+        if (typeDef != null) {
+            if (typeDef.getClass().equals(AtlasEntityDef.class)) {
+                ret.getEntityDefs().add((AtlasEntityDef) typeDef);
+            } else if (typeDef.getClass().equals(AtlasRelationshipDef.class)) {
+                ret.getRelationshipDefs().add((AtlasRelationshipDef) typeDef);
+            } else if (typeDef.getClass().equals(AtlasClassificationDef.class)) {
+                ret.getClassificationDefs().add((AtlasClassificationDef) typeDef);
+            } else if (typeDef.getClass().equals(AtlasStructDef.class)) {
+                ret.getStructDefs().add((AtlasStructDef) typeDef);
+            } else if (typeDef.getClass().equals(AtlasEnumDef.class)) {
+                ret.getEnumDefs().add((AtlasEnumDef) typeDef);
+            }
+        }
+
+        return ret;
+    }
+
     public static Collection<AtlasObjectId> toObjectIds(Collection<AtlasEntity> entities) {
         List<AtlasObjectId> ret = new ArrayList<>();
 
@@ -315,6 +371,20 @@ public class AtlasTypeUtil {
             for (AtlasEntity entity : entities) {
                 if (entity != null) {
                     ret.add(AtlasTypeUtil.getAtlasObjectId(entity));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    public static Collection<AtlasRelatedObjectId> toAtlasRelatedObjectIds(Collection<AtlasEntity> entities) {
+        List<AtlasRelatedObjectId> ret = new ArrayList<>();
+
+        if (CollectionUtils.isNotEmpty(entities)) {
+            for (AtlasEntity entity : entities) {
+                if (entity != null) {
+                    ret.add(toAtlasRelatedObjectId(entity));
                 }
             }
         }
@@ -340,8 +410,38 @@ public class AtlasTypeUtil {
         return ret;
     }
 
+    public static AtlasRelatedObjectId toAtlasRelatedObjectId(AtlasEntity entity) {
+        return new AtlasRelatedObjectId(getAtlasObjectId(entity));
+    }
+
+    public static AtlasRelatedObjectId toAtlasRelatedObjectId(AtlasEntity entity, AtlasTypeRegistry typeRegistry) {
+        return new AtlasRelatedObjectId(getAtlasObjectId(entity, typeRegistry));
+    }
+
     public static AtlasObjectId getAtlasObjectId(AtlasEntity entity) {
         return new AtlasObjectId(entity.getGuid(), entity.getTypeName());
+    }
+
+    public static AtlasObjectId getAtlasObjectId(AtlasEntity entity, AtlasTypeRegistry typeRegistry) {
+        String              typeName       = entity.getTypeName();
+        AtlasEntityType     entityType     = typeRegistry.getEntityTypeByName(typeName);
+        Map<String, Object> uniqAttributes = null;
+
+        if (entityType != null && MapUtils.isNotEmpty(entityType.getUniqAttributes())) {
+            for (AtlasAttribute attribute : entityType.getUniqAttributes().values()) {
+                Object attrValue = entity.getAttribute(attribute.getName());
+
+                if (attrValue != null) {
+                    if (uniqAttributes == null) {
+                        uniqAttributes = new HashMap<>();
+                    }
+
+                    uniqAttributes.put(attribute.getName(), attrValue);
+                }
+            }
+        }
+
+        return new AtlasObjectId(entity.getGuid(), typeName, uniqAttributes);
     }
 
     public static AtlasObjectId getAtlasObjectId(AtlasEntityHeader header) {
@@ -481,11 +581,15 @@ public class AtlasTypeUtil {
         ret.setReverseAttributeName(attribute.getInverseRefAttributeName());
         ret.setDefaultValue(attributeDef.getDefaultValue());
         ret.setDescription(attributeDef.getDescription());
+        ret.setMultiplicity(getMultiplicity(attributeDef));
 
-        final int lower;
-        final int upper;
+        return ret;
+    }
 
-        if (attributeDef.getCardinality() == AtlasAttributeDef.Cardinality.SINGLE) {
+    public static Multiplicity getMultiplicity(AtlasAttributeDef attributeDef) {
+        int lower;
+        int upper;
+        if (attributeDef.getCardinality() == Cardinality.SINGLE) {
             lower = attributeDef.getIsOptional() ? 0 : 1;
             upper = 1;
         } else {
@@ -498,14 +602,7 @@ public class AtlasTypeUtil {
             upper = attributeDef.getValuesMaxCount() < 2 ? Integer.MAX_VALUE : attributeDef.getValuesMaxCount();
         }
 
-        Multiplicity multiplicity = new Multiplicity();
-        multiplicity.setLower(lower);
-        multiplicity.setUpper(upper);
-        multiplicity.setIsUnique(AtlasAttributeDef.Cardinality.SET.equals(attributeDef.getCardinality()));
-
-        ret.setMultiplicity(multiplicity);
-
-        return ret;
+        return new Multiplicity(lower, upper, Cardinality.SET.equals(attributeDef.getCardinality()));
     }
 
     public static Map<String, Object> toMap(AtlasEntity entity) {

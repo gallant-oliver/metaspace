@@ -19,17 +19,21 @@ package org.apache.atlas.utils;
 
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.type.AtlasType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.Map;
+
 
 public class AtlasEntityUtil {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasEntityUtil.class);
 
-    public static boolean hasAnyAttributeUpdate(AtlasEntityType entityType, AtlasEntity currEntity, AtlasEntity entityInStore) {
+    /*public static boolean hasAnyAttributeUpdate(AtlasEntityType entityType, AtlasEntity currEntity, AtlasEntity entityInStore) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> hasAnyAttributeUpdate(guid={}, typeName={})", currEntity.getGuid(), currEntity.getTypeName());
         }
@@ -56,6 +60,50 @@ public class AtlasEntityUtil {
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("<== hasAnyAttributeUpdate(guid={}, typeName={}): ret={}", currEntity.getGuid(), currEntity.getTypeName(), ret);
+        }
+
+        return ret;
+    }
+*/
+    public static String getRelationshipType(Object val) {
+        final String ret;
+
+        if (val instanceof AtlasRelatedObjectId) {
+            ret = ((AtlasRelatedObjectId) val).getRelationshipType();
+        } else if (val instanceof Collection) {
+            String elemRelationshipType = null;
+
+            for (Object elem : (Collection) val) {
+                elemRelationshipType = getRelationshipType(elem);
+
+                if (elemRelationshipType != null) {
+                    break;
+                }
+            }
+
+            ret = elemRelationshipType;
+        } else if (val instanceof Map) {
+            Map mapValue = (Map) val;
+
+            if (mapValue.containsKey(AtlasRelatedObjectId.KEY_RELATIONSHIP_TYPE)) {
+                Object relTypeName = ((Map) val).get(AtlasRelatedObjectId.KEY_RELATIONSHIP_TYPE);
+
+                ret = relTypeName != null ? relTypeName.toString() : null;
+            } else {
+                String entryRelationshipType = null;
+
+                for (Object entryVal : mapValue.values()) {
+                    entryRelationshipType = getRelationshipType(entryVal);
+
+                    if (entryRelationshipType != null) {
+                        break;
+                    }
+                }
+
+                ret = entryRelationshipType;
+            }
+        } else {
+            ret = null;
         }
 
         return ret;

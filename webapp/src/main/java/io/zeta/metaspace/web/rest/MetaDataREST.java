@@ -19,13 +19,11 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
-import io.zeta.metaspace.web.service.BusinessService;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.service.TableTagService;
+import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -77,6 +75,9 @@ public class MetaDataREST {
 
     @Autowired
     private AtlasEntityStore entitiesStore;
+
+    @Autowired
+    private UsersService usersService;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -481,6 +482,16 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}")
     public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
+        String roleId = "";
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            roleId = usersService.getRoleIdByUserId(userId);
+        } catch (AtlasBaseException e) {
+            LOG.error("获取当前用户的roleId出错", e);
+        }
+        if (org.apache.commons.lang.StringUtils.isEmpty(roleId) || !roleId.equals("1")) {
+            return Response.status(403).entity("无权限执行此操作").build();
+        }
         if (!importing.getAndSet(true)) {
             CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
@@ -552,13 +563,6 @@ public class MetaDataREST {
         }
     }
 
-    /**
-     * 修改表信息
-     * @param guid
-     * @param table
-     * @return
-     * @throws AtlasBaseException
-     */
     /*@PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -573,6 +577,7 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }*/
+
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

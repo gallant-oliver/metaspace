@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -23,10 +24,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import java.util.List;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.util.List;
+
 
 @Path("technical")
 @Singleton
@@ -283,7 +285,6 @@ public class TechnicalREST {
         }
     }
 
-
     @POST
     @Path("/owner/table/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -338,7 +339,6 @@ public class TechnicalREST {
             AtlasPerfTracer.log(perf);
         }
     }
-
 
     @PUT
     @Path("/organization")

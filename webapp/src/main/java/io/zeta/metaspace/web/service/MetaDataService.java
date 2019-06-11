@@ -27,14 +27,9 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.common.filetable.*;
 import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.TableTagDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
@@ -44,19 +39,14 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.utils.AtlasPerfTracer;
-import org.apache.atlas.web.util.Servlets;
 import org.apache.avro.Schema;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -82,8 +72,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
-
-import javax.ws.rs.PathParam;
 
 /*
  * @description
@@ -941,8 +929,11 @@ public class MetaDataService {
                     LOG.error(errorMessage);
                     break;
             }
+        } catch (HiveException e) {
+            errorMessage = "同步元数据出错，无法连接到hive";
+            LOG.error("import metadata error,", e);
         } catch (Exception e) {
-            errorMessage = String.format("import metadata error:%s", e.getMessage());
+            errorMessage = String.format("同步元数据出错，%s", e.getMessage());
             LOG.error("import metadata error", e);
         }
     }
@@ -1275,7 +1266,6 @@ public class MetaDataService {
         }
     }
 
-
     public int updateTableEditInfo(String tableGuid,Table info) throws AtlasBaseException {
         try {
             return tableDAO.updateTableEditInfo(tableGuid, info);
@@ -1284,13 +1274,13 @@ public class MetaDataService {
         }
     }
 
+
     @Transactional
     public void updateTableInfo(String tableGuid, Table tableInfo) throws AtlasBaseException {
         try {
             tableDAO.updateTableInfo(tableGuid, tableInfo);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
-
         }
     }
 }
