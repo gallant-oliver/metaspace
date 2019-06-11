@@ -599,20 +599,26 @@ public class BusinessService {
         }
     }
 
-    public PageResult getPermissionBusinessRelatedTableList(Parameters parameters) throws AtlasBaseException {
+    public PageResult getPermissionBusinessRelatedTableList(String businessId, Parameters parameters) throws AtlasBaseException {
         try {
-            Parameters businessParam = new Parameters();
+            /*Parameters businessParam = new Parameters();
             businessParam.setQuery("");
             businessParam.setOffset(0);
             businessParam.setLimit(-1);
             PageResult businessInfo = getBusinessListByName(businessParam);
             List<BusinessInfoHeader> businessInfoHeaderList = businessInfo.getLists();
             List<String> businessList = new ArrayList<>();
-            businessInfoHeaderList.stream().forEach(info -> businessList.add(info.getBusinessId()));
+            businessInfoHeaderList.stream().forEach(info -> businessList.add(info.getBusinessId()));*/
+
+            String tableName = parameters.getQuery();
+            tableName = (tableName == null ? "":tableName);
+
+            if(Objects.nonNull(tableName))
+                tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
 
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
-            List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessList, limit, offset);
+            List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessId, tableName, limit, offset);
             for(int i=0; i<tableHeaderList.size(); i++) {
                 String tableGuid = tableHeaderList.get(i).getTableId();
                 AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
@@ -626,7 +632,7 @@ public class BusinessService {
                 }
             }
 
-            long count = businessDao.getCountBusinessRelatedTable(businessList);
+            long count = businessDao.getCountBusinessRelatedTable(businessId, tableName);
             PageResult pageResult = new PageResult();
             pageResult.setLists(tableHeaderList);
             pageResult.setCount(tableHeaderList.size());

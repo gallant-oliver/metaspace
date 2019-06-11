@@ -473,16 +473,16 @@ public class BusinessREST {
     }
 
     @POST
-    @Path("/tables")
+    @Path("/{businessId}/tables")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<TableHeader> getBussinessRelatedTableList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableHeader> getBussinessRelatedTableList(@PathParam("businessId") String businessId, Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBussinessRelatedTableList()");
             }
-            return businessService.getPermissionBusinessRelatedTableList(parameters);
+            return businessService.getPermissionBusinessRelatedTableList(businessId, parameters);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

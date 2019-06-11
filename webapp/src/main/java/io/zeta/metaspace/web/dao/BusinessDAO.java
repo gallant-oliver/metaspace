@@ -226,11 +226,9 @@ public interface BusinessDAO {
     @Select({"<script>",
              " SELECT DISTINCT tableInfo.tableGuid as tableId,tableInfo.tableName,tableInfo.databaseGuid as databaseId,tableInfo.createTime,tableInfo.status ",
              " from tableInfo,business2table ",
-             " WHERE business2table.businessid in",
-             " <foreach item='businessGuid' index='index' collection='businessList' separator=',' open='(' close=')'>" ,
-             " #{businessGuid}",
-             " </foreach>",
+             " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
+             " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",
@@ -238,16 +236,14 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </if>",
              " </script>"})
-    public List<TableHeader> getBusinessRelatedTableList(@Param("businessList")List<String> businessList, @Param("limit")Integer limit,@Param("offset") Integer offset);
+    public List<TableHeader> getBusinessRelatedTableList(@Param("businessId")String businessList, @Param("tableName")String tableName, @Param("limit")Integer limit,@Param("offset") Integer offset);
 
     @Select({"<script>",
              " SELECT count(DISTINCT tableInfo.tableGuid)",
              " from tableInfo,business2table ",
-             " WHERE business2table.businessid in",
-             " <foreach item='businessGuid' index='index' collection='businessList' separator=',' open='(' close=')'>" ,
-             " #{businessGuid}",
-             " </foreach>",
+             " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
+             " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
              " </script>"})
-    public long getCountBusinessRelatedTable(@Param("businessList")List<String> businessList);
+    public long getCountBusinessRelatedTable(@Param("businessId")String businessList, @Param("tableName")String tableName);
 }
