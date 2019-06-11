@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public class HiveJdbcUtils {
      * 系统调度
      */
     static Connection connection;
-    private static Connection getSystemConnection(String db) throws SQLException, IOException {
+    public static Connection getSystemConnection(String db) throws SQLException, IOException {
             String user = "hive";
 
             String jdbcUrl;
@@ -144,6 +145,21 @@ public class HiveJdbcUtils {
 
     }
 
+    public static long getTableSize(Connection conn, String tableName) throws Exception {
+        long totalSize = 0;
+        String querySQL = "show tblproperties " + tableName;
+        ResultSet resultSet = conn.createStatement().executeQuery(querySQL);
+        while(resultSet.next()) {
+            String str = resultSet.getString(1);
+            if("totalSize".equals(str)) {
+                totalSize = resultSet.getLong(2);
+                break;
+            }
+            System.out.println(str);
+        }
+        return totalSize;
+    }
+
     public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
         try {
             Connection conn = getSystemConnection(db);
@@ -151,6 +167,18 @@ public class HiveJdbcUtils {
             return resultSet;
         } catch (SQLException e) {
             LOG.info(e.getMessage());
+            if(e.getMessage().contains("Permission denied")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        }
+    }
+
+    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql, String db) throws AtlasBaseException, IOException {
+        try {
+            ResultSet resultSet = conn.createStatement().executeQuery(sql);
+            return resultSet;
+        } catch (SQLException e) {
             if(e.getMessage().contains("Permission denied")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }
