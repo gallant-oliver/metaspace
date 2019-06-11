@@ -55,6 +55,8 @@ public class QuartJob implements Job {
     private final String SEPARATOR = "\\.";
     private Connection conn = null;
 
+    Map<String, Double> columnType2Result = new HashMap<>();
+
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         JobKey key = jobExecutionContext.getTrigger().getJobKey();
@@ -143,7 +145,7 @@ public class QuartJob implements Job {
                         throw e;
                     }
                 }
-            //重试
+                //重试
             } while (retryCount < RETRY);
         }
     }
@@ -221,28 +223,35 @@ public class QuartJob implements Job {
             String[] sourceInfo = source.split(SEPARATOR);
             String dbName = sourceInfo[0];
             String tableName = sourceInfo[1];
+            String columnName = null;
             TaskType jobType = TaskType.getTaskByCode(rule.getSystemRuleId());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
+            StringJoiner joiner = new StringJoiner(".");
+            String superType = null;
             if (columnRule) {
-                String columnName = rule.getRuleColumnName();
+                columnName = rule.getRuleColumnName();
+
                 switch (jobType) {
                     case UNIQUE_VALUE_NUM:
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.UNIQUE_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.DUP_VALUE_NUM.code);
                         sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.EMPTY_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName);
                         break;
                     default:
@@ -250,13 +259,24 @@ public class QuartJob implements Job {
                         break;
                 }
             } else {
+                superType = String.valueOf(TaskType.TABLE_ROW_NUM.code);
                 sql = String.format(query, tableName);
+            }
+            String columnTypeKey = null;
+            if(Objects.nonNull(columnName)) {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(columnName).add(superType).toString();
+            } else {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            }
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                return columnType2Result.get(columnTypeKey);
             }
             ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
                 resultValue = Double.valueOf(object.toString());
             }
+            columnType2Result.put(columnTypeKey, resultValue);
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.getMessage());
@@ -319,7 +339,16 @@ public class QuartJob implements Job {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
+            String dbName = source.split("\\.")[0];
             String tableName = source.split("\\.")[1];
+            String superType = String.valueOf(TaskType.TABLE_SIZE.code);
+            StringJoiner joiner = new StringJoiner(".");
+            String columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                Double result = columnType2Result.get(columnTypeKey);
+                if(Objects.nonNull(result))
+                    return result.longValue();
+            }
             //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
             //表数据量
             totalSize = HiveJdbcUtils.getTableSize(conn, tableName);
