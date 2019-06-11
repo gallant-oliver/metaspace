@@ -22,6 +22,7 @@ import com.gridsum.gdp.library.commons.exception.VerifyException;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.table.Tag;
