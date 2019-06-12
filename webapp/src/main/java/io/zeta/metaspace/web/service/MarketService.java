@@ -135,6 +135,9 @@ public class MarketService {
     public TechnologyInfo getRelatedTableList(String businessId) throws AtlasBaseException {
         try {
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
+            if(Objects.isNull(info)) {
+                return info;
+            }
             info.setEditTechnical(false);
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
@@ -178,13 +181,17 @@ public class MarketService {
     public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters) throws AtlasBaseException {
         try {
             TechnologyInfo technologyInfo = getRelatedTableList(businessGuid);
+            PageResult<APIInfoHeader> pageResult = new PageResult<>();
+            if(Objects.isNull(technologyInfo)) {
+                return pageResult;
+            }
             List<TechnologyInfo.Table> tableHeaderList = technologyInfo.getTables();
             List<String> tableList = new ArrayList<>();
             tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
             List<APIInfoHeader> APIList = new ArrayList<>();
-            PageResult<APIInfoHeader> pageResult = new PageResult<>();
+
             int apiCount = 0;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDao.getTableRelatedAPI(tableList, limit, offset);
