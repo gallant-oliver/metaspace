@@ -21,7 +21,8 @@ import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 
-import java.util.Arrays;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +46,9 @@ public class RoleREST {
     public String addRole(Role role) throws AtlasBaseException {
         try {
             return roleService.addRole(role);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("新增角色失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"新增角色失败");
         }
@@ -65,11 +64,9 @@ public class RoleREST {
     public String updateRoleStatus(@PathParam("roleId")String roleId,@PathParam("status") int status) throws AtlasBaseException {
         try {
             return roleService.updateRoleStatus(roleId,status);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             String s="";
             if(status==0)
                 s="禁用角色失败";
@@ -90,11 +87,9 @@ public class RoleREST {
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.deleteRole(roleId);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e) {
             throw e;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("删除角色失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除角色失败");
         }
@@ -351,6 +346,27 @@ public class RoleREST {
         } catch (Exception e) {
             LOG.error("删除成员失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除成员失败");
+        }
+    }
+
+    @GET
+    @Path("/roles/sso/incr")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map getIncrRoles(@QueryParam("startTime") String startTime) throws AtlasBaseException {
+        try {
+            Map result = new HashMap();
+            List<Role> roleList =  roleService.getIncrRoles(startTime);
+            result.put("data", roleList);
+            DateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+            String queryTime = df.format(System.currentTimeMillis());
+            result.put("queryTime", queryTime);
+            return result;
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
         }
     }
 }
