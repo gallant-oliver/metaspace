@@ -375,6 +375,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
         //Drop the first key and change the class type as well to col0
         columnsMap.clear();
         columnsMap.put("col0", AtlasTypeUtil.getAtlasObjectId(col0));
+        tableEntity.setAttribute(TestUtilsV2.COLUMNS_MAP, columnsMap);
         init();
 
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
@@ -407,6 +408,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
 
         //Remove an entry
         paramsMap.remove("key1");
+        tableEntity.setAttribute("parametersMap", paramsMap);
         init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         validateMutationResponse(response, EntityMutations.EntityOperation.UPDATE, 1);
@@ -433,21 +435,24 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
 
         //add a new element to array of struct
         partitions.add(new AtlasStruct(TestUtilsV2.PARTITION_STRUCT_TYPE, TestUtilsV2.NAME, "part3"));
+        tableEntity.setAttribute("partitions", partitions);
         init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         updatedTable = response.getFirstUpdatedEntityByTypeName(TABLE_TYPE);
         validateEntity(entitiesInfo, getEntityFromStore(updatedTable));
 
         //remove one of the struct values
-        init();
         partitions.remove(1);
+        tableEntity.setAttribute("partitions", partitions);
+        init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         updatedTable = response.getFirstUpdatedEntityByTypeName(TABLE_TYPE);
         validateEntity(entitiesInfo, getEntityFromStore(updatedTable));
 
         //Update struct value within array of struct
-        init();
         partitions.get(0).setAttribute(TestUtilsV2.NAME, "part4");
+        tableEntity.setAttribute("partitions", partitions);
+        init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         updatedTable = response.getFirstUpdatedEntityByTypeName(TABLE_TYPE);
         validateEntity(entitiesInfo, getEntityFromStore(updatedTable));
@@ -455,6 +460,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
 
         //add a repeated element to array of struct
         partitions.add(new AtlasStruct(TestUtilsV2.PARTITION_STRUCT_TYPE, TestUtilsV2.NAME, "part4"));
+        tableEntity.setAttribute("partitions", partitions);
         init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         updatedTable = response.getFirstUpdatedEntityByTypeName(TABLE_TYPE);
@@ -462,6 +468,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
 
         // Remove all elements. Should set array attribute to null
         partitions.clear();
+        tableEntity.setAttribute("partitions", partitions);
         init();
         response = entityStore.createOrUpdate(new AtlasEntityStream(entitiesInfo), false);
         updatedTable = response.getFirstUpdatedEntityByTypeName(TABLE_TYPE);
@@ -541,7 +548,7 @@ public class AtlasEntityStoreV2Test extends AtlasEntityTestBase {
         final String paramsAttr = "parameters";
         Assert.assertNotNull(firstEntityCreated.getAttribute(isReplicatedAttr));
         Assert.assertEquals(firstEntityCreated.getAttribute(isReplicatedAttr), Boolean.FALSE);
-        Assert.assertNull(firstEntityCreated.getAttribute(paramsAttr));
+        Assert.assertNotNull(firstEntityCreated.getAttribute(paramsAttr));
 
         //Update to true
         dbEntity.setAttribute(isReplicatedAttr, Boolean.TRUE);

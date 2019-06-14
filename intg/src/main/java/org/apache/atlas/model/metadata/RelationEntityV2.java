@@ -16,6 +16,10 @@
  */
 package org.apache.atlas.model.metadata;
 
+import io.zeta.metaspace.model.metadata.DataOwnerHeader;
+
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -31,6 +35,8 @@ public class RelationEntityV2 {
     private String path;
     private String status;
     private String createTime;
+    private String generateTime;
+    private List<DataOwnerHeader> dataOwner;
 
     public RelationEntityV2() { }
 
@@ -106,5 +112,21 @@ public class RelationEntityV2 {
 
     public void setCreateTime(String createTime) {
         this.createTime = createTime;
+    }
+
+    public String getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(String generateTime) {
+        this.generateTime = generateTime;
+    }
+
+    public List<DataOwnerHeader> getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(List<DataOwnerHeader> dataOwner) {
+        this.dataOwner = dataOwner;
     }
 }

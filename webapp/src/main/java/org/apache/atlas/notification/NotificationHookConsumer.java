@@ -101,6 +101,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private final int                    failedMsgCacheSize;
     private final int                    minWaitDuration;
     private final int                    maxWaitDuration;
+    private final boolean testLocal;
 
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
@@ -128,6 +129,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         consumerRetryInterval = applicationProperties.getInt(CONSUMER_RETRY_INTERVAL, 500);
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
+        testLocal = applicationProperties.getBoolean("metaspace.test", false);
     }
 
     @Override
@@ -356,7 +358,13 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             long             startTime   = System.currentTimeMillis();
             boolean          isFailedMsg = false;
             AuditLog         auditLog = null;
-
+            if(testLocal){
+                try {
+                    sleep(3000);
+                } catch (InterruptedException e) {
+                    LOG.error("调试模式异常",e);
+                }
+            }
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, message.getType().name());
             }

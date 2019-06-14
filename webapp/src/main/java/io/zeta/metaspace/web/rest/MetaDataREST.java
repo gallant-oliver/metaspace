@@ -12,23 +12,28 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.service.TableTagService;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.model.Progress;
+import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,15 +42,19 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Path("metadata")
 @Singleton
 @Service
 public class MetaDataREST {
+    private static final Logger LOG = LoggerFactory.getLogger(MetaDataREST.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.MetaDataREST");
     @Autowired
     private SearchService searchService;
@@ -53,12 +62,22 @@ public class MetaDataREST {
     private HttpServletRequest httpServletRequest;
     private static final String DEFAULT_DIRECTION = "BOTH";
     private static final String DEFAULT_DEPTH = "-1";
+    private AtomicBoolean importing = new AtomicBoolean(false);
 
 
     @Autowired
     private DataManageService dataManageService;
 
     private final MetaDataService metadataService;
+
+    @Autowired
+    private BusinessService businessService;
+
+    @Autowired
+    private AtlasEntityStore entitiesStore;
+
+    @Autowired
+    private UsersService usersService;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -445,4 +464,119 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
         }
     }
+
+    @Path("/supplementTable")
+    @GET
+    public String supplementTable() throws AtlasBaseException {
+        try {
+            dataManageService.supplementTable();
+            return "success";
+        } catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "补充贴源层失败");
+        }
+    }
+
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/import/{databaseType}")
+    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
+        String roleId = "";
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            roleId = usersService.getRoleIdByUserId(userId);
+        } catch (AtlasBaseException e) {
+            LOG.error("获取当前用户的roleId出错", e);
+        }
+        if (org.apache.commons.lang.StringUtils.isEmpty(roleId) || !roleId.equals("1")) {
+            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "增量同步元数据");
+        }
+        if (!importing.getAndSet(true)) {
+            CompletableFuture.runAsync(() -> {
+                metadataService.synchronizeMetaData(databaseType, tableSchema);
+                importing.set(false);
+            });
+        } else {
+            return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
+        }
+        return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
+    }
+
+    @GET
+    @Path("/import/progress/{databaseType}")
+    public Response importProgress(@PathParam("databaseType") String databaseType) throws Exception {
+        Progress progress = metadataService.importProgress(databaseType);
+        return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/business/trust")
+    public Response updateTrustTable() throws AtlasBaseException {
+        try {
+            businessService.updateBusinessTrustTable();
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @Path("/owner/{tableGuid}")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public String deleteOwner(@PathParam("tableGuid") String tableGuid, List<String> ownerList) throws AtlasBaseException {
+        try {
+            metadataService.deleteTableOwner(tableGuid, ownerList);
+            return "success";
+        }  catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        }
+    }
+
+
+    /**
+     * Delete an entity identified by its GUID.
+     * @param  guid GUID for the entity
+     * @return EntityMutationResponse
+     */
+    @DELETE
+    @Path("/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteByGuid(" + guid + ")");
+            }
+
+            return metadataService.hardDeleteByGuid(guid);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+
+    @Path("/table/{guid}")
+    public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
+        try {
+            metadataService.updateTableInfo(guid, tableInfo);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+
 }

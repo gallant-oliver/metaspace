@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class UsersService {
@@ -45,9 +46,9 @@ public class UsersService {
 
     public void addUser(Map data) {
         String userId = data.get("AccountGuid").toString();
+        String account = data.get("LoginEmail").toString();
+        String displayName = data.get("DisplayName").toString();
         if (userDAO.ifUserExists(userId).size() == 0) {
-            String account = data.get("LoginEmail").toString();
-            String displayName = data.get("DisplayName").toString();
             User user = new User();
             user.setUserId(userId);
             user.setAccount(account);
@@ -58,7 +59,16 @@ public class UsersService {
                 user.setRoleId(SystemRole.GUEST.getCode());
             }
             userDAO.addUser(user);
-        }
+        } /*else {
+            User user = userDAO.getUser(userId);
+            if(!account.equals(user.getAccount()) || !displayName.equals(user.getUsername())) {
+                User userInfo = new User();
+                userInfo.setUserId(userId);
+                userInfo.setAccount(account);
+                userInfo.setUsername(displayName);
+                userDAO.updateUserInfo(userInfo);
+            }
+        }*/
     }
 
     @Transactional
@@ -137,9 +147,12 @@ public class UsersService {
         int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;
@@ -190,9 +203,12 @@ public class UsersService {
         int offset = parameters.getOffset();
         try {
             PageResult<User> userPageResult = new PageResult<>();
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
+            userPageResult.setOffset(offset);
             userPageResult.setCount(userList.size());
             userPageResult.setSum(userCount);
             return userPageResult;

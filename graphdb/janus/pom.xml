@@ -23,7 +23,7 @@
     <parent>
         <artifactId>atlas-graphdb</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.0.0</version>
+        <version>1.4.1</version>
     </parent>
     <artifactId>atlas-graphdb-janus</artifactId>
     <description>Apache Atlas JanusGraph DB Impl</description>
@@ -140,6 +140,7 @@
             <groupId>org.janusgraph</groupId>
             <artifactId>janusgraph-hbase</artifactId>
             <version>${janus.version}</version>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>

@@ -77,7 +77,7 @@ public class CategoryRelationUtils {
         try {
             String pathStr = utils.categoryDAO.queryPathByGuid(categoryId);
             String path = pathStr.substring(1, pathStr.length()-1);
-            path = path.replace(",", ".").replace("\"", "");
+            path = path.replace(",", "/").replace("\"", "");
             return path;
         } catch (Exception e) {
             LOG.error(e.getMessage());

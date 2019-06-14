@@ -125,29 +125,26 @@ public class HiveJdbcUtils {
      * @return
      */
     public static TableMetadata systemMetadata(String dbAndtableName) throws Exception {
-        String[] split = dbAndtableName.split("\\.");
-        String db = split[0];
-        String tableName = split[1];
-        String location = location(db, tableName);
-        if (location != null) {
-            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
-                Path path = new Path(location);
-                if(fs.exists(path)) {
-                    ContentSummary contentSummary = fs.getContentSummary(path);
-
-                    long numFiles = contentSummary.getFileCount();
-                    long totalSize = contentSummary.getLength();
-                    return new TableMetadata(numFiles, Long.valueOf(totalSize));
-                } else {
-                    return new TableMetadata();
-                }
-            }catch (Exception e){
-                LOG.warn(e.getMessage(),e);
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
+        TableMetadata tableMetadata = new TableMetadata();
+        try {
+            String[] split = dbAndtableName.split("\\.");
+            String db = split[0];
+            String tableName = split[1];
+            String sql = "describe formatted " + dbAndtableName;
+            LOG.debug("Running: " + sql);
+            ResultSet resultSet = selectBySQLWithSystemCon(sql, db);
+            while (resultSet.next()) {
+                String string = resultSet.getString(2);
+                if (string!=null&&string.contains("numFiles"))
+                    tableMetadata.setNumFiles(Long.parseLong(resultSet.getString(3).replaceAll(" ","")));
+                if (string!=null&&string.contains("totalSize"))
+                    tableMetadata.setTotalSize(Long.parseLong(resultSet.getString(3).replaceAll(" ","")));
             }
-        } else {//view
-            return new TableMetadata();
+        }catch (Exception e){
+            LOG.error("从hive获取表统计异常",e);
         }
+        return tableMetadata;
+
     }
 
     public static long getTableSize(Connection conn, String tableName) throws Exception {
@@ -165,30 +162,13 @@ public class HiveJdbcUtils {
         return totalSize;
     }
 
-    private static String location(String db, String tableName) {
-        try(Connection conn = getSystemConnection(db);
-            ResultSet rs = conn.createStatement().executeQuery("SHOW CREATE TABLE " + tableName)) {
-            while (rs.next()) {
-                String text = rs.getString(1);
-                if (text.contains("hdfs://")) {
-
-                    String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(":\\d+","").replaceAll(" ", "");
-                    LOG.info(db + "." + tableName + " location:" + s);
-                    return s;
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
-        }
-        return null;
-    }
-
     public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
         try {
             Connection conn = getSystemConnection(db);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
+            LOG.info(e.getMessage());
             if(e.getMessage().contains("Permission denied")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }

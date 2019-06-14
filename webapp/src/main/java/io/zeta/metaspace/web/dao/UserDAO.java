@@ -15,8 +15,14 @@ public interface UserDAO {
     @Select("select 1 from users where userid=#{userid}")
     public List<User> ifUserExists(String userid);
 
+    @Select("select 1 from users where userid=#{userid} and (userName is null or  account is null)")
+    public List<User> ifUserInfoNotExist(String userid);
+
     @Insert("insert into users(userid,username,account,roleid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId})")
     public int addUser(@Param("user") User user);
+
+    @Insert("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId})")
+    public int updateUserInfo(@Param("user") User user);
 
     @Select("select * from users where userId=#{userId}")
     public User getUser(@Param("userId") String userId);
@@ -35,13 +41,13 @@ public interface UserDAO {
 
     @Select({" <script>",
              " select users.*,role.roleName from users join role on users.roleId = role.roleId",
-             " where  username like '%${username}%' or account like '%${username}%'",
+             " where  username like '%${username}%' ESCAPE '/' or account like '%${username}%' ESCAPE '/'",
              " order by",
              " (case ",
              " when username=#{username} or account=#{username} then 1",
-             " when username like '${username}%' or account like '${username}%' then 2",
-             " when username like '%${username}' or account like '%${username}' then 3",
-             " when username like '%${username}%' or account like '%${username}%' then 4",
+             " when username like '${username}%' ESCAPE '/' or account like '${username}%' ESCAPE '/' then 2",
+             " when username like '%${username}' ESCAPE '/' or account like '%${username}' ESCAPE '/' then 3",
+             " when username like '%${username}%' ESCAPE '/' or account like '%${username}%' ESCAPE '/' then 4",
              " else 0",
              " end)",
              " <if test='limit!= -1'>",
@@ -51,11 +57,11 @@ public interface UserDAO {
              " </script>"})
     public List<User> getUserList(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
-    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' and role.roleid!='1' <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
+    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' ESCAPE '/' and role.roleid!='1' <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
     public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
 
-    @Select("select count(1) from users where username like '%'||#{query}||'%'")
+    @Select("select count(1) from users where username like '%'||#{query}||'%' ESCAPE '/'")
     public long getUsersCount(@Param("query") String query);
 
     @Select("<script>select count(1) from table_relation where categoryguid in" +
@@ -68,6 +74,9 @@ public interface UserDAO {
 
     @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
+
+    @Select("select account from users where userId=#{userId}")
+    public String getUserAccount(@Param("userId") String userId);
 
 
 }

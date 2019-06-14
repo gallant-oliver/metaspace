@@ -4,27 +4,38 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.OpType;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.model.user.UserWithRole;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
 @Service
 public class RoleService {
+    private static final Logger LOG = LoggerFactory.getLogger(RoleService.class);
     @Autowired
     private RoleDAO roleDAO;
     @Autowired
@@ -33,6 +44,10 @@ public class RoleService {
     private RoleService roleService;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private CategoryDAO categoryDAO;
+    @Autowired
+    private UserDAO userDAO;
 
     @Bean(name = "getRoleService")
     public RoleService getRoleService() {
@@ -40,20 +55,28 @@ public class RoleService {
     }
 
     public String addRole(Role role) throws AtlasBaseException {
-        String now = DateUtils.getNow();
-        role.setRoleId("m" + UUID.randomUUID().toString());
-        role.setCreateTime(now);
-        role.setUpdateTime(now);
-        role.setStatus(1);
-        role.setDisable(1);
-        role.setEdit(1);
-        role.setDelete(1);
-        if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+        try {
+            User user = AdminUtils.getUserData();
+            String now = DateUtils.getNow();
+            role.setRoleId("m" + UUID.randomUUID().toString());
+            role.setCreateTime(now);
+            role.setUpdateTime(now);
+            role.setStatus(1);
+            role.setDisable(1);
+            role.setEdit(1);
+            role.setDelete(1);
+            role.setValid(true);
+            String userId = user.getUserId();
+            role.setCreator(userId);
+            role.setUpdater(userId);
+            if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+            }
+            roleDAO.addRoles(role);
+            return "success";
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        ;
-        roleDAO.addRoles(role);
-        return "success";
     }
 
     public String updateRoleStatus(String roleId, int status) throws AtlasBaseException {
@@ -61,7 +84,9 @@ public class RoleService {
         if (role.getDisable() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许禁用");
         }
-        roleDAO.updateRoleStatus(roleId, status);
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
+        roleDAO.updateRoleStatus(roleId, status, DateUtils.getNow(), userId);
         return "success";
     }
 
@@ -71,7 +96,11 @@ public class RoleService {
         if (role.getDelete() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许删除");
         }
-        roleDAO.deleteRole(roleId);
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
+        //roleDAO.deleteRole(roleId);
+        //删除更新状态
+        roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
         roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
         return "success";
@@ -82,8 +111,12 @@ public class RoleService {
         PageResult<User> userPageResult = new PageResult<>();
         List<User> users;
         if (limit == -1) {
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
         } else {
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
         }
         long usersCount = roleDAO.getUsersCount(roleId, query);
@@ -96,14 +129,52 @@ public class RoleService {
 
     @Transactional
     public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
-        PageResult<Role> rolePageResult = new PageResult<>();
-        List<Role> roles = roleDAO.getRoles(query, offset, limit);
-        long rolesCount = roleDAO.getRolesCount(query);
-        rolePageResult.setLists(roles);
-        rolePageResult.setOffset(offset);
-        rolePageResult.setSum(rolesCount);
-        rolePageResult.setCount(roles.size());
-        return rolePageResult;
+        try {
+            PageResult<Role> rolePageResult = new PageResult<>();
+            if (Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            List<Role> roles = roleDAO.getRoles(query, offset, limit);
+            long rolesCount = roleDAO.getRolesCount(query);
+            rolePageResult.setLists(roles);
+            rolePageResult.setOffset(offset);
+            rolePageResult.setSum(rolesCount);
+            rolePageResult.setCount(roles.size());
+            return rolePageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    @Transactional
+    public List<Role> getIncrRoles(String startTime) throws AtlasBaseException {
+        try {
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            DateFormat startDf = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date startDate = startDf.parse(startTime);
+            String formatStartTimeStr = df.format(startDate);
+            List<Role> roles = roleDAO.getIncrRoles(formatStartTimeStr);
+            for(int i=0; i<roles.size(); i++) {
+                Role role = roles.get(i);
+                Boolean valid = role.isValid();
+                if(false == valid) {
+                    role.setOpType(OpType.DELETE.getDesc());
+                    continue;
+                }
+                String createTime = role.getCreateTime();
+                String updateTime = role.getUpdateTime();
+                if(Objects.nonNull(createTime) && Objects.nonNull(updateTime)) {
+                    Date createDate = df.parse(createTime);
+                    if(createDate.getTime() > startDate.getTime()) {
+                        role.setOpType(OpType.ADD.getDesc());
+                    } else {
+                        role.setOpType(OpType.UPDATE.getDesc());
+                    }
+                }
+            }
+            return roles;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
@@ -118,6 +189,41 @@ public class RoleService {
         return "success";
     }
 
+    @Transactional
+    public void addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
+        for(UserWithRole userWithRole: userWithRoleList) {
+            List<String> roleIds = userWithRole.getRoleId();
+            if(Objects.nonNull(roleIds) && roleIds.size() > 1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
+            } else if(Objects.nonNull(roleIds) && roleIds.size() == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
+            }
+            String roleId = roleIds.get(0);
+            List<String> users = userWithRole.getUserIds();
+            List<String> userIds = new ArrayList<>();
+            for (String userId : users) {
+                if (Objects.isNull(userId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Id不能为空");
+                }
+                String role = usersService.getRoleIdByUserId(userId);
+                if (Objects.isNull(role)) {
+                    User user = new User();
+                    user.setUserId(userId);
+                    user.setRoleId(roleId);
+                    userDAO.addUser(user);
+                } else if (role.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                } else {
+                    userIds.add(userId);
+                }
+            }
+            if (userIds.size() > 0) {
+                roleDAO.updateUsers(roleId, userIds);
+            }
+        }
+    }
+
+
     public String removeUser(List<String> users) throws AtlasBaseException {
         for (String user : users) {
             String role = usersService.getRoleIdByUserId(user);
@@ -128,6 +234,32 @@ public class RoleService {
         if (users.size() > 0)
             roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
         return "success";
+    }
+
+    @Transactional
+    public void removeUserRole(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
+        for(UserWithRole userWithRole: userWithRoleList) {
+            List<String> roleIds = userWithRole.getRoleId();
+            if (Objects.nonNull(roleIds) && roleIds.size() > 1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
+            } else if (Objects.nonNull(roleIds) && roleIds.size() == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
+            }
+            String roleId = roleIds.get(0);
+            List<String> users = userWithRole.getUserIds();
+            for (String userId : users) {
+                String realRoleId = usersService.getRoleIdByUserId(userId);
+                if (realRoleId.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                }
+                /*if(!roleId.equals(realRoleId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色错误");
+                }*/
+            }
+            if (users.size() > 0) {
+                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+            }
+        }
     }
 
     @Transactional
@@ -194,7 +326,8 @@ public class RoleService {
         return resultList;
     }
 
-    private void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
+    @Transactional
+    public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
         List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             otherCategory.setShow(false);
@@ -275,26 +408,15 @@ public class RoleService {
         List<RoleModulesCategories.Category> businessCategories = roleModulesCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = roleModulesCategories.getTechnicalCategories();
         if (businessCategories != null) {
-            if ((moduleIds.contains(SystemModule.BUSINESSE_OPERATE.getCode()) || moduleIds.contains(SystemModule.BUSINESSE_MANAGE.getCode())) && businessCategories.size() > 0) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
-                }
-            } else if (moduleIds.contains(SystemModule.BUSINESSE_CHECK.getCode())) {
-                for (RoleModulesCategories.Category businessCategory : businessCategories) {
-                    roleDAO.addRole2category(roleId, businessCategory.getGuid(), 0);
-                }
+            for (RoleModulesCategories.Category businessCategory : businessCategories) {
+                roleDAO.addRole2category(roleId, businessCategory.getGuid(), 1);
             }
         }
-        if (technicalCategories != null) {
-            if (moduleIds.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && technicalCategories.size() > 0) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
-                }
 
-            } else if (moduleIds.contains(SystemModule.TECHNICAL_CHECK.getCode())) {
-                for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
-                    roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 0);
-                }
+        //
+        if (technicalCategories != null) {
+            for (RoleModulesCategories.Category technicalCategory : technicalCategories) {
+                roleDAO.addRole2category(roleId, technicalCategory.getGuid(), 1);
             }
         }
         return "success";
@@ -315,33 +437,146 @@ public class RoleService {
 
     /**
      * 获取用户目录树，有权限首级目录不能加关联
+     * 1.4新权限 有管理目录权限的可以编辑目录和添加关联，其他人只能看
+     * 业务目录的，有管理目录权限的编辑目录，有编辑业务信息权限的可以创建业务对象和编辑业务对象
      *
      * @param userRoleId
      * @param categorytype
      * @return
      */
+
     @Transactional
-    public ArrayList<RoleModulesCategories.Category> getUserCategory(String userRoleId, int categorytype) {
-        Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
+    public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
-            setMap(userCategorys, allCategorys, 2, true);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+            addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         } else {
             List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
             if (userBusinessCategories.size() > 0) {
                 List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
                 List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
-                //得到用户的带权限的目录树
-                setMap(userCategorys, userChildCategorys, 2, true);
-                setMap(userCategorys, userParentCategorys, 0, false);
-                setMap(userCategorys, userPrivilegeCategorys, 1, true);
+                //按角色方案
+                List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
+                List<Integer> modules = new ArrayList<>();
+                for (UserInfo.Module module : moduleByRoleId) {
+                    modules.add(module.getModuleId());
+                }
+                CategoryPrivilege.Privilege childPrivilege = null;
+                CategoryPrivilege.Privilege parentPrivilege = null;
+                CategoryPrivilege.Privilege ownerPrivilege = null;
+                //技术目录
+                switch (categorytype) {
+                    //技术目录
+                    case 0: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode()) && modules.contains(SystemModule.TECHNICAL_CATALOG.getCode())) {
+                            //按勾选的目录
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, true);
+
+                        } else if (modules.contains(SystemModule.TECHNICAL_CATALOG.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, false, false, false, true);
+                        } else if (modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
+                        }
+                        break;
+                    }
+                    //业务目录
+                    case 1: {
+                        //按角色方案
+                        if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode()) && modules.contains(SystemModule.BUSINESSE_CATALOG.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_CATALOG.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, true, true);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, true, false, true, false, true, true);
+                        } else if (modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+                        } else {
+                            childPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
+                            parentPrivilege = new CategoryPrivilege.Privilege(false, true, false, false, false, false, false, false, false);
+                            ownerPrivilege = new CategoryPrivilege.Privilege(false, false, false, false, false, false, false, false, false);
+                        }
+                        break;
+                    }
+                }
+                addPrivilege(userCategorys, userChildCategorys, childPrivilege, categorytype);
+                addPrivilege(userCategorys, userParentCategorys, parentPrivilege, categorytype);
+                addPrivilege(userCategorys, userPrivilegeCategorys, ownerPrivilege, categorytype);
             }
         }
-
-        Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-        ArrayList<RoleModulesCategories.Category> categories = new ArrayList<>(valueCollection);
-        setOtherCategory(categorytype, categories);
-        return categories;
+        addOtherCategory(categorytype, userCategorys);
+        return userCategorys;
     }
+
+    private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys, CategoryPrivilege.Privilege privilege, int categorytype) {
+        String[] systemCategoryGuids = {"1", "2", "3", "4", "5"};
+        List<String> lists = Arrays.asList(systemCategoryGuids);
+        for (RoleModulesCategories.Category category : allCategorys) {
+            CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
+            //系统系统目录不允许删除和编辑
+            if (lists.contains(category.getGuid())) {
+                privilegeinfo.setDelete(false);
+                privilegeinfo.setEdit(false);
+            }
+            //技术目录一级目录不允许删关联
+            if (categorytype == 0 && category.getLevel() == 1) {
+                privilegeinfo.setDeleteRelation(false);
+            }
+            categoryPrivilege.setPrivilege(privilegeinfo);
+            userCategorys.add(categoryPrivilege);
+        }
+    }
+
+    @Transactional
+    public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList) {
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype);
+        ArrayList<CategoryPrivilege> others = new ArrayList<>();
+        for (RoleModulesCategories.Category otherCategory : otherCategorys) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true, false, false, false, false, false, false, false, false);
+            categoryPrivilege.setPrivilege(privilege);
+            others.add(categoryPrivilege);
+        }
+        resultList.addAll(others);
+    }
+
+    @Transactional
+    public String editRole(Role role) throws AtlasBaseException {
+        try {
+            String id = role.getRoleId();
+            role.getDescription();
+            if (id.equals("") || id == null) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "角色id不能为空");
+            }
+            User user = AdminUtils.getUserData();
+            String userId = user.getUserId();
+            role.setUpdater(userId);
+            String updateTime = DateUtils.getNow();
+            role.setUpdateTime(updateTime);
+            roleDAO.editRole(role);
+            return "success";
+        } catch (Exception e) {
+            LOG.info(e.toString());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
 }

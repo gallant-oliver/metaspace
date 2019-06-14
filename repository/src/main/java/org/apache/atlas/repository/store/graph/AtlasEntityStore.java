@@ -163,6 +163,8 @@ public interface AtlasEntityStore {
      */
     EntityMutationResponse deleteById(String guid) throws AtlasBaseException;
 
+    EntityMutationResponse hardDeleteById(String guid) throws AtlasBaseException;
+
     /**
      * Deletes an entity using its type and unique attributes
      * @param entityType      type of the entity

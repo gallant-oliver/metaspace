@@ -61,10 +61,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -304,9 +302,11 @@ public class DataQualityService {
             String jobGroupName = JOB_GROUP_NAME + jobName;
             quartzManager.pauseJob(jobName, jobGroupName);
             String cron = qualityDao.getCronByTemplateId(templateId);
+
             if(Objects.isNull(cron) || StringUtils.isEmpty(cron)) {
                 qualityDao.deleteTemplate2QrtzByTemplateId(templateId);
             }
+            qualityDao.updateFinishedPercent(templateId, 0F);
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
@@ -501,6 +501,7 @@ public class DataQualityService {
                 reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
                 total = qualityDao.getCount(tableGuid, templateId);
             }
+            pageResult.setOffset(offset);
             pageResult.setLists(reports);
             pageResult.setCount(reports.size());
             pageResult.setSum(total);

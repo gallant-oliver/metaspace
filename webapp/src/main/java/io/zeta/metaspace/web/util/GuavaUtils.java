@@ -31,7 +31,8 @@ public class GuavaUtils {
                 JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                 Object message = jsonObject.get("message");
                 if (message == null || (!message.toString().equals("Success"))) {
-                    throw new Exception();
+                    String error = message == null? String.format("调用sso接口%s返回信息为空", infoURL): message.toString();
+                    throw new Exception(error);
                 }
                 Map data = (Map) jsonObject.get("data");
                 ticketCache.put(ticket, data);

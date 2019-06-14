@@ -226,6 +226,18 @@ public final class EntityGraphRetriever {
         return ret;
     }
 
+    public Object getEntityAttribute(AtlasVertex entityVertex, AtlasAttribute attribute) {
+        Object ret = null;
+
+        try {
+            ret = getVertexAttribute(entityVertex, attribute);
+        } catch (AtlasBaseException excp) {
+            // ignore
+        }
+
+        return ret;
+    }
+
     public AtlasEntityHeader toAtlasEntityHeader(AtlasEntity entity) {
         AtlasEntityHeader ret        = null;
         String            typeName   = entity.getTypeName();
@@ -261,6 +273,27 @@ public final class EntityGraphRetriever {
                 ret.setMeanings(entity.getMeanings());
                 ret.setMeaningNames(entity.getMeanings().stream().map(AtlasTermAssignmentHeader::getDisplayText).collect(Collectors.toList()));
             }
+        }
+
+        return ret;
+    }
+
+    public AtlasObjectId toAtlasObjectId(AtlasEntity entity) {
+        AtlasObjectId   ret        = null;
+        AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
+
+        if (entityType != null) {
+            Map<String, Object> uniqueAttributes = new HashMap<>();
+
+            for (String attributeName : entityType.getUniqAttributes().keySet()) {
+                Object attrValue = entity.getAttribute(attributeName);
+
+                if (attrValue != null) {
+                    uniqueAttributes.put(attributeName, attrValue);
+                }
+            }
+
+            ret = new AtlasObjectId(entity.getGuid(), entity.getTypeName(), uniqueAttributes);
         }
 
         return ret;
@@ -794,8 +827,8 @@ public final class EntityGraphRetriever {
             ret = getPrimitiveMap(entityVertex, attribute.getVertexPropertyName());
         }
 
-        if (MapUtils.isEmpty(ret)) {
-            ret = null;
+        if (null == ret) {
+            ret = new HashMap<>();
         }
 
         return ret;
@@ -809,7 +842,7 @@ public final class EntityGraphRetriever {
         List<Object>   arrayElements    = getArrayElementsProperty(arrayElementType, entityVertex, attribute);
 
         if (CollectionUtils.isEmpty(arrayElements)) {
-            return null;
+            return arrayElements;
         }
 
         if (LOG.isDebugEnabled()) {

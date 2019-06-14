@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>1.0.0</version>
+    <version>1.4.1</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>metaspace</name>
     <packaging>pom</packaging>
@@ -253,6 +253,8 @@
         <cdh.hadoop.version>2.6.0-${cdh.version}</cdh.hadoop.version>
         <cdh.parquet.version>1.5.0-${cdh.version}</cdh.parquet.version>
         <cdh.avro.version>1.7.6-${cdh.version}</cdh.avro.version>
+        <sonar.host.url>http://sonar.gridsum.com</sonar.host.url>
+        <sonar.login>650355477e0df2b67087537edb8552bdd079509b</sonar.login>
     </properties>
 
     <modules>
@@ -510,6 +512,10 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.minidev</groupId>
+                        <artifactId>json-smart</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1437,10 +1443,21 @@
                         </execution>
                     </executions>
                 </plugin>
+                <!--sonar-->
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>3.6.0.1398</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <!--sonar-->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+            </plugin>
             <!-- enforcement of maven version 3.5.0 or above & Java 8 (151) or above -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

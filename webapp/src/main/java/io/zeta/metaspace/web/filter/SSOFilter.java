@@ -20,7 +20,9 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.FilterUtils;
 import io.zeta.metaspace.web.util.GuavaUtils;
+import kafka.log.Log;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.json.simple.JSONObject;
@@ -65,31 +67,41 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
+        if (FilterUtils.isSkipUrl(requestURL)) {
             filterChain.doFilter(request, response);
             return;
         }
         try {
-            String ticket = httpServletRequest.getHeader(TICKET_KEY);
-            if (ticket == null || ticket == "") {
-                ticket = httpServletRequest.getParameter(TICKET_KEY);
-            }
-            if (ticket == null || ticket.equals("")) {
-                loginSkip(httpServletResponse, loginURL);
+            String loginData = loginURL + "?service=";
+            try {
+                String ticket = httpServletRequest.getHeader(TICKET_KEY);
+                if (ticket == null || ticket.equals("")) {
+                    ticket = httpServletRequest.getParameter(TICKET_KEY);
+                }
+                if (ticket == null || ticket.equals("")) {
+                    loginSkip(401, httpServletResponse, "认证票据不能为空", loginData);
+                    return;
+                }
+                Map data = GuavaUtils.getUserInfo(ticket);
+                userName = data.getOrDefault("LoginEmail", userName).toString();
+                //给新用户授予访客权限
+                ServletContext servletContext = request.getServletContext();
+                WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+                UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
+                usersService.addUser(data);
+
+            } catch (Exception e) {
+                LOG.error("认证校验失败", e);
+                loginSkip(401, httpServletResponse, "认证校验失败" + e.getMessage(), loginData);
                 return;
             }
-            Map data = GuavaUtils.getUserInfo(ticket);
-            userName = data.getOrDefault("LoginEmail", userName).toString();
-            //给新用户授予访客权限
-            ServletContext servletContext = request.getServletContext();
-            WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
-            UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
-            usersService.addUser(data);
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            LOG.error("sso校验失败",e);
-            loginSkip(httpServletResponse, loginURL);
-        } finally {
+            try {
+                filterChain.doFilter(request, response);
+            } catch (Exception e) {
+                LOG.error("错误内容如下", e);
+                loginSkip(400, httpServletResponse, e.getMessage(), "");
+            }
+        }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             if (LOG.isDebugEnabled()) {
@@ -98,17 +110,17 @@ public class SSOFilter implements Filter {
             AUDIT_LOG.info(auditLog.toString());
         }
 
+
     }
 
-
-    private void loginSkip(HttpServletResponse httpServletResponse, String loginURL) throws IOException {
-        httpServletResponse.setStatus(401);
+    private void loginSkip(int status, HttpServletResponse httpServletResponse, String errorMessage, String data) throws IOException {
+        httpServletResponse.setStatus(status);
         httpServletResponse.setCharacterEncoding("UTF-8");
-        httpServletResponse.setContentType("text/plain;charset=utf-8");
+        httpServletResponse.setContentType("application/json;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();
         HashMap<String, String> hashMap = new HashMap();
-        hashMap.put("error", "请检查用户登陆状态");
-        hashMap.put("data", loginURL + "?service=");
+        hashMap.put("error", errorMessage);
+        hashMap.put("data", data);
         String j = new Gson().toJson(hashMap);
         writer.print(j);
     }

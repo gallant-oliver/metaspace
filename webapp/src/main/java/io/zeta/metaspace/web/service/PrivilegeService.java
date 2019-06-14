@@ -72,8 +72,12 @@ public class PrivilegeService {
 
             List<Integer> modules = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
-            privilegeDAO.addModule2Privilege(privilegeId, modules);
-            privilegeDAO.updateRolePrivilege(privilegeId, roleIds);
+            if(Objects.nonNull(modules)) {
+                privilegeDAO.addModule2Privilege(privilegeId, modules);
+            }
+            if(Objects.nonNull(roleIds)) {
+                privilegeDAO.updateRolePrivilege(privilegeId, roleIds);
+            }
             privilegeDAO.addPrivilege(privilege);
 
             if(!modules.contains(2) && !modules.contains(4) && !modules.contains(5)) {
@@ -191,12 +195,15 @@ public class PrivilegeService {
         try {
             PageResult<PrivilegeInfo> rolePageResult = new PageResult<>();
             List<PrivilegeInfo> privilegeList = null;
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             privilegeList = privilegeDAO.getPrivilegeList(query, limit, offset);
             for(PrivilegeInfo info : privilegeList) {
                 List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
                 info.setRoles(roleList);
             }
             long privilegeCount = privilegeDAO.getRolesCount(query);
+            rolePageResult.setOffset(offset);
             rolePageResult.setLists(privilegeList);
             rolePageResult.setCount(privilegeList.size());
             rolePageResult.setSum(privilegeCount);
@@ -232,6 +239,7 @@ public class PrivilegeService {
             PageResult<Role> pageResult = new PageResult<>();
             List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
             long sum = privilegeDAO.getCountAllPermissionRole();
+            pageResult.setOffset(offset);
             pageResult.setLists(roleList);
             pageResult.setCount(roleList.size());
             pageResult.setSum(sum);

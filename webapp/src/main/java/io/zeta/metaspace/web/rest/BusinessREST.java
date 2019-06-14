@@ -25,16 +25,22 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
+import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.share.APIInfo;
+import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -50,7 +56,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Singleton;
@@ -87,6 +95,8 @@ public class BusinessREST {
     private DataManageService dataManageService;
     @Autowired
     MetaDataService metadataService;
+    @Autowired
+    DataShareService shareService;
 
     private static final int TECHNICAL_CATEGORY_TYPE = 0;
 
@@ -197,6 +207,62 @@ public class BusinessREST {
         }
     }
 
+    @POST
+    @Path("/{businessId}/datashare")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId,Parameters parameters) throws AtlasBaseException {
+        try {
+            return businessService.getBusinessTableRelatedAPI(businessId, parameters);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @GET
+    @Path("/datashare/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+        try {
+            return shareService.getAPIInfo(guid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    /**
+     * 测试API
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+        try {
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
+            return result;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @PUT
+    @Path("/datashare/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
+        try {
+            shareService.cancelAPIThread(randomName);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
     /**
      * 更新技术
      * @param businessId
@@ -208,7 +274,7 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{businessId}/technical")
-    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, List<String> tableIdList) throws AtlasBaseException {
+    public Response updateTechnicalInfo(@PathParam("businessId") String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
         try {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
@@ -216,6 +282,7 @@ public class BusinessREST {
             throw e;
         }
     }
+
 
     /**
      * 获取全部目录
@@ -227,7 +294,7 @@ public class BusinessREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -249,7 +316,7 @@ public class BusinessREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -297,7 +364,7 @@ public class BusinessREST {
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public CategoryEntityV2 updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public String updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -338,7 +405,7 @@ public class BusinessREST {
     @Path("/technical/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RoleModulesCategories.Category> getAllCategory() throws AtlasBaseException {
+    public List<CategoryPrivilege> getAllCategory() throws AtlasBaseException {
         try {
             return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
@@ -362,7 +429,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, TECHNICAL_CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -386,7 +453,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelation(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
+            return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

@@ -9,9 +9,8 @@ import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
-import org.apache.atlas.AtlasErrorCode;
+import io.zeta.metaspace.web.util.FilterUtils;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -44,7 +43,7 @@ public class PrivilegeFilter implements Filter {
         RoleService roleService = (RoleService) requiredWebApplicationContext.getBean("getRoleService");
 
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (requestURL.contains("v2/entity/uniqueAttribute/type/") || requestURL.endsWith("api/metaspace/v2/entity/") || requestURL.contains("/api/metaspace/admin/status")) {
+        if (FilterUtils.isSkipUrl(requestURL)) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
@@ -115,7 +114,7 @@ public class PrivilegeFilter implements Filter {
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
-                    if (module.getModuleId() == SystemModule.TECHNICAL_CHECK.getCode() || module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                    if (module.getModuleId() == SystemModule.TECHNICAL_CHECK.getCode()) {
                         filterChain.doFilter(servletRequest, servletResponse);
                         return;
                     }
@@ -131,7 +130,7 @@ public class PrivilegeFilter implements Filter {
                 UserInfo userInfo = getUserInfo(httpServletResponse, usersService, userId);
                 List<UserInfo.Module> modules = userInfo.getModules();
                 for (UserInfo.Module module : modules) {
-                    if (module.getModuleId() == SystemModule.BUSINESSE_CHECK.getCode() || module.getModuleId() == SystemModule.BUSINESSE_OPERATE.getCode()) {
+                    if (module.getModuleId() == SystemModule.BUSINESSE_CHECK.getCode()) {
                         filterChain.doFilter(servletRequest, servletResponse);
                         return;
                     }
@@ -176,13 +175,13 @@ public class PrivilegeFilter implements Filter {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
-        };
+        }
     }
 
     private void loginSkip(HttpServletResponse httpServletResponse, String error) throws IOException {
         httpServletResponse.setStatus(403);
         httpServletResponse.setCharacterEncoding("UTF-8");
-        httpServletResponse.setContentType("text/plain;charset=utf-8");
+        httpServletResponse.setContentType("application/json;charset=utf-8");
         PrintWriter writer = httpServletResponse.getWriter();
         HashMap<String, String> hashMap = new HashMap();
         hashMap.put("errorMessage", error);

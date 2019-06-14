@@ -76,18 +76,23 @@ public interface BusinessDAO {
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId)values(#{relationshipGuid},#{categoryGuid},#{businessId})")
     public int addRelation(BusinessRelationEntity entity) throws SQLException;
 
-    //根据业务信息名称查询列表
+    @Select("select trustTable from businessInfo where businessId=#{businessId}")
+    public String getTrustTableGuid(@Param("businessId")String businessId);
+
+
+    //根据业务信息名称查询列表(有权限)
     @Select({"<script>",
              " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%'",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
+             " order by businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -95,6 +100,29 @@ public interface BusinessDAO {
              " </script>"})
     //@Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset);
+
+
+    @Select({"<script>",
+             " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
+             " join business_relation on",
+             " business_relation.businessId=businessInfo.businessId",
+             " where",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<BusinessInfoHeader> queryBusinessByNameWithoutPrivilege(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset);
+
+
+    //根据业务信息名称查询列表总数
+    @Select({"<script>",
+             " select count(*) from businessInfo",
+             " where",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " </script>"})
+    public long queryBusinessCountByNameWithoutPrivilege(@Param("businessName")String businessName);
 
     //查询业务信息所属目录Id
     @Select("select departmentId from businessInfo where businessId = #{businessId}")
@@ -106,7 +134,7 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%'",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
              " and",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -128,7 +156,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/' order by businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -151,7 +179,7 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' and ticketNumber like '%${ticketNumber}%' and submitter like '%${submitter}%'",
+             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/'",
              " </script>"})
     public long queryBusinessCountByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
                                               @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter);
@@ -163,7 +191,7 @@ public interface BusinessDAO {
              " on",
              " businessInfo.businessId = business_relation.businessId",
              " and",
-             " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,name",
+             " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -189,14 +217,31 @@ public interface BusinessDAO {
     @Delete("delete from business2table where businessId=#{businessId}")
     public int deleteRelationByBusinessId(@Param("businessId")String businessId);
 
+    @Update("UPDATE businessinfo SET trusttable=null where businessId=#{businessId}")
+    public int updateTrustTable(@Param("businessId")String businessId);
+
     //添加业务信息与表的关联
-    @Insert("insert into business2table(businessId, tableGuid)values(#{businessId}, #{tableGuid})")
-    public int insertTableRelation(@Param("businessId")String businessId, @Param("tableGuid")String tableId);
+    @Insert({" <script>",
+            " insert into business2table(businessId, tableGuid)values",
+            " <foreach collection='list' item='tableGuid' index='index'  separator=','>",
+             " (#{businessId},#{tableGuid})",
+             " </foreach>",
+            " </script>"})
+    public int insertTableRelation(@Param("businessId")String businessId, @Param("list")List<String> list);
 
     @Delete("delete from businessInfo where businessId=#{businessId}")
     public int deleteBusinessById(@Param("businessId")String businessId);
 
+    @Update("update businessInfo set trustTable=#{trustTable} where businessId=#{businessId}")
+    public int setBusinessTrustTable(@Param("businessId")String businessId, @Param("trustTable")String trustTable);
+
     @Delete("delete from business_relation where businessId=#{businessId}")
     public int deleteRelationById(@Param("businessId")String businessId);
+
+    @Select("select businessId from businessInfo where trustTable is null or trustTable=''")
+    public List<String> getNonTrustBusiness();
+
+    @Delete("delete from business2Table where tableGuid=#{tableGuid}")
+    public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);
 
 }
