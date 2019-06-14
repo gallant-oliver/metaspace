@@ -917,6 +917,8 @@ public class MetaDataService {
                     LOG.error(errorMessage);
                     break;
             }
+            //同步元数据后，刷新元数据缓存
+            refreshCache();
         } catch (HiveException e) {
             errorMessage = "同步元数据出错，无法连接到hive";
             LOG.error("import metadata error,", e);
