@@ -839,7 +839,10 @@ public class DataShareService {
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
                         Object value = resultSet.getObject(columnName);
-                        map.put(columnName, value);
+                        if(Objects.nonNull(value))
+                            map.put(columnName, String.valueOf(value));
+                        else
+                            map.put(columnName, value);
                     }
                     result.add(map);
                 }
