@@ -883,7 +883,7 @@ public class MetaDataService {
     }
 
     @CacheEvict(value = {"columnCache", "tablePageCache", "columnPageCache", "databaseSearchCache", "TableByDBCache"}, allEntries = true)
-    public void refreshCache() throws AtlasBaseException {
+    public void refreshCache(){
 
     }
 
@@ -917,14 +917,15 @@ public class MetaDataService {
                     LOG.error(errorMessage);
                     break;
             }
-            //同步元数据后，刷新元数据缓存
-            refreshCache();
         } catch (HiveException e) {
             errorMessage = "同步元数据出错，无法连接到hive";
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
             errorMessage = String.format("同步元数据出错，%s", e.getMessage());
             LOG.error("import metadata error", e);
+        }finally {
+            //同步元数据后，刷新元数据缓存
+            refreshCache();
         }
     }
 
