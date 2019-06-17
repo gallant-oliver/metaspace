@@ -24,4 +24,8 @@ COMMENT ON COLUMN "public"."role"."updater" IS '更新者';
 
 UPDATE "public"."role" set "valid"=true;
 
-UPDATE "public"."role" set "creator"='msadmin' where "role"."roleid" in ('1','2','3','4','5','6','7');
+/*UPDATE "public"."role" set "creator"='' where "role"."roleid" in ('1','2','3','4','5','6','7');*/
+
+/*此处需要根据现场环境管理员ID设置creator和updater*/
+UPDATE "public"."role" set "creator"='',"updater"='';
+
