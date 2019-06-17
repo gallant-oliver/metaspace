@@ -19,6 +19,8 @@
 package io.zeta.metaspace.web.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.sun.jersey.api.client.ClientResponse;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
@@ -178,27 +180,40 @@ public class HiveMetaStoreBridgeUtils {
         startTime.set(System.currentTimeMillis());
         endTime.set(0);
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
-        String database = "";
-        String table = "";
+        String databaseToImport = "";
+        String tableToImport = "";
         if (null != tableSchema) {
-            database = tableSchema.getDatabase();
-            table = tableSchema.getTable();
+            databaseToImport = tableSchema.getDatabase();
+            tableToImport = tableSchema.getTable();
         }
-        if (StringUtils.isEmpty(database)) {
+        if (StringUtils.isEmpty(databaseToImport)) {
             databaseNames = hiveMetaStoreClient.getAllDatabases();
 
         } else {
-            databaseNames = hiveMetaStoreClient.getDatabasesByPattern(database);
+            databaseNames = hiveMetaStoreClient.getDatabasesByPattern(databaseToImport);
         }
         int tables = 0;
-        if (StringUtils.isEmpty(table)) {
+        Map<String, List<String>> database2Table = Maps.newHashMap();
+        if (StringUtils.isEmpty(tableToImport)) {
             for (String databaseName : databaseNames) {
-                tables += hiveMetaStoreClient.getAllTables(databaseName).size();
+                List<String> tablesInDB = database2Table.get(databaseName);
+                if (null == tablesInDB) {
+                    tablesInDB = Lists.newArrayList();
+                }
+                tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
+                database2Table.put(databaseName, tablesInDB);
+                tables += tablesInDB.size();
             }
 
         } else {
             for (String databaseName : databaseNames) {
-                tables += hiveMetaStoreClient.getTablesByPattern(databaseName, table).size();
+                List<String> tablesInDB = database2Table.get(databaseName);
+                if (null == tablesInDB) {
+                    tablesInDB = Lists.newArrayList();
+                }
+                tablesInDB.addAll(hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport));
+                database2Table.put(databaseName, tablesInDB);
+                tables += tablesInDB.size();
             }
         }
         totalTables.set(tables);
@@ -210,10 +225,10 @@ public class HiveMetaStoreBridgeUtils {
             List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
             for (AtlasVertex vertex : dbVertices) {
                 if (Objects.nonNull(vertex)) {
-                    List<String> attributes = Collections.singletonList("name");
+                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
                     AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
                     AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                    String databaseInGraph = dbEntity.getAttribute("name").toString();
+                    String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
                     if (!databaseNames.contains(databaseInGraph)) {
                         deleteTableEntity(databaseInGraph, new ArrayList<>());
                         deleteEntity(dbEntity);
@@ -224,7 +239,7 @@ public class HiveMetaStoreBridgeUtils {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
 
                 if (dbEntity != null) {
-                    importTables(dbEntity.getEntity(), databaseName, table, false);
+                    importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false);
                 }
             }
         } else {
@@ -241,16 +256,8 @@ public class HiveMetaStoreBridgeUtils {
      * @param failOnError
      * @throws Exception
      */
-    private int importTables(AtlasEntity dbEntity, String databaseName,String tableToImport, final boolean failOnError) throws Exception {
+    private int importTables(AtlasEntity dbEntity, String databaseName,List<String> tableNames, final boolean failOnError) throws Exception {
         int tablesImported = 0;
-
-        final List<String> tableNames;
-
-        if (StringUtils.isEmpty(tableToImport)) {
-            tableNames = hiveMetaStoreClient.getAllTables(databaseName);
-        } else {
-            tableNames = hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport);
-        }
 
         if(!CollectionUtils.isEmpty(tableNames)) {
             LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
@@ -284,10 +291,10 @@ public class HiveMetaStoreBridgeUtils {
         List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
         for (AtlasVertex vertex : vertices) {
             if (Objects.nonNull(vertex)) {
-                List<String> attributes = Collections.singletonList("name");
+                List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
                 AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
                 AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
-                String tableNameInGraph = tableEntity.getAttribute("name").toString();
+                String tableNameInGraph = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
                 if (!tableNames.contains(tableNameInGraph)) {
                     deleteEntity(tableEntity);
                 }
