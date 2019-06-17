@@ -420,7 +420,8 @@ public class SearchService {
                 return getTableResultV2(parameters, categorysByTypeIds);
             }
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
+        return null;
+        //throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
     }
 
 

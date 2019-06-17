@@ -297,8 +297,10 @@ public class DataShareService {
             tablePara.setQuery("");
             PageResult<AddRelationTable> tablePageResult = searchService.getPermissionTablePageResultV2(tablePara);
             List<String> permissionTableList = new ArrayList<>();
-            List<AddRelationTable>  tableList = tablePageResult.getLists();
-            tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
+            if(Objects.nonNull(tablePageResult)) {
+                List<AddRelationTable> tableList = tablePageResult.getLists();
+                tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
+            }
             String userId = AdminUtils.getUserData().getUserId();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
