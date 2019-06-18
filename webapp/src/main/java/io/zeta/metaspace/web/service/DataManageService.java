@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.service;
  * @date 2018/11/19 20:10
  */
 
+import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
@@ -39,6 +41,8 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIContent;
+import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
@@ -579,29 +583,34 @@ public class DataManageService {
     @Transactional
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            List<String> tableList = new ArrayList<>(new HashSet<>(tableOwner.getTables()));
-            List<TableOwner.Owner> ownerList = tableOwner.getOwners();
-            //删除旧的关系
-            categoryDao.deleteDataOwner(tableList);
+            Configuration configuration = ApplicationProperties.get();
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/delete";
+            List<String> tableList = tableOwner.getTables();
+            APIDataOwner dataOwner = new APIDataOwner();
 
-            String keeper = AdminUtils.getUserData().getUserId();
-            long time = System.currentTimeMillis();
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String generateTime = format.format(time);
-            List<DataOwner> table2OwnerList = new ArrayList<>();
-            for(String tableGuid : tableList) {
-                for(TableOwner.Owner owner : ownerList) {
-                    DataOwner dataOwner = new DataOwner();
-                    dataOwner.setTableGuid(tableGuid);
-                    dataOwner.setOwnerId(owner.getId());
-                    dataOwner.setPkId(owner.getPkid());
-                    dataOwner.setKeeper(keeper);
-                    dataOwner.setGenerateTime(generateTime);
-                    table2OwnerList.add(dataOwner);
-                }
+            //api
+            List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
+            dataOwner.setApi_id_list(apiList);
+            //organization
+            List<TableOwner.Owner> tableOwners = tableOwner.getOwners();
+            List<APIDataOwner.Organization> organizations = new ArrayList<>();
+            for(TableOwner.Owner owner : tableOwners) {
+                APIDataOwner.Organization organization = new APIDataOwner.Organization();
+                organization.setOrganization(owner.getId());
+                organization.setOrganization_type(owner.getType());
+                organizations.add(organization);
             }
-            //添加新的owner
-            return categoryDao.addDataOwner(table2OwnerList);
+            //owner
+            dataOwner.setOrganization_list(organizations);
+            List<String> api_owner = new ArrayList<>();
+            dataOwner.setApi_owner(api_owner);
+            Gson gson = new Gson();
+            String jsonStr = gson.toJson(dataOwner, APIContent.class);
+            String res = SSLClient.doPut(mobiusURL, jsonStr);
+            return categoryDao.addTableOwners(tableOwner);
+        } catch (SQLException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
