@@ -480,6 +480,7 @@ public class MetaDataREST {
 
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}")
     public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
         String roleId = "";
@@ -490,7 +491,7 @@ public class MetaDataREST {
             LOG.error("获取当前用户的roleId出错", e);
         }
         if (org.apache.commons.lang.StringUtils.isEmpty(roleId) || !roleId.equals("1")) {
-            return Response.status(403).entity("无权限执行此操作").build();
+            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "增量同步元数据");
         }
         if (!importing.getAndSet(true)) {
             CompletableFuture.runAsync(() -> {

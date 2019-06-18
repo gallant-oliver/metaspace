@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.role.OpType;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
@@ -27,6 +28,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -52,20 +55,28 @@ public class RoleService {
     }
 
     public String addRole(Role role) throws AtlasBaseException {
-        String now = DateUtils.getNow();
-        role.setRoleId("m" + UUID.randomUUID().toString());
-        role.setCreateTime(now);
-        role.setUpdateTime(now);
-        role.setStatus(1);
-        role.setDisable(1);
-        role.setEdit(1);
-        role.setDelete(1);
-        if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+        try {
+            User user = AdminUtils.getUserData();
+            String now = DateUtils.getNow();
+            role.setRoleId("m" + UUID.randomUUID().toString());
+            role.setCreateTime(now);
+            role.setUpdateTime(now);
+            role.setStatus(1);
+            role.setDisable(1);
+            role.setEdit(1);
+            role.setDelete(1);
+            role.setValid(true);
+            String userId = user.getUserId();
+            role.setCreator(userId);
+            role.setUpdater(userId);
+            if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
+            }
+            roleDAO.addRoles(role);
+            return "success";
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        ;
-        roleDAO.addRoles(role);
-        return "success";
     }
 
     public String updateRoleStatus(String roleId, int status) throws AtlasBaseException {
@@ -73,7 +84,9 @@ public class RoleService {
         if (role.getDisable() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许禁用");
         }
-        roleDAO.updateRoleStatus(roleId, status);
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
+        roleDAO.updateRoleStatus(roleId, status, DateUtils.getNow(), userId);
         return "success";
     }
 
@@ -83,7 +96,11 @@ public class RoleService {
         if (role.getDelete() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色不允许删除");
         }
-        roleDAO.deleteRole(roleId);
+        User user = AdminUtils.getUserData();
+        String userId = user.getUserId();
+        //roleDAO.deleteRole(roleId);
+        //删除更新状态
+        roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
         roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
         return "success";
@@ -112,16 +129,52 @@ public class RoleService {
 
     @Transactional
     public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
-        PageResult<Role> rolePageResult = new PageResult<>();
-        if(Objects.nonNull(query))
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-        List<Role> roles = roleDAO.getRoles(query, offset, limit);
-        long rolesCount = roleDAO.getRolesCount(query);
-        rolePageResult.setLists(roles);
-        rolePageResult.setOffset(offset);
-        rolePageResult.setSum(rolesCount);
-        rolePageResult.setCount(roles.size());
-        return rolePageResult;
+        try {
+            PageResult<Role> rolePageResult = new PageResult<>();
+            if (Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            List<Role> roles = roleDAO.getRoles(query, offset, limit);
+            long rolesCount = roleDAO.getRolesCount(query);
+            rolePageResult.setLists(roles);
+            rolePageResult.setOffset(offset);
+            rolePageResult.setSum(rolesCount);
+            rolePageResult.setCount(roles.size());
+            return rolePageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    @Transactional
+    public List<Role> getIncrRoles(String startTime) throws AtlasBaseException {
+        try {
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            DateFormat startDf = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date startDate = startDf.parse(startTime);
+            String formatStartTimeStr = df.format(startDate);
+            List<Role> roles = roleDAO.getIncrRoles(formatStartTimeStr);
+            for(int i=0; i<roles.size(); i++) {
+                Role role = roles.get(i);
+                Boolean valid = role.isValid();
+                if(false == valid) {
+                    role.setOpType(OpType.DELETE.getDesc());
+                    continue;
+                }
+                String createTime = role.getCreateTime();
+                String updateTime = role.getUpdateTime();
+                if(Objects.nonNull(createTime) && Objects.nonNull(updateTime)) {
+                    Date createDate = df.parse(createTime);
+                    if(createDate.getTime() > startDate.getTime()) {
+                        role.setOpType(OpType.ADD.getDesc());
+                    } else {
+                        role.setOpType(OpType.UPDATE.getDesc());
+                    }
+                }
+            }
+            return roles;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
@@ -199,9 +252,9 @@ public class RoleService {
                 if (realRoleId.equals("1")) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
-                if(!roleId.equals(realRoleId)) {
+                /*if(!roleId.equals(realRoleId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色错误");
-                }
+                }*/
             }
             if (users.size() > 0) {
                 roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
@@ -507,13 +560,23 @@ public class RoleService {
 
     @Transactional
     public String editRole(Role role) throws AtlasBaseException {
-        String id = role.getRoleId();
-        role.getDescription();
-        if(id.equals("")||id==null){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"角色id不能为空");
+        try {
+            String id = role.getRoleId();
+            role.getDescription();
+            if (id.equals("") || id == null) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "角色id不能为空");
+            }
+            User user = AdminUtils.getUserData();
+            String userId = user.getUserId();
+            role.setUpdater(userId);
+            String updateTime = DateUtils.getNow();
+            role.setUpdateTime(updateTime);
+            roleDAO.editRole(role);
+            return "success";
+        } catch (Exception e) {
+            LOG.info(e.toString());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        roleDAO.editRole(role);
-        return "success";
     }
 
 }
