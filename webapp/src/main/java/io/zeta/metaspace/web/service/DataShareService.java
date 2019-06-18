@@ -802,7 +802,7 @@ public class DataShareService {
             offset = Objects.nonNull(offset)?offset:0;
             Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
             String sql = sqlMap.get("query").toString();
-            APITask task = new APITask(randomName, sql, dbName);
+            APITask task = new APITask(randomName, sql, dbName, true);
             Future<List<LinkedHashMap>> futureResult = pool.submit(task);
             List<LinkedHashMap> result = futureResult.get();
             return result;
@@ -818,10 +818,12 @@ public class DataShareService {
         private String name;
         private String sql;
         private String dbName;
-        APITask(String name, String sql, String dbName) {
+        private Boolean test;
+        APITask(String name, String sql, String dbName, Boolean test) {
             this.name = name;
             this.sql = sql;
             this.dbName = dbName;
+            this.test = test;
         }
         @Override
         public List<LinkedHashMap> call() throws Exception {
@@ -839,10 +841,11 @@ public class DataShareService {
                     for (int i = 1; i <= columnCount; i++) {
                         String columnName = metaData.getColumnName(i);
                         Object value = resultSet.getObject(columnName);
-                        if(Objects.nonNull(value))
+                        if(Objects.nonNull(test) && test && Objects.nonNull(value)) {
                             map.put(columnName, String.valueOf(value));
-                        else
+                        } else {
                             map.put(columnName, value);
+                        }
                     }
                     result.add(map);
                 }
@@ -1064,7 +1067,7 @@ public class DataShareService {
             String countSql = sqlMap.get("count").toString();
             //query任务
             String queryName = String.valueOf(System.currentTimeMillis());
-            APITask queryTask = new APITask(queryName, querySql, dbName);
+            APITask queryTask = new APITask(queryName, querySql, dbName, false);
             Future<List<LinkedHashMap>> queryResult = pool.submit(queryTask);
             List<LinkedHashMap> queryData = queryResult.get();
 
