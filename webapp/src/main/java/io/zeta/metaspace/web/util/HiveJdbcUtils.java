@@ -77,9 +77,11 @@ public class HiveJdbcUtils {
             String jdbcUrl;
             if (KerberosConfig.isKerberosEnable()) {
                 jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+                jdbcUrl += "?tez.am.resource.memory.mb=256";
                 connection = DriverManager.getConnection(jdbcUrl);
             } else {
                 jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
+                jdbcUrl += "?tez.am.resource.memory.mb=256";
                 connection = DriverManager.getConnection(jdbcUrl, user, "");
             }
         return connection;
