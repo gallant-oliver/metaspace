@@ -587,7 +587,6 @@ public class DataManageService {
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/reviews/user";
             List<String> tableList = tableOwner.getTables();
             APIDataOwner dataOwner = new APIDataOwner();
-
             //api
             List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
             dataOwner.setApi_id_list(apiList);
@@ -596,7 +595,7 @@ public class DataManageService {
             List<APIDataOwner.Organization> organizations = new ArrayList<>();
             for(TableOwner.Owner owner : tableOwners) {
                 APIDataOwner.Organization organization = new APIDataOwner.Organization();
-                organization.setOrganization(owner.getId());
+                organization.setOrganization(owner.getPkid());
                 organization.setOrganization_type(owner.getType());
                 organizations.add(organization);
             }
@@ -606,12 +605,28 @@ public class DataManageService {
             dataOwner.setApi_owner(api_owner);
             Gson gson = new Gson();
             String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
+            //向云平台发请求
             String res = SSLClient.doPut(mobiusURL, jsonStr);
             LOG.info(res);
-            return categoryDao.addTableOwners(tableOwner);
-        } catch (SQLException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL 异常");
+            //删除旧关系
+            categoryDao.deleteDataOwner(tableOwner.getTables());
+            //修改人
+            String keeper = AdminUtils.getUserData().getUserId();
+            //修改时间
+            String generateTIme = DateUtils.getNow();
+            //列表
+            List<DataOwner> table2OwnerList = new ArrayList<>();
+            for(String tableGuid : tableList) {
+                for(TableOwner.Owner owner : tableOwners) {
+                    DataOwner dOnwer = new DataOwner();
+                    dOnwer.setTableGuid(tableGuid);
+                    dOnwer.setOwnerId(owner.getId());
+                    dOnwer.setKeeper(keeper);
+                    dOnwer.setGenerateTime(generateTIme);
+                    table2OwnerList.add(dOnwer);
+                }
+            }
+            return categoryDao.addDataOwner(table2OwnerList);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
