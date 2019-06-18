@@ -584,7 +584,7 @@ public class DataManageService {
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/delete";
+            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/reviews/user";
             List<String> tableList = tableOwner.getTables();
             APIDataOwner dataOwner = new APIDataOwner();
 
@@ -605,8 +605,9 @@ public class DataManageService {
             List<String> api_owner = new ArrayList<>();
             dataOwner.setApi_owner(api_owner);
             Gson gson = new Gson();
-            String jsonStr = gson.toJson(dataOwner, APIContent.class);
+            String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
             String res = SSLClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
             return categoryDao.addTableOwners(tableOwner);
         } catch (SQLException e) {
             LOG.error(e.getMessage());
