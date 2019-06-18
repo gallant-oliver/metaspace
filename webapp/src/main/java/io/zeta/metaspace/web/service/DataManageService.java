@@ -589,25 +589,28 @@ public class DataManageService {
             APIDataOwner dataOwner = new APIDataOwner();
             //api
             List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
-            dataOwner.setApi_id_list(apiList);
-            //organization
             List<TableOwner.Owner> tableOwners = tableOwner.getOwners();
-            List<APIDataOwner.Organization> organizations = new ArrayList<>();
-            for(TableOwner.Owner owner : tableOwners) {
-                APIDataOwner.Organization organization = new APIDataOwner.Organization();
-                organization.setOrganization(owner.getPkid());
-                organization.setOrganization_type(owner.getType());
-                organizations.add(organization);
+            if(Objects.nonNull(apiList) && apiList.size()>0) {
+                dataOwner.setApi_id_list(apiList);
+                //organization
+                List<APIDataOwner.Organization> organizations = new ArrayList<>();
+                for (TableOwner.Owner owner : tableOwners) {
+                    APIDataOwner.Organization organization = new APIDataOwner.Organization();
+                    organization.setOrganization(owner.getPkid());
+                    organization.setOrganization_type(owner.getType());
+                    organizations.add(organization);
+                }
+                //owner
+                dataOwner.setOrganization_list(organizations);
+                List<String> api_owner = new ArrayList<>();
+                dataOwner.setApi_owner(api_owner);
+                Gson gson = new Gson();
+                String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
+                //向云平台发请求
+                String res = SSLClient.doPut(mobiusURL, jsonStr);
+                if(Objects.nonNull(res))
+                    LOG.info(res);
             }
-            //owner
-            dataOwner.setOrganization_list(organizations);
-            List<String> api_owner = new ArrayList<>();
-            dataOwner.setApi_owner(api_owner);
-            Gson gson = new Gson();
-            String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
-            //向云平台发请求
-            String res = SSLClient.doPut(mobiusURL, jsonStr);
-            LOG.info(res);
             //删除旧关系
             categoryDao.deleteDataOwner(tableOwner.getTables());
             //修改人
@@ -621,6 +624,7 @@ public class DataManageService {
                     DataOwner dOnwer = new DataOwner();
                     dOnwer.setTableGuid(tableGuid);
                     dOnwer.setOwnerId(owner.getId());
+                    dOnwer.setPkId(owner.getPkid());
                     dOnwer.setKeeper(keeper);
                     dOnwer.setGenerateTime(generateTIme);
                     table2OwnerList.add(dOnwer);
