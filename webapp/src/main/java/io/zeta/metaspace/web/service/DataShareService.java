@@ -769,8 +769,9 @@ public class DataShareService {
             operation.setResponses(responseMap);
             String yamlOutput = Yaml.pretty().writeValueAsString(swagger);
             String content = yamlOutput.substring(yamlOutput.indexOf("\n") + 1);
-            System.out.println(content);
-            LOG.info(content);
+            if(LOG.isDebugEnabled()) {
+                LOG.debug(content);
+            }
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
