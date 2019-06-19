@@ -387,29 +387,29 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
 
     @Override
     @GraphTransaction
-    public EntityMutationResponse hardDeleteById(final String guid) throws AtlasBaseException {
-        if (StringUtils.isEmpty(guid)) {
-            throw new AtlasBaseException(AtlasErrorCode.INSTANCE_GUID_NOT_FOUND, guid);
+    public EntityMutationResponse hardDeleteById(final List<String> guidList) throws AtlasBaseException {
+        if (CollectionUtils.isEmpty(guidList)) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "Guid(s) not specified");
         }
 
         Collection<AtlasVertex> deletionCandidates = new ArrayList<>();
-        AtlasVertex             vertex             = AtlasGraphUtilsV2.findByGuid(guid);
+        for (String guid : guidList) {
 
-        if (vertex != null) {
-            AtlasEntityHeader entityHeader = entityRetriever.toAtlasEntityHeaderWithClassifications(vertex);
+            AtlasVertex vertex = AtlasGraphUtilsV2.findByGuid(guid);
 
-            AtlasAuthorizationUtils.verifyAccess(new AtlasEntityAccessRequest(typeRegistry, AtlasPrivilege.ENTITY_DELETE, entityHeader), "delete entity: guid=", guid);
+            if (vertex != null) {
+                AtlasEntityHeader entityHeader = entityRetriever.toAtlasEntityHeaderWithClassifications(vertex);
 
-            deletionCandidates.add(vertex);
-        } else {
+                AtlasAuthorizationUtils.verifyAccess(new AtlasEntityAccessRequest(typeRegistry, AtlasPrivilege.ENTITY_DELETE, entityHeader), "delete entity: guid=", guid);
 
+                deletionCandidates.add(vertex);
+            } else {
+                LOG.info("ignored for non-existent entity with guid {}", guid);
+            }
         }
 
         EntityMutationResponse ret = hardDeleteVertices(deletionCandidates);
-
-        // Notify the change listeners
-        entityChangeNotifier.onEntitiesMutated(ret, false);
-
+        LOG.info("deleted guids of entities [{}]", StringUtils.join(guidList, ","));
         return ret;
     }
 
@@ -443,7 +443,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         }
 
         if (deletionCandidates.isEmpty()) {
-            LOG.info("No deletion candidate entities were found for guids %s", guids);
+            LOG.info("No deletion candidate entities were found for guids {}", guids);
         }
 
         EntityMutationResponse ret = deleteVertices(deletionCandidates);
@@ -975,7 +975,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         EntityMutationResponse response = new EntityMutationResponse();
         RequestContext         req      = RequestContext.get();
         DeleteHandlerV1 delete = new HardDeleteHandlerV1(typeRegistry);
-        delete.completeDeleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
+        delete.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
 
         for (AtlasObjectId entity : req.getDeletedEntities()) {
             response.addEntity(DELETE, entity);

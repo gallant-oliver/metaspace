@@ -102,9 +102,9 @@ public abstract class DeleteHandlerV1 {
             String              guid = AtlasGraphUtilsV2.getIdFromVertex(instanceVertex);
             AtlasEntity.Status state = getState(instanceVertex);
 
-            if (state == DELETED || requestContext.isDeletedEntity(guid)) {
+            if (state == getCheckStatus() || requestContext.isDeletedEntity(guid)) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Skipping deletion of {} as it is already deleted", guid);
+                    LOG.debug("Skipping deletion of {} as it is already {}", guid, getCheckStatus().name());
                 }
 
                 continue;
@@ -125,25 +125,6 @@ public abstract class DeleteHandlerV1 {
         }
     }
 
-    public void completeDeleteEntities(Collection<AtlasVertex> instanceVertices) throws AtlasBaseException {
-        RequestContext   requestContext            = RequestContext.get();
-        Set<AtlasVertex> deletionCandidateVertices = new HashSet<>();
-
-        for (AtlasVertex instanceVertex : instanceVertices) {
-            // Record all deletion candidate entities in RequestContext
-            // and gather deletion candidate vertices.
-            for (GraphHelper.VertexInfo vertexInfo : getComplateOwnedVertices(instanceVertex)) {
-                requestContext.recordEntityDelete(vertexInfo.getEntity());
-                deletionCandidateVertices.add(vertexInfo.getVertex());
-            }
-        }
-
-        // Delete traits and vertices.
-        for (AtlasVertex deletionCandidateVertex : deletionCandidateVertices) {
-            deleteAllClassifications(deletionCandidateVertex);
-            deleteTypeVertex(deletionCandidateVertex, isInternalType(deletionCandidateVertex));
-        }
-    }
 
     /**
      * Delete the specified relationship edge.
@@ -166,9 +147,9 @@ public abstract class DeleteHandlerV1 {
         for (AtlasEdge edge : edges) {
             boolean isInternal = isInternalType(edge.getInVertex()) && isInternalType(edge.getOutVertex());
 
-            if (!isInternal && getState(edge) == DELETED) {
+            if (!isInternal && getState(edge) == getCheckStatus()) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Skipping deletion of {} as it is already deleted", getIdFromEdge(edge));
+                    LOG.debug("Skipping deletion of {} as it is already {}", getIdFromEdge(edge), getCheckStatus().name());
                 }
 
                 continue;
@@ -180,6 +161,13 @@ public abstract class DeleteHandlerV1 {
             deleteEdge(edge, isInternal || forceDelete);
         }
     }
+
+    /**
+     * 获取校验entity状态的参照值，默认软删除返回DELETED，标示entity已经删除了，
+     * 硬删除返回ACTIVE
+     * @return
+     */
+    protected abstract Status getCheckStatus();
 
     /**
      * Get the GUIDs and vertices for all composite entities owned/contained by the specified root entity AtlasVertex.
@@ -199,7 +187,7 @@ public abstract class DeleteHandlerV1 {
             AtlasVertex        vertex = vertices.pop();
             AtlasEntity.Status state  = getState(vertex);
 
-            if (state == DELETED) {
+            if (state == getCheckStatus()) {
                 //If the reference vertex is marked for deletion, skip it
                 continue;
             }
@@ -232,7 +220,7 @@ public abstract class DeleteHandlerV1 {
                 if (typeCategory == OBJECT_ID_TYPE) {
                     AtlasEdge edge = graphHelper.getEdgeForLabel(vertex, edgeLabel);
 
-                    if (edge == null || getState(edge) == DELETED) {
+                    if (edge == null || getState(edge) == getCheckStatus()) {
                         continue;
                     }
 
@@ -255,7 +243,7 @@ public abstract class DeleteHandlerV1 {
 
                     if (CollectionUtils.isNotEmpty(edges)) {
                         for (AtlasEdge edge : edges) {
-                            if (edge == null || getState(edge) == DELETED) {
+                            if (edge == null || getState(edge) == getCheckStatus()) {
                                 continue;
                             }
 
@@ -881,7 +869,7 @@ public abstract class DeleteHandlerV1 {
         final String outId    = GraphHelper.getGuid(outVertex);
         final Status state    = getState(outVertex);
 
-        if (state == DELETED || (outId != null && RequestContext.get().isDeletedEntity(outId))) {
+        if (state == getCheckStatus() || (outId != null && RequestContext.get().isDeletedEntity(outId))) {
             //If the reference vertex is marked for deletion, skip updating the reference
             return;
         }
@@ -997,7 +985,7 @@ public abstract class DeleteHandlerV1 {
         for (AtlasEdge edge : incomingEdges) {
             Status edgeState = getState(edge);
 
-            if (edgeState == ACTIVE) {
+            if (edgeState == DELETED) {
                 if (isRelationshipEdge(edge)) {
                     deleteRelationship(edge);
                 } else {
