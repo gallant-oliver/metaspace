@@ -81,4 +81,9 @@ public class SoftDeleteHandlerV1 extends DeleteHandlerV1 {
             }
         }
     }
+
+    @Override
+    protected Status getCheckStatus() {
+        return DELETED;
+    }
 }
