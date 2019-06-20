@@ -28,7 +28,20 @@ public interface RoleDAO {
     @Update("update role set valid=#{valid},updater=#{updater},updateTime=#{updateTime} where roleId=#{roleId}")
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username limit #{limit} offset #{offset}")
+    @Select({"<script>",
+             " select userid,username,account,users.roleid,rolename",
+             " from users,role",
+             " where users.roleid=role.roleid",
+             " and users.roleid=#{roleId}",
+             " <if test=\"query != null and query!=''\">",
+             " and username like '%'||#{query}||'%' ESCAPE '/'",
+             "</if>",
+             " <if test=\"query == null or query==''\">",
+             " and username like '%'||#{query}||'%' ESCAPE '/' or username is null",
+             "</if>",
+             " order by username",
+             " limit #{limit} offset #{offset}",
+             " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
     @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username offset #{offset}")
