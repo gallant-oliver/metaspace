@@ -26,7 +26,6 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.table.Tag;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.common.filetable.*;
 import io.zeta.metaspace.web.config.FiletableConfig;
 import io.zeta.metaspace.web.dao.*;
@@ -34,7 +33,6 @@ import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.model.filetable.UploadJobInfo;
 import io.zeta.metaspace.web.util.*;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -884,7 +882,7 @@ public class MetaDataService {
 
     @CacheEvict(value = {"columnCache", "tablePageCache", "columnPageCache", "databaseSearchCache", "TableByDBCache"}, allEntries = true)
     public void refreshCache(){
-
+        LOG.info("元数据管理缓存已被清除");
     }
 
     /**
@@ -923,9 +921,6 @@ public class MetaDataService {
         } catch (Exception e) {
             errorMessage = String.format("同步元数据出错，%s", e.getMessage());
             LOG.error("import metadata error", e);
-        }finally {
-            //同步元数据后，刷新元数据缓存
-            refreshCache();
         }
     }
 
@@ -1226,10 +1221,10 @@ public class MetaDataService {
     @Transactional
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
-            User user = AdminUtils.getUserData();
-            String id = user.getRoleId();
-            if(!"1".equals(id)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限使用该接口");
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            if(!"1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
             AtlasEntity entity = info.getEntity();
@@ -1237,18 +1232,40 @@ public class MetaDataService {
             if(AtlasEntity.Status.DELETED != status) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
             }
-            EntityMutationResponse response = entitiesStore.hardDeleteById(guid);
-            //表详情
-            tableDAO.deleteTableInfo(guid);
-            //owner
-            tableDAO.deleteTableRelatedOwner(guid);
-            //关联关系
-            relationDAO.deleteByTableGuid(guid);
-            //business2table
-            businessDAO.deleteBusinessRelationByTableGuid(guid);
-            //表标签
-            tableTagDAO.delAllTable2Tag(guid);
-
+            List<String> deleteAllGuids = new ArrayList<>();
+            List<String> deleteTableGuids = new ArrayList<>();
+            //如果是数据库，则查找数据库下的表
+            if (entity.getTypeName().equals("hive_db")) {
+                deleteAllGuids.add(guid);
+                Map<String, Object> relationshipAttributes = entity.getRelationshipAttributes();
+                if (null != relationshipAttributes) {
+                    for (Object collection : relationshipAttributes.values()) {
+                        if (Objects.nonNull(collection) && collection instanceof ArrayList) {
+                            List<Object> list = (List<Object>) collection;
+                            for (Object object : list) {
+                                if (Objects.nonNull(object) && object instanceof AtlasRelatedObjectId) {
+                                    AtlasRelatedObjectId relatedObjectId = (AtlasRelatedObjectId) object;
+                                    deleteTableGuids.add(relatedObjectId.getGuid());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            deleteAllGuids.addAll(deleteTableGuids);
+            EntityMutationResponse response = entitiesStore.hardDeleteById(deleteAllGuids);
+            for (String tableGuid : deleteAllGuids) {
+                //表详情
+                tableDAO.deleteTableInfo(tableGuid);
+                //owner
+                tableDAO.deleteTableRelatedOwner(tableGuid);
+                //关联关系
+                relationDAO.deleteByTableGuid(tableGuid);
+                //business2table
+                businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
+                //表标签
+                tableTagDAO.delAllTable2Tag(tableGuid);
+            }
             return response;
         } catch (AtlasBaseException e) {
             throw e;
