@@ -29,3 +29,5 @@ UPDATE "public"."role" set "valid"=true;
 /*此处需要根据现场环境管理员ID设置creator和updater*/
 UPDATE "public"."role" set "creator"='',"updater"='';
 
+UPDATE "public"."role" set "createtime"= to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), "updatetime"= to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss') where "roleid" in ('1','2', '3', '4', '5', '6', '7')
+
