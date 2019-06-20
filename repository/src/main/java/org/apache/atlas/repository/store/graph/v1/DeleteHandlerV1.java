@@ -257,79 +257,6 @@ public abstract class DeleteHandlerV1 {
         return vertexInfoMap.values();
     }
 
-    public Collection<GraphHelper.VertexInfo> getComplateOwnedVertices(AtlasVertex entityVertex) throws AtlasBaseException {
-        Map<String, GraphHelper.VertexInfo> vertexInfoMap = new HashMap<>();
-        Stack<AtlasVertex>                  vertices      = new Stack<>();
-
-        vertices.push(entityVertex);
-
-        while (vertices.size() > 0) {
-            AtlasVertex        vertex = vertices.pop();
-            String guid = GraphHelper.getGuid(vertex);
-
-            if (vertexInfoMap.containsKey(guid)) {
-                continue;
-            }
-
-            AtlasObjectId   entity     = entityRetriever.toAtlasObjectId(vertex);
-            String          typeName   = entity.getTypeName();
-            AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
-
-            if (entityType == null) {
-                throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, TypeCategory.ENTITY.name(), typeName);
-            }
-
-            vertexInfoMap.put(guid, new GraphHelper.VertexInfo(entity, vertex));
-
-            for (AtlasStructType.AtlasAttribute attributeInfo : entityType.getAllAttributes().values()) {
-                if (!attributeInfo.isOwnedRef()) {
-                    continue;
-                }
-
-                String       edgeLabel    = attributeInfo.getRelationshipEdgeLabel();
-                AtlasType    attrType     = attributeInfo.getAttributeType();
-                TypeCategory typeCategory = attrType.getTypeCategory();
-
-                if (typeCategory == OBJECT_ID_TYPE) {
-                    AtlasEdge edge = graphHelper.getEdgeForLabel(vertex, edgeLabel);
-
-                    if (edge == null) {
-                        continue;
-                    }
-
-                    vertices.push(edge.getInVertex());
-
-                } else if (typeCategory == ARRAY || typeCategory == MAP) {
-                    TypeCategory elementType = null;
-
-                    if (typeCategory == ARRAY) {
-                        elementType = ((AtlasArrayType) attrType).getElementType().getTypeCategory();
-                    } else if (typeCategory == MAP) {
-                        elementType = ((AtlasMapType) attrType).getValueType().getTypeCategory();
-                    }
-
-                    if (elementType != OBJECT_ID_TYPE) {
-                        continue;
-                    }
-                    //获取边
-                    List<AtlasEdge> edges = getCollectionElementsUsingRelationship(vertex, attributeInfo);
-
-                    if (CollectionUtils.isNotEmpty(edges)) {
-                        for (AtlasEdge edge : edges) {
-                            if (edge == null) {
-                                continue;
-                            }
-
-                            vertices.push(edge.getInVertex());
-                        }
-                    }
-                }
-            }
-        }
-
-        return vertexInfoMap.values();
-    }
-
     /**
      * Force delete is used to remove struct/trait in case of entity updates
      * @param edge
@@ -867,9 +794,8 @@ public abstract class DeleteHandlerV1 {
 
         final String typeName = GraphHelper.getTypeName(outVertex);
         final String outId    = GraphHelper.getGuid(outVertex);
-        final Status state    = getState(outVertex);
 
-        if (state == getCheckStatus() || (outId != null && RequestContext.get().isDeletedEntity(outId))) {
+        if (outId != null && RequestContext.get().isDeletedEntity(outId)) {
             //If the reference vertex is marked for deletion, skip updating the reference
             return;
         }
