@@ -110,15 +110,15 @@ public class RoleService {
     public PageResult<User> getUsers(String roleId, String query, long offset, long limit) throws AtlasBaseException {
         PageResult<User> userPageResult = new PageResult<>();
         List<User> users;
-        if (limit == -1) {
+        /*if (limit == -1) {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
-        } else {
+        } else {*/
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
-        }
+        //}
         long usersCount = roleDAO.getUsersCount(roleId, query);
         userPageResult.setLists(users);
         userPageResult.setOffset(offset);
