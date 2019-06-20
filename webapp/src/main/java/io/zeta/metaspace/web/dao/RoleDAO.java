@@ -31,16 +31,19 @@ public interface RoleDAO {
     @Select({"<script>",
              " select userid,username,account,users.roleid,rolename",
              " from users,role",
-             " where users.roleid=role.roleid",
+             " where role.roleid=users.roleid",
              " and users.roleid=#{roleId}",
              " <if test=\"query != null and query!=''\">",
              " and username like '%'||#{query}||'%' ESCAPE '/'",
              "</if>",
              " <if test=\"query == null or query==''\">",
-             " and username like '%'||#{query}||'%' ESCAPE '/' or username is null",
+             " and (username like '%'||#{query}||'%' ESCAPE '/' or username is null)",
              "</if>",
              " order by username",
-             " limit #{limit} offset #{offset}",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
              " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
