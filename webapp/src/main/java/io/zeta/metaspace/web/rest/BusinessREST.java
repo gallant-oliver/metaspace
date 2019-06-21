@@ -53,6 +53,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -536,6 +538,18 @@ public class BusinessREST {
         try {
             return businessService.checkColumnName(tableGuid, columns);
         } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    @POST
+    @Path("/excel/import")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void checkColumnName(@RequestParam("excelFile")MultipartFile excelFile) throws AtlasBaseException {
+        try {
+
+        } catch (Exception e) {
             throw e;
         }
     }
