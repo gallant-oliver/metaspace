@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -13,12 +14,14 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserWithRole;
+import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -199,20 +202,28 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
             }
             String roleId = roleIds.get(0);
+            Role role = roleDAO.getRoleByRoleId(roleId);
+            if(Objects.isNull(role) || !role.isValid()) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
+            }
+            int status = role.getStatus();
+            if(0 == status) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
+            }
             List<String> users = userWithRole.getUserIds();
             List<String> userIds = new ArrayList<>();
             for (String userId : users) {
                 if (Objects.isNull(userId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Id不能为空");
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户Id不能为空");
                 }
-                String role = usersService.getRoleIdByUserId(userId);
-                if (Objects.isNull(role)) {
+                String userRole = usersService.getRoleIdByUserId(userId);
+                if (Objects.isNull(userRole)) {
                     User user = new User();
                     user.setUserId(userId);
                     user.setRoleId(roleId);
                     userDAO.addUser(user);
-                } else if (role.equals("1")) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                } else if (userRole.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, userId + "为平台管理员，不允许修改平台管理员用户");
                 } else {
                     userIds.add(userId);
                 }
