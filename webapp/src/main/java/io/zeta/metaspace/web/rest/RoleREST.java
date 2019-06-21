@@ -128,7 +128,7 @@ public class RoleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Role> getRoles(Parameters parameters) throws AtlasBaseException {
         try {
-            return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), true);
         }
         catch(AtlasBaseException e){
             throw e;
@@ -292,7 +292,7 @@ public class RoleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Role> getRoles(@QueryParam("query") @DefaultValue("")String query, @QueryParam("offset") @DefaultValue("0")Long offset, @QueryParam("limit") @DefaultValue("-1")Long limit) throws AtlasBaseException {
         try {
-            return roleService.getRoles(query, offset, limit);
+            return roleService.getRoles(query, offset, limit, false);
         } catch(AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

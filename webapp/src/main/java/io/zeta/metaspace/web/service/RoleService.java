@@ -131,13 +131,16 @@ public class RoleService {
     }
 
     @Transactional
-    public PageResult<Role> getRoles(String query, long offset, long limit) throws AtlasBaseException {
+    public PageResult<Role> getRoles(String query, long offset, long limit, boolean containUnenable) throws AtlasBaseException {
         try {
             PageResult<Role> rolePageResult = new PageResult<>();
-            if (Objects.nonNull(query))
+            if (Objects.nonNull(query)) {
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-            List<Role> roles = roleDAO.getRoles(query, offset, limit);
-            long rolesCount = roleDAO.getRolesCount(query);
+            } else {
+                query = "";
+            }
+            List<Role> roles = roleDAO.getRoles(query, offset, limit, containUnenable);
+            long rolesCount = roleDAO.getRolesCount(query, containUnenable);
             rolePageResult.setLists(roles);
             rolePageResult.setOffset(offset);
             rolePageResult.setSum(rolesCount);
