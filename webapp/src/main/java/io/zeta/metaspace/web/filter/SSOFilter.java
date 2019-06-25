@@ -67,11 +67,11 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (FilterUtils.isSkipUrl(requestURL)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
         try {
+            if (FilterUtils.isSkipUrl(requestURL)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String loginData = loginURL + "?service=";
             try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
