@@ -264,6 +264,20 @@ public class BusinessService {
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
 
+            for(int i=0; i<tables.size(); i++) {
+                String tableGuid = tables.get(i).getTableGuid();
+                AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
+                if(Objects.isNull(entityWithExtInfo)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表详情");
+                }
+                AtlasEntity entity = entityWithExtInfo.getEntity();
+                if (entity.hasAttribute("displayChineseText") && Objects.nonNull(entity.getAttribute("displayChineseText"))) {
+                    String displayName = entity.getAttribute("displayChineseText").toString();
+                    tables.get(i).setDisplayName(displayName);
+                }
+            }
+
+
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
                 TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
