@@ -499,8 +499,14 @@ public class DataManageService {
             if(Objects.nonNull(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
-
+            //path
             getPath(list);
+            //dataOwner
+            for(RelationEntityV2 entity : list) {
+                String tableGuid = entity.getTableGuid();
+                List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
+                entity.setDataOwner(ownerHeaders);
+            }
             long totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             pageResult.setCount(list.size());
             pageResult.setLists(list);
