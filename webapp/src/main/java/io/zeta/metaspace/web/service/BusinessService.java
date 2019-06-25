@@ -42,6 +42,7 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -115,8 +116,7 @@ public class BusinessService {
             info.setBusinessId(businessId);
             //submissionTime && businessLastUpdate && ticketNumber
             long timestamp = System.currentTimeMillis();
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String time = format.format(timestamp);
+            String time = DateUtils.getNow();
             info.setSubmissionTime(time);
             info.setBusinessLastUpdate(time);
             info.setTicketNumber(String.valueOf(timestamp));
@@ -144,6 +144,7 @@ public class BusinessService {
 
             entity.setBusinessId(businessId);
             entity.setCategoryGuid(categoryId);
+            entity.setGenerateTime(time);
             int relationFlag = businessDao.addRelation(entity);
             return insertFlag & relationFlag;
         } catch (AtlasBaseException e) {

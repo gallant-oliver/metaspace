@@ -73,7 +73,7 @@ public interface BusinessDAO {
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //添加目录/业务对象关联
-    @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId)values(#{relationshipGuid},#{categoryGuid},#{businessId})")
+    @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
     public int addRelation(BusinessRelationEntity entity) throws SQLException;
 
     @Select("select trustTable from businessInfo where businessId=#{businessId}")
