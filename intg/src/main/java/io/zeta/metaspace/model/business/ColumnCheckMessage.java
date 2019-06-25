@@ -16,37 +16,110 @@
  */
 package io.zeta.metaspace.model.business;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/6/3 14:01
  */
 public class ColumnCheckMessage {
-    private int row;
-    private String columnName;
-    private String errorMessage;
 
-    public int getRow() {
-        return row;
+    private List<ColumnCheckInfo> columnCheckInfoList;
+    private int status;
+    private int errorCount;
+    private int totalSize;
+    private List<String> errorColumnList;
+
+    public enum Status {
+        SUCCESS(1), FAILURE(0);
+
+        private int status;
+        Status(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
     }
 
-    public void setRow(int row) {
-        this.row = row;
+    public static class ColumnCheckInfo {
+        private int row;
+        private String columnName;
+        private String displayText;
+        private String errorMessage;
+
+        public int getRow() {
+            return row;
+        }
+
+        public void setRow(int row) {
+            this.row = row;
+        }
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public String getDisplayText() {
+            return displayText;
+        }
+
+        public void setDisplayText(String displayText) {
+            this.displayText = displayText;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+        public void setErrorMessage(String errorMessage) {
+            this.errorMessage = errorMessage;
+        }
     }
 
-    public String getColumnName() {
-        return columnName;
+    public List<ColumnCheckInfo> getColumnCheckInfoList() {
+        return columnCheckInfoList;
     }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    public void setColumnCheckInfoList(List<ColumnCheckInfo> columnCheckInfoList) {
+        this.columnCheckInfoList = columnCheckInfoList;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public int getStatus() {
+        return status;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setStatus(Status status) {
+        this.status = status.getStatus();
+    }
+
+    public int getErrorCount() {
+        return errorCount;
+    }
+
+    public void setErrorCount(int errorCount) {
+        this.errorCount = errorCount;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public List<String> getErrorColumnList() {
+        return errorColumnList;
+    }
+
+    public void setErrorColumnList(List<String> errorColumnList) {
+        this.errorColumnList = errorColumnList;
     }
 }

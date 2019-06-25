@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/2/13 10:09
  */
 
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
@@ -41,12 +43,15 @@ import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.util.ExcelUtils;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.io.FileUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +61,12 @@ import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -73,6 +84,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 
@@ -474,6 +486,13 @@ public class BusinessREST {
         }
     }
 
+    /**
+     * 获取业务对象关联表
+     * @param businessId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/{businessId}/tables")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -492,6 +511,13 @@ public class BusinessREST {
         }
     }
 
+    /**
+     * 获取表字段列表
+     * @param tableGuid
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -504,7 +530,7 @@ public class BusinessREST {
         }
     }
 
-    @PUT
+    /*@PUT
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -515,8 +541,14 @@ public class BusinessREST {
         } catch (AtlasBaseException e) {
             throw e;
         }
-    }
+    }*/
 
+    /**
+     * 编辑表显示名称
+     * @param tableHeader
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -530,7 +562,7 @@ public class BusinessREST {
         }
     }
 
-    @POST
+    /*@POST
     @Path("/table/{guid}/columns/check")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -540,17 +572,60 @@ public class BusinessREST {
         } catch (AtlasBaseException e) {
             throw e;
         }
+    }*/
+
+    /**
+     * 导入字段中文别名Excel
+     * @param tableGuid
+     * @param fileInputStream
+     * @param contentDispositionHeader
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/excel/import/{guid}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ColumnCheckMessage checkColumnName(@PathParam("guid") String tableGuid, @FormDataParam("file") InputStream fileInputStream,
+                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws AtlasBaseException {
+        try {
+            String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            if((name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) && (name.length() < 5 || !name.substring(name.length() - 4).equals(".xls"))) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
+            }
+            return businessService.importColumnWithDisplayText(tableGuid, fileInputStream);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
-    @POST
-    @Path("/excel/import")
+    /**
+     * 下载编辑字段中文别名模板
+     * @param tableGuid
+     * @throws AtlasBaseException
+     * @throws IOException
+     * @throws SQLException
+     */
+    @GET
+    @Path("/excel/{tableGuid}/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void checkColumnName(@RequestParam("excelFile")MultipartFile excelFile) throws AtlasBaseException {
+    public void downloadExcelTemplate(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException, IOException, SQLException {
         try {
-
-        } catch (Exception e) {
-            throw e;
+            File xlsxFile = businessService.exportExcel(tableGuid);
+            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+            httpServletResponse.setCharacterEncoding("utf-8");
+            String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
+            // Content-disposition属性设置成以附件方式进行下载
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+            OutputStream os = httpServletResponse.getOutputStream();
+            os.write(FileUtils.readFileToByteArray(xlsxFile));
+            os.close();
+            xlsxFile.delete();
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
         }
     }
 

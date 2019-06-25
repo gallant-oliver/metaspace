@@ -38,6 +38,8 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnPrivilegeDAO;
@@ -45,27 +47,27 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.AtlasStruct;
-import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
-import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import org.apache.atlas.repository.store.graph.EntityGraphDiscovery;
-import org.apache.atlas.repository.store.graph.EntityGraphDiscoveryContext;
 import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityGraphDiscoveryV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.atlas.repository.store.graph.v2.AtlasTypeDefGraphStoreV2;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
 import org.apache.atlas.type.AtlasTypeRegistry;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.postgresql.util.PGobject;
+
+import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.mockito.Mockito.mock;
 
 import org.slf4j.Logger;
@@ -75,15 +77,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+
 
 import javax.inject.Inject;
 
@@ -95,7 +101,6 @@ import javax.inject.Inject;
 @Service
 public class BusinessService {
     private static final Logger LOG = LoggerFactory.getLogger(BusinessService.class);
-    public static final String COLUMN_TYPE = "hive_column";
     @Autowired
     BusinessDAO businessDao;
     @Autowired
@@ -131,6 +136,9 @@ public class BusinessService {
 
     @Inject
     protected AtlasTypeDefGraphStoreV2 typeDefStore;
+
+
+    private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
@@ -677,21 +685,23 @@ public class BusinessService {
         }
     }
 
-    public void editTableColumnDisplayName(String tableGuid, List<Column> columns) throws AtlasBaseException {
+    public void editTableColumnDisplayName(List<Column> columns) throws AtlasBaseException {
         try {
             entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
             for(Column column : columns) {
                 String columnGuid = column.getColumnId();
                 String displayText = column.getDisplayName();
+                if(Objects.isNull(columnGuid) || Objects.isNull(displayText)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段Id或别名不能为空");
+                }
                 try {
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
                     graph.commit();
-                    RequestContext.clear();
-
                 } catch (AtlasBaseException ex) {
                     throw ex;
                 }
             }
+            RequestContext.clear();
         }catch (AtlasBaseException e) {
             throw e;
         }
@@ -711,7 +721,7 @@ public class BusinessService {
     }
 
 
-    public List<ColumnCheckMessage> checkColumnName(String tableGuid, List<String> columnList) throws AtlasBaseException {
+    /*public List<ColumnCheckMessage> checkColumnName(String tableGuid, List<String> columnList) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
             if(Objects.isNull(entityWithExtInfo)) {
@@ -736,6 +746,172 @@ public class BusinessService {
             return columnCheckMessageList;
         }catch (AtlasBaseException e) {
             throw e;
+        }
+    }*/
+
+    public ColumnCheckMessage checkColumnName(String tableGuid, List<String> columnList, List<Column> columnwithDisplayList) throws AtlasBaseException {
+        try {
+            ColumnCheckMessage columnCheckMessage = new ColumnCheckMessage();
+            int errorColumnCount = 0;
+            List<String> errorColumnList = new ArrayList<>();
+            List<ColumnCheckMessage.ColumnCheckInfo> columnCheckMessageList = new ArrayList<>();
+            List<String> recordColumnList = new ArrayList<>();
+            ColumnCheckMessage.ColumnCheckInfo columnCheckInfo = null;
+            int index = 0;
+            for(Column column : columnwithDisplayList) {
+                String columnName = column.getColumnName();
+                columnCheckInfo = new ColumnCheckMessage.ColumnCheckInfo();
+                columnCheckInfo.setRow(index++);
+                columnCheckInfo.setColumnName(columnName);
+                //是否为重复字段
+                if(recordColumnList.contains(columnName)) {
+                    columnCheckInfo.setErrorMessage("导入重复字段");
+                    errorColumnList.add(columnName);
+                    errorColumnCount++;
+                    columnCheckMessageList.add(columnCheckInfo);
+
+                //表中是否存在当前字段
+                } else if(columnList.contains(columnName)) {
+
+                    columnCheckInfo.setErrorMessage("匹配成功");
+                    String displayText = column.getDisplayName();
+                    //未填写别名默认为字段名
+                    if(Objects.isNull(displayText) || Objects.equals(displayText.trim(), "")) {
+                        columnCheckInfo.setDisplayText(columnName);
+                    } else {
+                        if(displayText.length() > 64) {
+                            columnCheckInfo.setErrorMessage("别名超出允许最大长度");
+                            errorColumnList.add(columnName);
+                            errorColumnCount++;
+                        } else {
+                            columnCheckInfo.setDisplayText(displayText);
+                        }
+                    }
+                    columnCheckMessageList.add(columnCheckInfo);
+                } else {
+                    columnCheckInfo.setErrorMessage("数据表中未找到该字段");
+                    errorColumnList.add(columnName);
+                    errorColumnCount++;
+                    columnCheckMessageList.add(columnCheckInfo);
+                }
+                recordColumnList.add(columnName);
+            }
+            columnCheckMessage.setColumnCheckInfoList(columnCheckMessageList);
+            columnCheckMessage.setErrorColumnList(errorColumnList);
+            columnCheckMessage.setTotalSize(columnCheckMessageList.size());
+            columnCheckMessage.setErrorCount(errorColumnCount);
+            if(errorColumnCount == 0) {
+
+                Map<String, String> columnName2GuidMap = getColumnName2GuidMap(tableGuid);
+
+                columnwithDisplayList.stream().forEach(column -> {
+                    String columnName = column.getColumnName();
+                    String guid = columnName2GuidMap.get(columnName);
+                    column.setColumnId(guid);
+                });
+
+                editTableColumnDisplayName(columnwithDisplayList);
+                columnCheckMessage.setStatus(ColumnCheckMessage.Status.SUCCESS);
+            } else {
+                columnCheckMessage.setStatus(ColumnCheckMessage.Status.FAILURE);
+            }
+            return columnCheckMessage;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    public Map<String, String> getColumnName2GuidMap(String tableGuid) throws AtlasBaseException {
+        String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO);
+        String columnQuery = String.format(query, tableGuid);
+        List<Map> columnInfoList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
+        Map name2GuidMap = new HashMap();
+        for(Map obj : columnInfoList) {
+            List<String> guidList = (List) obj.get("__guid");
+            List<String> nameList = (List) obj.get("Asset.name");
+            String guid = null;
+            String name = null;
+            if(Objects.nonNull(guidList) && guidList.size()>0) {
+                guid = guidList.get(0);
+            }
+            if(Objects.nonNull(nameList) && nameList.size()>0) {
+                name  = nameList.get(0);
+            }
+            if(Objects.nonNull(name) && Objects.nonNull(guid)) {
+                name2GuidMap.put(name, guid);
+            }
+        }
+        return name2GuidMap;
+    }
+
+    public ColumnCheckMessage importColumnWithDisplayText(String tableGuid, InputStream inputStream) throws AtlasBaseException {
+        try {
+            List<Column> columnAndDisplayMap = convertExceltoMap(inputStream);
+
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME);
+            String columnQuery = String.format(query, tableGuid);
+            List<String> columnList = (List<String>) graph.executeGremlinScript(columnQuery, false);
+            return checkColumnName(tableGuid, columnList, columnAndDisplayMap);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    public List<Column> convertExceltoMap(InputStream inputStream) throws AtlasBaseException {
+        try {
+            Workbook workbook = new WorkbookFactory().create(inputStream);
+            inputStream.close();
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowNum = sheet.getLastRowNum() + 1;
+            Row row = null;
+            String key = null;
+            String value = null;
+            List resultList = new ArrayList();
+            Column column = null;
+            for(int i=1; i<rowNum; i++) {
+                row = sheet.getRow(i);
+                key = row.getCell(0).getStringCellValue();
+                value = row.getCell(1).getStringCellValue();
+                column = new Column();
+                column.setColumnName(key);
+                column.setDisplayName(value);
+                resultList.add(column);
+            }
+            return resultList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+
+    public File exportExcel(String tableGuid) throws AtlasBaseException {
+        try {
+            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME);
+            String columnQuery = String.format(query, tableGuid);
+            List<String> columnList = (List<String>) graph.executeGremlinScript(columnQuery, false);
+
+            List<String> attributes = new ArrayList<>();
+            attributes.add("字段名称");
+            attributes.add("显示名称");
+
+            List<List<String>> datas = new ArrayList<>();
+            List<String> data = null;
+            for(String columnName : columnList) {
+                data = new ArrayList<>();
+                data.add(columnName);
+                datas.add(data);
+            }
+            Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
+            File file = new File("columns" + ".xlsx");
+            FileOutputStream output = new FileOutputStream(file);
+            workbook.write(output);
+            output.flush();
+            output.close();
+
+            return file;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }
 
