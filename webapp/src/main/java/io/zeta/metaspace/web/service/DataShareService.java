@@ -69,6 +69,7 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
@@ -768,8 +769,9 @@ public class DataShareService {
             operation.setResponses(responseMap);
             String yamlOutput = Yaml.pretty().writeValueAsString(swagger);
             String content = yamlOutput.substring(yamlOutput.indexOf("\n") + 1);
-            System.out.println(content);
-            LOG.info(content);
+            if(LOG.isDebugEnabled()) {
+                LOG.debug(content);
+            }
             return content;
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -801,11 +803,15 @@ public class DataShareService {
             long maxRowNumber = parameter.getMaxRowNumber();
             limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
             offset = Objects.nonNull(offset)?offset:0;
-            Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset);
-            String sql = sqlMap.get("query").toString();
+            //Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
+            String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
             APITask task = new APITask(randomName, sql, dbName, true);
-            Future<List<LinkedHashMap>> futureResult = pool.submit(task);
-            List<LinkedHashMap> result = futureResult.get();
+            /*Future<List<LinkedHashMap>> futureResult = pool.submit(task);
+            List<LinkedHashMap> result = futureResult.get();*/
+            Future<Map> futureResultMap = pool.submit(task);
+            Map resultMap = futureResultMap.get();
+            List<LinkedHashMap> result = (List<LinkedHashMap>)resultMap.get("queryResult");
+
             return result;
         } catch (AtlasBaseException e) {
             throw e;
@@ -815,7 +821,7 @@ public class DataShareService {
         }
     }
 
-    class APITask implements Callable<List<LinkedHashMap>> {
+    /*class APITask implements Callable<List<LinkedHashMap>> {
         private String name;
         private String sql;
         private String dbName;
@@ -859,7 +865,70 @@ public class DataShareService {
                 throw e;
             }
         }
+    }*/
+
+    class APITask implements Callable<Map> {
+        private String name;
+        private String querySql;
+        private String dbName;
+        private Boolean test;
+        APITask(String name, String querySql, String dbName, Boolean test) {
+            this.name = name;
+            this.querySql = querySql;
+            this.dbName = dbName;
+            this.test = test;
+        }
+        @Override
+        public Map call() throws Exception {
+            try {
+                if (Objects.nonNull(name)) {
+                    Thread.currentThread().setName(name);
+                }
+
+                Map resultMap = new HashMap();
+                Long count = 0L;
+                Connection conn = HiveJdbcUtils.getSystemConnection(dbName);
+                ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+
+                List<LinkedHashMap> result = new ArrayList<>();
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+                while (resultSet.next()) {
+                    LinkedHashMap map = new LinkedHashMap();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = metaData.getColumnName(i);
+                        Object value = resultSet.getObject(columnName);
+                        if(!test && i==columnCount) {
+                            if(Objects.nonNull(value)) {
+                                count = Long.parseLong(value.toString());
+                            } else {
+                                count = (long)map.size();
+                            }
+
+                            continue;
+                        }
+                        if(Objects.nonNull(test) && test && Objects.nonNull(value)) {
+                            map.put(columnName, String.valueOf(value));
+                        } else {
+                            map.put(columnName, value);
+                        }
+                    }
+                    result.add(map);
+                }
+                resultMap.put("queryResult", result);
+                resultMap.put("queryCount", count);
+                conn.close();
+                return resultMap;
+            } catch (AtlasBaseException e) {
+                LOG.error(e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                LOG.error(e.getMessage());
+                throw e;
+            }
+        }
     }
+
 
     /**
      * 取消查询线程
@@ -1062,14 +1131,14 @@ public class DataShareService {
             String tableName = shareDAO.queryTableNameByGuid(tableGuid);
             String dbName = shareDAO.querydbNameByGuid(tableGuid);
             //sql
-            Map sqlMap  = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
-            String querySql = sqlMap.get("query").toString();
+            //Map sqlMap  = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
+            String querySql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset, false);
 
-            String countSql = sqlMap.get("count").toString();
+            //String countSql = sqlMap.get("count").toString();
             //query任务
             String queryName = String.valueOf(System.currentTimeMillis());
-            APITask queryTask = new APITask(queryName, querySql, dbName, false);
-            Future<List<LinkedHashMap>> queryResult = pool.submit(queryTask);
+            APITask task = new APITask(queryName, querySql, dbName, false);
+            /*Future<List<LinkedHashMap>> queryResult = pool.submit(queryTask);
             List<LinkedHashMap> queryData = queryResult.get();
 
             //count
@@ -1077,12 +1146,19 @@ public class DataShareService {
             long count = queryData.size();
             while(resultSet.next()) {
                 count = resultSet.getLong(1);
-            }
+            }*/
+
+            Future<Map> futureResultMap = pool.submit(task);
+            Map resultMap = futureResultMap.get();
+            List<LinkedHashMap> queryData = (List<LinkedHashMap>)resultMap.get("queryResult");
+
+            Long count = Long.parseLong(resultMap.get("queryCount").toString());
+
             PageResult pageResult = new PageResult();
             pageResult.setOffset(offset);
             pageResult.setLists(queryData);
-            pageResult.setSum(queryData.size());
-            pageResult.setCount(count);
+            pageResult.setSum(count);
+            pageResult.setCount(queryData.size());
             return pageResult;
         } catch (ExecutionException e) {
             LOG.error(e.getMessage());
@@ -1221,7 +1297,7 @@ public class DataShareService {
      * @param offset
      * @return
      */
-    public Map<String,String> getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset) throws AtlasBaseException {
+    public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset, boolean test) throws AtlasBaseException {
         String columnName = null;
         try {
             if(offset<0) {
@@ -1234,20 +1310,23 @@ public class DataShareService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段columns不能为空");
             }
             StringBuffer querySql = new StringBuffer();
-            StringBuffer countSql = new StringBuffer();
+            //StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
-            countSql.append("select count(1) ");
+            //countSql.append("select count(1) ");
             StringJoiner columnJoiner = new StringJoiner(",");
             queryColumns.stream().forEach(column -> columnJoiner.add(column));
             querySql.append(columnJoiner.toString());
+            if(!test) {
+                querySql.append(",count(*) over() ");
+            }
             querySql.append(" from ");
             querySql.append(tableName);
-            countSql.append(" from ");
-            countSql.append(tableName);
+            //countSql.append(" from ");
+            //countSql.append(tableName);
             //过滤条件
             if (Objects.nonNull(kvList) && kvList.size() > 0) {
                 querySql.append(" where ");
-                countSql.append(" where ");
+                //countSql.append(" where ");
                 StringJoiner filterJoiner = new StringJoiner(" and ");
                 for (QueryParameter.Parameter kv : kvList) {
                     StringBuffer valueBuffer = new StringBuffer();
@@ -1280,7 +1359,7 @@ public class DataShareService {
                     filterJoiner.add(valueBuffer.toString());
                 }
                 querySql.append(filterJoiner.toString());
-                countSql.append(filterJoiner.toString());
+                //countSql.append(filterJoiner.toString());
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
@@ -1294,10 +1373,10 @@ public class DataShareService {
             }
             LOG.info("querySQL：" + querySql.toString());
             LOG.info("countSQL：" + querySql.toString());
-            Map result = new HashMap();
+            /*Map result = new HashMap();
             result.put("query", querySql.toString());
-            result.put("count", countSql.toString());
-            return result;
+            result.put("count", countSql.toString());*/
+            return querySql.toString();
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
         } catch (AtlasBaseException e) {
