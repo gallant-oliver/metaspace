@@ -1,6 +1,5 @@
 package io.zeta.metaspace.web.util;
 
-import io.zeta.metaspace.web.config.FiletableConfig;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,10 +19,6 @@ public class StringUtils {
 
         Matcher matcher = FILE_NAME_PATTERN.matcher(contentDisposition);
         return matcher.find() ? matcher.group("filename") : null;
-    }
-
-    public static String obtainFilePath(String jobId) {
-        return FiletableConfig.getUploadPath() + jobId + ".upload";
     }
 
     public static String obtainFileType(String fileName) {
