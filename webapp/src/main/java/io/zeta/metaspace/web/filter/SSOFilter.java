@@ -104,9 +104,6 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(Servlets.getRequestPayload(httpServletRequest));
-            }
             AUDIT_LOG.info(auditLog.toString());
         }
 
