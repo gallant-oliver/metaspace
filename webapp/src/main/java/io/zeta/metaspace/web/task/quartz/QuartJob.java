@@ -69,8 +69,8 @@ public class QuartJob implements Job {
 
     static {
         try {
-            /*org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");*/
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
         }  catch (Exception e) {
 
         }
@@ -117,7 +117,14 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
-        conn = HiveJdbcUtils.getSystemConnection(dbName);
+        //conn = HiveJdbcUtils.getSystemConnection(dbName);
+        LOG.info("query engine:" + engine);
+        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+        } else {
+            conn = HiveJdbcUtils.getSystemConnection(dbName);
+        }
+
         int totalStep = rules.size();
         for (int i = 0; i < rules.size(); i++) {
             //根据模板状态判断是否继续运行
@@ -135,19 +142,21 @@ public class QuartJob implements Job {
                     rule.setRuleCheckThreshold(thresholds);
                     runJob(rule);
                     float ratio = (float) (i + 1) / totalStep;
+                    LOG.info("raion=" + ratio);
                     qualityDao.updateFinishedPercent(templateId, ratio);
                     break;
                 } catch (Exception e) {
-                    LOG.error(e.getMessage());
+                    //LOG.error(e.getMessage());
                     try {
                         retryCount++;
+                        LOG.info("retryCount=" + retryCount);
                         ReportError error = new ReportError();
                         String errorId = UUID.randomUUID().toString();
                         error.setErrorId(errorId);
                         error.setTemplateId(templateId);
                         error.setReportId(reportId);
                         error.setRuleId(rule.getRuleId());
-                        error.setContent(e.getMessage());
+                        error.setContent(e.toString());
                         long currentTime = System.currentTimeMillis();
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         String generateTime = sdf.format(currentTime);
@@ -155,7 +164,7 @@ public class QuartJob implements Job {
                         error.setRetryCount(retryCount);
                         qualityDao.insertReportError(error);
                         qualityDao.updateFinishedPercent(templateId, 0F);
-                        Thread.sleep(RETRY * 10000);
+                        Thread.sleep(RETRY * 5000);
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
                     }
@@ -163,7 +172,10 @@ public class QuartJob implements Job {
                         LOG.error(e.getMessage());
                         throw e;
                     }
+                } finally {
+
                 }
+
             //重试
             } while (retryCount < RETRY);
         }
@@ -274,21 +286,23 @@ public class QuartJob implements Job {
             } else {
                 sql = String.format(query, tableName);
             }
-
-            ResultSet resultSet;
+            LOG.info("query Sql: " + sql);
+            ResultSet resultSet = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             } else {
                 resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
-
-            while (resultSet.next()) {
-                Object object = resultSet.getObject(1);
-                resultValue = Double.valueOf(object.toString());
+            if(Objects.nonNull(resultSet)) {
+                while (resultSet.next()) {
+                    Object object = resultSet.getObject(1);
+                    if(Objects.nonNull(object))
+                        resultValue = Double.valueOf(object.toString());
+                }
             }
             return resultValue;
         } catch (Exception e) {
-            LOG.info(e.getMessage());
+            LOG.info(e.toString());
             throw e;
         } finally {
             if (record) {
@@ -348,7 +362,7 @@ public class QuartJob implements Job {
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
-
+            String dbName = source.split("\\.")[0];
             String tableName = source.split("\\.")[1];
             //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
 
@@ -360,7 +374,9 @@ public class QuartJob implements Job {
             }*/
 
             //表数据量
-            totalSize = HiveJdbcUtils.getTableSize(conn, tableName);
+            Connection connection = HiveJdbcUtils.getSystemConnection(dbName);
+            totalSize = HiveJdbcUtils.getTableSize(connection, tableName);
+            connection.close();
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -430,16 +446,20 @@ public class QuartJob implements Job {
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
 
-            ResultSet resultSet;
+            ResultSet resultSet = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             } else {
                 resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
 
-            while (resultSet.next()) {
-                Object object = resultSet.getObject(1);
-                totalNum = Double.valueOf(object.toString());
+            if(Objects.nonNull(resultSet)) {
+                while (resultSet.next()) {
+                    Object object = resultSet.getObject(1);
+                    if(Objects.nonNull(object)) {
+                        totalNum = Double.valueOf(object.toString());
+                    }
+                }
             }
             if (totalNum != 0) {
                 ratio = nowNum / totalNum;

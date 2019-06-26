@@ -73,12 +73,13 @@ public class ImpalaJdbcUtils {
      * 系统调度
      */
     static Connection connection;
-    private static Connection getSystemConnection(String db) throws SQLException, IOException {
+    public static Connection getSystemConnection(String db) throws SQLException, IOException {
         String user = "hive";
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;
+            LOG.info("Impala Jdbc:" + jdbcUrl);
             connection = DriverManager.getConnection(jdbcUrl);
         } else {
             jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
@@ -87,9 +88,9 @@ public class ImpalaJdbcUtils {
         return connection;
     }
 
-    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
+    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql) throws Exception {
         try {
-            Connection conn = getSystemConnection(db);
+            //Connection conn = getSystemConnection(db);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
@@ -98,6 +99,9 @@ public class ImpalaJdbcUtils {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        } catch (Exception e) {
+            LOG.error(e.toString());
+            throw e;
         }
     }
 
@@ -109,55 +113,4 @@ public class ImpalaJdbcUtils {
         }
     }
 
-    /**
-     * 表数据量大小，单位bytes
-     * 文件个数
-     *
-     * @param
-     * @return
-     */
-    public static TableMetadata systemMetadata(String dbAndtableName) throws Exception {
-        String[] split = dbAndtableName.split("\\.");
-        String db = split[0];
-        String tableName = split[1];
-        String location = location(db, tableName);
-        if (location != null) {
-            try (FileSystem fs = HdfsUtils.getSystemFs("hdfs")){
-                Path path = new Path(location);
-                if(fs.exists(path)) {
-                    ContentSummary contentSummary = fs.getContentSummary(path);
-
-                    long numFiles = contentSummary.getFileCount();
-                    long totalSize = contentSummary.getLength();
-                    return new TableMetadata(numFiles, Long.valueOf(totalSize));
-                } else {
-                    return new TableMetadata();
-                }
-            }catch (Exception e){
-                LOG.warn(e.getMessage(),e);
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hdfs服务异常");
-            }
-        } else {//view
-            return new TableMetadata();
-        }
-    }
-
-
-    private static String location(String db, String tableName) {
-        try(Connection conn = getSystemConnection(db);
-            ResultSet rs = conn.createStatement().executeQuery("SHOW CREATE TABLE " + tableName)) {
-            while (rs.next()) {
-                String text = rs.getString(1);
-                if (text.contains("hdfs://")) {
-
-                    String s = text.replaceAll("'", "").replaceAll("hdfs://\\w+", "").replaceAll(":\\d+","").replaceAll(" ", "");
-                    LOG.info(db + "." + tableName + " location:" + s);
-                    return s;
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn(db + "." + tableName + " location is not found, may be it's view.");
-        }
-        return null;
-    }
 }

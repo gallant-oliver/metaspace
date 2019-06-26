@@ -56,6 +56,8 @@ import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 //import jodd.util.StringUtil;
+import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
+import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -105,7 +107,7 @@ public class DataShareService {
 
     public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
-    private static final String TICKET_KEY = "X-SSO-FullticketId";
+    private static String engine;
 
     @Autowired
     DataShareDAO shareDAO;
@@ -119,6 +121,15 @@ public class DataShareService {
     private UserDAO userDAO;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
+
+    static {
+        try {
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
+        }  catch (Exception e) {
+
+        }
+    }
 
     public int insertAPIInfo(APIInfo info) throws AtlasBaseException {
         try {
@@ -888,8 +899,23 @@ public class DataShareService {
 
                 Map resultMap = new HashMap();
                 Long count = 0L;
-                Connection conn = HiveJdbcUtils.getSystemConnection(dbName);
-                ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+                /*Connection conn = HiveJdbcUtils.getSystemConnection(dbName);
+                ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);*/
+
+                Connection conn = null;
+                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                    conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+                } else {
+                    conn = HiveJdbcUtils.getSystemConnection(dbName);
+                }
+
+                ResultSet resultSet = null;
+                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                    resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
+                } else {
+                    resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+                }
+
 
                 List<LinkedHashMap> result = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
@@ -1310,6 +1336,7 @@ public class DataShareService {
             if(Objects.isNull(queryColumns) || queryColumns.size()==0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段columns不能为空");
             }
+            String orderColumnName = queryColumns.get(0);
             StringBuffer querySql = new StringBuffer();
             //StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
@@ -1364,6 +1391,7 @@ public class DataShareService {
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
+                querySql.append(" order by " + orderColumnName);
                 querySql.append(" limit ");
                 querySql.append(limit);
             }
