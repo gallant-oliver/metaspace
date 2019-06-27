@@ -26,6 +26,7 @@ public class BusinessRelationEntity {
     private String categoryGuid;
     private String businessId;
     private String path;
+    private String generateTime;
 
     public String getRelationshipGuid() {
         return relationshipGuid;
@@ -57,5 +58,13 @@ public class BusinessRelationEntity {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getGenerateTime() {
+        return generateTime;
+    }
+
+    public void setGenerateTime(String generateTime) {
+        this.generateTime = generateTime;
     }
 }
