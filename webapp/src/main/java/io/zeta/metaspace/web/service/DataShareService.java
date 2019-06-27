@@ -47,8 +47,11 @@ import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.DataType;
 import io.zeta.metaspace.model.share.FilterColumn;
+import io.zeta.metaspace.model.share.JsonQueryResult;
 import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.share.QueryResult;
+import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -905,7 +908,6 @@ public class DataShareService {
                             } else {
                                 count = (long)map.size();
                             }
-
                             continue;
                         }
                         if(Objects.nonNull(test) && test && Objects.nonNull(value)) {
@@ -1069,7 +1071,7 @@ public class DataShareService {
         }
     }*/
 
-    public PageResult queryAPIData(String path, QueryInfo queryInfo) throws AtlasBaseException {
+    public QueryResult queryAPIData(String path, QueryInfo queryInfo, String acceptHeader) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
             if(Objects.isNull(info)) {
@@ -1132,35 +1134,31 @@ public class DataShareService {
             String tableName = shareDAO.queryTableNameByGuid(tableGuid);
             String dbName = shareDAO.querydbNameByGuid(tableGuid);
             //sql
-            //Map sqlMap  = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
             String querySql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset, false);
 
-            //String countSql = sqlMap.get("count").toString();
             //query任务
             String queryName = String.valueOf(System.currentTimeMillis());
             APITask task = new APITask(queryName, querySql, dbName, false);
-            /*Future<List<LinkedHashMap>> queryResult = pool.submit(queryTask);
-            List<LinkedHashMap> queryData = queryResult.get();
-
-            //count
-            ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(countSql, dbName);
-            long count = queryData.size();
-            while(resultSet.next()) {
-                count = resultSet.getLong(1);
-            }*/
 
             Future<Map> futureResultMap = pool.submit(task);
             Map resultMap = futureResultMap.get();
-            List<LinkedHashMap> queryData = (List<LinkedHashMap>)resultMap.get("queryResult");
+            List<LinkedHashMap<String,Object>> queryDataList = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
 
             Long count = Long.parseLong(resultMap.get("queryCount").toString());
 
-            PageResult pageResult = new PageResult();
-            pageResult.setOffset(offset);
-            pageResult.setLists(queryData);
-            pageResult.setSum(count);
-            pageResult.setCount(queryData.size());
-            return pageResult;
+            if(acceptHeader.contains("xml")) {
+                XmlQueryResult queryResult = new XmlQueryResult();
+                XmlQueryResult.QueryData queryData = new XmlQueryResult.QueryData();
+                queryData.setData(queryDataList);
+                queryResult.setTotalCount(count);
+                queryResult.setDatas(queryData);
+                return queryResult;
+            } else {
+                JsonQueryResult queryResult = new JsonQueryResult();
+                queryResult.setDatas(queryDataList);
+                queryResult.setTotalCount(count);
+                return queryResult;
+            }
         } catch (ExecutionException e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , e.getCause().getMessage());

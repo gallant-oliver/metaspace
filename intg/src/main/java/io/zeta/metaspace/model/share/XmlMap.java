@@ -12,23 +12,34 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 11:37
  */
 package io.zeta.metaspace.model.share;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElementRef;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 11:37
  */
-public class QueryResult {
-    private long totalCount;
+@XmlAccessorType(XmlAccessType.FIELD)
+public class XmlMap {
 
-    public long getTotalCount() {
-        return totalCount;
+    @XmlElementRef(name = "xmlMap")
+    private List<JAXBElement<Object>> elements = new ArrayList<>();
+    private static ObjectFactory objectFactory = new ObjectFactory();
+
+    public void put(String key, Object value) {
+        JAXBElement<Object> ele = objectFactory.createXmlMap(key, value);
+        this.elements.add(ele);
     }
 
-    public void setTotalCount(long totalCount) {
-        this.totalCount = totalCount;
-    }
 }
