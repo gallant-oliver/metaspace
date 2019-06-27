@@ -859,10 +859,9 @@ public class BusinessService {
         return name2GuidMap;
     }
 
-    public ColumnCheckMessage importColumnWithDisplayText(String tableGuid, InputStream inputStream) throws AtlasBaseException {
+    public ColumnCheckMessage importColumnWithDisplayText(String tableGuid, File file) throws AtlasBaseException {
         try {
-            List<Column> columnAndDisplayMap = convertExceltoMap(inputStream);
-
+            List<Column> columnAndDisplayMap = convertExceltoMap(file);
             String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME);
             String columnQuery = String.format(query, tableGuid);
             List<String> columnList = (List<String>) graph.executeGremlinScript(columnQuery, false);
@@ -872,10 +871,9 @@ public class BusinessService {
         }
     }
 
-    public List<Column> convertExceltoMap(InputStream inputStream) throws AtlasBaseException {
+    public List<Column> convertExceltoMap(File file) throws AtlasBaseException {
         try {
-            Workbook workbook = new WorkbookFactory().create(inputStream);
-            inputStream.close();
+            Workbook workbook = new WorkbookFactory().create(file);
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
             Row row = null;

@@ -43,8 +43,6 @@ import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.util.ExcelUtils;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -58,10 +56,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,6 +66,7 @@ import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -94,6 +92,7 @@ import javax.ws.rs.core.Response;
 public class BusinessREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
     private static final int CATEGORY_TYPE = 1;
+    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -588,16 +587,27 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ColumnCheckMessage checkColumnName(@PathParam("guid") String tableGuid, @FormDataParam("file") InputStream fileInputStream,
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws AtlasBaseException {
+        File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             if((name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) && (name.length() < 5 || !name.substring(name.length() - 4).equals(".xls"))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
             }
-            return businessService.importColumnWithDisplayText(tableGuid, fileInputStream);
+
+            file = new File(name);
+            FileUtils.copyInputStreamToFile(fileInputStream, file);
+            if(file.length() > MAX_EXCEL_FILE_SIZE) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
+            }
+            return businessService.importColumnWithDisplayText(tableGuid, file);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        } finally {
+            if(Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
         }
     }
 
