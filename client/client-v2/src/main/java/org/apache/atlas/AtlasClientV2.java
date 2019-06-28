@@ -73,6 +73,9 @@ public class AtlasClientV2 extends AtlasBaseClient {
     // Relationships APIs
     private static final String RELATIONSHIPS_URI  = BASE_URI + "v2/relationship/";
 
+    // Refresh Cache
+    private static final String REFRESH_CACHE_URI = BASE_URI + "metadata/refreshcache";
+
     public AtlasClientV2(String[] baseUrl, String[] basicAuthUserNamePassword) {
         super(baseUrl, basicAuthUserNamePassword);
     }
@@ -399,6 +402,10 @@ public class AtlasClientV2 extends AtlasBaseClient {
         return callAPI(API_V2.UPDATE_RELATIONSHIP, AtlasRelationship.class, relationship);
     }
 
+    public void refreshCache() throws AtlasServiceException {
+        callAPI(API_V2.REFRESH_CACHE, (Class) null, null);
+    }
+
     @Override
     protected API formatPathParameters(final API api, final String... params) {
         return new API(String.format(api.getPath(), params), api.getMethod(), api.getExpectedStatus());
@@ -480,6 +487,7 @@ public class AtlasClientV2 extends AtlasBaseClient {
         public static final API_V2 DELETE_RELATIONSHIP_BY_GUID = new API_V2(RELATIONSHIPS_URI + "guid/", HttpMethod.DELETE, Response.Status.NO_CONTENT);
         public static final API_V2 CREATE_RELATIONSHIP         = new API_V2(RELATIONSHIPS_URI , HttpMethod.POST, Response.Status.OK);
         public static final API_V2 UPDATE_RELATIONSHIP         = new API_V2(RELATIONSHIPS_URI , HttpMethod.PUT, Response.Status.OK);
+        public static final API_V2 REFRESH_CACHE         = new API_V2(REFRESH_CACHE_URI , HttpMethod.GET, Response.Status.OK);
 
         private API_V2(String path, String method, Response.Status status) {
             super(path, method, status);
