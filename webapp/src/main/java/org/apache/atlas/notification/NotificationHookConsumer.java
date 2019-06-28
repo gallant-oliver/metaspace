@@ -361,7 +361,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         }
 
         @VisibleForTesting
-        void handleMessage(AtlasKafkaMessage<HookNotification> kafkaMsg) throws AtlasServiceException, AtlasException {
+        void handleMessage(AtlasKafkaMessage<HookNotification> kafkaMsg) throws AtlasServiceException {
             AtlasPerfTracer  perf        = null;
             HookNotification message     = kafkaMsg.getMessage();
             String           messageUser = message.getUser();
@@ -563,7 +563,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                 }
 
                 commit(kafkaMsg);
-                atlasClientV2.refreshCache();
+                refreshCache();
             } finally {
                 AtlasPerfTracer.log(perf);
 
@@ -574,6 +574,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                     AuditFilter.audit(auditLog);
                 }
             }
+        }
+        @VisibleForTesting
+        public void refreshCache() throws AtlasServiceException {
+            atlasClientV2.refreshCache();
         }
 
         private void recordFailedMessages() {
