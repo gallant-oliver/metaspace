@@ -1022,9 +1022,9 @@ public class MetaDataService {
             }
             List<String> deleteAllGuids = new ArrayList<>();
             List<String> deleteTableGuids = new ArrayList<>();
+            deleteAllGuids.add(guid);
             //如果是数据库，则查找数据库下的表
             if (entity.getTypeName().equals("hive_db")) {
-                deleteAllGuids.add(guid);
                 Map<String, Object> relationshipAttributes = entity.getRelationshipAttributes();
                 if (null != relationshipAttributes) {
                     for (Object collection : relationshipAttributes.values()) {
@@ -1038,9 +1038,10 @@ public class MetaDataService {
                             }
                         }
                     }
+                    deleteAllGuids.addAll(deleteTableGuids);
                 }
             }
-            deleteAllGuids.addAll(deleteTableGuids);
+
             EntityMutationResponse response = entitiesStore.hardDeleteById(deleteAllGuids);
             for (String tableGuid : deleteAllGuids) {
                 //表详情
