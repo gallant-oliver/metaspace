@@ -1,0 +1,41 @@
+1、备份数据库
+2、备份放入$METASPCE_HOME/server/webapp/metaspace/WEB-INF/lib下的atlas-intg-1.4.0.jar,atlas-repository-1.4.0.jar,atlas-webapp-1.4.0.jar
+   备份$METASPCE_HOME/hook/hive/atlas-hive-plugin-impl/atlas-intg-*.jar, hive-bridge-*.jar
+   备份 $METASPCE_HOME/server/webapp/metaspace/static 
+   备份 $METASPCE_HOME/server/webapp/metaspace/index.html
+3、将附件中的atlas-intg-1.4.1.jar,atlas-repository-1.4.1.jar,atlas-webapp-1.4.1.jar放入$METASPCE_HOME/server/webapp/metaspace/WEB-INF/lib目录
+   将附件中的hive放入$METASPCE_HOME/hook/目录
+   static目录和index.html放入$METASPCE_HOME/server/webapp/metaspace/
+4、根据现场升级环境中的数据修改升级的metaspace.1.4.1.sql，然后执行升级sql脚本
+5、部署附件metaspace_category到任意nginx有权限访问的目录, 并根据环境修改config.js
+6、修改nginx.conf如下
+server {
+    listen 8899;
+    location / {
+        #metaspace_category.zip部署路径
+        root  /Users/zhuxt/Downloads/dist-2019-0611-1727;
+        index index.html;
+    }
+}
+# 增加metaspace的nginx配置
+server {
+        #根据环境修改端口
+        listen       21000;
+        server_name  localhost;
+        location / {
+            if ($request_method = OPTIONS ) {
+                add_header 'Access-Control-Allow-Origin' "*";
+                add_header 'Access-Control-Allow-Methods' "POST, GET, PUT, OPTIONS, DELETE";
+                add_header 'Access-Control-Max-Age' "3600";
+                add_header 'Access-Control-Allow-Headers' "Origin, X-Requested-With, Content-Type, Accept, Authorization,X-Requested-By,X-Http-Method-Override,X-XSRF-HEADER, X-SSO-FullticketId";
+                return 200;
+            }
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'origin, content-type, cache-control, accept, options, authorization, x-requested-with' always;
+            add_header 'Access-Control-Allow-Headers' 'Content-Type,*,X-Requested-By,X-Http-Method-Override,X-XSRF-HEADER, X-SSO-FullticketId' always;
+            #根据环境修改ip和端口
+            proxy_pass http://10.201.50.209:21000;
+            proxy_intercept_errors on;
+       }
+    }
+7、重启hive，重启metaspace，重新加载nginx的配置

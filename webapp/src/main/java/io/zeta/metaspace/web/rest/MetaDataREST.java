@@ -497,6 +497,7 @@ public class MetaDataREST {
             CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
                 importing.set(false);
+                metadataService.refreshCache();
             });
         } else {
             return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
@@ -557,8 +558,9 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteByGuid(" + guid + ")");
             }
-
-            return metadataService.hardDeleteByGuid(guid);
+            EntityMutationResponse entityMutationResponse = metadataService.hardDeleteByGuid(guid);
+            refreshCache();
+            return entityMutationResponse;
         } finally {
             AtlasPerfTracer.log(perf);
         }

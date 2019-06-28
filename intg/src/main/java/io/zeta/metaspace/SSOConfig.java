@@ -47,7 +47,7 @@ public class SSOConfig {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.organization.url未正确配置");
             }
             if(StringUtils.isEmpty(organizationCountURL)) {
-                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.organization.url未正确配置");
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.organization.count.url未正确配置");
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

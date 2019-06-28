@@ -237,7 +237,11 @@ public class EntityMutationResponse {
         }
 
         if (!entityHeaderExists(opEntities, entity.getGuid())) {
-            opEntities.add(new AtlasEntityHeader(entity.getTypeName(), entity.getGuid(), entity.getUniqueAttributes()));
+            AtlasEntityHeader entityHeader = new AtlasEntityHeader(entity.getTypeName(), entity.getGuid(), entity.getUniqueAttributes());
+            if (op.equals(EntityOperation.DELETE)) {
+                entityHeader.setStatus(AtlasEntity.Status.DELETED);
+            }
+            opEntities.add(entityHeader);
         }
     }
 

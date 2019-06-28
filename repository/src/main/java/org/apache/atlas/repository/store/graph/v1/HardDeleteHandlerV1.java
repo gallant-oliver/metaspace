@@ -20,6 +20,7 @@ package org.apache.atlas.repository.store.graph.v1;
 
 import org.apache.atlas.annotation.ConditionalOnAtlasProperty;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
@@ -27,6 +28,8 @@ import org.apache.atlas.type.AtlasTypeRegistry;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+
+import static org.apache.atlas.model.instance.AtlasEntity.Status.ACTIVE;
 
 @Component
 @ConditionalOnAtlasProperty(property = "atlas.DeleteHandlerV1.impl")
@@ -53,5 +56,10 @@ public class HardDeleteHandlerV1 extends DeleteHandlerV1 {
         }
 
         graphHelper.removeEdge(edge);
+    }
+
+    @Override
+    protected AtlasEntity.Status getCheckStatus() {
+        return ACTIVE;
     }
 }
