@@ -359,11 +359,11 @@ public class QuartJob implements Job {
     //表大小
     public long tableSize(UserRule rule, boolean record) throws Exception {
         long totalSize = 0;
-        try {
-            String templateId = rule.getTemplateId();
-            String source = qualityDao.querySourceByTemplateId(templateId);
-            String dbName = source.split("\\.")[0];
-            String tableName = source.split("\\.")[1];
+        String templateId = rule.getTemplateId();
+        String source = qualityDao.querySourceByTemplateId(templateId);
+        String dbName = source.split("\\.")[0];
+        String tableName = source.split("\\.")[1];
+        try(Connection connection = HiveJdbcUtils.getSystemConnection(dbName)) {
             //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
 
             /*TableMetadata metadata;
@@ -374,7 +374,6 @@ public class QuartJob implements Job {
             }*/
 
             //表数据量
-            Connection connection = HiveJdbcUtils.getSystemConnection(dbName);
             totalSize = HiveJdbcUtils.getTableSize(connection, tableName);
             connection.close();
             return totalSize;
