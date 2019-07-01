@@ -18,9 +18,7 @@
 
 package org.apache.atlas.notification;
 
-import org.apache.atlas.AtlasClient;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.AtlasServiceException;
+import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.kafka.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
@@ -53,7 +51,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.atlas.ApplicationProperties;
+
 import static org.testng.Assert.*;
 
 
@@ -100,13 +98,13 @@ public class NotificationHookConsumerKafkaTest {
     }
 
     @Test
-    public void testConsumerConsumesNewMessageWithAutoCommitDisabled() throws AtlasException, InterruptedException, AtlasBaseException {
+    public void testConsumerConsumesNewMessageWithAutoCommitDisabled() throws AtlasException, InterruptedException, AtlasBaseException, AtlasServiceException {
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user1", createEntity()));
 
         NotificationConsumer<HookNotification> consumer                 = createNewConsumer(kafkaNotification, false);
         NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer  hookConsumer             = notificationHookConsumer.new HookConsumer(consumer);
-
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        doNothing().when(hookConsumer).refreshCache();
         consumeOneMessage(consumer, hookConsumer);
 
         verify(atlasEntityStore).createOrUpdate(any(EntityStream.class), anyBoolean());
@@ -120,11 +118,12 @@ public class NotificationHookConsumerKafkaTest {
     }
 
     @Test
-    public void consumerConsumesNewMessageButCommitThrowsAnException_MessageOffsetIsRecorded() throws AtlasException, InterruptedException, AtlasBaseException {
+    public void consumerConsumesNewMessageButCommitThrowsAnException_MessageOffsetIsRecorded() throws AtlasException, InterruptedException, AtlasBaseException, AtlasServiceException {
 
         ExceptionThrowingCommitConsumer        consumer                 = createNewConsumerThatThrowsExceptionInCommit(kafkaNotification, true);
         NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer  hookConsumer             = notificationHookConsumer.new HookConsumer(consumer);
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        doNothing().when(hookConsumer).refreshCache();
         NotificationHookConsumer.FailedCommitOffsetRecorder failedCommitOffsetRecorder = hookConsumer.failedCommitOffsetRecorder;
 
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user2", createEntity()));
@@ -160,7 +159,8 @@ public class NotificationHookConsumerKafkaTest {
         assertNotNull (consumer);
 
         NotificationHookConsumer              notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer hookConsumer             = notificationHookConsumer.new HookConsumer(consumer);
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        doNothing().when(hookConsumer).refreshCache();
 
         consumeOneMessage(consumer, hookConsumer);
         verify(atlasEntityStore).createOrUpdate(any(EntityStream.class), anyBoolean());
@@ -198,7 +198,7 @@ public class NotificationHookConsumerKafkaTest {
                     break;
                 }
             }
-        } catch (AtlasServiceException | AtlasException e) {
+        } catch (AtlasServiceException e) {
             Assert.fail("Consumer failed with exception ", e);
         }
     }

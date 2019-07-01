@@ -124,13 +124,14 @@ public class NotificationHookConsumerTest {
     public void testCommitIsCalledWhenMessageIsProcessed() throws AtlasServiceException, AtlasException {
         NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
         NotificationConsumer                   consumer                 = mock(NotificationConsumer.class);
-        NotificationHookConsumer.HookConsumer  hookConsumer             = notificationHookConsumer.new HookConsumer(consumer);
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
         EntityCreateRequest                    message                  = mock(EntityCreateRequest.class);
         Referenceable                          mock                     = mock(Referenceable.class);
 
         when(message.getUser()).thenReturn("user");
         when(message.getType()).thenReturn(HookNotificationType.ENTITY_CREATE);
         when(message.getEntities()).thenReturn(Arrays.asList(mock));
+        doNothing().when(hookConsumer).refreshCache();
 
         hookConsumer.handleMessage(new AtlasKafkaMessage(message, -1, -1));
 

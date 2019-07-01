@@ -55,7 +55,6 @@ import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.session.SessionState;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -63,8 +62,8 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.Date;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -87,8 +86,6 @@ public class HiveMetaStoreBridgeUtils {
     public static final String ATLAS_ENDPOINT                  = "atlas.rest.address";
     public static final String SEP                             = ":".intern();
     public static final String HDFS_PATH                       = "hdfs_path";
-    public static final String HIVE_METASTORE_URIS             = "hive.metastore.uris";
-    public static final String METASPACE_HIVE_METASTORE_URIS   = "metaspace.hive.metastore.uris";
 
     private static final String DEFAULT_ATLAS_URL = "http://localhost:21000/";
     private volatile AtomicInteger totalTables = new AtomicInteger(0);
@@ -144,9 +141,7 @@ public class HiveMetaStoreBridgeUtils {
         clusterName = atlasConf.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
 
         HiveConf hiveConf = new HiveConf();
-        hiveConf.addResource(MetaspaceConfig.getHiveConfig()+ File.separator + "hive-site.xml");
-        String metastoreUris = atlasConf.getString(METASPACE_HIVE_METASTORE_URIS, "thrift:127.0.0.1:9083");
-        hiveConf.set(HIVE_METASTORE_URIS, metastoreUris);
+        hiveConf.addResource(new Path(MetaspaceConfig.getHiveConfig() + File.separator + "hive-site.xml"));
         try {
             hiveMetaStoreClient = Hive.get(hiveConf);
         } catch (HiveException e) {
