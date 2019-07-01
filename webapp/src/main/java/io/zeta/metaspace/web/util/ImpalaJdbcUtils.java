@@ -18,12 +18,8 @@ package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.KerberosConfig;
 import io.zeta.metaspace.MetaspaceConfig;
-import io.zeta.metaspace.model.table.TableMetadata;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.hadoop.fs.ContentSummary;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +69,7 @@ public class ImpalaJdbcUtils {
      * 系统调度
      */
     static Connection connection;
-    public static Connection getSystemConnection(String db) throws SQLException, IOException {
+    public static Connection getSystemConnection(String db) throws SQLException {
         String user = "hive";
         String jdbcUrl;
         if (KerberosConfig.isKerberosEnable()) {
@@ -88,9 +84,8 @@ public class ImpalaJdbcUtils {
         return connection;
     }
 
-    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql) throws Exception {
+    public static ResultSet selectBySQLWithSystemCon(Connection conn, String db, String sql) throws Exception {
         try {
-            //Connection conn = getSystemConnection(db);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
