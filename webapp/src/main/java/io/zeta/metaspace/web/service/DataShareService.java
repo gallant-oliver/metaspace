@@ -127,7 +127,7 @@ public class DataShareService {
             org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
             engine = conf.getString("metaspace.quality.engine");
         }  catch (Exception e) {
-
+            LOG.error(e.toString());
         }
     }
 
