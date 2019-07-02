@@ -132,7 +132,8 @@ public class HiveJdbcUtils {
             String tableName = split[1];
             String sql = "describe formatted " + dbAndtableName;
             LOG.debug("Running: " + sql);
-            ResultSet resultSet = selectBySQLWithSystemCon(sql, db);
+            Connection conn = getConnection(db);
+            ResultSet resultSet = selectBySQLWithSystemCon(conn, sql, db);
             while (resultSet.next()) {
                 String string = resultSet.getString(2);
                 if (string!=null&&string.contains("numFiles"))
@@ -140,39 +141,29 @@ public class HiveJdbcUtils {
                 if (string!=null&&string.contains("totalSize"))
                     tableMetadata.setTotalSize(Long.parseLong(resultSet.getString(3).replaceAll(" ","")));
             }
-        }catch (Exception e){
+        }catch (Exception e) {
             LOG.error("从hive获取表统计异常",e);
         }
         return tableMetadata;
 
     }
 
-    public static long getTableSize(Connection conn, String tableName) throws Exception {
-        long totalSize = 0;
-        String querySQL = "show tblproperties " + tableName;
-        ResultSet resultSet = conn.createStatement().executeQuery(querySQL);
-        while(resultSet.next()) {
-            String str = resultSet.getString(1);
-            if("totalSize".equals(str)) {
-                totalSize = resultSet.getLong(2);
-                break;
+    public static long getTableSize(String db, String tableName) throws Exception {
+        try(Connection conn = getSystemConnection(db)) {
+            long totalSize = 0;
+            String querySQL = "show tblproperties " + tableName;
+            ResultSet resultSet = conn.createStatement().executeQuery(querySQL);
+            while (resultSet.next()) {
+                String str = resultSet.getString(1);
+                if ("totalSize".equals(str)) {
+                    totalSize = resultSet.getLong(2);
+                    break;
+                }
+                System.out.println(str);
             }
-            System.out.println(str);
-        }
-        return totalSize;
-    }
-
-    public static ResultSet selectBySQLWithSystemCon(String sql, String db) throws AtlasBaseException, IOException {
-        try {
-            Connection conn = getSystemConnection(db);
-            ResultSet resultSet = conn.createStatement().executeQuery(sql);
-            return resultSet;
-        } catch (SQLException e) {
-            LOG.info(e.getMessage());
-            if(e.getMessage().contains("Permission denied")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-            }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+            return totalSize;
+        } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -181,6 +172,7 @@ public class HiveJdbcUtils {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
+            LOG.info(e.getMessage());
             if(e.getMessage().contains("Permission denied")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }
@@ -202,7 +194,7 @@ public class HiveJdbcUtils {
             boolean next = resultSet.next();
             resultSet.close();
             return next;
-        }catch (Exception e){
+        }catch (Exception e) {
             e.printStackTrace();
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
