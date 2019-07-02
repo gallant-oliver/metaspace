@@ -81,7 +81,6 @@ public class HiveJdbcUtils {
                 connection = DriverManager.getConnection(jdbcUrl);
             } else {
                 jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
-                jdbcUrl += "?tez.am.resource.memory.mb=256";
                 connection = DriverManager.getConnection(jdbcUrl, user, "");
                 //jdbcUrl += "?tez.am.resource.memory.mb=256";
             }
