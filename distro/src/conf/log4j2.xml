@@ -16,19 +16,7 @@
         <RollingFile name="application" fileName="${LOG_HOME}/${LOG_FILE}"
                      filePattern="${LOG_HOME}/$${date:yyyy-MM}/application-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@core@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
-            </PatternLayout>
-            <Policies>
-                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-                <SizeBasedTriggeringPolicy size="100M" />
-            </Policies>
-            <DefaultRolloverStrategy max="30"/>
-        </RollingFile>
-
-        <RollingFile name="audit" fileName="${LOG_HOME}/audit.log"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/audit-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@audit@1.1.0] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
+                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@core@1.4.2] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
@@ -59,8 +47,7 @@
         <logger name="org.apache.kafka.common.config.AbstractConfig" level="error">
         </logger>
 
-        <logger name="AUDIT" level="info" additivity="false">
-            <appender-ref ref="audit"/>
+        <logger name="AUDIT" level="info" >
         </logger>
 
         <logger name="METRICS" level="debug">

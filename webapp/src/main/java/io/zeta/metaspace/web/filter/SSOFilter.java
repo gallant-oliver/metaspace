@@ -67,11 +67,11 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
-        if (FilterUtils.isSkipUrl(requestURL)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
         try {
+            if (FilterUtils.isSkipUrl(requestURL)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String loginData = loginURL + "?service=";
             try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
@@ -104,9 +104,6 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(Servlets.getRequestPayload(httpServletRequest));
-            }
             AUDIT_LOG.info(auditLog.toString());
         }
 
