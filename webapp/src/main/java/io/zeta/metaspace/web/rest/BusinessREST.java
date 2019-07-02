@@ -402,7 +402,7 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableInfoById(guid);
+        return businessService.getTableInfoById(guid);
     }
 
 
@@ -524,7 +524,7 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters, @DefaultValue("columnName") @QueryParam("sortAttribute") final String sortAttribute, @DefaultValue("asc") @QueryParam("sort") final String sort) throws AtlasBaseException {
         try {
-            return businessService.getTableColumnListV2(tableGuid, parameters, sortAttribute, sort);
+            return businessService.getTableColumnList(tableGuid, parameters, sortAttribute, sort);
         } catch (AtlasBaseException e) {
             throw e;
         }

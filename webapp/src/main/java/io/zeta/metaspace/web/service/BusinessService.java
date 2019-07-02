@@ -563,9 +563,9 @@ public class BusinessService {
         }
     }
 
-    public Table getTableInfoById(String guid) throws AtlasBaseException {
+    /*public Table getTableInfoById(String guid) throws AtlasBaseException {
         Table table =  metaDataService.getTableInfoById(guid);
-        /*List<Column> columns = table.getColumns();
+        *//*List<Column> columns = table.getColumns();
         for(Column column : columns) {
             String columnId = column.getColumnId();
             ColumnPrivilegeRelation relation = columnPrivilegeDAO.queryPrivilegeRelationByColumnGuid(columnId);
@@ -573,9 +573,9 @@ public class BusinessService {
                 column.setColumnPrivilege(relation.getName());
                 column.setColumnPrivilegeGuid(relation.getColumnPrivilegeGuid());
             }
-        }*/
+        }*//*
         return table;
-    }
+    }*/
 
     public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters) throws AtlasBaseException {
         try {
@@ -1036,6 +1036,23 @@ public class BusinessService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
+    }
+
+    public Table getTableInfoById(String guid) throws AtlasBaseException {
+        Table table = metaDataService.getTableInfoById(guid);
+        String tableName = table.getTableName();
+        String tableDisplayName = table.getDisplayName();
+        String tableDisplayText = tableDisplayName + "(" + tableName + ")";
+        table.setTableName(tableDisplayText);
+        List<Column> columnList = table.getColumns();
+        columnList.forEach(column -> {
+            String columnName = column.getColumnName();
+            String displayName = column.getDisplayName();
+            String displayText = displayName + "(" + columnName + ")";
+            column.setColumnName(displayText);
+
+        });
+        return table;
     }
 
 }
