@@ -56,6 +56,8 @@ import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 //import jodd.util.StringUtil;
+import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
+import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -105,7 +107,7 @@ public class DataShareService {
 
     public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
-    private static final String TICKET_KEY = "X-SSO-FullticketId";
+    private static String engine;
 
     @Autowired
     DataShareDAO shareDAO;
@@ -119,6 +121,15 @@ public class DataShareService {
     private UserDAO userDAO;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
+
+    static {
+        try {
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
+        }  catch (Exception e) {
+            LOG.error(e.toString());
+        }
+    }
 
     public int insertAPIInfo(APIInfo info) throws AtlasBaseException {
         try {
@@ -441,7 +452,6 @@ public class DataShareService {
     }
 
     public APIContent generateAPIContent(List<String> guidList) throws Exception {
-        Configuration configuration = ApplicationProperties.get();
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
@@ -527,14 +537,6 @@ public class DataShareService {
 
             String ip=getLocalIP();
             Swagger swagger = new Swagger();
-            /*String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
-            *//*String[] hostArr = hostStr.split("http://");*//*
-            String[] hostArr = hostStr.split(":");
-
-            //host
-            *//*String host = hostArr[1];*//*
-            String port = hostArr[hostArr.length-1];
-            ip += ":" + port;*/
             swagger.setHost(ip);
             //basePath
             swagger.setBasePath("/api/metaspace");
@@ -822,52 +824,6 @@ public class DataShareService {
         }
     }
 
-    /*class APITask implements Callable<List<LinkedHashMap>> {
-        private String name;
-        private String sql;
-        private String dbName;
-        private Boolean test;
-        APITask(String name, String sql, String dbName, Boolean test) {
-            this.name = name;
-            this.sql = sql;
-            this.dbName = dbName;
-            this.test = test;
-        }
-        @Override
-        public List<LinkedHashMap> call() throws Exception {
-            try {
-                if (Objects.nonNull(name)) {
-                    Thread.currentThread().setName(name);
-                }
-                ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
-
-                List<LinkedHashMap> result = new ArrayList<>();
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                while (resultSet.next()) {
-                    LinkedHashMap map = new LinkedHashMap();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        Object value = resultSet.getObject(columnName);
-                        if(Objects.nonNull(test) && test && Objects.nonNull(value)) {
-                            map.put(columnName, String.valueOf(value));
-                        } else {
-                            map.put(columnName, value);
-                        }
-                    }
-                    result.add(map);
-                }
-                return result;
-            } catch (AtlasBaseException e) {
-                LOG.error(e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                LOG.error(e.getMessage());
-                throw e;
-            }
-        }
-    }*/
-
     class APITask implements Callable<Map> {
         private String name;
         private String querySql;
@@ -881,6 +837,7 @@ public class DataShareService {
         }
         @Override
         public Map call() throws Exception {
+            Connection conn = null;
             try {
                 if (Objects.nonNull(name)) {
                     Thread.currentThread().setName(name);
@@ -888,8 +845,20 @@ public class DataShareService {
 
                 Map resultMap = new HashMap();
                 Long count = 0L;
-                Connection conn = HiveJdbcUtils.getSystemConnection(dbName);
-                ResultSet resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+
+
+                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                    conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+                } else {
+                    conn = HiveJdbcUtils.getSystemConnection(dbName);
+                }
+                ResultSet resultSet = null;
+                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                    resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, dbName, querySql);
+                } else {
+                    resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+                }
+
 
                 List<LinkedHashMap> result = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
@@ -918,7 +887,6 @@ public class DataShareService {
                 }
                 resultMap.put("queryResult", result);
                 resultMap.put("queryCount", count);
-                conn.close();
                 return resultMap;
             } catch (AtlasBaseException e) {
                 LOG.error(e.getMessage());
@@ -926,6 +894,9 @@ public class DataShareService {
             } catch (Exception e) {
                 LOG.error(e.getMessage());
                 throw e;
+            } finally {
+                if(Objects.nonNull(conn))
+                    conn.close();
             }
         }
     }
@@ -953,121 +924,6 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务取消失败");
         }
     }
-
-    /*public List<Map> queryAPIData(String path, HttpServletRequest request) throws AtlasBaseException {
-        try {
-            APIInfo info = shareDAO.getAPIInfo(path);
-            if(Objects.isNull(info)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "路径错误，未查询到相关API信息");
-            }
-            String tableGuid = info.getTableGuid();
-            Boolean publish = info.getPublish();
-            if(Objects.isNull(publish)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API发布情况未知");
-            }
-            if (Objects.nonNull(publish) && !publish) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未发布");
-            }
-            //查询数据分享API字段详情
-            Object fieldsObject = shareDAO.getAPIFields(path);
-            PGobject pGobject = (PGobject) fieldsObject;
-            String valueObject = pGobject.getValue();
-            Gson gson = new Gson();
-            List<Map> values = gson.fromJson(valueObject, List.class);
-            Set<String> fields = new HashSet<>();
-            List<FilterColumn> filterFileds = new ArrayList<>();
-            for (Map map : values) {
-                String columnName = map.get("columnName").toString();
-                String defaultValue = map.get("defaultValue").toString();
-                Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
-                Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
-                Boolean useDefault = Boolean.parseBoolean(map.get("useDefaultValue").toString());
-                fields.add(columnName);
-                if (filter) {
-                    FilterColumn column = new FilterColumn(columnName, defaultValue, fill, useDefault);
-                    filterFileds.add(column);
-                }
-            }
-            Map parameterMap = request.getParameterMap();
-            //请求中查询字段
-            Object columnObj = parameterMap.get("columns");
-            String columnStr = "";
-            if(columnObj instanceof String[]) {
-                String[] str = (String[])columnObj;
-                columnStr = str[0];
-            }
-            String[] columnArr = columnStr.substring(1, columnStr.length()-1).split(",");
-            List<String> queryFiles = Arrays.asList(columnArr);
-            //请求中过滤字段
-            Object filterColumnObj = parameterMap.get("filters");
-            String filterColumnStr = "";
-            if(filterColumnObj instanceof String[]) {
-                String[] str = (String[])filterColumnObj;
-                filterColumnStr = str[0];
-            }
-            String[] filterColumnArr = filterColumnStr.substring(1, filterColumnStr.length()-1).split(";");
-            Map filterColumnMap = new HashMap();
-            for(String filterColumn : filterColumnArr) {
-                String[] kvArr = filterColumn.split(":");
-                String columnName = kvArr[0];
-                List<String> valueList = new ArrayList<>();
-                if(kvArr[1].contains("{")) {
-                    String valueStr = kvArr[1];
-                    String[] valueArr = valueStr.substring(1, valueStr.length()-1).split(",");
-                    valueList = Arrays.asList(valueArr);
-                } else {
-                    valueList.add(kvArr[1]);
-                }
-                filterColumnMap.put(columnName, valueList);
-            }
-            //检查请求中查询字段是否包含于详情中字段
-            checkFieldName(fields, queryFiles);
-            //获取字段类型
-            Map columnTypeMap = getColumnType(tableGuid, fields);
-            //校验过滤参数列表
-            List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, filterColumnMap);
-            //limit
-            Object limitObj = parameterMap.get("limit");
-            Long limit = null;
-            if(Objects.nonNull(limitObj) && limitObj instanceof String[]) {
-                String[] str = (String[])limitObj;
-                limit = Long.parseLong(str[0]);
-            }
-            //offset
-            Object offsetObj = parameterMap.get("offset");
-            long offset = 0;
-            if(Objects.nonNull(offsetObj) && offsetObj instanceof String[]) {
-                String[] str = (String[])offsetObj;
-                offset = Long.parseLong(str[0]);
-            }
-            //对比limit和maxRowNumber
-            long maxRowNumber = info.getMaxRowNumber();
-            if(Objects.nonNull(limit)) {
-                limit = Math.min(limit, maxRowNumber);
-            } else {
-                limit = maxRowNumber;
-            }
-            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
-            String dbName = shareDAO.querydbNameByGuid(tableGuid);
-            //sql
-            String sql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset);
-            //任务
-            String randomName = String.valueOf(System.currentTimeMillis());
-            APITask task = new APITask(randomName, sql, dbName);
-            Future<List<Map>> futureResult = pool.submit(task);
-            List<Map> result = futureResult.get();
-            return result;
-        } catch (ExecutionException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , e.getCause().getMessage());
-        } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
-        }
-    }*/
 
     public PageResult queryAPIData(String path, QueryInfo queryInfo) throws AtlasBaseException {
         try {
@@ -1310,6 +1166,7 @@ public class DataShareService {
             if(Objects.isNull(queryColumns) || queryColumns.size()==0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段columns不能为空");
             }
+            String orderColumnName = queryColumns.get(0);
             StringBuffer querySql = new StringBuffer();
             //StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
@@ -1364,6 +1221,7 @@ public class DataShareService {
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
+                querySql.append(" order by " + orderColumnName);
                 querySql.append(" limit ");
                 querySql.append(limit);
             }
