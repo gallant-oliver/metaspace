@@ -438,6 +438,13 @@ public class MetaDataService {
         } else {
             column.setDisplayName(column.getColumnName());
         }
+        if (attributes.containsKey("displayTextUpdateTime") && Objects.nonNull(attributes.get("displayTextUpdateTime"))) {
+            Date updateTime = (Date)attributes.get("displayTextUpdateTime");
+            String dateStr = DateUtils.date2String(updateTime);
+            column.setDisplayNameUpdateTime(dateStr);
+        } else {
+            column.setDisplayNameUpdateTime("");
+        }
     }
 
     public List<Column> filterColumn(ColumnQuery query, List<Column> columns) {

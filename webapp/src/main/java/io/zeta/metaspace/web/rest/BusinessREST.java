@@ -64,6 +64,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -521,26 +522,28 @@ public class BusinessREST {
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters, @DefaultValue("columnName") @QueryParam("sortAttribute") final String sortAttribute, @DefaultValue("asc") @QueryParam("sort") final String sort) throws AtlasBaseException {
         try {
-            return businessService.getTableColumnList(tableGuid, parameters);
+            return businessService.getTableColumnListV2(tableGuid, parameters, sortAttribute, sort);
         } catch (AtlasBaseException e) {
             throw e;
         }
     }
 
-    /*@PUT
+    @PUT
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, List<Column> columnList) throws AtlasBaseException {
+    public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
         try {
-            businessService.editTableColumnDisplayName(tableGuid, columnList);
+            List columnList = new ArrayList();
+            columnList.add(column);
+            businessService.editTableColumnDisplayName(columnList);
             return "success";
         } catch (AtlasBaseException e) {
             throw e;
         }
-    }*/
+    }
 
     /**
      * 编辑表显示名称

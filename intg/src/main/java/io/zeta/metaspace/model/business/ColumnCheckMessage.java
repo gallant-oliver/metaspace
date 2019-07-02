@@ -49,6 +49,7 @@ public class ColumnCheckMessage {
         private String columnName;
         private String displayText;
         private String errorMessage;
+        private String updateTime;
 
         public int getRow() {
             return row;
@@ -80,6 +81,14 @@ public class ColumnCheckMessage {
 
         public void setErrorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
+        }
+
+        public String getUpdateTime() {
+            return updateTime;
+        }
+
+        public void setUpdateTime(String updateTime) {
+            this.updateTime = updateTime;
         }
     }
 

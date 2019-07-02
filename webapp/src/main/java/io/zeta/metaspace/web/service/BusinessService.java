@@ -55,6 +55,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
@@ -84,12 +85,14 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 import javax.inject.Inject;
@@ -668,13 +671,16 @@ public class BusinessService {
         }
     }
 
-    public PageResult getTableColumnList(String tableGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult getTableColumnList(String tableGuid, Parameters parameters, String sortAttribute, String sort) throws AtlasBaseException {
         try {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(tableGuid);
             List<Column> columnList = metaDataService.getColumnInfoById(columnQuery, true);
+            String filterName = parameters.getQuery();
+            if(Objects.nonNull(filterName) && !"".equals(filterName))
+                columnList = columnList.stream().filter(column -> column.getColumnName().contains(filterName)).collect(Collectors.toList());
             PageResult pageResult = new PageResult();
             int total = columnList.size();
             int start = 0;
@@ -689,7 +695,21 @@ public class BusinessService {
             } else {
                 end = total;
             }
-            columnList.sort(Comparator.comparing(Column::getColumnName).thenComparing(Column::getColumnName));
+
+
+            if("updatetime".equals(sortAttribute.toLowerCase())) {
+                if("asc".equals(sort.toLowerCase())) {
+                    columnList.sort(Comparator.comparing(Column::getDisplayNameUpdateTime));
+                } else {
+                    columnList.sort(Comparator.comparing(Column::getDisplayNameUpdateTime).reversed());
+                }
+            } else {
+                if("asc".equals(sort.toLowerCase())) {
+                    columnList.sort(Comparator.comparing(Column::getColumnName));
+                } else {
+                    columnList.sort(Comparator.comparing(Column::getColumnName).reversed());
+                }
+            }
             List<Column> limitList = columnList.subList(start, end);
             pageResult.setLists(limitList);
             pageResult.setCount(limitList.size());
@@ -700,9 +720,98 @@ public class BusinessService {
         }
     }
 
+    public PageResult getTableColumnListV2(String tableGuid, Parameters parameters, String sortAttribute, String sort) throws AtlasBaseException {
+        try {
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+
+            String filterName = parameters.getQuery();
+
+            String sortName = "hive_column.displayChineseText";
+            if("updatetime".equals(sortAttribute.toLowerCase())) {
+                sortName = "hive_column.displayTextUpdateTime";
+            }
+
+            String order = "incr";
+            if("desc".equals(sort.toLowerCase())) {
+                order = "decr";
+            }
+            String queryStr = null;
+            String countStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_COLUMN_COUNT);
+
+            if((offset == 0 && limit == -1)) {
+                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_COLUMN_LIST);
+            } else {
+                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COLUMN_LIST);
+            }
+
+            String queryFormatStr = (offset == 0 && limit == -1) ? String.format(queryStr, tableGuid, filterName, sortName, order)
+                                                         : String.format(queryStr, tableGuid, filterName, offset, offset + limit, sortName, order);
+
+            String countFormatStr = String.format(countStr, tableGuid, filterName);
+
+            List<Long> countList = (List) graph.executeGremlinScript(countFormatStr, false);
+            long count = 0;
+
+            if(Objects.nonNull(countList)) {
+                count = countList.get(0);
+            }
+
+            List<Map> columnList = (List) graph.executeGremlinScript(queryFormatStr, false);
+
+            List<Column> columnInfoList = new ArrayList<>();
+            for(Map obj : columnList) {
+                List<String> guidList = (List) obj.get("__guid");
+                List<String> nameList = (List) obj.get("Asset.name");
+                List<String> typeList = (List) obj.get("hive_column.type");
+                List<String> displayList = (List) obj.get("hive_column.displayChineseText");
+                List<Long> updateTimeList = (List) obj.get("hive_column.displayTextUpdateTime");
+                String guid = null;
+                String name = null;
+                String type = null;
+                String displayName = null;
+                String updateTime = null;
+                if(Objects.nonNull(guidList) && guidList.size()>0) {
+                    guid = guidList.get(0);
+                }
+                if(Objects.nonNull(nameList) && nameList.size()>0) {
+                    name  = nameList.get(0);
+                }
+                if(Objects.nonNull(typeList) && typeList.size()>0) {
+                    type  = typeList.get(0);
+                }
+                if(Objects.nonNull(displayList) && displayList.size()>0) {
+                    displayName  = displayList.get(0);
+                }
+                if(Objects.nonNull(updateTimeList) && updateTimeList.size()>0) {
+                    Long time = updateTimeList.get(0);
+                    updateTime = DateUtils.date2String(new Date(time));
+
+                }
+                Column column = new Column();
+                column.setTableId(tableGuid);
+                column.setColumnId(guid);
+                column.setColumnName(name);
+                column.setType(type);
+                column.setDisplayName(displayName);
+                column.setDisplayNameUpdateTime(updateTime);
+                columnInfoList.add(column);
+            }
+
+            PageResult pageResult = new PageResult();
+            pageResult.setLists(columnInfoList);
+            pageResult.setCount(columnInfoList.size());
+            pageResult.setSum(count);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
     public void editTableColumnDisplayName(List<Column> columns) throws AtlasBaseException {
         try {
             entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
+            Date updateTime = new Date();
             for(Column column : columns) {
                 String columnGuid = column.getColumnId();
                 String displayText = column.getDisplayName();
@@ -711,6 +820,7 @@ public class BusinessService {
                 }
                 try {
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
+                    entityStore.updateEntityAttributeByGuid(columnGuid, "displayTextUpdateTime", updateTime);
                     graph.commit();
                 } catch (AtlasBaseException ex) {
                     throw ex;

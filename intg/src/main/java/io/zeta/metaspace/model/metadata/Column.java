@@ -29,6 +29,7 @@ public class Column implements Serializable {
     private Integer columnPrivilegeGuid;
     private String columnPrivilege;
     private String displayName;
+    private String displayNameUpdateTime;
     public String getTableId() {
         return tableId;
     }
@@ -131,5 +132,13 @@ public class Column implements Serializable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getDisplayNameUpdateTime() {
+        return displayNameUpdateTime;
+    }
+
+    public void setDisplayNameUpdateTime(String displayNameUpdateTime) {
+        this.displayNameUpdateTime = displayNameUpdateTime;
     }
 }
