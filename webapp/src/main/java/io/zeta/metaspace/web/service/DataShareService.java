@@ -855,9 +855,9 @@ public class DataShareService {
                 }
                 ResultSet resultSet = null;
                 if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                    resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, dbName, querySql);
+                    resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
                 } else {
-                    resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql, dbName);
+                    resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
                 }
 
 

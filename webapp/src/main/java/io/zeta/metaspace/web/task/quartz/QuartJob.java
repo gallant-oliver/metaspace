@@ -314,9 +314,9 @@ public class QuartJob implements Job {
             ResultSet resultSet = null;
 
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             }
             if(Objects.nonNull(resultSet)) {
                 while (resultSet.next()) {
@@ -491,9 +491,9 @@ public class QuartJob implements Job {
 
             ResultSet resultSet = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
             }
 
             if(Objects.nonNull(resultSet)) {
