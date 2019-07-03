@@ -105,6 +105,20 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
             case FULL_DB_BY_STATE:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
 
+            case COLUMN_NAME:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().values('Asset.name').toList()";
+
+            case COLUMN_INFO:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name').toList()";
+
+            case TABLE_COLUMN_LIST:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').inV().has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).range(%s,%s).order().by('%s',%s).valueMap('__guid', 'Asset.name','hive_column.type','hive_column.displayChineseText', 'hive_column.displayTextUpdateTime').toList()";
+
+            case FULL_TABLE_COLUMN_LIST:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').inV().has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('%s',%s).valueMap('__guid', 'Asset.name','hive_column.type','hive_column.displayChineseText', 'hive_column.displayTextUpdateTime').toList()";
+
+            case FULL_TABLE_COLUMN_COUNT:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').inV().has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).count().toList()";
         }
         return null;
     }

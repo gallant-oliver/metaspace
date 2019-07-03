@@ -66,6 +66,8 @@ public class Table implements Serializable {
 
     private TablePermission tablePermission;
 
+    private String displayName;
+
     private List<Column> columns;
 
     public String getUpdateTime() {
@@ -312,6 +314,14 @@ public class Table implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public static class BusinessObject {

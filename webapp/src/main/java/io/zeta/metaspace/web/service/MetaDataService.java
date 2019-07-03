@@ -119,6 +119,7 @@ public class MetaDataService {
             }
             //table
             Table table = extractTableInfo(entity, guid);
+
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
@@ -131,6 +132,11 @@ public class MetaDataService {
         if (entity.getTypeName().contains("table")) {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
+            //中文别名
+            table.setDisplayName(getEntityAttribute(entity, "displayChineseText"));
+            if(Objects.isNull(table.getDisplayName())) {
+                table.setDisplayName(table.getTableName());
+            }
             //判断是否为虚拟表
             if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
                 table.setVirtualTable(true);
@@ -422,6 +428,19 @@ public class MetaDataService {
             column.setDescription(attributes.get("comment").toString());
         } else {
             column.setDescription("");
+        }
+        if (attributes.containsKey("displayChineseText") && Objects.nonNull(attributes.get("displayChineseText"))) {
+            String displayName = attributes.get("displayChineseText").toString();
+            column.setDisplayName(displayName);
+        } else {
+            column.setDisplayName(column.getColumnName());
+        }
+        if (attributes.containsKey("displayTextUpdateTime") && Objects.nonNull(attributes.get("displayTextUpdateTime"))) {
+            Date updateTime = (Date)attributes.get("displayTextUpdateTime");
+            String dateStr = DateUtils.date2String(updateTime);
+            column.setDisplayNameUpdateTime(dateStr);
+        } else {
+            column.setDisplayNameUpdateTime("");
         }
     }
 
@@ -1062,6 +1081,15 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
         }
     }
+
+    public int updateTableEditInfo(String tableGuid,Table info) throws AtlasBaseException {
+        try {
+            return tableDAO.updateTableEditInfo(tableGuid, info);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+        }
+    }
+
 
     @Transactional
     public void updateTableInfo(String tableGuid, Table tableInfo) throws AtlasBaseException {
