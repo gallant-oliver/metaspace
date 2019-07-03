@@ -66,6 +66,7 @@ public class QuartJob implements Job {
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
 
+    Map<String, Double> columnType2Result = new HashMap<>();
     static {
         try {
             org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
@@ -170,7 +171,6 @@ public class QuartJob implements Job {
 
                 }
 
-            //重试
             } while (retryCount < RETRY);
         }
     }
@@ -250,6 +250,8 @@ public class QuartJob implements Job {
             String dbName = sourceInfo[0];
             String tableName = sourceInfo[1];
 
+            String columnName = null;
+
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 conn = ImpalaJdbcUtils.getSystemConnection(dbName);
             } else {
@@ -259,25 +261,31 @@ public class QuartJob implements Job {
             TaskType jobType = TaskType.getTaskByCode(rule.getSystemRuleId());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
+            StringJoiner joiner = new StringJoiner(".");
+            String superType = null;
             if (columnRule) {
-                String columnName = rule.getRuleColumnName();
+                columnName = rule.getRuleColumnName();
+
                 switch (jobType) {
                     case UNIQUE_VALUE_NUM:
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.UNIQUE_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.DUP_VALUE_NUM.code);
                         sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.EMPTY_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName);
                         break;
                     default:
@@ -285,10 +293,26 @@ public class QuartJob implements Job {
                         break;
                 }
             } else {
+                superType = String.valueOf(TaskType.TABLE_ROW_NUM.code);
                 sql = String.format(query, tableName);
             }
+
+
+            String columnTypeKey = null;
+            if(Objects.nonNull(columnName)) {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(columnName).add(superType).toString();
+            } else {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            }
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                return columnType2Result.get(columnTypeKey);
+            }
+
+
+
             LOG.info("query Sql: " + sql);
             ResultSet resultSet = null;
+
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             } else {
@@ -301,6 +325,7 @@ public class QuartJob implements Job {
                         resultValue = Double.valueOf(object.toString());
                 }
             }
+            columnType2Result.put(columnTypeKey, resultValue);
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
@@ -368,6 +393,17 @@ public class QuartJob implements Job {
         String dbName = source.split("\\.")[0];
         String tableName = source.split("\\.")[1];
         try {
+
+
+            String superType = String.valueOf(TaskType.TABLE_SIZE.code);
+            StringJoiner joiner = new StringJoiner(".");
+            String columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                Double result = columnType2Result.get(columnTypeKey);
+                if(Objects.nonNull(result))
+                    return result.longValue();
+            }
+
             //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
 
             /*TableMetadata metadata;
