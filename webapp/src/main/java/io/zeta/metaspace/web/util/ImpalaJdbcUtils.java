@@ -84,7 +84,7 @@ public class ImpalaJdbcUtils {
         return connection;
     }
 
-    public static ResultSet selectBySQLWithSystemCon(Connection conn, String db, String sql) throws Exception {
+    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql) throws Exception {
         try {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
