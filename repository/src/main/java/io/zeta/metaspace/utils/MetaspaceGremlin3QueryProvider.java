@@ -105,8 +105,8 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
             case FULL_DB_BY_STATE:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
 
-            case COLUMN_NAME:
-                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().values('Asset.name').toList()";
+            case COLUMN_INFO_MAP:
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name', '__state','hive_column.type').toList()";
 
             case COLUMN_INFO:
                 return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name').toList()";

@@ -30,6 +30,7 @@ public class Column implements Serializable {
     private String columnPrivilege;
     private String displayName;
     private String displayNameUpdateTime;
+    private String displayNameOperator;
     public String getTableId() {
         return tableId;
     }
@@ -140,5 +141,13 @@ public class Column implements Serializable {
 
     public void setDisplayNameUpdateTime(String displayNameUpdateTime) {
         this.displayNameUpdateTime = displayNameUpdateTime;
+    }
+
+    public String getDisplayNameOperator() {
+        return displayNameOperator;
+    }
+
+    public void setDisplayNameOperator(String displayNameOperator) {
+        this.displayNameOperator = displayNameOperator;
     }
 }
