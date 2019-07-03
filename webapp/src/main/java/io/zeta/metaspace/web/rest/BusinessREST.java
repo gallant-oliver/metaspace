@@ -534,9 +534,8 @@ public class BusinessREST {
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public ColumnCheckMessage editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
+    public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
         try {
-
             businessService.editSingleColumnDisplayName(tableGuid, column);
             return "success";
         } catch (AtlasBaseException e) {
