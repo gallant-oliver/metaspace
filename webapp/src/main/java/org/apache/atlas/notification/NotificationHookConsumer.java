@@ -20,12 +20,7 @@ package org.apache.atlas.notification;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import kafka.utils.ShutdownableThread;
-import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasClient;
-import org.apache.atlas.AtlasClientV2;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.AtlasServiceException;
-import org.apache.atlas.RequestContext;
+import org.apache.atlas.*;
 import org.apache.atlas.ha.HAConfiguration;
 import org.apache.atlas.kafka.AtlasKafkaMessage;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
@@ -55,6 +50,7 @@ import org.apache.atlas.web.filters.AuditFilter;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +86,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     public static final String CONSUMER_RETRY_INTERVAL           = "atlas.notification.consumer.retry.interval";
     public static final String CONSUMER_MIN_RETRY_INTERVAL       = "atlas.notification.consumer.min.retry.interval";
     public static final String CONSUMER_MAX_RETRY_INTERVAL       = "atlas.notification.consumer.max.retry.interval";
+    public static final String CONSUMER_DISABLED                 = "atlas.notification.consumer.disabled";
 
     public static final int SERVER_READY_WAIT_TIME_MS = 1000;
 
@@ -102,10 +99,12 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private final int                    minWaitDuration;
     private final int                    maxWaitDuration;
     private final boolean testLocal;
+    private final boolean                consumerDisabled;
 
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
     private Configuration         applicationProperties;
+    private AtlasClientV2 atlasClientV2;
 
     @VisibleForTesting
     final int consumerRetryInterval;
@@ -130,10 +129,21 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
         testLocal = applicationProperties.getBoolean("metaspace.test", false);
+        consumerDisabled = applicationProperties.getBoolean(CONSUMER_DISABLED, false);
+        String restAddress = applicationProperties.getString(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
+        if (StringUtils.isEmpty(restAddress)) {
+            restAddress = AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS;
+        }
+        atlasClientV2 = new AtlasClientV2(restAddress);
     }
 
     @Override
     public void start() throws AtlasException {
+        if (consumerDisabled) {
+            LOG.info("Hook consumer stopped. No hook messages will be processed. " +
+                    "Set property '{}' to false to start consuming hook messages.", CONSUMER_DISABLED);
+            return;
+        }
         startInternal(applicationProperties, null);
     }
 
@@ -351,7 +361,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         }
 
         @VisibleForTesting
-        void handleMessage(AtlasKafkaMessage<HookNotification> kafkaMsg) throws AtlasServiceException, AtlasException {
+        void handleMessage(AtlasKafkaMessage<HookNotification> kafkaMsg) throws AtlasServiceException {
             AtlasPerfTracer  perf        = null;
             HookNotification message     = kafkaMsg.getMessage();
             String           messageUser = message.getUser();
@@ -553,6 +563,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                 }
 
                 commit(kafkaMsg);
+                refreshCache();
             } finally {
                 AtlasPerfTracer.log(perf);
 
@@ -563,6 +574,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                     AuditFilter.audit(auditLog);
                 }
             }
+        }
+        @VisibleForTesting
+        public void refreshCache() throws AtlasServiceException {
+            atlasClientV2.refreshCache();
         }
 
         private void recordFailedMessages() {
@@ -618,7 +633,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
             // handle the case where thread was not started at all
             // and shutdown called
-            if (shouldRun.get() == false) {
+            if (!shouldRun.get()) {
                 return;
             }
 

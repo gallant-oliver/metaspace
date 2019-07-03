@@ -260,6 +260,16 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
             }
             String roleId = roleIds.get(0);
+
+            Role role = roleDAO.getRoleByRoleId(roleId);
+            if(Objects.isNull(role) || !role.isValid()) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
+            }
+            int status = role.getStatus();
+            if(0 == status) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
+            }
+
             List<String> users = userWithRole.getUserIds();
             for (String userId : users) {
                 String realRoleId = usersService.getRoleIdByUserId(userId);

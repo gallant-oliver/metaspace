@@ -49,8 +49,8 @@ public class KerberosConfig {
 //                metaspaceAdmin = conf.getString("metaspace.kerberos.admin");
 //                metaspaceKeytab = conf.getString("metaspace.kerberos.keytab");
                 hivePrincipal = conf.getString("metaspace.hive.principal");
-                /*impalaPrincipal = conf.getString("metaspace.impala.principal");
-                impalaJdbc = conf.getString("metaspace.impala.kerberos.jdbc");*/
+                impalaPrincipal = conf.getString("metaspace.impala.principal");
+                impalaJdbc = conf.getString("metaspace.impala.kerberos.jdbc");
 //                if (metaspaceAdmin == null || metaspaceAdmin.equals("")) {
 //                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.admin未正确配置");
 //                }

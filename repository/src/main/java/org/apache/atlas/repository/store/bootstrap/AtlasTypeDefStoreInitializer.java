@@ -86,22 +86,20 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
     }
 
     @PostConstruct
+    /**
+     * @see #instanceIsActive
+     * 只在服务器启动时加载类型元数据，leader切换时不用更新，因为会极大影响HA切换时间；如果有更新，重启即可
+     */
     public void init() throws AtlasBaseException {
         LOG.info("==> AtlasTypeDefStoreInitializer.init()");
+        atlasTypeDefStore.init();
+        loadBootstrapTypeDefs();
 
-        if (!HAConfiguration.isHAEnabled(conf)) {
-            atlasTypeDefStore.init();
-            loadBootstrapTypeDefs();
-
-            try {
-                AtlasAuthorizerFactory.getAtlasAuthorizer();
-            } catch (Throwable t) {
-                LOG.error("AtlasTypeDefStoreInitializer.init(): Unable to obtain AtlasAuthorizer", t);
-            }
-        } else {
-            LOG.info("AtlasTypeDefStoreInitializer.init(): deferring type loading until instance activation");
+        try {
+            AtlasAuthorizerFactory.getAtlasAuthorizer();
+        } catch (Throwable t) {
+            LOG.error("AtlasTypeDefStoreInitializer.init(): Unable to obtain AtlasAuthorizer", t);
         }
-
         LOG.info("<== AtlasTypeDefStoreInitializer.init()");
     }
 
@@ -327,24 +325,13 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
     }
 
     @Override
+    /**
+     * @see #init
+     */
     public void instanceIsActive() throws AtlasException {
         LOG.info("==> AtlasTypeDefStoreInitializer.instanceIsActive()");
 
-        try {
-            atlasTypeDefStore.init();
-
-            loadBootstrapTypeDefs();
-
-            try {
-                AtlasAuthorizerFactory.getAtlasAuthorizer();
-            } catch (Throwable t) {
-                LOG.error("AtlasTypeDefStoreInitializer.instanceIsActive(): Unable to obtain AtlasAuthorizer", t);
-            }
-        } catch (AtlasBaseException e) {
-            LOG.error("Failed to init after becoming active", e);
-        }
-
-        LOG.info("<== AtlasTypeDefStoreInitializer.instanceIsActive()");
+        LOG.info("==> AtlasTypeDefStoreInitializer.instanceIsActive()");
     }
 
     @Override

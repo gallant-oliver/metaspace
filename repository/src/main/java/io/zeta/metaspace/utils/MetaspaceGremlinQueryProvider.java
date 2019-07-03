@@ -64,6 +64,13 @@ public abstract class MetaspaceGremlinQueryProvider {
         TABLE_TOTAL_BY_DB,
         ALL_TABLE,
         DB_TABLE_BY_STATE,
-        FULL_DB_BY_STATE
+        FULL_DB_BY_STATE,
+
+        COLUMN_NAME,
+        COLUMN_INFO,
+
+        TABLE_COLUMN_LIST,
+        FULL_TABLE_COLUMN_LIST,
+        FULL_TABLE_COLUMN_COUNT
     }
 }

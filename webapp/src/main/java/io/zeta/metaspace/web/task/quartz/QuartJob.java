@@ -65,12 +65,12 @@ public class QuartJob implements Job {
 
     private final int RETRY = 3;
     private final String SEPARATOR = "\\.";
-    private Connection conn = null;
 
+    Map<String, Double> columnType2Result = new HashMap<>();
     static {
         try {
-            /*org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");*/
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
         }  catch (Exception e) {
 
         }
@@ -117,7 +117,9 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
-        conn = HiveJdbcUtils.getSystemConnection(dbName);
+        //conn = HiveJdbcUtils.getSystemConnection(dbName);
+        LOG.info("query engine:" + engine);
+
         int totalStep = rules.size();
         for (int i = 0; i < rules.size(); i++) {
             //根据模板状态判断是否继续运行
@@ -135,19 +137,21 @@ public class QuartJob implements Job {
                     rule.setRuleCheckThreshold(thresholds);
                     runJob(rule);
                     float ratio = (float) (i + 1) / totalStep;
+                    LOG.info("raion=" + ratio);
                     qualityDao.updateFinishedPercent(templateId, ratio);
                     break;
                 } catch (Exception e) {
-                    LOG.error(e.getMessage());
+                    //LOG.error(e.getMessage());
                     try {
                         retryCount++;
+                        LOG.info("retryCount=" + retryCount);
                         ReportError error = new ReportError();
                         String errorId = UUID.randomUUID().toString();
                         error.setErrorId(errorId);
                         error.setTemplateId(templateId);
                         error.setReportId(reportId);
                         error.setRuleId(rule.getRuleId());
-                        error.setContent(e.getMessage());
+                        error.setContent(e.toString());
                         long currentTime = System.currentTimeMillis();
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         String generateTime = sdf.format(currentTime);
@@ -155,7 +159,7 @@ public class QuartJob implements Job {
                         error.setRetryCount(retryCount);
                         qualityDao.insertReportError(error);
                         qualityDao.updateFinishedPercent(templateId, 0F);
-                        Thread.sleep(RETRY * 10000);
+                        Thread.sleep(RETRY * 5000);
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
                     }
@@ -163,11 +167,12 @@ public class QuartJob implements Job {
                         LOG.error(e.getMessage());
                         throw e;
                     }
+                } finally {
+
                 }
-            //重试
+
             } while (retryCount < RETRY);
         }
-        conn.close();
     }
 
     public void runJob(UserRule rule) throws Exception {
@@ -237,34 +242,50 @@ public class QuartJob implements Job {
     //规则值计算
     public double ruleResultValue(UserRule rule, boolean record, boolean columnRule) throws Exception {
         double resultValue = 0;
+        Connection conn = null;
         try {
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
             String[] sourceInfo = source.split(SEPARATOR);
             String dbName = sourceInfo[0];
             String tableName = sourceInfo[1];
+
+            String columnName = null;
+
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+            } else {
+                conn = HiveJdbcUtils.getSystemConnection(dbName);
+            }
+
             TaskType jobType = TaskType.getTaskByCode(rule.getSystemRuleId());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
+            StringJoiner joiner = new StringJoiner(".");
+            String superType = null;
             if (columnRule) {
-                String columnName = rule.getRuleColumnName();
+                columnName = rule.getRuleColumnName();
+
                 switch (jobType) {
                     case UNIQUE_VALUE_NUM:
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.UNIQUE_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.DUP_VALUE_NUM.code);
                         sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
+                        superType = String.valueOf(TaskType.EMPTY_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName);
                         break;
                     default:
@@ -272,27 +293,49 @@ public class QuartJob implements Job {
                         break;
                 }
             } else {
+                superType = String.valueOf(TaskType.TABLE_ROW_NUM.code);
                 sql = String.format(query, tableName);
             }
 
-            ResultSet resultSet;
+
+            String columnTypeKey = null;
+            if(Objects.nonNull(columnName)) {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(columnName).add(superType).toString();
+            } else {
+                columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            }
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                return columnType2Result.get(columnTypeKey);
+            }
+
+
+
+            LOG.info("query Sql: " + sql);
+            ResultSet resultSet = null;
+
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             } else {
                 resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
-
-            while (resultSet.next()) {
-                Object object = resultSet.getObject(1);
-                resultValue = Double.valueOf(object.toString());
+            if(Objects.nonNull(resultSet)) {
+                while (resultSet.next()) {
+                    Object object = resultSet.getObject(1);
+                    if(Objects.nonNull(object))
+                        resultValue = Double.valueOf(object.toString());
+                }
             }
+            columnType2Result.put(columnTypeKey, resultValue);
             return resultValue;
         } catch (Exception e) {
-            LOG.info(e.getMessage());
+            LOG.info(e.toString());
             throw e;
         } finally {
             if (record) {
                 recordDataMap(rule, resultValue, resultValue);
+            }
+            if(Objects.nonNull(conn)) {
+                conn.close();
             }
         }
     }
@@ -345,11 +388,22 @@ public class QuartJob implements Job {
     //表大小
     public long tableSize(UserRule rule, boolean record) throws Exception {
         long totalSize = 0;
+        String templateId = rule.getTemplateId();
+        String source = qualityDao.querySourceByTemplateId(templateId);
+        String dbName = source.split("\\.")[0];
+        String tableName = source.split("\\.")[1];
         try {
-            String templateId = rule.getTemplateId();
-            String source = qualityDao.querySourceByTemplateId(templateId);
 
-            String tableName = source.split("\\.")[1];
+
+            String superType = String.valueOf(TaskType.TABLE_SIZE.code);
+            StringJoiner joiner = new StringJoiner(".");
+            String columnTypeKey = joiner.add(dbName).add(tableName).add(superType).toString();
+            if(columnType2Result.containsKey(columnTypeKey)) {
+                Double result = columnType2Result.get(columnTypeKey);
+                if(Objects.nonNull(result))
+                    return result.longValue();
+            }
+
             //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
 
             /*TableMetadata metadata;
@@ -360,7 +414,7 @@ public class QuartJob implements Job {
             }*/
 
             //表数据量
-            totalSize = HiveJdbcUtils.getTableSize(conn, tableName);
+            totalSize = HiveJdbcUtils.getTableSize(dbName, tableName);
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -418,28 +472,37 @@ public class QuartJob implements Job {
 
     public void getProportion(UserRule rule) throws Exception {
         double ratio = 0;
+        String templateId = rule.getTemplateId();
+        String source = qualityDao.querySourceByTemplateId(templateId);
+        String[] sourceInfo = source.split(SEPARATOR);
+        String dbName = sourceInfo[0];
+        String tableName = sourceInfo[1];
+        Connection conn = null;
+        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+        } else {
+            conn = HiveJdbcUtils.getSystemConnection(dbName);
+        }
         try {
-            String templateId = rule.getTemplateId();
-            String source = qualityDao.querySourceByTemplateId(templateId);
-            String[] sourceInfo = source.split(SEPARATOR);
-            String dbName = sourceInfo[0];
-            String tableName = sourceInfo[1];
-
             double nowNum = ruleResultValue(rule, false, true);
             Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
 
-            ResultSet resultSet;
+            ResultSet resultSet = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(sql, dbName);
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             } else {
                 resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql, dbName);
             }
 
-            while (resultSet.next()) {
-                Object object = resultSet.getObject(1);
-                totalNum = Double.valueOf(object.toString());
+            if(Objects.nonNull(resultSet)) {
+                while (resultSet.next()) {
+                    Object object = resultSet.getObject(1);
+                    if(Objects.nonNull(object)) {
+                        totalNum = Double.valueOf(object.toString());
+                    }
+                }
             }
             if (totalNum != 0) {
                 ratio = nowNum / totalNum;
@@ -448,6 +511,8 @@ public class QuartJob implements Job {
             throw e;
         } finally {
             recordDataMap(rule, ratio, ratio);
+            if(Objects.nonNull(conn))
+                conn.close();
         }
     }
 
