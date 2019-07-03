@@ -49,6 +49,16 @@ public interface ColumnDAO {
     @Select("select count(*) from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public int tableColumnExist(@Param("tableGuid")String tableGuid);
 
+
+
+    @Update({" <script>",
+             " update column_info set display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime},",
+             " where",
+             " column_guid=#{columnInfo.columnId}",
+             " </script>"})
+    public int updateAPIInfo(@Param("columnInfo")Column info);
+
+
     @Select("select column_guid as columnId,column_name as columnName,type, from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public List<Column> getColumnInfoList(@Param("tableGuid")String tableGuid);
 

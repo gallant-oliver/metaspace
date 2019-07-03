@@ -816,22 +816,29 @@ public class BusinessService {
         }
     }
 
-    public void editTableColumnDisplayName(List<Column> columns, List<String> editColumnList) throws AtlasBaseException {
+    public void editTableColumnDisplayName(List<Column> columns, List<String> editColumnList, boolean existOnPg) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String time = DateUtils.getNow();
-            entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
+            //entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
             //Date updateTime = new Date();
-            for(Column column : columns) {
-                String columnGuid = column.getColumnId();
-                String displayText = column.getDisplayName();
-                if(Objects.isNull(columnGuid) || Objects.isNull(displayText)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段Id或别名不能为空");
+
+            if(existOnPg) {
+                for(Column column: columns) {
+                    columnDAO.updateAPIInfo(column);
                 }
-                if(editColumnList.contains(column.getColumnName())) {
-                    column.setDisplayNameOperator(userId);
-                    column.setDisplayNameUpdateTime(time);
-                }
+            } else {
+                for (Column column : columns) {
+                    column.setStatus("ACTIVE");
+                    String columnGuid = column.getColumnId();
+                    String displayText = column.getDisplayName();
+                    if (Objects.isNull(columnGuid) || Objects.isNull(displayText)) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段Id或别名不能为空");
+                    }
+                    if (editColumnList.contains(column.getColumnName())) {
+                        column.setDisplayNameOperator(userId);
+                        column.setDisplayNameUpdateTime(time);
+                    }
                 /*try {
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayTextUpdateTime", updateTime);
@@ -839,11 +846,36 @@ public class BusinessService {
                 } catch (AtlasBaseException ex) {
                     throw ex;
                 }*/
+                }
+                columnDAO.addColumnDisplayInfo(columns);
             }
-            columnDAO.addColumnDisplayInfo(columns);
             //RequestContext.clear();
         }catch (AtlasBaseException e) {
             throw e;
+        }
+    }
+
+    public ColumnCheckMessage editSingleColumnDisplayName(String tableGuid, Column column) throws AtlasBaseException {
+        try {
+            List columnAndDisplayMap = new ArrayList();
+            columnAndDisplayMap.add(column);
+            //判断是否已经存在于pg中
+            boolean existOnPg = columnDAO.tableColumnExist(tableGuid)>0?true:false;
+            //字段信息
+            List<Column> columnInfoList = null;
+            if(existOnPg) {
+                //pg中取出column信息
+                columnInfoList = columnDAO.getColumnInfoList(tableGuid);
+            } else {
+                //JanusGraph中取出column信息
+                String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO_MAP);
+                String columnQuery = String.format(query, tableGuid);
+                List<Map> columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
+                columnInfoList = ConvertMapToColumnInfoList(tableGuid, columnMapList);
+            }
+            return checkColumnName(tableGuid, columnInfoList, columnAndDisplayMap, existOnPg);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 
@@ -981,7 +1013,7 @@ public class BusinessService {
                     columnwithDisplayList.addAll(nonEditColumnInfoList);
                 }
 
-                editTableColumnDisplayName(columnwithDisplayList, editColumnList);
+                editTableColumnDisplayName(columnwithDisplayList, editColumnList, existOnPg);
                 columnCheckMessage.setStatus(ColumnCheckMessage.Status.SUCCESS);
             } else {
                 columnCheckMessage.setStatus(ColumnCheckMessage.Status.FAILURE);

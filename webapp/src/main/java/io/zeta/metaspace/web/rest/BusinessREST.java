@@ -534,13 +534,10 @@ public class BusinessREST {
     @Path("/table/{guid}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
+    public ColumnCheckMessage editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
         try {
-            List columnList = new ArrayList();
-            columnList.add(column);
-            List columnNameList = new ArrayList();
-            columnNameList.add(column.getColumnName());
-            businessService.editTableColumnDisplayName(columnList, columnNameList);
+
+            businessService.editSingleColumnDisplayName(tableGuid, column);
             return "success";
         } catch (AtlasBaseException e) {
             throw e;
