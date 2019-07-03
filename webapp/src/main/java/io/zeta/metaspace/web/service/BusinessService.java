@@ -816,7 +816,7 @@ public class BusinessService {
         }
     }
 
-    public void editTableColumnDisplayName(List<Column> columns) throws AtlasBaseException {
+    public void editTableColumnDisplayName(List<Column> columns, List<String> editColumnList) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String time = DateUtils.getNow();
@@ -828,8 +828,10 @@ public class BusinessService {
                 if(Objects.isNull(columnGuid) || Objects.isNull(displayText)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段Id或别名不能为空");
                 }
-                column.setDisplayNameOperator(userId);
-                column.setDisplayNameUpdateTime(time);
+                if(editColumnList.contains(column.getColumnName())) {
+                    column.setDisplayNameOperator(userId);
+                    column.setDisplayNameUpdateTime(time);
+                }
                 /*try {
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
                     entityStore.updateEntityAttributeByGuid(columnGuid, "displayTextUpdateTime", updateTime);
@@ -954,11 +956,15 @@ public class BusinessService {
                     columnInfoList.forEach(column -> {
                         columnId2Type.put(column.getColumnId(), column.getType());
                     });
-                    columnwithDisplayList.forEach(column -> {
-                        column.setType(columnId2Type.get(column.getColumnId()));
-                    });
+
                     //取出字段guid
-                    Map<String, String> columnName2GuidMap = getColumnName2GuidMap(tableGuid);
+                    Map<String, String> columnName2GuidMap = new HashMap<>();
+                    columnInfoList.forEach(column -> {
+                        String columnName = column.getColumnName();
+                        String columnId = column.getColumnId();
+                        columnName2GuidMap.put(columnName, columnId);
+                    });
+                    //Map<String, String> columnName2GuidMap = getColumnName2GuidMap(tableGuid);
                     columnwithDisplayList.stream().forEach(column -> {
                         String columnName = column.getColumnName();
                         String guid = columnName2GuidMap.get(columnName);
@@ -966,12 +972,16 @@ public class BusinessService {
                         column.setTableId(tableGuid);
                     });
 
+                    columnwithDisplayList.forEach(column -> {
+                        column.setType(columnId2Type.get(column.getColumnId()));
+                    });
+
                     //未编辑向在第一次写入pg时一同写入
                     nonEditColumnInfoList.forEach(column -> column.setDisplayName(column.getColumnName()));
                     columnwithDisplayList.addAll(nonEditColumnInfoList);
                 }
 
-                editTableColumnDisplayName(columnwithDisplayList);
+                editTableColumnDisplayName(columnwithDisplayList, editColumnList);
                 columnCheckMessage.setStatus(ColumnCheckMessage.Status.SUCCESS);
             } else {
                 columnCheckMessage.setStatus(ColumnCheckMessage.Status.FAILURE);
@@ -1026,6 +1036,8 @@ public class BusinessService {
             return checkColumnName(tableGuid, columnInfoList, columnAndDisplayMap, existOnPg);
         } catch (AtlasBaseException e) {
             throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 

@@ -46,7 +46,7 @@ public interface ColumnDAO {
             "</script>"})
     public int addColumnDisplayInfo(@Param("columnList")List<Column> columnList);
 
-    @Select("select count(*) from columnInfo where table_guid=#{tableGuid} and status='ACTIVE'")
+    @Select("select count(*) from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public int tableColumnExist(@Param("tableGuid")String tableGuid);
 
     @Select("select column_guid as columnId,column_name as columnName,type, from column_info where table_guid=#{tableGuid} and status='ACTIVE'")

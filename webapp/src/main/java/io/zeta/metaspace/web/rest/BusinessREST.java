@@ -538,7 +538,9 @@ public class BusinessREST {
         try {
             List columnList = new ArrayList();
             columnList.add(column);
-            businessService.editTableColumnDisplayName(columnList);
+            List columnNameList = new ArrayList();
+            columnNameList.add(column.getColumnName());
+            businessService.editTableColumnDisplayName(columnList, columnNameList);
             return "success";
         } catch (AtlasBaseException e) {
             throw e;
