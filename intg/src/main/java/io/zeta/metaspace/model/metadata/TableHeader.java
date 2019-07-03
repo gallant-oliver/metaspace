@@ -35,6 +35,7 @@ public class TableHeader {
     private String databaseName;
     private String createTime;
     private String status;
+    private String displayName;
 
     public String getStatus() {
         return status;
@@ -84,5 +85,11 @@ public class TableHeader {
         this.databaseName = databaseName;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
 
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 }
