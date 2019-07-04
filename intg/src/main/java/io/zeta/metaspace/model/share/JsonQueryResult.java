@@ -12,23 +12,28 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 14:58
  */
 package io.zeta.metaspace.model.share;
+
+import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 14:58
  */
-public class QueryResult {
-    private long totalCount;
+public class JsonQueryResult extends QueryResult implements Serializable {
 
-    public long getTotalCount() {
-        return totalCount;
+    private List<LinkedHashMap<String, Object>> datas;
+
+    public List<LinkedHashMap<String, Object>> getDatas() {
+        return datas;
     }
 
-    public void setTotalCount(long totalCount) {
-        this.totalCount = totalCount;
+    public void setDatas(List<LinkedHashMap<String, Object>> datas) {
+        this.datas = datas;
     }
 }

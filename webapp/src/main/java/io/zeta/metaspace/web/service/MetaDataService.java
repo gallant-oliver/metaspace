@@ -1073,6 +1073,8 @@ public class MetaDataService {
                 businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
                 //表标签
                 tableTagDAO.delAllTable2Tag(tableGuid);
+                //唯一信任数据
+                businessDAO.removeBusinessTrustTableByTableId(tableGuid);
             }
             return response;
         } catch (AtlasBaseException e) {

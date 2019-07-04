@@ -12,23 +12,36 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 11:39
  */
 package io.zeta.metaspace.model.share;
+
+import java.util.Map;
+
+import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/6/27 14:56
+ * @date 2019/6/27 11:39
  */
-public class QueryResult {
-    private long totalCount;
+public class MapAdapter extends XmlAdapter<XmlMap, Map<String, Object>> {
 
-    public long getTotalCount() {
-        return totalCount;
+    @Override
+    public Map<String, Object> unmarshal(XmlMap v) throws Exception {
+        return null;
     }
 
-    public void setTotalCount(long totalCount) {
-        this.totalCount = totalCount;
+    @Override
+    public XmlMap marshal(Map<String, Object> v) throws Exception {
+        if (v != null) {
+            XmlMap xmlMap = new XmlMap();
+            for (Map.Entry<String, Object> entry : v.entrySet()) {
+                xmlMap.put(entry.getKey(), entry.getValue());
+            }
+            return xmlMap;
+        }
+        return null;
     }
+
 }

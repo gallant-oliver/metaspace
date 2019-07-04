@@ -22,8 +22,9 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/4/12 17:14
  */
 
-import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.QueryInfo;
+import io.zeta.metaspace.model.share.QueryResult;
+import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.web.service.DataShareService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -31,18 +32,15 @@ import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 
 @Path("api")
 @Singleton
@@ -70,11 +68,12 @@ public class ApiREST {
 
     @POST
     @Path("/{version}/share/{url}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult queryAPIData(@PathParam("url") String url, QueryInfo info) throws Exception {
+    @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public QueryResult queryAPIData(@PathParam("url") String url, QueryInfo info) throws Exception {
         try {
-            return shareService.queryAPIData(url, info);
+            String acceptHeader = httpServletRequest.getHeader("Accept");
+            return shareService.queryAPIData(url, info, acceptHeader);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

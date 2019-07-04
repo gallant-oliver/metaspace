@@ -133,7 +133,7 @@ public class HiveJdbcUtils {
             String sql = "describe formatted " + dbAndtableName;
             LOG.debug("Running: " + sql);
             Connection conn = getConnection(db);
-            ResultSet resultSet = selectBySQLWithSystemCon(conn, sql, db);
+            ResultSet resultSet = selectBySQLWithSystemCon(conn, sql);
             while (resultSet.next()) {
                 String string = resultSet.getString(2);
                 if (string!=null&&string.contains("numFiles"))
@@ -167,7 +167,7 @@ public class HiveJdbcUtils {
         }
     }
 
-    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql, String db) throws AtlasBaseException, IOException {
+    public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql) throws AtlasBaseException, IOException {
         try {
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;

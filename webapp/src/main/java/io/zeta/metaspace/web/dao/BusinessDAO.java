@@ -263,11 +263,14 @@ public interface BusinessDAO {
     public List<TableHeader> getBusinessRelatedTableList(@Param("businessId")String businessList, @Param("tableName")String tableName, @Param("limit")Integer limit,@Param("offset") Integer offset);
 
     @Select({"<script>",
-             " SELECT count(DISTINCT tableInfo.tableGuid)",
-             " from tableInfo,business2table ",
-             " WHERE business2table.businessid=#{businessId}",
-             " and tableInfo.tableGuid=business2table.tableGuid",
-             " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
-             " </script>"})
-    public long getCountBusinessRelatedTable(@Param("businessId")String businessList, @Param("tableName")String tableName);
+            " SELECT count(DISTINCT tableInfo.tableGuid)",
+            " from tableInfo,business2table ",
+            " WHERE business2table.businessid=#{businessId}",
+            " and tableInfo.tableGuid=business2table.tableGuid",
+            " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " </script>"})
+    public long getCountBusinessRelatedTable(@Param("businessId") String businessList, @Param("tableName") String tableName);
+
+    @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
+    public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
 }
