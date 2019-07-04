@@ -270,4 +270,8 @@ public interface BusinessDAO {
              " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
              " </script>"})
     public long getCountBusinessRelatedTable(@Param("businessId")String businessList, @Param("tableName")String tableName);
+
+    @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
+    public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
+
 }

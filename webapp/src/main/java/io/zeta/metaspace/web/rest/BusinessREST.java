@@ -562,6 +562,18 @@ public class BusinessREST {
         }
     }
 
+    /*@POST
+    @Path("/table/{guid}/columns/check")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnCheckMessage> checkColumnName(@PathParam("guid") String tableGuid, List<String> columns) throws AtlasBaseException {
+        try {
+            return businessService.checkColumnName(tableGuid, columns);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }*/
+
     /**
      * 导入字段中文别名Excel
      * @param tableGuid

@@ -12,45 +12,23 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/3/28 11:01
+ * @date 2019/6/27 14:56
  */
 package io.zeta.metaspace.model.share;
-
-import com.google.gson.JsonObject;
-
-import java.util.List;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/3/28 11:01
+ * @date 2019/6/27 14:56
  */
 public class QueryResult {
-    List<JsonObject> data;
-    Long limit;
-    Long offset;
+    private long totalCount;
 
-    public List<JsonObject> getData() {
-        return data;
+    public long getTotalCount() {
+        return totalCount;
     }
 
-    public void setData(List<JsonObject> data) {
-        this.data = data;
-    }
-
-    public long getLimit() {
-        return limit;
-    }
-
-    public void setLimit(Long limit) {
-        this.limit = limit;
-    }
-
-    public long getOffset() {
-        return offset;
-    }
-
-    public void setOffset(Long offset) {
-        this.offset = offset;
+    public void setTotalCount(long totalCount) {
+        this.totalCount = totalCount;
     }
 }

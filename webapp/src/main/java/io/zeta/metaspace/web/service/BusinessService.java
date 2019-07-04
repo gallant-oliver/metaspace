@@ -557,27 +557,6 @@ public class BusinessService {
         }
     }
 
-    public ColumnPrivilegeRelation queryRelatedColumn(int columnGuid) throws AtlasBaseException {
-        try {
-            return columnPrivilegeDAO.queryPrivilegeRelation(columnGuid);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
-        }
-    }
-
-    /*public Table getTableInfoById(String guid) throws AtlasBaseException {
-        Table table =  metaDataService.getTableInfoById(guid);
-        *//*List<Column> columns = table.getColumns();
-        for(Column column : columns) {
-            String columnId = column.getColumnId();
-            ColumnPrivilegeRelation relation = columnPrivilegeDAO.queryPrivilegeRelationByColumnGuid(columnId);
-            if(Objects.nonNull(relation)) {
-                column.setColumnPrivilege(relation.getName());
-                column.setColumnPrivilegeGuid(relation.getColumnPrivilegeGuid());
-            }
-        }*//*
-        return table;
-    }*/
 
     public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters) throws AtlasBaseException {
         try {
@@ -629,15 +608,6 @@ public class BusinessService {
 
     public PageResult getPermissionBusinessRelatedTableList(String businessId, Parameters parameters) throws AtlasBaseException {
         try {
-            /*Parameters businessParam = new Parameters();
-            businessParam.setQuery("");
-            businessParam.setOffset(0);
-            businessParam.setLimit(-1);
-            PageResult businessInfo = getBusinessListByName(businessParam);
-            List<BusinessInfoHeader> businessInfoHeaderList = businessInfo.getLists();
-            List<String> businessList = new ArrayList<>();
-            businessInfoHeaderList.stream().forEach(info -> businessList.add(info.getBusinessId()));*/
-
             String tableName = parameters.getQuery();
             tableName = (tableName == null ? "":tableName);
 
@@ -710,94 +680,6 @@ public class BusinessService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
-
-    /*public PageResult getTableColumnListV2(String tableGuid, Parameters parameters, String sortAttribute, String sort) throws AtlasBaseException {
-        try {
-            int limit = parameters.getLimit();
-            int offset = parameters.getOffset();
-
-            String filterName = parameters.getQuery();
-
-            String sortName = "hive_column.displayChineseText";
-            if("updatetime".equals(sortAttribute.toLowerCase())) {
-                sortName = "hive_column.displayTextUpdateTime";
-            }
-
-            String order = "incr";
-            if("desc".equals(sort.toLowerCase())) {
-                order = "decr";
-            }
-            String queryStr = null;
-            String countStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_COLUMN_COUNT);
-
-            if((offset == 0 && limit == -1)) {
-                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_COLUMN_LIST);
-            } else {
-                queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COLUMN_LIST);
-            }
-
-            String queryFormatStr = (offset == 0 && limit == -1) ? String.format(queryStr, tableGuid, filterName, sortName, order)
-                                                         : String.format(queryStr, tableGuid, filterName, offset, offset + limit, sortName, order);
-
-            String countFormatStr = String.format(countStr, tableGuid, filterName);
-
-            List<Long> countList = (List) graph.executeGremlinScript(countFormatStr, false);
-            long count = 0;
-
-            if(Objects.nonNull(countList)) {
-                count = countList.get(0);
-            }
-
-            List<Map> columnList = (List) graph.executeGremlinScript(queryFormatStr, false);
-
-            List<Column> columnInfoList = new ArrayList<>();
-            for(Map obj : columnList) {
-                List<String> guidList = (List) obj.get("__guid");
-                List<String> nameList = (List) obj.get("Asset.name");
-                List<String> typeList = (List) obj.get("hive_column.type");
-                List<String> displayList = (List) obj.get("hive_column.displayChineseText");
-                List<Long> updateTimeList = (List) obj.get("hive_column.displayTextUpdateTime");
-                String guid = null;
-                String name = null;
-                String type = null;
-                String displayName = null;
-                String updateTime = null;
-                if(Objects.nonNull(guidList) && guidList.size()>0) {
-                    guid = guidList.get(0);
-                }
-                if(Objects.nonNull(nameList) && nameList.size()>0) {
-                    name  = nameList.get(0);
-                }
-                if(Objects.nonNull(typeList) && typeList.size()>0) {
-                    type  = typeList.get(0);
-                }
-                if(Objects.nonNull(displayList) && displayList.size()>0) {
-                    displayName  = displayList.get(0);
-                }
-                if(Objects.nonNull(updateTimeList) && updateTimeList.size()>0) {
-                    Long time = updateTimeList.get(0);
-                    updateTime = DateUtils.date2String(new Date(time));
-
-                }
-                Column column = new Column();
-                column.setTableId(tableGuid);
-                column.setColumnId(guid);
-                column.setColumnName(name);
-                column.setType(type);
-                column.setDisplayName(displayName);
-                column.setDisplayNameUpdateTime(updateTime);
-                columnInfoList.add(column);
-            }
-
-            PageResult pageResult = new PageResult();
-            pageResult.setLists(columnInfoList);
-            pageResult.setCount(columnInfoList.size());
-            pageResult.setSum(count);
-            return pageResult;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
-        }
-    }*/
 
     public void editTableColumnDisplayName(List<Column> columns, List<String> editColumnList, boolean existOnPg) throws AtlasBaseException {
         try {
