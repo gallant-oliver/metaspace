@@ -52,14 +52,48 @@ public interface ColumnDAO {
 
 
     @Update({" <script>",
-             " update column_info set display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime},",
-             " where",
+             " update column_info set display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime}",
+             " where ",
              " column_guid=#{columnInfo.columnId}",
              " </script>"})
-    public int updateAPIInfo(@Param("columnInfo")Column info);
+    public int updateColumnInfo(@Param("columnInfo")Column info);
 
 
-    @Select("select column_guid as columnId,column_name as columnName,type, from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
+    @Select("select column_guid as columnId,column_name as columnName,type from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public List<Column> getColumnInfoList(@Param("tableGuid")String tableGuid);
 
+    @Select("select column_name from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
+    public List<String> getColumnNameList(@Param("tableGuid")String tableGuid);
+
+    @Update("update tableInfo set display_name=#{displayName},display_operator=#{displayOperator}, display_updatetime=#{displayUpdateTime} where tableGuid=#{tableGuid}")
+    public int updateTableDisplay(@Param("tableGuid")String tableGuid, @Param("displayName")String displayName, @Param("displayOperator")String displayOperator, @Param("displayUpdateTime")String displayUpdateTime);
+
+    @Select({" <script>",
+             " select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime",
+             " from column_info",
+             " where table_guid=#{tableGuid}",
+             " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
+             " and status !='DELETED' ",
+             " <if test='sortColumn!= null'>",
+             " order by ${sortColumn}",
+             "</if>",
+             " <if test='sortColumn!= null and sortOrder!=null'>",
+             " ${sortOrder}",
+             " </if>",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<Column> getTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText, @Param("sortColumn")String sortColumn, @Param("sortOrder")String sortOrder, @Param("limit")int limit, @Param("offset")int offset);
+
+
+    @Select({" <script>",
+             " select count(*)",
+             " from column_info",
+             " where table_guid=#{tableGuid}",
+             " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
+             " and status !='DELETED' ",
+             " </script>"})
+    public int countTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText);
 }
