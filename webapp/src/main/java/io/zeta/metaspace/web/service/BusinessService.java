@@ -656,7 +656,7 @@ public class BusinessService {
             if(Objects.nonNull(queryText))
                 queryText = queryText.replaceAll("%", "/%").replaceAll("_", "/_");
             String sqlSortOrder = Objects.nonNull(sortOrder)? sortOrder.toLowerCase(): "asc";
-            String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn))?"display_updatetime":"display_name";
+            String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn.toLowerCase()))?"display_updatetime":"column_name";
 
             List<Column> resultColumnInfoList = columnDAO.getTableColumnList(tableGuid, queryText, sqlsortColumn, sqlSortOrder, limit, offset);
             int totalCount = columnDAO.countTableColumnList(tableGuid, queryText);
