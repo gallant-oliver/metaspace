@@ -964,7 +964,7 @@ public class BusinessService {
             List<String> nameList = (List) obj.get("Asset.name");
             List<String> typeList = (List) obj.get("hive_column.type");
             List<String> stateList = (List) obj.get("__state");
-            List<String> modifyTimeList = (List)obj.get("__modificationTimestamp");
+            List<Long> modifyTimeList = (List)obj.get("__modificationTimestamp");
             String guid = null;
             String name = null;
             String type = null;
@@ -984,7 +984,8 @@ public class BusinessService {
                 state  = stateList.get(0);
             }
             if(Objects.nonNull(modifyTimeList) && modifyTimeList.size()>0) {
-                updateTime = modifyTimeList.get(0);
+                Long time = modifyTimeList.get(0);
+                updateTime = DateUtils.date2String(new Date(time));
             }
 
             Column column = new Column();
