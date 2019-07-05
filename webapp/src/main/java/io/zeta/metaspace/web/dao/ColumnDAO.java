@@ -103,4 +103,7 @@ public interface ColumnDAO {
 
     @Select("select display_name from tableInfo where tableGuid=#{tableGuid}")
     public String getTableDisplayInfoByGuid(@Param("tableGuid")String tableGuid);
+
+    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{tableGuid}")
+    public TableHeader getTableHeaderInfo(@Param("tableGuid")String tableGuid);
 }

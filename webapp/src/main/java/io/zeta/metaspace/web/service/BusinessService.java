@@ -1052,8 +1052,14 @@ public class BusinessService {
                 data.add(columnName);
                 datas.add(data);
             }
+
+            TableHeader tableHeader = columnDAO.getTableHeaderInfo(tableGuid);
+            String dbName = tableHeader.getDatabaseName();
+            String tableName = tableHeader.getTableName();
+            StringJoiner joiner = new StringJoiner("_");
+            joiner.add(dbName).add(tableName).add("columns");
             Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
-            File file = new File("columns" + ".xlsx");
+            File file = new File(joiner.toString() + ".xlsx");
             FileOutputStream output = new FileOutputStream(file);
             workbook.write(output);
             output.flush();
