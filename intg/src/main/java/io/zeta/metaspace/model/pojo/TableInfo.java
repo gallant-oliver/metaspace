@@ -17,6 +17,7 @@ public class TableInfo {
     private String dataWarehouseAdmin;
     private String dataWarehouseDescription;
     private String catalogAdmin;
+    private String displayName;
 
     public String getDatabaseStatus() {
         return databaseStatus;
@@ -133,5 +134,13 @@ public class TableInfo {
 
     public void setCatalogAdmin(String catalogAdmin) {
         this.catalogAdmin = catalogAdmin;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

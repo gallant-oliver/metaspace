@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.ibatis.annotations.Delete;
@@ -69,13 +70,16 @@ public interface ColumnDAO {
     public int updateTableDisplay(@Param("tableGuid")String tableGuid, @Param("displayName")String displayName, @Param("displayOperator")String displayOperator, @Param("displayUpdateTime")String displayUpdateTime);
 
     @Select({" <script>",
-             " select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime",
+             " select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime, type",
              " from column_info",
              " where table_guid=#{tableGuid}",
              " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
              " and status !='DELETED' ",
              " <if test='sortColumn!= null'>",
              " order by ${sortColumn}",
+             "</if>",
+             " <if test='sortColumn==null'>",
+             " order by column_name",
              "</if>",
              " <if test='sortColumn!= null and sortOrder!=null'>",
              " ${sortOrder}",
@@ -96,4 +100,10 @@ public interface ColumnDAO {
              " and status !='DELETED' ",
              " </script>"})
     public int countTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText);
+
+    @Select("select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime from column_info where column_guid=#{columnId}")
+    public Column getColumnInfoByGuid(@Param("columnId")String columnId);
+
+    @Select("select display_name from tableInfo where tableGuid=#{tableGuid}")
+    public String getTableDisplayInfoByGuid(@Param("tableGuid")String tableGuid);
 }

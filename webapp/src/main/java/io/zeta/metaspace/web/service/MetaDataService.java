@@ -103,6 +103,9 @@ public class MetaDataService {
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
+    @Autowired
+    private ColumnDAO columnDAO;
+
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -133,8 +136,10 @@ public class MetaDataService {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
             //中文别名
-            table.setDisplayName(getEntityAttribute(entity, "displayChineseText"));
-            if(Objects.isNull(table.getDisplayName())) {
+            String displayName = columnDAO.getTableDisplayInfoByGuid(guid);
+            if(Objects.nonNull(displayName)) {
+                table.setDisplayName(displayName);
+            } else {
                 table.setDisplayName(table.getTableName());
             }
             //判断是否为虚拟表
@@ -429,19 +434,22 @@ public class MetaDataService {
         } else {
             column.setDescription("");
         }
-        if (attributes.containsKey("displayChineseText") && Objects.nonNull(attributes.get("displayChineseText"))) {
-            String displayName = attributes.get("displayChineseText").toString();
-            column.setDisplayName(displayName);
+        Column pgColumnInfo = columnDAO.getColumnInfoByGuid(column.getColumnId());
+        if(Objects.nonNull(pgColumnInfo)) {
+            String displayName = pgColumnInfo.getDisplayName();
+            if (Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
+                column.setDisplayName(displayName);
+            } else {
+                column.setDisplayName(column.getColumnName());
+            }
+            String displayUpdateTime = pgColumnInfo.getDisplayNameUpdateTime();
+            if(Objects.nonNull(displayUpdateTime) && !"".equals(displayUpdateTime.trim())) {
+                column.setDisplayNameUpdateTime(displayUpdateTime);
+            }
         } else {
             column.setDisplayName(column.getColumnName());
         }
-        if (attributes.containsKey("displayTextUpdateTime") && Objects.nonNull(attributes.get("displayTextUpdateTime"))) {
-            Date updateTime = (Date)attributes.get("displayTextUpdateTime");
-            String dateStr = DateUtils.date2String(updateTime);
-            column.setDisplayNameUpdateTime(dateStr);
-        } else {
-            column.setDisplayNameUpdateTime("");
-        }
+
     }
 
     public List<Column> filterColumn(ColumnQuery query, List<Column> columns) {

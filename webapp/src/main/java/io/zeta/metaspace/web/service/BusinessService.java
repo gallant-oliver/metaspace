@@ -269,20 +269,17 @@ public class BusinessService {
 
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
-
-            for(int i=0; i<tables.size(); i++) {
-                String tableGuid = tables.get(i).getTableGuid();
-                AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
-                if(Objects.isNull(entityWithExtInfo)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表详情");
+            tables.forEach(table -> {
+                String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
+                String tableName = table.getTableName();
+                if(Objects.nonNull(displayName)) {
+                    table.setDisplayName(displayName);
+                    table.setTableName(displayName + "(" + tableName + ")");
+                } else {
+                    table.setDisplayName(table.getTableName());
+                    table.setTableName(tableName + "(" + tableName + ")");
                 }
-                AtlasEntity entity = entityWithExtInfo.getEntity();
-                if (entity.hasAttribute("displayChineseText") && Objects.nonNull(entity.getAttribute("displayChineseText"))) {
-                    String displayName = entity.getAttribute("displayChineseText").toString();
-                    tables.get(i).setDisplayName(displayName);
-                }
-            }
-
+            });
 
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
@@ -608,38 +605,36 @@ public class BusinessService {
 
     public PageResult getPermissionBusinessRelatedTableList(String businessId, Parameters parameters) throws AtlasBaseException {
         try {
-            String tableName = parameters.getQuery();
-            tableName = (tableName == null ? "":tableName);
+            String query = parameters.getQuery();
+            query = (query == null ? "":query);
 
-            if(Objects.nonNull(tableName))
-                tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(query))
+                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
 
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
-            List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessId, tableName, limit, offset);
-            for(int i=0; i<tableHeaderList.size(); i++) {
-                String tableGuid = tableHeaderList.get(i).getTableId();
-                AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
-                if(Objects.isNull(entityWithExtInfo)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表详情");
-                }
-                AtlasEntity entity = entityWithExtInfo.getEntity();
-                if (entity.hasAttribute("displayChineseText") && Objects.nonNull(entity.getAttribute("displayChineseText"))) {
-                    String displayName = entity.getAttribute("displayChineseText").toString();
-                    tableHeaderList.get(i).setDisplayName(displayName);
-                }
-            }
+            List<TableHeader> tableHeaderList = businessDao.getBusinessRelatedTableList(businessId, query, limit, offset);
 
-            long count = businessDao.getCountBusinessRelatedTable(businessId, tableName);
+            tableHeaderList.forEach(tableHeader -> {
+                String displayName = tableHeader.getDisplayName();
+                String tableName = tableHeader.getTableName();
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    tableHeader.setDisplayName(tableHeader.getTableName());
+                    tableHeader.setTableName(tableName + "(" + tableName + ")");
+                } else {
+                    tableHeader.setDisplayName(displayName);
+                    tableHeader.setTableName(displayName + "(" + tableName + ")");
+                }
+            });
+
+            long count = businessDao.getCountBusinessRelatedTable(businessId, query);
             PageResult pageResult = new PageResult();
             pageResult.setLists(tableHeaderList);
             pageResult.setCount(tableHeaderList.size());
             pageResult.setSum(count);
             return pageResult;
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 
@@ -843,7 +838,7 @@ public class BusinessService {
                         columnCheckInfo.setDisplayText(columnName);
                     } else {
                         if(displayText.length() > 64) {
-                            columnCheckInfo.setErrorMessage("别名超出允许最大长度");
+                            columnCheckInfo.setErrorMessage("别名超出允许最大长度64字符");
                             errorColumnList.add(columnName);
                             errorColumnCount++;
                         } else {
@@ -969,10 +964,12 @@ public class BusinessService {
             List<String> nameList = (List) obj.get("Asset.name");
             List<String> typeList = (List) obj.get("hive_column.type");
             List<String> stateList = (List) obj.get("__state");
+            List<String> modifyTimeList = (List)obj.get("__modificationTimestamp");
             String guid = null;
             String name = null;
             String type = null;
             String state = null;
+            String updateTime = null;
 
             if(Objects.nonNull(guidList) && guidList.size()>0) {
                 guid = guidList.get(0);
@@ -986,6 +983,9 @@ public class BusinessService {
             if(Objects.nonNull(stateList) && stateList.size()>0) {
                 state  = stateList.get(0);
             }
+            if(Objects.nonNull(modifyTimeList) && modifyTimeList.size()>0) {
+                updateTime = modifyTimeList.get(0);
+            }
 
             Column column = new Column();
             column.setTableId(tableGuid);
@@ -993,6 +993,7 @@ public class BusinessService {
             column.setColumnName(name);
             column.setType(type);
             column.setStatus(state);
+            column.setDisplayNameUpdateTime(updateTime);
             columnInfoList.add(column);
         }
         return columnInfoList;
