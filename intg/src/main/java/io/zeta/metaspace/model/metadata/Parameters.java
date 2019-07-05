@@ -20,6 +20,24 @@ public class Parameters implements Serializable {
     private String query;
     private int offset;
     private int limit;
+    private String sortby;
+    private String order;
+
+    public String getSortby() {
+        return sortby;
+    }
+
+    public void setSortby(String sortby) {
+        this.sortby = sortby;
+    }
+
+    public String getOrder() {
+        return order;
+    }
+
+    public void setOrder(String order) {
+        this.order = order;
+    }
 
     public int getOffset() {
         return offset;
