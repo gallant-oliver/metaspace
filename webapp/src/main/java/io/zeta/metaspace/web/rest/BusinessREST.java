@@ -536,9 +536,7 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public String editTableColumnDisplayName(@PathParam("guid") String tableGuid, Column column) throws AtlasBaseException {
         try {
-            List columnList = new ArrayList();
-            columnList.add(column);
-            businessService.editTableColumnDisplayName(columnList);
+            businessService.editSingleColumnDisplayName(tableGuid, column);
             return "success";
         } catch (AtlasBaseException e) {
             throw e;

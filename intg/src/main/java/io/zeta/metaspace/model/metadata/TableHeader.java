@@ -36,6 +36,8 @@ public class TableHeader {
     private String createTime;
     private String status;
     private String displayName;
+    private String displayUpdateTime;
+    private String displayOperator;
 
     public String getStatus() {
         return status;
@@ -91,5 +93,21 @@ public class TableHeader {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getDisplayUpdateTime() {
+        return displayUpdateTime;
+    }
+
+    public void setDisplayUpdateTime(String displayUpdateTime) {
+        this.displayUpdateTime = displayUpdateTime;
+    }
+
+    public String getDisplayOperator() {
+        return displayOperator;
+    }
+
+    public void setDisplayOperator(String displayOperator) {
+        this.displayOperator = displayOperator;
     }
 }
