@@ -119,6 +119,16 @@ public class SearchService {
             }
             List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
 
+            tableList.forEach(table -> {
+                String displayName = table.getDisplayName();
+                String tableName = table.getTableName();
+                if(Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
+                    table.setTableName(displayName + "(" + tableName + ")");
+                } else {
+                    table.setTableName(tableName + "(" + tableName + ")");
+                }
+            });
+
             pageResult.setLists(tableList);
             pageResult.setSum(tableList.size());
             pageResult.setCount(tableList.size());

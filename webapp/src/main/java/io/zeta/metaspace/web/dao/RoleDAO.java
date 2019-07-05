@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 import io.zeta.metaspace.model.result.AddRelationTable;
@@ -320,7 +321,15 @@ public interface RoleDAO {
             "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
     public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    /*@Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
+    public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);*/
+
+    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +

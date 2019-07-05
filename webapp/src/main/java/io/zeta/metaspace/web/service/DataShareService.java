@@ -1244,4 +1244,18 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL查询语句异常");
         }
     }
+
+    public List<Column> getTableColumnList(String tableGuid) throws AtlasBaseException {
+        List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
+        columnList.forEach(column -> {
+            String columnName = column.getColumnName();
+            String displayName = column.getDisplayName();
+            if(Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
+                column.setColumnName(displayName + "(" + columnName + ")");
+            } else {
+                column.setColumnName(columnName + "(" + columnName + ")");
+            }
+        });
+        return columnList;
+    }
 }

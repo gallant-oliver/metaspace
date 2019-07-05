@@ -25,6 +25,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
@@ -351,8 +352,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
         try {
-            List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
-            return columnList;
+            return shareService.getTableColumnList(tableGuid);
         } catch (AtlasBaseException e) {
             throw e;
         }
