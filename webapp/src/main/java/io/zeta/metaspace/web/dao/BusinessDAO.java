@@ -248,11 +248,12 @@ public interface BusinessDAO {
 
 
     @Select({"<script>",
-             " SELECT DISTINCT tableInfo.tableGuid as tableId,tableInfo.tableName,tableInfo.databaseGuid as databaseId,tableInfo.createTime,tableInfo.status ",
+             " SELECT DISTINCT tableInfo.tableGuid as tableId,tableInfo.tableName,tableInfo.databaseGuid as databaseId,dbName as databaseName, tableInfo.createTime,tableInfo.status,",
+             " tableInfo.display_name as displayName, tableInfo.display_updateTime as displayUpdateTime, tableInfo.display_operator as displayOperator",
              " from tableInfo,business2table ",
              " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
-             " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+             " and (tableInfo.tableName like '%${tableName}%' ESCAPE '/' or tableInfo.display_name like '%${tableName}%' ESCAPE '/')",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",
@@ -263,14 +264,15 @@ public interface BusinessDAO {
     public List<TableHeader> getBusinessRelatedTableList(@Param("businessId")String businessList, @Param("tableName")String tableName, @Param("limit")Integer limit,@Param("offset") Integer offset);
 
     @Select({"<script>",
-            " SELECT count(DISTINCT tableInfo.tableGuid)",
-            " from tableInfo,business2table ",
-            " WHERE business2table.businessid=#{businessId}",
-            " and tableInfo.tableGuid=business2table.tableGuid",
-            " and tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
-            " </script>"})
-    public long getCountBusinessRelatedTable(@Param("businessId") String businessList, @Param("tableName") String tableName);
+             " SELECT count(DISTINCT tableInfo.tableGuid)",
+             " from tableInfo,business2table ",
+             " WHERE business2table.businessid=#{businessId}",
+             " and tableInfo.tableGuid=business2table.tableGuid",
+             " and (tableInfo.tableName like '%${tableName}%' ESCAPE '/' or tableInfo.display_name like '%${tableName}%' ESCAPE '/')",
+             " </script>"})
+    public long getCountBusinessRelatedTable(@Param("businessId")String businessList, @Param("tableName")String tableName);
 
     @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
     public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
+
 }
