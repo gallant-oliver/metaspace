@@ -142,6 +142,13 @@ public class MarketService {
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
 
+            tables.forEach(table -> {
+                String displayName = table.getDisplayName();
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    table.setDisplayName(table.getTableName());
+                }
+            });
+
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
                 TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();

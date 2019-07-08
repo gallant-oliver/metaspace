@@ -28,7 +28,6 @@ import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -51,19 +50,9 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
-
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
-import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityChangeNotifier;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
-import org.apache.atlas.repository.store.graph.v2.AtlasTypeDefGraphStoreV2;
-import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
-import org.apache.atlas.type.AtlasTypeRegistry;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -72,7 +61,6 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.postgresql.util.PGobject;
 
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
-import static org.mockito.Mockito.mock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,10 +71,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -125,17 +111,6 @@ public class BusinessService {
     DataShareDAO shareDAO;
     @Autowired
     DataShareService shareService;
-
-    @Inject
-    AtlasTypeRegistry typeRegistry;
-
-    @Inject
-    AtlasEntityStore entityStore;
-    @Inject
-    DeleteHandlerV1 deleteHandler;
-    @Inject
-    private EntityGraphMapper graphMapper;
-    private AtlasEntityChangeNotifier mockChangeNotifier = mock(AtlasEntityChangeNotifier.class);
 
     @Inject
     protected AtlasGraph graph;
@@ -271,13 +246,10 @@ public class BusinessService {
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
             tables.forEach(table -> {
                 String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
-                String tableName = table.getTableName();
                 if(Objects.nonNull(displayName)) {
                     table.setDisplayName(displayName);
-                    table.setTableName(displayName + "(" + tableName + ")");
                 } else {
                     table.setDisplayName(table.getTableName());
-                    table.setTableName(tableName + "(" + tableName + ")");
                 }
             });
 
@@ -619,11 +591,9 @@ public class BusinessService {
                 String displayName = tableHeader.getDisplayName();
                 String tableName = tableHeader.getTableName();
                 if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
-                    tableHeader.setDisplayName(tableHeader.getTableName());
-                    tableHeader.setTableName(tableName + "(" + tableName + ")");
+                    tableHeader.setDisplayName(tableName);
                 } else {
                     tableHeader.setDisplayName(displayName);
-                    tableHeader.setTableName(displayName + "(" + tableName + ")");
                 }
             });
 
@@ -680,8 +650,6 @@ public class BusinessService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String time = DateUtils.getNow();
-            //entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
-            //Date updateTime = new Date();
 
             if(existOnPg) {
                 for(Column column: columns) {
@@ -701,17 +669,9 @@ public class BusinessService {
                         column.setDisplayNameOperator(userId);
                         column.setDisplayNameUpdateTime(time);
                     }
-                /*try {
-                    entityStore.updateEntityAttributeByGuid(columnGuid, "displayChineseText", displayText);
-                    entityStore.updateEntityAttributeByGuid(columnGuid, "displayTextUpdateTime", updateTime);
-                    graph.commit();
-                } catch (AtlasBaseException ex) {
-                    throw ex;
-                }*/
                 }
                 columnDAO.addColumnDisplayInfo(columns);
             }
-            //RequestContext.clear();
         }catch (AtlasBaseException e) {
             throw e;
         }
@@ -760,48 +720,15 @@ public class BusinessService {
 
     public void editTableDisplayName(TableHeader tableHeader) throws AtlasBaseException {
         try {
-            //entityStore = new AtlasEntityStoreV2(deleteHandler, typeRegistry, mockChangeNotifier, graphMapper);
             String tableGuid = tableHeader.getTableId();
             String displayText = tableHeader.getDisplayName();
             String userId = AdminUtils.getUserData().getUserId();
             String time = DateUtils.getNow();
             columnDAO.updateTableDisplay(tableGuid, displayText, userId, time);
-            /*entityStore.updateEntityAttributeByGuid(tableGuid, "displayChineseText", displayText);
-            graph.commit();
-            RequestContext.clear();*/
         }catch (AtlasBaseException e) {
             throw e;
         }
     }
-
-
-    /*public List<ColumnCheckMessage> checkColumnName(String tableGuid, List<String> columnList) throws AtlasBaseException {
-        try {
-            AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entityStore.getById(tableGuid);
-            if(Objects.isNull(entityWithExtInfo)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到表字段信息");
-            }
-            List<Column> columnInfoList = metaDataService.extractColumnInfo(entityWithExtInfo, tableGuid);
-            List<String> tableColumnList = new ArrayList<>();
-            List<ColumnCheckMessage> columnCheckMessageList = new ArrayList<>();
-            columnInfoList.stream().forEach(column -> tableColumnList.add(column.getColumnName()));
-            for(int i=0; i<columnList.size(); i++) {
-                String columnName = columnList.get(i);
-                ColumnCheckMessage columnCheckMessage = new ColumnCheckMessage();
-                columnCheckMessage.setRow(i);
-                columnCheckMessage.setColumnName(columnName);
-                if(tableColumnList.contains(columnName)) {
-                    columnCheckMessage.setErrorMessage("success");
-                } else {
-                    columnCheckMessage.setErrorMessage("not find column name");
-                }
-                columnCheckMessageList.add(columnCheckMessage);
-            }
-            return columnCheckMessageList;
-        }catch (AtlasBaseException e) {
-            throw e;
-        }
-    }*/
 
     public ColumnCheckMessage checkColumnName(String tableGuid, List<Column> columnInfoList, List<Column> columnwithDisplayList, boolean existOnPg) throws AtlasBaseException {
         try {
@@ -1076,15 +1003,16 @@ public class BusinessService {
         Table table = metaDataService.getTableInfoById(guid);
         String tableName = table.getTableName();
         String tableDisplayName = table.getDisplayName();
-        String tableDisplayText = tableDisplayName + "(" + tableName + ")";
-        table.setTableName(tableDisplayText);
+        if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+            table.setDisplayName(tableName);
+        }
         List<Column> columnList = table.getColumns();
         columnList.forEach(column -> {
             String columnName = column.getColumnName();
             String displayName = column.getDisplayName();
-            String displayText = displayName + "(" + columnName + ")";
-            column.setColumnName(displayText);
-
+            if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                column.setDisplayName(columnName);
+            }
         });
         return table;
     }
