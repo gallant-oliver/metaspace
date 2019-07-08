@@ -656,7 +656,7 @@ public class BusinessService {
             if(Objects.nonNull(queryText))
                 queryText = queryText.replaceAll("%", "/%").replaceAll("_", "/_");
             String sqlSortOrder = Objects.nonNull(sortOrder)? sortOrder.toLowerCase(): "asc";
-            String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn))?"display_updatetime":"display_name";
+            String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn.toLowerCase()))?"display_updatetime":"column_name";
 
             List<Column> resultColumnInfoList = columnDAO.getTableColumnList(tableGuid, queryText, sqlsortColumn, sqlSortOrder, limit, offset);
             int totalCount = columnDAO.countTableColumnList(tableGuid, queryText);
@@ -964,7 +964,7 @@ public class BusinessService {
             List<String> nameList = (List) obj.get("Asset.name");
             List<String> typeList = (List) obj.get("hive_column.type");
             List<String> stateList = (List) obj.get("__state");
-            List<String> modifyTimeList = (List)obj.get("__modificationTimestamp");
+            List<Long> modifyTimeList = (List)obj.get("__modificationTimestamp");
             String guid = null;
             String name = null;
             String type = null;
@@ -984,7 +984,8 @@ public class BusinessService {
                 state  = stateList.get(0);
             }
             if(Objects.nonNull(modifyTimeList) && modifyTimeList.size()>0) {
-                updateTime = modifyTimeList.get(0);
+                Long time = modifyTimeList.get(0);
+                updateTime = DateUtils.date2String(new Date(time));
             }
 
             Column column = new Column();
