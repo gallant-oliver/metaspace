@@ -451,12 +451,4 @@ atlas.graph.index.search.solr.wait-searcher=true
             </plugin>
         </plugins>
     </build>
-
-    <!--Add a dependency here to ensure this module is the final one built-->
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.atlas</groupId>
-            <artifactId>storm-bridge</artifactId>
-        </dependency>
-    </dependencies>
 </project>
