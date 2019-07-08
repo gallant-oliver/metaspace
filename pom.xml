@@ -34,14 +34,6 @@
     <name>metaspace</name>
     <packaging>pom</packaging>
 
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-
-
     <issueManagement>
         <system>gitlab</system>
         <url>https://gitlab.gridsum.com/gdp/zeta/metaspace/issues</url>
@@ -273,17 +265,10 @@
         <module>authorization</module>
         <module>webapp</module>
         <module>docs</module>
-
         <module>addons/hdfs-model</module>
         <module>plugin-classloader</module>
         <module>addons/hive-bridge-shim</module>
         <module>addons/hive-bridge</module>
-        <module>addons/falcon-bridge-shim</module>
-        <module>addons/falcon-bridge</module>
-        <module>addons/sqoop-bridge-shim</module>
-        <module>addons/sqoop-bridge</module>
-        <module>addons/storm-bridge-shim</module>
-        <module>addons/storm-bridge</module>
         <module>addons/hbase-bridge-shim</module>
         <module>addons/hbase-bridge</module>
         <module>addons/kafka-bridge</module>
@@ -1033,18 +1018,6 @@
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>falcon-bridge</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>sqoop-bridge</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
                 <artifactId>hive-bridge-shim</artifactId>
                 <version>${project.version}</version>
                 <exclusions>
@@ -1055,23 +1028,6 @@
                 </exclusions>
             </dependency>
 
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>storm-bridge-shim</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>falcon-bridge-shim</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>sqoop-bridge-shim</artifactId>
-                <version>${project.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
