@@ -96,6 +96,9 @@ public interface DataStandardDAO {
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false ",
+             " <if test=\"params.query != null and params.query!=''\">",
+             " and (b.username like '%${params.query}%' ESCAPE '/' or a.number like '%${params.query}%' ESCAPE '/' or a.content like '%${params.query}%' ESCAPE '/' or a.description like '%${params.query}%' ESCAPE '/') ",
+             " </if>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
@@ -115,6 +118,9 @@ public interface DataStandardDAO {
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false ",
+             " <if test=\"query != null and query!=''\">",
+             " and (b.username like '%${query}%' ESCAPE '/' or a.number like '%${query}%' ESCAPE '/' or a.content like '%${query}%' ESCAPE '/' or a.description like '%${query}%' ESCAPE '/') ",
+             " </if>",
              " </script>"})
     public long countBySearch(@Param("query") String query);
 

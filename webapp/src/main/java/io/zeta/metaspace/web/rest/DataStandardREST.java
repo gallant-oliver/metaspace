@@ -10,10 +10,6 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/2/13 10:09
- */
 package io.zeta.metaspace.web.rest;
 
 

@@ -10,10 +10,6 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/2/12 14:56
- */
 package io.zeta.metaspace.web.service;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
