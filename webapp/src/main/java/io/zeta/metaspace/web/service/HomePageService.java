@@ -239,6 +239,12 @@ public class HomePageService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<TableUseInfo> tableList = homePageDAO.getTableRelatedInfo(limit, offset);
+            tableList.forEach(table -> {
+                String displayName = table.getDisplayName();
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    table.setDisplayName(table.getTableName());
+                }
+            });
             long total = homePageDAO.getTotalTableUserTimes();
             DecimalFormat df = new DecimalFormat("0.00");
             tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes() / total))));

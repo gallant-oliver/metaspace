@@ -934,14 +934,25 @@ public class BusinessService {
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
             Row row = null;
+            Cell keyCell = null;
+            Cell valueCell = null;
             String key = null;
             String value = null;
             List resultList = new ArrayList();
             Column column = null;
+
+            row = sheet.getRow(0);
+            keyCell = row.getCell(0);
+            valueCell = row.getCell(1);
+            key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
+            value = Objects.nonNull(valueCell)?valueCell.getStringCellValue():"";
+            if(!"字段名称".equals(key) || !"显示名称".equals(value)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Excel表头错误，表头名称应为【字段名称】和【显示名称】");
+            }
             for(int i=1; i<rowNum; i++) {
                 row = sheet.getRow(i);
-                Cell keyCell = row.getCell(0);
-                Cell valueCell = row.getCell(1);
+                keyCell = row.getCell(0);
+                valueCell = row.getCell(1);
                 key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
                 value = Objects.nonNull(valueCell)?valueCell.getStringCellValue():"";
                 column = new Column();
@@ -960,8 +971,9 @@ public class BusinessService {
         try {
             boolean existOnPg = columnDAO.tableColumnExist(tableGuid)>0?true:false;
             List<String> columnList = null;
+            List<Column> columnInfoList = null;
             if(existOnPg) {
-                columnList = columnDAO.getColumnNameList(tableGuid);
+                columnInfoList = columnDAO.getColumnNameWithDisplayList(tableGuid);
             } else {
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME_LIST);
                 String columnQuery = String.format(query, tableGuid);
@@ -974,10 +986,20 @@ public class BusinessService {
 
             List<List<String>> datas = new ArrayList<>();
             List<String> data = null;
-            for(String columnName : columnList) {
-                data = new ArrayList<>();
-                data.add(columnName);
-                datas.add(data);
+            if(existOnPg) {
+                for (Column column : columnInfoList) {
+                    data = new ArrayList<>();
+                    String displayName = column.getDisplayName();
+                    data.add(column.getColumnName());
+                    data.add(Objects.nonNull(displayName)?displayName:String.valueOf(""));
+                    datas.add(data);
+                }
+            } else {
+                for (String columnName : columnList) {
+                    data = new ArrayList<>();
+                    data.add(columnName);
+                    datas.add(data);
+                }
             }
 
             TableHeader tableHeader = columnDAO.getTableHeaderInfo(tableGuid);

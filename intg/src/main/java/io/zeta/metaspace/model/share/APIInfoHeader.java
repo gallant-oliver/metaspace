@@ -38,6 +38,7 @@ public class APIInfoHeader {
     private String updateTime;
     private Boolean star;
     private Boolean enableClone;
+    private String tableDisplayName;
 
     public String getGuid() {
         return guid;
@@ -149,5 +150,13 @@ public class APIInfoHeader {
 
     public void setEnableClone(Boolean enableClone) {
         this.enableClone = enableClone;
+    }
+
+    public String getTableDisplayName() {
+        return tableDisplayName;
+    }
+
+    public void setTableDisplayName(String tableDisplayName) {
+        this.tableDisplayName = tableDisplayName;
     }
 }
