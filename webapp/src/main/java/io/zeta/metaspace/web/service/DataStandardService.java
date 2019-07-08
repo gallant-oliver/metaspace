@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -49,7 +50,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-//@Transactional
+@Transactional
 public class DataStandardService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataStandardService.class);
@@ -67,41 +68,50 @@ public class DataStandardService {
         return dataStandardDAO.insert(dataStandard);
     }
 
-    public int batchInsert(List<DataStandard> dataList) throws AtlasBaseException {
+    public int batchInsert(String categoryId, List<DataStandard> dataList) throws AtlasBaseException {
         for (DataStandard dataStandard : dataList) {
             dataStandard.setId(UUIDUtils.alphaUUID());
             dataStandard.setCreateTime(DateUtils.currentTimestamp());
             dataStandard.setUpdateTime(DateUtils.currentTimestamp());
             dataStandard.setOperator(AdminUtils.getUserData().getUserId());
             dataStandard.setVersion(1);
+            dataStandard.setCategoryId(categoryId);
             dataStandard.setDelete(false);
         }
         return dataStandardDAO.batchInsert(dataList);
     }
 
-    public DataStandard get(String id) throws AtlasBaseException {
-        return dataStandardDAO.get(id);
+    public DataStandard getById(String id) throws AtlasBaseException {
+        DataStandard dataStandard = dataStandardDAO.getById(id);
+        String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+        dataStandard.setPath(path);
+        return dataStandardDAO.getById(id);
     }
 
-    public int delete(String id) throws AtlasBaseException {
-        return dataStandardDAO.delete(id);
+    public List<DataStandard> getByNumber(String number) throws AtlasBaseException {
+        return dataStandardDAO.getByNumber(number);
     }
 
-    public int deleteList(List<String> ids) throws AtlasBaseException {
-        return dataStandardDAO.deleteList(ids);
+    public void deleteByNumber(String number) throws AtlasBaseException {
+        dataStandardDAO.deleteByNumber(number);
+    }
+
+    public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
+        dataStandardDAO.deleteByNumberList(numberList);
     }
 
     /**
      * 更新也是插入, 版本号+1, 创建时间用最早版本的
      */
     public int update(DataStandard dataStandard) throws AtlasBaseException {
-        DataStandard old = get(dataStandard.getId());
+        DataStandard old = getById(dataStandard.getId());
         dataStandard.setId(UUIDUtils.uuid());
         dataStandard.setNumber(old.getNumber());
         dataStandard.setCreateTime(old.getCreateTime());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
         dataStandard.setVersion(old.getVersion() + 1);
+        dataStandard.setCategoryId(old.getCategoryId());
         dataStandard.setDelete(false);
         return dataStandardDAO.insert(dataStandard);
     }
@@ -179,6 +189,23 @@ public class DataStandardService {
         return list;
     }
 
+    public List<DataStandard> queryByNumberList(List<String> numberList) {
+        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList)
+                .stream()
+                .map(dataStandard -> {
+                    String path = null;
+                    try {
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+                    } catch (AtlasBaseException e) {
+                        LOG.error(e.getMessage(), e);
+                    }
+                    dataStandard.setPath(path);
+                    return dataStandard;
+                }).collect(Collectors.toList());
+
+        return list;
+    }
+
     public File exportExcel(String categoryId) throws Exception {
         List<DataStandard> data = queryByCatetoryId(categoryId, null);
         Workbook workbook = data2workbook(data);
@@ -214,9 +241,14 @@ public class DataStandardService {
         return tmpFile;
     }
 
-    public void importDataStandard(InputStream fileInputStream) throws Exception {
+    public void importDataStandard(String categoryId, InputStream fileInputStream) throws Exception {
         List<DataStandard> dataList = file2Data(fileInputStream);
-        batchInsert(dataList);
+        List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
+        List<String> existDataStandard = queryByNumberList(numberList).stream().map(DataStandard::getNumber).collect(Collectors.toList());
+        if (!existDataStandard.isEmpty()) {
+            throw new AtlasBaseException("标准编号为: " + Joiner.on("、").join(existDataStandard) + "已存在，请修改后上传。");
+        }
+        batchInsert(categoryId, dataList);
     }
 
     private List<DataStandard> file2Data(InputStream fileInputStream) throws Exception {

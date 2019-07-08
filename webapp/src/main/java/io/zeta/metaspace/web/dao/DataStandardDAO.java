@@ -11,42 +11,65 @@ import java.util.List;
 public interface DataStandardDAO {
 
     @Insert("insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete)" +
-            "values(#{id},#{number},#{content},#{description},#{createtime},#{updatetime},#{operator},#{version},#{categoryid},#{delete})")
+            "values(#{id},#{number},#{content},#{description},#{createTime},#{updateTime},#{operator},#{version},#{categoryId},#{delete})")
     public int insert(DataStandard dataStandard);
 
-    @Select("select * from data_standard where id=#{id}")
-    public DataStandard get(@Param("id") String id);
+    @Select({" select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
+             " from data_standard a ",
+             " inner join users b on a.operator=b.userid ",
+             " where a.delete=false and a.id = #{id} "})
+    public DataStandard getById(@Param("id") String id);
 
+    @Select({" select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
+             " from data_standard a ",
+             " inner join users b on a.operator=b.userid ",
+             " where a.delete=false and a.number = #{number} "})
+    public List<DataStandard> getByNumber(@Param("number") String number);
 
-    @Select("update data_standard set delete=true where id=#{id}")
-    public int delete(@Param("id") String id);
+    @Select("update data_standard set delete=true where number=#{number}")
+    public void deleteByNumber(@Param("number") String number);
 
     @Insert({" <script>",
-             " update data_standard set delete=true where id in ",
-             " <foreach collection='ids' item='id' index='index' open='(' close=')' separator=','>",
-             " #{id}",
+             " update data_standard set delete=true where number in ",
+             " <foreach collection='numberList' item='number' index='index' open='(' close=')' separator=','>",
+             " #{number}",
              " </foreach>",
              " </script>"})
-    public int deleteList(@Param("ids") List<String> ids);
+    public void deleteByNumberList(@Param("numberList") List<String> numberList);
 
-    @Insert({" <script>",
-             " select * from data_standard where id in ",
+    @Select({" <script>",
+             " select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
+             " from data_standard a ",
+             " inner join users b on a.operator=b.userid ",
+             " where a.delete=false and a.id in ",
              " <foreach collection='ids' item='id' index='index' open='(' close=')' separator=','>",
              " #{id}",
              " </foreach>",
              " </script>"})
     public List<DataStandard> queryByIds(@Param("ids") List<String> ids);
 
+    @Select({" <script>",
+             " select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
+             " from data_standard a ",
+             " inner join users b on a.operator=b.userid ",
+             " where a.delete=false and a.number in ",
+             " <foreach collection='numberList' item='number' index='index' open='(' close=')' separator=','>",
+             " #{number}",
+             " </foreach>",
+             " </script>"})
+    public List<DataStandard> queryByNumberList(@Param("numberList") List<String> numberList);
+
     @Select({"<script>",
-             " select b.id,b.number,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid from ",
-             " (select number,max(version) as version from data_standard where categoryid=#categoryId group by number) as a ",
+             " select b.id,b.number,b.content,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid,b.delete from ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
+             " where b.delete=false and b.categoryid=#{categoryId} ",
              " <if test='params != null'>",
              " <if test='params.sortby != null and params.order != null'>",
-             " order by #{params.offset} #{params.order}",
+             " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != -1'>",
+             " <if test='params.limit != null'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </if>",
@@ -56,76 +79,67 @@ public interface DataStandardDAO {
 
     @Select({"<script>",
              " select count(1) from ",
-             " (select number,max(version) as version from data_standard where categoryid=#categoryId group by number) as a ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
+             " where b.delete=false and b.categoryid=#{categoryId} ",
              " </script>"})
-    public long countByByCatetoryId(@Param("categoryGuid") String categoryGuid);
+    public long countByByCatetoryId(@Param("categoryId") String categoryId);
 
     @Select({"<script>",
-             " select b.id,b.number,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid from ",
-             " (select number,max(version) as version from data_standard ",
-             " <if test=\"query != null and query!=''\">",
-             " where (t.number like '%${query}%' ESCAPE '/' or t.content like '%${query}%' ESCAPE '/' or t.description like '%${query}%' ESCAPE '/' or u.username like '%${query}%' ESCAPE '/') ",
+             " select b.id,b.number,b.content,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid,b.delete from ",
+             " (select number,max(version) as version from data_standard where delete=false ",
+             " <if test=\"params.query != null and params.query!=''\">",
+             " and (number like '%${params.query}%' ESCAPE '/' or content like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/') ",
              " </if>",
              " group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
-
+             " where b.delete=false ",
              " <if test='params.sortby != null and params.order != null'>",
-             " order by #{params.offset} #{params.order}",
+             " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != -1'>",
+             " <if test='params.limit != null'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
     public List<DataStandard> search(@Param("params") Parameters params);
 
-
     @Select({"<script>",
              " select count(1) from ",
-             " (select number,max(version) as version from data_standard ",
+             " (select number,max(version) as version from data_standard where delete=false ",
              " <if test=\"query != null and query!=''\">",
-             " where (t.number like '%${query}%' ESCAPE '/' or t.content like '%${query}%' ESCAPE '/' or t.description like '%${query}%' ESCAPE '/' or u.username like '%${query}%' ESCAPE '/') ",
+             " and (number like '%${query}%' ESCAPE '/' or content like '%${query}%' ESCAPE '/' or description like '%${query}%' ESCAPE '/') ",
              " </if>",
              " group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
+             " where b.delete=false ",
              " </script>"})
     public long countBySearch(@Param("query") String query);
 
     @Insert({"<script>",
              "insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete) values ",
-             " <foreach collection='dataList' item='data' index='index' open='(' close=')' separator=','>",
-             " #{data.id},#{data.number},#{data.content},#{data.description},#{data.createtime},#{data.updatetime},#{data.operator},#{data.version},#{data.categoryid},#{data.delete}",
+             " <foreach collection='dataList' item='data' index='index' separator=','>",
+             " ( #{data.id},#{data.number},#{data.content},#{data.description},#{data.createTime},#{data.updateTime},#{data.operator},#{data.version},#{data.categoryId},#{data.delete} )",
              " </foreach>",
              " </script>"})
-    int batchInsert(List<DataStandard> dataList);
+    int batchInsert(@Param("dataList") List<DataStandard> dataList);
 
     @Select({"<script>",
-             " select d.id,d.number,d.description,d.createtime,d.updatetime,u.username as operator,d.version,d.categoryid ",
-             " from data_standard d inner join users u on d.operator=u.userid ",
+             " select d.id,d.number,d.content,d.description,d.createtime,d.updatetime,u.username as operator,d.version,d.categoryid ",
+             " from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} ",
              " <if test='params != null'>",
              " <if test='params.sortby != null and params.order != null'>",
-             " order by #{params.offset} #{params.order}",
+             " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != -1'>",
+             " <if test='params.limit != null'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </if>",
              " </script>"})
-    List<DataStandard> history(String number, Parameters parameters);
+    List<DataStandard> history(@Param("number") String number, @Param("params") Parameters parameters);
 
-    @Select({"<script>",
-             " select count(1) from data_standard d inner join users u on d.operator=u.userid ",
-             " <if test='params != null'>",
-             " <if test='params.sortby != null and params.order != null'>",
-             " order by #{params.offset} #{params.order}",
-             " </if>",
-             " <if test='params.limit != -1'>",
-             " limit #{params.limit} offset #{params.offset}",
-             " </if>",
-             " </if>",
-             " </script>"})
-    long countByHistory(String query);
+    @Select({"select count(1) from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} "})
+    long countByHistory(@Param("number") String number);
 }

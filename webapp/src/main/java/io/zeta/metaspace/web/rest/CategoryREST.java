@@ -71,7 +71,6 @@ public class CategoryREST {
      * @throws Exception
      */
     @POST
-    @Path("/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
@@ -99,7 +98,6 @@ public class CategoryREST {
      * @throws AtlasBaseException
      */
     @PUT
-    @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
