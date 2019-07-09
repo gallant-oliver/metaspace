@@ -280,7 +280,7 @@ public class DataShareService {
             info.setDataOwner(dataOwnerName);
 
             List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
-            List<Column> columnList = columnDAO.getColumnInfoList(info.getTableGuid());
+            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
             Map<String, String> columnName2DisplayMap = new HashMap();
             columnList.forEach(column -> {
                 String columnName = column.getColumnName();
