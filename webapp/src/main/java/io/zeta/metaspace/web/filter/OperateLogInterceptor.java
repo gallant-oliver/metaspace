@@ -24,6 +24,14 @@ import java.lang.reflect.Method;
 
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * 记录操作日志
+ * 使用方法:
+ * 1.在接口的方法用加注解OperateType; value是对应的操作类型:插入、更新、删除等
+ * @see io.zeta.metaspace.model.operatelog.OperateType
+ * 2.在接口方法的HttpServletRequest里添加attribute; key是`operatelog.object`, value是操作内容
+ * @see io.zeta.metaspace.web.rest.DataStandardREST
+ */
 @Component
 public class OperateLogInterceptor implements MethodInterceptor {
 

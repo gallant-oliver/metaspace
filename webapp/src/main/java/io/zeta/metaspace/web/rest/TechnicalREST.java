@@ -1,13 +1,17 @@
 package io.zeta.metaspace.web.rest;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
@@ -26,7 +30,9 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.List;
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 
@@ -44,6 +50,14 @@ public class TechnicalREST {
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
 
+
+    @Context
+    private HttpServletRequest request;
+
+    private void log(String content) {
+        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(技术信息) " + content);
+    }
+
     /**
      * 添加关联表时搜库
      *
@@ -53,6 +67,7 @@ public class TechnicalREST {
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
         PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
         return pageResult;
@@ -66,6 +81,7 @@ public class TechnicalREST {
     @Path("/search/database/table/{databaseGuid}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid,@PathParam("categoryId") String categotyId ) throws AtlasBaseException {
         PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid,categotyId);
         return pageResult;
@@ -79,6 +95,7 @@ public class TechnicalREST {
     @Path("/search/table/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
         PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId);
         return pageResult;
@@ -95,6 +112,7 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {

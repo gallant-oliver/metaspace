@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataManageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -35,6 +37,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 
 
 /**
@@ -44,6 +47,13 @@ import javax.ws.rs.Produces;
 @Service
 @Path("/categories")
 public class CategoryREST {
+
+    @Context
+    private HttpServletRequest request;
+
+    private void log(String content) {
+        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(分类目录) " + content);
+    }
 
     @Autowired
     private DataManageService dataManageService;
@@ -74,6 +84,7 @@ public class CategoryREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
+        log(categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
@@ -87,6 +98,7 @@ public class CategoryREST {
     @DELETE
     @Path("/{categoryGuid}")
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+        log(categoryGuid);
         dataManageService.deleteCategory(categoryGuid);
     }
 
@@ -101,6 +113,7 @@ public class CategoryREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+        log(categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 

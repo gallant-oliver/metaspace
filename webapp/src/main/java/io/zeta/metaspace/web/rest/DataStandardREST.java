@@ -69,9 +69,8 @@ public class DataStandardREST {
     @Autowired
     private DataStandardService dataStandardService;
 
-
     private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "数据标准: " + content);
+        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据标准) " + content);
     }
 
     @POST
@@ -110,7 +109,6 @@ public class DataStandardREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public DataStandard getById(@PathParam("id") String id) throws AtlasBaseException {
         return dataStandardService.getById(id);
     }
@@ -119,7 +117,6 @@ public class DataStandardREST {
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<DataStandard> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
         return dataStandardService.queryPageByCatetoryId(categoryId, parameters);
     }
@@ -139,7 +136,6 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<DataStandard> search(Parameters parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters);
     }
@@ -148,7 +144,6 @@ public class DataStandardREST {
     @Path("/history/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters) throws AtlasBaseException {
         return dataStandardService.history(number, parameters);
     }

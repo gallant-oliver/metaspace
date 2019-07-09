@@ -8,6 +8,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 
+/**
+ * 只有被标注的接口才会记录操作日志
+ * @see io.zeta.metaspace.web.filter.OperateLogInterceptor
+ */
 public @interface OperateType {
 
     public OperateTypeEnum value();
