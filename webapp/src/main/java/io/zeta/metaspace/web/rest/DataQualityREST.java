@@ -18,7 +18,6 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.QUERY;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.model.dataquality.Report;
@@ -159,7 +158,6 @@ public class DataQualityREST {
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public Template getTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
             return dataQualityService.viewTemplate(templateId);
@@ -237,7 +235,6 @@ public class DataQualityREST {
     @Path("/templates/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId) throws AtlasBaseException {
         try {
             return dataQualityService.getTemplates(tableId);

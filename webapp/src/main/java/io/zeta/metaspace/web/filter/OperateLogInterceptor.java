@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
  * 记录操作日志
  * 使用方法:
  * 1.在接口的方法用加注解OperateType; value是对应的操作类型:插入、更新、删除等
+ *
  * @see io.zeta.metaspace.model.operatelog.OperateType
  * 2.在接口方法的HttpServletRequest里添加attribute; key是`operatelog.object`, value是操作内容
  * @see io.zeta.metaspace.web.rest.DataStandardREST
@@ -60,29 +61,18 @@ public class OperateLogInterceptor implements MethodInterceptor {
             operateLog.setResult(operateResult(e).getEn());
             throw e;
         } finally {
-            if (needLog(operateLog, operateType)) {
-                Object operateObjct = request.getAttribute(OPERATELOG_OBJECT);
-                if (operateObjct != null) {
-                    operateLog.setObject(operateObjct.toString());
-                }
-                operateLog.setId(UUIDUtils.uuid());
-                User userData = AdminUtils.getUserData();
-                operateLog.setUserid(userData.getUserId());
-                operateLog.setUsername(userData.getUsername());
-                operateLog.setIp(request.getRemoteAddr());
-                operateLog.setCreatetime(DateUtils.currentTimestamp());
-                operateLogService.insert(operateLog);
+            Object operateObjct = request.getAttribute(OPERATELOG_OBJECT);
+            if (operateObjct != null) {
+                operateLog.setObject(operateObjct.toString());
             }
+            operateLog.setId(UUIDUtils.uuid());
+            User userData = AdminUtils.getUserData();
+            operateLog.setUserid(userData.getUserId());
+            operateLog.setUsername(userData.getUsername());
+            operateLog.setIp(request.getRemoteAddr());
+            operateLog.setCreatetime(DateUtils.currentTimestamp());
+            operateLogService.insert(operateLog);
         }
-    }
-
-    private boolean needLog(OperateLog operateLog, OperateType operateType) {
-        //查询只记录越权情况
-        if (operateType.value() == OperateTypeEnum.QUERY
-            && !OperateResultEnum.UNAUTHORIZED.getEn().equalsIgnoreCase(operateLog.getResult())) {
-            return false;
-        }
-        return true;
     }
 
     private OperateResultEnum operateResult(Throwable e) {

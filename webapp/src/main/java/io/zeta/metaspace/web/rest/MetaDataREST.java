@@ -102,7 +102,6 @@ public class MetaDataREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -125,7 +124,6 @@ public class MetaDataREST {
     @Path("/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -148,7 +146,6 @@ public class MetaDataREST {
     @Path("/search/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Table> getTableByQuery(Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -171,7 +168,6 @@ public class MetaDataREST {
     @Path("/search/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Column> getColumnByQuery(Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -194,7 +190,6 @@ public class MetaDataREST {
     @Path("/table/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public TableShow selectData(GuidCount guidCount) throws AtlasBaseException, SQLException {
         AtlasPerfTracer perf = null;
         try {
@@ -222,7 +217,6 @@ public class MetaDataREST {
     @Path("/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public BuildTableSql getTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -254,7 +248,6 @@ public class MetaDataREST {
     @Path("/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public List<Column> getColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", query.getGuid());
         AtlasPerfTracer perf = null;
@@ -281,7 +274,6 @@ public class MetaDataREST {
     @Path("/table/lineage/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public TableLineageInfo getTableLineage(@PathParam("guid") String guid,
                                             @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
                                             @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
@@ -311,7 +303,6 @@ public class MetaDataREST {
     @Path("/column/lineage/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public ColumnLineageInfo getColumnLineage(@PathParam("guid") String guid,
                                               @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
                                               @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {

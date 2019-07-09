@@ -17,6 +17,7 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -134,7 +135,7 @@ public class DataStandardService {
         return list;
     }
 
-    public PageResult<DataStandard> search(Parameters parameters) {
+    public PageResult<DataStandard> search(DataStandardQuery parameters) {
         List<DataStandard> list = dataStandardDAO.search(parameters)
                 .stream()
                 .map(dataStandard -> {
@@ -149,7 +150,7 @@ public class DataStandardService {
                 }).collect(Collectors.toList());
 
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long sum = dataStandardDAO.countBySearch(parameters.getQuery());
+        long sum = dataStandardDAO.countBySearch(parameters.getQuery(), parameters.getCategoryId());
         pageResult.setOffset(parameters.getOffset());
         pageResult.setSum(sum);
         pageResult.setCount(list.size());

@@ -7,7 +7,10 @@ public enum OperateTypeEnum {
     LOGIN("login", "登录"),
     LOGOUT("logout", "登出"),
     INSERT("insert", "新增"),
-    QUERY("query", "查询"),
+    /**
+     * 查询在权限访问filter里插入
+     */
+//    QUERY("query", "查询"),
     DELETE("delete", "删除"),
     UPDATE("update", "更新");
 
@@ -37,8 +40,8 @@ public enum OperateTypeEnum {
 
     public JsonObject toJson() {
         JsonObject obj = new JsonObject();
-        obj.addProperty("en", getEn() );
-        obj.addProperty("cn", getCn() );
+        obj.addProperty("en", getEn());
+        obj.addProperty("cn", getCn());
         return obj;
     }
 

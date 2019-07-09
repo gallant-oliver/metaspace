@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -92,12 +93,18 @@ public interface DataStandardDAO {
              " <if test=\"params.query != null and params.query!=''\">",
              " and (number like '%${params.query}%' ESCAPE '/' or content like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/') ",
              " </if>",
+             " <if test=\"params.categoryId != null and params.categoryId!=''\">",
+             " and categoryId=#{params.categoryId} ",
+             " </if>",
              " group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false ",
              " <if test=\"params.query != null and params.query!=''\">",
-             " and (b.username like '%${params.query}%' ESCAPE '/' or a.number like '%${params.query}%' ESCAPE '/' or a.content like '%${params.query}%' ESCAPE '/' or a.description like '%${params.query}%' ESCAPE '/') ",
+             " and (c.username like '%${params.query}%' ESCAPE '/' or b.number like '%${params.query}%' ESCAPE '/' or b.content like '%${params.query}%' ESCAPE '/' or b.description like '%${params.query}%' ESCAPE '/') ",
+             " </if>",
+             " <if test=\"params.categoryId != null and params.categoryId!=''\">",
+             " and b.categoryId=#{params.categoryId} ",
              " </if>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
@@ -106,7 +113,7 @@ public interface DataStandardDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<DataStandard> search(@Param("params") Parameters params);
+    public List<DataStandard> search(@Param("params") DataStandardQuery params);
 
     @Select({"<script>",
              " select count(1) from ",
@@ -114,15 +121,21 @@ public interface DataStandardDAO {
              " <if test=\"query != null and query!=''\">",
              " and (number like '%${query}%' ESCAPE '/' or content like '%${query}%' ESCAPE '/' or description like '%${query}%' ESCAPE '/') ",
              " </if>",
+             " <if test=\"categoryId != null and categoryId!=''\">",
+             " and categoryId=#{categoryId} ",
+             " </if>",
              " group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false ",
              " <if test=\"query != null and query!=''\">",
-             " and (b.username like '%${query}%' ESCAPE '/' or a.number like '%${query}%' ESCAPE '/' or a.content like '%${query}%' ESCAPE '/' or a.description like '%${query}%' ESCAPE '/') ",
+             " and (c.username like '%${query}%' ESCAPE '/' or b.number like '%${query}%' ESCAPE '/' or b.content like '%${query}%' ESCAPE '/' or b.description like '%${query}%' ESCAPE '/') ",
+             " </if>",
+             " <if test=\"categoryId != null and categoryId!=''\">",
+             " and b.categoryId=#{categoryId} ",
              " </if>",
              " </script>"})
-    public long countBySearch(@Param("query") String query);
+    public long countBySearch(@Param("query") String query, @Param("categoryId") String categoryId);
 
     @Insert({"<script>",
              "insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete) values ",

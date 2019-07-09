@@ -120,7 +120,6 @@ public class DataShareREST {
     @Path("/same")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public boolean querySameName(APIInfo info) throws AtlasBaseException {
         try {
             String name = info.getName();
@@ -187,7 +186,6 @@ public class DataShareREST {
     @Path("/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public APIInfo getAPIInfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
         try {
             return shareService.getAPIInfo(guid);
@@ -208,7 +206,6 @@ public class DataShareREST {
     @Path("/{groupGuid}/{my}/{publish}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish, Parameters parameters) throws AtlasBaseException {
         try {
             return shareService.getAPIList(guid, my, publish, parameters);
@@ -295,7 +292,6 @@ public class DataShareREST {
     @Path("/groups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public List<APIGroup> updateGroup() throws AtlasBaseException {
         try {
             return groupService.getGroupList();
@@ -316,7 +312,6 @@ public class DataShareREST {
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
@@ -336,7 +331,6 @@ public class DataShareREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Database> getDatabaseAndTableByQuery(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
@@ -358,7 +352,6 @@ public class DataShareREST {
     @Path("/tables/{databaseId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters);
@@ -378,7 +371,6 @@ public class DataShareREST {
     @Path("/table/columns/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
         try {
             return shareService.getTableColumnList(tableGuid);

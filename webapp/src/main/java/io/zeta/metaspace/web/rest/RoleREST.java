@@ -131,7 +131,6 @@ public class RoleREST {
     @Path("/{roleId}/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<User> getUsers(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getUsers(roleId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
@@ -154,7 +153,6 @@ public class RoleREST {
     @Path("/roles")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public PageResult<Role> getRoles(Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), true);
@@ -224,7 +222,6 @@ public class RoleREST {
     @GET
     @Path("/{roleId}/privileges")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(QUERY)
     public RoleModulesCategories getPrivileges(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.getPrivileges(roleId);

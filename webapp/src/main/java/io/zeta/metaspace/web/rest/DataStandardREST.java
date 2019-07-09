@@ -19,6 +19,7 @@ import static io.zeta.metaspace.web.service.DataStandardService.filename;
 import com.google.common.base.Joiner;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -136,7 +137,7 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(Parameters parameters) throws AtlasBaseException {
+    public PageResult<DataStandard> search(@PathParam("number") String categoryId, DataStandardQuery parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters);
     }
 
