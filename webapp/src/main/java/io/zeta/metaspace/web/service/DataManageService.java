@@ -44,6 +44,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.Organization;
+import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
@@ -52,6 +53,7 @@ import io.zeta.metaspace.web.dao.OrganizationDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.TableTagDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
@@ -76,6 +78,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class DataManageService {
@@ -99,6 +102,8 @@ public class DataManageService {
     UserDAO userDAO;
     @Autowired
     OrganizationDAO organizationDAO;
+    @Autowired
+    TableTagDAO tableTagDAO;
 
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
@@ -440,6 +445,9 @@ public class DataManageService {
             relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
             for(RelationEntityV2 entity : relations) {
                 String tableGuid = entity.getTableGuid();
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid);
+                List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
+                entity.setTableTagList(tableTagNameList);
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                 entity.setDataOwner(ownerHeaders);
             }
