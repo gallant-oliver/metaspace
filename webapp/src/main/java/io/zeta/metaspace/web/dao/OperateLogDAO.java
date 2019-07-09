@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateLog;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -22,7 +23,7 @@ import java.util.List;
 public interface OperateLogDAO {
 
     @Select({"<script>",
-             " select a.id,to_char(a.number, '00000000'),b.username,a.type,a.object,a.result,a.ip,a.createtime ",
+             " select a.id,to_char(a.number, '00000000') as number,a.userid,b.username,a.type,a.object,a.result,a.ip,a.createtime ",
              " from operate_log a inner join users b on a.userid=b.userid where 1=1 ",
              " <if test=\"request.query.type != null and request.query.type!=''\"> ",
              " and a.type=#{request.query.type} ",
@@ -66,4 +67,7 @@ public interface OperateLogDAO {
              " </if>",
              " </script>"})
     public long queryCountBySearch(@Param("request") OperateLogRequest request);
+
+    @Insert("insert into operate_log(id,userid,type,object,result,ip,createtime) values(#{id},#{userid},#{type},#{object},#{result},#{ip},#{createtime})")
+    int insert(OperateLog operateLog);
 }

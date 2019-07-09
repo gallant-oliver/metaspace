@@ -13,38 +13,28 @@
 package io.zeta.metaspace.web.rest;
 
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 import static io.zeta.metaspace.web.service.DataStandardService.filename;
 
-import com.google.gson.JsonObject;
-import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.google.common.base.Joiner;
 import com.sun.jersey.multipart.FormDataParam;
-import io.zeta.metaspace.model.business.ColumnCheckMessage;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataStandardService;
-import org.apache.atlas.Atlas;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.file.Files;
 import java.util.List;
-import java.util.Objects;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -79,10 +69,17 @@ public class DataStandardREST {
     @Autowired
     private DataStandardService dataStandardService;
 
+
+    private void log(String content) {
+        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "数据标准: " + content);
+    }
+
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
+        log(dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("标准编号已存在");
@@ -93,7 +90,9 @@ public class DataStandardREST {
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public void update(DataStandard dataStandard) throws AtlasBaseException {
+        log(dataStandard.getContent());
         dataStandardService.update(dataStandard);
     }
 
@@ -101,7 +100,9 @@ public class DataStandardREST {
     @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
+        log("批量删除:[" + Joiner.on("、").join(numberList) + "]");
         dataStandardService.deleteByNumberList(numberList);
     }
 
@@ -109,6 +110,7 @@ public class DataStandardREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public DataStandard getById(@PathParam("id") String id) throws AtlasBaseException {
         return dataStandardService.getById(id);
     }
@@ -117,6 +119,7 @@ public class DataStandardREST {
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<DataStandard> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
         return dataStandardService.queryPageByCatetoryId(categoryId, parameters);
     }
@@ -125,7 +128,9 @@ public class DataStandardREST {
     @Path("/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public void deleteByNumber(@PathParam("number") String number) throws AtlasBaseException {
+        log(number);
         dataStandardService.deleteByNumber(number);
     }
 
@@ -134,6 +139,7 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<DataStandard> search(Parameters parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters);
     }
@@ -142,6 +148,7 @@ public class DataStandardREST {
     @Path("/history/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(QUERY)
     public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters) throws AtlasBaseException {
         return dataStandardService.history(number, parameters);
     }

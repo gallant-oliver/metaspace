@@ -15,8 +15,8 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
-import io.zeta.metaspace.model.operatelog.OperateResult;
-import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateResultEnum;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.OperateLogDAO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,12 @@ public class OperateLogService {
     private OperateLogDAO operateLogDAO;
 
     public PageResult<OperateLog> search(OperateLogRequest operateLogRequest) {
-        List<OperateLog> list = operateLogDAO.search(operateLogRequest);
+        List<OperateLog> list = operateLogDAO.search(operateLogRequest)
+                .stream().map(operateLog -> {
+                    operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
+                    operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
+                    return operateLog;
+                }).collect(Collectors.toList());
         PageResult<OperateLog> pageResult = new PageResult<>();
         long sum = operateLogDAO.queryCountBySearch(operateLogRequest);
         pageResult.setOffset(operateLogRequest.getOffset());
@@ -43,11 +48,15 @@ public class OperateLogService {
         return pageResult;
     }
 
+    public void insert(OperateLog operateLog) {
+        operateLogDAO.insert(operateLog);
+    }
+
     public List<OperateEnum> typeList() {
-        return Arrays.stream(OperateType.values()).map(type -> new OperateEnum(type.getEn(), type.getCn())).collect(Collectors.toList());
+        return Arrays.stream(OperateTypeEnum.values()).map(type -> new OperateEnum(type.getEn(), type.getCn())).collect(Collectors.toList());
     }
 
     public List<OperateEnum> resultList() {
-        return Arrays.stream(OperateResult.values()).map(result -> new OperateEnum(result.getEn(), result.getCn())).collect(Collectors.toList());
+        return Arrays.stream(OperateResultEnum.values()).map(result -> new OperateEnum(result.getEn(), result.getCn())).collect(Collectors.toList());
     }
 }

@@ -7,7 +7,8 @@ import java.sql.Timestamp;
 public class OperateLog {
 
     private String id;
-    private Integer number;
+    private String number;
+    private String userid;
     private String username;
     private String type;
     private String object;
@@ -24,11 +25,11 @@ public class OperateLog {
         this.id = id;
     }
 
-    public Integer getNumber() {
+    public String getNumber() {
         return number;
     }
 
-    public void setNumber(Integer number) {
+    public void setNumber(String number) {
         this.number = number;
     }
 
@@ -78,5 +79,13 @@ public class OperateLog {
 
     public void setCreatetime(Timestamp createtime) {
         this.createtime = createtime;
+    }
+
+    public String getUserid() {
+        return userid;
+    }
+
+    public void setUserid(String userid) {
+        this.userid = userid;
     }
 }

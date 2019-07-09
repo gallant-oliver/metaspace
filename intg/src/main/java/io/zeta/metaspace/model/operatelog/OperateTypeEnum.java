@@ -2,16 +2,19 @@ package io.zeta.metaspace.model.operatelog;
 
 import com.google.gson.JsonObject;
 
-public enum OperateResult {
+public enum OperateTypeEnum {
 
-    LOGIN("success", "成功"),
-    LOGOUT("failed", "系统异常"),
-    QUERY("noPermission", "越权访问");
+    LOGIN("login", "登录"),
+    LOGOUT("logout", "登出"),
+    INSERT("insert", "新增"),
+    QUERY("query", "查询"),
+    DELETE("delete", "删除"),
+    UPDATE("update", "更新");
 
     private String en;
     private String cn;
 
-    OperateResult(String en, String cn) {
+    OperateTypeEnum(String en, String cn) {
         this.en = en;
         this.cn = cn;
     }
@@ -39,13 +42,13 @@ public enum OperateResult {
         return obj;
     }
 
-    public static OperateResult of(String en) {
-        for (OperateResult operateType : OperateResult.values()) {
-            if (en.equalsIgnoreCase(operateType.getEn())) {
-                return operateType;
+    public static OperateTypeEnum of(String en) {
+        for (OperateTypeEnum operateTypeEnum : OperateTypeEnum.values()) {
+            if (en.equalsIgnoreCase(operateTypeEnum.getEn())) {
+                return operateTypeEnum;
             }
         }
-        throw new RuntimeException("找不到对应的操作结果:" + en);
+        throw new RuntimeException("找不到对应的操作类型:" + en);
     }
 
     public String en2cn(String en) {
