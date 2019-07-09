@@ -46,7 +46,7 @@ public interface HomePageDAO {
     public long getBusinessCount();
 
     @Select({" <script>",
-            " select tableInfo.tableGuid,tableInfo.tableName,count(*) as times from business2Table",
+            " select tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name as displayName, count(*) as times from business2Table",
             " join tableInfo on business2table.tableGuid=tableInfo.tableGuid group by tableInfo.tableGuid,tableInfo.tableName",
             " order by times desc",
             " <if test='limit!= -1'>",

@@ -37,6 +37,7 @@ public class RelationEntityV2 {
     private String createTime;
     private String generateTime;
     private List<DataOwnerHeader> dataOwner;
+    private List<String> tableTagList;
 
     public RelationEntityV2() { }
 
@@ -128,5 +129,13 @@ public class RelationEntityV2 {
 
     public void setDataOwner(List<DataOwnerHeader> dataOwner) {
         this.dataOwner = dataOwner;
+    }
+
+    public List<String> getTableTagList() {
+        return tableTagList;
+    }
+
+    public void setTableTagList(List<String> tableTagList) {
+        this.tableTagList = tableTagList;
     }
 }

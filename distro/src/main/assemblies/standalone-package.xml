@@ -107,10 +107,6 @@
             <directory>../</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>DISCLAIMER.txt</include>
-                <include>NOTICE</include>
-                <include>LICENSE</include>
-                <include>CHANGES.txt</include>
                 <include>README</include>
             </includes>
         </fileSet>
@@ -160,24 +156,6 @@
 
         <fileSet>
             <directory>../addons/hbase-bridge/target/dependency/hook</directory>
-            <outputDirectory>hook</outputDirectory>
-        </fileSet>
-
-        <!-- addons/falcon -->
-        <fileSet>
-            <directory>../addons/falcon-bridge/target/dependency/hook</directory>
-            <outputDirectory>hook</outputDirectory>
-        </fileSet>
-
-        <!-- addons/sqoop -->
-        <fileSet>
-            <directory>../addons/sqoop-bridge/target/dependency/hook</directory>
-            <outputDirectory>hook</outputDirectory>
-        </fileSet>
-
-        <!-- addons/storm -->
-        <fileSet>
-            <directory>../addons/storm-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
 
