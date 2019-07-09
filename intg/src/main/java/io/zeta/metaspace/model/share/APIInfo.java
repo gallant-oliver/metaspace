@@ -48,6 +48,7 @@ public class APIInfo {
     private String updateTime;
     private Boolean star;
     private Boolean edit;
+    private String tableDisplayName;
 
     public String getGuid() {
         return guid;
@@ -241,6 +242,14 @@ public class APIInfo {
         this.edit = edit;
     }
 
+    public String getTableDisplayName() {
+        return tableDisplayName;
+    }
+
+    public void setTableDisplayName(String tableDisplayName) {
+        this.tableDisplayName = tableDisplayName;
+    }
+
     public static class Field {
         private String columnName;
         private Boolean filter;
@@ -295,6 +304,27 @@ public class APIInfo {
 
         public void setType(String type) {
             this.type = type;
+        }
+    }
+
+    public static class FieldWithDisplay extends Field {
+        private String displayName;
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public void setDisplayName(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public void setFieldInfo(Field field) {
+            this.setType(field.getType());
+            this.setFilter(field.getFilter());
+            this.setFill(field.getFill());
+            this.setDefaultValue(field.getDefaultValue());
+            this.setUseDefaultValue(field.getUseDefaultValue());
+            this.setColumnName(field.getColumnName());
         }
     }
 }

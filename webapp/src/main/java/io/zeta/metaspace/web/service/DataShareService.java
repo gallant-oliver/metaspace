@@ -54,6 +54,7 @@ import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
+import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -123,6 +124,8 @@ public class DataShareService {
     private SearchService searchService;
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private ColumnDAO columnDAO;
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
 
@@ -252,6 +255,13 @@ public class DataShareService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
+            String tableGuid = info.getTableGuid();
+            String tableDisplayName = columnDAO.getTableDisplayInfoByGuid(tableGuid);
+            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+                info.setTableDisplayName(info.getTableName());
+            } else {
+                info.setTableDisplayName(tableDisplayName);
+            }
             if(Objects.isNull(info)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
             }
@@ -268,7 +278,32 @@ public class DataShareService {
                 dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
             }
             info.setDataOwner(dataOwnerName);
-            info.setFields(fields);
+
+            List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
+            List<Column> columnList = columnDAO.getColumnInfoList(info.getTableGuid());
+            Map<String, String> columnName2DisplayMap = new HashMap();
+            columnList.forEach(column -> {
+                String columnName = column.getColumnName();
+                String columnDisplay = column.getDisplayName();
+                if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
+                    columnName2DisplayMap.put(columnName, columnDisplay);
+                } else {
+                    columnName2DisplayMap.put(columnName, columnName);
+                }
+            });
+            for(APIInfo.Field field : fields) {
+                APIInfo.FieldWithDisplay fieldWithDisplay = new APIInfo.FieldWithDisplay();
+                fieldWithDisplay.setFieldInfo(field);
+                String displayName = columnName2DisplayMap.get(field.getColumnName());
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    fieldWithDisplay.setDisplayName(field.getColumnName());
+                } else {
+                    fieldWithDisplay.setDisplayName(displayName);
+                }
+                fieldsWithDisplay.add(fieldWithDisplay);
+            }
+
+            info.setFields(fieldsWithDisplay);
             int count = shareDAO.getStarCount(userId, guid);
             if(count > 0) {
                 info.setStar(true);
@@ -372,7 +407,8 @@ public class DataShareService {
             Object fields = shareDAO.getQueryFiledsByGuid(guid);
             PGobject pGobject = (PGobject)fields;
             String value = pGobject.getValue();
-            List<APIInfo.Field> values = gson.fromJson(value, List.class);
+            Type type = new  TypeToken<List<APIInfo.Field>>(){}.getType();
+            List<APIInfo.Field> values = gson.fromJson(value, type);
             return values;
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -580,15 +616,15 @@ public class DataShareService {
             Map<String, Property> propertyMap = new HashMap<>();
 
             List<String> columnList = new ArrayList<>();
-            List<APIInfo.Field> values = new ArrayList<>();
+            List<APIInfo.Field> values = getQueryFileds(info.getGuid());
 
-            Gson gson = new Gson();
+            /*Gson gson = new Gson();
             for (Object obj : getQueryFileds(info.getGuid())) {
                 Type type = new TypeToken<APIInfo.Field>() {
                 }.getType();
                 APIInfo.Field field = gson.fromJson(gson.toJson(obj), type);
                 values.add(field);
-            }
+            }*/
 
             //response
             ArrayProperty responseProperty = new ArrayProperty();
@@ -1250,10 +1286,8 @@ public class DataShareService {
         columnList.forEach(column -> {
             String columnName = column.getColumnName();
             String displayName = column.getDisplayName();
-            if(Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
-                column.setColumnName(displayName + "(" + columnName + ")");
-            } else {
-                column.setColumnName(columnName + "(" + columnName + ")");
+            if(Objects.isNull(displayName) && "".equals(displayName.trim())) {
+                column.setDisplayName(columnName);
             }
         });
         return columnList;

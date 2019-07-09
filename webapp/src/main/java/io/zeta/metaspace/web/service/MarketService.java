@@ -142,6 +142,13 @@ public class MarketService {
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
 
+            tables.forEach(table -> {
+                String displayName = table.getDisplayName();
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    table.setDisplayName(table.getTableName());
+                }
+            });
+
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
                 TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
@@ -196,6 +203,11 @@ public class MarketService {
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDao.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
+                    String displayName = api.getTableDisplayName();
+                    if(Objects.isNull(displayName) || "".equals(displayName)) {
+                        api.setTableDisplayName(api.getTableName());
+                    }
+
                     List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
                     List<String> dataOwnerName = new ArrayList<>();
                     if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
