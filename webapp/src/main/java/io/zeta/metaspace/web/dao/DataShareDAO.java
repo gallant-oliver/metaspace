@@ -167,7 +167,7 @@ public interface DataShareDAO {
 
     @Select({" <script>",
              " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
-             " tableInfo.tableName,apiGroup.name as groupName",
+             " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
              " from apiInfo,tableInfo,apiGroup,users where",
              " apiInfo.tableGuid in",
              " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,

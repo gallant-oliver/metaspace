@@ -541,6 +541,10 @@ public class BusinessService {
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
+                    String displayName = api.getTableDisplayName();
+                    if(Objects.isNull(displayName) || "".equals(displayName)) {
+                        api.setTableDisplayName(api.getTableName());
+                    }
                     List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
                     List<String> dataOwnerName = new ArrayList<>();
                     if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
