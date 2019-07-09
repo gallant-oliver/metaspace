@@ -324,6 +324,9 @@ public class BusinessService {
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+            if(Objects.isNull(categoryIds) || categoryIds.size()==0) {
+                return  pageResult;
+            }
             if(Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
             businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset);
