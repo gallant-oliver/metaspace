@@ -1,2 +1,0 @@
-mvn clean -DskipTests package -Drat.skip=true -Pdist
-mvn clean package -Dmaven.compile.fork=true -Dmaven.test.skip=true -T 1C
