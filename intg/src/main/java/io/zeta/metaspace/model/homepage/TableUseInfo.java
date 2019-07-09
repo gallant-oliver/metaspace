@@ -28,6 +28,7 @@ public class TableUseInfo implements Serializable {
     private String tableName;
     private long times;
     private String proportion;
+    private String displayName;
 
     public String getTableGuid() {
         return tableGuid;
@@ -59,5 +60,13 @@ public class TableUseInfo implements Serializable {
 
     public void setProportion(String proportion) {
         this.proportion = proportion;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }
