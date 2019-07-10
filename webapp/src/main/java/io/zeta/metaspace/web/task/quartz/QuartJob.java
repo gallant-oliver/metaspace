@@ -56,6 +56,8 @@ public class QuartJob implements Job {
     private static final Integer STATUS_START = 1;
     @Autowired
     private DataQualityDAO qualityDao;
+    @Autowired
+    QuartzManager quartzManager;
 
     private static String engine;
 
@@ -123,7 +125,7 @@ public class QuartJob implements Job {
         String jobGroupName = DataQualityService.JOB_GROUP_NAME + jobName;
         String triggerName  = DataQualityService.TRIGGER_NAME + jobName;
         String triggerGroupName = DataQualityService.TRIGGER_GROUP_NAME + jobName;
-        QuartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
+        quartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
     }
 
     public void executeRuleList(String templateId, String reportId, List<UserRule> rules) throws Exception {

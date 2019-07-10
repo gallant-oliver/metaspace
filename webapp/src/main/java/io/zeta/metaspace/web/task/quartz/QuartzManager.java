@@ -41,9 +41,9 @@ import java.util.Objects;
 public class QuartzManager {
 
     @Autowired @Qualifier("Scheduler")
-    private static Scheduler scheduler;
+    private Scheduler scheduler;
 
-    public static void addJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName,
+    public void addJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName,
                        Class jobClass, String cron) {
         try {
             //任务名，任务组，任务执行类
@@ -85,7 +85,7 @@ public class QuartzManager {
      * @param triggerGroupName
      * @param cron
      */
-    public static void modifyJobTime(String jobName, String jobGroupName, String triggerName, String triggerGroupName, String cron) {
+    public void modifyJobTime(String jobName, String jobGroupName, String triggerName, String triggerGroupName, String cron) {
         try {
             TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
             CronTrigger trigger = (CronTrigger)scheduler.getTrigger(triggerKey);
@@ -116,7 +116,7 @@ public class QuartzManager {
      * @param jobName
      * @param jobGroupName
      */
-    public static void pauseJob(String jobName, String jobGroupName) {
+    public void pauseJob(String jobName, String jobGroupName) {
         try {
             JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
             scheduler.pauseJob(jobKey);
@@ -130,7 +130,7 @@ public class QuartzManager {
      * @param jobName
      * @param jobGroupName
      */
-    public static void resumeJob(String jobName, String jobGroupName) {
+    public void resumeJob(String jobName, String jobGroupName) {
         try {
             JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
             scheduler.resumeJob(jobKey);
@@ -146,7 +146,7 @@ public class QuartzManager {
      * @param triggerName
      * @param triggerGroupName
      */
-    public static void removeJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName) {
+    public void removeJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName) {
         try {
             TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
             //停止触发器
@@ -163,7 +163,7 @@ public class QuartzManager {
     /**
      * 启动所有定时任务
      */
-    public static void startJobs() {
+    public void startJobs() {
         try {
             scheduler.start();
         } catch (Exception e) {
@@ -174,7 +174,7 @@ public class QuartzManager {
     /**
      * 关闭所有定时任务
      */
-    public static void shutdownJobs() {
+    public void shutdownJobs() {
         try {
             if(!scheduler.isShutdown()) {
                 scheduler.shutdown();
