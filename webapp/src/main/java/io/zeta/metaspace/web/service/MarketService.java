@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.TechnologyInfo;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -280,7 +282,7 @@ public class MarketService {
                 fieldsWithDisplay.add(fieldWithDisplay);
             }
 
-            info.setFields(fields);
+            info.setFields(fieldsWithDisplay);
 
             info.setStar(false);
             info.setEdit(false);
@@ -310,7 +312,8 @@ public class MarketService {
             Object fields = shareDao.getQueryFiledsByGuid(guid);
             PGobject pGobject = (PGobject)fields;
             String value = pGobject.getValue();
-            List<APIInfo.Field> values = gson.fromJson(value, List.class);
+            Type type = new  TypeToken<List<APIInfo.Field>>(){}.getType();
+            List<APIInfo.Field> values = gson.fromJson(value, type);
             return values;
         } catch (Exception e) {
             LOG.error(e.getMessage());
