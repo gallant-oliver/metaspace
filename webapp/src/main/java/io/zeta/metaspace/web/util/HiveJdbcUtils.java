@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 public class HiveJdbcUtils {
@@ -126,13 +127,14 @@ public class HiveJdbcUtils {
      */
     public static TableMetadata systemMetadata(String dbAndtableName) throws Exception {
         TableMetadata tableMetadata = new TableMetadata();
+        Connection conn = null;
         try {
             String[] split = dbAndtableName.split("\\.");
             String db = split[0];
             String tableName = split[1];
             String sql = "describe formatted " + dbAndtableName;
             LOG.debug("Running: " + sql);
-            Connection conn = getConnection(db);
+            conn = getSystemConnection(db);
             ResultSet resultSet = selectBySQLWithSystemCon(conn, sql);
             while (resultSet.next()) {
                 String string = resultSet.getString(2);
@@ -143,6 +145,10 @@ public class HiveJdbcUtils {
             }
         }catch (Exception e) {
             LOG.error("从hive获取表统计异常",e);
+        } finally {
+            if(Objects.nonNull(conn)) {
+                conn.close();
+            }
         }
         return tableMetadata;
 

@@ -75,14 +75,14 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class DataQualityService {
     private static final Logger LOG = LoggerFactory.getLogger(HomePageService.class);
-    private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
-    private static String TRIGGER_NAME = "METASPACE_TRIGGER";
-    private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+    public static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
+    public static String TRIGGER_NAME = "METASPACE_TRIGGER";
+    public static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
 
     @Autowired
     DataQualityDAO qualityDao;
-    @Autowired
-    QuartzManager quartzManager;
+    /*@Autowired
+    QuartzManager quartzManager;*/
     @Autowired
     private MetaDataService metadataService;
 
@@ -128,7 +128,7 @@ public class DataQualityService {
             String jobGroupName = JOB_GROUP_NAME + jobName;
             String triggerName  = TRIGGER_NAME + jobName;
             String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
-            quartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
+            QuartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
 
         } catch (SQLException e) {
             LOG.error(e.getMessage());
@@ -246,7 +246,7 @@ public class DataQualityService {
                 if(Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
                     String jobName = qualityDao.getJobByTemplateId(templateId);
                     String jobGroupName = JOB_GROUP_NAME + jobName;
-                    quartzManager.resumeJob(jobName, jobGroupName);
+                    QuartzManager.resumeJob(jobName, jobGroupName);
                 } else {
                     //单次执行任务重新执行提交job
                     addQuartzJob(templateId);
@@ -283,7 +283,7 @@ public class DataQualityService {
             String triggerName = TRIGGER_NAME + jobName;
             String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
             String cron = qualityDao.getCronByTemplateId(templateId);
-            quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
+            QuartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
             //设置模板状态为【已启用】
             qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
             qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
@@ -300,7 +300,7 @@ public class DataQualityService {
         try {
             String jobName = qualityDao.getJobByTemplateId(templateId);
             String jobGroupName = JOB_GROUP_NAME + jobName;
-            quartzManager.pauseJob(jobName, jobGroupName);
+            QuartzManager.pauseJob(jobName, jobGroupName);
             String cron = qualityDao.getCronByTemplateId(templateId);
 
             if(Objects.isNull(cron) || StringUtils.isEmpty(cron)) {

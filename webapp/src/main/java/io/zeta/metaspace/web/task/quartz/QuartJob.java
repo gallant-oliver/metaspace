@@ -80,6 +80,11 @@ public class QuartJob implements Job {
     public void execute(JobExecutionContext jobExecutionContext) {
         JobKey key = jobExecutionContext.getTrigger().getJobKey();
         Template template = qualityDao.getTemplateByJob(key.getName());
+        if(Objects.isNull(template)) {
+            handleNullErrorTemplate(key);
+            LOG.warn("任务名为" + key.getName() + "所属模板已被删除,无法继续执行任务");
+            return;
+        }
         String reportId = UUID.randomUUID().toString();
         String templateId = template.getTemplateId();
         try {
@@ -111,6 +116,14 @@ public class QuartJob implements Job {
             qualityDao.updateFinishedPercent(templateId, 0F);
             return;
         }
+    }
+
+    public void handleNullErrorTemplate(JobKey jobKey) {
+        String jobName = jobKey.getName();
+        String jobGroupName = DataQualityService.JOB_GROUP_NAME + jobName;
+        String triggerName  = DataQualityService.TRIGGER_NAME + jobName;
+        String triggerGroupName = DataQualityService.TRIGGER_GROUP_NAME + jobName;
+        QuartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
     }
 
     public void executeRuleList(String templateId, String reportId, List<UserRule> rules) throws Exception {
