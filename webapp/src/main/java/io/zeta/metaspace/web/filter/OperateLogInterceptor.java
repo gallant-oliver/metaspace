@@ -58,7 +58,7 @@ public class OperateLogInterceptor implements MethodInterceptor {
             operateLog.setResult(OperateResultEnum.SUCCESS.getEn());
             return response;
         } catch (Throwable e) {
-            operateLog.setResult(operateResult(e).getEn());
+            operateLog.setResult(OperateResultEnum.FAILED.getEn());
             throw e;
         } finally {
             Object operateObjct = request.getAttribute(OPERATELOG_OBJECT);
@@ -73,16 +73,6 @@ public class OperateLogInterceptor implements MethodInterceptor {
             operateLog.setCreatetime(DateUtils.currentTimestamp());
             operateLogService.insert(operateLog);
         }
-    }
-
-    private OperateResultEnum operateResult(Throwable e) {
-        if (e instanceof AtlasBaseException) {
-            AtlasBaseException atlasBaseException = (AtlasBaseException) e;
-            if (atlasBaseException.getAtlasErrorCode() == null) {// todo null改为具体的401码
-                return OperateResultEnum.UNAUTHORIZED;
-            }
-        }
-        return OperateResultEnum.FAILED;
     }
 
 }

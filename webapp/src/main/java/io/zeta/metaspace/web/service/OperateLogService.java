@@ -21,12 +21,14 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.OperateLogDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class OperateLogService {
 
     @Autowired
@@ -49,6 +51,9 @@ public class OperateLogService {
     }
 
     public void insert(OperateLog operateLog) {
+        int nextNumber = operateLogDAO.nextNumber();
+        String number = String.format("%08d", nextNumber);
+        operateLog.setNumber(number);
         operateLogDAO.insert(operateLog);
     }
 
