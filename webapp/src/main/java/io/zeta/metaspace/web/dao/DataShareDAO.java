@@ -212,4 +212,10 @@ public interface DataShareDAO {
              " and publish=true",
              " </script>"})
     public List<String> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
+
+    @Select("select status from tableInfo where tableGuid = (select tableGuid from apiInfo where guid=#{apiGuid})")
+    public String getTableStatusByAPIGuid(@Param("guid")String apiGuid);
+
+    @Select("select status from tableInfo where tableGuid = #{tableGuid}")
+    public String getTableStatusByGuid(@Param("tableGuid")String tableGuid);
 }
