@@ -123,6 +123,20 @@ public class MetaDataService {
             //table
             Table table = extractTableInfo(entity, guid);
 
+            String tableName = table.getTableName();
+            String tableDisplayName = table.getDisplayName();
+            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+                table.setDisplayName(tableName);
+            }
+            List<Column> columnList = table.getColumns();
+            columnList.forEach(column -> {
+                String columnName = column.getColumnName();
+                String displayName = column.getDisplayName();
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    column.setDisplayName(columnName);
+                }
+            });
+
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
