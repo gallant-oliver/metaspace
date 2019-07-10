@@ -280,15 +280,15 @@ public class DataShareService {
             info.setDataOwner(dataOwnerName);
 
             List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
-            List<Column> columnList = columnDAO.getColumnInfoList(info.getTableGuid());
+            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
             Map<String, String> columnName2DisplayMap = new HashMap();
             columnList.forEach(column -> {
                 String columnName = column.getColumnName();
                 String columnDisplay = column.getDisplayName();
                 if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
-                    columnName2DisplayMap.put(columnName, columnDisplay);
-                } else {
                     columnName2DisplayMap.put(columnName, columnName);
+                } else {
+                    columnName2DisplayMap.put(columnName, columnDisplay);
                 }
             });
             for(APIInfo.Field field : fields) {

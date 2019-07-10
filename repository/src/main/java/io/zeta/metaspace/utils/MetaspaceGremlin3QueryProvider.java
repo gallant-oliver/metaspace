@@ -113,7 +113,7 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
                 return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name').toList()";
 
             case COLUMN_NAME_LIST:
-                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('Asset.name').toList()";
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().order().by('Asset.name').valueMap('Asset.name').toList()";
 
 
             case TABLE_COLUMN_LIST:
