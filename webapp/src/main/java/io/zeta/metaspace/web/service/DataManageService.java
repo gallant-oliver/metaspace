@@ -507,6 +507,13 @@ public class DataManageService {
             if(Objects.nonNull(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
+            //tag
+            list.forEach(entity -> {
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid());
+                List<String> tableTagNameList = tableTageList.stream().map(tableTag -> tableTag.getTagName()).collect(Collectors.toList());
+                entity.setTableTagList(tableTagNameList);
+            });
+
             //path
             getPath(list);
             //dataOwner
