@@ -63,8 +63,8 @@ public interface ColumnDAO {
     @Select("select column_guid as columnId,column_name as columnName,type from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public List<Column> getColumnInfoList(@Param("tableGuid")String tableGuid);
 
-    @Select("select column_name from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
-    public List<String> getColumnNameList(@Param("tableGuid")String tableGuid);
+    @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by column_name")
+    public List<Column> getColumnNameWithDisplayList(@Param("tableGuid")String tableGuid);
 
     @Update("update tableInfo set display_name=#{displayName},display_operator=#{displayOperator}, display_updatetime=#{displayUpdateTime} where tableGuid=#{tableGuid}")
     public int updateTableDisplay(@Param("tableGuid")String tableGuid, @Param("displayName")String displayName, @Param("displayOperator")String displayOperator, @Param("displayUpdateTime")String displayUpdateTime);
@@ -103,4 +103,7 @@ public interface ColumnDAO {
 
     @Select("select display_name from tableInfo where tableGuid=#{tableGuid}")
     public String getTableDisplayInfoByGuid(@Param("tableGuid")String tableGuid);
+
+    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{tableGuid}")
+    public TableHeader getTableHeaderInfo(@Param("tableGuid")String tableGuid);
 }

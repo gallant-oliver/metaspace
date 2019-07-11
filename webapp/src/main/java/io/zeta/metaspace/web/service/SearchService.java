@@ -122,10 +122,8 @@ public class SearchService {
             tableList.forEach(table -> {
                 String displayName = table.getDisplayName();
                 String tableName = table.getTableName();
-                if(Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
-                    table.setTableName(displayName + "(" + tableName + ")");
-                } else {
-                    table.setTableName(tableName + "(" + tableName + ")");
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    table.setDisplayName(tableName);
                 }
             });
 

@@ -17,27 +17,25 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.privilege.SystemModule;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.web.dao.UserDao;
 import org.mybatis.spring.MyBatisSystemException;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
@@ -45,9 +43,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -72,6 +73,8 @@ public class MarketService {
     MetaDataService metaDataService;
     @Autowired
     UserDAO userDao;
+    @Autowired
+    ColumnDAO columnDAO;
 
 
     /**
@@ -141,6 +144,14 @@ public class MarketService {
             info.setEditTechnical(false);
             //tables
             List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+            tables.forEach(table -> {
+                String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
+                if(Objects.nonNull(displayName)) {
+                    table.setDisplayName(displayName);
+                } else {
+                    table.setDisplayName(table.getTableName());
+                }
+            });
 
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
@@ -196,6 +207,10 @@ public class MarketService {
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDao.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
+                    String displayName = api.getTableDisplayName();
+                    if(Objects.isNull(displayName) || "".equals(displayName)) {
+                        api.setTableDisplayName(api.getTableName());
+                    }
                     List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
                     List<String> dataOwnerName = new ArrayList<>();
                     if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
@@ -242,7 +257,32 @@ public class MarketService {
                 dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
             }
             info.setDataOwner(dataOwnerName);
-            info.setFields(fields);
+
+            List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
+            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
+            Map<String, String> columnName2DisplayMap = new HashMap();
+            columnList.forEach(column -> {
+                String columnName = column.getColumnName();
+                String columnDisplay = column.getDisplayName();
+                if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
+                    columnName2DisplayMap.put(columnName, columnName);
+                } else {
+                    columnName2DisplayMap.put(columnName, columnDisplay);
+                }
+            });
+            for(APIInfo.Field field : fields) {
+                APIInfo.FieldWithDisplay fieldWithDisplay = new APIInfo.FieldWithDisplay();
+                fieldWithDisplay.setFieldInfo(field);
+                String displayName = columnName2DisplayMap.get(field.getColumnName());
+                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    fieldWithDisplay.setDisplayName(field.getColumnName());
+                } else {
+                    fieldWithDisplay.setDisplayName(displayName);
+                }
+                fieldsWithDisplay.add(fieldWithDisplay);
+            }
+
+            info.setFields(fieldsWithDisplay);
 
             info.setStar(false);
             info.setEdit(false);
@@ -272,7 +312,8 @@ public class MarketService {
             Object fields = shareDao.getQueryFiledsByGuid(guid);
             PGobject pGobject = (PGobject)fields;
             String value = pGobject.getValue();
-            List<APIInfo.Field> values = gson.fromJson(value, List.class);
+            Type type = new  TypeToken<List<APIInfo.Field>>(){}.getType();
+            List<APIInfo.Field> values = gson.fromJson(value, type);
             return values;
         } catch (Exception e) {
             LOG.error(e.getMessage());
