@@ -1,0 +1,10 @@
+到panel界面找到metaspace配置，在自定义application-properties添加:
+
+metaspace.impala.url=jdbc:impala://10.202.61.136:21050
+metaspace.impala.kerberos.jdbc=AuthMech=1;KrbRealm=PANEL.COM;KrbHostFQDN=ms-ip-1;KrbServiceName=impala
+metaspace.quality.engine=impala
+
+注意:
+metaspace.impala.url根据panel实际安装panel地址配置；
+metaspace.impala.kerberos.jdbc中KrbHostFQDN需要根据实际impala安装的主机名修改；
+metaspace.quality.engine可配置选项为hive和impala，根据使用情况及panel中是否安装impala调整；

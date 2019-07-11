@@ -324,6 +324,9 @@ public class BusinessService {
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
             List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+            if(Objects.isNull(categoryIds) || categoryIds.size()==0) {
+                return  pageResult;
+            }
             if(Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
             businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset);
@@ -974,16 +977,22 @@ public class BusinessService {
     public File exportExcel(String tableGuid) throws AtlasBaseException {
         try {
             boolean existOnPg = columnDAO.tableColumnExist(tableGuid)>0?true:false;
-            List<String> columnList = null;
+            List<Map> columnMapList = null;
+            List<String> columnList = new ArrayList<>();
             List<Column> columnInfoList = null;
             if(existOnPg) {
                 columnInfoList = columnDAO.getColumnNameWithDisplayList(tableGuid);
             } else {
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME_LIST);
                 String columnQuery = String.format(query, tableGuid);
-                columnList = (List<String>) graph.executeGremlinScript(columnQuery, false);
+                columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
+                columnMapList.forEach(obj -> {
+                    List<String> nameList = (List) obj.get("Asset.name");
+                    if(Objects.nonNull(nameList) && nameList.size()>0) {
+                        columnList.add(nameList.get(0));
+                    }
+                });
             }
-
             List<String> attributes = new ArrayList<>();
             attributes.add("字段名称");
             attributes.add("显示名称");

@@ -75,9 +75,9 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class DataQualityService {
     private static final Logger LOG = LoggerFactory.getLogger(HomePageService.class);
-    private static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
-    private static String TRIGGER_NAME = "METASPACE_TRIGGER";
-    private static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+    public static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
+    public static String TRIGGER_NAME = "METASPACE_TRIGGER";
+    public static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
 
     @Autowired
     DataQualityDAO qualityDao;

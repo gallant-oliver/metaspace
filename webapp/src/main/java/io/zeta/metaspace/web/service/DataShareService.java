@@ -280,15 +280,15 @@ public class DataShareService {
             info.setDataOwner(dataOwnerName);
 
             List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
-            List<Column> columnList = columnDAO.getColumnInfoList(info.getTableGuid());
+            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
             Map<String, String> columnName2DisplayMap = new HashMap();
             columnList.forEach(column -> {
                 String columnName = column.getColumnName();
                 String columnDisplay = column.getDisplayName();
                 if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
-                    columnName2DisplayMap.put(columnName, columnDisplay);
-                } else {
                     columnName2DisplayMap.put(columnName, columnName);
+                } else {
+                    columnName2DisplayMap.put(columnName, columnDisplay);
                 }
             });
             for(APIInfo.Field field : fields) {
@@ -438,6 +438,7 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
+            checkTableStatus(guidList);
             Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
             Gson gson = new Gson();
@@ -457,6 +458,15 @@ public class DataShareService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
+        }
+    }
+
+    public void checkTableStatus(List<String> guidList) throws AtlasBaseException {
+        for(String apiGuid: guidList){
+            String status = shareDAO.getTableStatusByAPIGuid(apiGuid);
+            if("DELETED".equals(status.trim())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
+            }
         }
     }
 
@@ -831,6 +841,10 @@ public class DataShareService {
     public List<LinkedHashMap> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
         try {
             String tableGuid = parameter.getTableGuid();
+            String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
+            if("DELETED".equals(tableStatus)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
+            }
             HashMap<String, List> columnMap = new HashMap<>();
             List<QueryParameter.Parameter> parameters = parameter.getParameter();
             parameters.stream().forEach(p -> columnMap.put(p.getColumnName(), p.getValue()));
