@@ -65,7 +65,7 @@ public class DataStandardService {
         return dataStandardDAO.insert(dataStandard);
     }
 
-    public int batchInsert(String categoryId, List<DataStandard> dataList) throws AtlasBaseException {
+    public void batchInsert(String categoryId, List<DataStandard> dataList) throws AtlasBaseException {
         for (DataStandard dataStandard : dataList) {
             dataStandard.setId(UUIDUtils.alphaUUID());
             dataStandard.setCreateTime(DateUtils.currentTimestamp());
@@ -75,7 +75,7 @@ public class DataStandardService {
             dataStandard.setCategoryId(categoryId);
             dataStandard.setDelete(false);
         }
-        return dataStandardDAO.batchInsert(dataList);
+        dataStandardDAO.batchInsert(dataList);
     }
 
     public DataStandard getById(String id) throws AtlasBaseException {
@@ -240,6 +240,9 @@ public class DataStandardService {
 
     public void importDataStandard(String categoryId, InputStream fileInputStream) throws Exception {
         List<DataStandard> dataList = file2Data(fileInputStream);
+        if(dataList.isEmpty()){
+            throw new AtlasBaseException("没有数据。");
+        }
         List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
         List<String> existDataStandard = queryByNumberList(numberList).stream().map(DataStandard::getNumber).collect(Collectors.toList());
         if (!existDataStandard.isEmpty()) {
