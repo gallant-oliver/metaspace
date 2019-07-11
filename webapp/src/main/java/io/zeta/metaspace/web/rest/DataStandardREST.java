@@ -23,8 +23,10 @@ import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -36,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -69,6 +72,9 @@ public class DataStandardREST {
 
     @Autowired
     private DataStandardService dataStandardService;
+
+    @Autowired
+    private DataQualityService dataQualityService;
 
     private void log(String content) {
         request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据标准) " + content);
@@ -163,7 +169,22 @@ public class DataStandardREST {
 
     @POST
     @Path("/export/selected")
-    public void export(List<String> ids) throws Exception {
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DownloadUri getDownloadURL(List<String> ids) throws Exception {
+        String downloadId = UUID.randomUUID().toString();
+        String address = request.getRequestURL().toString();
+        String downURL = address + "/" + downloadId;
+        dataQualityService.getDownloadList(ids, downloadId);
+        DownloadUri uri = new DownloadUri();
+        uri.setDownloadUri(downURL);
+        return uri;
+    }
+
+    @GET
+    @Path("/export/selected/{downloadId}")
+    public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
+        List<String> ids = dataQualityService.getDownloadList(null, downloadId);
         File exportExcel = dataStandardService.exportExcel(ids);
         try {
             String filePath = exportExcel.getAbsolutePath();
@@ -179,7 +200,7 @@ public class DataStandardREST {
 
     @GET
     @Path("/export/category/{categoryId}")
-    public void export(@PathParam("categoryId") String categoryId) throws Exception {
+    public void exportCategoryId(@PathParam("categoryId") String categoryId) throws Exception {
         File exportExcel = dataStandardService.exportExcel(categoryId);
         try {
             String filePath = exportExcel.getAbsolutePath();
