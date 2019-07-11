@@ -241,6 +241,13 @@ public class MarketService {
     public APIInfo getAPIInfo(String guid) throws AtlasBaseException {
         try {
             APIInfo info = shareDao.getAPIInfoByGuid(guid);
+            String tableGuid = info.getTableGuid();
+            String tableDisplayName = columnDAO.getTableDisplayInfoByGuid(tableGuid);
+            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+                info.setTableDisplayName(info.getTableName());
+            } else {
+                info.setTableDisplayName(tableDisplayName);
+            }
             if(Objects.isNull(info)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
             }
