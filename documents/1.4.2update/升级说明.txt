@@ -8,3 +8,26 @@ metaspace.quality.engine=impala
 metaspace.impala.url根据panel实际安装panel地址配置；
 metaspace.impala.kerberos.jdbc中KrbHostFQDN需要根据实际impala安装的主机名修改；
 metaspace.quality.engine可配置选项为hive和impala，根据使用情况及panel中是否安装impala调整；
+
+
+HA配置：
+1.在一台新的服务器添加metaspace服务；
+2.重启旧的metaspace服务；
+3.安装HAProxy
+4.修改HAProxy配置，如下：
+frontend metaspace_servers
+  bind *:41000
+  default_backend metaspace_servers
+
+backend metaspace_servers
+  server host1_21000 {metaspace_host1}:21000 check inter 1000
+  server host2_21000 {metaspace_host2}:21000 check inter 1000
+
+5.修改前端配置：
+'API_HOST': 'http://{haproxy_host}:41000/api/metaspace'
+
+6.添加atlas配置
+#zookeeper集群
+atlas.server.ha.zookeeper.connect={zk1}:2181,{zk2}:2181,{zk3}:2181
+#session超时时间
+atlas.server.ha.zookeeper.session.timeout.ms=4000
