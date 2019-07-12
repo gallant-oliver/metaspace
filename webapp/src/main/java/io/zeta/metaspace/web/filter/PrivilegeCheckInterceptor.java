@@ -28,7 +28,9 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.ApiModuleDAO;
 import io.zeta.metaspace.web.service.OperateLogService;
+import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
@@ -66,6 +69,10 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
     @Autowired
     UsersService usersService;
+    @Autowired
+    RoleService roleService;
+    @Autowired
+    ApiModuleDAO apiModuleDAO;
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -76,147 +83,106 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             return response;
         } else {
             String prefix = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
-
-            String requestMethod = request.getMethod();
+            String userId = "";
+            String username = "";
+            try {
+                userId = AdminUtils.getUserData().getUserId();
+                username = AdminUtils.getUserData().getUsername();
+            } catch (AtlasBaseException e) {
+                LOG.warn("查询用户信息失败", e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询用户信息失败");
+            }
 
             Method method = invocation.getMethod();
             Path path = method.getAnnotation(Path.class);
             String pathStr = path.value();
             String urlStr = prefix + "/" + pathStr;
 
-            String userId = AdminUtils.getUserData().getUserId();
+            String requestMethod = request.getMethod();
+
             Role roleByUserId = usersService.getRoleByUserId(userId);
             if (roleByUserId.getStatus() == 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
             }
-            UserInfo userInfo = userInfo = usersService.getUserInfoById(userId);
+            UserInfo userInfo = usersService.getUserInfoById(userId);
             List<UserInfo.Module> modules = userInfo.getModules();
             List<Integer> moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
-            Integer moduleId = getPrivikege();
 
+            Integer moduleId = apiModuleDAO.getModuleByPathAndMethod(urlStr, requestMethod);
 
+            if("privilegecheck".equals(prefix.toLowerCase().trim())) {
+                if (roleByUserId.getStatus() == 0) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
+                }
+                String privilegeType = "";
+                String privilegeGuid = "";
+                try {
+                    privilegeType = request.getParameter("privilegeType");
+                    privilegeGuid = request.getParameter("privilegeGuid");
+                    switch (privilegeType) {
+                        case "table": {
+                            //到这里再查库
+                            String roleIdByUserId = usersService.getRoleIdByUserId(userId);
+                            //超级管理员直接过
+                            if (roleIdByUserId.equals(SystemRole.ADMIN.getCode())) {
+                                return response;
+                            }
+                            Map<String, RoleModulesCategories.Category> userCatagory = getUserCatagory(userId);
+                            Collection<RoleModulesCategories.Category> categories = userCatagory.values();
+                            ArrayList<String> categoryGuids = new ArrayList<>();
+                            for (RoleModulesCategories.Category category : categories) {
+                                if (category.isShow())
+                                    categoryGuids.add(category.getGuid());
+                            }
+                            List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
+                            if (sum.size() > 0) {
+                                return response;
+                            } else {
+                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
+                            }
+                        }
+                        default:
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
+                    }
+                } catch (Exception e) {
+                    LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有该表的权限");
+                }
+            } else {
+
+            }
 
             switch (prefix) {
-                case "privilegecheck": {
-                    if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
-                    }
-                    String privilegeType = "";
-                    String privilegeGuid = "";
-                    try {
-                        privilegeType = request.getParameter("privilegeType");
-                        privilegeGuid = request.getParameter("privilegeGuid");
+                case "privilegecheck":
 
 
-                        switch (privilegeType) {
-                            case "table": {
-                                //到这里再查库
-                                String roleIdByUserId = usersService.getRoleIdByUserId(userId);
-                                //超级管理员直接过
-                                if (roleIdByUserId.equals(SystemRole.ADMIN.getCode())) {
-                                    return response;
-                                }
-                                Map<String, RoleModulesCategories.Category> userCatagory = getUserCatagory(roleService, userId);
-                                Collection<RoleModulesCategories.Category> categories = userCatagory.values();
-                                ArrayList<String> categoryGuids = new ArrayList<>();
-                                for (RoleModulesCategories.Category category : categories) {
-                                    if (category.isShow())
-                                        categoryGuids.add(category.getGuid());
-                                }
-                                List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
-                                if (sum.size() > 0) {
-                                    return response;
-                                } else {
-                                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
-                                }
-                                break;
-                            }
-                            default:
-                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
-                        }
-                        break;
-                    } catch (Exception e) {
-                        //LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有该表的权限");
-                    }
-                    break;
-                }
-                case "technical": {
-                    if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
-                    }
-                    for (UserInfo.Module module : modules) {
-                        if (module.getModuleId() == SystemModule.TECHNICAL_CHECK.getCode()) {
-                            return response;
-                        }
-                    }
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户没有该菜单的权限");
-                    break;
-                }
-                case "businesses": {
-                    if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户的角色已被禁用");
-                    }
-                    for (UserInfo.Module module : modules) {
-                        if (module.getModuleId() == SystemModule.BUSINESSE_CHECK.getCode()) {
-                            return response;
-                        }
-                    }
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户没有该菜单的权限");
-                }
-                case "businessManage": {
-                    if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户的角色已被禁用");
-                    }
-                    for (UserInfo.Module module : modules) {
-                        if (module.getModuleId() == SystemModule.BUSINESSE_MANAGE.getCode()) {
-                            return response;
-                        }
-                    }
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户没有该菜单的权限");
-                    break;
-                }
+                case "technical":
+                case "businesses":
+                case "businessManage":
                 case "role":
-                case "privilege": {
+                case "privilege":
                     if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户的角色已被禁用");
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
                     }
-                    for (UserInfo.Module module : modules) {
-                        if (module.getModuleId() == SystemModule.PRIVILEGE_MANAGE.getCode()) {
-                            return response;
-                        }
+                    if(moduleIds.contains(moduleId) || Objects.isNull(moduleId)) {
+                        return response;
+                    } else {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
                     }
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户没有该菜单的权限");
-                    break;
-                }
-                default: {
+
+                default:
                     return response;
-                }
+
             }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-            if(moduleIds.contains(moduleId)) {
-                return response;
-            } else {
-                return null;
-            }
         }
 
     }
 
-    public Integer getPrivikege() {
-        return 1;
+
+    private Map<String, RoleModulesCategories.Category> getUserCatagory(String userId) {
+        //技术目录
+        Map<String, RoleModulesCategories.Category> userStringCategoryMap = roleService.getUserStringCategoryMap(roleService.getRoleIdBYUserId(userId).getRoleId(), 0);
+        return userStringCategoryMap;
     }
 }
