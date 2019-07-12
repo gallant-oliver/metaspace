@@ -47,6 +47,9 @@ public class PrivilegeFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
+
+
+
         String check = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
         String userId = "";
         String username = "";
