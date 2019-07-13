@@ -77,10 +77,9 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        Object response = invocation.proceed();
         String requestURL = request.getRequestURL().toString();
         if (FilterUtils.isSkipUrl(requestURL)) {
-            return response;
+            return invocation.proceed();
         } else {
             String prefix = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
             String userId = "";
@@ -96,21 +95,15 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             Method method = invocation.getMethod();
             Path path = method.getAnnotation(Path.class);
             String pathStr = path.value();
-            String urlStr = prefix + "/" + pathStr;
-
+            String urlStr = prefix + pathStr;
             String requestMethod = request.getMethod();
 
             Role roleByUserId = usersService.getRoleByUserId(userId);
             if (roleByUserId.getStatus() == 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
             }
-            UserInfo userInfo = usersService.getUserInfoById(userId);
-            List<UserInfo.Module> modules = userInfo.getModules();
-            List<Integer> moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
 
-            Integer moduleId = apiModuleDAO.getModuleByPathAndMethod(urlStr, requestMethod);
-
-            if("privilegecheck".equals(prefix.toLowerCase().trim())) {
+            if ("privilegecheck".equals(prefix.toLowerCase().trim())) {
                 if (roleByUserId.getStatus() == 0) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
                 }
@@ -120,12 +113,12 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     privilegeType = request.getParameter("privilegeType");
                     privilegeGuid = request.getParameter("privilegeGuid");
                     switch (privilegeType) {
-                        case "table": {
+                        case "table":
                             //到这里再查库
                             String roleIdByUserId = usersService.getRoleIdByUserId(userId);
                             //超级管理员直接过
                             if (roleIdByUserId.equals(SystemRole.ADMIN.getCode())) {
-                                return response;
+                                return invocation.proceed();
                             }
                             Map<String, RoleModulesCategories.Category> userCatagory = getUserCatagory(userId);
                             Collection<RoleModulesCategories.Category> categories = userCatagory.values();
@@ -136,47 +129,35 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                             }
                             List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
                             if (sum.size() > 0) {
-                                return response;
+                                return invocation.proceed();
                             } else {
-                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
+                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限不足");
                             }
-                        }
                         default:
-                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,  "当前用户权限不足");
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限不足");
                     }
                 } catch (Exception e) {
                     LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有该表的权限");
                 }
             } else {
-
+                UserInfo userInfo = usersService.getUserInfoById(userId);
+                List<UserInfo.Module> modules = userInfo.getModules();
+                List<Integer> moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
+                Integer moduleId = null;
+                List<String> prefixCheckPathList = apiModuleDAO.getPrefixCheckPath();
+                String checkUrl = prefixCheckPathList.contains(prefix) ? prefix : urlStr;
+                requestMethod = prefixCheckPathList.contains(prefix) ? "option" : requestMethod;
+                moduleId = apiModuleDAO.getModuleByPathAndMethod(checkUrl, requestMethod);
+                if (Objects.isNull(moduleId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到当前接口权限");
+                } else if (moduleIds.contains(moduleId)) {
+                    return invocation.proceed();
+                } else {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
+                }
             }
-
-            switch (prefix) {
-                case "privilegecheck":
-
-
-                case "technical":
-                case "businesses":
-                case "businessManage":
-                case "role":
-                case "privilege":
-                    if (roleByUserId.getStatus() == 0) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
-                    }
-                    if(moduleIds.contains(moduleId) || Objects.isNull(moduleId)) {
-                        return response;
-                    } else {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
-                    }
-
-                default:
-                    return response;
-
-            }
-
         }
-
     }
 
 

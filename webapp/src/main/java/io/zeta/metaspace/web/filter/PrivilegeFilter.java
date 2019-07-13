@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-@Component
+
 public class PrivilegeFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(PrivilegeFilter.class);
 
@@ -47,8 +47,6 @@ public class PrivilegeFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
-
-
 
         String check = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
         String userId = "";

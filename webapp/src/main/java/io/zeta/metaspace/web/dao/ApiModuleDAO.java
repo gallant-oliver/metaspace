@@ -28,6 +28,9 @@ import java.util.List;
  */
 public interface ApiModuleDAO {
 
-    @Select("select module from api_module where path=#{path} and method=#{method}")
+    @Select("select module_id from api_module where path=#{path} and method=#{method}")
     public Integer getModuleByPathAndMethod(@Param("path")String path, @Param("method")String method);
+
+    @Select("select path from api_module where prefix_check=true")
+    public List<String> getPrefixCheckPath();
 }
