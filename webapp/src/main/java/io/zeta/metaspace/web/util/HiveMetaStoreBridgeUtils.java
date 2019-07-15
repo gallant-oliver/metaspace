@@ -28,6 +28,7 @@ import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.model.TableSchema;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClientV2;
+import org.apache.atlas.AtlasConstants;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -60,6 +61,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -74,6 +77,7 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  * A Bridge Utility that imports metadata from the Hive Meta Store
  * and registers them in Atlas.
  */
+@Singleton
 @Component
 public class HiveMetaStoreBridgeUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
@@ -83,11 +87,9 @@ public class HiveMetaStoreBridgeUtils {
     public static final String HDFS_PATH_CONVERT_TO_LOWER_CASE = CONF_PREFIX + "hdfs_path.convert_to_lowercase";
     public static final String DEFAULT_CLUSTER_NAME            = "primary";
     public static final String TEMP_TABLE_PREFIX               = "_temp-";
-    public static final String ATLAS_ENDPOINT                  = "atlas.rest.address";
     public static final String SEP                             = ":".intern();
     public static final String HDFS_PATH                       = "hdfs_path";
 
-    private static final String DEFAULT_ATLAS_URL = "http://localhost:21000/";
     private volatile AtomicInteger totalTables = new AtomicInteger(0);
     private volatile AtomicInteger updatedTables = new AtomicInteger(0);
     private volatile AtomicLong startTime = new AtomicLong(0);
@@ -97,6 +99,7 @@ public class HiveMetaStoreBridgeUtils {
     private final String                  clusterName;
     private Hive hiveMetaStoreClient = null;
     private AtlasClientV2           atlasClientV2 = null;
+    private Configuration atlasConf        = null;
     private final boolean convertHdfsPathToLowerCase;
     private final AtlasGraph graph;
     private final MetaspaceGremlinQueryProvider gremlinQueryProvider;
@@ -122,31 +125,12 @@ public class HiveMetaStoreBridgeUtils {
 
     @Inject
     private HiveMetaStoreBridgeUtils(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph, AtlasEntityStore atlasEntityStore) {
-        Configuration atlasConf        = null;
         try {
             atlasConf = ApplicationProperties.get();
         } catch (AtlasException e) {
             LOG.error("init config error,", e);
         }
-        String[]      atlasEndpoint    = atlasConf.getStringArray(ATLAS_ENDPOINT);
-
-        if (atlasEndpoint == null || atlasEndpoint.length == 0) {
-            atlasEndpoint = new String[] { DEFAULT_ATLAS_URL };
-        }
-        try {
-            atlasClientV2 = new AtlasClientV2(atlasEndpoint);
-        } catch (AtlasException e) {
-            LOG.error("init atlasClientV2 error,", e);
-        }
         clusterName = atlasConf.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
-
-        HiveConf hiveConf = new HiveConf();
-        hiveConf.addResource(new Path(MetaspaceConfig.getHiveConfig() + File.separator + "hive-site.xml"));
-        try {
-            hiveMetaStoreClient = Hive.get(hiveConf);
-        } catch (HiveException e) {
-            LOG.error("init hive metastore client error,", e);
-        }
         convertHdfsPathToLowerCase = atlasConf.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true);
         this.graph = atlasGraph;
         this.gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -169,6 +153,7 @@ public class HiveMetaStoreBridgeUtils {
      * @throws Exception
      */
     public void importDatabases(TableSchema tableSchema) throws Exception {
+        init();
         List<String> databaseNames = null;
         totalTables.set(0);
         updatedTables.set(0);
@@ -242,6 +227,30 @@ public class HiveMetaStoreBridgeUtils {
         }
         endTime.set(System.currentTimeMillis());
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
+    }
+
+    private void init() {
+        if (null == atlasClientV2) {
+            String[] atlasEndpoint = atlasConf.getStringArray(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
+
+            if (atlasEndpoint == null || atlasEndpoint.length == 0) {
+                atlasEndpoint = new String[] {AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
+            }
+            try {
+                atlasClientV2 = new AtlasClientV2(atlasEndpoint);
+            } catch (AtlasException e) {
+                LOG.error("init atlasClientV2 error,", e);
+            }
+        }
+        if (null == hiveMetaStoreClient) {
+            HiveConf hiveConf = new HiveConf();
+            hiveConf.addResource(new Path(MetaspaceConfig.getHiveConfig() + File.separator + "hive-site.xml"));
+            try {
+                hiveMetaStoreClient = Hive.get(hiveConf);
+            } catch (HiveException e) {
+                LOG.error("init hive metastore client error,", e);
+            }
+        }
     }
 
     /**
