@@ -87,7 +87,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_UPDATE);
-        dataManageService.updateTable(entities);
+        dataManageService.updateEntityInfo(entities);
     }
 
     @Override

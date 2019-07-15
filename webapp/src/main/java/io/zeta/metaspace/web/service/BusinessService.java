@@ -618,13 +618,16 @@ public class BusinessService {
     public PageResult getTableColumnList(String tableGuid, Parameters parameters, String sortColumn, String sortOrder) throws AtlasBaseException {
         try {
             boolean existOnPg = columnDAO.tableColumnExist(tableGuid)>0?true:false;
-
+            PageResult pageResult = new PageResult();
             if(!existOnPg) {
                 //JanusGraph中取出column信息
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO_MAP);
                 String columnQuery = String.format(query, tableGuid);
                 List<Map> columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
                 List<Column> columnInfoList = ConvertMapToColumnInfoList(tableGuid, columnMapList);
+                if(Objects.isNull(columnInfoList) || columnInfoList.size()==0) {
+                    return pageResult;
+                }
                 columnDAO.addColumnDisplayInfo(columnInfoList);
             }
             int limit = parameters.getLimit();
@@ -643,7 +646,7 @@ public class BusinessService {
                     column.setDisplayName(column.getColumnName());
                 }
             });
-            PageResult pageResult = new PageResult();
+
             pageResult.setLists(resultColumnInfoList);
             pageResult.setCount(resultColumnInfoList.size());
             pageResult.setSum(totalCount);

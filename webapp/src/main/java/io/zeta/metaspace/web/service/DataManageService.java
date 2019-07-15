@@ -48,6 +48,7 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.OrganizationDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
@@ -104,6 +105,8 @@ public class DataManageService {
     OrganizationDAO organizationDAO;
     @Autowired
     TableTagDAO tableTagDAO;
+    @Autowired
+    ColumnDAO columnDAO;
 
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
@@ -589,6 +592,9 @@ public class DataManageService {
             if (typeName.contains("hive_db")) {
                 relationDao.updateDatabaseStatus(guid, "DELETED");
             }
+            if (typeName.contains("hive_column")) {
+                columnDAO.updateColumnStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -878,7 +884,7 @@ public class DataManageService {
     }
 
     @Transactional
-    public void updateTable(List<AtlasEntity> entities) {
+    public void updateEntityInfo(List<AtlasEntity> entities) {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
@@ -890,6 +896,12 @@ public class DataManageService {
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.updateTable(tableInfo);
                 }
+            } else if(typeName.contains("hive_column")) {
+                String guid = entity.getGuid();
+                String name = entity.getAttribute("name").toString();
+                String type = entity.getAttribute("type").toString();
+                String status = entity.getStatus().name();
+                columnDAO.updateColumnBasicInfo(guid, name, type, status);
             }
         }
     }
