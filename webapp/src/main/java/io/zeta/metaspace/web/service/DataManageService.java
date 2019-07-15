@@ -884,7 +884,7 @@ public class DataManageService {
     }
 
     @Transactional
-    public void updateTable(List<AtlasEntity> entities) {
+    public void updateEntityInfo(List<AtlasEntity> entities) {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
@@ -896,6 +896,12 @@ public class DataManageService {
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.updateTable(tableInfo);
                 }
+            } else if(typeName.contains("hive_column")) {
+                String guid = entity.getGuid();
+                String name = entity.getAttribute("name").toString();
+                String type = entity.getAttribute("type").toString();
+                String status = entity.getStatus().name();
+                columnDAO.updateColumnBasicInfo(guid, name, type, status);
             }
         }
     }
