@@ -95,7 +95,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             Method method = invocation.getMethod();
             Path path = method.getAnnotation(Path.class);
             String pathStr = path.value();
-            String urlStr = prefix + pathStr;
+            String urlStr = "/" + prefix + pathStr;
             String requestMethod = request.getMethod();
 
             Role roleByUserId = usersService.getRoleByUserId(userId);
@@ -147,10 +147,11 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 Integer moduleId = null;
                 List<String> prefixCheckPathList = apiModuleDAO.getPrefixCheckPath();
                 String checkUrl = prefixCheckPathList.contains(prefix) ? prefix : urlStr;
-                requestMethod = prefixCheckPathList.contains(prefix) ? "option" : requestMethod;
+                requestMethod = prefixCheckPathList.contains(prefix) ? "OPTION" : requestMethod;
                 moduleId = apiModuleDAO.getModuleByPathAndMethod(checkUrl, requestMethod);
                 if (Objects.isNull(moduleId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到当前接口权限");
+                    return invocation.proceed();
+                    //throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到当前接口权限");
                 } else if (moduleIds.contains(moduleId)) {
                     return invocation.proceed();
                 } else {
