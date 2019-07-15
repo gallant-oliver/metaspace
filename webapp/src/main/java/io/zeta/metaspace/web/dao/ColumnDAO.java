@@ -106,4 +106,7 @@ public interface ColumnDAO {
 
     @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{tableGuid}")
     public TableHeader getTableHeaderInfo(@Param("tableGuid")String tableGuid);
+
+    @Update("update column_info set status=#{status} where column_guid=#{columnId}")
+    public int updateColumnStatus(@Param("columnId") String columnId, @Param("status") String status);
 }
