@@ -282,7 +282,7 @@ public class TechnicalREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/table/relations/")
+    @Path("/table/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
@@ -300,7 +300,7 @@ public class TechnicalREST {
     }
 
     @POST
-    @Path("/owner/table/")
+    @Path("/owner/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response addOwners(TableOwner tableOwner) throws AtlasBaseException {
