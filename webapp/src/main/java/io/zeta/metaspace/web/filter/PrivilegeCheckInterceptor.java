@@ -94,7 +94,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
             Method method = invocation.getMethod();
             Path path = method.getAnnotation(Path.class);
-            String pathStr = path.value();
+            String pathStr = Objects.nonNull(path)?path.value():"";
             String urlStr = "/" + prefix + pathStr;
             String requestMethod = request.getMethod();
 
