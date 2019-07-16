@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -48,6 +49,7 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.OrganizationDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
@@ -104,6 +106,8 @@ public class DataManageService {
     OrganizationDAO organizationDAO;
     @Autowired
     TableTagDAO tableTagDAO;
+    @Autowired
+    ColumnDAO columnDAO;
 
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
@@ -589,6 +593,9 @@ public class DataManageService {
             if (typeName.contains("hive_db")) {
                 relationDao.updateDatabaseStatus(guid, "DELETED");
             }
+            if (typeName.contains("hive_column")) {
+                columnDAO.updateColumnStatus(guid, "DELETED");
+            }
         }
     }
 
@@ -808,30 +815,48 @@ public class DataManageService {
     }
 
     @Transactional
-    public void addTable(List<AtlasEntity> entities) {
+    public void addEntity(List<AtlasEntity> entities) {
         //添加到tableinfo
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
                 if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
+                    String guid = entity.getGuid();
+                    String name = getEntityAttribute(entity, "name");
+                    if (tableDAO.ifTableExists(guid).size() == 0) {
+                        TableInfo tableInfo = new TableInfo();
+                        tableInfo.setTableGuid(guid);
+                        tableInfo.setTableName(name);
+                        Object createTime = entity.getAttribute("createTime");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        String formatDateStr = sdf.format(createTime);
+                        tableInfo.setCreateTime(formatDateStr);
+                        tableInfo.setStatus(entity.getStatus().name());
+                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                        tableInfo.setDatabaseGuid(relatedDB.getGuid());
+                        tableInfo.setDbName(relatedDB.getDisplayText());
+                        tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+                        tableDAO.addTable(tableInfo);
+                    }
+                }
+            } else if(typeName.contains("hive_column")) {
+                AtlasRelatedObjectId table = (AtlasRelatedObjectId)entity.getRelationshipAttribute("table");
+                String tableGuid = table.getGuid();
                 String guid = entity.getGuid();
-                String name = getEntityAttribute(entity, "name");
-                if (tableDAO.ifTableExists(guid).size() == 0) {
-                    TableInfo tableInfo = new TableInfo();
-                    tableInfo.setTableGuid(guid);
-                    tableInfo.setTableName(name);
-                    Object createTime = entity.getAttribute("createTime");
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    String formatDateStr = sdf.format(createTime);
-                    tableInfo.setCreateTime(formatDateStr);
-                    tableInfo.setStatus(entity.getStatus().name());
-                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                    tableInfo.setDatabaseGuid(relatedDB.getGuid());
-                    tableInfo.setDbName(relatedDB.getDisplayText());
-                    tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
-                    tableDAO.addTable(tableInfo);
-                }
-                }
+                String name = entity.getAttribute("name").toString();
+                String type = entity.getAttribute("type").toString();
+                String status = entity.getStatus().name();
+                String updateTime = entity.getUpdateTime().toString();
+                Column column = new Column();
+                column.setTableId(tableGuid);
+                column.setColumnId(guid);
+                column.setColumnName(name);
+                column.setType(type);
+                column.setStatus(status);
+                column.setDisplayNameUpdateTime(updateTime);
+                List<Column> columnList = new ArrayList<>();
+                columnList.add(column);
+                columnDAO.addColumnDisplayInfo(columnList);
             }
         }
         addFullRelation();
@@ -878,7 +903,7 @@ public class DataManageService {
     }
 
     @Transactional
-    public void updateTable(List<AtlasEntity> entities) {
+    public void updateEntityInfo(List<AtlasEntity> entities) {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
@@ -890,6 +915,12 @@ public class DataManageService {
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.updateTable(tableInfo);
                 }
+            } else if(typeName.contains("hive_column")) {
+                String guid = entity.getGuid();
+                String name = entity.getAttribute("name").toString();
+                String type = entity.getAttribute("type").toString();
+                String status = entity.getStatus().name();
+                columnDAO.updateColumnBasicInfo(guid, name, type, status);
             }
         }
     }

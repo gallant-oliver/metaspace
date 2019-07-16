@@ -254,6 +254,7 @@ public interface BusinessDAO {
              " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
              " and (tableInfo.tableName like '%${tableName}%' ESCAPE '/' or tableInfo.display_name like '%${tableName}%' ESCAPE '/')",
+             " order by tableInfo.status",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
              " </if>",

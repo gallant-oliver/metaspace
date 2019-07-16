@@ -68,8 +68,6 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Autowired
     DataManageService dataManageService;
 
-
-
     @Inject
     public EntityNotificationListenerV2(AtlasTypeRegistry typeRegistry,
                                         NotificationInterface notificationInterface,
@@ -81,13 +79,13 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Override
     public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_CREATE);
-        dataManageService.addTable(entities);
+        dataManageService.addEntity(entities);
     }
 
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_UPDATE);
-        dataManageService.updateTable(entities);
+        dataManageService.updateEntityInfo(entities);
     }
 
     @Override
