@@ -25,6 +25,14 @@
   <display-name>Apache Atlas</display-name>
   <description>Metadata Management and Data Governance Platform over Hadoop</description>
 
+  <context-param>
+
+  <param-name>contextConfigLocation</param-name>
+
+  <param-value>classpath:applicationContext.xml</param-value>
+
+  </context-param>
+
   <servlet>
     <servlet-name>jersey-servlet</servlet-name>
     <servlet-class>

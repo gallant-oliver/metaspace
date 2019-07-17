@@ -20,8 +20,13 @@ import org.apache.atlas.ApplicationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.ehcache.EhCacheCacheManager;
+import org.springframework.cache.ehcache.EhCacheManagerUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -38,12 +43,17 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     private static String hostName;
     private static int port;
+    private static String engine;
+    private static int expiration;
+    private final static String CACHE_ON_REDIS = "redis";
 
     static {
         try {
-        org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-        hostName = configuration.getString("metaspace.redis.host");
-        port = configuration.getInt("metaspace.redis.port");
+            org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
+            engine = configuration.getString("metaspace.redis.cache");
+            hostName = configuration.getString("metaspace.cache.redis.host");
+            port = configuration.getInt("metaspace.cache.redis.port");
+            expiration = configuration.getInt("metaspace.cache.redis.expiration");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -52,7 +62,6 @@ public class CacheConfig extends CachingConfigurerSupport {
     @Bean
     public JedisConnectionFactory redisConnectionFactory() {
         JedisConnectionFactory redisConnectionFactory = new JedisConnectionFactory();
-
         // Defaults
         redisConnectionFactory.setHostName(hostName);
         redisConnectionFactory.setPort(port);
@@ -68,10 +77,14 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     @Bean
     public CacheManager cacheManager(RedisTemplate redisTemplate) {
-        RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
-
-        // Number of seconds before expiration. Defaults to unlimited (0)
-        cacheManager.setDefaultExpiration(300);
-        return cacheManager;
+        if(CACHE_ON_REDIS.equals(engine)) {
+            RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
+            cacheManager.setDefaultExpiration(expiration);
+            return cacheManager;
+        } else {
+            ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource location = resolver.getResource("classpath:ehcache-setting.xml");
+            return new EhCacheCacheManager(EhCacheManagerUtils.buildCacheManager(location));
+        }
     }
 }
