@@ -444,14 +444,19 @@ public class DataShareService {
             Gson gson = new Gson();
             String jsonStr = gson.toJson(content, APIContent.class);
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
-            String res = SSLClient.doPost(mobiusURL, jsonStr);
+            int retryCount = 0;
+            while(retryCount < 3) {
+
+            }
+            /*String res = SSLClient.doPost(mobiusURL, jsonStr);
             LOG.info(res);
             Map response = convertMobiusResponse(res);
             String error_id = String.valueOf(response.get("error-id"));
             String error_reason = String.valueOf(response.get("reason"));
             if(!"0.0".equals(error_id)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + error_reason);
-            }
+            }*/
+
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (AtlasBaseException e) {
             throw e;

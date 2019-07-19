@@ -683,6 +683,12 @@
         <scope>compile</scope>
       </dependency>
 
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>3.4.2</version>
+        </dependency>
+
     </dependencies>
 
 
