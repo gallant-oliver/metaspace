@@ -47,6 +47,7 @@ import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnDAO;
@@ -635,9 +636,27 @@ public class DataManageService {
                 Gson gson = new Gson();
                 String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
                 //向云平台发请求
-                String res = SSLClient.doPut(mobiusURL, jsonStr);
-                if(Objects.nonNull(res))
+
+                int retryCount = 0;
+                String error_id = null;
+                String error_reason = null;
+                while(retryCount < 3) {
+                    String res = OKHttpClient.doPut(mobiusURL, jsonStr);
                     LOG.info(res);
+                    if(Objects.nonNull(res)) {
+                        Map response = gson.fromJson(res, Map.class);
+                        error_id = String.valueOf(response.get("error-id"));
+                        error_reason = String.valueOf(response.get("reason"));
+                        if ("0.0".equals(error_id)) {
+                            break;
+                        } else {
+                            retryCount++;
+                        }
+                    }
+                }
+                if(!"0.0".equals(error_id)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
+                }
             }
             //删除旧关系
             categoryDao.deleteDataOwner(tableOwner.getTables());
@@ -659,8 +678,11 @@ public class DataManageService {
                 }
             }
             return categoryDao.addDataOwner(table2OwnerList);
+        } catch (AtlasBaseException e) {
+            LOG.error(e.toString());
+            throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error(e.toString());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
     }
@@ -731,42 +753,33 @@ public class DataManageService {
             String endTime = sdf.format(currentTime);
 
             HashMap<String, String> header = new HashMap<>();
-
+            Gson gson = new Gson();
             organizationCountURL += "?endTime=" + endTime;
             organizationCountURL = organizationCountURL.replaceAll(" ", "%20");
-            String countSession = SSLClient.doGet(organizationCountURL, header);
-            Gson gson = new Gson();
-            Map countBody = gson.fromJson(countSession, Map.class);
-            Map countData = (Map) countBody.get("data");
-            double count = (Double) countData.get("count");
-            double pageSize = 500;
-            double countPageSize = Math.ceil(count / pageSize);
-
-            organizationURL +=  "?currentPage=0&pageSize=" + (int) count + "&endTime=" + endTime;
-            organizationURL = organizationURL.replaceAll(" ", "%20");
-            String session = SSLClient.doGet(organizationURL, header);
-            Map body = gson.fromJson(session, Map.class);
-            List data = (List) body.get("data");
-            //organizationURL += "?endTime=" + endTime;
-
-            /*List result = new ArrayList();
-            for (int i = 0; i < countPageSize; i++) {
-                String currentOrganizationURL = organizationURL;
-                if((i+1)*pageSize>=count) {
-                    double currentPageSize = count - (i*pageSize);
-                    currentOrganizationURL +=  "?currentPage=" + i + "&pageSize=" + (int) currentPageSize + "&endTime=" + endTime;
-                } else {
-                    currentOrganizationURL +=  "?currentPage=" + i + "&pageSize=" + (int) pageSize + "&endTime=" + endTime;
+            List data = new ArrayList();
+            int retryCount = 0;
+            while(retryCount < 3) {
+                String countSession = OKHttpClient.doGet(organizationCountURL, header);
+                if(Objects.isNull(countSession)) {
+                    retryCount++;
+                    continue;
                 }
-                currentOrganizationURL = currentOrganizationURL.replaceAll(" ", "%20");
-                String session = SSLClient.doGet(currentOrganizationURL, header);
+                Map countBody = gson.fromJson(countSession, Map.class);
+                Map countData = (Map) countBody.get("data");
+                double count = (Double) countData.get("count");
+
+                organizationURL +=  "?currentPage=0&pageSize=" + (int) count + "&endTime=" + endTime;
+                organizationURL = organizationURL.replaceAll(" ", "%20");
+
+                String session = OKHttpClient.doGet(organizationURL, header);
+                if(Objects.isNull(session)) {
+                    retryCount++;
+                    continue;
+                }
                 Map body = gson.fromJson(session, Map.class);
-                List data = (List) body.get("data");
-                if(Objects.nonNull(data) && data.size()>0) {
-                    result.addAll(data);
-                }
-            }*/
-
+                data = (List) body.get("data");
+                break;
+            }
             return data;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());

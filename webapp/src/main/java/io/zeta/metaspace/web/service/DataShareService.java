@@ -53,6 +53,7 @@ import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -445,17 +446,25 @@ public class DataShareService {
             String jsonStr = gson.toJson(content, APIContent.class);
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
             int retryCount = 0;
+            String error_id = null;
+            String error_reason = null;
             while(retryCount < 3) {
-
+                String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+                LOG.info(res);
+                if(Objects.nonNull(res)) {
+                    Map response = convertMobiusResponse(res);
+                    error_id = String.valueOf(response.get("error-id"));
+                    error_reason = String.valueOf(response.get("reason"));
+                    if ("0.0".equals(error_id)) {
+                        break;
+                    } else {
+                        retryCount++;
+                    }
+                }
             }
-            /*String res = SSLClient.doPost(mobiusURL, jsonStr);
-            LOG.info(res);
-            Map response = convertMobiusResponse(res);
-            String error_id = String.valueOf(response.get("error-id"));
-            String error_reason = String.valueOf(response.get("reason"));
             if(!"0.0".equals(error_id)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + error_reason);
-            }*/
+            }
 
             return shareDAO.updatePublishStatus(guidList, true);
         } catch (AtlasBaseException e) {
@@ -489,11 +498,24 @@ public class DataShareService {
             param.put("api_id_list", apiGuid);
             Gson gson = new Gson();
             String jsonStr = gson.toJson(param, Map.class);
-            String res = SSLClient.doPut(mobiusURL, jsonStr);
-            LOG.info(res);
-            Map response = convertMobiusResponse(res);
-            String error_id = String.valueOf(response.get("error-id"));
-            String error_reason = String.valueOf(response.get("reason"));
+
+            int retryCount = 0;
+            String error_id = null;
+            String error_reason = null;
+            while(retryCount < 3) {
+                String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+                LOG.info(res);
+                if(Objects.nonNull(res)) {
+                    Map response = convertMobiusResponse(res);
+                    error_id = String.valueOf(response.get("error-id"));
+                    error_reason = String.valueOf(response.get("reason"));
+                    if ("0.0".equals(error_id)) {
+                        break;
+                    } else {
+                        retryCount++;
+                    }
+                }
+            }
             if(!"0.0".equals(error_id)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
             }

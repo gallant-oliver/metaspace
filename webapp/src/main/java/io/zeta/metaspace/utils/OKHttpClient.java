@@ -16,19 +16,24 @@
  */
 package io.zeta.metaspace.utils;
 
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import io.zeta.metaspace.web.util.AdminUtils;
-import okhttp3.Call;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+
+
 
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @description
@@ -38,12 +43,42 @@ import java.net.URLDecoder;
 public class OKHttpClient {
 
     private static final String TICKET_KEY = "X-SSO-FullticketId";
+    private static OkHttpClient client;
+    static {
+        client = new OkHttpClient();
+        client.setConnectTimeout(1, TimeUnit.SECONDS);
+    }
 
-    public static String doPut(String url, String json) {
+    /**
+     * get请求
+     * @return
+     */
+    public static String doGet(String url, Map<String,String> map) {
         try {
-            OkHttpClient client = new OkHttpClient().newBuilder()
-                    .followRedirects(false)
-                    .build();
+            Request.Builder builder = new Request.Builder()
+                    .url(url);
+            Set<Map.Entry<String, String>> entries = map.entrySet();
+            for (Map.Entry<String, String> entry : entries) {
+                builder.addHeader(entry.getKey(),entry.getValue());
+            }
+            Request request = builder.build();
+            Call call = client.newCall(request);
+            Response response = call.execute();
+
+            /**请求发送成功，并得到响应**/
+            if (response.isSuccessful()) {
+                /**读取服务器返回过来的json字符串数据**/
+                return response.body().string();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static String doPost(String url, String json) {
+        try {
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
             String ticket = AdminUtils.getSSOTicket();
             Request request = new Request.Builder()
@@ -51,12 +86,34 @@ public class OKHttpClient {
                                 .addHeader(TICKET_KEY, ticket)
                                 .post(body)
                                 .build();
-
             Call call = client.newCall(request);
-
             Response response = call.execute();
 
-            if (response.code() == org.apache.commons.httpclient.HttpStatus.SC_OK) {
+            if (response.isSuccessful()) {
+                InputStream in = response.body().byteStream();
+                return getResponseStr(in);
+            } else {
+                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String doPut(String url, String json) {
+        try {
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+            String ticket = AdminUtils.getSSOTicket();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader(TICKET_KEY, ticket)
+                    .put(body)
+                    .build();
+            Call call = client.newCall(request);
+            Response response = call.execute();
+
+            if (response.isSuccessful()) {
                 InputStream in = response.body().byteStream();
                 return getResponseStr(in);
             } else {
