@@ -83,19 +83,19 @@
         <!--7 aspectj支持自动代理实现AOP功能 -->
         <aop:aspectj-autoproxy proxy-target-class="true"></aop:aspectj-autoproxy>
 
-
+        <context:component-scan base-package="io.zeta.metaspace.web.cache" />
 
         <!-- 启用缓存注解功能，这个是必须的，否则注解不会生效，另外，该注解一定要声明在spring主配置文件中才会生效 -->
-        <cache:annotation-driven cache-manager="cacheManager"/>
+        <!--<cache:annotation-driven cache-manager="cacheManager"/>-->
 
         <!-- cacheManager工厂类，指定ehcache.xml的位置 -->
-        <bean id="ehcacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+        <!--<bean id="ehcacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
                 <property name="configLocation" value="/WEB-INF/ehcache-setting.xml" />
-        </bean>
+        </bean>-->
         <!-- 声明cacheManager -->
-        <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+        <!--<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
                 <property name="cacheManager" ref="ehcacheManagerFactory"/>
-        </bean>
+        </bean>-->
 
         <!--<cache:annotation-driven/>-->
 
