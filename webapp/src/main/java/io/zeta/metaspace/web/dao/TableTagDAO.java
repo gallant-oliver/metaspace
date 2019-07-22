@@ -29,8 +29,8 @@ public interface TableTagDAO {
     @Delete("delete from table2tag where tableguid=#{tableGuid} and tagid=#{tagId}")
     public int deleteTable2Tag(@Param("tableGuid") String tableGuid,@Param("tagId") String tagId);
 
-    @Select("select 1 from tag where tagname=#{tagName}")
-    public List<Integer> ifTagExists(String tagName);
+    @Select("select count(1) from tag where tagname=#{tagName}")
+    public Integer ifTagExists(String tagName);
 
     @Delete("delete from table2tag where tableguid=#{tableGuid}")
     public int delAllTable2Tag(String tableGuid);

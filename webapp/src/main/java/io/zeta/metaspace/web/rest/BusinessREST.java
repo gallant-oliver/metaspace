@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/2/13 10:09
  */
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.business.BusinessInfo;
@@ -34,11 +36,13 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -110,6 +114,10 @@ public class BusinessREST {
 
     private static final int TECHNICAL_CATEGORY_TYPE = 0;
 
+    private void log(String content) {
+        httpServletRequest.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(业务对象) " + content);
+    }
+
     /**
      * 添加业务对象
      * @param categoryId
@@ -121,8 +129,10 @@ public class BusinessREST {
     @Path("/category/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
         try {
+            log(business.getName());
             businessService.addBusiness(categoryId, business);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
@@ -141,8 +151,10 @@ public class BusinessREST {
     @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
         try {
+            log(business.getName());
             businessService.updateBusiness(businessId, business);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
@@ -326,7 +338,9 @@ public class BusinessREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+        log(categoryInfo.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -475,7 +489,9 @@ public class BusinessREST {
     @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public Response deleteBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
+        log(businessId);
         try {
             businessService.deleteBusiness(businessId);
             return Response.status(200).entity("success").build();
