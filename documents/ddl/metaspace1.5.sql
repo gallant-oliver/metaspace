@@ -256,7 +256,7 @@ CREATE TABLE "data_standard" (
 )
 ;
 ALTER TABLE "data_standard" OWNER TO "postgres";
-<<<<<<< HEAD
+
 COMMENT ON COLUMN "data_standard"."id" IS '唯一id';
 COMMENT ON COLUMN "data_standard"."number" IS '标准编号';
 COMMENT ON COLUMN "data_standard"."content" IS '标准内容';
