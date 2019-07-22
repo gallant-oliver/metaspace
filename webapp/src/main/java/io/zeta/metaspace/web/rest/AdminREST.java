@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.Item;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.service.UsersService;
@@ -74,7 +75,7 @@ public class AdminREST {
             }
             HashMap<String, String> header = new HashMap<>();
             header.put("ticket", httpServletRequest.getHeader("X-SSO-FullticketId"));
-            SSLClient.doDelete(logoutURL, header);
+            OKHttpClient.doDelete(logoutURL, header);
             return "success";
         } finally {
             AtlasPerfTracer.log(perf);

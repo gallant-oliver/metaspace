@@ -29,11 +29,13 @@ public class HivePermissionUtil {
 
             int retryCount = 0;
             String session = null;
+            Map<String, String> queryParamMap = new HashMap<>();
+            queryParamMap.put("user", userName);
+            queryParamMap.put("database", db);
+            queryParamMap.put("table", table);
             while (Objects.isNull(session) && retryCount < 3) {
-                session = OKHttpClient.doGet(SecurePlusConfig.getSecurePlusPrivilegeREST()
-                                             + "?" + "user=" + userName
-                                             + "&" + "database=" + db
-                                             + "&" + "table=" + table, map);
+                session = OKHttpClient.doGet(SecurePlusConfig.getSecurePlusPrivilegeREST(),
+                                            queryParamMap, map);
                 if (Objects.nonNull(session)) {
                     Gson gson = new Gson();
                     Map body = gson.fromJson(session, Map.class);

@@ -754,12 +754,12 @@ public class DataManageService {
 
             HashMap<String, String> header = new HashMap<>();
             Gson gson = new Gson();
-            organizationCountURL += "?endTime=" + endTime;
-            organizationCountURL = organizationCountURL.replaceAll(" ", "%20");
+            Map<String, String> queryCountParamMap = new HashMap<>();
+            queryCountParamMap.put("endTime", endTime);
             List data = new ArrayList();
             int retryCount = 0;
             while(retryCount < 3) {
-                String countSession = OKHttpClient.doGet(organizationCountURL, header);
+                String countSession = OKHttpClient.doGet(organizationCountURL, queryCountParamMap, header);
                 if(Objects.isNull(countSession)) {
                     retryCount++;
                     continue;
@@ -768,10 +768,11 @@ public class DataManageService {
                 Map countData = (Map) countBody.get("data");
                 double count = (Double) countData.get("count");
 
-                organizationURL +=  "?currentPage=0&pageSize=" + (int) count + "&endTime=" + endTime;
-                organizationURL = organizationURL.replaceAll(" ", "%20");
-
-                String session = OKHttpClient.doGet(organizationURL, header);
+                Map<String, String> queryDataParamMap = new HashMap<>();
+                queryDataParamMap.put("currentPage", "0");
+                queryDataParamMap.put("pageSize", String.valueOf((int)count));
+                queryDataParamMap.put("endTime", endTime);
+                String session = OKHttpClient.doGet(organizationURL, queryDataParamMap, header);
                 if(Objects.isNull(session)) {
                     retryCount++;
                     continue;
