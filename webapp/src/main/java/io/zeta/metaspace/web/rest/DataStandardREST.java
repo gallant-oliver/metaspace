@@ -13,23 +13,27 @@
 package io.zeta.metaspace.web.rest;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 import static io.zeta.metaspace.web.service.DataStandardService.filename;
 
 import com.google.common.base.Joiner;
+import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,12 +41,15 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -76,6 +83,9 @@ public class DataStandardREST {
     @Autowired
     private DataQualityService dataQualityService;
 
+    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
+
+
     private void log(String content) {
         request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据标准) " + content);
     }
@@ -84,6 +94,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
+    @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
         log(dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
@@ -97,6 +108,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
+    @Valid
     public void update(DataStandard dataStandard) throws AtlasBaseException {
         log(dataStandard.getContent());
         dataStandardService.update(dataStandard);
@@ -143,7 +155,7 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(@PathParam("number") String categoryId, DataStandardQuery parameters) throws AtlasBaseException {
+    public PageResult<DataStandard> search(DataStandardQuery parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters);
     }
 
@@ -157,7 +169,7 @@ public class DataStandardREST {
 
     @GET
     @Path("/download/template")
-    public void downloadTemplate(@PathParam("downloadId") String downloadId) throws Exception {
+    public void downloadTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
         String filePath = homeDir + "/conf/数据标准导入模版.xlsx";
         String fileName = filename(filePath);
@@ -219,12 +231,28 @@ public class DataStandardREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response importDataStandard(@PathParam("categoryId") String categoryId,
-                                       @FormDataParam("file") InputStream fileInputStream) throws Exception {
+                                       @FormDataParam("file") InputStream fileInputStream,
+                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+        File file = null;
         try {
+            String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            if(!(name.endsWith(".xlsx") || name.endsWith(".xls"))) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
+            }
+
+            file = new File(name);
+            FileUtils.copyInputStreamToFile(fileInputStream, file);
+            if(file.length() > MAX_EXCEL_FILE_SIZE) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
+            }
             dataStandardService.importDataStandard(categoryId, fileInputStream);
             return Response.ok().build();
         } catch (AtlasBaseException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } finally {
+            if(Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
         }
     }
 }

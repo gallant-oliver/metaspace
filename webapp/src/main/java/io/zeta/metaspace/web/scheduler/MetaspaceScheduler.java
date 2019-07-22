@@ -14,6 +14,7 @@
 package io.zeta.metaspace.web.scheduler;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.web.util.BaseHiveEvent;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -31,6 +32,7 @@ import io.zeta.metaspace.repository.tablestat.TableStatService;
 import io.zeta.metaspace.utils.BytesUtils;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -121,8 +123,8 @@ public class MetaspaceScheduler {
         log.info("start insert into table_stat");
         if (tables != null && !tables.isEmpty()) {
             log.info("table amount {}", tables.size());
-            for (int i = 0; i < tables.size(); i++) {
-                int totalCnt = tables.size();
+            int totalCnt = tables.size();
+            for (int i = 0; i < totalCnt; i++) {
                 String tableId = tables.get(i).getGuid();
                 String tableName = tables.get(i).getDisplayText();
                 try {
@@ -194,14 +196,20 @@ public class MetaspaceScheduler {
 
         tableStat.setTableName(displayName);
 
-        TableMetadata metadata = HiveJdbcUtils.systemMetadata(tableName);
-        //表数据量
-        long totalSize = metadata.getTotalSize();
-        tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
-        tableStat.setDataVolumeBytes(totalSize);
-        //文件个数
-        long fieldNum = metadata.getNumFiles();
-        tableStat.setFileNum(fieldNum);
+
+        Object parameters = entity.getAttribute(BaseHiveEvent.ATTRIBUTE_PARAMETERS);
+        if(parameters != null){
+            Map params = (Map)parameters;
+            //表数据量
+            String totalSizeStr =  params.get("totalSize").toString();
+            long totalSize = StringUtils.isNotBlank(totalSizeStr) ? Integer.valueOf(totalSizeStr) : 0;
+            tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
+            tableStat.setDataVolumeBytes(totalSize);
+            //文件个数
+            String numFilesStr = params.get("numFiles").toString();
+            long numFiles = StringUtils.isNotBlank(numFilesStr) ? Integer.valueOf(numFilesStr) : 0;
+            tableStat.setFileNum(numFiles);
+        }
 
         //数据来源表
         AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3);
