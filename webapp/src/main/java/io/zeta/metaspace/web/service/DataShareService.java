@@ -54,7 +54,6 @@ import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;

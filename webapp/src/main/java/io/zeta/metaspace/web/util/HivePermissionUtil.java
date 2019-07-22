@@ -5,7 +5,6 @@ import io.zeta.metaspace.SecurePlusConfig;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.TablePermission;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.SSLClient;
 import org.apache.atlas.exception.AtlasBaseException;
 
 import java.util.*;

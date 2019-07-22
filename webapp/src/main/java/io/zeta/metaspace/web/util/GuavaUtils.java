@@ -5,8 +5,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.SSLClient;
 import org.json.simple.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
