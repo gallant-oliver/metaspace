@@ -12,7 +12,9 @@
  Target Server Version : 100005
  File Encoding         : 65001
 
+
  Date: 17/07/2019 11:40:49
+
 */
 
 
@@ -254,6 +256,17 @@ CREATE TABLE "data_standard" (
 )
 ;
 ALTER TABLE "data_standard" OWNER TO "postgres";
+
+COMMENT ON COLUMN "data_standard"."id" IS '唯一id';
+COMMENT ON COLUMN "data_standard"."number" IS '标准编号';
+COMMENT ON COLUMN "data_standard"."content" IS '标准内容';
+COMMENT ON COLUMN "data_standard"."description" IS '标准比描述';
+COMMENT ON COLUMN "data_standard"."createtime" IS '创建时间';
+COMMENT ON COLUMN "data_standard"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "data_standard"."operator" IS '编辑人id';
+COMMENT ON COLUMN "data_standard"."version" IS '版本号（每次+1）';
+COMMENT ON COLUMN "data_standard"."categoryid" IS '所属分类';
+COMMENT ON COLUMN "data_standard"."delete" IS 'true表示已删除';
 
 -- ----------------------------
 -- Table structure for module
@@ -1070,6 +1083,11 @@ ALTER TABLE "category" ADD CONSTRAINT "table_catalog_pkey" PRIMARY KEY ("guid");
 -- Primary Key structure for table column_info
 -- ----------------------------
 ALTER TABLE "column_info" ADD CONSTRAINT "column_info_pkey" PRIMARY KEY ("column_guid");
+
+-- ----------------------------
+-- Primary Key structure for table data_standard
+-- ----------------------------
+ALTER TABLE "data_standard" ADD CONSTRAINT "data_standard_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Primary Key structure for table module
