@@ -10,33 +10,33 @@
 //
 //
 // ======================================================================
-
-package io.zeta.metaspace.model.metadata;
+package io.zeta.metaspace.model.datastandard;
 
 import java.io.Serializable;
 
-public class Parameters implements Serializable {
+public class DataStandardQuery implements Serializable {
 
     private String query;
+    private String categoryId;
     private int offset;
     private int limit;
     private String sortby;
     private String order;
 
-    public String getSortby() {
-        return sortby;
+    public String getQuery() {
+        return query;
     }
 
-    public void setSortby(String sortby) {
-        this.sortby = sortby;
+    public void setQuery(String query) {
+        this.query = query;
     }
 
-    public String getOrder() {
-        return order;
+    public String getCategoryId() {
+        return categoryId;
     }
 
-    public void setOrder(String order) {
-        this.order = order;
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
     }
 
     public int getOffset() {
@@ -55,11 +55,19 @@ public class Parameters implements Serializable {
         this.limit = limit;
     }
 
-    public String getQuery() {
-        return query;
+    public String getSortby() {
+        return sortby;
     }
 
-    public void setQuery(String query) {
-        this.query = query;
+    public void setSortby(String sortby) {
+        this.sortby = sortby;
+    }
+
+    public String getOrder() {
+        return order;
+    }
+
+    public void setOrder(String order) {
+        this.order = order;
     }
 }
