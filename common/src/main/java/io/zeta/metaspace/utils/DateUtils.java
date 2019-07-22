@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.utils;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -158,6 +159,10 @@ public class DateUtils {
     public static String formatDateTime(long timestamp) {
         LocalDateTime date = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
         return DATE_TIME.format(date);
+    }
+
+    public static Timestamp currentTimestamp() {
+        return new Timestamp(System.currentTimeMillis());
     }
 
 }
