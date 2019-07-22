@@ -12,17 +12,11 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 public interface UserDAO {
-    @Select("select 1 from users where userid=#{userid}")
-    public List<User> ifUserExists(String userid);
-
-    @Select("select 1 from users where userid=#{userid} and (userName is null or  account is null)")
-    public List<User> ifUserInfoNotExist(String userid);
+    @Select("select count(1) from users where userid=#{userid}")
+    public Integer ifUserExists(String userid);
 
     @Insert("insert into users(userid,username,account,roleid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId})")
     public int addUser(@Param("user") User user);
-
-    @Insert("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId})")
-    public int updateUserInfo(@Param("user") User user);
 
     @Select("select * from users where userId=#{userId}")
     public User getUser(@Param("userId") String userId);
@@ -70,13 +64,9 @@ public interface UserDAO {
             "    #{item}" +
             "    </foreach>" +
             " and tableguid=#{tableGuid}</script>")
-    public List<Integer> ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
+    public Integer ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
 
     @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
-
-    @Select("select account from users where userId=#{userId}")
-    public String getUserAccount(@Param("userId") String userId);
-
 
 }
