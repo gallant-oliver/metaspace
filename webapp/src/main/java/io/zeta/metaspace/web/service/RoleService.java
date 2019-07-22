@@ -72,7 +72,7 @@ public class RoleService {
             String userId = user.getUserId();
             role.setCreator(userId);
             role.setUpdater(userId);
-            if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
+            if (roleDAO.ifRole(role.getRoleName())>0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
             }
             roleDAO.addRoles(role);

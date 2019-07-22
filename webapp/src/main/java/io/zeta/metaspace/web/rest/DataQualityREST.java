@@ -16,19 +16,26 @@
  */
 package io.zeta.metaspace.web.rest;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
+
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +68,9 @@ public class DataQualityREST {
     @Autowired
     private DataQualityService dataQualityService;
 
+    private void log(String content) {
+        httpServletRequest.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据质量) " + content);
+    }
     /**
      * 添加模板
      *
@@ -69,8 +79,10 @@ public class DataQualityREST {
     @POST
     @Path("/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public Response addTemplate(Template template) throws AtlasBaseException {
         try {
+            log(template.getTemplateName());
             dataQualityService.addTemplate(template);
             return Response.status(200).entity("success").build();
         } catch (CannotCreateTransactionException e) {
@@ -93,8 +105,10 @@ public class DataQualityREST {
     @DELETE
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public Response deleteTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
+            log(templateId);
             dataQualityService.deleteTemplate(templateId);
             return Response.status(200).entity("success").build();
         } catch (CannotCreateTransactionException e) {
@@ -117,8 +131,10 @@ public class DataQualityREST {
     @PUT
     @Path("/template/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response putTemplate(@PathParam("templateId") String templateId, Template template) throws AtlasBaseException {
         try {
+            log(template.getTemplateName());
             dataQualityService.updateTemplate(templateId, template);
             return Response.status(200).entity("success").build();
         } catch (CannotCreateTransactionException e) {

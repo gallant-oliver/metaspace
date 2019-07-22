@@ -836,7 +836,7 @@ public class DataManageService {
                 if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                     String guid = entity.getGuid();
                     String name = getEntityAttribute(entity, "name");
-                    if (tableDAO.ifTableExists(guid).size() == 0) {
+                    if (tableDAO.ifTableExists(guid) == 0) {
                         TableInfo tableInfo = new TableInfo();
                         tableInfo.setTableGuid(guid);
                         tableInfo.setTableName(name);
@@ -899,7 +899,7 @@ public class DataManageService {
         List<Table> lists = tableNameAndDbNameByQuery.getLists();
         for (Table list : lists) {
             String tableId = list.getTableId();
-            if (tableDAO.ifTableExists(tableId).size() == 0) {
+            if (tableDAO.ifTableExists(tableId) == 0) {
                 TableInfo tableInfo = new TableInfo();
                 tableInfo.setTableGuid(tableId);
                 tableInfo.setTableName(list.getTableName());

@@ -48,7 +48,7 @@ public class UsersService {
         String userId = data.get("AccountGuid").toString();
         String account = data.get("LoginEmail").toString();
         String displayName = data.get("DisplayName").toString();
-        if (userDAO.ifUserExists(userId).size() == 0) {
+        if (userDAO.ifUserExists(userId) == 0) {
             User user = new User();
             user.setUserId(userId);
             user.setAccount(account);
@@ -162,11 +162,12 @@ public class UsersService {
         }
     }
 
-    public List<Integer> ifPrivilege(List<String> categoryGuid, String tableGuid) {
-        if (categoryGuid.size() > 0)
+    public Integer ifPrivilege(List<String> categoryGuid, String tableGuid) {
+        if (categoryGuid.size() > 0) {
             return userDAO.ifPrivilege(categoryGuid, tableGuid);
-        else
-            return new ArrayList<>();
+        } else {
+            return 0;
+        }
     }
 
     public Item getUserItems() throws AtlasBaseException {

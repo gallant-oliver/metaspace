@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.4.2</version>
+        <version>1.5.0</version>
     </parent>
     <artifactId>atlas-intg</artifactId>
     <description>Apache Atlas Integration</description>
@@ -30,7 +30,14 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
+
+      <dependency>
+        <groupId>org.glassfish.jersey.ext</groupId>
+        <artifactId>jersey-bean-validation</artifactId>
+        <version>2.2</version>
+      </dependency>
+
+      <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
         </dependency>

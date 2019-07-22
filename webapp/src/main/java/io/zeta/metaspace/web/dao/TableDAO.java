@@ -44,10 +44,9 @@ public interface TableDAO {
             "</script>"})
     public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
 
-    @Select("select 1 from tableinfo where tableguid=#{tableGuid}")
-    public List<Integer> ifTableExists(String tableGuid);
+    @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
+    public Integer ifTableExists(String tableGuid);
 
-    //@Select("select ownerId from table2owner where tableGuid=#{tableGuid}")
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
 

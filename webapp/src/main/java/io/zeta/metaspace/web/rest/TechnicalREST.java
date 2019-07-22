@@ -1,13 +1,17 @@
 package io.zeta.metaspace.web.rest;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
@@ -26,7 +30,9 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.List;
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 
@@ -43,6 +49,14 @@ public class TechnicalREST {
     @Autowired
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
+
+
+    @Context
+    private HttpServletRequest request;
+
+    private void log(String content) {
+        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(技术信息) " + content);
+    }
 
     /**
      * 添加关联表时搜库

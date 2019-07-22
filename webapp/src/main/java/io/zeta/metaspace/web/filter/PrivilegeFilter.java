@@ -87,8 +87,8 @@ public class PrivilegeFilter implements Filter {
                             for (RoleModulesCategories.Category category : categories) {
                                 if (category.isShow()) categoryGuids.add(category.getGuid());
                             }
-                            List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
-                            if (sum.size() > 0) {
+                            Integer sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
+                            if (sum > 0) {
                                 filterChain.doFilter(servletRequest, servletResponse);
                                 return;
                             } else {
