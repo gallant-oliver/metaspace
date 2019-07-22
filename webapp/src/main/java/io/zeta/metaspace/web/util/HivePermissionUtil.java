@@ -34,6 +34,7 @@ public class HivePermissionUtil {
                                              + "?" + "user=" + userName
                                              + "&" + "database=" + db
                                              + "&" + "table=" + table, map);
+                retryCount++;
             }
             if(Objects.nonNull(session)) {
                 Gson gson = new Gson();
