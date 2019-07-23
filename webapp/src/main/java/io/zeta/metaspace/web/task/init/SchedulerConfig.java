@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.task.init;
 
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
+import org.apache.atlas.annotation.ConditionalOnAtlasMethodProperty;
 import org.quartz.*;
 import org.quartz.ee.servlet.QuartzInitializerListener;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ public class SchedulerConfig {
      * 监听到工程的启动，在工程停止再启动时可以让已有的定时任务继续进行
      */
     @Bean
+    @ConditionalOnAtlasMethodProperty(property = "metaspace.quartz.task.enable")
     public QuartzInitializerListener executorListener() {
         return new QuartzInitializerListener();
     }
@@ -76,6 +78,7 @@ public class SchedulerConfig {
      *每晚十二点自动执行统计信息任务
      */
     @Bean
+    @ConditionalOnAtlasMethodProperty(property = "metaspace.quartz.task.enable")
     public String autoStatistics() throws IOException, SchedulerException {
         JobKey jobKey = new JobKey("统计信息任务", "元数据分析");
         if (scheduler.getJobDetail(jobKey) == null) {
@@ -95,6 +98,7 @@ public class SchedulerConfig {
      *每晚十二点自动执行统计信息任务
      */
     @Bean
+    @ConditionalOnAtlasMethodProperty(property = "metaspace.quartz.task.enable")
     public String autoHomeStatistics() throws IOException, SchedulerException {
         JobKey jobKey = new JobKey("首页统计信息任务", "系统数据分析");
         if (scheduler.getJobDetail(jobKey) == null) {
