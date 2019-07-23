@@ -25,13 +25,16 @@ import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -82,6 +85,9 @@ public class DataStandardREST {
 
     @Autowired
     private DataQualityService dataQualityService;
+
+    @Autowired
+    private DataManageService dataManageService;
 
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
 
@@ -255,4 +261,66 @@ public class DataStandardREST {
             }
         }
     }
+
+
+    /**
+     * 指定分类的目录列表
+     *
+     * @param categoryType
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{categoryType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
+        return dataManageService.getAll(categoryType);
+    }
+
+    /**
+     * 添加目录
+     *
+     * @param categoryInfo
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
+        log(categoryInfo.getName());
+        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
+    }
+
+    /**
+     * 删除目录
+     *
+     * @param categoryGuid
+     * @return
+     * @throws Exception
+     */
+    @DELETE
+    @Path("/{categoryGuid}")
+    public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+        log(categoryGuid);
+        dataManageService.deleteCategory(categoryGuid);
+    }
+
+    /**
+     * 修改目录信息
+     *
+     * @param categoryInfo
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+        log(categoryInfo.getName());
+        dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
+    }
+
+
 }

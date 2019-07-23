@@ -82,7 +82,7 @@ public class DataStandardService {
         DataStandard dataStandard = dataStandardDAO.getById(id);
         String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
         dataStandard.setPath(path);
-        return dataStandardDAO.getById(id);
+        return dataStandard;
     }
 
     public List<DataStandard> getByNumber(String number) throws AtlasBaseException {
