@@ -61,69 +61,6 @@ public class HomePageREST {
     }
 
     /**
-     * 获取系统角色用户数与占比topN
-     *
-     * @param parameters
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/role/rank")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RoleUseInfo> getRoleUsedInfo(Parameters parameters) throws AtlasBaseException {
-        try {
-            return homePageService.getRoleRelatedInfo(parameters);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
-    }
-
-    /**
-     * 获取角色列表
-     *
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/roles")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Role> getAllRole() throws AtlasBaseException {
-        try {
-            return homePageService.getAllRole();
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
-    }
-
-    /**
-     * 获取系统角色的用户
-     *
-     * @param roleId
-     * @param parameters
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/role/{roleId}/users")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<User> getUsersByRoleId(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
-        try {
-            return homePageService.getUserListByRoleId(roleId, parameters);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
-    }
-
-    /**
      * 获取已补充/未补充技术信息的业务对象占比
      *
      * @return
