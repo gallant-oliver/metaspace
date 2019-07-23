@@ -271,7 +271,7 @@ public class DataStandardREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{categoryType}")
+    @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
@@ -288,6 +288,7 @@ public class DataStandardREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/category")
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         log(categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
@@ -301,7 +302,7 @@ public class DataStandardREST {
      * @throws Exception
      */
     @DELETE
-    @Path("/{categoryGuid}")
+    @Path("/category/{categoryGuid}")
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         log(categoryGuid);
         dataManageService.deleteCategory(categoryGuid);
@@ -317,6 +318,7 @@ public class DataStandardREST {
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/category")
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         log(categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
