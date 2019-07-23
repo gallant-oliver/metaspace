@@ -1,23 +1,22 @@
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.Item;
-import io.zeta.metaspace.utils.SSLClient;
-import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.service.UsersService;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
-import org.apache.atlas.web.service.UserService;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -26,10 +25,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Path("user")
 @Singleton
@@ -74,7 +69,7 @@ public class AdminREST {
             }
             HashMap<String, String> header = new HashMap<>();
             header.put("ticket", httpServletRequest.getHeader("X-SSO-FullticketId"));
-            SSLClient.doDelete(logoutURL, header);
+            OKHttpClient.doDelete(logoutURL, header);
             return "success";
         } finally {
             AtlasPerfTracer.log(perf);
