@@ -12,20 +12,26 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/1/10 17:17
+ * @date 2019/1/12 10:13
  */
-package io.zeta.metaspace.model.dataquality;
+package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+/**
+ * 规则问题级别
+ */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum CheckExpression {
+public enum RuleLevelEnum {
 
-    EQU(0,"等于") , NEQ(1,"不等于"), GTR(2, "大于"), GER(3, "大于等于"), LSS(4, "小于"), LEQ(5, "小于等于");
+    NONAL(1, "普通"),
+    IMPORTANT(2, "重要"),
+    VERY_IMPORTANT(3, "非常重要");
+
     public Integer code;
     public String desc;
 
-    CheckExpression(Integer code, String desc) {
+    RuleLevelEnum(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }
@@ -46,16 +52,16 @@ public enum CheckExpression {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static RuleLevelEnum getRuleCheckTypeByCode(Integer code) {
+        for (RuleLevelEnum rc : RuleLevelEnum.values()) {
+            if (rc.code == code) {
+                return rc;
+            }
         }
-        return defaultExpression;
+        throw new RuntimeException();
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getRuleCheckTypeByCode(code).desc;
     }
 }

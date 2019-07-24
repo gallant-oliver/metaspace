@@ -16,11 +16,14 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/1/12 10:13
  */
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum RuleCheckType {
     FIX(0,"固定值") , FLU(1,"波动值");
     public Integer code;

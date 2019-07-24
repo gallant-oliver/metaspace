@@ -77,7 +77,7 @@ public class WarningGroupREST {
         log(warningGroup.getName());
         List<WarningGroup> oldList = warningGroupService.getByName(warningGroup.getName());
         if (!oldList.isEmpty()) {
-            throw new AtlasBaseException("规则编号已存在");
+            throw new AtlasBaseException("告警组名已存在");
         }
         warningGroupService.insert(warningGroup);
     }

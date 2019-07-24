@@ -19,6 +19,8 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,7 @@ public class WarningGroupService {
         warningGroup.setId(UUIDUtils.alphaUUID());
         warningGroup.setCreateTime(DateUtils.currentTimestamp());
         warningGroup.setUpdateTime(DateUtils.currentTimestamp());
+        warningGroup.setCreator(AdminUtils.getUserData().getUserId());
         warningGroup.setDelete(false);
         return warningGroupDAO.insert(warningGroup);
     }
@@ -64,7 +67,10 @@ public class WarningGroupService {
 
     public int update(WarningGroup warningGroup) throws AtlasBaseException {
         warningGroup.setUpdateTime(DateUtils.currentTimestamp());
-        return warningGroupDAO.update(warningGroup);
+
+        WarningGroup old = getById(warningGroup.getId());
+        BeansUtil.copyPropertiesIgnoreNull(warningGroup, old);
+        return warningGroupDAO.update(old);
     }
 
     public PageResult<WarningGroup> search(Parameters parameters) {

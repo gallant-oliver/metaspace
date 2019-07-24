@@ -20,6 +20,8 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +45,10 @@ public class RuleService {
         rule.setId(UUIDUtils.alphaUUID());
         rule.setCreateTime(DateUtils.currentTimestamp());
         rule.setUpdateTime(DateUtils.currentTimestamp());
+        rule.setCreator(AdminUtils.getUserData().getUserId());
         rule.setDelete(false);
         return ruleDAO.insert(rule);
     }
-
 
     public Rule getById(String id) throws AtlasBaseException {
         Rule rule = ruleDAO.getById(id);
@@ -55,8 +57,8 @@ public class RuleService {
         return rule;
     }
 
-    public List<Rule> getByCode(String number) throws AtlasBaseException {
-        return ruleDAO.getByCode(number);
+    public List<Rule> getByCode(String code) throws AtlasBaseException {
+        return ruleDAO.getByCode(code);
     }
 
     public void deleteById(String number) throws AtlasBaseException {
@@ -69,23 +71,25 @@ public class RuleService {
 
     public int update(Rule rule) throws AtlasBaseException {
         rule.setUpdateTime(DateUtils.currentTimestamp());
-        return ruleDAO.update(rule);
+        Rule old = getById(rule.getId());
+        BeansUtil.copyPropertiesIgnoreNull(rule, old);
+        return ruleDAO.update(old);
     }
 
-    public PageResult<Rule> queryPageByCatetoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
-        List<Rule> list = queryByCatetoryId(categoryId, parameters);
+    public PageResult<Rule> queryPageByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
+        List<Rule> list = queryByCatetoryId(categoryId, params);
         PageResult<Rule> pageResult = new PageResult<>();
         long sum = ruleDAO.countByByCatetoryId(categoryId);
-        pageResult.setOffset(parameters.getOffset());
+        pageResult.setOffset(params.getOffset());
         pageResult.setSum(sum);
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
 
-    public List<Rule> queryByCatetoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
+    private List<Rule> queryByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
         String path = CategoryRelationUtils.getPath(categoryId);
-        List<Rule> list = ruleDAO.queryByCatetoryId(categoryId, parameters)
+        List<Rule> list = ruleDAO.queryByCatetoryId(categoryId, params)
                 .stream()
                 .map(rule -> {
                     rule.setPath(path);
@@ -94,8 +98,8 @@ public class RuleService {
         return list;
     }
 
-    public PageResult<Rule> search(Parameters parameters) {
-        List<Rule> list = ruleDAO.search(parameters)
+    public PageResult<Rule> search(Parameters params) {
+        List<Rule> list = ruleDAO.search(params)
                 .stream()
                 .map(rule -> {
                     String path = null;
@@ -109,8 +113,8 @@ public class RuleService {
                 }).collect(Collectors.toList());
 
         PageResult<Rule> pageResult = new PageResult<>();
-        long sum = ruleDAO.countBySearch(parameters.getQuery());
-        pageResult.setOffset(parameters.getOffset());
+        long sum = ruleDAO.countBySearch(params.getQuery());
+        pageResult.setOffset(params.getOffset());
         pageResult.setSum(sum);
         pageResult.setCount(list.size());
         pageResult.setLists(list);

@@ -6,7 +6,7 @@ public enum CategoryType {
     BUSINESS(2, "业务数据"),
     DATA_STANDARD(3, "数据标准"),
     DATA_QUALITY_RULE_TEMPLATE(4, "数据质量规则模版"),
-    DATA_QUALITY_RULE(4, "数据质量规则");
+    DATA_QUALITY_RULE(5, "数据质量规则");
 
     private Integer type;
     private String description;

@@ -21,7 +21,7 @@ public class WarningGroup {
 
     private String id;
     private String name;
-    private String type;
+    private Integer type;
     private String contacts;
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -47,11 +47,11 @@ public class WarningGroup {
         this.name = name;
     }
 
-    public String getType() {
+    public Integer getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Integer type) {
         this.type = type;
     }
 

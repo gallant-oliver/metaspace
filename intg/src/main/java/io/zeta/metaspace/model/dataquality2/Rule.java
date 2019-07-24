@@ -24,11 +24,11 @@ public class Rule {
     private String name;
     private String code;
     private String categoryId;
-    private String enable;
+    private boolean enable;
     private String description;
-    private String level;
-    private String checkType;
-    private String checkExpressionType;
+    private Integer level;
+    private Integer checkType;
+    private Integer checkExpressionType;
     private String checkThreshold;
     private String creator;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -46,21 +46,6 @@ public class Rule {
         this.id = id;
     }
 
-    public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public String getLevel() {
-        return level;
-    }
-
-    public void setLevel(String level) {
-        this.level = level;
-    }
 
     public String getRuleTemplateId() {
         return ruleTemplateId;
@@ -94,11 +79,11 @@ public class Rule {
         this.categoryId = categoryId;
     }
 
-    public String getEnable() {
+    public boolean isEnable() {
         return enable;
     }
 
-    public void setEnable(String enable) {
+    public void setEnable(boolean enable) {
         this.enable = enable;
     }
 
@@ -110,19 +95,27 @@ public class Rule {
         this.description = description;
     }
 
-    public String getCheckType() {
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
+    }
+
+    public Integer getCheckType() {
         return checkType;
     }
 
-    public void setCheckType(String checkType) {
+    public void setCheckType(Integer checkType) {
         this.checkType = checkType;
     }
 
-    public String getCheckExpressionType() {
+    public Integer getCheckExpressionType() {
         return checkExpressionType;
     }
 
-    public void setCheckExpressionType(String checkExpressionType) {
+    public void setCheckExpressionType(Integer checkExpressionType) {
         this.checkExpressionType = checkExpressionType;
     }
 
@@ -132,6 +125,14 @@ public class Rule {
 
     public void setCheckThreshold(String checkThreshold) {
         this.checkThreshold = checkThreshold;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
     }
 
     public Timestamp getCreateTime() {

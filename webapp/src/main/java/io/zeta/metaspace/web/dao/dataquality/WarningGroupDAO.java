@@ -11,10 +11,10 @@ import java.util.List;
 public interface WarningGroupDAO {
 
     @Insert({" insert into warning_group(id,name,type,contacts,description,create_time,update_time,creator,delete) ",
-             " values(#{id},#{name},#{type},#{contacts},#{description},#{create_time},#{update_time},#{creator},#{delete})"})
+             " values(#{id},#{name},#{type},#{contacts},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
     public int insert(WarningGroup warningGroup);
 
-    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},description=#{description},update_time=#{update_time}")
+    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},description=#{description},update_time=#{updateTime}")
     public int update(WarningGroup warningGroup);
 
     @Select({" select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
@@ -55,14 +55,8 @@ public interface WarningGroupDAO {
     @Select({"<script>",
              " select count(1) ",
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false ",
-             " <if test=\"params.query != null and params.query!=''\">",
-             " and (a.name like '%${params.query}%' ESCAPE '/' ) ",
-             " </if>",
-             " <if test='params.sortby != null and params.order != null'>",
-             " order by ${params.sortby} ${params.order}",
-             " </if>",
-             " <if test='params.limit != null'>",
-             " limit #{params.limit} offset #{params.offset}",
+             " <if test=\"query != null and query!=''\">",
+             " and (a.name like '%${query}%' ESCAPE '/' ) ",
              " </if>",
              " </script>"})
     public long countBySearch(@Param("query") String query);
