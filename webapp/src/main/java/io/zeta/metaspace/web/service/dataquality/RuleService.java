@@ -39,7 +39,7 @@ public class RuleService {
     private static final Logger LOG = LoggerFactory.getLogger(RuleService.class);
 
     @Autowired
-    RuleDAO ruleDAO;
+    private RuleDAO ruleDAO;
 
     public int insert(Rule rule) throws AtlasBaseException {
         rule.setId(UUIDUtils.alphaUUID());

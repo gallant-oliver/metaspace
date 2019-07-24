@@ -23,12 +23,14 @@ public class WarningGroup {
     private String name;
     private Integer type;
     private String contacts;
+    private String categoryId;
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     private String creator;
+    private String path;
     private boolean delete;
 
     public String getId() {
@@ -63,6 +65,14 @@ public class WarningGroup {
         this.contacts = contacts;
     }
 
+    public String getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -93,6 +103,14 @@ public class WarningGroup {
 
     public void setCreator(String creator) {
         this.creator = creator;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public boolean isDelete() {

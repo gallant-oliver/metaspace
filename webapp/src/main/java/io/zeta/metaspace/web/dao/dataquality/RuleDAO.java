@@ -45,7 +45,7 @@ public interface RuleDAO {
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != null'>",
+             " <if test='params.limit != null && params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </if>",
@@ -67,7 +67,7 @@ public interface RuleDAO {
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != null'>",
+             " <if test='params.limit != null && params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})

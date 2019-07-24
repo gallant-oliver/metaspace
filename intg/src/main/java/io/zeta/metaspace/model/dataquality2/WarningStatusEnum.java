@@ -18,20 +18,17 @@ package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-/**
- * 规则问题级别
- */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum RuleLevelEnum {
+public enum WarningStatusEnum {
 
-    NONAL(1, "普通"),
-    IMPORTANT(2, "重要"),
-    VERY_IMPORTANT(3, "非常重要");
+    NO(0, "无告警"),
+    TODO(1, "待处理"),
+    DONE(2, "已处理");
 
     public Integer code;
     public String desc;
 
-    RuleLevelEnum(Integer code, String desc) {
+    WarningStatusEnum(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }
@@ -52,8 +49,8 @@ public enum RuleLevelEnum {
         this.desc = desc;
     }
 
-    public static RuleLevelEnum getRuleCheckTypeByCode(Integer code) {
-        for (RuleLevelEnum rc : RuleLevelEnum.values()) {
+    public static WarningStatusEnum getRuleCheckTypeByCode(Integer code) {
+        for (WarningStatusEnum rc : WarningStatusEnum.values()) {
             if (rc.code == code) {
                 return rc;
             }
