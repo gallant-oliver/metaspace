@@ -26,7 +26,6 @@ public class Rule {
     private String categoryId;
     private boolean enable;
     private String description;
-    private Integer level;
     private Integer checkType;
     private Integer checkExpressionType;
     private String checkThreshold;
@@ -93,14 +92,6 @@ public class Rule {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Integer getLevel() {
-        return level;
-    }
-
-    public void setLevel(Integer level) {
-        this.level = level;
     }
 
     public Integer getCheckType() {

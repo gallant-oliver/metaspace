@@ -11,7 +11,7 @@ import java.util.List;
 public interface WarningGroupDAO {
 
     @Insert({" insert into warning_group(id,name,type,contacts,category_id,description,create_time,update_time,creator,delete) ",
-             " values(#{id},#{name},#{type},#{contacts},#{category_id},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
+             " values(#{id},#{name},#{type},#{contacts},#{categoryId},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
     public int insert(WarningGroup warningGroup);
 
     @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},category_id=#{categoryId},description=#{description},update_time=#{updateTime}")
@@ -46,7 +46,7 @@ public interface WarningGroupDAO {
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != null && params.limit != -1'>",
+             " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})

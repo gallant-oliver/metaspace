@@ -58,10 +58,7 @@ public class WarningGroupService {
     }
 
     public WarningGroup getByName(String name) throws AtlasBaseException {
-        WarningGroup warningGroup = warningGroupDAO.getByName(name);
-        String path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-        warningGroup.setPath(path);
-        return warningGroup;
+        return warningGroupDAO.getByName(name);
     }
 
     public void deleteById(String number) throws AtlasBaseException {
