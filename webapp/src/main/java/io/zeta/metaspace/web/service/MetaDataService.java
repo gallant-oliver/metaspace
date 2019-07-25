@@ -944,6 +944,7 @@ public class MetaDataService {
         try {
             switch (databaseTypeEntity) {
                 case HIVE:
+                    hiveMetaStoreBridgeUtils.getStartTime().set(System.currentTimeMillis());
                     hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
                     break;
                 case MYSQL:
