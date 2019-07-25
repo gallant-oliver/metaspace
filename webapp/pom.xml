@@ -702,6 +702,45 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <configuration>
+                    <installDirectory>target</installDirectory>
+                    <workingDirectory>src/main/dashboard</workingDirectory>
+                    <npmRegistryURL>http://registry.npm.gridsum.com/</npmRegistryURL>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <npmVersion>${npm.version}</npmVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
@@ -717,6 +756,12 @@
                         But mvn 3.3.x includes them for some reason. So, excluding them explicitly here -->
                         WEB-INF/lib/hbase*.jar,WEB-INF/lib/junit*.jar,${packages.to.exclude}
                     </packagingExcludes>
+                    <webResources>
+                        <resource>
+                            <!--前端代码编译目标路径-->
+                            <directory>src/main/dashboard/dist</directory>
+                        </resource>
+                    </webResources>
                 </configuration>
             </plugin>
 
