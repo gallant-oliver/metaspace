@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.AtomicTask;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
+import io.zeta.metaspace.model.dataquality2.RuleExecuteStatus;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
@@ -87,8 +88,9 @@ public class QuartzJob implements Job {
     public void execute(JobExecutionContext jobExecutionContext) {
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
+            String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
             //获取原子任务列表
-            List<AtomicTask> taskList = taskManageDAO.getObjectWithRuleRelation(key.getName());
+            List<AtomicTask> taskList = taskManageDAO.getObjectWithRuleRelation(taskId);
             if (Objects.isNull(taskList)) {
                 quartzManager.handleNullErrorTask(key);
                 LOG.warn("任务名为" + key.getName() + "所属任务已被删除,无法继续执行任务");
@@ -97,7 +99,7 @@ public class QuartzJob implements Job {
             //补全数据
             completeTaskInformation(taskList);
 
-            executeAtomicTaskList(null, taskList);
+            executeAtomicTaskList(taskId, taskList);
         } catch (Exception e) {
             LOG.error(e.toString());
         }
@@ -515,64 +517,66 @@ public class QuartzJob implements Job {
         return ruleStatus;
     }
 
-    public RuleStatus getCalculateStatus(RuleCheckType ruleCheckTypeByCode, CheckExpression expressionByCode, float resultValue, String checkThreshold) {
-        RuleStatus ruleStatus = null;
+    public RuleExecuteStatus getCalculateStatus(RuleCheckType ruleCheckTypeByCode, CheckExpression expressionByCode, float resultValue, float checkThresholdMinValue, float checkThresholdMaxValue) {
+        RuleExecuteStatus ruleStatus = null;
         try {
             if (FIX == ruleCheckTypeByCode) {
-                float checkThresholdValue = Float.parseFloat(checkThreshold);
                 switch (expressionByCode) {
                     case EQU: {
-                        if (checkThresholdValue == 0) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (checkThresholdMaxValue == 0) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                     case NEQ: {
-                        if (resultValue != checkThresholdValue) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (resultValue != checkThresholdMaxValue) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                     case GTR: {
-                        if (resultValue > checkThresholdValue) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (resultValue > checkThresholdMaxValue) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                     case GER: {
-                        if (resultValue >= checkThresholdValue) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (resultValue >= checkThresholdMaxValue) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                     case LSS: {
-                        if (resultValue < checkThresholdValue) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (resultValue < checkThresholdMaxValue) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                     case LEQ: {
-                        if (resultValue <= checkThresholdValue) {
-                            ruleStatus = RuleStatus.NORMAL;
+                        if (resultValue <= checkThresholdMaxValue) {
+                            ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
-                            ruleStatus = RuleStatus.RED;
+                            ruleStatus = RuleExecuteStatus.WARNING;
                         }
                         break;
                     }
                 }
             } else if (FLU == ruleCheckTypeByCode) {
-
-
+                if(resultValue>= checkThresholdMinValue && resultValue<=checkThresholdMaxValue) {
+                    ruleStatus = RuleExecuteStatus.NORMAL;
+                } else {
+                    ruleStatus = RuleExecuteStatus.WARNING;
+                }
             }
         } catch (Exception e) {
 

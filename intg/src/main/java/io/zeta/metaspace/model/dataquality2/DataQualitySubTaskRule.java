@@ -29,14 +29,17 @@ public class DataQualitySubTaskRule {
     private String id;
     private String subTaskId;
     private String ruleId;
-    private String checkThreshold;
+    private Float checkThresholdMinValue;
+    private Float checkThresholdMaxValue;
     private Integer orangeCheckType;
     private Integer orangeCheckExpression;
-    private String orangeThreshold;
+    private Float orangeThresholdMinValue;
+    private Float orangeThresholdMaxValue;
     private String orangeWarningGroupIds;
     private Integer redCheckType;
     private Integer redCheckExpression;
-    private String redThreshold;
+    private Float redThresholdMinValue;
+    private Float redThresholdMaxValue;
     private String redWarningGroupIds;
     private Integer sequence;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -69,12 +72,20 @@ public class DataQualitySubTaskRule {
         this.ruleId = ruleId;
     }
 
-    public String getCheckThreshold() {
-        return checkThreshold;
+    public Float getCheckThresholdMinValue() {
+        return checkThresholdMinValue;
     }
 
-    public void setCheckThreshold(String checkThreshold) {
-        this.checkThreshold = checkThreshold;
+    public void setCheckThresholdMinValue(Float checkThresholdMinValue) {
+        this.checkThresholdMinValue = checkThresholdMinValue;
+    }
+
+    public Float getCheckThresholdMaxValue() {
+        return checkThresholdMaxValue;
+    }
+
+    public void setCheckThresholdMaxValue(Float checkThresholdMaxValue) {
+        this.checkThresholdMaxValue = checkThresholdMaxValue;
     }
 
     public Integer getOrangeCheckType() {
@@ -93,12 +104,20 @@ public class DataQualitySubTaskRule {
         this.orangeCheckExpression = orangeCheckExpression;
     }
 
-    public String getOrangeThreshold() {
-        return orangeThreshold;
+    public Float getOrangeThresholdMinValue() {
+        return orangeThresholdMinValue;
     }
 
-    public void setOrangeThreshold(String orangeThreshold) {
-        this.orangeThreshold = orangeThreshold;
+    public void setOrangeThresholdMinValue(Float orangeThresholdMinValue) {
+        this.orangeThresholdMinValue = orangeThresholdMinValue;
+    }
+
+    public Float getOrangeThresholdMaxValue() {
+        return orangeThresholdMaxValue;
+    }
+
+    public void setOrangeThresholdMaxValue(Float orangeThresholdMaxValue) {
+        this.orangeThresholdMaxValue = orangeThresholdMaxValue;
     }
 
     public String getOrangeWarningGroupIds() {
@@ -125,12 +144,20 @@ public class DataQualitySubTaskRule {
         this.redCheckExpression = redCheckExpression;
     }
 
-    public String getRedThreshold() {
-        return redThreshold;
+    public Float getRedThresholdMinValue() {
+        return redThresholdMinValue;
     }
 
-    public void setRedThreshold(String redThreshold) {
-        this.redThreshold = redThreshold;
+    public void setRedThresholdMinValue(Float redThresholdMinValue) {
+        this.redThresholdMinValue = redThresholdMinValue;
+    }
+
+    public Float getRedThresholdMaxValue() {
+        return redThresholdMaxValue;
+    }
+
+    public void setRedThresholdMaxValue(Float redThresholdMaxValue) {
+        this.redThresholdMaxValue = redThresholdMaxValue;
     }
 
     public String getRedWarningGroupIds() {

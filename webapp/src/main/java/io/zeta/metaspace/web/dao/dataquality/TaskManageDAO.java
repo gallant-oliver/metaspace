@@ -178,14 +178,17 @@ public interface TaskManageDAO {
              " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id from" ,
              " (select sub_rule.*,data_quality_rule.rule_template_id from data_quality_rule join",
              " (select ruleid,subtask_id from data_quality_sub_task_rule where subtask_id in",
-             " (select id from data_quality_sub_task where task_id=(select id from data_quality_task where qrtz_job=#{qrtzName}'))) sub_rule on sub_rule.ruleid=data_quality_rule.id) template_rule",
+             " (select id from data_quality_sub_task where task_id=#{taskId})) sub_rule on sub_rule.ruleid=data_quality_rule.id) template_rule",
              " join",
              " (select object_id,subtask_id from data_quality_sub_task_object where subtask_id in",
-             " (select id from data_quality_sub_task where task_id=(select id from data_quality_task where qrtz_job=#{qrtzName}))) obj",
+             " (select id from data_quality_sub_task where task_id=#{taskId})) obj",
              " on template_rule.subtask_id=obj.subtask_id) relation",
              " on relation.rule_template_id=data_quality_rule_template.id",
              " </script>"})
-    public List<AtomicTask> getObjectWithRuleRelation(@Param("qrtzName")String qrtzName);
+    public List<AtomicTask> getObjectWithRuleRelation(@Param("taskId")String taskId);
+
+    @Select("select id from data_quality_task where qrtz_job=#{qrtzName}")
+    public String getTaskIdByQrtzName(@Param("qrtzName")String qrtzName);
 
     @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{guid}")
     public Table getDbAndTableName(@Param("guid")String guid);
