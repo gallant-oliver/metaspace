@@ -28,7 +28,8 @@ public class Rule {
     private String description;
     private Integer checkType;
     private Integer checkExpressionType;
-    private String checkThreshold;
+    private Float checkThresholdMinValue;
+    private Float checkThresholdMaxValue;
     private String creator;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
@@ -110,12 +111,20 @@ public class Rule {
         this.checkExpressionType = checkExpressionType;
     }
 
-    public String getCheckThreshold() {
-        return checkThreshold;
+    public Float getCheckThresholdMinValue() {
+        return checkThresholdMinValue;
     }
 
-    public void setCheckThreshold(String checkThreshold) {
-        this.checkThreshold = checkThreshold;
+    public void setCheckThresholdMinValue(Float checkThresholdMinValue) {
+        this.checkThresholdMinValue = checkThresholdMinValue;
+    }
+
+    public Float getCheckThresholdMaxValue() {
+        return checkThresholdMaxValue;
+    }
+
+    public void setCheckThresholdMaxValue(Float checkThresholdMaxValue) {
+        this.checkThresholdMaxValue = checkThresholdMaxValue;
     }
 
     public String getCreator() {
