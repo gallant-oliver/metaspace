@@ -17,7 +17,7 @@
 package io.zeta.metaspace.model.dataquality;
 
 public enum RuleStatus {
-    NORMAL(0,"正常") , ORANGE(1,"橙色"), RED(2, "红色");
+    NORMAL(0,"正常") , ORANGE(1,"橙色"), RED(2, "红色"), FAILURE(-1, "失败") ;
     private Integer code;
     private String desc;
 
