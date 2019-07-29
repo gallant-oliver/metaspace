@@ -19,6 +19,9 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
+import io.zeta.metaspace.web.service.CategoryRelationUtils;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -35,23 +39,26 @@ public class WarningGroupService {
     private static final Logger LOG = LoggerFactory.getLogger(WarningGroupService.class);
 
     @Autowired
-    WarningGroupDAO warningGroupDAO;
+    private WarningGroupDAO warningGroupDAO;
 
     public int insert(WarningGroup warningGroup) throws AtlasBaseException {
         warningGroup.setId(UUIDUtils.alphaUUID());
         warningGroup.setCreateTime(DateUtils.currentTimestamp());
         warningGroup.setUpdateTime(DateUtils.currentTimestamp());
+        warningGroup.setCreator(AdminUtils.getUserData().getUserId());
         warningGroup.setDelete(false);
         return warningGroupDAO.insert(warningGroup);
     }
 
-
     public WarningGroup getById(String id) throws AtlasBaseException {
-        return warningGroupDAO.getById(id);
+        WarningGroup warningGroup = warningGroupDAO.getById(id);
+        String path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
+        warningGroup.setPath(path);
+        return warningGroup;
     }
 
-    public List<WarningGroup> getByName(String number) throws AtlasBaseException {
-        return warningGroupDAO.getByName(number);
+    public WarningGroup getByName(String name) throws AtlasBaseException {
+        return warningGroupDAO.getByName(name);
     }
 
     public void deleteById(String number) throws AtlasBaseException {
@@ -64,11 +71,23 @@ public class WarningGroupService {
 
     public int update(WarningGroup warningGroup) throws AtlasBaseException {
         warningGroup.setUpdateTime(DateUtils.currentTimestamp());
-        return warningGroupDAO.update(warningGroup);
+        WarningGroup old = getById(warningGroup.getId());
+        BeansUtil.copyPropertiesIgnoreNull(warningGroup, old);
+        return warningGroupDAO.update(old);
     }
 
     public PageResult<WarningGroup> search(Parameters parameters) {
-        List<WarningGroup> list = warningGroupDAO.search(parameters);
+        List<WarningGroup> list = warningGroupDAO.search(parameters).stream()
+                .map(warningGroup -> {
+                    String path = null;
+                    try {
+                        path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
+                    } catch (AtlasBaseException e) {
+                        LOG.error(e.getMessage(), e);
+                    }
+                    warningGroup.setPath(path);
+                    return warningGroup;
+                }).collect(Collectors.toList());
         PageResult<WarningGroup> pageResult = new PageResult<>();
         long sum = warningGroupDAO.countBySearch(parameters.getQuery());
         pageResult.setOffset(parameters.getOffset());

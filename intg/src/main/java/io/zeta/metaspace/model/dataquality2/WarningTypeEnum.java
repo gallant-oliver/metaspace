@@ -12,20 +12,23 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/1/10 17:17
+ * @date 2019/1/12 10:13
  */
-package io.zeta.metaspace.model.dataquality;
+package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum CheckExpression {
+public enum WarningTypeEnum {
 
-    EQU(0,"等于") , NEQ(1,"不等于"), GTR(2, "大于"), GER(3, "大于等于"), LSS(4, "小于"), LEQ(5, "小于等于");
+    SYSTEM(0, "系统"),
+    EMAIL(1, "邮件"),
+    MESSAGE(2, "短信");
+
     public Integer code;
     public String desc;
 
-    CheckExpression(Integer code, String desc) {
+    WarningTypeEnum(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }
@@ -46,16 +49,16 @@ public enum CheckExpression {
         this.desc = desc;
     }
 
-    public static CheckExpression getExpressionByCode(Integer code) {
-        CheckExpression defaultExpression = CheckExpression.EQU;
-        for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
-                return ce;
+    public static WarningTypeEnum getRuleCheckTypeByCode(Integer code) {
+        for (WarningTypeEnum rc : WarningTypeEnum.values()) {
+            if (rc.code == code) {
+                return rc;
+            }
         }
-        return defaultExpression;
+        throw new RuntimeException();
     }
 
     public static String getDescByCode(Integer code) {
-        return getExpressionByCode(code).desc;
+        return getRuleCheckTypeByCode(code).desc;
     }
 }

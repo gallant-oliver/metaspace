@@ -10,20 +10,20 @@ import java.util.List;
 
 public interface RuleDAO {
 
-    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,level,check_type,check_expression_type,check_threshold,create_time,update_time,delete) " +
-            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThreshold},#{createTime},#{updateTime},#{delete})")
+    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold,creator,create_time,update_time,delete) " +
+            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThreshold},#{creator},#{createTime},#{updateTime},#{delete})")
     public int insert(Rule rule);
 
     @Insert(" update data_quality_rule set " +
-            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},level=#{level},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold=#{checkThreshold},update_time=#{update_time}")
+            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold=#{checkThreshold},update_time=#{updateTime}")
     public int update(Rule rule);
 
-    @Select({" select a.id,a.rule_template_id as rule_template_id,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.level,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false "})
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and id=#{id}"})
     public Rule getById(@Param("id") String id);
 
-    @Select({" select a.id,a.rule_template_id as rule_template_id,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.level,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and code = #{code} "})
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} "})
     public List<Rule> getByCode(@Param("code") String code);
 
     @Select("update data_quality_rule set delete=true where id=#{id}")
@@ -39,13 +39,13 @@ public interface RuleDAO {
 
 
     @Select({"<script>",
-             " select a.id,a.rule_template_id as rule_template_id,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.level,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.categoryid=#{categoryId} ",
+             " select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId} ",
              " <if test='params != null'>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != null'>",
+             " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </if>",
@@ -54,20 +54,12 @@ public interface RuleDAO {
 
 
     @Select({"<script>",
-             " select count(1) from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.categoryid=#{categoryId} ",
-             " <if test='params != null'>",
-             " <if test='params.sortby != null and params.order != null'>",
-             " order by ${params.sortby} ${params.order}",
-             " </if>",
-             " <if test='params.limit != null'>",
-             " limit #{params.limit} offset #{params.offset}",
-             " </if>",
-             " </if>",
+             " select count(1) from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId} ",
              " </script>"})
     public long countByByCatetoryId(@Param("categoryId") String categoryId);
 
     @Select({"<script>",
-             " select a.id,a.rule_template_id as rule_template_id,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.level,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold as checkThreshold,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (name like '%${params.query}%' ESCAPE '/' or code like '%${params.query}%' ESCAPE '/' ) ",
@@ -75,7 +67,7 @@ public interface RuleDAO {
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
              " </if>",
-             " <if test='params.limit != null'>",
+             " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
@@ -83,14 +75,8 @@ public interface RuleDAO {
 
     @Select({"<script>",
              " select count(1) from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false ",
-             " <if test=\"params.query != null and params.query!=''\">",
-             " and (name like '%${params.query}%' ESCAPE '/' or code like '%${params.query}%' ESCAPE '/' ) ",
-             " </if>",
-             " <if test='params.sortby != null and params.order != null'>",
-             " order by ${params.sortby} ${params.order}",
-             " </if>",
-             " <if test='params.limit != null'>",
-             " limit #{params.limit} offset #{params.offset}",
+             " <if test=\"query != null and query!=''\">",
+             " and (name like '%${query}%' ESCAPE '/' or code like '%${query}%' ESCAPE '/' ) ",
              " </if>",
              " </script>"})
     public long countBySearch(@Param("query") String query);
