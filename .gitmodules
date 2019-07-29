@@ -2,3 +2,4 @@
 	path = webapp/src/main/dashboard
 	url = https://gitlab.gridsum.com/zeta/dev/metaspace/metaspace-ui.git
 	branch = develop
+	ignore = dirty
