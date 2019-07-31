@@ -277,12 +277,9 @@ public class RoleService {
             List<String> users = userWithRole.getUserIds();
             for (String userId : users) {
                 String realRoleId = usersService.getRoleIdByUserId(userId);
-                if (realRoleId.equals("1")) {
+                if (("1").equals(realRoleId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
-                /*if(!roleId.equals(realRoleId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色错误");
-                }*/
             }
             if (users.size() > 0) {
                 roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
