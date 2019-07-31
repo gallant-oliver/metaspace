@@ -22,15 +22,19 @@ package io.zeta.metaspace.web.service.dataquality;
  * @date 2019/7/24 10:29
  */
 
+import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
+import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
+import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
+import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -39,8 +43,10 @@ import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.solr.metrics.AltBufferPoolMetricSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -77,8 +84,20 @@ public class TaskManageService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-            PageResult<TaskHeader> pageResult = new PageResult<>();
+            if(Objects.nonNull(list)) {
+                list.forEach(task -> {
+                    if(Objects.isNull(task.getExecuteId())) {
+                        task.setExecuteStatus(0);
+                        task.setOrangeWarningCount(0);
+                        task.setRedWarningCount(0);
+                        task.setRuleErrorCount(0);
+                        task.setPercent(0F);
+                    }
+                });
+            }
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
+            PageResult<TaskHeader> pageResult = new PageResult<>();
+
             pageResult.setOffset(parameters.getOffset());
             pageResult.setSum(totalSize);
             pageResult.setCount(list.size());
@@ -255,7 +274,8 @@ public class TaskManageService {
                 //规则Id
                 subTaskRule.setRuleId(rule.getRuleId());
                 //校验阈值
-                subTaskRule.setCheckThreshold(rule.getCheckThreshold());
+                subTaskRule.setCheckThresholdMinValue(rule.getCheckThresholdMinValue());
+                subTaskRule.setCheckThresholdMaxValue(rule.getCheckThresholdMaxValue());
                 //order
                 subTaskRule.setSequence(i+1);
 
@@ -271,8 +291,8 @@ public class TaskManageService {
                             Integer warningCheckExpression = warning.getWarningCheckExpression();
                             subTaskRule.setOrangeCheckExpression(warningCheckExpression);
                             //橙色阈值
-                            String warningThreshold = warning.getWarningCheckThreshold();
-                            subTaskRule.setOrangeThreshold(warningThreshold);
+                            subTaskRule.setOrangeThresholdMinValue(warning.getWarningCheckThresholdMinValue());
+                            subTaskRule.setOrangeThresholdMaxValue(warning.getWarningCheckThresholdMaxValue());
                             //橙色告警组
                             List<String> warningNotificationGroup = warning.getWarningNotificationIdList();
                             StringJoiner warningGroupJoiner = new StringJoiner(",");
@@ -288,8 +308,8 @@ public class TaskManageService {
                             Integer warningCheckExpression = warning.getWarningCheckExpression();
                             subTaskRule.setRedCheckExpression(warningCheckExpression);
                             //红色阈值
-                            String warningThreshold = warning.getWarningCheckThreshold();
-                            subTaskRule.setRedThreshold(warningThreshold);
+                            subTaskRule.setRedThresholdMinValue(warning.getWarningCheckThresholdMinValue());
+                            subTaskRule.setRedThresholdMaxValue(warning.getWarningCheckThresholdMaxValue());
                             //红色告警组
                             List<String> warningNotificationGroup = warning.getWarningNotificationIdList();
                             StringJoiner warningGroupJoiner = new StringJoiner(",");
@@ -313,8 +333,25 @@ public class TaskManageService {
         }
     }
 
-    public DataQualityTask getTaskBasicInfo(String guid) {
-        return taskManageDAO.getTaskBasicInfo(guid);
+    public DataQualityBasicInfo getTaskBasicInfo(String guid) throws AtlasBaseException {
+        try {
+            DataQualityBasicInfo basicInfo = taskManageDAO.getTaskBasicInfo(guid);
+            String qrtzName = taskManageDAO.getQrtzJobByTaskId(guid);
+            if(Objects.nonNull(qrtzName)) {
+                String triggerName = TRIGGER_NAME + qrtzName;
+                String triggerGroupName = TRIGGER_GROUP_NAME + qrtzName;
+
+                Date lastExecuteTime = quartzManager.getJobLastExecuteTime(triggerName, triggerGroupName);
+                Date nextExecuteTime = quartzManager.getJobNextExecuteTime(triggerName, triggerGroupName);
+
+                basicInfo.setLastExecuteTime(new Timestamp(lastExecuteTime.getTime()));
+                basicInfo.setNextExecuteTime(new Timestamp(nextExecuteTime.getTime()));
+            }
+            return basicInfo;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+
     }
 
 
@@ -323,6 +360,7 @@ public class TaskManageService {
             String qrtzName = taskManageDAO.getQrtzJobByTaskId(taskId);
             if (Objects.isNull(qrtzName) || qrtzName.trim().length() == 0) {
                 addQuartzJob(taskId);
+                initExecuteInfo(taskId);
             } else {
                 String jobGroupName = JOB_GROUP_NAME + qrtzName;
                 quartzManager.resumeJob(qrtzName, jobGroupName);
@@ -331,6 +369,36 @@ public class TaskManageService {
             taskManageDAO.updateTaskStatus(taskId, true);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public String initExecuteInfo(String taskId) {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
+            String id = UUID.randomUUID().toString();
+            taskExecute.setId(id);
+            taskExecute.setTaskId(taskId);
+            taskExecute.setPercent(0F);
+            taskExecute.setExecuteStatus(1);
+            taskExecute.setExecutor(userId);
+            taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
+            taskExecute.setOrangeWarningCount(0);
+            taskExecute.setRedWarningCount(0);
+            taskExecute.setRuleErrorCount(0);
+            taskManageDAO.initTaskExecuteInfo(taskExecute);
+            return id;
+        } catch (Exception e) {
+            LOG.error(e.toString());
+        }
+        return null;
+    }
+
+    public void startTaskNow(String taskId) throws AtlasBaseException {
+        try {
+            addQuartzJob(taskId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 
@@ -360,12 +428,31 @@ public class TaskManageService {
             Timestamp startTime = task.getStartTime();
             Timestamp endTime = task.getEndTime();
             Integer level = task.getLevel();
-            quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
+            if(Objects.nonNull(cron)) {
+                quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
+            } else {
+                quartzManager.addSimpleJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class);
+            }
             //添加qrtzName
             taskManageDAO.updateTaskQrtzName(taskId, jobName);
 
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
+        }
+    }
+
+    public PageResult<TaskRuleHeader> getRuleList(String taskId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult pageResult = new PageResult();
+            List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters);
+            long totalSize = taskManageDAO.countRuleList(taskId);
+            pageResult.setLists(lists);
+            pageResult.setCount(lists.size());
+            pageResult.setSum(totalSize);
+
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
 

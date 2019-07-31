@@ -74,6 +74,11 @@ public class RuleREST {
         request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据质量规则) " + content);
     }
 
+    /**
+     * 添加规则
+     * @param rule
+     * @throws AtlasBaseException
+     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -114,6 +119,13 @@ public class RuleREST {
         return ruleService.getById(id);
     }
 
+    /**
+     * 规则列表
+     * @param categoryId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -122,6 +134,11 @@ public class RuleREST {
         return ruleService.queryPageByCatetoryId(categoryId, parameters);
     }
 
+    /**
+     * 删除规则
+     * @param id
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -143,7 +160,7 @@ public class RuleREST {
 
 
     /**
-     * 指定分类的目录列表
+     * 获取全部目录列表
      *
      * @param categoryType
      * @return
@@ -203,5 +220,22 @@ public class RuleREST {
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/{ruleId}/enable")
+    public void enableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
+        log(ruleId);
+        ruleService.updateRuleStatus(ruleId, true);
+    }
+
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/{ruleId}/disable")
+    public void disableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
+        log(ruleId);
+        ruleService.updateRuleStatus(ruleId, false);
+    }
 
 }

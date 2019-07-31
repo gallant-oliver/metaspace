@@ -21,14 +21,16 @@ package io.zeta.metaspace.model.dataquality2;
  * @author sunhaoning
  * @date 2019/7/25 18:52
  */
-public class AtomicTask {
+public class AtomicTaskExecution {
     private String id;
+    private String taskExecuteId;
     private String ruleTemplateId;
     private String objectId;
     private String objectName;
     private String dbName;
     private String tableName;
     private String objectType;
+    private String taskId;
     private String subTaskId;
     private String subTaskRuleId;
     private Integer taskType;
@@ -40,6 +42,14 @@ public class AtomicTask {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getTaskExecuteId() {
+        return taskExecuteId;
+    }
+
+    public void setTaskExecuteId(String taskExecuteId) {
+        this.taskExecuteId = taskExecuteId;
     }
 
     public String getRuleTemplateId() {
@@ -88,6 +98,14 @@ public class AtomicTask {
 
     public void setObjectType(String objectType) {
         this.objectType = objectType;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 
     public String getSubTaskId() {

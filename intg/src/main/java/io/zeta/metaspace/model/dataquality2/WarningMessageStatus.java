@@ -12,22 +12,26 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/7/29 11:50
+ * @date 2019/7/29 15:48
  */
 package io.zeta.metaspace.model.dataquality2;
 
 /*
  * @description
  * @author sunhaoning
- * @date 2019/7/29 11:50
+ * @date 2019/7/29 15:48
  */
-public enum  RuleExecuteStatus {
-    NORMAL(0,"正常") , WARNING(1,"告警"), FAILURE(-1, "失败") ;
+public enum  WarningMessageStatus {
 
-    private Integer code;
-    private String desc;
+    WAITING(1, "待发送"),
+    SENDING(2, "发送中"),
+    SUCESS(3, "发送成功"),
+    FAILURE(4, "发送失败");
 
-    RuleExecuteStatus(Integer code, String desc) {
+    public Integer code;
+    public String desc;
+
+    WarningMessageStatus(Integer code, String desc) {
         this.code = code;
         this.desc = desc;
     }
@@ -46,5 +50,18 @@ public enum  RuleExecuteStatus {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public static WarningMessageStatus getWarningMessageStatusByCode(Integer code) {
+        for (WarningMessageStatus rc : WarningMessageStatus.values()) {
+            if (rc.code == code) {
+                return rc;
+            }
+        }
+        throw new RuntimeException();
+    }
+
+    public static String getDescByCode(Integer code) {
+        return getWarningMessageStatusByCode(code).desc;
     }
 }

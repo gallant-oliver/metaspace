@@ -22,10 +22,13 @@ package io.zeta.metaspace.web.rest.dataquality;
  * @date 2019/7/24 10:47
  */
 
+import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
+import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
+import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
@@ -67,8 +70,7 @@ public class TaskManageREST {
     @Autowired
     DataManageService dataManageService;
 
-
-    private static final int CategoryType = 5;
+    private static final int CategoryType = 4;
 
     /**
      * 获取任务列表
@@ -195,7 +197,7 @@ public class TaskManageREST {
     @Path("/{groupId}/{objType}/rules")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId, Integer objType, List<String> objIdList) throws AtlasBaseException {
+    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")Integer objType, List<String> objIdList) throws AtlasBaseException {
         return taskManageService.getValidRuleList(groupId, objType, objIdList);
     }
 
@@ -243,7 +245,29 @@ public class TaskManageREST {
     @Path("/task/{taskId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataQualityTask getTaskInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
+    public DataQualityBasicInfo getTaskInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
         return taskManageService.getTaskBasicInfo(taskId);
     }
+
+    /**
+     * 立即执行任务
+     * @param taskId
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/{taskId}/execute")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void startTaskNow(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        taskManageService.startTaskNow(taskId);
+    }
+
+    @POST
+    @Path("/{taskId}/rules")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<TaskRuleHeader> getRuleList(@PathParam("taskId")String taskId, Parameters parameters) throws AtlasBaseException {
+        return taskManageService.getRuleList(taskId, parameters);
+    }
+
 }

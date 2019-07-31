@@ -12,12 +12,17 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -30,6 +35,14 @@ public class RuleTemplateService {
 
     public long countByCategoryId(String categoryId) {
         return ruleTemplateDAO.countByCategoryId(categoryId);
+    }
+
+    public List<RuleTemplate> getRuleTemplate(String categoryId) throws AtlasBaseException {
+        try {
+            return ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
     }
 
 }

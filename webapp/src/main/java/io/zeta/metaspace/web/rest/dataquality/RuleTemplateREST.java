@@ -13,6 +13,7 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -27,6 +28,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 
@@ -52,6 +54,14 @@ public class RuleTemplateREST {
             ruleTemplateCategory.setCount(count);
             return ruleTemplateCategory;
         }).collect(Collectors.toList());
+    }
+
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/{categoryId}/rules")
+    public List<RuleTemplate> getRuleTemplate(@PathParam("categoryId")String categoryId) throws AtlasBaseException {
+        return ruleTemplateService.getRuleTemplate(categoryId);
     }
 
 

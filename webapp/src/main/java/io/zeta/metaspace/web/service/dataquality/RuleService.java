@@ -22,6 +22,7 @@ import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,5 +120,13 @@ public class RuleService {
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         return pageResult;
+    }
+
+    public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {
+        try {
+            return ruleDAO.updateRuleStatus(id, enable);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
     }
 }

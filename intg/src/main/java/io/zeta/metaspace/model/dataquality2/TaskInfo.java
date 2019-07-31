@@ -135,7 +135,8 @@ public class TaskInfo {
 
     public static class SubTaskRule {
         private String ruleId;
-        private String checkThreshold;
+        private Float checkThresholdMinValue;
+        private Float checkThresholdMaxValue;
         private List<Warning> warnings;
 
         public String getRuleId() {
@@ -146,12 +147,20 @@ public class TaskInfo {
             this.ruleId = ruleId;
         }
 
-        public String getCheckThreshold() {
-            return checkThreshold;
+        public Float getCheckThresholdMinValue() {
+            return checkThresholdMinValue;
         }
 
-        public void setCheckThreshold(String checkThreshold) {
-            this.checkThreshold = checkThreshold;
+        public void setCheckThresholdMinValue(Float checkThresholdMinValue) {
+            this.checkThresholdMinValue = checkThresholdMinValue;
+        }
+
+        public Float getCheckThresholdMaxValue() {
+            return checkThresholdMaxValue;
+        }
+
+        public void setCheckThresholdMaxValue(Float checkThresholdMaxValue) {
+            this.checkThresholdMaxValue = checkThresholdMaxValue;
         }
 
         public List<Warning> getWarnings() {
@@ -167,7 +176,8 @@ public class TaskInfo {
         private Integer warningType;
         private Integer warningCheckType;
         private Integer warningCheckExpression;
-        private String warningCheckThreshold;
+        private Float warningCheckThresholdMinValue;
+        private Float warningCheckThresholdMaxValue;
         private List<String> warningNotificationIdList;
 
         public Integer getWarningType() {
@@ -194,12 +204,20 @@ public class TaskInfo {
             this.warningCheckExpression = warningCheckExpression;
         }
 
-        public String getWarningCheckThreshold() {
-            return warningCheckThreshold;
+        public Float getWarningCheckThresholdMinValue() {
+            return warningCheckThresholdMinValue;
         }
 
-        public void setWarningCheckThreshold(String warningCheckThreshold) {
-            this.warningCheckThreshold = warningCheckThreshold;
+        public void setWarningCheckThresholdMinValue(Float warningCheckThresholdMinValue) {
+            this.warningCheckThresholdMinValue = warningCheckThresholdMinValue;
+        }
+
+        public Float getWarningCheckThresholdMaxValue() {
+            return warningCheckThresholdMaxValue;
+        }
+
+        public void setWarningCheckThresholdMaxValue(Float warningCheckThresholdMaxValue) {
+            this.warningCheckThresholdMaxValue = warningCheckThresholdMaxValue;
         }
 
         public List<String> getWarningNotificationIdList() {

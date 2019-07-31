@@ -30,9 +30,10 @@ public class TaskHeader {
     private Long taskId;
     private String taskName;
     private String description;
-    private String executeStatus;
+    private String executeId;
+    private Integer executeStatus;
     private Float percent;
-    private int yellowWarningCount;
+    private int orangeWarningCount;
     private int redWarningCount;
     private int ruleErrorCount;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -73,11 +74,19 @@ public class TaskHeader {
         this.description = description;
     }
 
-    public String getExecuteStatus() {
+    public String getExecuteId() {
+        return executeId;
+    }
+
+    public void setExecuteId(String executeId) {
+        this.executeId = executeId;
+    }
+
+    public Integer getExecuteStatus() {
         return executeStatus;
     }
 
-    public void setExecuteStatus(String executeStatus) {
+    public void setExecuteStatus(Integer executeStatus) {
         this.executeStatus = executeStatus;
     }
 
@@ -89,12 +98,12 @@ public class TaskHeader {
         this.percent = percent;
     }
 
-    public int getYellowWarningCount() {
-        return yellowWarningCount;
+    public int getOrangeWarningCount() {
+        return orangeWarningCount;
     }
 
-    public void setYellowWarningCount(int yellowWarningCount) {
-        this.yellowWarningCount = yellowWarningCount;
+    public void setOrangeWarningCount(int orangeWarningCount) {
+        this.orangeWarningCount = orangeWarningCount;
     }
 
     public int getRedWarningCount() {

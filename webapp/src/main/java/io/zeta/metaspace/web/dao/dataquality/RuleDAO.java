@@ -5,6 +5,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -80,5 +81,8 @@ public interface RuleDAO {
              " </if>",
              " </script>"})
     public long countBySearch(@Param("query") String query);
+
+    @Update("update data_quality_rule set enable=#{status} where id=#{id}")
+    public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
 
 }

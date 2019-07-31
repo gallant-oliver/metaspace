@@ -32,13 +32,33 @@ public class DataQualityTaskRuleExecute {
     private String subTaskId;
     private String subTaskObjectId;
     private String subTaskRuleId;
-    private String result;
-    private Integer warningType;
+    private Float result;
+    private Float referenceValue;
+    private Integer checkStatus;
+    private Integer orangeWarningCheckStatus;
+    private Integer redWarningCheckStatus;
     private Integer warningStatus;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
+
+    public DataQualityTaskRuleExecute(String id, String taskExecuteId, String taskId, String subTaskId, String subTaskObjectId, String subTaskRuleId, Float result, Float referenceValue, Integer checkStatus, Integer orangeWarningCheckStatus, Integer redWarningCheckStatus, Integer warningStatus, Timestamp createTime, Timestamp updateTime) {
+        this.id = id;
+        this.taskExecuteId = taskExecuteId;
+        this.taskId = taskId;
+        this.subTaskId = subTaskId;
+        this.subTaskObjectId = subTaskObjectId;
+        this.subTaskRuleId = subTaskRuleId;
+        this.result = result;
+        this.referenceValue = referenceValue;
+        this.checkStatus = checkStatus;
+        this.orangeWarningCheckStatus = orangeWarningCheckStatus;
+        this.redWarningCheckStatus = redWarningCheckStatus;
+        this.warningStatus = warningStatus;
+        this.createTime = createTime;
+        this.updateTime = updateTime;
+    }
 
     public String getId() {
         return id;
@@ -88,20 +108,44 @@ public class DataQualityTaskRuleExecute {
         this.subTaskRuleId = subTaskRuleId;
     }
 
-    public String getResult() {
+    public Float getResult() {
         return result;
     }
 
-    public void setResult(String result) {
+    public void setResult(Float result) {
         this.result = result;
     }
 
-    public Integer getWarningType() {
-        return warningType;
+    public Float getReferenceValue() {
+        return referenceValue;
     }
 
-    public void setWarningType(Integer warningType) {
-        this.warningType = warningType;
+    public void setReferenceValue(Float referenceValue) {
+        this.referenceValue = referenceValue;
+    }
+
+    public Integer getCheckStatus() {
+        return checkStatus;
+    }
+
+    public void setCheckStatus(Integer checkStatus) {
+        this.checkStatus = checkStatus;
+    }
+
+    public Integer getOrangeWarningCheckStatus() {
+        return orangeWarningCheckStatus;
+    }
+
+    public void setOrangeWarningCheckStatus(Integer orangeWarningCheckStatus) {
+        this.orangeWarningCheckStatus = orangeWarningCheckStatus;
+    }
+
+    public Integer getRedWarningCheckStatus() {
+        return redWarningCheckStatus;
+    }
+
+    public void setRedWarningCheckStatus(Integer redWarningCheckStatus) {
+        this.redWarningCheckStatus = redWarningCheckStatus;
     }
 
     public Integer getWarningStatus() {

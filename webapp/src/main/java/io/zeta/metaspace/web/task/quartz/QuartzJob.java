@@ -24,10 +24,12 @@ import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.RuleStatus;
 import io.zeta.metaspace.model.dataquality.TaskType;
-import io.zeta.metaspace.model.dataquality2.AtomicTask;
+import io.zeta.metaspace.model.dataquality2.AtomicTaskExecution;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
+import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
 import io.zeta.metaspace.model.dataquality2.RuleExecuteStatus;
+import io.zeta.metaspace.model.dataquality2.WarningMessageStatus;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
@@ -90,14 +92,14 @@ public class QuartzJob implements Job {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
             //获取原子任务列表
-            List<AtomicTask> taskList = taskManageDAO.getObjectWithRuleRelation(taskId);
+            List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId);
             if (Objects.isNull(taskList)) {
                 quartzManager.handleNullErrorTask(key);
                 LOG.warn("任务名为" + key.getName() + "所属任务已被删除,无法继续执行任务");
                 return;
             }
             //补全数据
-            completeTaskInformation(taskList);
+            completeTaskInformation(taskId, taskList);
 
             executeAtomicTaskList(taskId, taskList);
         } catch (Exception e) {
@@ -105,23 +107,24 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void completeTaskInformation(List<AtomicTask> taskList) throws AtlasBaseException {
+    public void completeTaskInformation(String taskId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
         try {
-            for (AtomicTask task : taskList) {
+            for (AtomicTaskExecution taskExecution : taskList) {
+                taskExecution.setTaskId(taskId);
                 String id = UUID.randomUUID().toString();
-                task.setId(id);
-                String objectId = task.getObjectId();
-                if (1 == task.getScope()) {
+                taskExecution.setId(id);
+                String objectId = taskExecution.getObjectId();
+                if (0 == taskExecution.getScope()) {
                     Table tableInfo = taskManageDAO.getDbAndTableName(objectId);
-                    task.setDbName(tableInfo.getDatabaseName());
-                    task.setTableName(tableInfo.getTableName());
-                    task.setObjectName(tableInfo.getTableName());
-                } else if (2 == task.getScope()) {
+                    taskExecution.setDbName(tableInfo.getDatabaseName());
+                    taskExecution.setTableName(tableInfo.getTableName());
+                    taskExecution.setObjectName(tableInfo.getTableName());
+                } else if (1 == taskExecution.getScope()) {
                     Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
-                    task.setDbName(column.getDatabaseName());
-                    task.setTableName(column.getTableName());
-                    task.setObjectName(column.getColumnName());
-                    task.setObjectType(column.getType());
+                    taskExecution.setDbName(column.getDatabaseName());
+                    taskExecution.setTableName(column.getTableName());
+                    taskExecution.setObjectName(column.getColumnName());
+                    taskExecution.setObjectType(column.getType());
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
@@ -132,15 +135,18 @@ public class QuartzJob implements Job {
     }
 
 
-    public void executeAtomicTaskList(String taskId, List<AtomicTask> taskList) throws Exception {
-        String executeId = initExecuteInfo(taskId);
+    public void executeAtomicTaskList(String taskId, List<AtomicTaskExecution> taskList) throws Exception {
+        String executeId = taskManageDAO.getExecuteIdByTaskId(taskId);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
+        long startTime = System.currentTimeMillis();
         for (int i = 0; i < totalStep; i++) {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
-            AtomicTask task = taskList.get(i);
-            taskManageDAO.initRuleExecuteInfo(task.getId(), taskId, executeId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId());
+            AtomicTaskExecution task = taskList.get(i);
+            task.setTaskExecuteId(executeId);
+            Timestamp currentTime = new Timestamp(startTime);
+            taskManageDAO.initRuleExecuteInfo(task.getId(), executeId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTime, currentTime);
             do {
                 try {
                     //运行中途停止模板
@@ -158,40 +164,25 @@ public class QuartzJob implements Job {
                     try {
                         retryCount++;
                         LOG.info("retryCount=" + retryCount);
+
                         Thread.sleep(RETRY * 5000);
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
                     }
                     if(RETRY == retryCount) {
-                        LOG.error(e.getMessage());
-                        throw e;
+                        taskManageDAO.updateTaskExecuteErrorMsg(executeId, e.toString());
                     }
                 } finally {
-                    taskManageDAO.updateTaskExecuteWarningInfo();
+
                 }
             } while (retryCount < RETRY);
         }
+        long endTime = System.currentTimeMillis();
+        taskManageDAO.updateTaskExecuteStatus(executeId, 2);
+        taskManageDAO.updateDataTaskCostTime(executeId, endTime-startTime);
     }
 
-    public String initExecuteInfo(String taskId) {
-        try {
-            String userId = AdminUtils.getUserData().getUserId();
-            DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
-            String id = UUID.randomUUID().toString();
-            taskExecute.setId(id);
-            taskExecute.setTaskId(taskId);
-            taskExecute.setPercent(0F);
-            taskExecute.setExecuteStatus(1);
-            taskExecute.setExecutor(userId);
-            taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
-            taskManageDAO.initTaskExecuteInfo(taskExecute);
-            return id;
-        } catch (Exception e) {
-            LOG.error(e.toString());
-        }
-        return null;
-    }
-    public void runJob(AtomicTask task) throws Exception {
+    public void runJob(AtomicTaskExecution task) throws Exception {
         try {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             switch (jobType) {
@@ -257,8 +248,8 @@ public class QuartzJob implements Job {
 
 
     //规则值计算
-    public Float ruleResultValue(AtomicTask task, boolean record, boolean columnRule) throws Exception {
-        Float resultValue = 0F;
+    public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+        Float resultValue = null;
         Connection conn = null;
         try {
             String dbName = task.getDbName();
@@ -273,7 +264,7 @@ public class QuartzJob implements Job {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
-            String superType = null;
+            String superType  = String.valueOf(jobType.code);
             if (columnRule) {
                 columnName = task.getObjectName();
                 switch (jobType) {
@@ -281,21 +272,18 @@ public class QuartzJob implements Job {
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
-                        superType = String.valueOf(TaskType.UNIQUE_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
-                        superType = String.valueOf(TaskType.DUP_VALUE_NUM.code);
                         sql = String.format(query, columnName, tableName, columnName, columnName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        superType = String.valueOf(TaskType.EMPTY_VALUE_NUM.code);
                         sql = String.format(query, tableName, columnName);
                         break;
                     default:
@@ -303,7 +291,6 @@ public class QuartzJob implements Job {
                         break;
                 }
             } else {
-                superType = String.valueOf(TaskType.TABLE_ROW_NUM.code);
                 sql = String.format(query, tableName);
             }
 
@@ -333,14 +320,16 @@ public class QuartzJob implements Job {
                     }
                 }
             }
-            columnType2Result.put(columnTypeKey, resultValue);
+            if(Objects.nonNull(resultValue)) {
+                columnType2Result.put(columnTypeKey, resultValue);
+            }
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), resultValue, resultValue);
+                checkResult(task,resultValue,resultValue);
             }
             if(Objects.nonNull(conn)) {
                 conn.close();
@@ -349,7 +338,7 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化
-    public Float ruleResultValueChange(AtomicTask task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
         Float nowValue = 0F;
         Float valueChange = 0F;
         try {
@@ -363,13 +352,13 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), valueChange, nowValue);
+                checkResult(task,valueChange,nowValue);
             }
         }
     }
 
     //规则值变化率
-    public Float ruleResultChangeRatio(AtomicTask task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
         Float ratio = 0F;
         Float ruleValueChange = 0F;
         Float lastValue = 0F;
@@ -386,13 +375,13 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), ratio, ruleValueChange + lastValue);
+                checkResult(task,ratio,ruleValueChange + lastValue);
             }
         }
     }
 
     //表大小
-    public Float tableSize(AtomicTask task, boolean record) throws Exception {
+    public Float tableSize(AtomicTaskExecution task, boolean record) throws Exception {
         Float totalSize = 0F;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
@@ -404,13 +393,13 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), totalSize, totalSize);
+                checkResult(task,totalSize,totalSize);
             }
         }
     }
 
     //表大小变化
-    public Float tableSizeChange(AtomicTask task, boolean record) throws Exception {
+    public Float tableSizeChange(AtomicTaskExecution task, boolean record) throws Exception {
         Float tableSize = 0F;
         Float sizeChange = 0F;
         try {
@@ -424,13 +413,13 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), sizeChange, tableSize);
+                checkResult(task,sizeChange,tableSize);
             }
         }
     }
 
     //表大小变化率
-    public Float tableSizeChangeRatio(AtomicTask task, boolean record) throws Exception {
+    public Float tableSizeChangeRatio(AtomicTaskExecution task, boolean record) throws Exception {
         Float tableSizeChange = 0F;
         Float lastValue = 0F;
         Float ratio = 0F;
@@ -447,12 +436,12 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             if (record) {
-                taskManageDAO.completeCalculationResult(task.getId(), ratio, tableSizeChange + lastValue);
+                checkResult(task,ratio,tableSizeChange + lastValue);
             }
         }
     }
 
-    public void getProportion(AtomicTask task) throws Exception {
+    public void getProportion(AtomicTaskExecution task) throws Exception {
         Float ratio = 0F;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
@@ -489,9 +478,10 @@ public class QuartzJob implements Job {
         } catch (Exception e) {
             throw e;
         } finally {
-            taskManageDAO.completeCalculationResult(task.getId(), ratio, ratio);
-            if(Objects.nonNull(conn))
+            checkResult(task, ratio, ratio);
+            if(Objects.nonNull(conn)) {
                 conn.close();
+            }
         }
     }
 
@@ -502,26 +492,74 @@ public class QuartzJob implements Job {
      * @param resultValue
      * @return
      */
-    public RuleStatus checkResultStatus(float resultValue, AtomicTask task) throws Exception {
-        RuleStatus ruleStatus = null;
+    public RuleExecuteStatus checkResult(AtomicTaskExecution task, Float resultValue, Float referenceValue) throws Exception {
+        RuleExecuteStatus checkStatus = null;
         try {
             DataQualitySubTaskRule subTaskRule = taskManageDAO.getSubTaskRuleInfo(task.getSubTaskRuleId());
-            int ruleCheckType = taskManageDAO.getRuleCheckType(task.getSubTaskRuleId());
-            RuleCheckType ruleCheckTypeByCode = RuleCheckType.getRuleCheckTypeByCode(ruleCheckType);
+            int ruleCheckTypeCode = taskManageDAO.getRuleCheckType(task.getSubTaskRuleId());
+            int checkExpressionCode = taskManageDAO.getRuleCheckExpression(task.getSubTaskRuleId());
+            RuleCheckType ruleCheckType = RuleCheckType.getRuleCheckTypeByCode(ruleCheckTypeCode);
+            CheckExpression checkExpression = CheckExpression.getExpressionByCode(checkExpressionCode);
+            Float checkThresholdMinValue = null;
+            Float checkThresholdMaxValue = null;
+
+
+            RuleExecuteStatus orangeWarningcheckStatus = null;
+            RuleExecuteStatus redWarningcheckStatus = null;
+            if(Objects.nonNull(resultValue)) {
+                if (FIX == ruleCheckType) {
+                    checkThresholdMaxValue = subTaskRule.getCheckThresholdMaxValue();
+                } else if (FLU == ruleCheckType) {
+                    checkThresholdMinValue = subTaskRule.getCheckThresholdMinValue();
+                    checkThresholdMaxValue = subTaskRule.getCheckThresholdMaxValue();
+                }
+                checkStatus = checkResultStatus(ruleCheckType, checkExpression, resultValue, checkThresholdMinValue, checkThresholdMaxValue);
+
+                if (Objects.nonNull(subTaskRule.getOrangeCheckExpression())) {
+                    RuleCheckType orangeCheckRuleCheckType = RuleCheckType.getRuleCheckTypeByCode(subTaskRule.getOrangeCheckType());
+                    CheckExpression orangeCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getOrangeCheckExpression());
+                    orangeWarningcheckStatus = checkResultStatus(orangeCheckRuleCheckType, orangeCheckRuleCheckExpression, resultValue, subTaskRule.getOrangeThresholdMinValue(), subTaskRule.getOrangeThresholdMaxValue());
+                }
+
+                if (Objects.nonNull(subTaskRule.getRedCheckExpression())) {
+                    RuleCheckType redCheckRuleCheckType = RuleCheckType.getRuleCheckTypeByCode(subTaskRule.getRedCheckType());
+                    CheckExpression redCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getRedCheckExpression());
+                    redWarningcheckStatus = checkResultStatus(redCheckRuleCheckType, redCheckRuleCheckExpression, resultValue, subTaskRule.getRedThresholdMinValue(), subTaskRule.getRedThresholdMaxValue());
+                }
+            }
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            DataQualityTaskRuleExecute taskRuleExecute = new DataQualityTaskRuleExecute(task.getId(),task.getTaskExecuteId(),task.getTaskId(),task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(),
+                                                                                        resultValue, referenceValue, Objects.isNull(checkStatus)?-1:checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus)?null:orangeWarningcheckStatus.getCode(),
+                                                                                        Objects.isNull(redWarningcheckStatus)?null:redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(),currentTime, currentTime);
+
+            //taskManageDAO.insertDataQualityTaskRuleExecute(taskRuleExecute);
+            taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
+            //橙色告警数量
+            if(Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
+                taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
+            }
+            //红色告警数量
+            if(Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
+                taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
+            }
+            //计算异常数量
+            if(Objects.isNull(resultValue)) {
+                taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
+            }
 
         } catch (Exception e) {
             LOG.info(e.getMessage(),e);
             throw e;
         }
-        if (ruleStatus == null) throw new RuntimeException();
-        return ruleStatus;
+        if (checkStatus == null) throw new RuntimeException();
+        return checkStatus;
     }
 
-    public RuleExecuteStatus getCalculateStatus(RuleCheckType ruleCheckTypeByCode, CheckExpression expressionByCode, float resultValue, float checkThresholdMinValue, float checkThresholdMaxValue) {
+    public RuleExecuteStatus checkResultStatus(RuleCheckType ruleCheckType, CheckExpression checkExpression, Float resultValue, Float checkThresholdMinValue, Float checkThresholdMaxValue) {
         RuleExecuteStatus ruleStatus = null;
         try {
-            if (FIX == ruleCheckTypeByCode) {
-                switch (expressionByCode) {
+            if (FIX == ruleCheckType) {
+                switch (checkExpression) {
                     case EQU: {
                         if (checkThresholdMaxValue == 0) {
                             ruleStatus = RuleExecuteStatus.NORMAL;
@@ -571,7 +609,7 @@ public class QuartzJob implements Job {
                         break;
                     }
                 }
-            } else if (FLU == ruleCheckTypeByCode) {
+            } else if (FLU == ruleCheckType) {
                 if(resultValue>= checkThresholdMinValue && resultValue<=checkThresholdMaxValue) {
                     ruleStatus = RuleExecuteStatus.NORMAL;
                 } else {
@@ -579,7 +617,7 @@ public class QuartzJob implements Job {
                 }
             }
         } catch (Exception e) {
-
+            LOG.info(e.toString());
         }
         return ruleStatus;
     }
