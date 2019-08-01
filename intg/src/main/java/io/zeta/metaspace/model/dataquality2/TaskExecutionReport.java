@@ -37,6 +37,7 @@ public class TaskExecutionReport {
     private Timestamp endTime;
     private Integer orangeWarningTotalCount;
     private Integer redWarningTotalCount;
+    private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
 
@@ -112,6 +113,14 @@ public class TaskExecutionReport {
         this.executeCount = executeCount;
     }
 
+    public Integer getErrorTotalCount() {
+        return errorTotalCount;
+    }
+
+    public void setErrorTotalCount(Integer errorTotalCount) {
+        this.errorTotalCount = errorTotalCount;
+    }
+
     public List<ExecutionRecord> getExecutionRecordList() {
         return executionRecordList;
     }
@@ -126,7 +135,8 @@ public class TaskExecutionReport {
         private Integer redWarningCount;
         private Integer errorCount;
         @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-        private Timestamp generateTime;
+        private Timestamp executeTime;
+        private String number;
 
         public String getExecutionId() {
             return executionId;
@@ -160,12 +170,20 @@ public class TaskExecutionReport {
             this.errorCount = errorCount;
         }
 
-        public Timestamp getGenerateTime() {
-            return generateTime;
+        public Timestamp getExecuteTime() {
+            return executeTime;
         }
 
-        public void setGenerateTime(Timestamp generateTime) {
-            this.generateTime = generateTime;
+        public void setExecuteTime(Timestamp executeTime) {
+            this.executeTime = executeTime;
+        }
+
+        public String getNumber() {
+            return number;
+        }
+
+        public void setNumber(String number) {
+            this.number = number;
         }
     }
 }

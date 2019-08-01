@@ -447,10 +447,14 @@ public class TaskManageService {
 
     public TaskExecutionReport getTaskExecutionReport(String taskId) throws AtlasBaseException {
         try {
-            return taskManageDAO.getTaskExecutionReport(taskId);
+            TaskExecutionReport taskExecutionInfo = taskManageDAO.getTaskExecutionInfo(taskId);
+            List<TaskExecutionReport.ExecutionRecord> executionRecordList = taskManageDAO.getTaskExecutionRecord(taskId);
+            taskExecutionInfo.setExecutionRecordList(executionRecordList);
+            return taskExecutionInfo;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
+
 
 }

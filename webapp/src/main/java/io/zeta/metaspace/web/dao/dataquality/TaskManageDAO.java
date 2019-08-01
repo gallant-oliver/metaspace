@@ -490,8 +490,11 @@ public interface TaskManageDAO {
     @Select("select id from data_quality_task_execute where task_id=#{taskId}")
     public String getExecuteIdByTaskId(@Param("taskId")String id);
 
-    @Select("")
-    public TaskExecutionReport getTaskExecutionReport(@Param("taskId")String id);
+    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
+    public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
+
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId}")
+    public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     @Select("select updater from data_quality_task where id=#{taskId}")
     public String getTaskUpdater(@Param("taskId")String id);
