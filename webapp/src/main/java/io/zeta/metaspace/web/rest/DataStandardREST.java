@@ -171,7 +171,7 @@ public class DataStandardREST {
     @Path("/download/template")
     public void downloadTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/数据标准导入模版.xlsx";
+        String filePath = homeDir + "/conf/data_standard_template.xlsx";
         String fileName = filename(filePath);
         InputStream inputStream = new FileInputStream(filePath);
         response.setContentType("application/force-download");
