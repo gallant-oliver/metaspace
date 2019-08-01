@@ -272,7 +272,7 @@ public class TaskManageREST {
     }
 
     @GET
-    @Path("/{taskId}/rules")
+    @Path("/{taskId}/report")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TaskExecutionReport getTaskExecutionReport(@PathParam("taskId")String taskId) throws AtlasBaseException {

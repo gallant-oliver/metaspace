@@ -47,6 +47,7 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -63,6 +64,8 @@ import java.util.UUID;
  * @author sunhaoning
  * @date 2019/7/25 17:28
  */
+
+@Transactional
 public class QuartzJob implements Job {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
@@ -86,11 +89,35 @@ public class QuartzJob implements Job {
         }
     }
 
+    public String initExecuteInfo(String taskId) {
+        try {
+            String userId = taskManageDAO.getTaskUpdater(taskId);
+            DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
+            String id = UUID.randomUUID().toString();
+            taskExecute.setId(id);
+            taskExecute.setTaskId(taskId);
+            taskExecute.setPercent(0F);
+            taskExecute.setExecuteStatus(1);
+            taskExecute.setExecutor(userId);
+            taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
+            taskExecute.setOrangeWarningCount(0);
+            taskExecute.setRedWarningCount(0);
+            taskExecute.setRuleErrorCount(0);
+            taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
+            taskManageDAO.initTaskExecuteInfo(taskExecute);
+            taskManageDAO.updateTaskExecutionCount(taskId);
+            return id;
+        } catch (Exception e) {
+            LOG.error(e.toString());
+        }
+        return null;
+    }
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
+            String taskExecuteId = initExecuteInfo(taskId);
             //获取原子任务列表
             List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId);
             if (Objects.isNull(taskList)) {
@@ -99,18 +126,19 @@ public class QuartzJob implements Job {
                 return;
             }
             //补全数据
-            completeTaskInformation(taskId, taskList);
+            completeTaskInformation(taskId, taskExecuteId, taskList);
 
-            executeAtomicTaskList(taskId, taskList);
+            executeAtomicTaskList(taskId, taskExecuteId, taskList);
         } catch (Exception e) {
             LOG.error(e.toString());
         }
     }
 
-    public void completeTaskInformation(String taskId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
+    public void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
         try {
             for (AtomicTaskExecution taskExecution : taskList) {
                 taskExecution.setTaskId(taskId);
+                taskExecution.setTaskExecuteId(taskExecuteId);
                 String id = UUID.randomUUID().toString();
                 taskExecution.setId(id);
                 String objectId = taskExecution.getObjectId();
@@ -135,8 +163,7 @@ public class QuartzJob implements Job {
     }
 
 
-    public void executeAtomicTaskList(String taskId, List<AtomicTaskExecution> taskList) throws Exception {
-        String executeId = taskManageDAO.getExecuteIdByTaskId(taskId);
+    public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws Exception {
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
         long startTime = System.currentTimeMillis();
@@ -144,20 +171,20 @@ public class QuartzJob implements Job {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
-            task.setTaskExecuteId(executeId);
-            Timestamp currentTime = new Timestamp(startTime);
-            taskManageDAO.initRuleExecuteInfo(task.getId(), executeId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTime, currentTime);
+            long currentTime = System.currentTimeMillis();
+            Timestamp currentTimeStamp = new Timestamp(currentTime);
+            taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp);
             do {
                 try {
                     //运行中途停止模板
                     if (!taskManageDAO.isRuning(taskId)) {
-                        taskManageDAO.updateTaskFinishedPercent(executeId, 0F);
+                        taskManageDAO.updateTaskFinishedPercent(taskExecuteId, 0F);
                         return;
                     }
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
-                    taskManageDAO.updateTaskFinishedPercent(executeId, ratio);
+                    taskManageDAO.updateTaskFinishedPercent(taskExecuteId, ratio);
                     break;
                 } catch (Exception e) {
                     LOG.error(e.toString());
@@ -170,7 +197,7 @@ public class QuartzJob implements Job {
                         LOG.error(ex.getMessage());
                     }
                     if(RETRY == retryCount) {
-                        taskManageDAO.updateTaskExecuteErrorMsg(executeId, e.toString());
+                        taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
                     }
                 } finally {
 
@@ -178,8 +205,8 @@ public class QuartzJob implements Job {
             } while (retryCount < RETRY);
         }
         long endTime = System.currentTimeMillis();
-        taskManageDAO.updateTaskExecuteStatus(executeId, 2);
-        taskManageDAO.updateDataTaskCostTime(executeId, endTime-startTime);
+        taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 2);
+        taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime-startTime);
     }
 
     public void runJob(AtomicTaskExecution task) throws Exception {
@@ -537,14 +564,17 @@ public class QuartzJob implements Job {
             //橙色告警数量
             if(Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
+                taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
             }
             //红色告警数量
             if(Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
+                taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
             }
             //计算异常数量
             if(Objects.isNull(resultValue)) {
                 taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
+                taskManageDAO.updateTaskErrorCount(task.getTaskId());
             }
 
         } catch (Exception e) {

@@ -190,8 +190,8 @@ public interface TaskManageDAO {
      * @param task
      * @return
      */
-    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,error_warning_group_id,enable,start_time,end_time,create_time,update_time,creator,delete) ",
-            " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.errorWarningGroupIds},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.delete})"})
+    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,error_warning_group_id,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count) ",
+            " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.errorWarningGroupIds},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount})"})
     public int addDataQualityTask(@Param("task")DataQualityTask task);
 
     /**
@@ -312,7 +312,7 @@ public interface TaskManageDAO {
      * 添加任务执行信息
      * @param taskExecute
      */
-    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count) values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount})")
+    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count,number) values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount},#{task.number})")
     public void initTaskExecuteInfo(@Param("task")DataQualityTaskExecute taskExecute);
 
     /**
@@ -492,4 +492,20 @@ public interface TaskManageDAO {
 
     @Select("")
     public TaskExecutionReport getTaskExecutionReport(@Param("taskId")String id);
+
+    @Select("select updater from data_quality_task where id=#{taskId}")
+    public String getTaskUpdater(@Param("taskId")String id);
+
+
+    @Update("update data_quality_task set orange_warning_total_count=orange_warning_total_count+1 where id=#{taskId}")
+    public int updateTaskOrangeWarningCount(@Param("taskId")String id);
+
+    @Update("update data_quality_task set red_warning_total_count=red_warning_total_count+1 where id=#{taskId}")
+    public int updateTaskRedWarningCount(@Param("taskId")String id);
+
+    @Update("update data_quality_task set error_total_count=error_total_count+1 where id=#{taskId}")
+    public int updateTaskErrorCount(@Param("taskId")String id);
+
+    @Update("update data_quality_task set execution_count=execution_count+1 where id=#{taskId}")
+    public int updateTaskExecutionCount(@Param("taskId")String id);
 }

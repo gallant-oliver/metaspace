@@ -189,10 +189,19 @@ public class TaskManageService {
             //创建者
             String userId = AdminUtils.getUserData().getUserId();
             dataQualityTask.setCreator(userId);
+            dataQualityTask.setUpdater(userId);
             //是否已删除
             dataQualityTask.setDelete(false);
             //是否开启
             dataQualityTask.setEnable(false);
+            //orangeWarningCount
+            dataQualityTask.setOrangeWarningTotalCount(0);
+            //redWarningCount
+            dataQualityTask.setRedWarningTotalCount(0);
+            //errorCount
+            dataQualityTask.setErrorTotalCount(0);
+            //executionCount
+            dataQualityTask.setExecutionCount(0);
             //子任务
             List<TaskInfo.SubTask> subTaskList = taskInfo.getTaskList();
             addDataQualitySubTask(guid, currentTime, subTaskList);
@@ -361,7 +370,6 @@ public class TaskManageService {
             String qrtzName = taskManageDAO.getQrtzJobByTaskId(taskId);
             if (Objects.isNull(qrtzName) || qrtzName.trim().length() == 0) {
                 addQuartzJob(taskId);
-                initExecuteInfo(taskId);
             } else {
                 String jobGroupName = JOB_GROUP_NAME + qrtzName;
                 quartzManager.resumeJob(qrtzName, jobGroupName);
@@ -373,27 +381,7 @@ public class TaskManageService {
         }
     }
 
-    public String initExecuteInfo(String taskId) {
-        try {
-            String userId = AdminUtils.getUserData().getUserId();
-            DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
-            String id = UUID.randomUUID().toString();
-            taskExecute.setId(id);
-            taskExecute.setTaskId(taskId);
-            taskExecute.setPercent(0F);
-            taskExecute.setExecuteStatus(1);
-            taskExecute.setExecutor(userId);
-            taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
-            taskExecute.setOrangeWarningCount(0);
-            taskExecute.setRedWarningCount(0);
-            taskExecute.setRuleErrorCount(0);
-            taskManageDAO.initTaskExecuteInfo(taskExecute);
-            return id;
-        } catch (Exception e) {
-            LOG.error(e.toString());
-        }
-        return null;
-    }
+
 
     public void startTaskNow(String taskId) throws AtlasBaseException {
         try {

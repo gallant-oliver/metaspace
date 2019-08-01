@@ -43,6 +43,11 @@ public class DataQualityTask {
     private Timestamp updateTime;
     private String creator;
     private Boolean delete;
+    private Integer executionCount;
+    private String updater;
+    private Integer orangeWarningTotalCount;
+    private Integer redWarningTotalCount;
+    private Integer errorTotalCount;
 
 
     private Long taskId;
@@ -176,5 +181,45 @@ public class DataQualityTask {
 
     public void setLastExecuteTime(Timestamp lastExecuteTime) {
         this.lastExecuteTime = lastExecuteTime;
+    }
+
+    public Integer getExecutionCount() {
+        return executionCount;
+    }
+
+    public void setExecutionCount(Integer executionCount) {
+        this.executionCount = executionCount;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
+    }
+
+    public Integer getOrangeWarningTotalCount() {
+        return orangeWarningTotalCount;
+    }
+
+    public void setOrangeWarningTotalCount(Integer orangeWarningTotalCount) {
+        this.orangeWarningTotalCount = orangeWarningTotalCount;
+    }
+
+    public Integer getRedWarningTotalCount() {
+        return redWarningTotalCount;
+    }
+
+    public void setRedWarningTotalCount(Integer redWarningTotalCount) {
+        this.redWarningTotalCount = redWarningTotalCount;
+    }
+
+    public Integer getErrorTotalCount() {
+        return errorTotalCount;
+    }
+
+    public void setErrorTotalCount(Integer errorTotalCount) {
+        this.errorTotalCount = errorTotalCount;
     }
 }
