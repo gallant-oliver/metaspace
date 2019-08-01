@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
+import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
@@ -268,6 +269,14 @@ public class TaskManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<TaskRuleHeader> getRuleList(@PathParam("taskId")String taskId, Parameters parameters) throws AtlasBaseException {
         return taskManageService.getRuleList(taskId, parameters);
+    }
+
+    @GET
+    @Path("/{taskId}/rules")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TaskExecutionReport getTaskExecutionReport(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        return taskManageService.getTaskExecutionReport(taskId);
     }
 
 }

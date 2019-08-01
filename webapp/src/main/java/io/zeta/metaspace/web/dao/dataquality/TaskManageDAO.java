@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
+import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.metadata.Column;
@@ -341,7 +342,7 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId})")
+    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId},#{createTime},#{updateTime})")
     public int initRuleExecuteInfo(@Param("id")String id, @Param("taskExecuteId")String taskExecuteId, @Param("taskId")String taskId, @Param("subTaskId")String subTaskId, @Param("objectId")String objectId, @Param("subTaskRuleId")String subTaskRuleId, @Param("createTime")Timestamp createTime, @Param("updateTime")Timestamp updateTime);
 
     /**
@@ -393,7 +394,7 @@ public interface TaskManageDAO {
 
     @Update({" <script>",
              " update data_quality_task_rule_execute set result=#{task.result},reference_value=#{task.referenceValue},check_status=#{task.checkStatus},waring_status=#{task.warningStatus},",
-             " orange_warning_check_status=#{task.orangeWarningCheckStatus},red_warning_check_status=#{task.redWarningCheckStatus})",
+             " orange_warning_check_status=#{task.orangeWarningCheckStatus},red_warning_check_status=#{task.redWarningCheckStatus} where id=#{task.id}",
              " </script>"})
     public int updateRuleExecutionWarningInfo(@Param("task")DataQualityTaskRuleExecute taskRuleExecute);
 
@@ -488,4 +489,7 @@ public interface TaskManageDAO {
 
     @Select("select id from data_quality_task_execute where task_id=#{taskId}")
     public String getExecuteIdByTaskId(@Param("taskId")String id);
+
+    @Select("")
+    public TaskExecutionReport getTaskExecutionReport(@Param("taskId")String id);
 }
