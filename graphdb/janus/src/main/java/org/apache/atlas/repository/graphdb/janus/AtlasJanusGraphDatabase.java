@@ -72,7 +72,7 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
     }
 
     public static Configuration getConfiguration() throws AtlasException {
-        startLocalSolr();
+//        startLocalSolr();
 
         Configuration configProperties = ApplicationProperties.get();
         Configuration janusConfig      = ApplicationProperties.getSubsetConfiguration(configProperties, GRAPH_PREFIX);
@@ -119,7 +119,7 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                         }
                     }
                     atlasGraphInstance = new AtlasJanusGraph();
-                    validateIndexBackend(config);
+//                    validateIndexBackend(config);
                 }
             }
         }
