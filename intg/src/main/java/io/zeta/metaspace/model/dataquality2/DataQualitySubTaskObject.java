@@ -27,6 +27,7 @@ import java.sql.Timestamp;
  */
 public class DataQualitySubTaskObject {
     private String id;
+    private String taskId;
     private String subTaskId;
     private String objectId;
     private Integer sequence;
@@ -42,6 +43,14 @@ public class DataQualitySubTaskObject {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 
     public String getSubTaskId() {

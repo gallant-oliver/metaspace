@@ -237,7 +237,7 @@ public class TaskManageService {
                 addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList);
                 //object
                 List<String> objectIdList = subTask.getObjectIdList();
-                addDataQualitySubTaskObject(guid, currentTime, objectIdList);
+                addDataQualitySubTaskObject(taskId, guid, currentTime, objectIdList);
                 taskManageDAO.addDataQualitySubTask(dataQualitySubTask);
             }
         } catch (Exception e) {
@@ -245,7 +245,7 @@ public class TaskManageService {
         }
     }
 
-    public void addDataQualitySubTaskObject(String subTaskId, Timestamp currentTime, List<String> objectIdList) throws AtlasBaseException {
+    public void addDataQualitySubTaskObject(String taskId, String subTaskId, Timestamp currentTime, List<String> objectIdList) throws AtlasBaseException {
         try {
             for (int i = 0, size = objectIdList.size(); i < size; i++) {
                 String objectId = objectIdList.get(i);
@@ -253,6 +253,8 @@ public class TaskManageService {
                 //id
                 String guid = UUID.randomUUID().toString();
                 dataQualitySubTaskObject.setId(guid);
+                //taskId
+                dataQualitySubTaskObject.setTaskId(taskId);
                 //子任务Id
                 dataQualitySubTaskObject.setSubTaskId(subTaskId);
                 //对象Id
@@ -284,6 +286,10 @@ public class TaskManageService {
                 subTaskRule.setSubTaskId(subTaskId);
                 //规则Id
                 subTaskRule.setRuleId(rule.getRuleId());
+                //校验类型
+                subTaskRule.setCheckType(rule.getCheckType());
+                //校验表达式
+                subTaskRule.setCheckExpression(rule.getCheckExpression());
                 //校验阈值
                 subTaskRule.setCheckThresholdMinValue(rule.getCheckThresholdMinValue());
                 subTaskRule.setCheckThresholdMaxValue(rule.getCheckThresholdMaxValue());
@@ -460,7 +466,7 @@ public class TaskManageService {
 
     public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String taskRuleId) throws AtlasBaseException {
         try {
-
+            return taskManageDAO.getTaskRuleExecutionRecordList(taskRuleId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }

@@ -218,8 +218,8 @@ public interface TaskManageDAO {
      * @param taskRule
      * @return
      */
-    @Insert({" insert into data_quality_sub_task_rule(id,subtask_id,ruleId,check_threshold_min_value,check_threshold_max_value,orange_check_type,orange_check_expression_type,orange_threshold_min_value,orange_threshold_max_value,orange_warning_groupid,red_check_type,red_check_expression_type,red_threshold_min_value,red_threshold_max_value,red_warning_groupid,sequence,create_time,update_time,delete) ",
-             " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.orangeWarningGroupIds},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.redWarningGroupIds},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete})"})
+    @Insert({" insert into data_quality_sub_task_rule(id,subtask_id,ruleId,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,orange_check_type,orange_check_expression_type,orange_threshold_min_value,orange_threshold_max_value,orange_warning_groupid,red_check_type,red_check_expression_type,red_threshold_min_value,red_threshold_max_value,red_warning_groupid,sequence,create_time,update_time,delete) ",
+             " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.orangeWarningGroupIds},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.redWarningGroupIds},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete})"})
     public int addDataQualitySubTaskRule(@Param("rule")DataQualitySubTaskRule taskRule);
 
     /**

@@ -135,6 +135,8 @@ public class TaskInfo {
 
     public static class SubTaskRule {
         private String ruleId;
+        private Integer checkType;
+        private Integer checkExpression;
         private Float checkThresholdMinValue;
         private Float checkThresholdMaxValue;
         private List<Warning> warnings;
@@ -145,6 +147,22 @@ public class TaskInfo {
 
         public void setRuleId(String ruleId) {
             this.ruleId = ruleId;
+        }
+
+        public Integer getCheckType() {
+            return checkType;
+        }
+
+        public void setCheckType(Integer checkType) {
+            this.checkType = checkType;
+        }
+
+        public Integer getCheckExpression() {
+            return checkExpression;
+        }
+
+        public void setCheckExpression(Integer checkExpression) {
+            this.checkExpression = checkExpression;
         }
 
         public Float getCheckThresholdMinValue() {
