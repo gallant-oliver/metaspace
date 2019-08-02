@@ -22,9 +22,9 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.GraphTransactionInterceptor;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.annotation.GraphTransaction;
+import org.apache.atlas.authorize.AtlasAuthorizationUtils;
 import org.apache.atlas.authorize.AtlasEntityAccessRequest;
 import org.apache.atlas.authorize.AtlasPrivilege;
-import org.apache.atlas.authorize.AtlasAuthorizationUtils;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
@@ -35,13 +35,8 @@ import org.apache.atlas.repository.store.graph.EntityGraphDiscovery;
 import org.apache.atlas.repository.store.graph.EntityGraphDiscoveryContext;
 import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v1.HardDeleteHandlerV1;
-import org.apache.atlas.type.AtlasClassificationType;
-import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.*;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
-import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.type.AtlasTypeUtil;
-import org.apache.atlas.utils.AtlasEntityUtil;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -687,7 +682,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     }
 
     private EntityMutationResponse createOrUpdate(EntityStream entityStream, boolean isPartialUpdate, boolean replaceClassifications) throws AtlasBaseException {
-        long start = System.currentTimeMillis();
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> createOrUpdate()");
         }
@@ -717,22 +711,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             if (CollectionUtils.isNotEmpty(context.getUpdatedEntities())) {
                 List<AtlasEntity> entitiesToSkipUpdate = null;
 
-                /*for (AtlasEntity entity : context.getUpdatedEntities()) {
-                    String guid = entity.getGuid();
-                    AtlasVertex vertex = context.getVertex(guid);
-                    AtlasEntity entityInStore = entityRetriever.toAtlasEntity(vertex);
-                    AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
-                    if (!hasAnyAttributeUpdate(entityType, entity, entityInStore)) {
-                        // if classifications are to be replaced as well, then skip updates only when no change in classifications as well
-                        if (!replaceClassifications || Objects.equals(entity.getClassifications(), entityInStore.getClassifications())) {
-                            if (entitiesToSkipUpdate == null) {
-                                entitiesToSkipUpdate = new ArrayList<>();
-                            }
-
-                            entitiesToSkipUpdate.add(entity);
-                        }
-                    }
-                }*/
                 for (AtlasEntity entity : context.getUpdatedEntities()) {
                     String          guid       = entity.getGuid();
                     AtlasVertex     vertex     = context.getVertex(guid);
@@ -836,40 +814,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         }
     }
 
-/*
-    private boolean hasAnyAttributeUpdate(AtlasEntityType entityType, AtlasEntity currEntity, AtlasEntity entityInStore) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("==> hasAnyAttributeUpdate(guid={}, typeName={})", currEntity.getGuid(), currEntity.getTypeName());
-        }
-
-        boolean ret = false;
-
-        for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {
-            String    attrName  = attribute.getName();
-            AtlasType attrType  = attribute.getAttributeType();
-            Object    currValue = currEntity.getAttribute(attrName);
-            Object    oldValue  = entityInStore.getAttribute(attrName);
-            setGuid(currValue);
-
-            if (!attrType.areEqualValues(currValue, oldValue)) {
-                ret = true;
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("hasAnyAttributeUpdate(guid={}, typeName={}): attribute '{}' is found updated - currentValue={}, newValue={}",
-                            currEntity.getGuid(), currEntity.getTypeName(), attrName, currValue, oldValue);
-                }
-
-                break;
-            }
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("<== hasAnyAttributeUpdate(guid={}, typeName={}): ret={}", currEntity.getGuid(), currEntity.getTypeName(), ret);
-        }
-
-        return ret;
-    }
-*/
 
     private void setGuid(Object currValue) {
         if (currValue instanceof ArrayList) {
