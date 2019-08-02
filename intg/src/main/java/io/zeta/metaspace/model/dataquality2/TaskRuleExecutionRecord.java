@@ -23,6 +23,7 @@ package io.zeta.metaspace.model.dataquality2;
  */
 public class TaskRuleExecutionRecord {
     private Integer objectType;
+    private String subTaskRuleId;
     private String executionId;
     private String ruleExecutionId;
     private String ruleName;
@@ -31,8 +32,14 @@ public class TaskRuleExecutionRecord {
     private String dbName;
     private String tableGuid;
     private String tableName;
-    private String columnId;
-    private String columnName;
+    private String objectId;
+    private String objectName;
+    private Integer checkType;
+    private Integer checkExpression;
+    private Float result;
+    private Float checkMinValue;
+    private Float checkMaxValue;
+    private Integer checkStatus;
     private Integer orangeWarningCheckType;
     private Integer orangeWarningcheckExpression;
     private Float orangeWarningMinValue;
@@ -41,8 +48,6 @@ public class TaskRuleExecutionRecord {
     private Integer redWarningcheckExpression;
     private Float redWarningMinValue;
     private Float redWarningMaxValue;
-    private Float result;
-    private Integer checkStatus;
 
     public Integer getObjectType() {
         return objectType;
@@ -50,6 +55,14 @@ public class TaskRuleExecutionRecord {
 
     public void setObjectType(Integer objectType) {
         this.objectType = objectType;
+    }
+
+    public String getSubTaskRuleId() {
+        return subTaskRuleId;
+    }
+
+    public void setSubTaskRuleId(String subTaskRuleId) {
+        this.subTaskRuleId = subTaskRuleId;
     }
 
     public String getExecutionId() {
@@ -116,20 +129,68 @@ public class TaskRuleExecutionRecord {
         this.tableName = tableName;
     }
 
-    public String getColumnId() {
-        return columnId;
+    public String getObjectId() {
+        return objectId;
     }
 
-    public void setColumnId(String columnId) {
-        this.columnId = columnId;
+    public void setObjectId(String objectId) {
+        this.objectId = objectId;
     }
 
-    public String getColumnName() {
-        return columnName;
+    public String getObjectName() {
+        return objectName;
     }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    public void setObjectName(String objectName) {
+        this.objectName = objectName;
+    }
+
+    public Integer getCheckType() {
+        return checkType;
+    }
+
+    public void setCheckType(Integer checkType) {
+        this.checkType = checkType;
+    }
+
+    public Integer getCheckExpression() {
+        return checkExpression;
+    }
+
+    public void setCheckExpression(Integer checkExpression) {
+        this.checkExpression = checkExpression;
+    }
+
+    public Float getResult() {
+        return result;
+    }
+
+    public void setResult(Float result) {
+        this.result = result;
+    }
+
+    public Float getCheckMinValue() {
+        return checkMinValue;
+    }
+
+    public void setCheckMinValue(Float checkMinValue) {
+        this.checkMinValue = checkMinValue;
+    }
+
+    public Float getCheckMaxValue() {
+        return checkMaxValue;
+    }
+
+    public void setCheckMaxValue(Float checkMaxValue) {
+        this.checkMaxValue = checkMaxValue;
+    }
+
+    public Integer getCheckStatus() {
+        return checkStatus;
+    }
+
+    public void setCheckStatus(Integer checkStatus) {
+        this.checkStatus = checkStatus;
     }
 
     public Integer getOrangeWarningCheckType() {
@@ -194,21 +255,5 @@ public class TaskRuleExecutionRecord {
 
     public void setRedWarningMaxValue(Float redWarningMaxValue) {
         this.redWarningMaxValue = redWarningMaxValue;
-    }
-
-    public Float getResult() {
-        return result;
-    }
-
-    public void setResult(Float result) {
-        this.result = result;
-    }
-
-    public Integer getCheckStatus() {
-        return checkStatus;
-    }
-
-    public void setCheckStatus(Integer checkStatus) {
-        this.checkStatus = checkStatus;
     }
 }

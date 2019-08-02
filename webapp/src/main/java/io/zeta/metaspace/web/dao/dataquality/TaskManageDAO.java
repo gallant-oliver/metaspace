@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
+import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -511,4 +512,18 @@ public interface TaskManageDAO {
 
     @Update("update data_quality_task set execution_count=execution_count+1 where id=#{taskId}")
     public int updateTaskExecutionCount(@Param("taskId")String id);
+
+    @Insert({" <script>",
+             " select d.*,rule_execute.check_status,rule_execute.orange_warning_check_status,rule_execute.red_warning_check_status,rule_execute.result from data_quality_task_rule_execute as rule_execute",
+             " join",
+             " (select b.*, c.objectid from",
+             " (select a.*,data_quality_rule.name,data_quality_rule.description,data_quality_rule.check_type,data_quality_rule.check_expression_type from data_quality_rule",
+             " join",
+             " (select sub_task_rule.id as subtaskruleid,sub_task_rule.check_threshold_min_value,sub_task_rule.check_threshold_max_value,sub_task_rule.orange_check_type,",
+             " sub_task_rule.orange_check_expression_type,sub_task_rule.orange_threshold_min_value,sub_task_rule.orange_threshold_max_value,sub_task_rule.red_check_type,",
+             " sub_task_rule.red_check_expression_type,sub_task_rule.red_threshold_min_value,sub_task_rule.red_threshold_max_value,sub_task_rule.ruleid,data_quality_sub_task.id as subtaskid ",
+             " from",
+             " data_quality_sub_task_rule as sub_task_rule join data_quality_sub_task on sub_task_rule.subtask_id=data_quality_sub_task.id and data_quality_sub_task.task_id=",
+             " </script>"})
+    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("taskRuleId")String taskRuleId);
 }
