@@ -100,7 +100,7 @@ def hbaseBinDir(dir):
     return os.path.join(dir, "hbase", BIN)
 
 def hbaseConfDir(dir):
-    return os.environ.get(HBASE_CONF_DIR, os.path.join(dir, "hbase", CONF))
+    return os.environ.get(HBASE_CONF_DIR, os.path.join(dir, CONF, "hbase"))
 
 def zookeeperBinDir(dir):
     return os.environ.get(SOLR_BIN, os.path.join(dir, "zk", BIN))

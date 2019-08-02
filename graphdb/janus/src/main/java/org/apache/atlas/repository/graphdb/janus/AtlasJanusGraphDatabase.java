@@ -119,7 +119,7 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                         }
                     }
                     atlasGraphInstance = new AtlasJanusGraph();
-                    validateIndexBackend(config);
+//                    validateIndexBackend(config);
                 }
             }
         }
