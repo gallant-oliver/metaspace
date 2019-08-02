@@ -209,8 +209,8 @@ public interface TaskManageDAO {
      * @param taskObject
      * @return
      */
-    @Insert({" insert into data_quality_sub_task_object(id,subtask_id,object_id,sequence,create_time,update_time,delete) ",
-             " values(#{taskObject.id},#{taskObject.subTaskId},#{taskObject.objectId},#{taskObject.sequence},#{taskObject.createTime},#{taskObject.updateTime},#{taskObject.delete})"})
+    @Insert({" insert into data_quality_sub_task_object(id,task_id,subtask_id,object_id,sequence,create_time,update_time,delete) ",
+             " values(#{taskObject.id},#{taskObject.taskId},#{taskObject.subTaskId},#{taskObject.objectId},#{taskObject.sequence},#{taskObject.createTime},#{taskObject.updateTime},#{taskObject.delete})"})
     public int addDataQualitySubTaskObject(@Param("taskObject")DataQualitySubTaskObject taskObject);
 
     /**
