@@ -37,7 +37,8 @@ import java.util.stream.Collectors;
 
 public class LocalSolrRunner {
 
-    private   static final String   TARGET_DIRECTORY   = System.getProperty("embedded.solr.directory");
+    private   static final String   SOURCE_DIRECTORY   = System.getProperty("atlas.conf");
+    private   static final String   TARGET_DIRECTORY   = System.getProperty("atlas.home");
     private   static final String   COLLECTIONS_FILE   = "collections.txt";
     private   static final String   SOLR_XML           = "solr.xml";
     private   static final String   TEMPLATE_DIRECTORY = "core-template";
@@ -46,6 +47,7 @@ public class LocalSolrRunner {
     private static final Logger LOG = LoggerFactory.getLogger(LocalSolrRunner.class);
 
     private static MiniSolrCloudCluster miniSolrCloudCluster;
+    private static File temp = new File(TARGET_DIRECTORY + File.separator + "data" + File.separator + "index" + File.separator + getRandomString());
 
     public static void start() throws Exception {
         if (isLocalSolrRunning()) {
@@ -53,13 +55,15 @@ public class LocalSolrRunner {
         }
 
         LOG.info("==> LocalSolrRunner.start()");
-
-        File templateDirectory = new File(TARGET_DIRECTORY + File.separator + "solr" + File.separator + TEMPLATE_DIRECTORY);
-        File temp = new File(TARGET_DIRECTORY + File.separator + "data" + File.separator + "index" + File.separator + getRandomString());
+        //删除旧的目录
+        File index              = new File(TARGET_DIRECTORY + File.separator + "data" + File.separator + "index");
+        if (index.exists()) {
+            FileUtils.deleteDirectory(index);
+        }
+        File templateDirectory = new File(SOURCE_DIRECTORY + File.separator + "solr" + File.separator + TEMPLATE_DIRECTORY);
 
         temp.mkdirs();
-        temp.deleteOnExit();
-
+        FileUtils.forceDeleteOnExit(temp);
         miniSolrCloudCluster = new MiniSolrCloudCluster(1, null, temp.toPath(), readSolrXml(), null, null);
 
         LOG.info("Started local solr server at: " + getZookeeperUrls());
@@ -87,7 +91,7 @@ public class LocalSolrRunner {
         }
         System.clearProperty("solr.solrxml.location");
         System.clearProperty("zkHost");
-
+        FileUtils.deleteDirectory(temp);
         miniSolrCloudCluster.shutdown();
     }
 
