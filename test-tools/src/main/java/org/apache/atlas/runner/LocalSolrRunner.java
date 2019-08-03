@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 public class LocalSolrRunner {
 
-    private   static final String   SOURCE_DIRECTORY   = System.getProperty("atlas.conf");
+    private   static final String   SOURCE_DIRECTORY   = System.getProperty("embedded.solr.directory");
     private   static final String   TARGET_DIRECTORY   = System.getProperty("atlas.home");
     private   static final String   COLLECTIONS_FILE   = "collections.txt";
     private   static final String   SOLR_XML           = "solr.xml";
@@ -55,15 +55,8 @@ public class LocalSolrRunner {
         }
 
         LOG.info("==> LocalSolrRunner.start()");
-        //删除旧的目录
-        File index              = new File(TARGET_DIRECTORY + File.separator + "data" + File.separator + "index");
-        if (index.exists()) {
-            FileUtils.deleteDirectory(index);
-        }
         File templateDirectory = new File(SOURCE_DIRECTORY + File.separator + "solr" + File.separator + TEMPLATE_DIRECTORY);
-
         temp.mkdirs();
-        FileUtils.forceDeleteOnExit(temp);
         miniSolrCloudCluster = new MiniSolrCloudCluster(1, null, temp.toPath(), readSolrXml(), null, null);
 
         LOG.info("Started local solr server at: " + getZookeeperUrls());
