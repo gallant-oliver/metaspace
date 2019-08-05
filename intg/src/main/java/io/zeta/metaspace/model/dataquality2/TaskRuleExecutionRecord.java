@@ -41,13 +41,15 @@ public class TaskRuleExecutionRecord {
     private Float checkMaxValue;
     private Integer checkStatus;
     private Integer orangeWarningCheckType;
-    private Integer orangeWarningcheckExpression;
+    private Integer orangeWarningCheckExpression;
     private Float orangeWarningMinValue;
     private Float orangeWarningMaxValue;
+    private Integer orangeCheckStatus;
     private Integer redWarningCheckType;
-    private Integer redWarningcheckExpression;
+    private Integer redWarningCheckExpression;
     private Float redWarningMinValue;
     private Float redWarningMaxValue;
+    private Integer redCheckStatus;
 
     public Integer getObjectType() {
         return objectType;
@@ -201,12 +203,12 @@ public class TaskRuleExecutionRecord {
         this.orangeWarningCheckType = orangeWarningCheckType;
     }
 
-    public Integer getOrangeWarningcheckExpression() {
-        return orangeWarningcheckExpression;
+    public Integer getOrangeWarningCheckExpression() {
+        return orangeWarningCheckExpression;
     }
 
-    public void setOrangeWarningcheckExpression(Integer orangeWarningcheckExpression) {
-        this.orangeWarningcheckExpression = orangeWarningcheckExpression;
+    public void setOrangeWarningCheckExpression(Integer orangeWarningCheckExpression) {
+        this.orangeWarningCheckExpression = orangeWarningCheckExpression;
     }
 
     public Float getOrangeWarningMinValue() {
@@ -225,6 +227,14 @@ public class TaskRuleExecutionRecord {
         this.orangeWarningMaxValue = orangeWarningMaxValue;
     }
 
+    public Integer getOrangeCheckStatus() {
+        return orangeCheckStatus;
+    }
+
+    public void setOrangeCheckStatus(Integer orangeCheckStatus) {
+        this.orangeCheckStatus = orangeCheckStatus;
+    }
+
     public Integer getRedWarningCheckType() {
         return redWarningCheckType;
     }
@@ -233,12 +243,12 @@ public class TaskRuleExecutionRecord {
         this.redWarningCheckType = redWarningCheckType;
     }
 
-    public Integer getRedWarningcheckExpression() {
-        return redWarningcheckExpression;
+    public Integer getRedWarningCheckExpression() {
+        return redWarningCheckExpression;
     }
 
-    public void setRedWarningcheckExpression(Integer redWarningcheckExpression) {
-        this.redWarningcheckExpression = redWarningcheckExpression;
+    public void setRedWarningCheckExpression(Integer redWarningCheckExpression) {
+        this.redWarningCheckExpression = redWarningCheckExpression;
     }
 
     public Float getRedWarningMinValue() {
@@ -255,5 +265,13 @@ public class TaskRuleExecutionRecord {
 
     public void setRedWarningMaxValue(Float redWarningMaxValue) {
         this.redWarningMaxValue = redWarningMaxValue;
+    }
+
+    public Integer getRedCheckStatus() {
+        return redCheckStatus;
+    }
+
+    public void setRedCheckStatus(Integer redCheckStatus) {
+        this.redCheckStatus = redCheckStatus;
     }
 }

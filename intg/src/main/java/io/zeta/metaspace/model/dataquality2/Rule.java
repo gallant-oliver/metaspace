@@ -23,6 +23,7 @@ public class Rule {
     private String ruleTemplateId;
     private String name;
     private String code;
+    private Integer scope;
     private String categoryId;
     private boolean enable;
     private String description;
@@ -69,6 +70,14 @@ public class Rule {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public Integer getScope() {
+        return scope;
+    }
+
+    public void setScope(Integer scope) {
+        this.scope = scope;
     }
 
     public String getCategoryId() {

@@ -513,17 +513,17 @@ public interface TaskManageDAO {
     @Update("update data_quality_task set execution_count=execution_count+1 where id=#{taskId}")
     public int updateTaskExecutionCount(@Param("taskId")String id);
 
-    @Insert({" <script>",
-             " select d.*,rule_execute.check_status,rule_execute.orange_warning_check_status,rule_execute.red_warning_check_status,rule_execute.result from data_quality_task_rule_execute as rule_execute",
+    @Select({" <script>",
+             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,",
+             " d.name as ruleName,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
+             " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue",
+             " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}) c",
              " join",
-             " (select b.*, c.objectid from",
-             " (select a.*,data_quality_rule.name,data_quality_rule.description,data_quality_rule.check_type,data_quality_rule.check_expression_type from data_quality_rule",
+             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule.name,data_quality_rule.description from data_quality_sub_task_rule join data_quality_rule on data_quality_sub_task_rule.ruleid=data_quality_rule.id) a",
              " join",
-             " (select sub_task_rule.id as subtaskruleid,sub_task_rule.check_threshold_min_value,sub_task_rule.check_threshold_max_value,sub_task_rule.orange_check_type,",
-             " sub_task_rule.orange_check_expression_type,sub_task_rule.orange_threshold_min_value,sub_task_rule.orange_threshold_max_value,sub_task_rule.red_check_type,",
-             " sub_task_rule.red_check_expression_type,sub_task_rule.red_threshold_min_value,sub_task_rule.red_threshold_max_value,sub_task_rule.ruleid,data_quality_sub_task.id as subtaskid ",
-             " from",
-             " data_quality_sub_task_rule as sub_task_rule join data_quality_sub_task on sub_task_rule.subtask_id=data_quality_sub_task.id and data_quality_sub_task.task_id=",
+             " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
+             " on a.subtask_id = b.subtask_id) d",
+             " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
              " </script>"})
-    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("taskRuleId")String taskRuleId);
+    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId);
 }

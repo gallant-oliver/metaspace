@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.Rule;
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -84,5 +85,8 @@ public interface RuleDAO {
 
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
+
+    @Select("select id,name,scope,unit,description,delete,category_id as categoryId from data_quality_rule_template")
+    public List<RuleTemplate> getAllRuleTemplateList();
 
 }

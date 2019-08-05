@@ -280,12 +280,12 @@ public class TaskManageREST {
         return taskManageService.getTaskExecutionReport(taskId);
     }
 
-    /*@GET
-    @Path("/{taskRuleId}/record")
+    @GET
+    @Path("/{ruleExecutionId}/record")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("taskRuleId")String taskRuleId) throws AtlasBaseException {
-        return taskManageService.getTaskExecutionReport(taskRuleId);
-    }*/
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(ruleExecutionId);
+    }
 
 }

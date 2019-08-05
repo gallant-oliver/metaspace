@@ -19,6 +19,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.model.dataquality2.Rule;
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -236,6 +237,14 @@ public class RuleREST {
     public void disableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
         log(ruleId);
         ruleService.updateRuleStatus(ruleId, false);
+    }
+
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/ruleTemplate")
+    public List<RuleTemplate> disableRule() throws AtlasBaseException {
+        return ruleService.getAllRuleTemplateList();
     }
 
 }

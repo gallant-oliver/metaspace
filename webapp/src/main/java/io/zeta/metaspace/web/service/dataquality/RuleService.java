@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.service.dataquality;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import io.zeta.metaspace.model.dataquality2.Rule;
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -125,6 +126,14 @@ public class RuleService {
     public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {
         try {
             return ruleDAO.updateRuleStatus(id, enable);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public List<RuleTemplate> getAllRuleTemplateList() throws AtlasBaseException {
+        try {
+            return ruleDAO.getAllRuleTemplateList();
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
