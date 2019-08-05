@@ -37,7 +37,9 @@ import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
@@ -466,7 +468,23 @@ public class TaskManageService {
 
     public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String taskRuleId) throws AtlasBaseException {
         try {
-            return taskManageDAO.getTaskRuleExecutionRecordList(taskRuleId);
+            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(taskRuleId);
+            for (TaskRuleExecutionRecord record : list) {
+                if(0 == record.getObjectType()) {
+                    String objectId = record.getObjectId();
+                    Table table = taskManageDAO.getDbAndTableName(objectId);
+                    record.setDbName(table.getDatabaseName());
+                    record.setTableName(table.getTableName());
+                    record.setObjectName(table.getTableName());
+                } else if(1 == record.getObjectType()) {
+                    String objectId = record.getObjectId();
+                    Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+                    record.setDbName(column.getDatabaseName());
+                    record.setTableName(column.getTableName());
+                    record.setObjectName(column.getColumnName());
+                }
+            }
+            return list;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }

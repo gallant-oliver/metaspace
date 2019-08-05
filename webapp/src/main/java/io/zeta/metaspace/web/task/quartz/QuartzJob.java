@@ -198,6 +198,8 @@ public class QuartzJob implements Job {
                     }
                     if(RETRY == retryCount) {
                         taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
+                        taskManageDAO.updateTaskRuleExecutionErrorMsg(task.getId(), e.toString());
+
                     }
                 } finally {
 

@@ -28,9 +28,7 @@ public class TaskRuleExecutionRecord {
     private String ruleExecutionId;
     private String ruleName;
     private String description;
-    private String dbGuid;
     private String dbName;
-    private String tableGuid;
     private String tableName;
     private String objectId;
     private String objectName;
@@ -99,14 +97,6 @@ public class TaskRuleExecutionRecord {
         this.description = description;
     }
 
-    public String getDbGuid() {
-        return dbGuid;
-    }
-
-    public void setDbGuid(String dbGuid) {
-        this.dbGuid = dbGuid;
-    }
-
     public String getDbName() {
         return dbName;
     }
@@ -115,13 +105,6 @@ public class TaskRuleExecutionRecord {
         this.dbName = dbName;
     }
 
-    public String getTableGuid() {
-        return tableGuid;
-    }
-
-    public void setTableGuid(String tableGuid) {
-        this.tableGuid = tableGuid;
-    }
 
     public String getTableName() {
         return tableName;

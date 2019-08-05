@@ -515,11 +515,11 @@ public interface TaskManageDAO {
 
     @Select({" <script>",
              " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,",
-             " d.name as ruleName,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
+             " d.name as ruleName,d.scope as objectType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
              " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue",
              " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}) c",
              " join",
-             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule.name,data_quality_rule.description from data_quality_sub_task_rule join data_quality_rule on data_quality_sub_task_rule.ruleid=data_quality_rule.id) a",
+             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule.name,data_quality_rule.description,data_quality_rule.scope from data_quality_sub_task_rule join data_quality_rule on data_quality_sub_task_rule.ruleid=data_quality_rule.id) a",
              " join",
              " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
              " on a.subtask_id = b.subtask_id) d",
