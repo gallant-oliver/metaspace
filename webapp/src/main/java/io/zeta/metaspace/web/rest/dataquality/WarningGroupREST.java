@@ -68,6 +68,11 @@ public class WarningGroupREST {
         request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据质量告警组) " + content);
     }
 
+    /**
+     * 添加告警组
+     * @param warningGroup
+     * @throws AtlasBaseException
+     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -82,6 +87,11 @@ public class WarningGroupREST {
         warningGroupService.insert(warningGroup);
     }
 
+    /**
+     * 编辑告警组
+     * @param warningGroup
+     * @throws AtlasBaseException
+     */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -92,6 +102,11 @@ public class WarningGroupREST {
         warningGroupService.update(warningGroup);
     }
 
+    /**
+     * 批量删除告警组
+     * @param idList
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -102,6 +117,12 @@ public class WarningGroupREST {
         warningGroupService.deleteByIdList(idList);
     }
 
+    /**
+     * 告警组详情
+     * @param id
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -110,6 +131,11 @@ public class WarningGroupREST {
         return warningGroupService.getById(id);
     }
 
+    /**
+     * 删除告警组
+     * @param id
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -120,7 +146,12 @@ public class WarningGroupREST {
         warningGroupService.deleteById(id);
     }
 
-
+    /**
+     * 搜索告警组列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -128,5 +159,28 @@ public class WarningGroupREST {
     public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
         return warningGroupService.search(parameters);
     }
+
+    /**
+     * 获取告警列表
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{warningType}/{warningStatus}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getWarningList() throws AtlasBaseException {
+
+    }
+
+
+    @PUT
+    @Path("/")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void closePageAllWarning() throws AtlasBaseException {
+
+    }
+
 
 }
