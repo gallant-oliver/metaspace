@@ -24,6 +24,7 @@ import metaspace_config as mc
 ATLAS_LOG_OPTS="-Datlas.log.dir=%s -Datlas.log.file=%s.log"
 ATLAS_COMMAND_OPTS="-Datlas.home=%s"
 ATLAS_CONFIG_OPTS="-Datlas.conf=%s"
+ATLAS_SOLR_OPTS="-Dembedded.solr.directory=%s"
 DEFAULT_JVM_HEAP_OPTS="-Xmx1024m"
 DEFAULT_JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j.configuration=log4j2.xml -Djava.net.preferIPv4Stack=true -server"
 
@@ -57,6 +58,9 @@ def main():
 
     config_opts = (ATLAS_CONFIG_OPTS % jvm_confdir)
     jvm_opts_list.extend(config_opts.split())
+
+    solr_opts = (ATLAS_SOLR_OPTS % jvm_confdir)
+    jvm_opts_list.extend(solr_opts.split())
 
     atlas_server_heap_opts = os.environ.get(mc.ATLAS_SERVER_HEAP, DEFAULT_JVM_HEAP_OPTS)
     jvm_opts_list.extend(atlas_server_heap_opts.split())

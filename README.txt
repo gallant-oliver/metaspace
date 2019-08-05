@@ -4,8 +4,8 @@ Build Process
 
 1. Get MetaSpace sources to your local directory, for example with following commands
    $ cd <your-local-directory>
-   $ git clone https://gitlab.gridsum.com/zeta/dev/metaspace/metaspace
-   $ cd metaspace
+   $ git clone --recursive https://gitlab.gridsum.com/zeta/dev/metaspace/metaspace
+   $ cd metaspace && git submodule update --init
 
 2. Execute the following commands to build Apache Atlas
 
