@@ -33,5 +33,53 @@ public class TaskWarningHeader {
     private Integer warningCount;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp lastWarningTime;
-    private List<String>
+    private List<String> warningGroupObjectList;
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public Integer getWarningStatus() {
+        return warningStatus;
+    }
+
+    public void setWarningStatus(Integer warningStatus) {
+        this.warningStatus = warningStatus;
+    }
+
+    public Integer getWarningCount() {
+        return warningCount;
+    }
+
+    public void setWarningCount(Integer warningCount) {
+        this.warningCount = warningCount;
+    }
+
+    public Timestamp getLastWarningTime() {
+        return lastWarningTime;
+    }
+
+    public void setLastWarningTime(Timestamp lastWarningTime) {
+        this.lastWarningTime = lastWarningTime;
+    }
+
+    public List<String> getWarningGroupObjectList() {
+        return warningGroupObjectList;
+    }
+
+    public void setWarningGroupObjectList(List<String> warningGroupObjectList) {
+        this.warningGroupObjectList = warningGroupObjectList;
+    }
 }

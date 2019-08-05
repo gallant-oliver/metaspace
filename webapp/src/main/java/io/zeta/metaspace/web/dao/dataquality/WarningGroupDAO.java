@@ -61,4 +61,6 @@ public interface WarningGroupDAO {
              " </script>"})
     public long countBySearch(@Param("query") String query);
 
+    public List<>
+
 }
