@@ -42,6 +42,7 @@ public class DataQualityTaskExecute {
     private Integer ruleErrorCount;
     private Integer warningStatus;
     private String number;
+    private Integer counter;
 
     public String getId() {
         return id;
@@ -153,5 +154,13 @@ public class DataQualityTaskExecute {
 
     public void setNumber(String number) {
         this.number = number;
+    }
+
+    public Integer getCounter() {
+        return counter;
+    }
+
+    public void setCounter(Integer counter) {
+        this.counter = counter;
     }
 }

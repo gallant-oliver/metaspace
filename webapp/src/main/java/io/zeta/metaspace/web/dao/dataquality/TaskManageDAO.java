@@ -24,6 +24,8 @@ import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
+import io.zeta.metaspace.model.dataquality2.ExecutionLog;
+import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
@@ -313,7 +315,7 @@ public interface TaskManageDAO {
      * 添加任务执行信息
      * @param taskExecute
      */
-    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count,number) values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount},#{task.number})")
+    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count,number,counter) values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount},#{task.number},#{task.counter})")
     public void initTaskExecuteInfo(@Param("task")DataQualityTaskExecute taskExecute);
 
     /**
@@ -526,4 +528,55 @@ public interface TaskManageDAO {
              " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
              " </script>"})
     List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId);
+
+    @Select("select name from data_quality_rule where id=(select ruleId from data_quality_sub_task_rule where id=#{subTaskRuleId})")
+    public String getRuleCheckName(@Param("subTaskRuleId")String subTaskRuleId);
+
+    /**
+     * 获取当前任务最大检验次数
+     * @param taskId
+     * @return
+     */
+    @Select("select max(counter) from data_quality_task_execute where task_id=#{taskId}")
+    public Integer getMaxCounter(@Param("taskId")String taskId);
+
+    /**
+     * 任务执行日志列表
+     * @param taskId
+     * @return
+     */
+    @Select({" <script>",
+             " select execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
+             " join users on users.userId=data_quality_task_execute.executor",
+             " where task_id=#{taskId}",
+             " and (executor like '%${params.query}%' ESCAPE '/')",
+             " <if test='params.limit!=null and params.limit!= -1'>",
+             " limit #{params.limit}",
+             " </if>",
+             " <if test='params.offset!=null'>",
+             " offset #{params.offset}",
+             " </if>",
+             " </script>"})
+    public List<ExecutionLogHeader> getExecutionLogList(@Param("taskId")String taskId, @Param("params")Parameters parameters);
+
+    /**
+     * 统计任务执行日志列表
+     * @param taskId
+     * @param parameters
+     * @return
+     */
+    @Select({" <script>",
+             " select count(*) from",
+             " (select * from data_quality_task_execute",
+             " join users on users.userId=data_quality_task_execute.executor",
+             " where task_id=#{taskId}",
+             " and (users.userName like '%${params.query}%' ESCAPE '/')) as info",
+             " </script>"})
+    public Long countExecutionLogList(@Param("taskId")String taskId, @Param("params")Parameters parameters);
+
+    @Select("select data_quality_task.name as taskName, execute_time as executeTime,counter,execute_status as executeStatus from data_quality_task_execute join data_quality_task on data_quality_task.id=data_quality_task_execute.task_id where data_quality_task_execute.id=#{ruleExecutionId}")
+    public ExecutionLog getExecutionInfo(@Param("ruleExecutionId")String ruleExecutionId);
+
+    @Select("select error_msg from data_quality_task_rule_execute where task_execute_id=#{ruleExecutionId}")
+    public List<String> getRuleExecutionLog(@Param("ruleExecutionId")String ruleExecutionId);
 }

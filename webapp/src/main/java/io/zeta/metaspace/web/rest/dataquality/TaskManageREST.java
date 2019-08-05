@@ -24,6 +24,8 @@ package io.zeta.metaspace.web.rest.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
+import io.zeta.metaspace.model.dataquality2.ExecutionLog;
+import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
@@ -87,6 +89,34 @@ public class TaskManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<TaskHeader> getTaskList(@PathParam("my") Integer my, Parameters parameters) throws AtlasBaseException {
         return taskManageService.getTaskList(my, parameters);
+    }
+
+    /**
+     * 报告详情
+     * @param taskId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{taskId}/report")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TaskExecutionReport getTaskExecutionReport(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        return taskManageService.getTaskExecutionReport(taskId);
+    }
+
+    /**
+     * 报告规则记录详情
+     * @param ruleExecutionId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{ruleExecutionId}/record")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(ruleExecutionId);
     }
 
     /**
@@ -229,6 +259,11 @@ public class TaskManageREST {
         taskManageService.startTask(taskId);
     }
 
+    /**
+     * 关闭任务
+     * @param taskId
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/{taskId}/disable")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -264,6 +299,13 @@ public class TaskManageREST {
         taskManageService.startTaskNow(taskId);
     }
 
+    /**
+     * 任务规则列表
+     * @param taskId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/{taskId}/rules")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -272,20 +314,33 @@ public class TaskManageREST {
         return taskManageService.getRuleList(taskId, parameters);
     }
 
-    @GET
-    @Path("/{taskId}/report")
+    /**
+     * 任务日志列表
+     * @param taskId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/{taskId}/log")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TaskExecutionReport getTaskExecutionReport(@PathParam("taskId")String taskId) throws AtlasBaseException {
-        return taskManageService.getTaskExecutionReport(taskId);
+    public PageResult<ExecutionLogHeader> getExecutionLogList(@PathParam("taskId")String taskId, Parameters parameters) throws AtlasBaseException {
+        return taskManageService.getExecutionLogList(taskId, parameters);
     }
 
+    /**
+     * 任务某次执行日志详情
+     * @param ruleExecutionId
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
-    @Path("/{ruleExecutionId}/record")
+    @Path("/{ruleExecutionId}/log")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(ruleExecutionId);
+    public ExecutionLog getExecutionLogList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
+        return taskManageService.getExecutionLogList(ruleExecutionId);
     }
 
 }

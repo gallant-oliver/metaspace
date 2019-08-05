@@ -35,6 +35,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
@@ -104,6 +105,8 @@ public class QuartzJob implements Job {
             taskExecute.setRedWarningCount(0);
             taskExecute.setRuleErrorCount(0);
             taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
+            Integer counter = taskManageDAO.getMaxCounter(taskId);
+            taskExecute.setCounter(Objects.isNull(counter)?0:++counter);
             taskManageDAO.initTaskExecuteInfo(taskExecute);
             taskManageDAO.updateTaskExecutionCount(taskId);
             return id;
@@ -167,12 +170,14 @@ public class QuartzJob implements Job {
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
         long startTime = System.currentTimeMillis();
+
         for (int i = 0; i < totalStep; i++) {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
             long currentTime = System.currentTimeMillis();
             Timestamp currentTimeStamp = new Timestamp(currentTime);
+            String errorMsg = null;
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp);
             do {
                 try {
@@ -198,17 +203,44 @@ public class QuartzJob implements Job {
                     }
                     if(RETRY == retryCount) {
                         taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
-                        taskManageDAO.updateTaskRuleExecutionErrorMsg(task.getId(), e.toString());
-
+                         errorMsg = e.toString();
                     }
                 } finally {
-
+                    recordExecutionInfo(task, errorMsg);
                 }
             } while (retryCount < RETRY);
         }
         long endTime = System.currentTimeMillis();
         taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 2);
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime-startTime);
+    }
+
+    public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg) {
+        String dbName = task.getDbName();
+        String tableName = task.getTableName();
+        String objectName = task.getObjectName();
+        String source = dbName + "." + tableName;
+        if(Objects.nonNull(objectName) && !objectName.equals(tableName)) {
+            source += "." + objectName;
+        }
+        String checkMsg = taskManageDAO.getRuleCheckName(task.getSubTaskRuleId());
+        String currentTime = DateUtils.getNow();
+
+        String logInfoStatus = null;
+        if(Objects.nonNull(errorMsg)) {
+            logInfoStatus = "ERROR";
+        } else {
+            logInfoStatus = "INFO";
+        }
+
+        StringJoiner logJoiner = new StringJoiner(" ");
+        logJoiner.add(currentTime);
+        logJoiner.add(logInfoStatus);
+        logJoiner.add(source);
+        logJoiner.add(checkMsg);
+        logJoiner.add(Objects.isNull(errorMsg)?"SUCCESS":errorMsg);
+
+        taskManageDAO.updateTaskRuleExecutionErrorMsg(task.getId(), logJoiner.toString());
     }
 
     public void runJob(AtomicTaskExecution task) throws Exception {

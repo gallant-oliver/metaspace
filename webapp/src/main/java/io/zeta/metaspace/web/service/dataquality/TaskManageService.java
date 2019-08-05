@@ -28,6 +28,8 @@ import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
+import io.zeta.metaspace.model.dataquality2.ExecutionLog;
+import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.Rule;
@@ -485,6 +487,33 @@ public class TaskManageService {
                 }
             }
             return list;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public PageResult<ExecutionLogHeader> getExecutionLogList(String taskId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult pageResult = new PageResult();
+            List<ExecutionLogHeader> lists = taskManageDAO.getExecutionLogList(taskId, parameters);
+            Long count = taskManageDAO.countExecutionLogList(taskId, parameters);
+            pageResult.setLists(lists);
+            pageResult.setCount(lists.size());
+            pageResult.setSum(count);
+            return pageResult;
+
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public ExecutionLog getExecutionLogList(String ruleExecutionId) throws AtlasBaseException {
+        try {
+            ExecutionLog logInfo = taskManageDAO.getExecutionInfo(ruleExecutionId);
+            List<String> errorList = taskManageDAO.getRuleExecutionLog(ruleExecutionId);
+            logInfo.setMsg(errorList);
+            return logInfo;
+
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
