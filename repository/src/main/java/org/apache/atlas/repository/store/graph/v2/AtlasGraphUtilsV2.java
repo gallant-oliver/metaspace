@@ -345,10 +345,12 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static AtlasVertex findByTypeAndPropertyName(String typeName, String propertyName, Object attrVal) {
+        //提交事务，以获取最新的数据
+        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
-                                                    .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typeName)
-                                                    .has(propertyName, attrVal)
-                                                    .has(Constants.STATE_PROPERTY_KEY, AtlasEntity.Status.ACTIVE.name());
+                .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typeName)
+                .has(propertyName, attrVal)
+                .has(Constants.STATE_PROPERTY_KEY, AtlasEntity.Status.ACTIVE.name());
 
         Iterator<AtlasVertex> results = query.vertices().iterator();
 
@@ -358,10 +360,12 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static AtlasVertex findBySuperTypeAndPropertyName(String typeName, String propertyName, Object attrVal) {
+        //提交事务，以获取最新的数据
+        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
-                                                    .has(Constants.SUPER_TYPES_PROPERTY_KEY, typeName)
-                                                    .has(propertyName, attrVal)
-                                                    .has(Constants.STATE_PROPERTY_KEY, AtlasEntity.Status.ACTIVE.name());
+                .has(Constants.SUPER_TYPES_PROPERTY_KEY, typeName)
+                .has(propertyName, attrVal)
+                .has(Constants.STATE_PROPERTY_KEY, AtlasEntity.Status.ACTIVE.name());
 
         Iterator<AtlasVertex> results = query.vertices().iterator();
 
@@ -371,15 +375,17 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static List<String> findEntityGUIDsByType(String typename, SortOrder sortOrder) {
+        //提交事务，以获取最新的数据
+        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
-                                                  .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typename);
+                .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typename);
         if (sortOrder != null) {
             AtlasGraphQuery.SortOrder qrySortOrder = sortOrder == SortOrder.ASCENDING ? ASC : DESC;
             query.orderBy(Constants.QUALIFIED_NAME, qrySortOrder);
         }
 
         Iterator<AtlasVertex> results = query.vertices().iterator();
-        ArrayList<String> ret = new ArrayList<>();
+        ArrayList<String>     ret     = new ArrayList<>();
 
         if (!results.hasNext()) {
             return Collections.emptyList();
@@ -397,6 +403,8 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static boolean relationshipTypeHasInstanceEdges(String typeName) throws AtlasBaseException {
+        //提交事务，以获取最新的数据
+        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance()
                 .query()
                 .has(Constants.TYPE_NAME_PROPERTY_KEY, AtlasGraphQuery.ComparisionOperator.EQUAL, typeName);

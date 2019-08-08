@@ -13,7 +13,9 @@
 package io.zeta.metaspace.web.rest;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 import static io.zeta.metaspace.web.service.DataStandardService.filename;
 
 import com.google.common.base.Joiner;
@@ -23,7 +25,6 @@ import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
@@ -48,6 +49,7 @@ import java.util.UUID;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -92,6 +94,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
+    @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
         log(dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
@@ -105,6 +108,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
+    @Valid
     public void update(DataStandard dataStandard) throws AtlasBaseException {
         log(dataStandard.getContent());
         dataStandardService.update(dataStandard);
@@ -151,7 +155,7 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(@PathParam("number") String categoryId, DataStandardQuery parameters) throws AtlasBaseException {
+    public PageResult<DataStandard> search(DataStandardQuery parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters);
     }
 
@@ -165,9 +169,9 @@ public class DataStandardREST {
 
     @GET
     @Path("/download/template")
-    public void downloadTemplate(@PathParam("downloadId") String downloadId) throws Exception {
+    public void downloadTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/数据标准导入模版.xlsx";
+        String filePath = homeDir + "/conf/data_standard_template.xlsx";
         String fileName = filename(filePath);
         InputStream inputStream = new FileInputStream(filePath);
         response.setContentType("application/force-download");

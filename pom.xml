@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>1.4.2</version>
+    <version>1.5.0</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>metaspace</name>
     <packaging>pom</packaging>
@@ -96,7 +96,7 @@
                 </graphdb.backend.impl>
                 <graph.index.backend>solr</graph.index.backend>
                 <tests.solr.embedded>true</tests.solr.embedded>
-                <distro.exclude.packages>WEB-INF/lib/je-*.jar,WEB-INF/lib/solr-test-framework-*.jar,
+                <distro.exclude.packages>WEB-INF/lib/je-*.jar,
                     WEB-INF/lib/jts-*.jar,WEB-INF/lib/logback-*.jar
                 </distro.exclude.packages>
             </properties>
@@ -118,16 +118,9 @@
                 </graphdb.backend.impl>
                 <graph.index.backend>solr</graph.index.backend>
                 <tests.solr.embedded>true</tests.solr.embedded>
-                <distro.exclude.packages>WEB-INF/lib/je-*.jar,WEB-INF/lib/solr-test-framework-*.jar,
+                <distro.exclude.packages>WEB-INF/lib/je-*.jar,
                     WEB-INF/lib/jts-*.jar,WEB-INF/lib/logback-*.jar
                 </distro.exclude.packages>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>skipMinify</id>
-            <properties>
-                <project.build.dashboardv2.gruntBuild>build</project.build.dashboardv2.gruntBuild>
             </properties>
         </profile>
 
@@ -138,7 +131,8 @@
         <skipTests>false</skipTests>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <node.version>v0.10.30</node.version>
+        <node.version>v12.4.0</node.version>
+        <npm.version>6.10.1</npm.version>
         <node-for-v2.version>v4.4.2</node-for-v2.version>
         <slf4j.version>1.7.25</slf4j.version>
         <jetty.version>9.3.14.v20161028</jetty.version>
@@ -191,7 +185,6 @@
         <jettison.version>1.3.7</jettison.version>
         <paranamer.version>2.7</paranamer.version>
         <zkclient.version>0.8</zkclient.version>
-        <enunciate-maven-plugin.version>2.10.1</enunciate-maven-plugin.version>
         <antlr4.plugin.version>4.5</antlr4.plugin.version>
         <maven-site-plugin.version>3.7</maven-site-plugin.version>
         <doxia.version>1.8</doxia.version>
@@ -209,14 +202,10 @@
         <PermGen>64m</PermGen>
         <MaxPermGen>512m</MaxPermGen>
 
-        <!-- skips checkstyle and find bugs -->
-        <skipCheck>false</skipCheck>
-        <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
         <skipUTs>false</skipUTs>
         <skipITs>false</skipITs>
         <skipDocs>true</skipDocs>
         <skipSite>true</skipSite>
-        <skipEnunciate>true</skipEnunciate>
         <projectBaseDir>${project.basedir}</projectBaseDir>
         <jetty-maven-plugin.stopWait>10</jetty-maven-plugin.stopWait>
 
@@ -234,7 +223,6 @@
         <atlas.surefire.options></atlas.surefire.options>
 
         <aspectj.runtime.version>1.8.7</aspectj.runtime.version>
-        <project.build.dashboardv2.gruntBuild>build-minify</project.build.dashboardv2.gruntBuild>
         <testng.version>6.9.4</testng.version>
         <joda-time.version>2.10</joda-time.version>
         <jersey-spring.version>1.19.4</jersey-spring.version>
@@ -250,7 +238,7 @@
     </properties>
 
     <modules>
-        <module>build-tools</module>
+        <!--<module>build-tools</module>-->
         <module>test-tools</module>
 
         <module>intg</module>
@@ -942,13 +930,6 @@
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-dashboardv2</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
                 <artifactId>atlas-webapp</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
@@ -1045,13 +1026,6 @@
                         <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <!-- API documentation  -->
-            <dependency>
-                <groupId>com.webcohesion.enunciate</groupId>
-                <artifactId>enunciate-core-annotations</artifactId>
-                <version>${enunciate-maven-plugin.version}</version>
             </dependency>
 
             <!-- supports simple auth handler -->
@@ -1314,28 +1288,10 @@
                     <version>2.6</version>
                 </plugin>
 
-                <!--<plugin>
-                    <groupId>org.apache.rat</groupId>
-                    <artifactId>apache-rat-plugin</artifactId>
-                    <version>0.12</version>
-                </plugin>-->
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.9.1</version>
-                </plugin>
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
                     <version>${maven-site-plugin.version}</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.1</version>
                 </plugin>
 
                 <!-- Source code metrics: mvn javancss:report or mvn site -->
@@ -1380,19 +1336,6 @@
                     </configuration>
                 </plugin>
 
-                <plugin>
-                    <groupId>com.webcohesion.enunciate</groupId>
-                    <artifactId>enunciate-maven-plugin</artifactId>
-                    <version>${enunciate-maven-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>docs</goal>
-                            </goals>
-                            <phase>package</phase>
-                        </execution>
-                    </executions>
-                </plugin>
                 <!--sonar-->
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
@@ -1566,150 +1509,6 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <revisionOnScmFailure>release</revisionOnScmFailure>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
-                </configuration>
-            </plugin>
-
-            <!--<plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <configuration>
-                    <useDefaultExcludes>true</useDefaultExcludes>
-                    <useMavenDefaultExcludes>true</useMavenDefaultExcludes>
-                    <useIdeaDefaultExcludes>true</useIdeaDefaultExcludes>
-                    <useEclipseDefaultExcludes>true</useEclipseDefaultExcludes>
-                    <excludeSubProjects>true</excludeSubProjects>
-                    <excludes>
-                        <exclude>**/antlr4/**</exclude>
-                        <exclude>**/dependency-reduced-pom.xml</exclude>
-                        <exclude>**/javax.script.ScriptEngineFactory</exclude>
-                        <exclude>.reviewboardrc</exclude>
-                        <exclude>3party-licenses/**</exclude>
-                        <exclude>**/.cache</exclude>
-                        <exclude>**/.cache-main</exclude>
-                        <exclude>**/.cache-tests</exclude>
-                        <exclude>**/.checkstyle</exclude>
-                        <exclude>**/*.txt</exclude>
-                        <exclude>**/*.json</exclude>
-                        <exclude>.pc/**</exclude>
-                        <exclude>debian/**</exclude>
-                        <exclude>.svn/**</exclude>
-                        <exclude>.git/**</exclude>
-                        <exclude>.gitignore</exclude>
-                        <exclude>**/.idea/**</exclude>
-                        <exclude>**/*.twiki</exclude>
-                        <exclude>**/*.iml</exclude>
-                        <exclude>**/*.json</exclude>
-                        <exclude>**/*.log</exclude>
-                        <exclude>**/target/**</exclude>
-                        <exclude>**/target*/**</exclude>
-                        <exclude>**/build/**</exclude>
-                        <exclude>**/*.patch</exclude>
-                        <exclude>derby.log</exclude>
-                        <exclude>**/logs/**</exclude>
-                        <exclude>**/.classpath</exclude>
-                        <exclude>**/.project</exclude>
-                        <exclude>**/.settings/**</exclude>
-                        <exclude>**/test-output/**</exclude>
-                        <exclude>**/mock/**</exclude>
-                        <exclude>**/data/**</exclude>
-                        <exclude>**/maven-eclipse.xml</exclude>
-                        <exclude>**/.externalToolBuilders/**</exclude>
-                        <exclude>**/build.log</exclude>
-                        <exclude>**/.bowerrc</exclude>
-                        <exclude>*.json</exclude>
-                        <exclude>**/overlays/**</exclude>
-                        <exclude>dev-support/**</exclude>
-                        <exclude>**/users-credentials.properties</exclude>
-                        <exclude>**/public/css/animate.min.css</exclude>
-                        <exclude>**/public/css/bootstrap-sidebar.css</exclude>
-                        <exclude>**/public/js/external_lib/**</exclude>
-                        <exclude>**/node_modules/**</exclude>
-                        &lt;!&ndash; All the npm plugins are copied here, so exclude it &ndash;&gt;
-                        <exclude>**/public/js/libs/**</exclude>
-
-                        &lt;!&ndash; atlas data directory creates when tests are run from IDE &ndash;&gt;
-                        <exclude>**/atlas.data/**</exclude>
-                        <exclude>**/${sys:atlas.data}/**</exclude>
-                        <exclude>**/policy-store.txt</exclude>
-                        <exclude>**/*rebel*.xml</exclude>
-                        <exclude>**/*rebel*.xml.bak</exclude>
-                        <exclude>**/test/resources/**</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>rat-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>validate</phase>
-                    </execution>
-                </executions>
-            </plugin>-->
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.atlas</groupId>
-                        <artifactId>atlas-buildtools</artifactId>
-                        <version>1.0</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>checkstyle-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>verify</phase>
-                        <configuration>
-                            <skip>${skipCheck}</skip>
-                            <consoleOutput>false</consoleOutput>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
-                            <failOnViolation>${checkstyle.failOnViolation}</failOnViolation>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <configuration>
-                    <!--debug>true</debug -->
-                    <xmlOutput>true</xmlOutput>
-                    <failOnError>false</failOnError>
-                    <skip>${skipCheck}</skip>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>findbugs-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- Source code metrics: mvn javancss:report or mvn site -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1718,6 +1517,7 @@
 
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
                 <configuration>
                     <filesets>
                         <fileset>

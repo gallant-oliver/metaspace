@@ -22,7 +22,7 @@ public class TableTagService {
 @Autowired
     TableTagDAO tableTagDAO;
     public String addTag(String tagName) throws AtlasBaseException {
-        if(tableTagDAO.ifTagExists(tagName).size()==0) {
+        if(tableTagDAO.ifTagExists(tagName)==0) {
             String tagId = UUID.randomUUID().toString();
             tableTagDAO.addTag(tagId, tagName);
             return tagId;

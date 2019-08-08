@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-@Component
+
 public class PrivilegeFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(PrivilegeFilter.class);
 
@@ -47,6 +47,7 @@ public class PrivilegeFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
+
         String check = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
         String userId = "";
         String username = "";
@@ -87,8 +88,8 @@ public class PrivilegeFilter implements Filter {
                             for (RoleModulesCategories.Category category : categories) {
                                 if (category.isShow()) categoryGuids.add(category.getGuid());
                             }
-                            List<Integer> sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
-                            if (sum.size() > 0) {
+                            Integer sum = usersService.ifPrivilege(categoryGuids, privilegeGuid);
+                            if (sum > 0) {
                                 filterChain.doFilter(servletRequest, servletResponse);
                                 return;
                             } else {

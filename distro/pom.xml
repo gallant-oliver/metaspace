@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.4.2</version>
+        <version>1.5.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>atlas-distro</artifactId>
@@ -126,12 +126,12 @@ atlas.graph.index.search.solr.wait-searcher=true
                                 <configuration>
                                     <skipAssembly>false</skipAssembly>
                                     <descriptors>
-                                        <descriptor>src/main/assemblies/metaspace-hbase-hook-package.xml</descriptor>
-                                        <descriptor>src/main/assemblies/metaspace-hive-hook-package.xml</descriptor>
-                                        <descriptor>src/main/assemblies/metaspace-kafka-hook-package.xml</descriptor>
-                                        <descriptor>src/main/assemblies/metaspace-server-package.xml</descriptor>
+<!--                                        <descriptor>src/main/assemblies/metaspace-hbase-hook-package.xml</descriptor>-->
+<!--                                        <descriptor>src/main/assemblies/metaspace-hive-hook-package.xml</descriptor>-->
+<!--                                        <descriptor>src/main/assemblies/metaspace-kafka-hook-package.xml</descriptor>-->
+<!--                                        <descriptor>src/main/assemblies/metaspace-server-package.xml</descriptor>-->
                                         <descriptor>src/main/assemblies/standalone-package.xml</descriptor>
-                                        <descriptor>src/main/assemblies/src-package.xml</descriptor>
+                                        <!--<descriptor>src/main/assemblies/src-package.xml</descriptor>-->
                                     </descriptors>
                                     <finalName>metaspace-${project.version}</finalName>
                                     <tarLongFileMode>gnu</tarLongFileMode>

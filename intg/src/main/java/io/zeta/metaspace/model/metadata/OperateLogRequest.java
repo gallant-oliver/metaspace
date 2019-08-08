@@ -1,6 +1,9 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.zeta.metaspace.WhiteSpaceRemovalDeserializer;
+
 import java.io.Serializable;
 
 public class OperateLogRequest implements Serializable {
@@ -34,10 +37,15 @@ public class OperateLogRequest implements Serializable {
     }
 
     private static class Query {
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String type;
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String starttime;
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String endtime;
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String result;
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String keyword;
 
         public String getType() {

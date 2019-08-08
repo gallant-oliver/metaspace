@@ -13,13 +13,20 @@
 package io.zeta.metaspace.model.datastandard;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.hibernate.validator.constraints.NotBlank;
 
 import java.sql.Timestamp;
+
+import javax.validation.constraints.Pattern;
+
 
 public class DataStandard {
 
     private String id;
+    @NotBlank
+    @Pattern(regexp = "^[A-Z0-9]+$")
     private String number;
+    @NotBlank
     private String content;
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -32,10 +39,8 @@ public class DataStandard {
     boolean delete;
     private String path;
 
-
     public DataStandard() {
     }
-
 
     public String getId() {
         return id;

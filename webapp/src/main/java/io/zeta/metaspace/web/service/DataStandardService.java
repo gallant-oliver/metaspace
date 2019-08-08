@@ -246,14 +246,15 @@ public class DataStandardService {
         List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
         List<String> existDataStandard = queryByNumberList(numberList).stream().map(DataStandard::getNumber).collect(Collectors.toList());
         if (!existDataStandard.isEmpty()) {
-            throw new AtlasBaseException("标准编号为: " + Joiner.on("、").join(existDataStandard) + "已存在，请修改后上传。");
+            List<String> showList = existDataStandard.subList(0, Math.min(existDataStandard.size(), 5));
+            throw new AtlasBaseException("标准编号为: " + Joiner.on("、").join(showList) + "已存在，请修改后上传。");
         }
         batchInsert(categoryId, dataList);
     }
 
     private List<DataStandard> file2Data(InputStream fileInputStream) throws Exception {
         List<DataStandard> dataList = new ArrayList<>();
-        Workbook workbook = new WorkbookFactory().create(fileInputStream);
+        Workbook workbook = WorkbookFactory.create(fileInputStream);
         Sheet sheet = workbook.getSheetAt(0);
         int rowNum = sheet.getLastRowNum() + 1;
         for (int i = 1; i < rowNum; i++) {

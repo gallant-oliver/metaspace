@@ -679,17 +679,18 @@ CREATE TABLE "public"."user2apistar" (
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table2owner";
 CREATE TABLE "public"."table2owner" (
-  "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "ownerid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
+  "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ownerid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 
 -- ----------------------------
 -- Primary Key structure for table table2owner
 -- ----------------------------
-ALTER TABLE "public"."table2owner" ADD CONSTRAINT "table2owner_pkey" PRIMARY KEY ("tableguid", "ownerid");
+ALTER TABLE "public"."table2owner" ADD CONSTRAINT "table2owner_pkey" PRIMARY KEY ("tableguid", "ownerid", "pkid");
 
 -- ----------------------------
 -- Table structure for users

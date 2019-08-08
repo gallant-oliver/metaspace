@@ -119,7 +119,7 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                         }
                     }
                     atlasGraphInstance = new AtlasJanusGraph();
-                    validateIndexBackend(config);
+//                    validateIndexBackend(config);
                 }
             }
         }
@@ -212,16 +212,13 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
     }
 
     private static void startLocalSolr() {
-        if (isEmbeddedSolr()) {
-            try {
-                LocalSolrRunner.start();
-
-                Configuration configuration = ApplicationProperties.get();
-                configuration.clearProperty(SOLR_ZOOKEEPER_URL);
-                configuration.setProperty(SOLR_ZOOKEEPER_URL, LocalSolrRunner.getZookeeperUrls());
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to start embedded solr cloud server. Aborting!", e);
-            }
+        try {
+            LocalSolrRunner.start();
+            Configuration configuration = ApplicationProperties.get();
+            configuration.clearProperty(SOLR_ZOOKEEPER_URL);
+            configuration.setProperty(SOLR_ZOOKEEPER_URL, LocalSolrRunner.getZookeeperUrls());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start embedded solr cloud server. Aborting!", e);
         }
     }
 

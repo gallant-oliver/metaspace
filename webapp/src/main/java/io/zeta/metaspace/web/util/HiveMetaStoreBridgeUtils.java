@@ -153,19 +153,17 @@ public class HiveMetaStoreBridgeUtils {
      * @throws Exception
      */
     public void importDatabases(TableSchema tableSchema) throws Exception {
-        init();
+        LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         List<String> databaseNames = null;
         totalTables.set(0);
         updatedTables.set(0);
-        startTime.set(System.currentTimeMillis());
-        endTime.set(0);
-        LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         String databaseToImport = "";
         String tableToImport = "";
         if (null != tableSchema) {
             databaseToImport = tableSchema.getDatabase();
             tableToImport = tableSchema.getTable();
         }
+        init();
         if (StringUtils.isEmpty(databaseToImport)) {
             databaseNames = hiveMetaStoreClient.getAllDatabases();
 
@@ -225,7 +223,7 @@ public class HiveMetaStoreBridgeUtils {
         } else {
             LOG.info("No database found");
         }
-        endTime.set(System.currentTimeMillis());
+        getEndTime().set(System.currentTimeMillis());
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 

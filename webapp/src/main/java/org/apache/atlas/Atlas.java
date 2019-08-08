@@ -18,6 +18,7 @@
 
 package org.apache.atlas;
 
+import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.security.SecurityProperties;
 import org.apache.atlas.web.service.EmbeddedServer;
 import org.apache.commons.cli.CommandLine;
@@ -60,8 +61,8 @@ public final class Atlas {
             public void run() {
                 try {
                     LOG.info("==> Shutdown of Atlas");
-
                     shutdown();
+                    LocalSolrRunner.stop();
                 } catch (Exception e) {
                     LOG.error("Failed to shutdown", e);
                 } finally {

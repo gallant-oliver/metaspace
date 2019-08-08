@@ -1,6 +1,5 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -14,14 +13,12 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserWithRole;
-import io.zeta.metaspace.utils.SSLClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
-import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -33,7 +30,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 
 @Service
@@ -72,7 +76,7 @@ public class RoleService {
             String userId = user.getUserId();
             role.setCreator(userId);
             role.setUpdater(userId);
-            if (roleDAO.ifRole(role.getRoleName()).size() != 0) {
+            if (roleDAO.ifRole(role.getRoleName())>0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该角色已存在");
             }
             roleDAO.addRoles(role);
@@ -273,12 +277,9 @@ public class RoleService {
             List<String> users = userWithRole.getUserIds();
             for (String userId : users) {
                 String realRoleId = usersService.getRoleIdByUserId(userId);
-                if (realRoleId.equals("1")) {
+                if (("1").equals(realRoleId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
-                /*if(!roleId.equals(realRoleId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色错误");
-                }*/
             }
             if (users.size() > 0) {
                 roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);

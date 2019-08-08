@@ -8,8 +8,9 @@ logs/
 *.log
 *.zip
 target
-deploy/
 *.iml
+shaded/hbase-server-shaded/dependency-reduced-pom.xml
+shaded/hbase-client-shaded/dependency-reduced-pom.xml
 
 
 webapp/src/main/webapp/static/.DS_Store

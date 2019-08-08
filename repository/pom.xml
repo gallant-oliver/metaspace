@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.atlas</groupId>
         <artifactId>apache-atlas</artifactId>
-        <version>1.4.2</version>
+        <version>1.5.0</version>
     </parent>
     <artifactId>atlas-repository</artifactId>
     <description>Apache Atlas Repository Module</description>
@@ -220,6 +220,10 @@
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
                 </exclusion>
             </exclusions>
         </dependency>

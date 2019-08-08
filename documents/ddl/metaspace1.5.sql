@@ -12,9 +12,24 @@
  Target Server Version : 100005
  File Encoding         : 65001
 
- Date: 10/07/2019 14:21:04
+
+ Date: 17/07/2019 11:40:49
+
 */
 
+
+-- ----------------------------
+-- Table structure for api_module
+-- ----------------------------
+DROP TABLE IF EXISTS "api_module";
+CREATE TABLE "api_module" (
+  "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "method" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "module_id" int2,
+  "prefix_check" bool
+)
+;
+ALTER TABLE "api_module" OWNER TO "postgres";
 
 -- ----------------------------
 -- Table structure for apigroup
@@ -232,8 +247,8 @@ CREATE TABLE "data_standard" (
   "number" varchar COLLATE "pg_catalog"."default",
   "content" varchar COLLATE "pg_catalog"."default",
   "description" varchar COLLATE "pg_catalog"."default",
-  "createtime" timestamp(0),
-  "updatetime" timestamp(0),
+  "createtime" timestamptz(0),
+  "updatetime" timestamptz(0),
   "operator" varchar COLLATE "pg_catalog"."default",
   "version" int4,
   "categoryid" varchar COLLATE "pg_catalog"."default",
@@ -241,6 +256,7 @@ CREATE TABLE "data_standard" (
 )
 ;
 ALTER TABLE "data_standard" OWNER TO "postgres";
+
 COMMENT ON COLUMN "data_standard"."id" IS '唯一id';
 COMMENT ON COLUMN "data_standard"."number" IS '标准编号';
 COMMENT ON COLUMN "data_standard"."content" IS '标准内容';
@@ -279,7 +295,7 @@ CREATE TABLE "operate_log" (
   "object" text COLLATE "pg_catalog"."default",
   "result" text COLLATE "pg_catalog"."default",
   "ip" text COLLATE "pg_catalog"."default",
-  "createtime" timestamp(6)
+  "createtime" timestamptz(0)
 )
 ;
 ALTER TABLE "operate_log" OWNER TO "postgres";
@@ -1027,6 +1043,11 @@ COMMENT ON COLUMN "users"."userid" IS '用户id';
 COMMENT ON COLUMN "users"."username" IS '用户名';
 COMMENT ON COLUMN "users"."account" IS '用户账号';
 COMMENT ON COLUMN "users"."roleid" IS '用户角色id';
+
+-- ----------------------------
+-- Primary Key structure for table api_module
+-- ----------------------------
+ALTER TABLE "api_module" ADD CONSTRAINT "api_module_pkey" PRIMARY KEY ("path", "method");
 
 -- ----------------------------
 -- Primary Key structure for table apigroup
