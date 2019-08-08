@@ -327,6 +327,4 @@ public class DataStandardREST {
         log(categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
-
-
 }
