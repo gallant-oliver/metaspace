@@ -96,12 +96,16 @@ public class DataStandardREST {
     @OperateType(INSERT)
     @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
-        log(dataStandard.getContent());
-        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
-        if (!oldList.isEmpty()) {
-            throw new AtlasBaseException("标准编号已存在");
+        try {
+            log(dataStandard.getContent());
+            List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
+            if (!oldList.isEmpty()) {
+                throw new AtlasBaseException("标准编号已存在");
+            }
+            dataStandardService.insert(dataStandard);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
-        dataStandardService.insert(dataStandard);
     }
 
     @PUT
