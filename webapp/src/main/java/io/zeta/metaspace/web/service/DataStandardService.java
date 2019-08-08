@@ -238,7 +238,7 @@ public class DataStandardService {
         return tmpFile;
     }
 
-    public void importDataStandard(String categoryId, InputStream fileInputStream) throws Exception {
+    public void importDataStandard(String categoryId, File fileInputStream) throws Exception {
         List<DataStandard> dataList = file2Data(fileInputStream);
         if(dataList.isEmpty()){
             throw new AtlasBaseException("没有数据。");
@@ -252,9 +252,9 @@ public class DataStandardService {
         batchInsert(categoryId, dataList);
     }
 
-    private List<DataStandard> file2Data(InputStream fileInputStream) throws Exception {
+    private List<DataStandard> file2Data(File file) throws Exception {
         List<DataStandard> dataList = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(fileInputStream);
+        Workbook workbook = WorkbookFactory.create(file);
         Sheet sheet = workbook.getSheetAt(0);
         int rowNum = sheet.getLastRowNum() + 1;
         for (int i = 1; i < rowNum; i++) {

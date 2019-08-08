@@ -24,7 +24,7 @@ public class DataStandard {
 
     private String id;
     @NotBlank
-    @Pattern(regexp = "^[A-Z0-9]+$")
+    @Pattern(regexp = "^[A-Z0-9]+$", message = "编号内容格式错误，请输入大写英文字母或数字")
     private String number;
     @NotBlank
     private String content;
