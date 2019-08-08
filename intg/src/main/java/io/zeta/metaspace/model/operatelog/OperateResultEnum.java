@@ -3,7 +3,7 @@ package io.zeta.metaspace.model.operatelog;
 public enum OperateResultEnum {
 
     SUCCESS("success", "成功"),
-    FAILED("failed", "系统异常"),
+    FAILED("failed", "失败"),
     UNAUTHORIZED("unauthorized", "越权访问");
 
     private String en;

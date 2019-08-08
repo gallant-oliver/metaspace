@@ -26,6 +26,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
@@ -42,7 +43,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -62,13 +63,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -114,10 +113,6 @@ public class BusinessREST {
 
     private static final int TECHNICAL_CATEGORY_TYPE = 0;
 
-    private void log(String content) {
-        httpServletRequest.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(业务对象) " + content);
-    }
-
     /**
      * 添加业务对象
      * @param categoryId
@@ -132,7 +127,7 @@ public class BusinessREST {
     @OperateType(INSERT)
     public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
         try {
-            log(business.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), business.getName());
             businessService.addBusiness(categoryId, business);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
@@ -154,7 +149,7 @@ public class BusinessREST {
     @OperateType(UPDATE)
     public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
         try {
-            log(business.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), business.getName());
             businessService.updateBusiness(businessId, business);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
@@ -330,6 +325,7 @@ public class BusinessREST {
 
     /**
      * 添加目录
+     *
      * @param categoryInfo
      * @return
      * @throws Exception
@@ -340,7 +336,7 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
-        log(categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), categoryInfo.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -491,7 +487,8 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public Response deleteBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
-        log(businessId);
+        BusinessInfo businessInfo = businessService.getBusinessInfo(businessId);
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), businessInfo.getName());
         try {
             businessService.deleteBusiness(businessId);
             return Response.status(200).entity("success").build();

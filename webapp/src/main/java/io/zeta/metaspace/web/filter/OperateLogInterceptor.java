@@ -5,14 +5,12 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.service.OperateLogService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +39,8 @@ public class OperateLogInterceptor implements MethodInterceptor {
     /**
      * 接口需要在request的attribute里set操作对象
      */
-    public static String OPERATELOG_OBJECT = "operatelog.object";
+    public static String OPERATELOG_MODULE = "operatelog_module";
+    public static String OPERATELOG_CONTENT= "operatelog_content";
 
     @Autowired
     private OperateLogService operateLogService;
@@ -61,9 +60,13 @@ public class OperateLogInterceptor implements MethodInterceptor {
             operateLog.setResult(OperateResultEnum.FAILED.getEn());
             throw e;
         } finally {
-            Object operateObjct = request.getAttribute(OPERATELOG_OBJECT);
-            if (operateObjct != null) {
-                operateLog.setObject(operateObjct.toString());
+            Object content = request.getAttribute(OPERATELOG_CONTENT);
+            if (content != null) {
+                operateLog.setContent(content.toString());
+            }
+            Object module = request.getAttribute(OPERATELOG_MODULE);
+            if (null != module) {
+                operateLog.setModule(module.toString());
             }
             operateLog.setId(UUIDUtils.uuid());
             User userData = AdminUtils.getUserData();

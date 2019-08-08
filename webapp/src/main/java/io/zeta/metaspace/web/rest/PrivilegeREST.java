@@ -24,9 +24,9 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeHeader;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -34,8 +34,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
-import io.zeta.metaspace.web.service.DataStandardService;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.UsersService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -47,7 +46,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -72,10 +70,6 @@ public class PrivilegeREST {
 
     @Context
     private HttpServletRequest request;
-
-    private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(权限) " + content);
-    }
 
 
     /**
@@ -115,6 +109,7 @@ public class PrivilegeREST {
 
     /**
      * 新增权限方法
+     *
      * @param privilege
      * @return
      * @throws AtlasBaseException
@@ -124,8 +119,8 @@ public class PrivilegeREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response addPrivilege(PrivilegeHeader privilege) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.PRIVILEGE.getAlias(), privilege.getPrivilegeName());
         try {
-            log(privilege.getPrivilegeName());
             privilegeService.addPrivilege(privilege);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
@@ -152,6 +147,7 @@ public class PrivilegeREST {
 
     /**
      * 删除权限方案
+     *
      * @param privilegeId
      * @throws AtlasBaseException
      */
@@ -160,8 +156,9 @@ public class PrivilegeREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deletePrivilege(@PathParam("privilegeId") String privilegeId) throws AtlasBaseException {
+        PrivilegeInfo privilegeInfo = privilegeService.getPrivilegeInfo(privilegeId);
+        HttpRequestContext.get().auditLog(ModuleEnum.PRIVILEGE.getAlias(), privilegeInfo.getPrivilegeName());
         try {
-            log(privilegeId);
             privilegeService.delPrivilege(privilegeId);
         } catch (Exception e) {
             throw e;
@@ -170,6 +167,7 @@ public class PrivilegeREST {
 
     /**
      * 修改权限方案
+     *
      * @param privilegeId
      * @param privilege
      * @return
@@ -181,8 +179,8 @@ public class PrivilegeREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response updatePrivilege(@PathParam("privilegeId") String privilegeId, PrivilegeHeader privilege) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.PRIVILEGE.getAlias(), privilege.getPrivilegeName());
         try {
-            log(privilege.getPrivilegeName());
             privilegeService.updatePrivilege(privilegeId, privilege);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {

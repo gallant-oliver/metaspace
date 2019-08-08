@@ -4,6 +4,7 @@ package io.zeta.metaspace.web.rest;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 import com.google.common.base.Joiner;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -14,7 +15,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserWithRole;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
@@ -49,14 +50,6 @@ public class RoleREST {
     @Context
     private HttpServletRequest request;
 
-    private void logRole(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(角色) " + content);
-    }
-
-    private void logUser(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(用户) " + content);
-    }
-
     /**
      * 新增角色
      *
@@ -66,14 +59,14 @@ public class RoleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public String addRole(Role role) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
         try {
-            logRole(role.getRoleName());
             return roleService.addRole(role);
-        } catch(AtlasBaseException e) {
+        } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
             LOG.error("新增角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"新增角色失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新增角色失败");
         }
     }
 
@@ -85,20 +78,21 @@ public class RoleREST {
     @PUT
     @Path("/{roleId}/{status}")
     @OperateType(UPDATE)
-    public String updateRoleStatus(@PathParam("roleId")String roleId,@PathParam("status") int status) throws AtlasBaseException {
+    public String updateRoleStatus(@PathParam("roleId") String roleId, @PathParam("status") int status) throws AtlasBaseException {
         try {
-            logRole(roleId);
-            return roleService.updateRoleStatus(roleId,status);
-        } catch(AtlasBaseException e) {
+            Role role = roleService.getRoleById(roleId);
+            HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
+            return roleService.updateRoleStatus(roleId, status);
+        } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            String s="";
-            if(status==0)
-                s="禁用角色失败";
+            String s = "";
+            if (status == 0)
+                s = "禁用角色失败";
             else
-                s="启用角色失败";
+                s = "启用角色失败";
             LOG.error(s, e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,s);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, s);
         }
     }
 
@@ -112,7 +106,8 @@ public class RoleREST {
     @OperateType(OperateTypeEnum.DELETE)
     public String deleteRole(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
-            logRole(roleId);
+            Role role = roleService.getRoleById(roleId);
+            HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
             return roleService.deleteRole(roleId);
         } catch(AtlasBaseException e) {
             throw e;
@@ -174,10 +169,11 @@ public class RoleREST {
     @POST
     @Path("/{roleId}/user")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
+    @OperateType(UPDATE)
     public String addUserList(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
-            logUser("roleId:" + roleId + ",users:[" + Joiner.on("、").join(users)+"]");
+            Role role = roleService.getRoleById(roleId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",添加用户:[" + Joiner.on("、").join(users)+"]");
             return roleService.addUsers(roleId,users) ;
         }
         catch(AtlasBaseException e){
@@ -196,10 +192,11 @@ public class RoleREST {
      */
     @DELETE
     @Path("/{roleId}/user")
-    @OperateType(DELETE)
+    @OperateType(UPDATE)
     public String removeUser(@PathParam("roleId") String roleId,List<String> users) throws AtlasBaseException {
         try {
-            logUser("roleId:" + roleId + ",users:[" + Joiner.on("、").join(users)+"]");
+            Role role = roleService.getRoleById(roleId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",移除用户:[" + Joiner.on("、").join(users)+"]");
             if(roleId.equals(SystemRole.GUEST.getCode())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"访客不能移除成员");
             }
@@ -242,9 +239,14 @@ public class RoleREST {
     @PUT
     @Path("/{roleId}/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-
+    @OperateType(UPDATE)
     public String putPrivileges(@PathParam("roleId") String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         try {
+            Role role = roleService.getRoleById(roleId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() +
+                    ", 修改业务目录为:[" + Joiner.on("、").join(roleModulesCategories.getBusinessCategories()) + "]" +
+                    ", 修改技术目录为" + "[" + Joiner.on("、").join(roleModulesCategories.getTechnicalCategories()) + "]" +
+                    ", 修改权限方案为" + roleModulesCategories.getPrivilege().getPrivilegeName());
             return roleService.putPrivileges(roleId,roleModulesCategories);
         }
         catch(AtlasBaseException e){
@@ -304,8 +306,10 @@ public class RoleREST {
     @PUT
     @Path("/{roleId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public String editRole(Role role) throws AtlasBaseException {
         try {
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.editRole(role);
         }
         catch(AtlasBaseException e){

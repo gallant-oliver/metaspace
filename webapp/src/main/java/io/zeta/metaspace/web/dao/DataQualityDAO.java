@@ -322,6 +322,9 @@ public interface DataQualityDAO {
     @Select("select templateStatus from template where templateId=#{templateId}")
     public Integer getTemplateStatus(@Param("templateId") String templateId);
 
+    @Select("select * from template where templateId=#{templateId}")
+    public Template getTemplate(@Param("templateId") String templateId);
+
     @Insert("insert into report_error(errorId,templateId,reportId,ruleId,content,generateTime,retryCount)values(#{errorId},#{templateId},#{reportId},#{ruleId},#{content},#{generateTime},#{retryCount})")
     public int insertReportError(ReportError error);
 
