@@ -940,7 +940,7 @@ public class BusinessService {
 
     public List<Column> convertExceltoMap(File file) throws AtlasBaseException {
         try {
-            Workbook workbook = new WorkbookFactory().create(file);
+            Workbook workbook = WorkbookFactory.create(file);
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
             Row row = null;
