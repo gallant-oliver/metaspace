@@ -24,6 +24,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -56,6 +57,10 @@ public class DataStandardService {
     DataStandardDAO dataStandardDAO;
 
     public int insert(DataStandard dataStandard) throws AtlasBaseException {
+        String regexp = "^[A-Z0-9]+$";
+        if(!dataStandard.getNumber().matches(regexp)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
+        }
         dataStandard.setId(UUIDUtils.alphaUUID());
         dataStandard.setCreateTime(DateUtils.currentTimestamp());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());

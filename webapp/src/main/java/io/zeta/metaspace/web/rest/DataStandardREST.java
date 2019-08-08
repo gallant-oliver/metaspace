@@ -110,7 +110,7 @@ public class DataStandardREST {
             }
             dataStandardService.insert(dataStandard);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            throw e;
         }
     }
 
