@@ -41,6 +41,7 @@ public class DataQualityTaskExecute {
     private Integer redWarningCount;
     private Integer ruleErrorCount;
     private Integer warningStatus;
+    private Integer errorStatus;
     private String number;
     private Integer counter;
 
@@ -146,6 +147,14 @@ public class DataQualityTaskExecute {
 
     public void setWarningStatus(Integer warningStatus) {
         this.warningStatus = warningStatus;
+    }
+
+    public Integer getErrorStatus() {
+        return errorStatus;
+    }
+
+    public void setErrorStatus(Integer errorStatus) {
+        this.errorStatus = errorStatus;
     }
 
     public String getNumber() {

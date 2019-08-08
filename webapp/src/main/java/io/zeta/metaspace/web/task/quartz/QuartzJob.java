@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
 import io.zeta.metaspace.model.dataquality2.RuleExecuteStatus;
 import io.zeta.metaspace.model.dataquality2.WarningMessageStatus;
+import io.zeta.metaspace.model.dataquality2.WarningStatus;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
@@ -104,6 +105,8 @@ public class QuartzJob implements Job {
             taskExecute.setOrangeWarningCount(0);
             taskExecute.setRedWarningCount(0);
             taskExecute.setRuleErrorCount(0);
+            taskExecute.setWarningStatus(0);
+            taskExecute.setErrorStatus(0);
             taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
             Integer counter = taskManageDAO.getMaxCounter(taskId);
             taskExecute.setCounter(Objects.isNull(counter)?0:++counter);
@@ -178,7 +181,7 @@ public class QuartzJob implements Job {
             long currentTime = System.currentTimeMillis();
             Timestamp currentTimeStamp = new Timestamp(currentTime);
             String errorMsg = null;
-            taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp);
+            taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0);
             do {
                 try {
                     //运行中途停止模板
@@ -204,6 +207,10 @@ public class QuartzJob implements Job {
                     if(RETRY == retryCount) {
                         taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
                          errorMsg = e.toString();
+                        taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
+                        taskManageDAO.updateTaskErrorCount(task.getTaskId());
+                        taskManageDAO.updateTaskExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
+                        taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                     }
                 } finally {
                     recordExecutionInfo(task, errorMsg);
@@ -599,17 +606,22 @@ public class QuartzJob implements Job {
             if(Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
+                taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //红色告警数量
             if(Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
+                taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //计算异常数量
-            if(Objects.isNull(resultValue)) {
+            /*if(Objects.isNull(resultValue)) {
                 taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskErrorCount(task.getTaskId());
-            }
+                taskManageDAO.updateSubTaskErrorCount(task.getSubTaskRuleId());
+            }*/
 
         } catch (Exception e) {
             LOG.info(e.getMessage(),e);

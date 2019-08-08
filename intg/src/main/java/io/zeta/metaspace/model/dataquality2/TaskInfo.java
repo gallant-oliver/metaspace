@@ -36,7 +36,8 @@ public class TaskInfo {
     private Timestamp endTime;
     private String cronExpression;
     private List<SubTask> taskList;
-    private List<String> errorWarningGroupList;
+    private List<String> contentWarningNotificationIdList;
+    private List<String> executionWarningNotificationIdList;
 
     public String getTaskName() {
         return taskName;
@@ -95,12 +96,20 @@ public class TaskInfo {
         this.taskList = taskList;
     }
 
-    public List<String> getErrorWarningGroupList() {
-        return errorWarningGroupList;
+    public List<String> getContentWarningNotificationIdList() {
+        return contentWarningNotificationIdList;
     }
 
-    public void setErrorWarningGroupList(List<String> errorWarningGroupList) {
-        this.errorWarningGroupList = errorWarningGroupList;
+    public void setContentWarningNotificationIdList(List<String> contentWarningNotificationIdList) {
+        this.contentWarningNotificationIdList = contentWarningNotificationIdList;
+    }
+
+    public List<String> getExecutionWarningNotificationIdList() {
+        return executionWarningNotificationIdList;
+    }
+
+    public void setExecutionWarningNotificationIdList(List<String> executionWarningNotificationIdList) {
+        this.executionWarningNotificationIdList = executionWarningNotificationIdList;
     }
 
     public static class SubTask {
@@ -196,7 +205,6 @@ public class TaskInfo {
         private Integer warningCheckExpression;
         private Float warningCheckThresholdMinValue;
         private Float warningCheckThresholdMaxValue;
-        private List<String> warningNotificationIdList;
 
         public Integer getWarningType() {
             return warningType;
@@ -238,12 +246,5 @@ public class TaskInfo {
             this.warningCheckThresholdMaxValue = warningCheckThresholdMaxValue;
         }
 
-        public List<String> getWarningNotificationIdList() {
-            return warningNotificationIdList;
-        }
-
-        public void setWarningNotificationIdList(List<String> warningNotificationIdList) {
-            this.warningNotificationIdList = warningNotificationIdList;
-        }
     }
 }

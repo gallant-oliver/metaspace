@@ -31,7 +31,6 @@ public class DataQualityTask {
     private Integer level;
     private String description;
     private String cronExpression;
-    private String errorWarningGroupIds;
     private Boolean enable;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp startTime;
@@ -94,14 +93,6 @@ public class DataQualityTask {
 
     public void setCronExpression(String cronExpression) {
         this.cronExpression = cronExpression;
-    }
-
-    public String getErrorWarningGroupIds() {
-        return errorWarningGroupIds;
-    }
-
-    public void setErrorWarningGroupIds(String errorWarningGroupIds) {
-        this.errorWarningGroupIds = errorWarningGroupIds;
     }
 
     public Boolean getEnable() {

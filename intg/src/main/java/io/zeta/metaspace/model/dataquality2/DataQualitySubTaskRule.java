@@ -37,12 +37,10 @@ public class DataQualitySubTaskRule {
     private Integer orangeCheckExpression;
     private Float orangeThresholdMinValue;
     private Float orangeThresholdMaxValue;
-    private String orangeWarningGroupIds;
     private Integer redCheckType;
     private Integer redCheckExpression;
     private Float redThresholdMinValue;
     private Float redThresholdMaxValue;
-    private String redWarningGroupIds;
     private Integer sequence;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
@@ -138,14 +136,6 @@ public class DataQualitySubTaskRule {
         this.orangeThresholdMaxValue = orangeThresholdMaxValue;
     }
 
-    public String getOrangeWarningGroupIds() {
-        return orangeWarningGroupIds;
-    }
-
-    public void setOrangeWarningGroupIds(String orangeWarningGroupIds) {
-        this.orangeWarningGroupIds = orangeWarningGroupIds;
-    }
-
     public Integer getRedCheckType() {
         return redCheckType;
     }
@@ -176,14 +166,6 @@ public class DataQualitySubTaskRule {
 
     public void setRedThresholdMaxValue(Float redThresholdMaxValue) {
         this.redThresholdMaxValue = redThresholdMaxValue;
-    }
-
-    public String getRedWarningGroupIds() {
-        return redWarningGroupIds;
-    }
-
-    public void setRedWarningGroupIds(String redWarningGroupIds) {
-        this.redWarningGroupIds = redWarningGroupIds;
     }
 
     public Integer getSequence() {

@@ -39,12 +39,16 @@ import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
+import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
+import io.zeta.metaspace.model.dataquality2.WarningType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
+import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
@@ -52,6 +56,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.service.UserService;
 import org.apache.solr.metrics.AltBufferPoolMetricSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,9 +91,19 @@ public class TaskManageService {
     @Autowired
     QuartzManager quartzManager;
 
+    @Autowired
+    UsersService usersService;
+
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
+
+            String roleIdByUserId = usersService.getRoleIdByUserId(userId);
+            //非管理员无法查看全部任务
+            if (!SystemRole.ADMIN.getCode().equals(roleIdByUserId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色无权限查看全部任务列表");
+            }
+
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
             if(Objects.nonNull(list)) {
                 list.forEach(task -> {
@@ -157,12 +172,29 @@ public class TaskManageService {
         }
     }
 
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(String groupId) throws AtlasBaseException {
+        try {
+            return taskManageDAO.getWarningGroupList(groupId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup() throws AtlasBaseException {
+        try {
+            return taskManageDAO.getAllWarningGroup();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
     public void addTask(TaskInfo taskInfo) throws AtlasBaseException {
         Timestamp currentTime = DateUtils.currentTimestamp();
         addDataQualityTask(currentTime, taskInfo);
     }
 
-    public int addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo) throws AtlasBaseException {
+    @Transactional
+    public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo) throws AtlasBaseException {
         try {
             DataQualityTask dataQualityTask = new DataQualityTask();
             //id
@@ -180,13 +212,7 @@ public class TaskManageService {
             dataQualityTask.setStartTime(taskInfo.getStartTime());
             //执行截止时间
             dataQualityTask.setEndTime(taskInfo.getEndTime());
-            //异常告警组
-            List<String> errorGroupList = taskInfo.getErrorWarningGroupList();
-            StringJoiner errorGroupIdJoiner = new StringJoiner(",");
-            if (Objects.nonNull(errorGroupList)) {
-                errorGroupList.forEach(errorId -> errorGroupIdJoiner.add(errorId));
-            }
-            dataQualityTask.setErrorWarningGroupIds(errorGroupIdJoiner.toString());
+
             //创建时间
             dataQualityTask.setCreateTime(currentTime);
             //更新时间
@@ -210,7 +236,12 @@ public class TaskManageService {
             //子任务
             List<TaskInfo.SubTask> subTaskList = taskInfo.getTaskList();
             addDataQualitySubTask(guid, currentTime, subTaskList);
-            return taskManageDAO.addDataQualityTask(dataQualityTask);
+
+            taskManageDAO.addTaskWarningGroup(guid, WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
+            taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
+
+            taskManageDAO.addDataQualityTask(dataQualityTask);
+
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
@@ -314,13 +345,6 @@ public class TaskManageService {
                             //橙色阈值
                             subTaskRule.setOrangeThresholdMinValue(warning.getWarningCheckThresholdMinValue());
                             subTaskRule.setOrangeThresholdMaxValue(warning.getWarningCheckThresholdMaxValue());
-                            //橙色告警组
-                            List<String> warningNotificationGroup = warning.getWarningNotificationIdList();
-                            StringJoiner warningGroupJoiner = new StringJoiner(",");
-                            if (Objects.nonNull(warningNotificationGroup) && warningNotificationGroup.size() > 0) {
-                                warningNotificationGroup.forEach(groupId -> warningGroupJoiner.add(groupId));
-                                subTaskRule.setOrangeWarningGroupIds(warningGroupJoiner.toString());
-                            }
                         } else if (2 == warningType) {
                             //红色校验类型
                             Integer warningCheckType = warning.getWarningCheckType();
@@ -331,13 +355,6 @@ public class TaskManageService {
                             //红色阈值
                             subTaskRule.setRedThresholdMinValue(warning.getWarningCheckThresholdMinValue());
                             subTaskRule.setRedThresholdMaxValue(warning.getWarningCheckThresholdMaxValue());
-                            //红色告警组
-                            List<String> warningNotificationGroup = warning.getWarningNotificationIdList();
-                            StringJoiner warningGroupJoiner = new StringJoiner(",");
-                            if (Objects.nonNull(warningNotificationGroup) && warningNotificationGroup.size() > 0) {
-                                warningNotificationGroup.forEach(groupId -> warningGroupJoiner.add(groupId));
-                                subTaskRule.setRedWarningGroupIds(warningGroupJoiner.toString());
-                            }
                         }
                     }
                 }
@@ -391,8 +408,6 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-
-
 
     public void startTaskNow(String taskId) throws AtlasBaseException {
         try {

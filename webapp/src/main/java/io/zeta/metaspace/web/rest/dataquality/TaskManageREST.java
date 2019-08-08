@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
+import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
@@ -231,6 +232,28 @@ public class TaskManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")Integer objType, List<String> objIdList) throws AtlasBaseException {
         return taskManageService.getValidRuleList(groupId, objType, objIdList);
+    }
+
+    /**
+     * 根据分组获取告警组
+     * @param groupId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{groupId}/warningGroup")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@PathParam("groupId")String groupId) throws AtlasBaseException {
+        return taskManageService.getWarningGroupList(groupId);
+    }
+
+    @GET
+    @Path("/warningGroup")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroupList() throws AtlasBaseException {
+        return taskManageService.getAllWarningGroup();
     }
 
     /**

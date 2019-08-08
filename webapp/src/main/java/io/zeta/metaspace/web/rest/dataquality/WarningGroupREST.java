@@ -165,22 +165,73 @@ public class WarningGroupREST {
      * @return
      * @throws AtlasBaseException
      */
-    @GET
-    @Path("/{warningType}/{warningStatus}")
+    @POST
+    @Path("/warning/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList() throws AtlasBaseException {
-
+    public PageResult getWarningList(Parameters parameters) throws AtlasBaseException {
+        return warningGroupService.getWarningList(parameters);
     }
 
+    @POST
+    @Path("/error/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getErrorWarningList(Parameters parameters) throws AtlasBaseException {
+        return warningGroupService.getErrorWarningList(parameters);
+    }
 
+    /**
+     * 关闭任务告警
+     * @param executionIdList
+     * @throws AtlasBaseException
+     */
     @PUT
-    @Path("/")
+    @Path("/warnings")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void closePageAllWarning() throws AtlasBaseException {
-
+    public void closeTaskWarning(List<String> executionIdList) throws AtlasBaseException {
+        warningGroupService.closeTaskExecutionWarning(0, executionIdList);
     }
 
+    /**
+     * 关闭规则告警
+     * @param executionId
+     * @param executionIdList
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/{executionId}/warnings")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void closeTaskRuleExecutionWarning(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
+        warningGroupService.closeRuleExecutionWarning(0, executionId, executionIdList);
+    }
 
+    /**
+     * 关闭任务告警
+     * @param executionIdList
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/errors")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void closeTaskError(List<String> executionIdList) throws AtlasBaseException {
+        warningGroupService.closeTaskExecutionWarning(1, executionIdList);
+    }
+
+    /**
+     * 关闭规则告警
+     * @param executionId
+     * @param executionIdList
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/{executionId}/errors")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void closeTaskRuleExecutionError(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
+        warningGroupService.closeRuleExecutionWarning(1, executionId, executionIdList);
+    }
 }

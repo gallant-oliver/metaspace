@@ -12,7 +12,7 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
- * @date 2019/8/5 18:24
+ * @date 2019/8/7 17:33
  */
 package io.zeta.metaspace.model.dataquality2;
 
@@ -24,19 +24,19 @@ import java.util.List;
 /*
  * @description
  * @author sunhaoning
- * @date 2019/8/5 18:24
+ * @date 2019/8/7 17:33
  */
-public class TaskWarningHeader {
+public class TaskErrorHeader {
+
     private String taskId;
     private String executionId;
     private String taskName;
     private String number;
-    private Integer redWarningCount;
-    private Integer orangeWarningCount;
+    private String errorMsg;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp executionTime;
-    private Integer warningStatus;
-    private List<WarningGroupHeader> warningGroupList;
+    private Integer errorStatus;
+    private List<TaskWarningHeader.WarningGroupHeader> warningGroupList;
 
     public String getTaskId() {
         return taskId;
@@ -70,20 +70,12 @@ public class TaskWarningHeader {
         this.number = number;
     }
 
-    public Integer getRedWarningCount() {
-        return redWarningCount;
+    public String getErrorMsg() {
+        return errorMsg;
     }
 
-    public void setRedWarningCount(Integer redWarningCount) {
-        this.redWarningCount = redWarningCount;
-    }
-
-    public Integer getOrangeWarningCount() {
-        return orangeWarningCount;
-    }
-
-    public void setOrangeWarningCount(Integer orangeWarningCount) {
-        this.orangeWarningCount = orangeWarningCount;
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
     }
 
     public Timestamp getExecutionTime() {
@@ -94,19 +86,19 @@ public class TaskWarningHeader {
         this.executionTime = executionTime;
     }
 
-    public Integer getWarningStatus() {
-        return warningStatus;
+    public Integer getErrorStatus() {
+        return errorStatus;
     }
 
-    public void setWarningStatus(Integer warningStatus) {
-        this.warningStatus = warningStatus;
+    public void setErrorStatus(Integer errorStatus) {
+        this.errorStatus = errorStatus;
     }
 
-    public List<WarningGroupHeader> getWarningGroupList() {
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList() {
         return warningGroupList;
     }
 
-    public void setWarningGroupList(List<WarningGroupHeader> warningGroupList) {
+    public void setWarningGroupList(List<TaskWarningHeader.WarningGroupHeader> warningGroupList) {
         this.warningGroupList = warningGroupList;
     }
 
