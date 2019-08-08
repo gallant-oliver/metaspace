@@ -249,7 +249,7 @@ public class DataStandardREST {
             if(file.length() > MAX_EXCEL_FILE_SIZE) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
             }
-            dataStandardService.importDataStandard(categoryId, fileInputStream);
+            dataStandardService.importDataStandard(categoryId, file);
             return Response.ok().build();
         } catch (AtlasBaseException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
