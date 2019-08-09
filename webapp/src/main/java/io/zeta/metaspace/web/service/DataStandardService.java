@@ -12,10 +12,9 @@
 // ======================================================================
 package io.zeta.metaspace.web.service;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -40,9 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -272,12 +268,5 @@ public class DataStandardService {
         }
         return dataList;
     }
-
-    public static String filename(String filePath) throws UnsupportedEncodingException {
-        String filename = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
-        filename = URLEncoder.encode(filename, "UTF-8");
-        return filename;
-    }
-
 
 }

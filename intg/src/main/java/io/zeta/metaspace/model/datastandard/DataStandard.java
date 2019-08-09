@@ -17,8 +17,6 @@ import org.hibernate.validator.constraints.NotBlank;
 
 import java.sql.Timestamp;
 
-import javax.validation.constraints.Pattern;
-
 
 public class DataStandard {
 
