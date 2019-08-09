@@ -1,21 +1,25 @@
 package io.zeta.metaspace.model.operatelog;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.sql.Timestamp;
 
 public class OperateLog {
 
-    private String id;
-    private String number;
-    private String userid;
-    private String username;
-    private String type;
-    private String object;
-    private String result;
-    private String ip;
+    private String    id;
+    private String    number;
+    private String    userid;
+    private String    username;
+    private String    type;
+    private String    module;
+    private String    content;
+    private String    result;
+    private String    ip;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createtime;
+    @JsonIgnore
+    private int       total;
 
     public String getId() {
         return id;
@@ -49,12 +53,12 @@ public class OperateLog {
         this.type = type;
     }
 
-    public String getObject() {
-        return object;
+    public String getContent() {
+        return content;
     }
 
-    public void setObject(String object) {
-        this.object = object;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public String getResult() {
@@ -87,5 +91,21 @@ public class OperateLog {
 
     public void setUserid(String userid) {
         this.userid = userid;
+    }
+
+    public String getModule() {
+        return module;
+    }
+
+    public void setModule(String module) {
+        this.module = module;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
     }
 }

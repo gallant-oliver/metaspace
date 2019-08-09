@@ -12,6 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service;
 
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
@@ -19,6 +20,8 @@ import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.OperateLogDAO;
+import io.zeta.metaspace.web.model.ModuleEnum;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,18 +42,23 @@ public class OperateLogService {
                 .stream().map(operateLog -> {
                     operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
                     operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
+                    operateLog.setModule(ModuleEnum.valueOf(operateLog.getModule().toUpperCase()).getName());
                     return operateLog;
                 }).collect(Collectors.toList());
         PageResult<OperateLog> pageResult = new PageResult<>();
-        long sum = operateLogDAO.queryCountBySearch(operateLogRequest);
+        long total = 0;
+        if (CollectionUtils.isNotEmpty(list)) {
+            total = list.get(0).getTotal();
+        }
         pageResult.setOffset(operateLogRequest.getOffset());
-        pageResult.setSum(sum);
+        pageResult.setSum(total);
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
 
     public void insert(OperateLog operateLog) {
+        operateLog.setId(UUIDUtils.uuid());
         int nextNumber = operateLogDAO.nextNumber();
         String number = String.format("%08d", nextNumber);
         operateLog.setNumber(number);

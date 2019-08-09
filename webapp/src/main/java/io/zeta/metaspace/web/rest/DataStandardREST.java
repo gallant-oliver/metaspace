@@ -13,14 +13,10 @@
 package io.zeta.metaspace.web.rest;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-import static io.zeta.metaspace.web.service.DataStandardService.filename;
-
 import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -28,12 +24,13 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
@@ -41,6 +38,15 @@ import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -49,21 +55,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.web.service.DataStandardService.filename;
 
 
 /**
@@ -92,10 +85,6 @@ public class DataStandardREST {
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
 
 
-    private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据标准) " + content);
-    }
-
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -103,7 +92,7 @@ public class DataStandardREST {
     @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
         try {
-            log(dataStandard.getContent());
+            HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
             List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
             if (!oldList.isEmpty()) {
                 throw new AtlasBaseException("标准编号已存在");
@@ -120,7 +109,7 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     @Valid
     public void update(DataStandard dataStandard) throws AtlasBaseException {
-        log(dataStandard.getContent());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
         dataStandardService.update(dataStandard);
     }
 
@@ -130,7 +119,7 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
-        log("批量删除:[" + Joiner.on("、").join(numberList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(),  Joiner.on("、").join(numberList));
         dataStandardService.deleteByNumberList(numberList);
     }
 
@@ -156,7 +145,7 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByNumber(@PathParam("number") String number) throws AtlasBaseException {
-        log(number);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), number);
         dataStandardService.deleteByNumber(number);
     }
 
@@ -290,11 +279,12 @@ public class DataStandardREST {
      * @throws Exception
      */
     @POST
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/category")
+    @OperateType(INSERT)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
-        log(categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
@@ -307,8 +297,12 @@ public class DataStandardREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
-        log(categoryGuid);
+        CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), category.getName());
         dataManageService.deleteCategory(categoryGuid);
     }
 
@@ -320,11 +314,12 @@ public class DataStandardREST {
      * @throws AtlasBaseException
      */
     @PUT
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/category")
+    @OperateType(UPDATE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
-        log(categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 }

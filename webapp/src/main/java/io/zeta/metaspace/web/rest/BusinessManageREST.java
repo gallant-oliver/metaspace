@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/2/21 18:20
  */
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessQueryParameter;
@@ -32,12 +33,13 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -56,7 +58,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Singleton;
@@ -72,6 +73,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Singleton
 @Service
@@ -191,7 +194,10 @@ public class BusinessManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{businessId}")
+    @OperateType(UPDATE)
     public Response updateTechnicalInfo(@PathParam("businessId") String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
+        BusinessInfo businessInfo = businessService.getBusinessInfo(businessId);
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS_MANAGE.getAlias(), businessInfo.getName());
         try {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
@@ -303,6 +309,7 @@ public class BusinessManageREST {
 
     /**
      * 更新业务对象信息
+     *
      * @param businessId
      * @param business
      * @return
@@ -312,7 +319,9 @@ public class BusinessManageREST {
     @Path("/{businessId}/business")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS_MANAGE.getAlias(), business.getName());
         try {
             businessService.updateBusiness(businessId, business);
             return Response.status(200).entity("success").build();

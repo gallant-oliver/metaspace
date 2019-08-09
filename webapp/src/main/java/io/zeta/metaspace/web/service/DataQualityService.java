@@ -474,6 +474,15 @@ public class DataQualityService {
         }
     }
 
+    public Template getTemplate(String templateId) {
+        try {
+            return qualityDao.getTemplate(templateId);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+    }
+
     public List<TemplateResult> getTemplates(String tableId) throws SQLException {
         List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId);
         return templateResults;

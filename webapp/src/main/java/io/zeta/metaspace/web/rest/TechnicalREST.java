@@ -2,6 +2,8 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
+import com.google.common.base.Joiner;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
@@ -12,11 +14,13 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -49,14 +53,6 @@ public class TechnicalREST {
     @Autowired
     private DataManageService dataManageService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
-
-
-    @Context
-    private HttpServletRequest request;
-
-    private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(技术信息) " + content);
-    }
 
     /**
      * 添加关联表时搜库
@@ -132,12 +128,14 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
             return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -155,6 +153,7 @@ public class TechnicalREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}")
+    @OperateType(DELETE)
     public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
@@ -162,6 +161,8 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
             }
+            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
             dataManageService.deleteCategory(categoryGuid);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -182,12 +183,14 @@ public class TechnicalREST {
     @Path("/update/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public String updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
             return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");

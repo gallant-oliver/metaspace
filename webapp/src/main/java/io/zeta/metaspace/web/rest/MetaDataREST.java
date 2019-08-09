@@ -12,9 +12,8 @@
 // ======================================================================
 package io.zeta.metaspace.web.rest;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
-
 import com.google.gson.Gson;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -23,8 +22,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
-import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.*;
@@ -54,6 +52,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Path("metadata")
 @Singleton
@@ -87,10 +87,6 @@ public class MetaDataREST {
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
-    }
-
-    private void log(String content) {
-        httpServletRequest.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(元数据) " + content);
     }
 
     /**
@@ -318,62 +314,6 @@ public class MetaDataREST {
         }
     }
 
-
-    /**
-     * 更新表描述
-     *
-     * @param tableEdit
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/update/table")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
-    public Response updateTableDescription(TableEdit tableEdit) throws AtlasBaseException {
-        log(tableEdit.getGuid());
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateTableDescription()");
-            }
-            metadataService.updateTable(tableEdit);
-
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-    /**
-     * 更新字段描述
-     *
-     * @param columnEdits
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/update/table/column")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
-    public Response updateColumnDescription(List<ColumnEdit> columnEdits) throws AtlasBaseException {
-        log(columnEdits.get(0).getColumnName());
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateColumnDescription()");
-            }
-            metadataService.updateColumnDescription(columnEdits);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-
     /**
      * 清除缓存
      *
@@ -453,6 +393,7 @@ public class MetaDataREST {
     @Path("/tag/{tagId}")
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public String deleteTag(@PathParam("tagId") String tagId) throws AtlasBaseException {
         try {
             tableTagService.deleteTag(tagId);
@@ -466,10 +407,8 @@ public class MetaDataREST {
     @Path("/tag/tag2table/{tableguId}/{tagId}")
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
     public String deletetag2table(@PathParam("tableguId") String tableguId, @PathParam("tagId") String tagId) throws AtlasBaseException {
         try {
-            log(tagId);
             tableTagService.deleteTable2Tag(tableguId, tagId);
             return "success";
         } catch (Exception e) {
@@ -542,10 +481,8 @@ public class MetaDataREST {
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
     public String deleteOwner(@PathParam("tableGuid") String tableGuid, List<String> ownerList) throws AtlasBaseException {
         try {
-            log(tableGuid);
             metadataService.deleteTableOwner(tableGuid, ownerList);
             return "success";
         }  catch (Exception e) {
@@ -602,8 +539,8 @@ public class MetaDataREST {
     @Path("/table/{guid}")
     @OperateType(UPDATE)
     public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableInfo.getTableName());
         try {
-            log(guid);
             metadataService.updateTableInfo(guid, tableInfo);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {

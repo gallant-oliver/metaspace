@@ -22,51 +22,36 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
-
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.share.APIContent;
-import io.zeta.metaspace.model.share.APIGroup;
-import io.zeta.metaspace.model.share.APIInfo;
-import io.zeta.metaspace.model.share.APIInfoHeader;
-import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.DataShareGroupService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 @Path("datashare")
 @Singleton
@@ -84,12 +69,9 @@ public class DataShareREST {
     @Context
     private HttpServletRequest httpServletRequest;
 
-    private void log(String content) {
-        httpServletRequest.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据分享) " + content);
-    }
-
     /**
      * 创建API
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -99,8 +81,8 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response insertAPIInfo(APIInfo info) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), info.getName());
         try {
-            log(info.getName());
             shareService.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             throw e;
@@ -131,6 +113,7 @@ public class DataShareREST {
 
     /**
      * 删除API
+     *
      * @param guid
      * @return
      * @throws AtlasBaseException
@@ -140,9 +123,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public Response deleteAPIINfo(@PathParam("apiGuid")String guid) throws AtlasBaseException {
+    public Response deleteAPIINfo(@PathParam("apiGuid") String guid) throws AtlasBaseException {
+        APIInfo apiInfo = shareService.getAPIInfo(guid);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), apiInfo.getName());
         try {
-            log(guid);
             shareService.deleteAPIInfo(guid);
         } catch (AtlasBaseException e) {
             throw e;
@@ -154,6 +138,7 @@ public class DataShareREST {
 
     /**
      * 修改API信息
+     *
      * @param guid
      * @param info
      * @return
@@ -164,9 +149,9 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updateAPIInfo(@PathParam("apiGuid")String guid, APIInfo info) throws AtlasBaseException {
+    public Response updateAPIInfo(@PathParam("apiGuid") String guid, APIInfo info) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), info.getName());
         try {
-            log(info.getName());
             shareService.updateAPIInfo(guid, info);
         } catch (AtlasBaseException e) {
             throw e;
@@ -217,6 +202,7 @@ public class DataShareREST {
 
     /**
      * 创建API分组
+     *
      * @param group
      * @return
      * @throws AtlasBaseException
@@ -227,8 +213,8 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response insertGroup(APIGroup group) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), group.getName());
         try {
-            log(group.getName());
             groupService.insertGroup(group);
         } catch (AtlasBaseException e) {
             throw e;
@@ -240,6 +226,7 @@ public class DataShareREST {
 
     /**
      * 删除API分组
+     *
      * @param guid
      * @return
      * @throws AtlasBaseException
@@ -247,9 +234,10 @@ public class DataShareREST {
     @DELETE
     @Path("/group/{groupId}")
     @OperateType(DELETE)
-    public Response deleteGroup(@PathParam("groupId")String guid) throws AtlasBaseException {
+    public Response deleteGroup(@PathParam("groupId") String guid) throws AtlasBaseException {
+        String groupName = groupService.getGroupName(guid);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), groupName);
         try {
-            log(guid);
             groupService.deleteGroup(guid);
         } catch (AtlasBaseException e) {
             throw e;
@@ -261,6 +249,7 @@ public class DataShareREST {
 
     /**
      * 更新API分组信息
+     *
      * @param guid
      * @param group
      * @return
@@ -271,9 +260,9 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updateGroup(@PathParam("groupId")String guid, APIGroup group) throws AtlasBaseException {
+    public Response updateGroup(@PathParam("groupId") String guid, APIGroup group) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), group.getName());
         try {
-            log(group.getName());
             groupService.updateGroup(guid, group);
         } catch (AtlasBaseException e) {
             throw e;
