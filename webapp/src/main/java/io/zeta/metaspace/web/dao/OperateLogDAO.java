@@ -23,7 +23,8 @@ import java.util.List;
 public interface OperateLogDAO {
 
     @Select({"<script>",
-             " select a.id,a.number,a.userid,b.username,a.type,a.object,a.result,a.ip,a.createtime ",
+             " select a.id,a.number,a.userid,b.username,a.type,a.module,a.content,a.result,a.ip,a.createtime," +
+                     " count(*) over() as total",
              " from operate_log a inner join users b on a.userid=b.userid where 1=1 ",
              " <if test=\"request.query.type != null and request.query.type!=''\"> ",
              " and a.type=#{request.query.type} ",
@@ -38,37 +39,16 @@ public interface OperateLogDAO {
              " and a.result=#{request.query.result} ",
              " </if> ",
              " <if test=\"request.query.keyword != null and request.query.keyword!=''\"> ",
-             " and ( b.username like '%${request.query.keyword}%' ESCAPE '/' or a.object like '%${request.query.keyword}%' ESCAPE '/' or a.ip like '%${request.query.keyword}%' ESCAPE '/' )",
+             " and ( b.username like '%${request.query.keyword}%' ESCAPE '/' or a.content like '%${request.query.keyword}%' ESCAPE '/' or a.ip like '%${request.query.keyword}%' ESCAPE '/' )",
              " </if>",
              " order by a.createtime desc ",
              " <if test='request.limit != null and request.offset != null'>",
              " limit #{request.limit} offset #{request.offset} ",
              " </if>",
              " </script>"})
-    public List<OperateLog> search(@Param("request") OperateLogRequest request);
+    List<OperateLog> search(@Param("request") OperateLogRequest request);
 
-    @Select({"<script>",
-             " select count(1) ",
-             " from operate_log a inner join users b on a.userid=b.userid where 1=1 ",
-             " <if test=\"request.query.type != null and request.query.type!=''\"> ",
-             " and a.type=#{request.query.type} ",
-             " </if> ",
-             " <if test=\"request.query.starttime != null and request.query.starttime!=''\"> ",
-             " <![CDATA[ and a.createtime >= '${request.query.starttime}' ]]> ",
-             " </if> ",
-             " <if test=\"request.query.endtime != null and request.query.endtime!=''\"> ",
-             " <![CDATA[ and a.createtime <= '${request.query.endtime}' ]]> ",
-             " </if> ",
-             " <if test=\"request.query.result != null and request.query.result!=''\"> ",
-             " and a.result=#{request.query.result} ",
-             " </if> ",
-             " <if test=\"request.query.keyword != null and request.query.keyword!=''\"> ",
-             " and ( b.username like '%${request.query.keyword}%' ESCAPE '/' or a.object like '%${request.query.keyword}%' ESCAPE '/' or a.ip like '%${request.query.keyword}%' ESCAPE '/' )",
-             " </if>",
-             " </script>"})
-    public long queryCountBySearch(@Param("request") OperateLogRequest request);
-
-    @Insert("insert into operate_log(id,number,userid,type,object,result,ip,createtime) values(#{id},#{number},#{userid},#{type},#{object},#{result},#{ip},#{createtime})")
+    @Insert("insert into operate_log values(#{id},#{number},#{userid},#{type},#{module},#{content},#{result},#{ip},#{createtime})")
     int insert(OperateLog operateLog);
 
     @Select("select COALESCE(max(cast(number as integer)) + 1, 1) from operate_log")

@@ -15,6 +15,7 @@
 package io.zeta.metaspace.web.filter;
 
 import com.google.gson.Gson;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.FilterUtils;
@@ -66,6 +67,8 @@ public class SSOFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         String userName = "unknown";
         String requestURL = httpServletRequest.getRequestURL().toString();
+        HttpRequestContext httpRequestContext = HttpRequestContext.get();
+        httpRequestContext.setRequest(httpServletRequest);
         try {
             if (FilterUtils.isSkipUrl(requestURL)) {
                 filterChain.doFilter(request, response);

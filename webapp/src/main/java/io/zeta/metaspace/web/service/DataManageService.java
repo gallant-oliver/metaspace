@@ -140,7 +140,6 @@ public class DataManageService {
         }
     }
 
-
     /**
      * 创建业务目录
      *
@@ -278,6 +277,16 @@ public class DataManageService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
         }
+    }
+
+    /**
+     * 获取目录信息
+     * @param guid
+     * @return
+     * @throws SQLException
+     */
+    public CategoryEntityV2 getCategory(String guid) throws SQLException {
+        return categoryDao.queryByGuid(guid);
     }
 
     /**

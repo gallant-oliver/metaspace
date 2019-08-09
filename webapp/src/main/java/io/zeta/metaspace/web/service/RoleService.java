@@ -86,6 +86,10 @@ public class RoleService {
         }
     }
 
+    public Role getRoleById(String roleId) {
+        return roleDAO.getRoleByRoleId(roleId);
+    }
+
     public String updateRoleStatus(String roleId, int status) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
         if (role.getDisable() == 0) {

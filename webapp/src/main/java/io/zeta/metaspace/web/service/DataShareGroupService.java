@@ -119,4 +119,13 @@ public class DataShareGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
+
+    public String getGroupName(String guid) throws AtlasBaseException {
+        try {
+            return groupDAO.getGroupNameById(guid);
+        }  catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+        }
+    }
 }
