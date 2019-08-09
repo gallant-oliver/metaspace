@@ -16,6 +16,10 @@
  */
 package io.zeta.metaspace.model.dataquality2;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
+
 /*
  * @description
  * @author sunhaoning
@@ -30,6 +34,9 @@ public class RuleTemplate {
     private String description;
     private Boolean delete;
     private String categoryId;
+    private String ruleType;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
 
     public String getId() {
         return id;
@@ -85,5 +92,21 @@ public class RuleTemplate {
 
     public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public String getRuleType() {
+        return ruleType;
+    }
+
+    public void setRuleType(String ruleType) {
+        this.ruleType = ruleType;
+    }
+
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
     }
 }

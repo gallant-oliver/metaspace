@@ -17,10 +17,12 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -42,6 +44,9 @@ public class RuleService {
 
     @Autowired
     private RuleDAO ruleDAO;
+
+    @Autowired
+    private DataManageService dataManageService;
 
     public int insert(Rule rule) throws AtlasBaseException {
         rule.setId(UUIDUtils.alphaUUID());
@@ -72,10 +77,14 @@ public class RuleService {
     }
 
     public int update(Rule rule) throws AtlasBaseException {
-        rule.setUpdateTime(DateUtils.currentTimestamp());
-        Rule old = getById(rule.getId());
-        BeansUtil.copyPropertiesIgnoreNull(rule, old);
-        return ruleDAO.update(old);
+        try {
+            rule.setUpdateTime(DateUtils.currentTimestamp());
+            Rule old = getById(rule.getId());
+            BeansUtil.copyPropertiesIgnoreNull(rule, old);
+            return ruleDAO.update(old);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     public PageResult<Rule> queryPageByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
@@ -121,6 +130,19 @@ public class RuleService {
         pageResult.setCount(list.size());
         pageResult.setLists(list);
         return pageResult;
+    }
+
+    public List<CategoryPrivilege> getAll(Integer categoryType) throws AtlasBaseException {
+        try {
+            List<CategoryPrivilege> resultList = dataManageService.getAll(categoryType);
+            for (CategoryPrivilege res : resultList) {
+                Integer count = ruleDAO.getCategoryObjectCount(res.getGuid());
+                res.setObjectCount(count);
+            }
+            return resultList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {

@@ -13,6 +13,7 @@
 package io.zeta.metaspace.web.service.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -22,7 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -39,7 +42,16 @@ public class RuleTemplateService {
 
     public List<RuleTemplate> getRuleTemplate(String categoryId) throws AtlasBaseException {
         try {
-            return ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
+            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
+                ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+            });
+            for (RuleTemplate ruleTemplate : ruleTemplateList) {
+                String ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getCategoryId());
+                ruleTemplate.setRuleType(ruleType);
+            }
+            return ruleTemplateList;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }

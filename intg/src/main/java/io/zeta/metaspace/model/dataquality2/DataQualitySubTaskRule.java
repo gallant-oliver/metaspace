@@ -33,6 +33,7 @@ public class DataQualitySubTaskRule {
     private Integer checkExpression;
     private Float checkThresholdMinValue;
     private Float checkThresholdMaxValue;
+    private String checkThresholdUnit;
     private Integer orangeCheckType;
     private Integer orangeCheckExpression;
     private Float orangeThresholdMinValue;
@@ -102,6 +103,14 @@ public class DataQualitySubTaskRule {
 
     public void setCheckThresholdMaxValue(Float checkThresholdMaxValue) {
         this.checkThresholdMaxValue = checkThresholdMaxValue;
+    }
+
+    public String getCheckThresholdUnit() {
+        return checkThresholdUnit;
+    }
+
+    public void setCheckThresholdUnit(String checkThresholdUnit) {
+        this.checkThresholdUnit = checkThresholdUnit;
     }
 
     public Integer getOrangeCheckType() {

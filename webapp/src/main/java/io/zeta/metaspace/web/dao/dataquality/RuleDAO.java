@@ -16,8 +16,9 @@ public interface RuleDAO {
             " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete})")
     public int insert(Rule rule);
 
-    @Insert(" update data_quality_rule set " +
-            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime}")
+    @Update(" update data_quality_rule set " +
+            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime}" +
+            " where id=#{id}")
     public int update(Rule rule);
 
     @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
@@ -88,5 +89,8 @@ public interface RuleDAO {
 
     @Select("select id,name,scope,unit,description,delete,category_id as categoryId from data_quality_rule_template")
     public List<RuleTemplate> getAllRuleTemplateList();
+
+    @Select("select count(*) from data_quality_rule where category_id=#{categoryId}")
+    public Integer getCategoryObjectCount(@Param("categoryId") String guid);
 
 }

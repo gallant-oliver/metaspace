@@ -17,9 +17,13 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
+import io.zeta.metaspace.model.dataquality2.WarningInfo;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -33,9 +37,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.PathParam;
 
 @Service
 @Transactional
@@ -45,6 +58,9 @@ public class WarningGroupService {
 
     @Autowired
     private WarningGroupDAO warningGroupDAO;
+
+    @Autowired
+    private TaskManageDAO taskManageDAO;
 
     public int insert(WarningGroup warningGroup) throws AtlasBaseException {
         warningGroup.setId(UUIDUtils.alphaUUID());
@@ -141,16 +157,20 @@ public class WarningGroupService {
 
     public void closeTaskExecutionWarning(Integer warningType, List<String> taskIdList) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
-            warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList);
+            warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList, currentTime, userId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
 
-    public void closeRuleExecutionWarning(Integer warningType, String executionId, List<String> executionRuleIdList) throws AtlasBaseException {
+    /*public void closeRuleExecutionWarning(Integer warningType, String executionId, List<String> executionRuleIdList) throws AtlasBaseException {
         try {
-            warningGroupDAO.closeTaskRuleExecutionWarning(warningType, executionRuleIdList);
+            String userId = AdminUtils.getUserData().getUserId();
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            warningGroupDAO.closeTaskRuleExecutionWarning(warningType, executionRuleIdList,currentTime, userId);
             Integer countWarning = warningGroupDAO.coutTaskRuleExecutionOpenWarning(warningType, executionId);
             if(0 == countWarning) {
                 List executionIdList = new ArrayList();
@@ -160,6 +180,75 @@ public class WarningGroupService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
+    }*/
+
+
+
+    public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
+        try {
+            //任务名称、告警发生时间、告警关闭时间、告警处理人
+            WarningInfo info = warningGroupDAO.getWarningBasicInfo(executionRuleId);
+            Map<String, Table> idToTable = new HashMap<>();
+            Map<String, Column> idToColumn = new HashMap<>();
+            List<WarningInfo.SubTaskWarning> subTaskList =warningGroupDAO.getSubTaskWarning(executionRuleId);
+            for (WarningInfo.SubTaskWarning subTask : subTaskList) {
+                String subTaskId = subTask.getSubTaskId();
+                List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(subTaskId);
+                for (WarningInfo.SubTaskRuleWarning subTaskRuleWarning : subTaskRuleWarningList) {
+                    String objectId = subTaskRuleWarning.getObjectId();
+                    Integer dataSourceType = subTaskRuleWarning.getWarningType();
+                    if(0 == dataSourceType) {
+                        Table table = null;
+                        if(idToTable.containsKey(objectId)) {
+                            table = idToTable.get(objectId);
+                        } else {
+                            table = taskManageDAO.getDbAndTableName(objectId);
+                            idToTable.put(objectId, table);
+                        }
+                        String dbName = table.getDatabaseName();
+                        String tableName = table.getTableName();
+                        subTaskRuleWarning.setDbName(dbName);
+                        subTaskRuleWarning.setTableName(tableName);
+                    } else if(1 == dataSourceType) {
+                        Column column = null;
+                        if(idToColumn.containsKey(objectId)) {
+                            column = idToColumn.get(objectId);
+                            idToColumn.put(objectId, column);
+                        } else {
+                            column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+                        }
+                        String dbName = column.getDatabaseName();
+                        String tableName = column.getTableName();
+                        String columnName = column.getColumnName();
+                        subTaskRuleWarning.setDbName(dbName);
+                        subTaskRuleWarning.setTableName(tableName);
+                        subTaskRuleWarning.setColumnName(columnName);
+                    }
+
+                    subTaskRuleWarning.setWarningMessage(subTaskRuleWarning.getRuleName() + "为" + subTaskRuleWarning.getResult() + subTaskRuleWarning.getUnit());
+                }
+                subTask.setSubTaskList(subTaskRuleWarningList);
+            }
+            info.setSubTaskList(subTaskList);
+
+            //通知对象
+            /*List<String> warningGroupMemberList = warningGroupDAO.getWarningGroupMemberList(executionRuleId);
+            Set<String> memberSet = new HashSet<>();
+            StringJoiner memberJoiner = new StringJoiner(";");
+            for (String warningGroup : warningGroupMemberList) {
+                List<String> members = Arrays.asList(warningGroup.split(","));
+                members.forEach(member -> memberSet.add(member));
+            }
+            memberSet.stream().forEach(member -> memberJoiner.add(member));*/
+
+            return info;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
+
     }
 
 }

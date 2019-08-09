@@ -19,6 +19,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
+import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
@@ -200,13 +201,13 @@ public class WarningGroupREST {
      * @param executionIdList
      * @throws AtlasBaseException
      */
-    @PUT
+    /*@PUT
     @Path("/{executionId}/warnings")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void closeTaskRuleExecutionWarning(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
         warningGroupService.closeRuleExecutionWarning(0, executionId, executionIdList);
-    }
+    }*/
 
     /**
      * 关闭任务告警
@@ -227,11 +228,33 @@ public class WarningGroupREST {
      * @param executionIdList
      * @throws AtlasBaseException
      */
-    @PUT
+    /*@PUT
     @Path("/{executionId}/errors")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void closeTaskRuleExecutionError(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
         warningGroupService.closeRuleExecutionWarning(1, executionId, executionIdList);
+    }*/
+
+    /**
+     * 获取告警详情
+     * @param executionId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{executionId}/warning")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public WarningInfo getWarningInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return warningGroupService.getWarningInfo(executionId);
+    }
+
+    @GET
+    @Path("/{executionId}/error")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public WarningInfo getErrorInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return warningGroupService.getWarningInfo(executionId);
     }
 }

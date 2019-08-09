@@ -3,12 +3,14 @@ package io.zeta.metaspace.web.dao.dataquality;
 import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
+import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface WarningGroupDAO {
@@ -138,12 +140,14 @@ public interface WarningGroupDAO {
              " <if test='warningType==1'>",
              " error_status=2",
              " </if>",
+             " close_time=#{closeTime},",
+             " closer=#{closer}",
              " where task_execute_id in",
              " <foreach collection='executionIdList' item='executionId' index='index' open='(' close=')' separator=','>",
              " #{executionId}",
              " </foreach>",
              " </script>"})
-    public int closeAllTaskRuleExecutionWarning(@Param("warningType")Integer warningType, @Param("executionIdList")List<String> executionIdList);
+    public int closeAllTaskRuleExecutionWarning(@Param("warningType")Integer warningType, @Param("executionIdList")List<String> executionIdList, @Param("closeTime")Timestamp closeTime, @Param("closer")String closer);
 
     @Update({" <script>",
              " update data_quality_task_rule_execute set",
@@ -153,12 +157,14 @@ public interface WarningGroupDAO {
              " <if test='warningType==1'>",
              " error_status=2",
              " </if>",
+             " close_time=#{closeTime},",
+             " closer=#{closer}",
              " where id in",
              " <foreach collection='executionRuleIdList' item='executionRuleId' index='index' open='(' close=')' separator=','>",
              " #{executionRuleId}",
              " </foreach>",
              " </script>"})
-    public int closeTaskRuleExecutionWarning(@Param("warningType")Integer warningType, @Param("executionRuleIdList")List<String> executionIdList);
+    public int closeTaskRuleExecutionWarning(@Param("warningType")Integer warningType, @Param("executionRuleIdList")List<String> executionRuleIdList, @Param("closeTime")Timestamp closeTime, @Param("closer")String closer);
 
     @Select({" <script>",
              " select count(*) from data_quality_task_rule_execute where task_execute_id=#{executionId}",
@@ -170,5 +176,50 @@ public interface WarningGroupDAO {
              " </if>",
              " </script>"})
     public int coutTaskRuleExecutionOpenWarning(@Param("warningType")Integer warningType, @Param("executionId")String taskIdList);
+
+    @Select({" <script>",
+             " select data_quality_task.name as taskName,data_quality_task_execute.id as executionId,data_quality_task_execute.execute_time as executeTime,",
+             " data_quality_task_execute.closer,data_quality_task_execute.close_time as closeTime,data_quality_task_execute.warning_status as warningStatus",
+             " from data_quality_task_execute join data_quality_task on data_quality_task.id=data_quality_task_execute.task_id where",
+             " data_quality_task_execute.id=#{executionId}",
+             " </script>"})
+    public WarningInfo getWarningBasicInfo(@Param("executionId")String executionId);
+
+    @Select("select id as subTaskId,sequence,datasource_type as ruleType from data_quality_sub_task where task_id=(select task_id from data_quality_task_execute where id=#{executionId})")
+    public List<WarningInfo.SubTaskWarning> getSubTaskWarning(@Param("executionId")String executionId);
+
+    @Select({" <script>",
+             " select a.objectId,a.result,data_quality_rule.name as ruleName,data_quality_rule.check_threshold_unit as unit,0 as warningType from",
+             " (select data_quality_sub_task_rule.ruleid as ruleId,data_quality_task_rule_execute.subtask_object_id as objectId,",
+             " data_quality_task_rule_execute.result from data_quality_task_rule_execute ",
+             " join data_quality_sub_task_rule on data_quality_sub_task_rule.id=data_quality_task_rule_execute.subtask_rule_id",
+             " where data_quality_task_rule_execute.subtask_id=#{subTaskId} and orange_warning_check_status=1) a",
+             " join data_quality_rule on data_quality_rule.id=a.ruleid",
+             " UNION ALL",
+             " select a.objectId,a.result,data_quality_rule.name as ruleName,data_quality_rule.check_threshold_unit as unit,1 as warningType from",
+             " (select data_quality_sub_task_rule.ruleid as ruleId,data_quality_task_rule_execute.subtask_object_id as objectId,",
+             " data_quality_task_rule_execute.result from data_quality_task_rule_execute ",
+             " join data_quality_sub_task_rule on data_quality_sub_task_rule.id=data_quality_task_rule_execute.subtask_rule_id",
+             " where data_quality_task_rule_execute.subtask_id=#{subTaskId} and red_warning_check_status=1) a",
+             " join data_quality_rule on data_quality_rule.id=a.ruleid",
+             " </script>"})
+    public List<WarningInfo.SubTaskRuleWarning> getSubTaskRuleWarning(@Param("subTaskId")String subTaskId);
+
+    @Select({" <script>",
+             " select contacts from warning_group where id in",
+             " (select warning_group_id from data_quality_task2warning_group WHERE task_id=",
+             " (select task_id from data_quality_task_rule_execute where id=#{executionRuleId}))",
+             " </script>"})
+    public List<String> getWarningGroupMemberList(@Param("executionRuleId")String executionRuleId);
+
+    @Select({" <script>",
+             " select scope from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=",
+             " (select rule_template_id from data_quality_rule where id=(select ruleid from data_quality_sub_task_rule where id=",
+             " (select subtask_rule_id from data_quality_task_rule_execute where id=#{executionRuleId})))",
+             " </script>"})
+    public Integer getRuleScope(@Param("executionRuleId")String executionRuleId);
+
+    @Select("select subtask_object_id from data_quality_task_rule_execute where id=#{executionRuleId}")
+    public String getObjectId(@Param("executionRuleId")String executionRuleId);
 
 }

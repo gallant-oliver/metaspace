@@ -146,6 +146,7 @@ public class TaskInfo {
         private String ruleId;
         private Integer checkType;
         private Integer checkExpression;
+        private String checkThresholdUnit;
         private Float checkThresholdMinValue;
         private Float checkThresholdMaxValue;
         private List<Warning> warnings;
@@ -172,6 +173,15 @@ public class TaskInfo {
 
         public void setCheckExpression(Integer checkExpression) {
             this.checkExpression = checkExpression;
+        }
+
+
+        public String getCheckThresholdUnit() {
+            return checkThresholdUnit;
+        }
+
+        public void setCheckThresholdUnit(String checkThresholdUnit) {
+            this.checkThresholdUnit = checkThresholdUnit;
         }
 
         public Float getCheckThresholdMinValue() {

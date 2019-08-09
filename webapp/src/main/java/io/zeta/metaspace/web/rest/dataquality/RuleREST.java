@@ -172,7 +172,7 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
-        return dataManageService.getAll(categoryType);
+        return ruleService.getAll(categoryType);
     }
 
     /**
