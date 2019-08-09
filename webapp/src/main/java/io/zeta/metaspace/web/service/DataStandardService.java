@@ -24,6 +24,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -56,6 +57,10 @@ public class DataStandardService {
     DataStandardDAO dataStandardDAO;
 
     public int insert(DataStandard dataStandard) throws AtlasBaseException {
+        String regexp = "^[A-Z0-9]+$";
+        if(!dataStandard.getNumber().matches(regexp)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
+        }
         dataStandard.setId(UUIDUtils.alphaUUID());
         dataStandard.setCreateTime(DateUtils.currentTimestamp());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
@@ -238,7 +243,7 @@ public class DataStandardService {
         return tmpFile;
     }
 
-    public void importDataStandard(String categoryId, InputStream fileInputStream) throws Exception {
+    public void importDataStandard(String categoryId, File fileInputStream) throws Exception {
         List<DataStandard> dataList = file2Data(fileInputStream);
         if(dataList.isEmpty()){
             throw new AtlasBaseException("没有数据。");
@@ -252,9 +257,9 @@ public class DataStandardService {
         batchInsert(categoryId, dataList);
     }
 
-    private List<DataStandard> file2Data(InputStream fileInputStream) throws Exception {
+    private List<DataStandard> file2Data(File file) throws Exception {
         List<DataStandard> dataList = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(fileInputStream);
+        Workbook workbook = WorkbookFactory.create(file);
         Sheet sheet = workbook.getSheetAt(0);
         int rowNum = sheet.getLastRowNum() + 1;
         for (int i = 1; i < rowNum; i++) {
