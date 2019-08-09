@@ -12,7 +12,8 @@ public enum OperateTypeEnum {
      */
 //    QUERY("query", "查询"),
     DELETE("delete", "删除"),
-    UPDATE("update", "更新");
+    UPDATE("update", "更新"),
+    UNKOWN("unkown", "未知");
 
     private String en;
     private String cn;
@@ -51,10 +52,7 @@ public enum OperateTypeEnum {
                 return operateTypeEnum;
             }
         }
-        throw new RuntimeException("找不到对应的操作类型:" + en);
+        return UNKOWN;
     }
 
-    public String en2cn(String en) {
-        return of(en).getCn();
-    }
 }

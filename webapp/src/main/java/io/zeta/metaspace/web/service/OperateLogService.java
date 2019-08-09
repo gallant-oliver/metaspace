@@ -12,6 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service;
 
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
@@ -57,6 +58,7 @@ public class OperateLogService {
     }
 
     public void insert(OperateLog operateLog) {
+        operateLog.setId(UUIDUtils.uuid());
         int nextNumber = operateLogDAO.nextNumber();
         String number = String.format("%08d", nextNumber);
         operateLog.setNumber(number);

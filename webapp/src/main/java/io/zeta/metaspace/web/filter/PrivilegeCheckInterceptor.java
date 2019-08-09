@@ -73,6 +73,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     RoleService roleService;
     @Autowired
     ApiModuleDAO apiModuleDAO;
+    @Autowired
+    private OperateLogService operateLogService;
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -155,12 +157,32 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 } else if (moduleIds.contains(moduleId)) {
                     return invocation.proceed();
                 } else {
+                    String ip = request.getRemoteAddr();
+                    auditLog(prefix, ip, userId);
+
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
                 }
             }
         }
     }
 
+    /**
+     * 记录审计日志
+     * @param module 模块
+     * @param ip
+     * @param userId
+     */
+    private void auditLog(String module, String ip, String userId) {
+        OperateLog operateLog = new OperateLog();
+        operateLog.setModule(module.toLowerCase());
+        operateLog.setResult(OperateResultEnum.UNAUTHORIZED.getEn());
+        operateLog.setType("");
+        operateLog.setContent("");
+        operateLog.setCreatetime(DateUtils.currentTimestamp());
+        operateLog.setIp(ip);
+        operateLog.setUserid(userId);
+        operateLogService.insert(operateLog);
+    }
 
     private Map<String, RoleModulesCategories.Category> getUserCatagory(String userId) {
         //技术目录

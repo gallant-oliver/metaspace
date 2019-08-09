@@ -67,8 +67,10 @@ public class OperateLogInterceptor implements MethodInterceptor {
             Object module = request.getAttribute(OPERATELOG_MODULE);
             if (null != module) {
                 operateLog.setModule(module.toString());
+            } else {
+                String modulePath = request.getRequestURL().toString().replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
+                operateLog.setModule(modulePath.toLowerCase());
             }
-            operateLog.setId(UUIDUtils.uuid());
             User userData = AdminUtils.getUserData();
             operateLog.setUserid(userData.getUserId());
             operateLog.setUsername(userData.getUsername());
