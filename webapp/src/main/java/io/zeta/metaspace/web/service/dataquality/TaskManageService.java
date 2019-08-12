@@ -34,6 +34,7 @@ import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
@@ -53,6 +54,7 @@ import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.AdminUtils;
+import jnr.ffi.Struct;
 import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -67,7 +69,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -460,6 +464,15 @@ public class TaskManageService {
         try {
             PageResult pageResult = new PageResult();
             List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters);
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
+                ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+            });
+            for (TaskRuleHeader rule : lists) {
+                String categoryId = taskManageDAO.getTypeByRuleId(rule.getRuleId());
+                String typeName = ruleTemplateCategoryMap.get(categoryId);
+                rule.setTypeName(typeName);
+            }
             long totalSize = taskManageDAO.countRuleList(taskId);
             pageResult.setLists(lists);
             pageResult.setCount(lists.size());

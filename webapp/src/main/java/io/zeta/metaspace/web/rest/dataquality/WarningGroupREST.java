@@ -18,12 +18,14 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
 import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -65,9 +67,6 @@ public class WarningGroupREST {
     private WarningGroupService warningGroupService;
 
 
-    private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据质量告警组) " + content);
-    }
 
     /**
      * 添加告警组
@@ -80,7 +79,7 @@ public class WarningGroupREST {
     @OperateType(INSERT)
     @Valid
     public void insert(WarningGroup warningGroup) throws AtlasBaseException {
-        log(warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName());
         if (old != null) {
             throw new AtlasBaseException("告警组名已存在");
@@ -99,7 +98,7 @@ public class WarningGroupREST {
     @OperateType(UPDATE)
     @Valid
     public void update(WarningGroup warningGroup) throws AtlasBaseException {
-        log(warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), warningGroup.getName());
         warningGroupService.update(warningGroup);
     }
 
@@ -114,7 +113,7 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByIdList(List<String> idList) throws AtlasBaseException {
-        log("批量删除:[" + Joiner.on("、").join(idList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(idList) + "]");
         warningGroupService.deleteByIdList(idList);
     }
 
@@ -143,7 +142,7 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteById(@PathParam("id") String id) throws AtlasBaseException {
-        log(id);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), id);
         warningGroupService.deleteById(id);
     }
 

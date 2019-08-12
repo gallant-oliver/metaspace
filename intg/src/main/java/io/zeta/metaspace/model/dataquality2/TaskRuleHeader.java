@@ -25,48 +25,29 @@ import java.sql.Timestamp;
  * @author sunhaoning
  * @date 2019/7/29 18:48
  */
-public class TaskRuleHeader {
-    private String id;
-    private String taskId;
-    private String subTaskId;
-    private String number;
+public class  TaskRuleHeader {
+    private String ruleId;
+    private String subTaskRuleId;
     private String description;
-    private Integer code;
-    private String type;
-    private String level;
+    private String code;
+    private String typeName;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp lastExecuteTime;
 
-    public String getId() {
-        return id;
+    public String getRuleId() {
+        return ruleId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setRuleId(String ruleId) {
+        this.ruleId = ruleId;
     }
 
-    public String getTaskId() {
-        return taskId;
+    public String getSubTaskRuleId() {
+        return subTaskRuleId;
     }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
-
-    public String getSubTaskId() {
-        return subTaskId;
-    }
-
-    public void setSubTaskId(String subTaskId) {
-        this.subTaskId = subTaskId;
-    }
-
-    public String getNumber() {
-        return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
+    public void setSubTaskRuleId(String subTaskRuleId) {
+        this.subTaskRuleId = subTaskRuleId;
     }
 
     public String getDescription() {
@@ -77,28 +58,20 @@ public class TaskRuleHeader {
         this.description = description;
     }
 
-    public Integer getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(Integer code) {
+    public void setCode(String code) {
         this.code = code;
     }
 
-    public String getType() {
-        return type;
+    public String getTypeName() {
+        return typeName;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getLevel() {
-        return level;
-    }
-
-    public void setLevel(String level) {
-        this.level = level;
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 
     public Timestamp getLastExecuteTime() {

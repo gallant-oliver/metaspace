@@ -247,8 +247,8 @@ public class WarningGroupService {
         }
     }
 
-    public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
+    /*public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
 
-    }
+    }*/
 
 }

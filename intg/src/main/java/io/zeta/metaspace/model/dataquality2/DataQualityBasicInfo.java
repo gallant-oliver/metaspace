@@ -29,7 +29,7 @@ public class DataQualityBasicInfo {
 
     private String id;
     private String name;
-    private String number;
+    private String taskId;
     private Integer level;
     private String description;
     private Boolean enable;
@@ -60,12 +60,12 @@ public class DataQualityBasicInfo {
         this.name = name;
     }
 
-    public String getNumber() {
-        return number;
+    public String getTaskId() {
+        return taskId;
     }
 
-    public void setNumber(String number) {
-        this.number = number;
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 
     public Integer getLevel() {

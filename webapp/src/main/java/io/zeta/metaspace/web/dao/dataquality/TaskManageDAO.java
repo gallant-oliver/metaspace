@@ -26,14 +26,12 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
-import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
-import io.zeta.metaspace.model.dataquality2.WarningGroup;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -211,7 +209,7 @@ public interface TaskManageDAO {
     public int addDataQualityTask(@Param("task")DataQualityTask task);
 
     @Insert({" <script>",
-             " insert into data_quality_task2warning_group(task_rule_id, warning_group_id,warning_type)values",
+             " insert into data_quality_task2warning_group(task_id, warning_group_id,warning_type)values",
              " <foreach collection='list' item='warningGroupId' index='index'  separator=','>",
              " (#{taskRuleId},#{warningGroupId},#{warningType})",
              " </foreach>",
@@ -250,7 +248,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id, name, number as taskId, level, description, enable, creator, create_time as createTime, cron as cronExpression from data_quality_task where id=#{id}")
+    @Select("select id, name, 'TID-'||number as taskId, level, description, enable, creator, create_time as createTime,cron_expression as cronExpression from data_quality_task where id=#{id}")
     public DataQualityBasicInfo getTaskBasicInfo(@Param("id")String id);
 
     /**
@@ -483,17 +481,17 @@ public interface TaskManageDAO {
     @Update("update data_quality_task_execute set execute_status=#{status} where id=#{id}")
     public int updateTaskExecuteStatus(@Param("id")String id, @Param("status")Integer status);
 
-    @Insert({" <script>",
-             " select create_time,b.* from data_quality_task_rule_execute",
+    @Select({" <script>",
+             " select max(create_time) as lastExecuteTime,b.* from data_quality_task_rule_execute",
              " join",
              " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
              " join",
-             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule_template.category_id,data_quality_rule.description",
+             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
              " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id) a",
              " on",
              " data_quality_sub_task_rule.ruleid = a.ruleid) b",
              " on",
-             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id='' group by b.subtaskruleid,b.ruleid,b.code,b.category_id,b.description",
+             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id=#{taskId} group by b.subtaskruleid,b.ruleid,b.code,b.description",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",
@@ -503,26 +501,23 @@ public interface TaskManageDAO {
              " </script>"})
     public List<TaskRuleHeader> getRuleList(@Param("taskId")String id, @Param("params") Parameters params);
 
-    @Insert({" <script>",
+    @Select({" <script>",
              " select count(*) from",
-             " (select create_time,b.* from data_quality_task_rule_execute",
+             " (select max(create_time) as lastExecuteTime,b.subtaskruleid from data_quality_task_rule_execute",
              " join",
              " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
              " join",
-             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule_template.category_id,data_quality_rule.description",
+             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
              " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id) a",
              " on",
              " data_quality_sub_task_rule.ruleid = a.ruleid) b",
              " on",
-             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id='' group by b.subtaskruleid) as d",
-             " <if test='params.limit!=null and params.limit!= -1'>",
-             " limit #{params.limit}",
-             " </if>",
-             " <if test='params.offset!=null'>",
-             " offset #{params.offset}",
-             " </if>",
+             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id=#{taskId} group by b.subtaskruleid) c",
              " </script>"})
     public long countRuleList(@Param("taskId")String id);
+
+    @Select("select category_id from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
+    public String getTypeByRuleId(@Param("ruleId")String id);
 
     @Select("select id from data_quality_task_execute where task_id=#{taskId}")
     public String getExecuteIdByTaskId(@Param("taskId")String id);

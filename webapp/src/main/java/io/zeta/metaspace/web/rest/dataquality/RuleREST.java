@@ -18,6 +18,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -25,6 +26,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
+import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.dataquality.RuleService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -71,10 +73,6 @@ public class RuleREST {
     private DataManageService dataManageService;
 
 
-    private void log(String content) {
-        request.setAttribute(OperateLogInterceptor.OPERATELOG_OBJECT, "(数据质量规则) " + content);
-    }
-
     /**
      * 添加规则
      * @param rule
@@ -85,7 +83,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public void insert(Rule rule) throws AtlasBaseException {
-        log(rule.getCode());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), rule.getCode());
         List<Rule> oldList = ruleService.getByCode(rule.getCode());
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("规则编号已存在");
@@ -98,7 +96,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public void update(Rule rule) throws AtlasBaseException {
-        log(rule.getCode());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), rule.getCode());
         ruleService.update(rule);
     }
 
@@ -108,7 +106,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByIdList(List<String> idList) throws AtlasBaseException {
-        log("批量删除:[" + Joiner.on("、").join(idList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(idList) + "]");
         ruleService.deleteByIdList(idList);
     }
 
@@ -146,7 +144,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteById(@PathParam("id") String id) throws AtlasBaseException {
-        log(id);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), id);
         ruleService.deleteById(id);
     }
 
@@ -187,7 +185,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
-        log(categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
@@ -201,7 +199,7 @@ public class RuleREST {
     @DELETE
     @Path("/category/{categoryGuid}")
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
-        log(categoryGuid);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), categoryGuid);
         dataManageService.deleteCategory(categoryGuid);
     }
 
@@ -217,7 +215,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
-        log(categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
@@ -226,7 +224,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/enable")
     public void enableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
-        log(ruleId);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), ruleId);
         ruleService.updateRuleStatus(ruleId, true);
     }
 
@@ -235,7 +233,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/disable")
     public void disableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
-        log(ruleId);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), ruleId);
         ruleService.updateRuleStatus(ruleId, false);
     }
 
