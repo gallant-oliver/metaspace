@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao.dataquality;
 
+import io.zeta.metaspace.model.dataquality2.ErrorInfo;
 import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
@@ -235,6 +236,13 @@ public interface WarningGroupDAO {
              " join data_quality_rule on data_quality_rule.id=a.ruleid",
              " </script>"})
     public List<WarningInfo.SubTaskRuleWarning> getSubTaskRuleWarning(@Param("subTaskId")String subTaskId);
+
+
+    @Select("select task_execute_id as taskExecuteId,create_time as executeTime,error_msg as errorMessage from data_quality_task_rule_execute where task_execute_id=#{executionId} and error_status!=0  ORDER BY create_time desc limit 1;")
+    public ErrorInfo getErrorInfo(@Param("executionId")String executionId);
+
+
+
 
     @Select({" <script>",
              " select contacts from warning_group where id in",

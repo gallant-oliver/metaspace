@@ -26,8 +26,33 @@ import java.sql.Timestamp;
  * @date 2019/8/9 16:35
  */
 public class ErrorInfo {
+    private String taskExecuteId;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp executeTime;
 
     private String errorMessage;
+
+    public String getTaskExecuteId() {
+        return taskExecuteId;
+    }
+
+    public void setTaskExecuteId(String taskExecuteId) {
+        this.taskExecuteId = taskExecuteId;
+    }
+
+    public Timestamp getExecuteTime() {
+        return executeTime;
+    }
+
+    public void setExecuteTime(Timestamp executeTime) {
+        this.executeTime = executeTime;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
 }

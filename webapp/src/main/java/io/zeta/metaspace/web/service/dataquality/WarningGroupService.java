@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.service.dataquality;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
+import io.zeta.metaspace.model.dataquality2.ErrorInfo;
 import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
@@ -212,7 +213,7 @@ public class WarningGroupService {
                 List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(subTaskId);
                 for (WarningInfo.SubTaskRuleWarning subTaskRuleWarning : subTaskRuleWarningList) {
                     String objectId = subTaskRuleWarning.getObjectId();
-                    Integer dataSourceType = subTaskRuleWarning.getWarningType();
+                    Integer dataSourceType = subTask.getRuleType();
                     if(0 == dataSourceType) {
                         Table table = null;
                         if(idToTable.containsKey(objectId)) {
@@ -263,8 +264,12 @@ public class WarningGroupService {
         }
     }
 
-    /*public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
-
-    }*/
+    public ErrorInfo getErrorInfo(String executionRuleId) throws AtlasBaseException {
+        try {
+            return warningGroupDAO.getErrorInfo(executionRuleId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
 
 }

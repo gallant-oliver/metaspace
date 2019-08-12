@@ -19,6 +19,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.dataquality2.ErrorInfo;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
 import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -187,6 +188,12 @@ public class WarningGroupREST {
         return warningGroupService.getWarningList(parameters);
     }
 
+    /**
+     * 获取异常列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/error/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -208,22 +215,9 @@ public class WarningGroupREST {
         warningGroupService.closeTaskExecutionWarning(0, executionIdList);
     }
 
-    /**
-     * 关闭规则告警
-     * @param executionId
-     * @param executionIdList
-     * @throws AtlasBaseException
-     */
-    /*@PUT
-    @Path("/{executionId}/warnings")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void closeTaskRuleExecutionWarning(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeRuleExecutionWarning(0, executionId, executionIdList);
-    }*/
 
     /**
-     * 关闭任务告警
+     * 关闭任务异常
      * @param executionIdList
      * @throws AtlasBaseException
      */
@@ -235,19 +229,6 @@ public class WarningGroupREST {
         warningGroupService.closeTaskExecutionWarning(1, executionIdList);
     }
 
-    /**
-     * 关闭规则告警
-     * @param executionId
-     * @param executionIdList
-     * @throws AtlasBaseException
-     */
-    /*@PUT
-    @Path("/{executionId}/errors")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void closeTaskRuleExecutionError(@PathParam("executionId")String executionId, List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeRuleExecutionWarning(1, executionId, executionIdList);
-    }*/
 
     /**
      * 获取告警详情
@@ -267,7 +248,7 @@ public class WarningGroupREST {
     @Path("/{executionId}/error")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public WarningInfo getErrorInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
-        return warningGroupService.getWarningInfo(executionId);
+    public ErrorInfo getErrorInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return warningGroupService.getErrorInfo(executionId);
     }
 }
