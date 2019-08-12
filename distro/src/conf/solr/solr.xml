@@ -29,7 +29,7 @@
 <solr>
 
     <solrcloud>
-        <str name="host">${host:127.0.0.1}</str>
+        <str name="host">127.0.0.1</str>
         <int name="hostPort">${hostPort:8983}</int>
         <str name="hostContext">${hostContext:solr}</str>
         <int name="zkClientTimeout">${zkClientTimeout:30000}</int>

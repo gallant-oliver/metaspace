@@ -50,13 +50,14 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
-import static io.zeta.metaspace.web.service.DataStandardService.filename;
 
 
 /**
@@ -91,16 +92,12 @@ public class DataStandardREST {
     @OperateType(INSERT)
     @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
-        try {
-            HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
-            List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
-            if (!oldList.isEmpty()) {
-                throw new AtlasBaseException("标准编号已存在");
-            }
-            dataStandardService.insert(dataStandard);
-        } catch (Exception e) {
-            throw e;
+        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
+        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
+        if (!oldList.isEmpty()) {
+            throw new AtlasBaseException("标准编号已存在");
         }
+        dataStandardService.insert(dataStandard);
     }
 
     @PUT
@@ -168,6 +165,7 @@ public class DataStandardREST {
 
     @GET
     @Path("/download/template")
+    @Valid
     public void downloadTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
         String filePath = homeDir + "/conf/data_standard_template.xlsx";
@@ -176,6 +174,12 @@ public class DataStandardREST {
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+    }
+
+    public static String filename(String filePath) throws UnsupportedEncodingException {
+        String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
+        filename = URLEncoder.encode(filename, "UTF-8");
+        return filename;
     }
 
     @POST
@@ -194,6 +198,7 @@ public class DataStandardREST {
 
     @GET
     @Path("/export/selected/{downloadId}")
+    @Valid
     public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
         List<String> ids = dataQualityService.getDownloadList(null, downloadId);
         File exportExcel = dataStandardService.exportExcel(ids);
@@ -211,6 +216,7 @@ public class DataStandardREST {
 
     @GET
     @Path("/export/category/{categoryId}")
+    @Valid
     public void exportCategoryId(@PathParam("categoryId") String categoryId) throws Exception {
         File exportExcel = dataStandardService.exportExcel(categoryId);
         try {
@@ -264,7 +270,7 @@ public class DataStandardREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{categoryType}")
+    @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
@@ -282,6 +288,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
+    @Path("/category")
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
@@ -295,7 +302,10 @@ public class DataStandardREST {
      * @throws Exception
      */
     @DELETE
-    @Path("/{categoryGuid}")
+    @Path("/category/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Valid
     @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
@@ -314,6 +324,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
+    @Path("/category")
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
