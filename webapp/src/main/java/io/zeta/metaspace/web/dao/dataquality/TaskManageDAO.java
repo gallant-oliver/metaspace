@@ -59,7 +59,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({"<script>",
-             " select data_quality_task.enable, data_quality_task.number as taskId, data_quality_task.name as taskName, data_quality_task.description, data_quality_task.start_time as startTime, data_quality_task.end_time as endTime, data_quality_task.level as taskLevel,",
+             " select data_quality_task.id,data_quality_task.enable, 'TID-'||data_quality_task.number as taskId, data_quality_task.name as taskName, data_quality_task.description, data_quality_task.start_time as startTime, data_quality_task.end_time as endTime, data_quality_task.level as taskLevel,",
              " data_quality_task_execute.red_warning_count as redWarningCount, data_quality_task_execute.orange_warning_count as orangeWarningCount, data_quality_task_execute.rule_error_count as ruleErrorCount, data_quality_task_execute.execute_status as executeStatus, data_quality_task_execute.percent,data_quality_task_execute.id as executeId",
              " from data_quality_task",
              " left join",

@@ -118,6 +118,22 @@ public class WarningGroupService {
         return pageResult;
     }
 
+    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) {
+        List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters);
+        for (WarningGroup group : list) {
+            String numberStr = group.getContacts();
+            String[] numberArr = numberStr.split(",");
+            group.setNumberCount(numberArr.length);
+        }
+        PageResult<WarningGroup> pageResult = new PageResult<>();
+        long sum = warningGroupDAO.countWarningGroup(parameters);
+        pageResult.setOffset(parameters.getOffset());
+        pageResult.setSum(sum);
+        pageResult.setCount(list.size());
+        pageResult.setLists(list);
+        return pageResult;
+    }
+
 
     public PageResult<TaskWarningHeader> getWarningList(Parameters parameters) throws AtlasBaseException {
         try {

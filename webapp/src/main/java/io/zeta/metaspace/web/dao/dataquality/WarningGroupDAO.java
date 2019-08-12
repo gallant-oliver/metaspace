@@ -67,6 +67,37 @@ public interface WarningGroupDAO {
     public long countBySearch(@Param("query") String query);
 
 
+    @Select({"<script>",
+             " select a.*,category.name as categoryName from",
+             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
+             " from warning_group join users on users.userid=creator where delete=false) a ",
+             " join",
+             " category on category.guid=a.categoryId",
+             " <if test=\"params.query != null and params.query!=''\">",
+             " where (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/') ",
+             " </if>",
+             " <if test='params.sortby != null and params.order != null'>",
+             " order by ${params.sortby} ${params.order}",
+             " </if>",
+             " <if test='params.limit != null and params.limit != -1'>",
+             " limit #{params.limit} offset #{params.offset}",
+             " </if>",
+             " </script>"})
+    public List<WarningGroup> getWarningGroup(@Param("params") Parameters params);
+
+    @Select({"<script>",
+             " select count(*) from",
+             " (select name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
+             " from warning_group join users on users.userid=creator where delete=false) a ",
+             " join",
+             " category on category.guid=a.categoryId",
+             " <if test=\"params.query != null and params.query!=''\">",
+             " where (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/')",
+             " </if>",
+             " </script>"})
+    public long countWarningGroup(@Param("params") Parameters params);
+
+
     @Select({" <script>",
              " select data_quality_task.id as taskId, data_quality_task_execute.id as executionId, data_quality_task.name as taskName,data_quality_task_execute.number,warning_status as warningStatus,orange_warning_count as orangeWarningCount,",
              " red_warning_count as redWarningCount,execute_time as executionTime from data_quality_task_execute join data_quality_task on data_quality_task_execute.task_id=data_quality_task.id",

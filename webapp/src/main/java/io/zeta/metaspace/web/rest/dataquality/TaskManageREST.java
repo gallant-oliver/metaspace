@@ -244,7 +244,7 @@ public class TaskManageREST {
     @Path("/{groupId}/warningGroup")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@PathParam("groupId")String groupId) throws AtlasBaseException {
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroup(@PathParam("groupId")String groupId) throws AtlasBaseException {
         return taskManageService.getWarningGroupList(groupId);
     }
 

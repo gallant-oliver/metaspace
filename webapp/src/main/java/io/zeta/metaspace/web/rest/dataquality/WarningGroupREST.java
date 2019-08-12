@@ -147,6 +147,20 @@ public class WarningGroupREST {
     }
 
     /**
+     * 获取告警组列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) throws AtlasBaseException {
+        return warningGroupService.getWarningGroupList(parameters);
+    }
+
+    /**
      * 搜索告警组列表
      * @param parameters
      * @return

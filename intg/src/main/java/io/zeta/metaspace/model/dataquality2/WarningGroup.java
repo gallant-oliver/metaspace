@@ -23,7 +23,9 @@ public class WarningGroup {
     private String name;
     private Integer type;
     private String contacts;
+    private Integer numberCount;
     private String categoryId;
+    private String categoryName;
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
@@ -65,12 +67,28 @@ public class WarningGroup {
         this.contacts = contacts;
     }
 
+    public Integer getNumberCount() {
+        return numberCount;
+    }
+
+    public void setNumberCount(Integer numberCount) {
+        this.numberCount = numberCount;
+    }
+
     public String getCategoryId() {
         return categoryId;
     }
 
     public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public String getDescription() {

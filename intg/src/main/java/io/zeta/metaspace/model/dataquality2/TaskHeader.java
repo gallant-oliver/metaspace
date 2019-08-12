@@ -27,7 +27,8 @@ import java.sql.Timestamp;
  */
 public class TaskHeader {
     private boolean enable;
-    private Long taskId;
+    private String id;
+    private String taskId;
     private String taskName;
     private String description;
     private String executeId;
@@ -50,11 +51,19 @@ public class TaskHeader {
         this.enable = enable;
     }
 
-    public String getTaskId() {
-        return "TID-" + taskId;
+    public String getId() {
+        return id;
     }
 
-    public void setTaskId(Long taskId) {
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
         this.taskId = taskId;
     }
 
