@@ -4,8 +4,6 @@ import com.google.gson.JsonObject;
 
 public enum OperateTypeEnum {
 
-    LOGIN("login", "登录"),
-    LOGOUT("logout", "登出"),
     INSERT("insert", "新增"),
     /**
      * 查询在权限访问filter里插入
