@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
+import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
@@ -59,12 +60,10 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({"<script>",
-             " select data_quality_task.id,data_quality_task.enable, 'TID-'||data_quality_task.number as taskId, data_quality_task.name as taskName, data_quality_task.description, data_quality_task.start_time as startTime, data_quality_task.end_time as endTime, data_quality_task.level as taskLevel,",
-             " data_quality_task_execute.red_warning_count as redWarningCount, data_quality_task_execute.orange_warning_count as orangeWarningCount, data_quality_task_execute.rule_error_count as ruleErrorCount, data_quality_task_execute.execute_status as executeStatus, data_quality_task_execute.percent,data_quality_task_execute.id as executeId",
-             " from data_quality_task",
-             " left join",
-             " data_quality_task_execute",
-             " on data_quality_task_execute.task_id=data_quality_task.id",
+             " select data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
+             " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
+             " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
+             " from data_quality_task join users on users.userid=data_quality_task.creator",
              " where ",
              " (data_quality_task.name like '%${params.query}%' ESCAPE '/' or 'TID-'||data_quality_task.number like '%${params.query}%' ESCAPE '/')",
              " <if test='my==0'>",
@@ -243,6 +242,9 @@ public interface TaskManageDAO {
              " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete})"})
     public int addDataQualitySubTaskRule(@Param("rule")DataQualitySubTaskRule taskRule);
 
+    @Select("select name as taskName,level,description,start_time as startTime,end_time as endTime,cron_expression as cronExpression from data_quality_task where id=#{taskId}")
+    public TaskInfo getTaskInfo(@Param("taskId")String taskId);
+
     /**
      * 获取任务基本信息
      * @param id
@@ -274,7 +276,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Update("update data_quality_task set enable=#{status} where id=#{id}")
-    public int updateTaskStatus(@Param("id")String id, @Param("status")boolean enable);
+    public int updateTaskEnableStatus(@Param("id")String id, @Param("status")boolean enable);
 
     /**
      * 添加quartz名称
@@ -352,7 +354,10 @@ public interface TaskManageDAO {
      * @return
      */
     @Update("update data_quality_task_execute set percent=#{percent} where id=#{id}")
-    public int updateTaskFinishedPercent(@Param("id")String id, @Param("percent")Float percent);
+    public int updateTaskExecutionFinishedPercent(@Param("id")String id, @Param("percent")Float percent);
+
+    @Update("update data_quality_task set current_execution_percent=#{percent} where id=#{id}")
+    public int updateTaskFinishedPercent(@Param("taskId")String id, @Param("percent")Float percent);
 
     /**
      * 初始化规则执行信息
@@ -481,6 +486,9 @@ public interface TaskManageDAO {
     @Update("update data_quality_task_execute set execute_status=#{status} where id=#{id}")
     public int updateTaskExecuteStatus(@Param("id")String id, @Param("status")Integer status);
 
+    @Update("update data_quality_task_execute set current_execution_status=#{status} where id=#{id}")
+    public int updateTaskStatus(@Param("taskId")String id, @Param("status")Integer status);
+
     @Select({" <script>",
              " select max(create_time) as lastExecuteTime,b.* from data_quality_task_rule_execute",
              " join",
@@ -576,7 +584,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
+             " select id as executionId,execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
              " and (executor like '%${params.query}%' ESCAPE '/')",

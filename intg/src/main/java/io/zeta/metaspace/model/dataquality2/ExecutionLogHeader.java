@@ -22,12 +22,20 @@ package io.zeta.metaspace.model.dataquality2;
  * @date 2019/8/5 16:28
  */
 public class ExecutionLogHeader {
-
+    private String executionId;
     private Integer executeStatus;
     private Integer errorCount;
     private String executor;
     private String executeTime;
     private Float costTime;
+
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
+    }
 
     public Integer getExecuteStatus() {
         return executeStatus;

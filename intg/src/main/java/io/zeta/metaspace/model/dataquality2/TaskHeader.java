@@ -31,12 +31,11 @@ public class TaskHeader {
     private String taskId;
     private String taskName;
     private String description;
-    private String executeId;
     private Integer executeStatus;
     private Float percent;
-    private int orangeWarningCount;
-    private int redWarningCount;
-    private int ruleErrorCount;
+    private int orangeWarningTotalCount;
+    private int redWarningTotalCount;
+    private int ruleErrorTotalCount;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp startTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -83,14 +82,6 @@ public class TaskHeader {
         this.description = description;
     }
 
-    public String getExecuteId() {
-        return executeId;
-    }
-
-    public void setExecuteId(String executeId) {
-        this.executeId = executeId;
-    }
-
     public Integer getExecuteStatus() {
         return executeStatus;
     }
@@ -107,28 +98,28 @@ public class TaskHeader {
         this.percent = percent;
     }
 
-    public int getOrangeWarningCount() {
-        return orangeWarningCount;
+    public int getOrangeWarningTotalCount() {
+        return orangeWarningTotalCount;
     }
 
-    public void setOrangeWarningCount(int orangeWarningCount) {
-        this.orangeWarningCount = orangeWarningCount;
+    public void setOrangeWarningTotalCount(int orangeWarningTotalCount) {
+        this.orangeWarningTotalCount = orangeWarningTotalCount;
     }
 
-    public int getRedWarningCount() {
-        return redWarningCount;
+    public int getRedWarningTotalCount() {
+        return redWarningTotalCount;
     }
 
-    public void setRedWarningCount(int redWarningCount) {
-        this.redWarningCount = redWarningCount;
+    public void setRedWarningTotalCount(int redWarningTotalCount) {
+        this.redWarningTotalCount = redWarningTotalCount;
     }
 
-    public int getRuleErrorCount() {
-        return ruleErrorCount;
+    public int getRuleErrorTotalCount() {
+        return ruleErrorTotalCount;
     }
 
-    public void setRuleErrorCount(int ruleErrorCount) {
-        this.ruleErrorCount = ruleErrorCount;
+    public void setRuleErrorTotalCount(int ruleErrorTotalCount) {
+        this.ruleErrorTotalCount = ruleErrorTotalCount;
     }
 
     public Timestamp getStartTime() {

@@ -269,6 +269,10 @@ public class TaskManageREST {
         taskManageService.addTask(taskInfo);
     }
 
+    /*public TaskInfo getTaskInfo(String taskId) throws AtlasBaseException {
+
+    }*/
+
     /**
      * 开启任务
      * @param taskId

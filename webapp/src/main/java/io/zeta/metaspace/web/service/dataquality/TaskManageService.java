@@ -109,17 +109,17 @@ public class TaskManageService {
             }
 
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-            if(Objects.nonNull(list)) {
+            /*if(Objects.nonNull(list)) {
                 list.forEach(task -> {
                     if(Objects.isNull(task.getExecuteId())) {
                         task.setExecuteStatus(0);
-                        task.setOrangeWarningCount(0);
-                        task.setRedWarningCount(0);
-                        task.setRuleErrorCount(0);
+                        task.setOrangeWarningTotalCount(0);
+                        task.setRedWarningTotalCount(0);
+                        task.setRuleErrorTotalCount(0);
                         task.setPercent(0F);
                     }
                 });
-            }
+            }*/
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             PageResult<TaskHeader> pageResult = new PageResult<>();
 
@@ -245,6 +245,9 @@ public class TaskManageService {
             taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
 
             taskManageDAO.addDataQualityTask(dataQualityTask);
+
+            taskManageDAO.updateTaskStatus(guid, 0);
+            taskManageDAO.updateTaskFinishedPercent(guid, 0F);
 
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -375,6 +378,14 @@ public class TaskManageService {
         }
     }
 
+    /*public TaskInfo getTaskInfo(String taskId) {
+        try {
+
+        } catch (Exception e) {
+
+        }
+    }*/
+
     public DataQualityBasicInfo getTaskBasicInfo(String guid) throws AtlasBaseException {
         try {
             DataQualityBasicInfo basicInfo = taskManageDAO.getTaskBasicInfo(guid);
@@ -407,7 +418,7 @@ public class TaskManageService {
                 quartzManager.resumeJob(qrtzName, jobGroupName);
             }
             //设置任务状态为【启用】
-            taskManageDAO.updateTaskStatus(taskId, true);
+            taskManageDAO.updateTaskEnableStatus(taskId, true);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
@@ -427,7 +438,7 @@ public class TaskManageService {
             String jobGroupName = JOB_GROUP_NAME + jobName;
             quartzManager.pauseJob(jobName, jobGroupName);
             //设置模板状态为【暂停】
-            taskManageDAO.updateTaskStatus(taskId, false);
+            taskManageDAO.updateTaskEnableStatus(taskId, false);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
@@ -494,7 +505,6 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-
 
     public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String taskRuleId) throws AtlasBaseException {
         try {

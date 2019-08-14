@@ -112,6 +112,7 @@ public class QuartzJob implements Job {
             taskExecute.setCounter(Objects.isNull(counter)?0:++counter);
             taskManageDAO.initTaskExecuteInfo(taskExecute);
             taskManageDAO.updateTaskExecutionCount(taskId);
+            taskManageDAO.updateTaskExecuteStatus(taskId, 1);
             return id;
         } catch (Exception e) {
             LOG.error(e.toString());
@@ -186,13 +187,15 @@ public class QuartzJob implements Job {
                 try {
                     //运行中途停止模板
                     if (!taskManageDAO.isRuning(taskId)) {
-                        taskManageDAO.updateTaskFinishedPercent(taskExecuteId, 0F);
+                        taskManageDAO.updateTaskFinishedPercent(taskId, 0F);
+                        taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
                         return;
                     }
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
-                    taskManageDAO.updateTaskFinishedPercent(taskExecuteId, ratio);
+                    taskManageDAO.updateTaskFinishedPercent(taskId, ratio);
+                    taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
                     break;
                 } catch (Exception e) {
                     LOG.error(e.toString());
@@ -211,6 +214,8 @@ public class QuartzJob implements Job {
                         taskManageDAO.updateTaskErrorCount(task.getTaskId());
                         taskManageDAO.updateTaskExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
                         taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                        taskManageDAO.updateTaskExecuteStatus(taskId, 3);
+                        taskManageDAO.updateTaskStatus(taskId, 3);
                     }
                 } finally {
                     recordExecutionInfo(task, errorMsg);
@@ -219,6 +224,7 @@ public class QuartzJob implements Job {
         }
         long endTime = System.currentTimeMillis();
         taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 2);
+        taskManageDAO.updateTaskStatus(taskExecuteId, 2);
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime-startTime);
     }
 
