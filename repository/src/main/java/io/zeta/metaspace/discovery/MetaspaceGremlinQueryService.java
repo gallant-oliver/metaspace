@@ -644,6 +644,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             attributes.add("name");
             attributes.add("comment");
             attributes.add("temporary");
+            List<String> relationAttributes = new ArrayList<>();
+            relationAttributes.add("db");
             if (Objects.nonNull(table)) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
                 AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();

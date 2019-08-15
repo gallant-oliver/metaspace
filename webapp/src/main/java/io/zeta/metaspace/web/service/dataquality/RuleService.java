@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,10 +59,17 @@ public class RuleService {
     }
 
     public Rule getById(String id) throws AtlasBaseException {
-        Rule rule = ruleDAO.getById(id);
-        String path = CategoryRelationUtils.getPath(rule.getCategoryId());
-        rule.setPath(path);
-        return rule;
+        try {
+            Rule rule = ruleDAO.getById(id);
+            if(Objects.isNull(rule)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到规则详情");
+            }
+            String path = CategoryRelationUtils.getPath(rule.getCategoryId());
+            rule.setPath(path);
+            return rule;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
     }
 
     public List<Rule> getByCode(String code) throws AtlasBaseException {

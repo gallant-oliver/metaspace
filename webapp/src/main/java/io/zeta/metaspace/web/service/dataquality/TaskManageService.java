@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.service.dataquality;
  * @date 2019/7/24 10:29
  */
 
+import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
@@ -50,6 +51,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
+import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
@@ -99,6 +101,12 @@ public class TaskManageService {
     @Autowired
     UsersService usersService;
 
+    @Autowired
+    MetaspaceGremlinQueryService metaspaceEntityService;
+
+    @Autowired
+    BusinessService businessService;
+
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -132,6 +140,40 @@ public class TaskManageService {
         } catch (Exception e) {
             LOG.info(e.toString());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public PageResult getTableList(String databaseId, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, parameters.getOffset(), parameters.getLimit());
+
+            List<Table> tableList = pageResult.getLists();
+            String dbName = null;
+            if(Objects.nonNull(tableList) && tableList.size()>0) {
+                Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
+                dbName = tmpTable.getDatabaseName();
+            }
+            for (Table table : tableList) {
+                table.setDatabaseName(dbName);
+            }
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    public PageResult getColumnList(String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<Column> pageResult = businessService.getTableColumnList(tableGuid, parameters, null, null);
+            List<Column> columnList = pageResult.getLists();
+            for (Column column : columnList) {
+                Column tmpColumn = taskManageDAO.getDbAndTableAndColumnName(column.getColumnId());
+                column.setDatabaseName(tmpColumn.getDatabaseName());
+                column.setTableName(tmpColumn.getTableName());
+            }
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 
@@ -574,7 +616,7 @@ public class TaskManageService {
             }
             return list;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
     }
 

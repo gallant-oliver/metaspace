@@ -20,7 +20,7 @@ public interface WarningGroupDAO {
              " values(#{id},#{name},#{type},#{contacts},#{categoryId},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
     public int insert(WarningGroup warningGroup);
 
-    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},category_id=#{categoryId},description=#{description},update_time=#{updateTime}")
+    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},category_id=#{categoryId},description=#{description},update_time=#{updateTime} where id=#{id}")
     public int update(WarningGroup warningGroup);
 
     @Select({" select a.id,a.name,a.type,a.contacts,a.category_id as categoryId,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
@@ -70,7 +70,7 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select a.*,category.name as categoryName from",
-             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
+             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
              " from warning_group join users on users.userid=creator where delete=false) a ",
              " join",
              " category on category.guid=a.categoryId",

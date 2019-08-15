@@ -119,20 +119,24 @@ public class WarningGroupService {
         return pageResult;
     }
 
-    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) {
-        List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters);
-        for (WarningGroup group : list) {
-            String numberStr = group.getContacts();
-            String[] numberArr = numberStr.split(",");
-            group.setNumberCount(numberArr.length);
+    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) throws AtlasBaseException {
+        try {
+            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters);
+            for (WarningGroup group : list) {
+                String numberStr = group.getContacts();
+                String[] numberArr = numberStr.split(",");
+                group.setNumberCount(numberArr.length);
+            }
+            PageResult<WarningGroup> pageResult = new PageResult<>();
+            long sum = warningGroupDAO.countWarningGroup(parameters);
+            pageResult.setOffset(parameters.getOffset());
+            pageResult.setSum(sum);
+            pageResult.setCount(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        PageResult<WarningGroup> pageResult = new PageResult<>();
-        long sum = warningGroupDAO.countWarningGroup(parameters);
-        pageResult.setOffset(parameters.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
-        pageResult.setLists(list);
-        return pageResult;
     }
 
 

@@ -160,7 +160,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getTableList(@PathParam("databaseId")String databaseId, Parameters parameters) throws AtlasBaseException {
-        return searchService.getTableByDB(databaseId, parameters.getOffset(), parameters.getLimit());
+        return taskManageService.getTableList(databaseId, parameters);
     }
 
     /**
@@ -175,7 +175,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getColumnList(@PathParam("tableGuid")String tableGuid, Parameters parameters) throws AtlasBaseException {
-        return businessService.getTableColumnList(tableGuid, parameters, null, null);
+        return taskManageService.getColumnList(tableGuid, parameters);
     }
 
     /**
