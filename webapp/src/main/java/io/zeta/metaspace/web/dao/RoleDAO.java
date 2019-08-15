@@ -18,7 +18,7 @@ public interface RoleDAO {
     @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit},#{role.valid},#{role.creator},#{role.updater})")
     public int addRoles(@Param("role") Role role);
 
-    @Select("select count(1) from role where rolename=#{roleName}")
+    @Select("select count(1) from role where rolename=#{roleName} and valid=true")
     public Integer ifRole(@Param("roleName") String roleName);
 
     @Update("update role set status=#{status},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
