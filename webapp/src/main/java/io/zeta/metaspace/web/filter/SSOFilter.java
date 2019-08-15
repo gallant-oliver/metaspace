@@ -22,27 +22,21 @@ import io.zeta.metaspace.web.util.FilterUtils;
 import io.zeta.metaspace.web.util.GuavaUtils;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 
 @Component
@@ -69,6 +63,7 @@ public class SSOFilter implements Filter {
         String requestURL = httpServletRequest.getRequestURL().toString();
         HttpRequestContext httpRequestContext = HttpRequestContext.get();
         httpRequestContext.setRequest(httpServletRequest);
+        httpRequestContext.setIp(getIpAdress(httpServletRequest));
         try {
             if (FilterUtils.isSkipUrl(requestURL)) {
                 filterChain.doFilter(request, response);
@@ -105,7 +100,7 @@ public class SSOFilter implements Filter {
             }
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
-            AuditLog auditLog = new AuditLog(userName, httpServletRequest.getRemoteAddr(), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            AuditLog auditLog = new AuditLog(userName, getIpAdress(httpServletRequest), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
             AUDIT_LOG.info(auditLog.toString());
         }
 
@@ -134,5 +129,22 @@ public class SSOFilter implements Filter {
     @Override
     public void destroy() {
         // do nothing
+    }
+
+    private String getIpAdress(HttpServletRequest request) {
+        String ip = request.getHeader("x-forwarded-for");
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 }
