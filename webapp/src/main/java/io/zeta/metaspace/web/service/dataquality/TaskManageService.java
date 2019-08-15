@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
+import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
@@ -378,13 +379,51 @@ public class TaskManageService {
         }
     }
 
-    /*public TaskInfo getTaskInfo(String taskId) {
+    public void updateTask(TaskInfo taskInfo) throws AtlasBaseException {
+        Timestamp currentTime = DateUtils.currentTimestamp();
+    }
+
+    public EditionTaskInfo getTaskInfo(String taskId) throws AtlasBaseException {
         try {
+            EditionTaskInfo info = taskManageDAO.getTaskInfo(taskId);
+            List<EditionTaskInfo.SubTask> subTaskList = taskManageDAO.getSubTaskInfo(taskId);
+            for (EditionTaskInfo.SubTask subTask : subTaskList) {
+                String subTaskId = subTask.getSubTaskId();
+                List<EditionTaskInfo.ObjectInfo> objectInfoList = taskManageDAO.getSubTaskRelatedObject(subTaskId);
+                Integer dataSourceType = subTask.getDataSourceType();
+                for (EditionTaskInfo.ObjectInfo objectInfo : objectInfoList) {
+                    String objectId = objectInfo.getObjectId();
+                    if (0 == dataSourceType) {
+                        Table tableInfo = taskManageDAO.getDbAndTableName(objectId);
+                        objectInfo.setDbName(tableInfo.getDatabaseName());
+                        objectInfo.setTableName(tableInfo.getTableName());
+                        objectInfo.setObjectName(tableInfo.getTableName());
+                    } else if (1 == dataSourceType) {
+                        Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+                        objectInfo.setDbName(column.getDatabaseName());
+                        objectInfo.setTableName(column.getTableName());
+                        objectInfo.setObjectName(column.getColumnName());
+                    } else {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
+                    }
+                }
+                subTask.setObjectIdList(objectInfoList);
+                List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId);
+                subTask.setSubTaskRuleList(subTaskRuleList);
 
+            }
+            info.setTaskList(subTaskList);
+            List<EditionTaskInfo.WarningGroup> contentWarningGroup = taskManageDAO.getWarningGroup(taskId, 0);
+            List<EditionTaskInfo.WarningGroup> errorWarningGroup = taskManageDAO.getWarningGroup(taskId, 1);
+            info.setContentWarningNotificationIdList(contentWarningGroup);
+            info.setExecutionWarningNotificationIdList(errorWarningGroup);
+
+
+            return info;
         } catch (Exception e) {
-
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-    }*/
+    }
 
     public DataQualityBasicInfo getTaskBasicInfo(String guid) throws AtlasBaseException {
         try {

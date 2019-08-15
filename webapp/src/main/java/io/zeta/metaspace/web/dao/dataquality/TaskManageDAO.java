@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
+import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
@@ -242,8 +243,28 @@ public interface TaskManageDAO {
              " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete})"})
     public int addDataQualitySubTaskRule(@Param("rule")DataQualitySubTaskRule taskRule);
 
-    @Select("select name as taskName,level,description,start_time as startTime,end_time as endTime,cron_expression as cronExpression from data_quality_task where id=#{taskId}")
-    public TaskInfo getTaskInfo(@Param("taskId")String taskId);
+    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression from data_quality_task where id=#{taskId}")
+    public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
+
+    @Select("select id as subTaskId,datasource_type as dataSourceType,sequence from data_quality_sub_task where task_id=#{taskId}")
+    public List<EditionTaskInfo.SubTask> getSubTaskInfo(@Param("taskId")String taskId);
+
+    @Select("select object_id as objectId,sequence from data_quality_sub_task_object where subtask_id=#{subTaskId}")
+    public List<EditionTaskInfo.ObjectInfo> getSubTaskRelatedObject(@Param("subTaskId")String subTaskId);
+
+    @Select({"select data_quality_rule.name as ruleName,data_quality_rule.id as ruleId,category_id as categoryId,",
+             " data_quality_sub_task_rule.id as subTaskRuleId,data_quality_sub_task_rule.check_type as checkType,data_quality_sub_task_rule.check_expression_type as checkExpression,",
+             " data_quality_sub_task_rule.check_threshold_min_value as checkThresholdMinValue,data_quality_sub_task_rule.check_threshold_max_value as checkThresholdMaxValue,",
+             " orange_check_type as orangeWarningCheckType,orange_check_expression_type as orangeWarningCheckExpression,orange_threshold_min_value as orangeWarningCheckThresholdMinValue,",
+             " orange_threshold_max_value as orangeWarningCheckThresholdMaxValue,red_check_type as redWarningCheckType,red_check_expression_type as redWarningCheckExpression,",
+             " red_threshold_min_value as redWarningCheckThresholdMinValue,red_threshold_max_value as redWarningCheckThresholdMaxValue",
+             " from data_quality_sub_task_rule join data_quality_rule on data_quality_rule.id=data_quality_sub_task_rule.ruleId where data_quality_sub_task_rule.subtask_id=#{subTaskId}",
+    })
+    public List<EditionTaskInfo.SubTaskRule> getSubTaskRule(@Param("subTaskId")String subTaskId);
+
+    @Select("select warning_group.id as warningGroupId,warning_group.name as warningGroupName from data_quality_task2warning_group join warning_group on warning_group.id=data_quality_task2warning_group.warning_group_id where task_id=#{taskId} and data_quality_task2warning_group.warning_type=#{warningType}")
+    public List<EditionTaskInfo.WarningGroup> getWarningGroup(@Param("taskId")String taskId,@Param("warningType")Integer type);
+
 
     /**
      * 获取任务基本信息

@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.rest.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
+import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.Rule;
@@ -269,9 +270,27 @@ public class TaskManageREST {
         taskManageService.addTask(taskInfo);
     }
 
-    /*public TaskInfo getTaskInfo(String taskId) throws AtlasBaseException {
+    @GET
+    @Path("/info/{taskId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EditionTaskInfo getTaskInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        return taskManageService.getTaskInfo(taskId);
+    }
 
-    }*/
+
+    /**
+     * 修改任务
+     * @param taskInfo
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/task")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateTask(TaskInfo taskInfo) throws AtlasBaseException {
+        taskManageService.addTask(taskInfo);
+    }
 
     /**
      * 开启任务
@@ -309,7 +328,7 @@ public class TaskManageREST {
     @Path("/task/{taskId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataQualityBasicInfo getTaskInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
+    public DataQualityBasicInfo getTaskBasicInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
         return taskManageService.getTaskBasicInfo(taskId);
     }
 
