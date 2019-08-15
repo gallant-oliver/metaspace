@@ -8,10 +8,19 @@ atlas.graph.index.search.solr.zookeeper-session-timeout=60000
 atlas.graph.index.search.solr.wait-searcher=true
 2、修改配置
 atlas.graph.index.search.solr.kerberos-enabled=false
-
-3、增加配置
-atlas-env.xml
 metadata_opts=-Dzookeeper.sasl.client=false -Djavax.security.auth.useSubjectCredsOnly=false
 
+3、增加配置
 atlas-application.properties
 metaspace.quartz.task.enable=true
+
+4、nginx配置
+server中增加
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+http中增加
+log_format  main '$remote_addr - $remote_user [$time_local] "$request" '                                        '$status $body_bytes_sent "$http_referer" '                                                    '$http_user_agent $http_x_forwarded_for $request_time $upstream_response_time $upstream_addr $upstream_status';
+
+access_log  logs/access.log  main;
