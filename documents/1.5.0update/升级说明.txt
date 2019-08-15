@@ -1,0 +1,17 @@
+1、移除配置
+atlas.graph.index.search.backend=solr
+
+atlas.graph.index.search.solr.mode=cloud
+atlas.graph.index.search.solr.zookeeper-url=node1:2181,node2:2181,node3:2181
+atlas.graph.index.search.solr.zookeeper-connect-timeout=60000
+atlas.graph.index.search.solr.zookeeper-session-timeout=60000
+atlas.graph.index.search.solr.wait-searcher=true
+2、修改配置
+atlas.graph.index.search.solr.kerberos-enabled=false
+
+3、增加配置
+atlas-env.xml
+metadata_opts=-Dzookeeper.sasl.client=false -Djavax.security.auth.useSubjectCredsOnly=false
+
+atlas-application.properties
+metaspace.quartz.task.enable=true

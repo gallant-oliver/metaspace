@@ -67,6 +67,7 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -168,7 +169,7 @@ public class DataManageService {
             entity.setCategoryType(type);
 
             //创建第一个目录
-            if (Objects.isNull(currentCategoryGuid)) {
+            if (StringUtils.isEmpty(currentCategoryGuid)) {
                 User user = AdminUtils.getUserData();
                 Role role = roleDao.getRoleByUsersId(user.getUserId());
                 if (!"1".equals(role.getRoleId())) {
@@ -179,7 +180,14 @@ public class DataManageService {
                 entity.setQualifiedName(qualifiedName.toString());
                 entity.setLevel(1);
                 categoryDao.add(entity);
-                CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+                CategoryPrivilege returnEntity = new CategoryPrivilege();
+                returnEntity.setGuid(newCategoryGuid);
+                returnEntity.setName(name);
+                returnEntity.setDescription(info.getDescription());
+                returnEntity.setLevel(1);
+                returnEntity.setParentCategoryGuid(null);
+                returnEntity.setUpBrotherCategoryGuid(null);
+                returnEntity.setDownBrotherCategoryGuid(null);
                 CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
                 if(type==0){
                     privilege.setDeleteRelation(false);
@@ -195,7 +203,7 @@ public class DataManageService {
             String parentGuid = null;
             int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid);
             //创建子目录
-            if (Objects.nonNull(newCategoryParentGuid)) {
+            if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
                 parentGuid = currentCategoryGuid;
                 entity.setParentCategoryGuid(currentCategoryGuid);
                 parentQualifiedName = currentEntity.getQualifiedName();
@@ -204,13 +212,13 @@ public class DataManageService {
                 //创建同级目录
                 parentGuid = currentEntity.getParentCategoryGuid();
                 entity.setLevel(currentLevel);
-                if (Objects.nonNull(parentGuid)) {
+                if (StringUtils.isNotEmpty(parentGuid)) {
                     entity.setParentCategoryGuid(parentGuid);
                     CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid);
                     parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
                 }
             }
-            if (Objects.nonNull(parentQualifiedName) && parentQualifiedName.length() > 0)
+            if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
             int count = categoryDao.querySameNameNum(name, parentGuid, type);
@@ -220,26 +228,26 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
 
             //子目录
-            if (Objects.nonNull(newCategoryParentGuid)) {
+            if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
                 String lastChildGuid = categoryDao.queryLastChildCategory(currentCategoryGuid);
-                if (Objects.nonNull(lastChildGuid)) {
+                if (StringUtils.isNotEmpty(lastChildGuid)) {
                     entity.setUpBrotherCategoryGuid(lastChildGuid);
                     categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid);
                 }
             } else {
                 //同级目录
-                if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "up")) {
+                if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), "up")) {
                     entity.setDownBrotherCategoryGuid(currentCategoryGuid);
                     String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
-                    if (Objects.nonNull(upBrotherGuid)) {
+                    if (StringUtils.isNotEmpty(upBrotherGuid)) {
                         entity.setUpBrotherCategoryGuid(upBrotherGuid);
                         categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid);
                     }
                     categoryDao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
-                } else if (Objects.nonNull(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
+                } else if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
                     entity.setUpBrotherCategoryGuid(info.getGuid());
                     String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
-                    if (Objects.nonNull(downBrotherGuid)) {
+                    if (StringUtils.isNotEmpty(downBrotherGuid)) {
                         entity.setDownBrotherCategoryGuid(downBrotherGuid);
                         categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid);
                     }
@@ -314,10 +322,10 @@ public class DataManageService {
             }
             String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
             String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (Objects.nonNull(upBrotherCategoryGuid)) {
+            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
                 categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid);
             }
-            if (Objects.nonNull(downBrotherCategoryGuid)) {
+            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
                 categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
             }
             User user = AdminUtils.getUserData();
@@ -355,9 +363,9 @@ public class DataManageService {
             CategoryEntityV2 currentEntity = categoryDao.queryByGuid(guid);
             String parentQualifiedName = null;
             StringBuffer qualifiedName = new StringBuffer();
-            if (Objects.nonNull(currentEntity.getParentCategoryGuid()))
+            if (StringUtils.isNotEmpty(currentEntity.getParentCategoryGuid()))
                 parentQualifiedName = categoryDao.queryQualifiedName(currentEntity.getParentCategoryGuid());
-            if (Objects.nonNull(parentQualifiedName))
+            if (StringUtils.isNotEmpty(parentQualifiedName))
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
             int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid(), type);
@@ -519,9 +527,9 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
-            if(Objects.nonNull(tableName))
+            if(StringUtils.isNotEmpty(tableName))
                 tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
-            if(Objects.nonNull(tag))
+            if(StringUtils.isNotEmpty(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
             //tag
@@ -566,9 +574,9 @@ public class DataManageService {
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
-            if(Objects.nonNull(tableName))
+            if(StringUtils.isNotEmpty(tableName))
                 tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
-            if(Objects.nonNull(tag))
+            if(StringUtils.isNotEmpty(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = relationDao.queryByTableNameFilter(tableName, tag, categoryIds, limit, offset);
 
@@ -655,7 +663,7 @@ public class DataManageService {
                 while(retryCount < 3) {
                     String res = OKHttpClient.doPut(mobiusURL, jsonStr);
                     LOG.info(res);
-                    if(Objects.nonNull(res)) {
+                    if(StringUtils.isNotEmpty(res)) {
                         Map response = gson.fromJson(res, Map.class);
                         error_id = String.valueOf(response.get("error-id"));
                         error_reason = String.valueOf(response.get("reason"));
@@ -702,7 +710,7 @@ public class DataManageService {
     public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
         try {
             String query = parameters.getQuery();
-            if(Objects.nonNull(query))
+            if(StringUtils.isNotEmpty(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
@@ -730,7 +738,7 @@ public class DataManageService {
     public PageResult<Organization> getOrganizationByName(Parameters parameters) throws AtlasBaseException {
         try {
             String query = parameters.getQuery();
-            if(Objects.nonNull(query))
+            if(StringUtils.isNotEmpty(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
