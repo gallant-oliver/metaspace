@@ -1,7 +1,6 @@
 package io.zeta.metaspace.web.filter;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -18,9 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.lang.reflect.Method;
-
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
 
 /**
  * 记录操作日志
@@ -74,7 +72,7 @@ public class OperateLogInterceptor implements MethodInterceptor {
             User userData = AdminUtils.getUserData();
             operateLog.setUserid(userData.getUserId());
             operateLog.setUsername(userData.getUsername());
-            operateLog.setIp(request.getRemoteAddr());
+            operateLog.setIp(HttpRequestContext.get().getIp());
             operateLog.setCreatetime(DateUtils.currentTimestamp());
             operateLogService.insert(operateLog);
         }
