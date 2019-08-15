@@ -638,4 +638,7 @@ public interface TaskManageDAO {
 
     @Select("select error_msg from data_quality_task_rule_execute where task_execute_id=#{ruleExecutionId}")
     public List<String> getRuleExecutionLog(@Param("ruleExecutionId")String ruleExecutionId);
+
+    @Update("update data_quality_task set name=#{taskInfo.name},level=#{taskInfo.level},description=#{taskInfo.description},cron_expression=#{taskInfo.cronExpression},start_time=#{taskInfo.startTime},end_time=#{taskInfo.endTime},update_time=#{taskInfo.updateTime},updater=#{taskInfo.updater} where id=#{taskInfo.id}")
+    public int updateTaskInfo(@Param("taskInfo")DataQualityTask taskInfo);
 }

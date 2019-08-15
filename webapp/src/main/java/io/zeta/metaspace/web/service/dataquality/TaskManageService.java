@@ -379,8 +379,17 @@ public class TaskManageService {
         }
     }
 
-    public void updateTask(TaskInfo taskInfo) throws AtlasBaseException {
+    public void updateTask(DataQualityTask taskInfo) throws AtlasBaseException {
         Timestamp currentTime = DateUtils.currentTimestamp();
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            taskInfo.setUpdateTime(currentTime);
+            taskInfo.setUpdater(userId);
+            taskManageDAO.updateTaskInfo(taskInfo);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+
     }
 
     public EditionTaskInfo getTaskInfo(String taskId) throws AtlasBaseException {

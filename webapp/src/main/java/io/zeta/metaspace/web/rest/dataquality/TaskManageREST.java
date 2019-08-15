@@ -288,8 +288,8 @@ public class TaskManageREST {
     @Path("/task")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateTask(TaskInfo taskInfo) throws AtlasBaseException {
-        taskManageService.addTask(taskInfo);
+    public void updateTask(DataQualityTask taskInfo) throws AtlasBaseException {
+        taskManageService.updateTask(taskInfo);
     }
 
     /**
