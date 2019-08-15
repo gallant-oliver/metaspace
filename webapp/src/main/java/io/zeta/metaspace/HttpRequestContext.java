@@ -12,6 +12,7 @@ public class HttpRequestContext {
 
     private static final ThreadLocal<HttpRequestContext> CURRENT_CONTEXT = new ThreadLocal<>();
     private HttpServletRequest request;
+    private String ip;
 
     public static HttpRequestContext get() {
         HttpRequestContext context = CURRENT_CONTEXT.get();
@@ -34,5 +35,13 @@ public class HttpRequestContext {
 
     public void setRequest(HttpServletRequest request) {
         this.request = request;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 }

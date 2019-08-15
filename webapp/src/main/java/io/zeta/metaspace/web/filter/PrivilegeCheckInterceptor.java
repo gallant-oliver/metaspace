@@ -16,16 +16,12 @@
  */
 package io.zeta.metaspace.web.filter;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
-import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.ApiModuleDAO;
@@ -45,16 +41,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Path;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /*
  * @description
@@ -157,7 +148,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 } else if (moduleIds.contains(moduleId)) {
                     return invocation.proceed();
                 } else {
-                    String ip = request.getRemoteAddr();
+                    String ip = HttpRequestContext.get().getIp();
                     auditLog(prefix, ip, userId);
 
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
