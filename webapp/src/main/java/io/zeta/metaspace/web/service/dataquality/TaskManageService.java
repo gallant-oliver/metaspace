@@ -553,7 +553,7 @@ public class TaskManageService {
             if(Objects.nonNull(cron)) {
                 quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
             } else {
-                quartzManager.addSimpleJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class);
+                quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
             }
             //添加qrtzName
             taskManageDAO.updateTaskQrtzName(taskId, jobName);
