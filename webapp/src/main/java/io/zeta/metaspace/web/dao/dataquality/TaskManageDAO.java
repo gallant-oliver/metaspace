@@ -377,7 +377,7 @@ public interface TaskManageDAO {
     @Update("update data_quality_task_execute set percent=#{percent} where id=#{id}")
     public int updateTaskExecutionFinishedPercent(@Param("id")String id, @Param("percent")Float percent);
 
-    @Update("update data_quality_task set current_execution_percent=#{percent} where id=#{id}")
+    @Update("update data_quality_task set current_execution_percent=#{percent} where id=#{taskId}")
     public int updateTaskFinishedPercent(@Param("taskId")String id, @Param("percent")Float percent);
 
     /**
@@ -507,7 +507,7 @@ public interface TaskManageDAO {
     @Update("update data_quality_task_execute set execute_status=#{status} where id=#{id}")
     public int updateTaskExecuteStatus(@Param("id")String id, @Param("status")Integer status);
 
-    @Update("update data_quality_task_execute set current_execution_status=#{status} where id=#{id}")
+    @Update("update data_quality_task set current_execution_status=#{status} where id=#{taskId}")
     public int updateTaskStatus(@Param("taskId")String id, @Param("status")Integer status);
 
     @Select({" <script>",
@@ -641,4 +641,7 @@ public interface TaskManageDAO {
 
     @Update("update data_quality_task set name=#{taskInfo.name},level=#{taskInfo.level},description=#{taskInfo.description},cron_expression=#{taskInfo.cronExpression},start_time=#{taskInfo.startTime},end_time=#{taskInfo.endTime},update_time=#{taskInfo.updateTime},updater=#{taskInfo.updater} where id=#{taskInfo.id}")
     public int updateTaskInfo(@Param("taskInfo")DataQualityTask taskInfo);
+
+    @Select("select qrtz_job from data_quality_task where id=#{taskId}")
+    public String getJobName(@Param("taskId")String taskId);
 }

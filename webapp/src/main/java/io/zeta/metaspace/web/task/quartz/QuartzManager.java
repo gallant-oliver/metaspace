@@ -111,21 +111,13 @@ public class QuartzManager {
         }
     }
 
-    public void addSimpleJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName,
-                                        Class jobClass) {
+    public void addSimpleJob(String jobName, String jobGroupName, Class jobClass) {
         try {
             //任务名，任务组，任务执行类
             JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
-            //触发器
-            TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
-            //触发器名，触发器组
-            triggerBuilder.withIdentity(triggerName, triggerGroupName);
-
-            Trigger trigger = triggerBuilder.newTrigger()
-                    .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(0))//重复执行的次数，因为加入任务的时候马上执行了，所以不需要重复，否则会多一次。
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0))
                     .startNow().build();
-
-            //调度器设置JobDetail和Trigger
             scheduler.scheduleJob(jobDetail, trigger);
             //启动
             if(!scheduler.isShutdown()) {

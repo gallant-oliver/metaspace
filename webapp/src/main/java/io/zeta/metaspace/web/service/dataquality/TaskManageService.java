@@ -516,7 +516,9 @@ public class TaskManageService {
 
     public void startTaskNow(String taskId) throws AtlasBaseException {
         try {
-            addQuartzJob(taskId);
+            String jobName = taskManageDAO.getJobName(taskId);
+            String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
+            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
