@@ -25,10 +25,13 @@ import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.filter.OperateLogInterceptor;
 import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.service.UserService;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -66,6 +69,9 @@ public class WarningGroupREST {
 
     @Autowired
     private WarningGroupService warningGroupService;
+
+    @Autowired
+    private UsersService usersService;
 
 
 
@@ -250,5 +256,23 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ErrorInfo getErrorInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
         return warningGroupService.getErrorInfo(executionId);
+    }
+
+    /**
+     * 获取用户列表
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<User> UserList(Parameters parameters) throws AtlasBaseException {
+        try {
+            return usersService.getUserList(parameters);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }
