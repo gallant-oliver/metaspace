@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Path("role")
 @Singleton
@@ -244,9 +245,9 @@ public class RoleREST {
         try {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() +
-                    ", 修改业务目录为:[" + Joiner.on("、").join(roleModulesCategories.getBusinessCategories()) + "]" +
-                    ", 修改技术目录为" + "[" + Joiner.on("、").join(roleModulesCategories.getTechnicalCategories()) + "]" +
-                    ", 修改权限方案为" + roleModulesCategories.getPrivilege().getPrivilegeName());
+                    (Objects.nonNull(roleModulesCategories.getBusinessCategories()) ? (", 修改业务目录为:[" + Joiner.on("、").join(roleModulesCategories.getBusinessCategories()) + "]") : "") +
+                    (Objects.nonNull(roleModulesCategories.getTechnicalCategories())?(", 修改技术目录为" + "[" + Joiner.on("、").join(roleModulesCategories.getTechnicalCategories()) + "]"):"") +
+                    (Objects.nonNull(roleModulesCategories.getPrivilege())?(", 修改权限方案为" + roleModulesCategories.getPrivilege().getPrivilegeName()):""));
             return roleService.putPrivileges(roleId,roleModulesCategories);
         }
         catch(AtlasBaseException e){
