@@ -34,7 +34,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.UsersService;
 import org.apache.atlas.exception.AtlasBaseException;

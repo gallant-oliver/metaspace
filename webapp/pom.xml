@@ -754,6 +754,12 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.0.0</version>
@@ -775,7 +781,6 @@
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <configuration>
-                    <installDirectory>target</installDirectory>
                     <workingDirectory>src/main/dashboard</workingDirectory>
                     <npmRegistryURL>http://registry.npm.gridsum.com/</npmRegistryURL>
                 </configuration>

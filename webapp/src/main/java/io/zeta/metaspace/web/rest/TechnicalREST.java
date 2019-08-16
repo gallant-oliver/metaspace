@@ -2,7 +2,6 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
-import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
@@ -13,11 +12,9 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
-import io.zeta.metaspace.web.filter.OperateLogInterceptor;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -34,9 +31,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.List;
 import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 
