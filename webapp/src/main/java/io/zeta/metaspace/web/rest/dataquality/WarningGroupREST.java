@@ -23,10 +23,11 @@ import io.zeta.metaspace.model.dataquality2.ErrorInfo;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
 import io.zeta.metaspace.model.dataquality2.WarningInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.model.ModuleEnum;
+
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import org.apache.atlas.exception.AtlasBaseException;
