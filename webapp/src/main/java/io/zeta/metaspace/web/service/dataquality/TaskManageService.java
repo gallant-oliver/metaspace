@@ -169,6 +169,9 @@ public class TaskManageService {
     public List<RuleHeader> getValidRuleList(String groupId, int objType, List<String> objIdList) throws AtlasBaseException {
         try {
             List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId);
+            if(Objects.isNull(objIdList) || objIdList.isEmpty()) {
+                return ruleList;
+            }
             if(Objects.nonNull(ruleList)) {
                 if(ObjectType.TABLE == ObjectType.of(objType)) {
                     return ruleList.stream().filter(rule -> 0==rule.getScope()).collect(Collectors.toList());

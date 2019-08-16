@@ -164,8 +164,8 @@ public interface TaskManageDAO {
              " from data_quality_rule, data_quality_rule_template",
              " where data_quality_rule.category_id=#{categoryId}",
              " and data_quality_rule.rule_template_id=data_quality_rule_template.id",
-             " and delete=false",
-             " and enable=true",
+             " and data_quality_rule.delete=false",
+             " and data_quality_rule.enable=true",
              " </script>"})
     public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId);
 
