@@ -30,7 +30,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;

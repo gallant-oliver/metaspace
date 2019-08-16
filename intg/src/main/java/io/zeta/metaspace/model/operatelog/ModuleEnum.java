@@ -1,4 +1,4 @@
-package io.zeta.metaspace.web.model;
+package io.zeta.metaspace.model.operatelog;
 
 /**
  * @author zhuxuetong
