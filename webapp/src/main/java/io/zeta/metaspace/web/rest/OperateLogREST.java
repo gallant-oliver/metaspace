@@ -13,8 +13,10 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
+import io.zeta.metaspace.model.operatelog.OperateModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.OperateLogService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -72,6 +74,14 @@ public class OperateLogREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<OperateEnum> resultList() throws AtlasBaseException {
         return operateLogService.resultList();
+    }
+
+    @GET
+    @Path("/module")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<OperateModule> moduleList() throws AtlasBaseException {
+        return operateLogService.moduleList();
     }
 
 }

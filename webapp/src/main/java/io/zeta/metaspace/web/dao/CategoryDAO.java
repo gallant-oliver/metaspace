@@ -47,6 +47,9 @@ public interface CategoryDAO {
             "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType},#{level})")
     public int add(CategoryEntityV2 category);
 
+    @Select("select count(*) from category where categoryType=#{categoryType}")
+    public int ifExistCategory(@Param("categoryType") int categoryType);
+
     @Select("select * from category where categoryType=#{categoryType}")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType) throws SQLException;
 

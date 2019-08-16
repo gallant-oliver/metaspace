@@ -170,6 +170,9 @@ public class DataManageService {
 
             //创建第一个目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
+                if(categoryDao.ifExistCategory(type) > 0) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在首个目录，请刷新后重新操作");
+                }
                 User user = AdminUtils.getUserData();
                 Role role = roleDao.getRoleByUsersId(user.getUserId());
                 if (!"1".equals(role.getRoleId())) {
@@ -194,6 +197,9 @@ public class DataManageService {
                 }
                 returnEntity.setPrivilege(privilege);
                 return returnEntity;
+            }
+            if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid))) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
 
             String newCategoryParentGuid = info.getParentCategoryGuid();
