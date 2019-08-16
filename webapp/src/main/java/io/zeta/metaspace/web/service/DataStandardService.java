@@ -25,6 +25,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -41,6 +42,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,6 +69,9 @@ public class DataStandardService {
     }
 
     public void batchInsert(String categoryId, List<DataStandard> dataList) throws AtlasBaseException {
+        int startIndex = 0;
+        int endIndex = 0;
+        List<DataStandard> subList = null;
         for (DataStandard dataStandard : dataList) {
             dataStandard.setId(UUIDUtils.alphaUUID());
             dataStandard.setCreateTime(DateUtils.currentTimestamp());
@@ -75,8 +80,15 @@ public class DataStandardService {
             dataStandard.setVersion(1);
             dataStandard.setCategoryId(categoryId);
             dataStandard.setDelete(false);
+            endIndex++;
+            if(endIndex%500==0) {
+                subList = dataList.subList(startIndex, endIndex);
+                dataStandardDAO.batchInsert(subList);
+                startIndex = endIndex;
+            }
         }
-        dataStandardDAO.batchInsert(dataList);
+        subList = dataList.subList(startIndex, endIndex);
+        dataStandardDAO.batchInsert(subList);
     }
 
     public DataStandard getById(String id) throws AtlasBaseException {
@@ -254,19 +266,42 @@ public class DataStandardService {
     }
 
     private List<DataStandard> file2Data(File file) throws Exception {
-        List<DataStandard> dataList = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
-        int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            DataStandard data = new DataStandard();
-            data.setNumber(row.getCell(0).getStringCellValue());
-            data.setContent(row.getCell(1).getStringCellValue());
-            data.setDescription(row.getCell(2).getStringCellValue());
-            dataList.add(data);
+        try {
+            List<DataStandard> dataList = new ArrayList<>();
+            Workbook workbook = WorkbookFactory.create(file);
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowNum = sheet.getLastRowNum() + 1;
+            String regexp = "^[A-Z0-9]+$";
+            for (int i = 1; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                DataStandard data = new DataStandard();
+                Cell numberCell = row.getCell(0);
+                if(Objects.isNull(numberCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号不能为空");
+                }
+                data.setNumber(numberCell.getStringCellValue());
+
+                if(!data.getNumber().matches(regexp)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
+                }
+                Cell contentCell = row.getCell(1);
+                if(Objects.isNull(contentCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准内容不能为空");
+                }
+                data.setContent(contentCell.getStringCellValue());
+
+                Cell discriptionCell = row.getCell(2);
+                if(Objects.isNull(discriptionCell)) {
+                    data.setDescription("");
+                } else {
+                    data.setDescription(discriptionCell.getStringCellValue());
+                }
+                dataList.add(data);
+            }
+            return dataList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
-        return dataList;
     }
 
 }
