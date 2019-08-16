@@ -187,11 +187,11 @@ public class WarningGroupREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/warning/list")
+    @Path("/warning/{warningType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList(Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.getWarningList(parameters);
+    public PageResult getWarningList(@PathParam("warningType")Integer warningType, Parameters parameters) throws AtlasBaseException {
+        return warningGroupService.getWarningList(warningType, parameters);
     }
 
     /**
@@ -201,11 +201,11 @@ public class WarningGroupREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/error/list")
+    @Path("/error/{errorType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getErrorWarningList(Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.getErrorWarningList(parameters);
+    public PageResult getErrorWarningList(@PathParam("errorType")Integer errorType, Parameters parameters) throws AtlasBaseException {
+        return warningGroupService.getErrorWarningList(errorType, parameters);
     }
 
     /**

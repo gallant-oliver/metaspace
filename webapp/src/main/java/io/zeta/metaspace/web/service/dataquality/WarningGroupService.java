@@ -140,15 +140,15 @@ public class WarningGroupService {
     }
 
 
-    public PageResult<TaskWarningHeader> getWarningList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<TaskWarningHeader> getWarningList(Integer warningType, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TaskWarningHeader> pageResult = new PageResult<>();
-            List<TaskWarningHeader> warningList = warningGroupDAO.getWarningList(parameters);
+            List<TaskWarningHeader> warningList = warningGroupDAO.getWarningList(warningType, parameters);
             for (TaskWarningHeader warning : warningList) {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warning.getTaskId(), 0);
                 warning.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countWarning(parameters);
+            Long count = warningGroupDAO.countWarning(warningType, parameters);
             pageResult.setSum(count);
             pageResult.setLists(warningList);
             pageResult.setCount(warningList.size());
@@ -158,15 +158,15 @@ public class WarningGroupService {
         }
     }
 
-    public PageResult<TaskErrorHeader> getErrorWarningList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<TaskErrorHeader> getErrorWarningList(Integer errorType, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TaskErrorHeader> pageResult = new PageResult<>();
-            List<TaskErrorHeader> warningList = warningGroupDAO.getErrorWarningList(parameters);
+            List<TaskErrorHeader> warningList = warningGroupDAO.getErrorWarningList(errorType, parameters);
             for (TaskErrorHeader error : warningList) {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
                 error.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countError(parameters);
+            Long count = warningGroupDAO.countError(errorType, parameters);
             pageResult.setSum(count);
             pageResult.setLists(warningList);
             pageResult.setCount(warningList.size());
