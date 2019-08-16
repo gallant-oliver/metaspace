@@ -29,7 +29,6 @@ import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -39,17 +38,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
-
-import javax.ws.rs.PathParam;
 
 @Service
 @Transactional
@@ -98,25 +90,29 @@ public class WarningGroupService {
         return warningGroupDAO.update(old);
     }
 
-    public PageResult<WarningGroup> search(Parameters parameters) {
-        List<WarningGroup> list = warningGroupDAO.search(parameters).stream()
-                .map(warningGroup -> {
-                    String path = null;
-                    try {
-                        path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-                    } catch (AtlasBaseException e) {
-                        LOG.error(e.getMessage(), e);
-                    }
-                    warningGroup.setPath(path);
-                    return warningGroup;
-                }).collect(Collectors.toList());
-        PageResult<WarningGroup> pageResult = new PageResult<>();
-        long sum = warningGroupDAO.countBySearch(parameters.getQuery());
-        pageResult.setOffset(parameters.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
-        pageResult.setLists(list);
-        return pageResult;
+    public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
+        try {
+            List<WarningGroup> list = warningGroupDAO.search(parameters).stream()
+                    .map(warningGroup -> {
+                        String path = null;
+                        try {
+                            path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
+                        } catch (AtlasBaseException e) {
+                            LOG.error(e.getMessage(), e);
+                        }
+                        warningGroup.setPath(path);
+                        return warningGroup;
+                    }).collect(Collectors.toList());
+            PageResult<WarningGroup> pageResult = new PageResult<>();
+            long sum = warningGroupDAO.countBySearch(parameters.getQuery());
+            pageResult.setOffset(parameters.getOffset());
+            pageResult.setSum(sum);
+            pageResult.setCount(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
     public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) throws AtlasBaseException {
@@ -186,24 +182,6 @@ public class WarningGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-
-    /*public void closeRuleExecutionWarning(Integer warningType, String executionId, List<String> executionRuleIdList) throws AtlasBaseException {
-        try {
-            String userId = AdminUtils.getUserData().getUserId();
-            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-            warningGroupDAO.closeTaskRuleExecutionWarning(warningType, executionRuleIdList,currentTime, userId);
-            Integer countWarning = warningGroupDAO.coutTaskRuleExecutionOpenWarning(warningType, executionId);
-            if(0 == countWarning) {
-                List executionIdList = new ArrayList();
-                executionIdList.add(executionId);
-                warningGroupDAO.closeTaskExecutionWarning(warningType, executionIdList);
-            }
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
-        }
-    }*/
-
-
 
     public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
         try {

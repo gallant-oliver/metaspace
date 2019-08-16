@@ -28,13 +28,11 @@ import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
-import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
-import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
@@ -53,16 +51,11 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.UsersService;
-import io.zeta.metaspace.web.task.quartz.QuartJob;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.AdminUtils;
-import jnr.ffi.Struct;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.web.service.UserService;
-import org.apache.solr.metrics.AltBufferPoolMetricSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,13 +63,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -91,19 +82,14 @@ public class TaskManageService {
 
     @Autowired
     TaskManageDAO taskManageDAO;
-
     @Autowired
     RuleService ruleService;
-
     @Autowired
     QuartzManager quartzManager;
-
     @Autowired
     UsersService usersService;
-
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
-
     @Autowired
     BusinessService businessService;
 
@@ -118,17 +104,7 @@ public class TaskManageService {
             }
 
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-            /*if(Objects.nonNull(list)) {
-                list.forEach(task -> {
-                    if(Objects.isNull(task.getExecuteId())) {
-                        task.setExecuteStatus(0);
-                        task.setOrangeWarningTotalCount(0);
-                        task.setRedWarningTotalCount(0);
-                        task.setRuleErrorTotalCount(0);
-                        task.setPercent(0F);
-                    }
-                });
-            }*/
+
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             PageResult<TaskHeader> pageResult = new PageResult<>();
 

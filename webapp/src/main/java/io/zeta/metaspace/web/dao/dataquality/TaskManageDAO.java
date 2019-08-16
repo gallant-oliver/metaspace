@@ -164,6 +164,7 @@ public interface TaskManageDAO {
              " from data_quality_rule, data_quality_rule_template",
              " where data_quality_rule.category_id=#{categoryId}",
              " and data_quality_rule.rule_template_id=data_quality_rule_template.id",
+             " and delete=false",
              " and enable=true",
              " </script>"})
     public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId);
@@ -516,7 +517,8 @@ public interface TaskManageDAO {
              " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
              " join",
              " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
-             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id) a",
+             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id",
+             " where data_quality_rule.delete=false and data_quality_rule.enable=true) a",
              " on",
              " data_quality_sub_task_rule.ruleid = a.ruleid) b",
              " on",
@@ -537,7 +539,8 @@ public interface TaskManageDAO {
              " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
              " join",
              " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
-             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id) a",
+             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id",
+             " where data_quality_rule.delete=false and data_quality_rule.enable=true) a",
              " on",
              " data_quality_sub_task_rule.ruleid = a.ruleid) b",
              " on",
