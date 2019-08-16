@@ -1,23 +1,22 @@
-image: repository.gridsum.com:8443/gridsum/java:8
+image: repository.gridsum.com:8443/library/jdk-8-maven-node:latest
 variables:
   MAVEN_OPTS: "-Djava.awt.headless=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN"
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
-  DEPLOY_USER: "sunhaoning"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --show-version"
+  DEPLOY_USER: "metaspace"
   DEVELOP_SERVER_ID_1: "10.201.50.209"
-  QA_SERVER_ID_1: "10.201.50.202"
-  DEPLOY_PATH: "/usr/local/soft"
-before_script:
-  - eval $(ssh-agent -s)
-  - ssh-add <(echo "$SSH_PRIVATE_KEY")
-  - mkdir -p ~/.ssh
-  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  TEST_SERVER_ID_1: "10.202.61.175"
+  DEVELOP_HOME: "/home/metaspace/metaspace"
+  TEST_HOME: "/usr/hdp/1.3.0.1-91/metaspace"
+  DEPLOY_PATH: "/home/metaspace/metaspace/server/webapp"
+  TEST_DEPLOY_PATH: "/usr/hdp/1.3.0.1-91/metaspace/server/webapp"
+  GIT_SUBMODULE_STRATEGY: recursive
 # 定义 stages
 stages:
   - test
-  - build_artifacts
-  - sonar
+  - dev_deploy
+  - test_deploy
 
-# 定义 job
+# 执行测试
 test:
   tags:
     - java
@@ -25,37 +24,41 @@ test:
   script:
     - "mvn $MAVEN_CLI_OPTS clean test -Dskip.npm"
   cache:
-      key: "$CI_COMMIT_REF_NAME"
-      policy: pull
+    key: "$CI_COMMIT_REF_SLUG"
+    untracked: true
 
-
-build artifacts:
+#部署开发环境
+dev_deploy:
   tags:
     - java
-  stage: build_artifacts
+  stage: dev_deploy
   script:
-    - "mvn $MAVEN_CLI_OPTS -DskipTests package -Pdist"
-    - "scp distro/target/metaspace-*-bin.tar.gz $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH"
-    - "scp distro/target/metaspace-*-bin.tar.gz $DEPLOY_USER@$QA_SERVER_ID_1:$DEPLOY_PATH"
+    - "mvn $MAVEN_CLI_OPTS package -DskipTests"
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEVELOP_HOME/bin/metaspace_stop.py && rm -rf $DEVELOP_HOME/server/webapp/metaspace_bak && mv $DEVELOP_HOME/server/webapp/metaspace{,_bak} && $DEVELOP_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cp $DEVELOP_HOME/server/webapp/metaspace_bak/config.js $DEVELOP_HOME/server/webapp/metaspace/\""
   when: manual
   artifacts:
-    expire_in: 1 week
     paths:
-      - distro/target/metaspace-*-bin.tar.gz
+      - webapp/src/main/dashboard/node_modules/
+      - webapp/src/main/dashboard/node/
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: "$CI_COMMIT_REF_SLUG"
     policy: pull
 
-
-sonar:
+#部署测试环境
+test_deploy:
   tags:
     - java
-  stage: sonar
+  stage: test_deploy
   script:
-    - "mvn $MAVEN_CLI_OPTS clean package -Dmaven.test.skip=true sonar:sonar -Dsonar.scm.disabled=true"
+    - "mvn $MAVEN_CLI_OPTS package -DskipTests"
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$TEST_DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$TEST_HOME/bin/metaspace_stop.py && rm -rf $TEST_HOME/server/webapp/metaspace_bak && mv $TEST_HOME/server/webapp/metaspace{,_bak} && $TEST_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cp $TEST_HOME/server/webapp/metaspace_bak/config.js $TEST_HOME/server/webapp/metaspace/\""
   when: manual
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: "$CI_COMMIT_REF_SLUG"
     policy: pull
 
 

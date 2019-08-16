@@ -43,10 +43,9 @@ import com.google.common.collect.Collections2;
 /**
  * Tests for AtlasJanusGraphQuery.
  */
-@Test
+@Test(enabled = false)
 public class GraphQueryTest extends AbstractGraphDatabaseTest {
 
-    @Test
     public <V, E> void testQueryThatCannotRunInMemory() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
         AtlasVertex<V, E> v1 = createVertex(graph);
@@ -76,7 +75,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
 
     }
 
-    @Test
     public  void testCombinationOfAndsAndOrs() throws AtlasException {
         AtlasJanusGraph graph = getAtlasJanusGraph();
 
@@ -132,7 +130,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
         assertQueryMatches(q, v1);
     }
 
-    @Test
     public  void testWithinStep() throws AtlasException {
         AtlasJanusGraph graph = getAtlasJanusGraph();
 
@@ -176,7 +173,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
         assertQueryMatches(q, v1);
     }
 
-    @Test
     public  void testWithinStepWhereGraphIsStale() throws AtlasException {
         AtlasJanusGraph graph = getAtlasJanusGraph();
 
@@ -221,7 +217,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
         assertQueryMatches(q, v1);
     }
 
-    @Test
     public  void testSimpleOrQuery() throws AtlasException {
         AtlasJanusGraph graph = getAtlasJanusGraph();
 
@@ -260,7 +255,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
 
 
 
-    @Test
     public <V, E> void testQueryMatchesAddedVertices() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
 
@@ -292,7 +286,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
     }
 
 
-    @Test
     public <V, E> void testQueryDoesNotMatchRemovedVertices() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
 
@@ -325,7 +318,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
         assertQueryMatches(q, v4);
     }
 
-    @Test
     public <V, E> void testQueryDoesNotMatchUncommittedAddedAndRemovedVertices() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
 
@@ -361,7 +353,6 @@ public class GraphQueryTest extends AbstractGraphDatabaseTest {
     }
 
 
-    @Test
     public <V, E> void testQueryResultsReflectPropertyAdd() throws AtlasException {
         AtlasGraph<V, E> graph = getGraph();
 
