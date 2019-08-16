@@ -23,6 +23,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -53,6 +54,8 @@ public class DataStandardService {
 
     @Autowired
     DataStandardDAO dataStandardDAO;
+    @Autowired
+    DataManageService dataManageService;
 
     public int insert(DataStandard dataStandard) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -301,6 +304,17 @@ public class DataStandardService {
             return dataList;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    public void deleteCategory(String categoryGuid) throws AtlasBaseException {
+        try {
+            if(dataStandardDAO.countByByCatetoryId(categoryGuid) > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
+            }
+            dataManageService.deleteCategory(categoryGuid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
