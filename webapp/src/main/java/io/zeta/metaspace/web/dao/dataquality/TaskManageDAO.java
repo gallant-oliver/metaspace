@@ -106,7 +106,7 @@ public interface TaskManageDAO {
     @Update({" <script>",
              " update data_quality_task set delete=true where id in",
              " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " ${taskId}",
+             " #{taskId}",
              " </foreach>",
              " </script>"})
     public int deleteTaskList(@Param("taskIdList")List<String> taskIdList);
@@ -119,7 +119,7 @@ public interface TaskManageDAO {
     @Update({" <script>",
              " update data_quality_sub_task set delete=true where task_id in",
              " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " ${taskId}",
+             " #{taskId}",
              " </foreach>",
              " </script>"})
     public int deleteSubTaskList(@Param("taskIdList")List<String> taskIdList);
@@ -133,7 +133,7 @@ public interface TaskManageDAO {
              " update data_quality_sub_task_object set delete=true where subtask_id in",
              " (select id from data_quality_sub_task where task_id in",
              " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " ${taskId}",
+             " #{taskId}",
              " </foreach>",
              " )",
             " </script>"})
@@ -148,7 +148,7 @@ public interface TaskManageDAO {
              " update data_quality_sub_task_rule set delete=true where subtask_id in",
              " (select id from data_quality_sub_task where task_id in",
              " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " ${taskId}",
+             " #{taskId}",
              " </foreach>",
              " )",
              " </script>"})
