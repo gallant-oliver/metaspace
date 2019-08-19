@@ -213,7 +213,7 @@ public class QuartzJob implements Job {
                         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
                         taskManageDAO.updateTaskErrorCount(task.getTaskId());
                         taskManageDAO.updateTaskExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
-                        taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                        //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                         taskManageDAO.updateTaskExecuteStatus(taskId, 3);
                         taskManageDAO.updateTaskStatus(taskId, 3);
                     }
@@ -612,14 +612,14 @@ public class QuartzJob implements Job {
             if(Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                 taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //红色告警数量
             if(Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
+                //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                 taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //计算异常数量
