@@ -9,7 +9,10 @@ variables:
   TEST_HOME: "/usr/hdp/1.3.0.1-91/metaspace"
   DEPLOY_PATH: "/home/metaspace/metaspace/server/webapp"
   TEST_DEPLOY_PATH: "/usr/hdp/1.3.0.1-91/metaspace/server/webapp"
-  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - git submodule sync
+  - git submodule update --init
 # 定义 stages
 stages:
   - test
