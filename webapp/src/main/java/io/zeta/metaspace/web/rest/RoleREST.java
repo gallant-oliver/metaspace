@@ -21,6 +21,8 @@ import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +34,8 @@ import javax.ws.rs.core.Context;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("role")
 @Singleton
@@ -244,10 +244,7 @@ public class RoleREST {
     public String putPrivileges(@PathParam("roleId") String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         try {
             Role role = roleService.getRoleById(roleId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() +
-                    (Objects.nonNull(roleModulesCategories.getBusinessCategories()) ? (", 修改业务目录为:[" + Joiner.on("、").join(roleModulesCategories.getBusinessCategories()) + "]") : "") +
-                    (Objects.nonNull(roleModulesCategories.getTechnicalCategories())?(", 修改技术目录为" + "[" + Joiner.on("、").join(roleModulesCategories.getTechnicalCategories()) + "]"):"") +
-                    (Objects.nonNull(roleModulesCategories.getPrivilege())?(", 修改权限方案为" + roleModulesCategories.getPrivilege().getPrivilegeName()):""));
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.putPrivileges(roleId,roleModulesCategories);
         }
         catch(AtlasBaseException e){

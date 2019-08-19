@@ -77,7 +77,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response addTemplate(Template template) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), template.getTemplateName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), template.getTemplateName());
         try {
             dataQualityService.addTemplate(template);
             return Response.status(200).entity("success").build();
@@ -104,7 +104,7 @@ public class DataQualityREST {
     @OperateType(DELETE)
     public Response deleteTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         Template template = dataQualityService.getTemplate(templateId);
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), template.getTemplateName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), template.getTemplateName());
         try {
             dataQualityService.deleteTemplate(templateId);
             return Response.status(200).entity("success").build();
@@ -130,7 +130,7 @@ public class DataQualityREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response putTemplate(@PathParam("templateId") String templateId, Template template) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), template.getTemplateName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), template.getTemplateName());
         try {
             dataQualityService.updateTemplate(templateId, template);
             return Response.status(200).entity("success").build();
