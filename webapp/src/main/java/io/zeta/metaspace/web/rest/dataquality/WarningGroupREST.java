@@ -85,7 +85,7 @@ public class WarningGroupREST {
     @OperateType(INSERT)
     @Valid
     public void insert(WarningGroup warningGroup) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName());
         if (old != null) {
             throw new AtlasBaseException("告警组名已存在");
@@ -104,7 +104,7 @@ public class WarningGroupREST {
     @OperateType(UPDATE)
     @Valid
     public void update(WarningGroup warningGroup) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         warningGroupService.update(warningGroup);
     }
 
@@ -119,7 +119,7 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByIdList(List<String> idList) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(idList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(idList) + "]");
         warningGroupService.deleteByIdList(idList);
     }
 
@@ -148,7 +148,7 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteById(@PathParam("id") String id) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_QUALITY.getAlias(), id);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), id);
         warningGroupService.deleteById(id);
     }
 

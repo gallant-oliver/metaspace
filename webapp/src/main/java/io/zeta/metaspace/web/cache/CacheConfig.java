@@ -17,6 +17,8 @@
 package io.zeta.metaspace.web.cache;
 
 import org.apache.atlas.ApplicationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
@@ -39,6 +41,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 @Configuration
 @EnableCaching
 public class CacheConfig extends CachingConfigurerSupport {
+    private static final Logger LOG = LoggerFactory.getLogger(CacheConfig.class);
 
     private static String hostName;
     private static int port;
@@ -49,7 +52,7 @@ public class CacheConfig extends CachingConfigurerSupport {
     static {
         try {
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            engine = configuration.getString("metaspace.redis.cache");
+            engine = configuration.getString("metaspace.cache.type");
             hostName = configuration.getString("metaspace.cache.redis.host");
             port = configuration.getInt("metaspace.cache.redis.port");
             expiration = configuration.getInt("metaspace.cache.redis.expiration");
@@ -76,6 +79,7 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     @Bean
     public CacheManager cacheManager(RedisTemplate redisTemplate) {
+        LOG.info("cache engine:" + engine);
         if(CACHE_ON_REDIS.equals(engine)) {
             RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
             cacheManager.setDefaultExpiration(expiration);
