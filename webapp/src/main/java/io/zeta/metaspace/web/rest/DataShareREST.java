@@ -81,7 +81,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response insertAPIInfo(APIInfo info) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), info.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), info.getName());
         try {
             shareService.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
@@ -125,7 +125,7 @@ public class DataShareREST {
     @OperateType(DELETE)
     public Response deleteAPIINfo(@PathParam("apiGuid") String guid) throws AtlasBaseException {
         APIInfo apiInfo = shareService.getAPIInfo(guid);
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), apiInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), apiInfo.getName());
         try {
             shareService.deleteAPIInfo(guid);
         } catch (AtlasBaseException e) {
@@ -150,7 +150,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response updateAPIInfo(@PathParam("apiGuid") String guid, APIInfo info) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), info.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), info.getName());
         try {
             shareService.updateAPIInfo(guid, info);
         } catch (AtlasBaseException e) {
@@ -213,7 +213,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Response insertGroup(APIGroup group) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), group.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), group.getName());
         try {
             groupService.insertGroup(group);
         } catch (AtlasBaseException e) {
@@ -236,7 +236,7 @@ public class DataShareREST {
     @OperateType(DELETE)
     public Response deleteGroup(@PathParam("groupId") String guid) throws AtlasBaseException {
         String groupName = groupService.getGroupName(guid);
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), groupName);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), groupName);
         try {
             groupService.deleteGroup(guid);
         } catch (AtlasBaseException e) {
@@ -261,7 +261,7 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response updateGroup(@PathParam("groupId") String guid, APIGroup group) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_SHARE.getAlias(), group.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), group.getName());
         try {
             groupService.updateGroup(guid, group);
         } catch (AtlasBaseException e) {
