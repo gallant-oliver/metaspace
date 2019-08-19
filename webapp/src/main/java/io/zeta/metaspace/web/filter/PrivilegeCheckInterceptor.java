@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.filter;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
@@ -167,7 +168,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
         OperateLog operateLog = new OperateLog();
         operateLog.setModule(module.toLowerCase());
         operateLog.setResult(OperateResultEnum.UNAUTHORIZED.getEn());
-        operateLog.setType("");
+        operateLog.setType(OperateTypeEnum.UNKOWN.getEn());
         operateLog.setContent("");
         operateLog.setCreatetime(DateUtils.currentTimestamp());
         operateLog.setIp(ip);
