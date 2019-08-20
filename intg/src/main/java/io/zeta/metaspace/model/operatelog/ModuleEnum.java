@@ -5,7 +5,6 @@ package io.zeta.metaspace.model.operatelog;
  * @date 2019-08-07 18:07
  */
 public enum ModuleEnum {
-    HOME("概览", "home"),
     TECHNICAL("技术数据", "technical"),
     BUSINESS("业务对象", "business"),
     METADATA("元数据管理", "metadata"),

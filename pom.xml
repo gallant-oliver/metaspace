@@ -1331,7 +1331,7 @@
                     <artifactId>maven-remote-resources-plugin</artifactId>
                     <version>1.5</version>
                     <configuration>
-                        <excludeGroupIds>org.restlet.jee</excludeGroupIds>
+                        <skip>true</skip>
                     </configuration>
                 </plugin>
 
