@@ -20,9 +20,6 @@ stages:
   - dev_deploy
   - test_deploy
 
-cache:
-  key: "metaspace_cache"
-  untracked: true
 
 # 执行测试
 test:
@@ -31,9 +28,12 @@ test:
   stage: test
   script:
     - "mvn $MAVEN_CLI_OPTS clean test -Dskip.npm"
+  cache:
+    key: "test"
+    paths:
+      - webapp/src/main/dashboard/node/
 
-
-#部署开发环境
+      #部署开发环境
 dev_deploy:
   tags:
     - java
@@ -44,12 +44,11 @@ dev_deploy:
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEVELOP_HOME/bin/metaspace_stop.py && rm -rf $DEVELOP_HOME/server/webapp/metaspace_bak && mv $DEVELOP_HOME/server/webapp/metaspace{,_bak} && $DEVELOP_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cp $DEVELOP_HOME/server/webapp/metaspace_bak/config.js $DEVELOP_HOME/server/webapp/metaspace/\""
   when: manual
-  artifacts:
-    paths:
-      - webapp/src/main/dashboard/node_modules/
-      - webapp/src/main/dashboard/node/
   cache:
-    policy: pull
+    key: "dev_deploy"
+    paths:
+      - webapp/src/main/dashboard/node/
+      - webapp/src/main/dashboard/node_modules/
 
 #部署测试环境
 test_deploy:
@@ -63,7 +62,9 @@ test_deploy:
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cp $TEST_HOME/server/webapp/metaspace_bak/config.js $TEST_HOME/server/webapp/metaspace/\""
   when: manual
   cache:
-    policy: pull
-
+    key: "test_deploy"
+    paths:
+      - webapp/src/main/dashboard/node/
+      - webapp/src/main/dashboard/node_modules/
 
 
