@@ -252,7 +252,6 @@
         <module>repository</module>
         <module>authorization</module>
         <module>webapp</module>
-        <module>docs</module>
         <module>addons/hdfs-model</module>
         <module>plugin-classloader</module>
         <module>addons/hive-bridge-shim</module>
