@@ -28,7 +28,7 @@ test:
   script:
     - "mvn $MAVEN_CLI_OPTS clean test -Dskip.npm"
   cache:
-    key: "$CI_COMMIT_REF_SLUG"
+    key: "metaspace"
     untracked: true
 
 #部署开发环境
@@ -47,7 +47,7 @@ dev_deploy:
       - webapp/src/main/dashboard/node_modules/
       - webapp/src/main/dashboard/node/
   cache:
-    key: "$CI_COMMIT_REF_SLUG"
+    key: "metaspace"
     policy: pull
 
 #部署测试环境
@@ -62,7 +62,7 @@ test_deploy:
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cp $TEST_HOME/server/webapp/metaspace_bak/config.js $TEST_HOME/server/webapp/metaspace/\""
   when: manual
   cache:
-    key: "$CI_COMMIT_REF_SLUG"
+    key: "metaspace"
     policy: pull
 
 
