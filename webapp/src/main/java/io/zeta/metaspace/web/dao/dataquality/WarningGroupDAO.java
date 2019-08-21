@@ -75,7 +75,7 @@ public interface WarningGroupDAO {
              " join",
              " category on category.guid=a.categoryId",
              " <if test=\"params.query != null and params.query!=''\">",
-             " where (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/') ",
+             " where a.name like '%${params.query}%' ESCAPE '/'",
              " </if>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",

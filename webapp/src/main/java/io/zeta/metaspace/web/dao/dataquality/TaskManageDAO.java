@@ -199,7 +199,7 @@ public interface TaskManageDAO {
     @Select("select id,name from warning_group where category_id=#{categoryId}")
     public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId);
 
-    @Select("select id,name from warning_group")
+    @Select("select id,name from warning_group where delete=false")
     public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup();
 
     /**
