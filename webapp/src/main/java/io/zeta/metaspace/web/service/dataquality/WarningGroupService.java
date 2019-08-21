@@ -183,16 +183,16 @@ public class WarningGroupService {
         }
     }
 
-    public WarningInfo getWarningInfo(String executionRuleId) throws AtlasBaseException {
+    public WarningInfo getWarningInfo(String executionId) throws AtlasBaseException {
         try {
             //任务名称、告警发生时间、告警关闭时间、告警处理人
-            WarningInfo info = warningGroupDAO.getWarningBasicInfo(executionRuleId);
+            WarningInfo info = warningGroupDAO.getWarningBasicInfo(executionId);
             Map<String, Table> idToTable = new HashMap<>();
             Map<String, Column> idToColumn = new HashMap<>();
-            List<WarningInfo.SubTaskWarning> subTaskList =warningGroupDAO.getSubTaskWarning(executionRuleId);
+            List<WarningInfo.SubTaskWarning> subTaskList =warningGroupDAO.getSubTaskWarning(executionId);
             for (WarningInfo.SubTaskWarning subTask : subTaskList) {
                 String subTaskId = subTask.getSubTaskId();
-                List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(subTaskId);
+                List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(executionId, subTaskId);
                 for (WarningInfo.SubTaskRuleWarning subTaskRuleWarning : subTaskRuleWarningList) {
                     String objectId = subTaskRuleWarning.getObjectId();
                     Integer dataSourceType = subTask.getRuleType();

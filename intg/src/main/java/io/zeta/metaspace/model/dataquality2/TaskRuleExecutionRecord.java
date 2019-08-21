@@ -48,6 +48,7 @@ public class TaskRuleExecutionRecord {
     private Float redWarningMinValue;
     private Float redWarningMaxValue;
     private Integer redCheckStatus;
+    private String checkThresholdUnit;
 
     public Integer getObjectType() {
         return objectType;
@@ -256,5 +257,13 @@ public class TaskRuleExecutionRecord {
 
     public void setRedCheckStatus(Integer redCheckStatus) {
         this.redCheckStatus = redCheckStatus;
+    }
+
+    public String getCheckThresholdUnit() {
+        return checkThresholdUnit;
+    }
+
+    public void setCheckThresholdUnit(String checkThresholdUnit) {
+        this.checkThresholdUnit = checkThresholdUnit;
     }
 }

@@ -14,6 +14,8 @@ package io.zeta.metaspace.web.service.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -43,17 +45,36 @@ public class RuleTemplateService {
     public List<RuleTemplate> getRuleTemplate(String categoryId) throws AtlasBaseException {
         try {
             List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
-            Map<String, String> ruleTemplateCategoryMap = new HashMap();
-            RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
-                ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
-            });
-            for (RuleTemplate ruleTemplate : ruleTemplateList) {
-                String ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getCategoryId());
-                ruleTemplate.setRuleType(ruleType);
-            }
+            updateRuleType(ruleTemplateList);
             return ruleTemplateList;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public PageResult<RuleTemplate> search(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult pageResult = new PageResult<RuleTemplate>();
+            List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters);
+            updateRuleType(lists);
+            long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
+            pageResult.setLists(lists);
+            pageResult.setCount(lists.size());
+            pageResult.setSum(totalCount);
+            return pageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public void updateRuleType(List<RuleTemplate> lists) {
+        Map<String, String> ruleTemplateCategoryMap = new HashMap();
+        RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
+            ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+        });
+        for (RuleTemplate ruleTemplate : lists) {
+            String ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getCategoryId());
+            ruleTemplate.setRuleType(ruleType);
         }
     }
 

@@ -249,9 +249,12 @@ public interface TaskManageDAO {
      * @param taskRule
      * @return
      */
-    @Insert({" insert into data_quality_sub_task_rule(id,subtask_id,ruleId,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,orange_check_type,orange_check_expression_type,orange_threshold_min_value,orange_threshold_max_value,red_check_type,red_check_expression_type,red_threshold_min_value,red_threshold_max_value,sequence,create_time,update_time,delete) ",
-             " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete})"})
+    @Insert({" insert into data_quality_sub_task_rule(id,subtask_id,ruleId,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,orange_check_type,orange_check_expression_type,orange_threshold_min_value,orange_threshold_max_value,red_check_type,red_check_expression_type,red_threshold_min_value,red_threshold_max_value,sequence,create_time,update_time,delete,check_threshold_unit) ",
+             " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.checkThresholdUnit})"})
     public int addDataQualitySubTaskRule(@Param("rule")DataQualitySubTaskRule taskRule);
+
+    @Select("select check_threshold_unit from data_quality_rule where id=#{ruleId}")
+    public String getTaskRuleUnit(@Param("ruleId")String ruleId);
 
     /**
      * 任务详情-任务信息
@@ -350,7 +353,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,",
+             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.ruleid,",
              " data_quality_rule_template.type as taskType,data_quality_rule_template.scope from data_quality_rule_template",
              " join",
              " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,template_rule.subTaskRuleId from" ,
@@ -426,8 +429,8 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time,warning_status,error_status)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId},#{createTime},#{updateTime},#{warningStatus},#{errorStatus})")
-    public int initRuleExecuteInfo(@Param("id")String id, @Param("taskExecuteId")String taskExecuteId, @Param("taskId")String taskId, @Param("subTaskId")String subTaskId, @Param("objectId")String objectId, @Param("subTaskRuleId")String subTaskRuleId, @Param("createTime")Timestamp createTime, @Param("updateTime")Timestamp updateTime,@Param("warningStatus")Integer warningStatus,@Param("errorStatus")Integer errorStatus);
+    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time,warning_status,error_status,ruleId)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId},#{createTime},#{updateTime},#{warningStatus},#{errorStatus},#{ruleId})")
+    public int initRuleExecuteInfo(@Param("id")String id, @Param("taskExecuteId")String taskExecuteId, @Param("taskId")String taskId, @Param("subTaskId")String subTaskId, @Param("objectId")String objectId, @Param("subTaskRuleId")String subTaskRuleId, @Param("createTime")Timestamp createTime, @Param("updateTime")Timestamp updateTime,@Param("warningStatus")Integer warningStatus,@Param("errorStatus")Integer errorStatus,@Param("ruleId")String ruleId);
 
     /**
      * 获取库中最新值
@@ -682,7 +685,7 @@ public interface TaskManageDAO {
     @Select({" <script>",
              " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,",
              " d.name as ruleName,d.scope as objectType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
-             " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue",
+             " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
              " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}) c",
              " join",
              " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule.name,data_quality_rule.description,data_quality_rule.scope from data_quality_sub_task_rule join data_quality_rule on data_quality_sub_task_rule.ruleid=data_quality_rule.id) a",

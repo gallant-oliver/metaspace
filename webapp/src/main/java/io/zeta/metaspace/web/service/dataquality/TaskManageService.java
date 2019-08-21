@@ -393,6 +393,8 @@ public class TaskManageService {
                 subTaskRule.setUpdateTime(currentTime);
                 //是否已删除
                 subTaskRule.setDelete(false);
+                String unit = taskManageDAO.getTaskRuleUnit(rule.getRuleId());
+                subTaskRule.setCheckThresholdUnit(unit);
                 taskManageDAO.addDataQualitySubTaskRule(subTaskRule);
             }
         } catch (Exception e) {

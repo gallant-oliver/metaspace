@@ -12,9 +12,12 @@ import java.util.List;
 
 public interface RuleDAO {
 
-    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete) " +
-            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete})")
+    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete,check_threshold_unit) " +
+            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete},#{checkThresholdUnit})")
     public int insert(Rule rule);
+
+    @Select("select unit from data_quality_rule_template where id=#{ruleTemplateId}")
+    public String getRuleTemplateUnit(@Param("ruleTemplateId")String ruleTemplateId);
 
     @Update(" update data_quality_rule set " +
             " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime}" +
@@ -90,7 +93,7 @@ public interface RuleDAO {
     @Select("select id,name,scope,unit,description,delete,category_id as categoryId from data_quality_rule_template")
     public List<RuleTemplate> getAllRuleTemplateList();
 
-    @Select("select count(*) from data_quality_rule where category_id=#{categoryId}")
+    @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false")
     public Integer getCategoryObjectCount(@Param("categoryId") String guid);
 
 }

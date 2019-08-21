@@ -62,8 +62,8 @@ public class RuleTemplateCategory {
     }
 
     public static List<RuleTemplateCategory> all() {
-        return Lists.newArrayList(new RuleTemplateCategory("1", "空值校验"),
-                                  new RuleTemplateCategory("2", "表体积"),
+        return Lists.newArrayList(new RuleTemplateCategory("1", "表体积"),
+                                  new RuleTemplateCategory("2", "空值校验"),
                                   new RuleTemplateCategory("3", "唯一值校验"),
                                   new RuleTemplateCategory("4", "重复值校验"),
                                   new RuleTemplateCategory("5", "数值型校验"));

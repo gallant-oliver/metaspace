@@ -55,6 +55,8 @@ public class RuleService {
         rule.setUpdateTime(DateUtils.currentTimestamp());
         rule.setCreator(AdminUtils.getUserData().getUserId());
         rule.setDelete(false);
+        String unit = ruleDAO.getRuleTemplateUnit(rule.getRuleTemplateId());
+        rule.setCheckThresholdUnit(unit);
         return ruleDAO.insert(rule);
     }
 

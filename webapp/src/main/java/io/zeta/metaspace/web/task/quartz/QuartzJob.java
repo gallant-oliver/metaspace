@@ -182,7 +182,7 @@ public class QuartzJob implements Job {
             long currentTime = System.currentTimeMillis();
             Timestamp currentTimeStamp = new Timestamp(currentTime);
             String errorMsg = null;
-            taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0);
+            taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
                     //运行中途停止模板

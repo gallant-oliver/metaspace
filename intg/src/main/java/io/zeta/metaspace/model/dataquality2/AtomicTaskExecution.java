@@ -35,6 +35,7 @@ public class AtomicTaskExecution {
     private String subTaskRuleId;
     private Integer taskType;
     private Integer scope;
+    private String ruleId;
 
     public String getId() {
         return id;
@@ -138,5 +139,13 @@ public class AtomicTaskExecution {
 
     public void setScope(Integer scope) {
         this.scope = scope;
+    }
+
+    public String getRuleId() {
+        return ruleId;
+    }
+
+    public void setRuleId(String ruleId) {
+        this.ruleId = ruleId;
     }
 }

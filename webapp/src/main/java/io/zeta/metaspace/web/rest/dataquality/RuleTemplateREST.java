@@ -13,8 +13,11 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 
+import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -62,6 +66,14 @@ public class RuleTemplateREST {
     @Path("/{categoryId}/rules")
     public List<RuleTemplate> getRuleTemplate(@PathParam("categoryId")String categoryId) throws AtlasBaseException {
         return ruleTemplateService.getRuleTemplate(categoryId);
+    }
+
+    @POST
+    @Path("/search")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RuleTemplate> search(Parameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.search(parameters);
     }
 
 
