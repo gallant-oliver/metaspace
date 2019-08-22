@@ -390,9 +390,9 @@ public class DataShareService {
                 header.setDataOwner(dataOwnerName);
             }
             int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
-            pageResult.setOffset(offset);
-            pageResult.setSum(apiCount);
-            pageResult.setCount(list.size());
+            //pageResult.setOffset(offset);
+            pageResult.setTotalSize(apiCount);
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {

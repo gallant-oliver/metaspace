@@ -105,9 +105,9 @@ public class WarningGroupService {
                     }).collect(Collectors.toList());
             PageResult<WarningGroup> pageResult = new PageResult<>();
             long sum = warningGroupDAO.countBySearch(parameters.getQuery());
-            pageResult.setOffset(parameters.getOffset());
-            pageResult.setSum(sum);
-            pageResult.setCount(list.size());
+            //pageResult.setOffset(parameters.getOffset());
+            pageResult.setTotalSize(sum);
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
@@ -125,9 +125,9 @@ public class WarningGroupService {
             }
             PageResult<WarningGroup> pageResult = new PageResult<>();
             long sum = warningGroupDAO.countWarningGroup(parameters);
-            pageResult.setOffset(parameters.getOffset());
-            pageResult.setSum(sum);
-            pageResult.setCount(list.size());
+            //pageResult.setOffset(parameters.getOffset());
+            pageResult.setTotalSize(sum);
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
@@ -145,9 +145,9 @@ public class WarningGroupService {
                 warning.setWarningGroupList(groupHeaderList);
             }
             Long count = warningGroupDAO.countWarning(warningType, parameters);
-            pageResult.setSum(count);
+            pageResult.setTotalSize(count);
             pageResult.setLists(warningList);
-            pageResult.setCount(warningList.size());
+            pageResult.setCurrentSize(warningList.size());
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -163,9 +163,9 @@ public class WarningGroupService {
                 error.setWarningGroupList(groupHeaderList);
             }
             Long count = warningGroupDAO.countError(errorType, parameters);
-            pageResult.setSum(count);
+            pageResult.setTotalSize(count);
             pageResult.setLists(warningList);
-            pageResult.setCount(warningList.size());
+            pageResult.setCurrentSize(warningList.size());
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);

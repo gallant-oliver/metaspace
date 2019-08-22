@@ -16,26 +16,24 @@ import java.io.Serializable;
 import java.util.List;
 
 public class PageResult<E> implements Serializable {
-    private long offset;
-    private long count;
-
-    public long getSum() {
-        return sum;
-    }
-
-    public void setSum(long sum) {
-        this.sum = sum;
-    }
-
-    private long sum;
+    private long totalSize;
+    private long currentSize;
     private List<E> lists;
 
-    public long getCount() {
-        return count;
+    public long getTotalSize() {
+        return totalSize;
     }
 
-    public void setCount(long count) {
-        this.count = count;
+    public void setTotalSize(long totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    public long getCurrentSize() {
+        return currentSize;
+    }
+
+    public void setCurrentSize(long currentSize) {
+        this.currentSize = currentSize;
     }
 
     public List<E> getLists() {
@@ -44,13 +42,5 @@ public class PageResult<E> implements Serializable {
 
     public void setLists(List<E> lists) {
         this.lists = lists;
-    }
-
-    public long getOffset() {
-        return offset;
-    }
-
-    public void setOffset(long offset) {
-        this.offset = offset;
     }
 }

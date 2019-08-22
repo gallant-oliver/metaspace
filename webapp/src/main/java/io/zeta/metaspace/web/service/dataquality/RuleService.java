@@ -101,9 +101,9 @@ public class RuleService {
         List<Rule> list = queryByCatetoryId(categoryId, params);
         PageResult<Rule> pageResult = new PageResult<>();
         long sum = ruleDAO.countByByCatetoryId(categoryId);
-        pageResult.setOffset(params.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(params.getOffset());
+        pageResult.setTotalSize(sum);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
@@ -135,9 +135,9 @@ public class RuleService {
 
         PageResult<Rule> pageResult = new PageResult<>();
         long sum = ruleDAO.countBySearch(params.getQuery());
-        pageResult.setOffset(params.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(params.getOffset());
+        pageResult.setTotalSize(sum);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }

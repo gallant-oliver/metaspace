@@ -59,8 +59,8 @@ public class RuleTemplateService {
             updateRuleType(lists);
             long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
             pageResult.setLists(lists);
-            pageResult.setCount(lists.size());
-            pageResult.setSum(totalCount);
+            pageResult.setCurrentSize(lists.size());
+            pageResult.setTotalSize(totalCount);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());

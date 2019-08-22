@@ -108,9 +108,9 @@ public class TaskManageService {
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             PageResult<TaskHeader> pageResult = new PageResult<>();
 
-            pageResult.setOffset(parameters.getOffset());
-            pageResult.setSum(totalSize);
-            pageResult.setCount(list.size());
+            //pageResult.setOffset(parameters.getOffset());
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
@@ -559,8 +559,8 @@ public class TaskManageService {
             }
             long totalSize = taskManageDAO.countRuleList(taskId);
             pageResult.setLists(lists);
-            pageResult.setCount(lists.size());
-            pageResult.setSum(totalSize);
+            pageResult.setCurrentSize(lists.size());
+            pageResult.setTotalSize(totalSize);
 
             return pageResult;
         } catch (Exception e) {
@@ -609,8 +609,8 @@ public class TaskManageService {
             List<ExecutionLogHeader> lists = taskManageDAO.getExecutionLogList(taskId, parameters);
             Long count = taskManageDAO.countExecutionLogList(taskId, parameters);
             pageResult.setLists(lists);
-            pageResult.setCount(lists.size());
-            pageResult.setSum(count);
+            pageResult.setCurrentSize(lists.size());
+            pageResult.setTotalSize(count);
             return pageResult;
 
         } catch (Exception e) {

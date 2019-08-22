@@ -428,12 +428,11 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 }
             }
             pageResult.setLists(databases);
-            pageResult.setOffset(offset);
-            pageResult.setCount(databases.size());
+            pageResult.setCurrentSize(databases.size());
             String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
             String numQuery = String.format(gremlinQuery, queryDb);
             List num = (List) graph.executeGremlinScript(numQuery, false);
-            pageResult.setSum(Integer.parseInt(num.get(0).toString()));
+            pageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误");
@@ -480,11 +479,11 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             tables.add(table);
         }
         tablePageResult.setLists(tables);
-        tablePageResult.setCount(tables.size());
-        tablePageResult.setOffset(offset);
+        tablePageResult.setCurrentSize(tables.size());
+        //tablePageResult.setOffset(offset);
         String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
-        tablePageResult.setSum(counts.get(0));
+        tablePageResult.setTotalSize(counts.get(0));
         return tablePageResult;
     }
 
@@ -551,11 +550,11 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             columns.add(column);
         }
         columnPageResult.setLists(columns);
-        columnPageResult.setCount(columns.size());
-        columnPageResult.setOffset(offset);
+        columnPageResult.setCurrentSize(columns.size());
+        //columnPageResult.setOffset(offset);
         String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_COUNT_BY_QUERY);
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryColumn), false);
-        columnPageResult.setSum(counts.get(0));
+        columnPageResult.setTotalSize(counts.get(0));
         return columnPageResult;
     }
 
@@ -623,13 +622,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             }
                 lists.add(db);
         }
-        databasePageResult.setCount(lists.size());
-        databasePageResult.setOffset(offset);
+        databasePageResult.setCurrentSize(lists.size());
+        //databasePageResult.setOffset(offset);
         databasePageResult.setLists(lists);
         String gremlinQuery = active?gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_ACTIVE_TOTAL_NUM_BY_QUERY):gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TOTAL_NUM_BY_QUERY);
         String numQuery = String.format(gremlinQuery, queryDb);
         List num = (List) graph.executeGremlinScript(numQuery, false);
-        databasePageResult.setSum(Integer.parseInt(num.get(0).toString()));
+        databasePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
         return databasePageResult;
     }
 
@@ -662,13 +661,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             }
             lists.add(tb);
         }
-        tablePageResult.setCount(lists.size());
-        tablePageResult.setOffset(offset);
+        tablePageResult.setCurrentSize(lists.size());
+        //tablePageResult.setOffset(offset);
         tablePageResult.setLists(lists);
         String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_TOTAL_BY_DB);
         String numQuery = String.format(gremlinQuery, databaseId);
         List num = (List) graph.executeGremlinScript(numQuery, false);
-        tablePageResult.setSum(Integer.parseInt(num.get(0).toString()));
+        tablePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
         return tablePageResult;
     }
 

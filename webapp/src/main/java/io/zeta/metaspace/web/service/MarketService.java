@@ -122,9 +122,9 @@ public class MarketService {
                 infoHeader.setLevel2Category(level2Category);
             }
             long businessCount = businessDao.queryBusinessCountByNameWithoutPrivilege(businessName);
-            pageResult.setSum(businessCount);
+            pageResult.setTotalSize(businessCount);
             pageResult.setLists(businessInfoList);
-            pageResult.setCount(businessInfoList.size());
+            pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -220,9 +220,9 @@ public class MarketService {
                 }
                 apiCount = shareDao.countTableRelatedAPI(tableList);
             }
-            pageResult.setSum(apiCount);
+            pageResult.setTotalSize(apiCount);
             pageResult.setLists(APIList);
-            pageResult.setCount(APIList.size());
+            pageResult.setCurrentSize(APIList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;

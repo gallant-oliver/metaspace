@@ -296,9 +296,9 @@ public class BusinessService {
                 infoHeader.setLevel2Category(level2Category);
             }
             long sum = businessDao.queryBusinessCountByByCatetoryId(categoryId);
-            pageResult.setOffset(offset);
-            pageResult.setSum(sum);
-            pageResult.setCount(list.size());
+            //pageResult.setOffset(offset);
+            pageResult.setTotalSize(sum);
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -344,10 +344,10 @@ public class BusinessService {
                 infoHeader.setLevel2Category(level2Category);
             }
             long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
-            pageResult.setOffset(offset);
-            pageResult.setSum(businessCount);
+            //pageResult.setOffset(offset);
+            pageResult.setTotalSize(businessCount);
             pageResult.setLists(businessInfoList);
-            pageResult.setCount(businessInfoList.size());
+            pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -394,11 +394,11 @@ public class BusinessService {
                     if (pathArr.length >= 2)
                         infoHeader.setLevel2Category(pathArr[1]);
                 }
-                pageResult.setOffset(offset);
+                //pageResult.setOffset(offset);
                 pageResult.setLists(businessInfoList);
                 long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
-                pageResult.setSum(businessCount);
-                pageResult.setCount(businessInfoList.size());
+                pageResult.setTotalSize(businessCount);
+                pageResult.setCurrentSize(businessInfoList.size());
             }
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -557,10 +557,10 @@ public class BusinessService {
                 }
                 apiCount = shareDAO.countTableRelatedAPI(tableList);
             }
-            pageResult.setOffset(offset);
-            pageResult.setSum(apiCount);
+            //pageResult.setOffset(offset);
+            pageResult.setTotalSize(apiCount);
             pageResult.setLists(APIList);
-            pageResult.setCount(APIList.size());
+            pageResult.setCurrentSize(APIList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -607,8 +607,8 @@ public class BusinessService {
             long count = businessDao.getCountBusinessRelatedTable(businessId, query);
             PageResult pageResult = new PageResult();
             pageResult.setLists(tableHeaderList);
-            pageResult.setCount(tableHeaderList.size());
-            pageResult.setSum(count);
+            pageResult.setCurrentSize(tableHeaderList.size());
+            pageResult.setTotalSize(count);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
@@ -648,8 +648,8 @@ public class BusinessService {
             });
 
             pageResult.setLists(resultColumnInfoList);
-            pageResult.setCount(resultColumnInfoList.size());
-            pageResult.setSum(totalCount);
+            pageResult.setCurrentSize(resultColumnInfoList.size());
+            pageResult.setTotalSize(totalCount);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());

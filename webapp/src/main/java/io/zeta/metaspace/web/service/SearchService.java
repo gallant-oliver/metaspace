@@ -128,8 +128,8 @@ public class SearchService {
             });
 
             pageResult.setLists(tableList);
-            pageResult.setSum(tableList.size());
-            pageResult.setCount(tableList.size());
+            pageResult.setTotalSize(tableList.size());
+            pageResult.setCurrentSize(tableList.size());
             return pageResult;
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -309,9 +309,9 @@ public class SearchService {
             }
             //如果没目录
             if (strings.size() == 0) {
-                databasePageResult.setOffset(parameters.getOffset());
-                databasePageResult.setCount(0);
-                databasePageResult.setSum(0);
+                //databasePageResult.setOffset(parameters.getOffset());
+                databasePageResult.setCurrentSize(0);
+                databasePageResult.setTotalSize(0);
                 return databasePageResult;
             }
             databaseHeaders = roleDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit());
@@ -337,9 +337,9 @@ public class SearchService {
                 }
             });
             databasePageResult.setLists(databaseHeaders);
-            databasePageResult.setOffset(parameters.getOffset());
-            databasePageResult.setCount(databaseHeaders.size());
-            databasePageResult.setSum(roleDAO.getDBCountV2(strings, parameters.getQuery()));
+            //databasePageResult.setOffset(parameters.getOffset());
+            databasePageResult.setCurrentSize(databaseHeaders.size());
+            databasePageResult.setTotalSize(roleDAO.getDBCountV2(strings, parameters.getQuery()));
         }
         return databasePageResult;
     }
@@ -354,9 +354,9 @@ public class SearchService {
             }
             //如果没目录
             if (strings.size() == 0) {
-                tablePageResult.setOffset(parameters.getOffset());
-                tablePageResult.setCount(0);
-                tablePageResult.setSum(0);
+                //tablePageResult.setOffset(parameters.getOffset());
+                tablePageResult.setCurrentSize(0);
+                tablePageResult.setTotalSize(0);
                 return tablePageResult;
             }
 
@@ -369,9 +369,9 @@ public class SearchService {
                 else e.setCheck(0);
             });
             tablePageResult.setLists(tables);
-            tablePageResult.setOffset(parameters.getOffset());
-            tablePageResult.setCount(tableInfos.size());
-            tablePageResult.setSum(roleDAO.getTableInfosByDBIdCount(strings, databaseGuid));
+            //tablePageResult.setOffset(parameters.getOffset());
+            tablePageResult.setCurrentSize(tableInfos.size());
+            tablePageResult.setTotalSize(roleDAO.getTableInfosByDBIdCount(strings, databaseGuid));
         }
         return tablePageResult;
 
@@ -448,9 +448,9 @@ public class SearchService {
                 strings.add(child.getGuid());
             }
             if (strings.size() == 0) {
-                tablePageResult.setSum(0);
-                tablePageResult.setCount(0);
-                tablePageResult.setOffset(offset);
+                tablePageResult.setTotalSize(0);
+                tablePageResult.setCurrentSize(0);
+                //tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
             if (Objects.nonNull(query))
@@ -463,9 +463,9 @@ public class SearchService {
                 if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
                 else e.setCheck(0);
             });
-            tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
-            tablePageResult.setCount(tableInfo.size());
-            tablePageResult.setOffset(offset);
+            tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
+            tablePageResult.setCurrentSize(tableInfo.size());
+            //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
         }
         return tablePageResult;
@@ -486,18 +486,18 @@ public class SearchService {
                 strings.add(child.getGuid());
             }
             if (strings.size() == 0) {
-                tablePageResult.setSum(0);
-                tablePageResult.setCount(0);
-                tablePageResult.setOffset(offset);
+                tablePageResult.setTotalSize(0);
+                tablePageResult.setCurrentSize(0);
+                //tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> tables = getTables(tableInfo);
-            tablePageResult.setSum(roleDAO.getTableCountV2(strings, query));
-            tablePageResult.setCount(tableInfo.size());
-            tablePageResult.setOffset(offset);
+            tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
+            tablePageResult.setCurrentSize(tableInfo.size());
+            //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
         }
         return tablePageResult;
@@ -559,9 +559,9 @@ public class SearchService {
             }
             //如果没目录
             if (strings.size() == 0) {
-                databasePageResult.setOffset(parameters.getOffset());
-                databasePageResult.setCount(0);
-                databasePageResult.setSum(0);
+                //databasePageResult.setOffset(parameters.getOffset());
+                databasePageResult.setCurrentSize(0);
+                databasePageResult.setTotalSize(0);
                 return databasePageResult;
             }
             dbName = roleDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
@@ -573,9 +573,9 @@ public class SearchService {
                 lists.add(database);
             }
             databasePageResult.setLists(lists);
-            databasePageResult.setOffset(parameters.getOffset());
-            databasePageResult.setCount(dbName.size());
-            databasePageResult.setSum(roleDAO.getDBCountV2(strings, parameters.getQuery()));
+            //databasePageResult.setOffset(parameters.getOffset());
+            databasePageResult.setCurrentSize(dbName.size());
+            databasePageResult.setTotalSize(roleDAO.getDBCountV2(strings, parameters.getQuery()));
         }
         return databasePageResult;
     }
