@@ -429,7 +429,7 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time,warning_status,error_status,ruleId)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId},#{createTime},#{updateTime},#{warningStatus},#{errorStatus},#{ruleId})")
+    @Insert("insert into data_quality_task_rule_execute(id,task_execute_id,task_id,subtask_id,subtask_object_id,subtask_rule_id,create_time, update_time,warning_status,error_status,rule_id)values(#{id},#{taskExecuteId},#{taskId},#{subTaskId},#{objectId},#{subTaskRuleId},#{createTime},#{updateTime},#{warningStatus},#{errorStatus},#{ruleId})")
     public int initRuleExecuteInfo(@Param("id")String id, @Param("taskExecuteId")String taskExecuteId, @Param("taskId")String taskId, @Param("subTaskId")String subTaskId, @Param("objectId")String objectId, @Param("subTaskRuleId")String subTaskRuleId, @Param("createTime")Timestamp createTime, @Param("updateTime")Timestamp updateTime,@Param("warningStatus")Integer warningStatus,@Param("errorStatus")Integer errorStatus,@Param("ruleId")String ruleId);
 
     /**
