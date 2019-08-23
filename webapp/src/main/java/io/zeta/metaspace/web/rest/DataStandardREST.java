@@ -285,10 +285,10 @@ public class DataStandardREST {
      * @throws Exception
      */
     @POST
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    @Path("/category")
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
@@ -321,10 +321,10 @@ public class DataStandardREST {
      * @throws AtlasBaseException
      */
     @PUT
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    @Path("/category")
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());

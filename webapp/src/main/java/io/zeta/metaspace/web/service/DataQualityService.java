@@ -510,10 +510,10 @@ public class DataQualityService {
                 reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
                 total = qualityDao.getCount(tableGuid, templateId);
             }
-            pageResult.setOffset(offset);
+            //pageResult.setOffset(offset);
             pageResult.setLists(reports);
-            pageResult.setCount(reports.size());
-            pageResult.setSum(total);
+            pageResult.setCurrentSize(reports.size());
+            pageResult.setTotalSize(total);
             /*map.put("reports", reports);
             map.put("total", count);*/
             return pageResult;

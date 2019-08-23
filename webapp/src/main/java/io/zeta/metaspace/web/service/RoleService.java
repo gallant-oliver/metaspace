@@ -132,9 +132,9 @@ public class RoleService {
         //}
         long usersCount = roleDAO.getUsersCount(roleId, query);
         userPageResult.setLists(users);
-        userPageResult.setOffset(offset);
-        userPageResult.setSum(usersCount);
-        userPageResult.setCount(users.size());
+        //userPageResult.setOffset(offset);
+        userPageResult.setTotalSize(usersCount);
+        userPageResult.setCurrentSize(users.size());
         return userPageResult;
     }
 
@@ -150,9 +150,9 @@ public class RoleService {
             List<Role> roles = roleDAO.getRoles(query, offset, limit, containUnenable);
             long rolesCount = roleDAO.getRolesCount(query, containUnenable);
             rolePageResult.setLists(roles);
-            rolePageResult.setOffset(offset);
-            rolePageResult.setSum(rolesCount);
-            rolePageResult.setCount(roles.size());
+            //rolePageResult.setOffset(offset);
+            rolePageResult.setTotalSize(rolesCount);
+            rolePageResult.setCurrentSize(roles.size());
             return rolePageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());

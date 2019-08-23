@@ -51,9 +51,9 @@ public class OperateLogService {
         if (CollectionUtils.isNotEmpty(list)) {
             total = list.get(0).getTotal();
         }
-        pageResult.setOffset(operateLogRequest.getOffset());
-        pageResult.setSum(total);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(operateLogRequest.getOffset());
+        pageResult.setTotalSize(total);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }

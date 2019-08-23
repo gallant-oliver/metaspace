@@ -312,7 +312,6 @@ public class QuartJob implements Job {
                 sql = String.format(query, tableName);
             }
 
-
             String columnTypeKey = null;
             if(Objects.nonNull(columnName)) {
                 columnTypeKey = joiner.add(dbName).add(tableName).add(columnName).add(superType).toString();
