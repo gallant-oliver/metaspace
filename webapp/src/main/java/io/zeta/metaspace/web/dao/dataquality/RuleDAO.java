@@ -13,7 +13,7 @@ import java.util.List;
 public interface RuleDAO {
 
     @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete,check_threshold_unit) " +
-            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete},#{checkThresholdUnit})")
+            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete},#{unit})")
     public int insert(Rule rule);
 
     @Select("select unit from data_quality_rule_template where id=#{ruleTemplateId}")

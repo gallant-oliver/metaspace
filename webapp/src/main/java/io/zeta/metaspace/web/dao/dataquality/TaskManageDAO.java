@@ -344,7 +344,7 @@ public interface TaskManageDAO {
      * @param name
      * @return
      */
-    @Update("update data_quality_task set qrtz_job=#{qrtzName}")
+    @Update("update data_quality_task set qrtz_job=#{qrtzName} where id=#{id}")
     public int updateTaskQrtzName(@Param("id")String id, @Param("qrtzName")String name);
 
     /**
