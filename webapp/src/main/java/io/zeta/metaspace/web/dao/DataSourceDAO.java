@@ -74,7 +74,7 @@ public interface DataSourceDAO {
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
     @Select("<script>" +
-            "select ds.source_name sourceName,ds.source_type sourceType,description,to_char(create_time,'yyyy-MM-dd HH-mm-ss') createTime,to_char(update_time,'yyyy-MM-dd HH-mm-ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
+            "select ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,description,to_char(create_time,'yyyy-MM-dd HH-mm-ss') createTime,to_char(update_time,'yyyy-MM-dd HH-mm-ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
             "<if test='dataSourceSearch.sourceName!=null or dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null'>" +
             "where " +
             "</if>" +
