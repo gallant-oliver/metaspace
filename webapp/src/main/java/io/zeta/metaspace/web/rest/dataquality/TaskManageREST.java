@@ -108,17 +108,31 @@ public class TaskManageREST {
     }
 
     /**
-     * 报告规则记录详情
-     * @param ruleExecutionId
+     * 报告详情
+     * @param taskId
      * @return
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{ruleExecutionId}/record")
+    @Path("/{taskId}/report/pdf")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(ruleExecutionId);
+    public TaskExecutionReport getReportData(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        return taskManageService.getTaskExecutionReport(taskId);
+    }
+
+    /**
+     * 报告规则记录详情
+     * @param executionId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{executionId}/record")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(executionId);
     }
 
     /**
