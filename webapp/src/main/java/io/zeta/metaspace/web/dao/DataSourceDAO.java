@@ -51,9 +51,13 @@ public interface DataSourceDAO {
             "where source_id=#{dataSourceBody.sourceId}")
     public int update(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
 
-    //查询数据源
-    @Select("select * from data_source where source_id=#{sourceId}")
-    public DataSource getDataSourceForSourceId(@Param("sourceId") String sourceId);
+    //数据源id是否存在
+    @Select("select count(1) from data_source where source_id=#{sourceId}")
+    public int isSourceId(@Param("sourceId") String sourceId);
+
+    //数据源名称是否存在
+    @Select("select count(1) from data_source where source_name=#{sourceName}")
+    public int isSourceName(@Param("sourceName") String sourceName);
 
     //查询数据源名字
     @Select("select source_name from data_source where source_id=#{sourceId}")
@@ -74,7 +78,7 @@ public interface DataSourceDAO {
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
     @Select("<script>" +
-            "select ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,description,to_char(create_time,'yyyy-MM-dd HH-mm-ss') createTime,to_char(update_time,'yyyy-MM-dd HH-mm-ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
+            "select ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,description,to_char(create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
             "<if test='dataSourceSearch.sourceName!=null or dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null'>" +
             "where " +
             "</if>" +
