@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -77,8 +78,15 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
+
         try {
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
+            }
+
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
+
+            dataSourceBody.setSourceId(UUID.randomUUID().toString());
             dataSourceService.setNewDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
         }catch (AtlasBaseException e){
@@ -91,20 +99,24 @@ public class DataSourceREST {
 
     /**
      * 更新数据源
-     * @param sourceId
      * @param dataSourceBody
      * @return
      * @throws AtlasBaseException
      */
     @PUT
-    @Path("/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updataDateSource(@PathParam("sourceId") String sourceId,DataSourceBody dataSourceBody) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
+    public Response updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+
         try {
-            dataSourceService.updateDataSource(sourceId,dataSourceBody);
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
+            }
+
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
+
+            dataSourceService.updateDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
         }catch (AtlasBaseException e){
             throw e;
