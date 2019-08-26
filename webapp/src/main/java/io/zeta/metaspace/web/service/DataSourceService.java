@@ -55,10 +55,6 @@ public class DataSourceService {
      */
     public int setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
         try {
-            DataSource dataSource = dataSourceDAO.getDataSourceForSourceId(dataSourceBody.getSourceId());
-            if (!Objects.isNull(dataSource)){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id已存在");
-            }
             String userId = AdminUtils.getUserData().getUserId();
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
             return dataSourceDAO.add(userId,dataSourceBody);
@@ -72,20 +68,17 @@ public class DataSourceService {
 
     /**
      * 更新数据源
-     * @param sourceId
      * @param dataSourceBody
      * @return
      * @throws AtlasBaseException
      */
-    public int updateDataSource(String sourceId,DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
+    public int updateDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
         try {
-            DataSource dataSource = dataSourceDAO.getDataSourceForSourceId(sourceId);
-            if (Objects.isNull(dataSource)){
+            if (dataSourceDAO.isSourceId(dataSourceBody.getSourceId())==0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
             String userId = AdminUtils.getUserData().getUserId();
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-            dataSourceBody.setSourceId(sourceId);
             return dataSourceDAO.update(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
@@ -167,6 +160,20 @@ public class DataSourceService {
         }
     }
 
+    /**
+     * 查询数据源
+     * @param limit
+     * @param offset
+     * @param sortby
+     * @param order
+     * @param sourceName
+     * @param sourceType
+     * @param createTime
+     * @param updateTime
+     * @param updateUserName
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName,String sourceType,String createTime,String updateTime,String updateUserName) throws AtlasBaseException {
         try {
             DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName,sourceType,createTime,updateTime,updateUserName);
@@ -213,6 +220,21 @@ public class DataSourceService {
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败");
+        }
+    }
+
+    /**
+     * 判断sourceName是否存在
+     * @param sourceName
+     * @return
+     * @throws AtlasBaseException
+     */
+    public int isSourceName(String sourceName) throws AtlasBaseException {
+        try {
+            return dataSourceDAO.isSourceName(sourceName);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"SQL异常");
         }
     }
 
