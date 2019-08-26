@@ -14,6 +14,7 @@
 package io.zeta.metaspace.model.dataSource;
 
 public class DataSourceHead {
+    private String sourceId;
     private String sourceName;
     private String sourceType;
     private String description;
@@ -23,7 +24,8 @@ public class DataSourceHead {
 
     public DataSourceHead(){}
 
-    public DataSourceHead(String sourceName, String sourceType, String description, String createTime, String updateTime, String updateUserName) {
+    public DataSourceHead(String sourceId,String sourceName, String sourceType, String description, String createTime, String updateTime, String updateUserName) {
+        this.sourceId = sourceId;
         this.sourceName = sourceName;
         this.sourceType = sourceType;
         this.description = description;
@@ -80,10 +82,19 @@ public class DataSourceHead {
         this.updateUserName = updateUserName;
     }
 
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
     @Override
     public String toString() {
         return "DataSourceHead{" +
-               "sourceName='" + sourceName + '\'' +
+               "sourceId='" + sourceId + '\'' +
+               ", sourceName='" + sourceName + '\'' +
                ", sourceType='" + sourceType + '\'' +
                ", description='" + description + '\'' +
                ", createTime='" + createTime + '\'' +
