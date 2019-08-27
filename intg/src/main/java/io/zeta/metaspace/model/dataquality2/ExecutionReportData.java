@@ -30,7 +30,7 @@ public class ExecutionReportData {
     private TaskBasicInfo basicInfo;
     private TaskCheckResultCount checkResultCount;
     private ImprovingSuggestion suggestion;
-    private TaskRuleExecutionRecord ruleCheckResult;
+    private List<TaskRuleExecutionRecord> ruleCheckResult;
 
     public TaskBasicInfo getBasicInfo() {
         return basicInfo;
@@ -56,11 +56,11 @@ public class ExecutionReportData {
         this.suggestion = suggestion;
     }
 
-    public TaskRuleExecutionRecord getRuleCheckResult() {
+    public List<TaskRuleExecutionRecord> getRuleCheckResult() {
         return ruleCheckResult;
     }
 
-    public void setRuleCheckResult(TaskRuleExecutionRecord ruleCheckResult) {
+    public void setRuleCheckResult(List<TaskRuleExecutionRecord> ruleCheckResult) {
         this.ruleCheckResult = ruleCheckResult;
     }
 

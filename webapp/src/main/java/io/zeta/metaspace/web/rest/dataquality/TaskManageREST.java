@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
+import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
@@ -114,11 +115,11 @@ public class TaskManageREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{taskId}/report/pdf")
+    @Path("/{taskId}/{executionId}/report/pdf")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TaskExecutionReport getReportData(@PathParam("taskId")String taskId) throws AtlasBaseException {
-        return taskManageService.getTaskExecutionReport(taskId);
+    public ExecutionReportData getReportData(@PathParam("taskId")String taskId, @PathParam("executionId")String executionId) throws AtlasBaseException {
+        return taskManageService.getTaskReportData(taskId, executionId);
     }
 
     /**

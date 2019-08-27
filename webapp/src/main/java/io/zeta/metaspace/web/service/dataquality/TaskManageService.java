@@ -581,7 +581,7 @@ public class TaskManageService {
         }
     }
 
-    public void getTaskReportData(String taskId, String taskExecuteId) throws AtlasBaseException {
+    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId) throws AtlasBaseException {
         try {
             ExecutionReportData resultData = new ExecutionReportData();
             //basicInfo
@@ -627,6 +627,7 @@ public class TaskManageService {
                 checkResultCount.setRedWarningNumber(0);
                 checkResultCount.setTotalRedWarningRuleNumber(0);
             }
+            resultData.setCheckResultCount(checkResultCount);
 
             //result && suggestion
             ExecutionReportData.ImprovingSuggestion suggestion = new ExecutionReportData.ImprovingSuggestion();
@@ -637,19 +638,18 @@ public class TaskManageService {
             for (TaskRuleExecutionRecord record : executeResult) {
                 if(0==record.getObjectType() && 1==record.getCheckStatus()) {
                     tableRuleSuggestion.add(record.getDescription() + suffix);
-                }
-                else if(1==record.getObjectType() && 1==record.getCheckStatus()) {
+                } else if(1==record.getObjectType() && 1==record.getCheckStatus()) {
                     columnRuleSuggestion.add(record.getDescription() + suffix);
                 }
                 Integer sequence = taskManageDAO.getSubTaskSequence(record.getSubtaskId());
                 record.setSubTaskSequence(sequence);
             }
-
+            resultData.setRuleCheckResult(executeResult);
             //suggestion
             suggestion.setTableQuestion(tableRuleSuggestion);
             suggestion.setColumnQuestion(columnRuleSuggestion);
             resultData.setSuggestion(suggestion);
-
+            return resultData;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
