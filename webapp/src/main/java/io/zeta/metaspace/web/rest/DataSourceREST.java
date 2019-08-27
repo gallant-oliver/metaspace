@@ -16,23 +16,18 @@ package io.zeta.metaspace.web.rest;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.HttpRequestContext;
-import io.zeta.metaspace.model.dataSource.DataSource;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
-import io.zeta.metaspace.model.dataSource.DataSourceSearch;
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.DataSourceService;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.tools.ant.taskdefs.Exec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,24 +71,20 @@ public class DataSourceREST {
      */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Response setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
             if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
             }
-
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
             dataSourceBody.setSourceId(UUID.randomUUID().toString());
             dataSourceService.setNewDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
-        }catch (AtlasBaseException e){
-            throw e;
         }catch (Exception e){
             LOG.warn("添加失败");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败"+e.getMessage());
         }
     }
 
@@ -105,7 +96,6 @@ public class DataSourceREST {
      */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
@@ -118,11 +108,9 @@ public class DataSourceREST {
 
             dataSourceService.updateDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
-        }catch (AtlasBaseException e){
-            throw e;
         }catch (Exception e){
             LOG.warn("更新失败");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"更新失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"更新失败"+e.getMessage());
         }
     }
 
@@ -134,7 +122,6 @@ public class DataSourceREST {
      */
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
     public Response deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
         for (String sourceId:sourceIds
@@ -145,11 +132,9 @@ public class DataSourceREST {
         try {
             dataSourceService.deleteDataSource(sourceIds);
             return Response.status(200).entity("success").build();
-        }catch (AtlasBaseException e){
-            throw e;
         }catch (Exception e){
             LOG.warn("删除失败");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除失败"+e.getMessage());
         }
     }
 
@@ -166,11 +151,9 @@ public class DataSourceREST {
     public DataSourceInfo getDataSourceInfo(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
         try {
             return dataSourceService.getDataSourceInfo(sourceId);
-        }catch (AtlasBaseException e){
-            throw e;
         }catch (Exception e){
             LOG.warn("获取数据源信息失败");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取数据源信息失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取数据源信息失败"+e.getMessage());
         }
     }
 
@@ -189,7 +172,7 @@ public class DataSourceREST {
             return dataSourceService.testConnection(dataSourceConnection);
         }catch (Exception e){
             LOG.warn("连接失败");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败"+e.getMessage());
         }
     }
 
@@ -215,11 +198,9 @@ public class DataSourceREST {
                                                         @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
         try {
             return dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName);
-        }catch (AtlasBaseException e){
-            throw e;
         }catch (Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败"+e.getMessage());
         }
 
     }
