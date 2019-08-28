@@ -653,7 +653,7 @@ public interface TaskManageDAO {
              " <if test='queryType==1'>",
              " orange_warning_check_status",
              " </if>",
-             " <if test='queryType==1'>",
+             " <if test='queryType==2'>",
              " red_warning_check_status",
              " </if>",
              " from data_quality_task_rule_execute where task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
