@@ -24,6 +24,7 @@ import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerUtils;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -75,6 +76,12 @@ public class CacheConfig extends CachingConfigurerSupport {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
         redisTemplate.setConnectionFactory(cf);
         return redisTemplate;
+    }
+
+    @Bean("customKeyGenerator")
+    @Override
+    public KeyGenerator keyGenerator() {
+        return new CustomKeyGenerator();
     }
 
     @Bean
