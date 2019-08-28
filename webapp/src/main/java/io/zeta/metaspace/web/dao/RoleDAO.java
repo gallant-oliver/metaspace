@@ -62,7 +62,7 @@ public interface RoleDAO {
              " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
              " and valid=true",
              " <if test='contain == false'>",
-             " and status=1",
+             " and status=1 and role.roleId!='1'",
              " </if>",
              " order by roleid",
              " <if test='limit!= -1'>",

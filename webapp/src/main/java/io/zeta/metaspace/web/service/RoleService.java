@@ -177,7 +177,7 @@ public class RoleService {
             for(int i=0; i<roles.size(); i++) {
                 Role role = roles.get(i);
                 Boolean valid = role.isValid();
-                if(false == valid) {
+                if(false == valid || "1".equals(role.getRoleId())) {
                     role.setOpType(OpType.DELETE.getDesc());
                     continue;
                 }
