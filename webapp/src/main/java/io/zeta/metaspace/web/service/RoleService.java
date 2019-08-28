@@ -224,6 +224,9 @@ public class RoleService {
             if(Objects.isNull(role) || !role.isValid()) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
             }
+            if("1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改用户角色为平台管理员");
+            }
             int status = role.getStatus();
             if(0 == status) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
@@ -619,22 +622,38 @@ public class RoleService {
     public void updateUserInfo() throws AtlasBaseException {
         try {
             List<String> userIdList = roleDAO.getUserIdList();
-            String userInfoURL = SSOConfig.getUserInfoURL();
-            HashMap header = new HashMap();
-            Gson gson = new Gson();
-            for(String userId : userIdList) {
-                Map<String, String> queryDataParamMap = new HashMap<>();
-                queryDataParamMap.put("id", userId);
-                String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
-                Map userBody = gson.fromJson(userSession, Map.class);
-                if(StringUtils.isEmpty(userBody.get("data").toString())) {
+            for (String userId : userIdList) {
+                User user = getUserInfo(userId);
+                if(null==user || "".equals(user.getUsername())) {
                     continue;
                 }
-                Map userData = (Map)userBody.get("data");
-                String email = userData.get("loginEmail").toString();
-                String name = userData.get("displayName").toString();
-                roleDAO.updateUserInfo(userId, email, name);
+                roleDAO.updateUserInfo(user);
             }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public User getUserInfo(String userId) throws AtlasBaseException {
+        try {
+            String userInfoURL = SSOConfig.getUserInfoURL();
+            HashMap<String, String> header = new HashMap<>();
+            Map<String, String> queryDataParamMap = new HashMap<>();
+            queryDataParamMap.put("id", userId);
+            String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
+            Gson gson = new Gson();
+            Map userBody = gson.fromJson(userSession, Map.class);
+            if (StringUtils.isEmpty(userBody.get("data").toString())) {
+                return null;
+            }
+            Map userData = (Map) userBody.get("data");
+            String email = userData.get("loginEmail").toString();
+            String name = userData.get("displayName").toString();
+            User user = new User();
+            user.setUserId(userId);
+            user.setUsername(name);
+            user.setAccount(email);
+            return user;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }

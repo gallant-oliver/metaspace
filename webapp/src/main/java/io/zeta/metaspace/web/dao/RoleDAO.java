@@ -380,6 +380,6 @@ public interface RoleDAO {
     @Select("select userId from users")
     public List<String> getUserIdList();
 
-    @Update("update users set userName=#{userName},account=#{email} where userId=#{userId}")
-    public int updateUserInfo(@Param("userId")String userId,@Param("email")String email, @Param("userName")String name);
+    @Update("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId}")
+    public int updateUserInfo(@Param("user") User user);
 }
