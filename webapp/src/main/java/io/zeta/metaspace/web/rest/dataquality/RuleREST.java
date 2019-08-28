@@ -182,6 +182,7 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
+    @OperateType(INSERT)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
@@ -196,6 +197,7 @@ public class RuleREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}")
+    @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryGuid);
         dataManageService.deleteCategory(categoryGuid);
@@ -212,6 +214,7 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
+    @OperateType(UPDATE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
@@ -221,6 +224,7 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/enable")
+    @OperateType(UPDATE)
     public void enableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleId);
         ruleService.updateRuleStatus(ruleId, true);
@@ -230,6 +234,7 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/disable")
+    @OperateType(UPDATE)
     public void disableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleId);
         ruleService.updateRuleStatus(ruleId, false);

@@ -22,6 +22,8 @@ package io.zeta.metaspace.web.rest.dataquality;
  * @date 2019/7/24 10:47
  */
 
+import com.google.common.base.Joiner;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
@@ -37,6 +39,9 @@ import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.BusinessService;
@@ -59,6 +64,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 @Singleton
 @Service
@@ -145,7 +152,9 @@ public class TaskManageREST {
     @Path("/tasks")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
     public void deleteTaskList(List<String> taskList) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(taskList) + "]");
         taskManageService.deleteTaskList(taskList);
     }
 
@@ -281,7 +290,9 @@ public class TaskManageREST {
     @Path("/task")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
         taskManageService.addTask(taskInfo);
     }
 
@@ -303,7 +314,9 @@ public class TaskManageREST {
     @Path("/task")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public void updateTask(DataQualityTask taskInfo) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getName());
         taskManageService.updateTask(taskInfo);
     }
 
