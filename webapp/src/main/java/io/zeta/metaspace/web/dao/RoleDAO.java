@@ -35,10 +35,7 @@ public interface RoleDAO {
              " where role.roleid=users.roleid",
              " and users.roleid=#{roleId}",
              " <if test=\"query != null and query!=''\">",
-             " and username like '%'||#{query}||'%' ESCAPE '/'",
-             "</if>",
-             " <if test=\"query == null or query==''\">",
-             " and (username like '%'||#{query}||'%' ESCAPE '/' or username is null)",
+             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
              "</if>",
              " order by username",
              " <if test='limit!= -1'>",
@@ -48,10 +45,15 @@ public interface RoleDAO {
              " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username offset #{offset}")
-    public List<User> getUser(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
-
-    @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/'")
+    @Select({"<script>",
+             " select count(1)",
+             " from users,role",
+             " where role.roleid=users.roleid",
+             " and users.roleid=#{roleId}",
+             " <if test=\"query != null and query!=''\">",
+             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
+             "</if>",
+             " </script>"})
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",

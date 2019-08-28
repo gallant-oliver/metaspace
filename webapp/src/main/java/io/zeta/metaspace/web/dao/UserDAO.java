@@ -35,27 +35,37 @@ public interface UserDAO {
 
     @Select({" <script>",
              " select users.*,role.roleName from users join role on users.roleId = role.roleId",
-             " where  username like '%${username}%' ESCAPE '/' or account like '%${username}%' ESCAPE '/'",
+             " <if test=\"query == null or query==''\">",
+             " order by account",
+             " </if>",
+             " <if test=\"query != null and query!=''\">",
+             " where  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
              " order by",
              " (case ",
-             " when username=#{username} or account=#{username} then 1",
-             " when username like '${username}%' ESCAPE '/' or account like '${username}%' ESCAPE '/' then 2",
-             " when username like '%${username}' ESCAPE '/' or account like '%${username}' ESCAPE '/' then 3",
-             " when username like '%${username}%' ESCAPE '/' or account like '%${username}%' ESCAPE '/' then 4",
+             " when username=#{query} or account=#{query} then 1",
+             " when username like '${query}%' ESCAPE '/' or account like '${query}%' ESCAPE '/' then 2",
+             " when username like '%${query}' ESCAPE '/' or account like '%${query}' ESCAPE '/' then 3",
+             " when username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/' then 4",
              " else 0",
              " end)",
+             " </if>",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<User> getUserList(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
+    public List<User> getUserList(@Param("query") String query, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' ESCAPE '/' and role.roleid!='1' <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
     public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
 
-    @Select("select count(1) from users where username like '%'||#{query}||'%' ESCAPE '/'")
+    @Select({" <script>",
+             " select count(1) from users",
+             " <if test=\"query != null and query!=''\">",
+             " where  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
+             " </if>",
+             " </script>"})
     public long getUsersCount(@Param("query") String query);
 
     @Select("<script>select count(1) from table_relation where categoryguid in" +

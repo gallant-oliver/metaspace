@@ -123,23 +123,26 @@ public class RoleService {
 
     @Transactional
     public PageResult<User> getUsers(String roleId, String query, long offset, long limit) throws AtlasBaseException {
-        PageResult<User> userPageResult = new PageResult<>();
-        List<User> users;
+        try {
+            PageResult<User> userPageResult = new PageResult<>();
+            List<User> users;
         /*if (limit == -1) {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
         } else {*/
-            if(Objects.nonNull(query))
+            if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
-        //}
-        long usersCount = roleDAO.getUsersCount(roleId, query);
-        userPageResult.setLists(users);
-        //userPageResult.setOffset(offset);
-        userPageResult.setTotalSize(usersCount);
-        userPageResult.setCurrentSize(users.size());
-        return userPageResult;
+            //}
+            long usersCount = roleDAO.getUsersCount(roleId, query);
+            userPageResult.setLists(users);
+            userPageResult.setTotalSize(usersCount);
+            userPageResult.setCurrentSize(users.size());
+            return userPageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @Transactional
