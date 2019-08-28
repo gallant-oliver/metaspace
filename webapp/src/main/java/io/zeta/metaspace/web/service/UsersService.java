@@ -152,9 +152,9 @@ public class UsersService {
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
-            userPageResult.setOffset(offset);
-            userPageResult.setCount(userList.size());
-            userPageResult.setSum(userCount);
+            //userPageResult.setOffset(offset);
+            userPageResult.setCurrentSize(userList.size());
+            userPageResult.setTotalSize(userCount);
             return userPageResult;
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -209,9 +209,9 @@ public class UsersService {
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
-            userPageResult.setOffset(offset);
-            userPageResult.setCount(userList.size());
-            userPageResult.setSum(userCount);
+            //userPageResult.setOffset(offset);
+            userPageResult.setCurrentSize(userList.size());
+            userPageResult.setTotalSize(userCount);
             return userPageResult;
         } catch (Exception e) {
             LOG.error("获取成员失败",e);

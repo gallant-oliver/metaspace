@@ -17,7 +17,9 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
+import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.commons.lang.StringUtils;
+import org.omg.CORBA.INTERNAL;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
@@ -31,7 +33,11 @@ import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Objects;
+
+import javax.print.attribute.standard.JobKOctets;
 
 /*
  * @description
@@ -77,6 +83,51 @@ public class QuartzManager {
         }
     }
 
+
+    public void addCronJobWithTimeRange(String jobName, String jobGroupName, String triggerName, String triggerGroupName,
+                                        Class jobClass, String cron, Integer level, Timestamp startTime, Timestamp endTime) {
+        try {
+            //任务名，任务组，任务执行类
+            JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
+            //触发器
+            TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
+            //触发器名，触发器组
+            triggerBuilder.withIdentity(triggerName, triggerGroupName);
+            Trigger trigger = triggerBuilder
+                                .withSchedule(CronScheduleBuilder.cronSchedule(cron))
+                                .withPriority(level)
+                                .startAt(startTime)
+                                .endAt(endTime)
+                                .build();
+
+            //调度器设置JobDetail和Trigger
+            scheduler.scheduleJob(jobDetail, trigger);
+            //启动
+            if(!scheduler.isShutdown()) {
+                scheduler.start();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void addSimpleJob(String jobName, String jobGroupName, Class jobClass) {
+        try {
+            //任务名，任务组，任务执行类
+            JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
+            Trigger trigger = TriggerBuilder.newTrigger()
+                    .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0))
+                    .startNow().build();
+            scheduler.scheduleJob(jobDetail, trigger);
+            //启动
+            if(!scheduler.isShutdown()) {
+                scheduler.start();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * 修改一个任务的触发时间
      * @param jobName
@@ -109,6 +160,46 @@ public class QuartzManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public Date getJobEndTime(String triggerName, String triggerGroupName) {
+        try {
+            TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+            CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+            if(Objects.nonNull(trigger)) {
+                return trigger.getEndTime();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    public Date getJobNextExecuteTime(String triggerName, String triggerGroupName) {
+        try {
+            TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+            CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+            if(Objects.nonNull(trigger)) {
+                return trigger.getNextFireTime();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Date getJobLastExecuteTime(String triggerName, String triggerGroupName) {
+        try {
+            TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+            CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+            if(Objects.nonNull(trigger)) {
+                return trigger.getPreviousFireTime();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -149,6 +240,7 @@ public class QuartzManager {
     public void removeJob(String jobName, String jobGroupName, String triggerName, String triggerGroupName) {
         try {
             TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+
             //停止触发器
             scheduler.pauseTrigger(triggerKey);
             //移除触发器
@@ -182,6 +274,14 @@ public class QuartzManager {
         } catch (Exception e) {
             throw new RuntimeException();
         }
+    }
+
+    public void handleNullErrorTask(JobKey jobKey) {
+        String jobName = jobKey.getName();
+        String jobGroupName = DataQualityService.JOB_GROUP_NAME + jobName;
+        String triggerName  = DataQualityService.TRIGGER_NAME + jobName;
+        String triggerGroupName = DataQualityService.TRIGGER_GROUP_NAME + jobName;
+        removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
     }
 
     public Scheduler getScheduler() {

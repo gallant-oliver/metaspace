@@ -47,6 +47,8 @@ public class OperateLogRequest implements Serializable {
         private String result;
         @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
         private String keyword;
+        @JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
+        private String module;
 
         public String getType() {
             return type;
@@ -86,6 +88,14 @@ public class OperateLogRequest implements Serializable {
 
         public void setKeyword(String keyword) {
             this.keyword = keyword;
+        }
+
+        public String getModule() {
+            return module;
+        }
+
+        public void setModule(String module) {
+            this.module = module;
         }
     }
 }

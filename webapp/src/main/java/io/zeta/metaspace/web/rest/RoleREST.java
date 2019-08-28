@@ -1,11 +1,13 @@
 package io.zeta.metaspace.web.rest;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -15,7 +17,6 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserWithRole;
-import io.zeta.metaspace.web.model.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
@@ -25,17 +26,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+
 
 @Path("role")
 @Singleton
@@ -244,13 +255,9 @@ public class RoleREST {
     public String putPrivileges(@PathParam("roleId") String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         try {
             Role role = roleService.getRoleById(roleId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() +
-                    (Objects.nonNull(roleModulesCategories.getBusinessCategories()) ? (", 修改业务目录为:[" + Joiner.on("、").join(roleModulesCategories.getBusinessCategories()) + "]") : "") +
-                    (Objects.nonNull(roleModulesCategories.getTechnicalCategories())?(", 修改技术目录为" + "[" + Joiner.on("、").join(roleModulesCategories.getTechnicalCategories()) + "]"):"") +
-                    (Objects.nonNull(roleModulesCategories.getPrivilege())?(", 修改权限方案为" + roleModulesCategories.getPrivilege().getPrivilegeName()):""));
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.putPrivileges(roleId,roleModulesCategories);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e){
             throw e;
         }
         catch (Exception e) {

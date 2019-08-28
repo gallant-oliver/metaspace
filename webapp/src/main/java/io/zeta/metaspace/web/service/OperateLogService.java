@@ -16,11 +16,12 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
+import io.zeta.metaspace.model.operatelog.OperateModule;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.OperateLogDAO;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,9 +51,9 @@ public class OperateLogService {
         if (CollectionUtils.isNotEmpty(list)) {
             total = list.get(0).getTotal();
         }
-        pageResult.setOffset(operateLogRequest.getOffset());
-        pageResult.setSum(total);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(operateLogRequest.getOffset());
+        pageResult.setTotalSize(total);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
@@ -71,5 +72,9 @@ public class OperateLogService {
 
     public List<OperateEnum> resultList() {
         return Arrays.stream(OperateResultEnum.values()).map(result -> new OperateEnum(result.getEn(), result.getCn())).collect(Collectors.toList());
+    }
+
+    public List<OperateModule> moduleList() {
+        return Arrays.stream(ModuleEnum.values()).map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
     }
 }

@@ -24,7 +24,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
@@ -92,7 +92,7 @@ public class DataStandardREST {
     @OperateType(INSERT)
     @Valid
     public void insert(DataStandard dataStandard) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("标准编号已存在");
@@ -106,7 +106,7 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     @Valid
     public void update(DataStandard dataStandard) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), dataStandard.getContent());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
         dataStandardService.update(dataStandard);
     }
 
@@ -116,7 +116,7 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(),  Joiner.on("、").join(numberList));
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  Joiner.on("、").join(numberList));
         dataStandardService.deleteByNumberList(numberList);
     }
 
@@ -142,7 +142,7 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByNumber(@PathParam("number") String number) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), number);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), number);
         dataStandardService.deleteByNumber(number);
     }
 
@@ -285,12 +285,12 @@ public class DataStandardREST {
      * @throws Exception
      */
     @POST
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    @Path("/category")
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
         return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
@@ -309,7 +309,7 @@ public class DataStandardREST {
     @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), category.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), category.getName());
         dataManageService.deleteCategory(categoryGuid);
     }
 
@@ -321,12 +321,12 @@ public class DataStandardREST {
      * @throws AtlasBaseException
      */
     @PUT
+    @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    @Path("/category")
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATA_STANDARD.getAlias(), categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 }

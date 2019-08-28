@@ -23,6 +23,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -53,6 +54,8 @@ public class DataStandardService {
 
     @Autowired
     DataStandardDAO dataStandardDAO;
+    @Autowired
+    DataManageService dataManageService;
 
     public int insert(DataStandard dataStandard) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -95,7 +98,7 @@ public class DataStandardService {
         DataStandard dataStandard = dataStandardDAO.getById(id);
         String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
         dataStandard.setPath(path);
-        return dataStandardDAO.getById(id);
+        return dataStandard;
     }
 
     public List<DataStandard> getByNumber(String number) throws AtlasBaseException {
@@ -130,9 +133,9 @@ public class DataStandardService {
         List<DataStandard> list = queryByCatetoryId(categoryId, parameters);
         PageResult<DataStandard> pageResult = new PageResult<>();
         long sum = dataStandardDAO.countByByCatetoryId(categoryId);
-        pageResult.setOffset(parameters.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(parameters.getOffset());
+        pageResult.setTotalSize(sum);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
@@ -164,9 +167,9 @@ public class DataStandardService {
 
         PageResult<DataStandard> pageResult = new PageResult<>();
         long sum = dataStandardDAO.countBySearch(parameters.getQuery(), parameters.getCategoryId());
-        pageResult.setOffset(parameters.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(parameters.getOffset());
+        pageResult.setTotalSize(sum);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
@@ -175,9 +178,9 @@ public class DataStandardService {
         List<DataStandard> list = dataStandardDAO.history(number, parameters);
         PageResult<DataStandard> pageResult = new PageResult<>();
         long sum = dataStandardDAO.countByHistory(parameters.getQuery());
-        pageResult.setOffset(parameters.getOffset());
-        pageResult.setSum(sum);
-        pageResult.setCount(list.size());
+        //pageResult.setOffset(parameters.getOffset());
+        pageResult.setTotalSize(sum);
+        pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
@@ -301,6 +304,17 @@ public class DataStandardService {
             return dataList;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    public void deleteCategory(String categoryGuid) throws AtlasBaseException {
+        try {
+            if(dataStandardDAO.countByByCatetoryId(categoryGuid) > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
+            }
+            dataManageService.deleteCategory(categoryGuid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 

@@ -16,6 +16,9 @@
  */
 package io.zeta.metaspace.model.dataquality;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum CheckExpression {
 
     EQU(0,"等于") , NEQ(1,"不等于"), GTR(2, "大于"), GER(3, "大于等于"), LSS(4, "小于"), LEQ(5, "小于等于");

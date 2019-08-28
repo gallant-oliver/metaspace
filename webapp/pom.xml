@@ -775,7 +775,6 @@
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <configuration>
-                    <installDirectory>target</installDirectory>
                     <workingDirectory>src/main/dashboard</workingDirectory>
                     <npmRegistryURL>http://registry.npm.gridsum.com/</npmRegistryURL>
                 </configuration>

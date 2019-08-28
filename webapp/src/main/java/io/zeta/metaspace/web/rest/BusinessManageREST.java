@@ -39,7 +39,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.web.model.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -197,7 +197,7 @@ public class BusinessManageREST {
     @OperateType(UPDATE)
     public Response updateTechnicalInfo(@PathParam("businessId") String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
         BusinessInfo businessInfo = businessService.getBusinessInfo(businessId);
-        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS_MANAGE.getAlias(), businessInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSMANAGE.getAlias(), businessInfo.getName());
         try {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
@@ -321,7 +321,7 @@ public class BusinessManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS_MANAGE.getAlias(), business.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSMANAGE.getAlias(), business.getName());
         try {
             businessService.updateBusiness(businessId, business);
             return Response.status(200).entity("success").build();

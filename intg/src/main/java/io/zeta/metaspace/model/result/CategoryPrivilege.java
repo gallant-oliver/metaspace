@@ -32,6 +32,7 @@ public class CategoryPrivilege {
     private String description;
     private Privilege privilege;
     private int level;
+    private Integer objectCount;
 
     public int getLevel() {
         return level;
@@ -113,7 +114,13 @@ public class CategoryPrivilege {
         this.description = description;
     }
 
+    public Integer getObjectCount() {
+        return objectCount;
+    }
 
+    public void setObjectCount(Integer objectCount) {
+        this.objectCount = objectCount;
+    }
 
     public static class Privilege{
         //目录是否隐藏

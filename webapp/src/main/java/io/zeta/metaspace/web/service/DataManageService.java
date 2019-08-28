@@ -170,6 +170,9 @@ public class DataManageService {
 
             //创建第一个目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
+                if(categoryDao.ifExistCategory(type) > 0) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在首个目录，请刷新后重新操作");
+                }
                 User user = AdminUtils.getUserData();
                 Role role = roleDao.getRoleByUsersId(user.getUserId());
                 if (!"1".equals(role.getRoleId())) {
@@ -194,6 +197,9 @@ public class DataManageService {
                 }
                 returnEntity.setPrivilege(privilege);
                 return returnEntity;
+            }
+            if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid))) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
 
             String newCategoryParentGuid = info.getParentCategoryGuid();
@@ -478,10 +484,10 @@ public class DataManageService {
             }
             totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
             getPath(relations);
-            pageResult.setCount(relations.size());
+            pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
-            pageResult.setOffset(query.getOffset());
-            pageResult.setSum(totalNum);
+            //pageResult.setOffset(query.getOffset());
+            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -504,10 +510,10 @@ public class DataManageService {
             relations = relationDao.queryRelationByCategoryGuidFilter(categoryGuid, limit, offset);
             totalNum = relationDao.queryTotalNumByCategoryGuidFilter(categoryGuid);
             getPath(relations);
-            pageResult.setCount(relations.size());
+            pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
-            pageResult.setOffset(query.getOffset());
-            pageResult.setSum(totalNum);
+            //pageResult.setOffset(query.getOffset());
+            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -548,10 +554,10 @@ public class DataManageService {
                 entity.setDataOwner(ownerHeaders);
             }
             long totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
-            pageResult.setCount(list.size());
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
-            pageResult.setOffset(query.getOffset());
-            pageResult.setSum(totalNum);
+            //pageResult.setOffset(query.getOffset());
+            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -582,10 +588,10 @@ public class DataManageService {
 
             getPath(list);
             long totalNum = relationDao.queryTotalNumByNameFilter(tableName, tag, categoryIds);
-            pageResult.setCount(list.size());
+            pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
-            pageResult.setOffset(query.getOffset());
-            pageResult.setSum(totalNum);
+            //pageResult.setOffset(query.getOffset());
+            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -727,10 +733,10 @@ public class DataManageService {
             long sum = organizationDAO.countOrganizationByPid(pId, query);
             long count = list.size();
             PageResult pageResult = new PageResult();
-            pageResult.setOffset(offset);
+            //pageResult.setOffset(offset);
             pageResult.setLists(list);
-            pageResult.setCount(count);
-            pageResult.setSum(sum);
+            pageResult.setCurrentSize(count);
+            pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
@@ -756,10 +762,10 @@ public class DataManageService {
             long sum = organizationDAO.countOrganizationByName(query);
             long count = list.size();
             PageResult pageResult = new PageResult();
-            pageResult.setOffset(offset);
+            //pageResult.setOffset(offset);
             pageResult.setLists(list);
-            pageResult.setCount(count);
-            pageResult.setSum(sum);
+            pageResult.setCurrentSize(count);
+            pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");

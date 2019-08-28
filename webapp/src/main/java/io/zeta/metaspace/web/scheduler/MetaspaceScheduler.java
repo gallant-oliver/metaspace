@@ -201,13 +201,13 @@ public class MetaspaceScheduler {
         if(parameters != null){
             Map params = (Map)parameters;
             //表数据量
-            String totalSizeStr =  params.get("totalSize").toString();
-            long totalSize = StringUtils.isNotBlank(totalSizeStr) ? Integer.valueOf(totalSizeStr) : 0;
+            Object totalSizeStr =  params.get("totalSize");
+            long totalSize = totalSizeStr != null ? Integer.valueOf(totalSizeStr.toString()) : 0;
             tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
             tableStat.setDataVolumeBytes(totalSize);
             //文件个数
-            String numFilesStr = params.get("numFiles").toString();
-            long numFiles = StringUtils.isNotBlank(numFilesStr) ? Integer.valueOf(numFilesStr) : 0;
+            Object numFilesStr = params.get("numFiles").toString();
+            long numFiles = numFilesStr != null ? Integer.valueOf(numFilesStr.toString()) : 0;
             tableStat.setFileNum(numFiles);
         }
 
