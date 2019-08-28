@@ -412,4 +412,18 @@ public class RoleREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
         }
     }
+
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateUserInfo() throws AtlasBaseException {
+        try {
+            roleService.updateUserInfo();
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
+        }
+    }
 }

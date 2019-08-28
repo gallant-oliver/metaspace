@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
+import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -13,6 +15,7 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserWithRole;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
@@ -21,6 +24,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -605,6 +609,31 @@ public class RoleService {
         } catch (Exception e) {
             LOG.info(e.toString());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    @Transactional
+    public void updateUserInfo() throws AtlasBaseException {
+        try {
+            List<String> userIdList = roleDAO.getUserIdList();
+            String userInfoURL = SSOConfig.getUserInfoURL();
+            HashMap header = new HashMap();
+            Gson gson = new Gson();
+            for(String userId : userIdList) {
+                Map<String, String> queryDataParamMap = new HashMap<>();
+                queryDataParamMap.put("id", userId);
+                String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
+                Map userBody = gson.fromJson(userSession, Map.class);
+                if(StringUtils.isEmpty(userBody.get("data").toString())) {
+                    continue;
+                }
+                Map userData = (Map)userBody.get("data");
+                String email = userData.get("loginEmail").toString();
+                String name = userData.get("displayName").toString();
+                roleDAO.updateUserInfo(userId, email, name);
+            }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 

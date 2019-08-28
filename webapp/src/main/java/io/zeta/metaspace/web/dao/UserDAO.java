@@ -21,7 +21,7 @@ public interface UserDAO {
     @Select("select * from users where userId=#{userId}")
     public User getUser(@Param("userId") String userId);
 
-    @Select("select * from role where roleId in (select roleId from users where userId=#{userId})")
+    @Select("select * from role where roleId in (select roleId from users where userId=#{userId}) and valid=true")
     public Role getRoleByUserId(@Param("userId") String userId);
 
     @Select("select * from category where guid in (select categoryId from role2category where roleId=#{roleId}) and categoryType=0")
@@ -30,7 +30,7 @@ public interface UserDAO {
     @Select("select * from category where guid in (select categoryId from role2category where roleId=#{roleId}) and categoryType=1")
     public List<CategoryEntityV2> getBusinessCategoryByRoleId(@Param("roleId") String roleId);
 
-    @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId in (select privilegeId from role where roleId=#{roleId}))")
+    @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId in (select privilegeId from role where roleId=#{roleId} and valid=true))")
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
     @Select({" <script>",

@@ -104,7 +104,7 @@ public interface RoleDAO {
 
 
     //获取角色方案
-    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId}")
+    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId} and valid=true")
     public PrivilegeInfo getPrivilegeByRoleId(String roleId);
 
     //修改角色方案
@@ -280,7 +280,7 @@ public interface RoleDAO {
     @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId}")
     public Role getRoleByUsersId(String userId);
 
-    @Select("select * from role where roleid=#{roleId}")
+    @Select("select * from role where roleid=#{roleId} and valid=true")
     public Role getRoleByRoleId(String roleId);
 
     @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
@@ -374,4 +374,10 @@ public interface RoleDAO {
             "    </foreach>" +
             "     and tableinfo.databaseGuid=#{DB} </script>")
     public long getTableInfosByDBIdCount(@Param("guids") List<String> guids, @Param("DB") String DB);
+
+    @Select("select userId from users")
+    public List<String> getUserIdList();
+
+    @Update("update users set userName=#{userName},account=#{email} where userId=#{userId}")
+    public int updateUserInfo(@Param("userId")String userId,@Param("email")String email, @Param("userName")String name);
 }
