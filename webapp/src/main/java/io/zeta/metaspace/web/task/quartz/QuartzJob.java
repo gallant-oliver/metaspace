@@ -211,10 +211,9 @@ public class QuartzJob implements Job {
                         taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
                          errorMsg = e.toString();
                         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
-                        taskManageDAO.updateTaskErrorCount(task.getTaskId());
-                        taskManageDAO.updateTaskExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
-                        //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
-                        taskManageDAO.updateTaskExecuteStatus(taskId, 3);
+                        taskManageDAO.updateTaskErrorCount(taskId);
+                        taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
+                        taskManageDAO.updateTaskExecuteStatus(task.getTaskExecuteId(), 3);
                         taskManageDAO.updateTaskStatus(taskId, 3);
                     }
                 } finally {
@@ -400,6 +399,12 @@ public class QuartzJob implements Job {
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
+            taskManageDAO.updateTaskExecuteErrorMsg(task.getTaskExecuteId(), e.toString());
+            taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
+            taskManageDAO.updateTaskErrorCount(task.getTaskId());
+            taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
+            taskManageDAO.updateTaskExecuteStatus(task.getTaskExecuteId(), 3);
+            taskManageDAO.updateTaskStatus(task.getTaskId(), 3);
             throw e;
         } finally {
             if (record) {
@@ -603,7 +608,7 @@ public class QuartzJob implements Job {
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             DataQualityTaskRuleExecute taskRuleExecute = new DataQualityTaskRuleExecute(task.getId(),task.getTaskExecuteId(),task.getTaskId(),task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(),
-                                                                                        resultValue, referenceValue, Objects.isNull(checkStatus)?-1:checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus)?null:orangeWarningcheckStatus.getCode(),
+                                                                                        resultValue, referenceValue, Objects.isNull(checkStatus)?2:checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus)?null:orangeWarningcheckStatus.getCode(),
                                                                                         Objects.isNull(redWarningcheckStatus)?null:redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(),currentTime, currentTime);
 
             //taskManageDAO.insertDataQualityTaskRuleExecute(taskRuleExecute);

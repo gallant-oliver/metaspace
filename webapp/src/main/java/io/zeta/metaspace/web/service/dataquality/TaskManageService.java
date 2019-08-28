@@ -31,6 +31,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
+import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
@@ -63,6 +64,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -579,9 +581,83 @@ public class TaskManageService {
         }
     }
 
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String taskRuleId) throws AtlasBaseException {
+    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId) throws AtlasBaseException {
         try {
-            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(taskRuleId);
+            ExecutionReportData resultData = new ExecutionReportData();
+            //basicInfo
+            ExecutionReportData.TaskBasicInfo basicInfo =  taskManageDAO.getTaskExecutionBasicInfo(taskId, taskExecuteId);
+            resultData.setBasicInfo(basicInfo);
+            //checkStatus
+            ExecutionReportData.TaskCheckResultCount checkResultCount = new ExecutionReportData.TaskCheckResultCount();
+            long tableRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 0);
+            long tableRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 1);
+            long columnRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 0);
+            long columnRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 1);
+            checkResultCount.setTableRulePassedNumber(tableRulePassedNumber);
+            checkResultCount.setTableRuleNoPassedNumber(tableRuleNoPassedNumber);
+            checkResultCount.setColumnRulePassedNumber(columnRulePassedNumber);
+            checkResultCount.setColumnRuleNoPassedNumber(columnRuleNoPassedNumber);
+            //error
+            List<Integer> errorList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 0);
+            if(null != errorList && errorList.size()>0) {
+                long errorNumber = errorList.stream().filter(status -> status==2).count();
+                checkResultCount.setErrorRuleNumber(errorNumber);
+                checkResultCount.setTotalRuleNumber(errorList.size());
+            } else {
+                checkResultCount.setErrorRuleNumber(0);
+                checkResultCount.setTotalRuleNumber(0);
+            }
+            //orangeWarning
+            List<Integer> checkOrangeWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 1);
+            if(null != checkOrangeWarningStatusList && checkOrangeWarningStatusList.size()>0) {
+                long warningNumber = checkOrangeWarningStatusList.stream().filter(status -> status==1).count();
+                checkResultCount.setOrangeWarningNumber(warningNumber);
+                checkResultCount.setTotalOrangeWarningRuleNumber(checkOrangeWarningStatusList.size());
+            } else {
+                checkResultCount.setOrangeWarningNumber(0);
+                checkResultCount.setTotalOrangeWarningRuleNumber(0);
+            }
+            //redWarning
+            List<Integer> checkRedWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 2);
+            if(null != checkRedWarningStatusList && checkRedWarningStatusList.size()>0) {
+                long warningNumber = checkRedWarningStatusList.stream().filter(status -> status==1).count();
+                checkResultCount.setRedWarningNumber(warningNumber);
+                checkResultCount.setTotalRedWarningRuleNumber(checkRedWarningStatusList.size());
+            } else {
+                checkResultCount.setRedWarningNumber(0);
+                checkResultCount.setTotalRedWarningRuleNumber(0);
+            }
+            resultData.setCheckResultCount(checkResultCount);
+
+            //result && suggestion
+            ExecutionReportData.ImprovingSuggestion suggestion = new ExecutionReportData.ImprovingSuggestion();
+            List<String> tableRuleSuggestion = new ArrayList<>();
+            List<String> columnRuleSuggestion = new ArrayList<>();
+            String suffix = "的结果不符合预期，请及时处理";
+            List<TaskRuleExecutionRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId);
+            for (TaskRuleExecutionRecord record : executeResult) {
+                if(0==record.getObjectType() && 1==record.getCheckStatus()) {
+                    tableRuleSuggestion.add(record.getDescription() + suffix);
+                } else if(1==record.getObjectType() && 1==record.getCheckStatus()) {
+                    columnRuleSuggestion.add(record.getDescription() + suffix);
+                }
+                Integer sequence = taskManageDAO.getSubTaskSequence(record.getSubtaskId());
+                record.setSubTaskSequence(sequence);
+            }
+            resultData.setRuleCheckResult(executeResult);
+            //suggestion
+            suggestion.setTableQuestion(tableRuleSuggestion);
+            suggestion.setColumnQuestion(columnRuleSuggestion);
+            resultData.setSuggestion(suggestion);
+            return resultData;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+        }
+    }
+
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String executionId) throws AtlasBaseException {
+        try {
+            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId);
             for (TaskRuleExecutionRecord record : list) {
                 if(0 == record.getObjectType()) {
                     String objectId = record.getObjectId();

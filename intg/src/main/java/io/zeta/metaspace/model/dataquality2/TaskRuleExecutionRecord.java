@@ -24,6 +24,8 @@ package io.zeta.metaspace.model.dataquality2;
 public class TaskRuleExecutionRecord {
     private Integer objectType;
     private String subTaskRuleId;
+    private String subtaskId;
+    private Integer subTaskSequence;
     private String executionId;
     private String ruleExecutionId;
     private String ruleName;
@@ -66,12 +68,28 @@ public class TaskRuleExecutionRecord {
         this.subTaskRuleId = subTaskRuleId;
     }
 
+    public Integer getSubTaskSequence() {
+        return subTaskSequence;
+    }
+
+    public void setSubTaskSequence(Integer subTaskSequence) {
+        this.subTaskSequence = subTaskSequence;
+    }
+
     public String getExecutionId() {
         return executionId;
     }
 
     public void setExecutionId(String executionId) {
         this.executionId = executionId;
+    }
+
+    public String getSubtaskId() {
+        return subtaskId;
+    }
+
+    public void setSubtaskId(String subtaskId) {
+        this.subtaskId = subtaskId;
     }
 
     public String getRuleExecutionId() {
