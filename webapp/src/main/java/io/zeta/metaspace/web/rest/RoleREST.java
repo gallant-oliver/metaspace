@@ -1,11 +1,13 @@
 package io.zeta.metaspace.web.rest;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -15,27 +17,36 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserWithRole;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.RoleService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+
 
 @Path("role")
 @Singleton
@@ -246,8 +257,7 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.putPrivileges(roleId,roleModulesCategories);
-        }
-        catch(AtlasBaseException e){
+        } catch(AtlasBaseException e){
             throw e;
         }
         catch (Exception e) {
@@ -399,6 +409,20 @@ public class RoleREST {
             throw e;
         } catch (Exception e) {
             LOG.error("获取角色失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
+        }
+    }
+
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void updateUserInfo() throws AtlasBaseException {
+        try {
+            roleService.updateUserInfo();
+        } catch(AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
         }
     }

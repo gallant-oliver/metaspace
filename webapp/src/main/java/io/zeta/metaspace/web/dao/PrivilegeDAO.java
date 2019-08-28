@@ -97,7 +97,7 @@ public interface PrivilegeDAO {
     public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
 
 
-    @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
+    @Select("select * from role where privilegeId=#{privilegeId} and valid=true order by roleId")
     public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);
 
     @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%' ESCAPE '/'")
@@ -109,17 +109,17 @@ public interface PrivilegeDAO {
     @Select("select delete from privilege where privilegeId = #{privilegeId}")
     public int getEnableDelete(@Param("privilegeId")String privilegeId);
 
-    @Select("select * from role where privilegeId=#{privilegeId} order by roleId")
+    @Select("select * from role where privilegeId=#{privilegeId} and valid=true order by roleId")
     public List<Role> getRelatedRoleWithPrivilege(@Param("privilegeId")String privilegeId);
 
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId=#{privilegeId})")
     public List<Module> getRelatedModuleWithPrivilege(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId})) and moduleId=#{moduleId}")
+    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId}) and valid=true) and moduleId=#{moduleId}")
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
 
     @Select({" <script>",
-             " select * from role where edit=1 order by roleId",
+             " select * from role where edit=1 and valid=true order by roleId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -127,6 +127,6 @@ public interface PrivilegeDAO {
              " </script>"})
     public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);
 
-    @Select("select count(*) from role where edit=1")
+    @Select("select count(*) from role where edit=1 and valid=true")
     public long getCountAllPermissionRole();
 }
