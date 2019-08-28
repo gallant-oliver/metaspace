@@ -399,12 +399,12 @@ public class QuartzJob implements Job {
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
-            taskManageDAO.updateTaskExecuteErrorMsg(task.getTaskExecuteId(), e.toString());
+            /*taskManageDAO.updateTaskExecuteErrorMsg(task.getTaskExecuteId(), e.toString());
             taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
             taskManageDAO.updateTaskErrorCount(task.getTaskId());
             taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
             taskManageDAO.updateTaskExecuteStatus(task.getTaskExecuteId(), 3);
-            taskManageDAO.updateTaskStatus(task.getTaskId(), 3);
+            taskManageDAO.updateTaskStatus(task.getTaskId(), 3);*/
             throw e;
         } finally {
             if (record) {
@@ -418,8 +418,8 @@ public class QuartzJob implements Job {
 
     //规则值变化
     public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
-        Float nowValue = 0F;
-        Float valueChange = 0F;
+        Float nowValue = null;
+        Float valueChange = null;
         try {
             nowValue = ruleResultValue(task, false, columnRule);
             String subTaskRuleId = task.getSubTaskRuleId();
@@ -438,9 +438,9 @@ public class QuartzJob implements Job {
 
     //规则值变化率
     public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
-        Float ratio = 0F;
-        Float ruleValueChange = 0F;
-        Float lastValue = 0F;
+        Float ratio = null;
+        Float ruleValueChange = null;
+        Float lastValue = null;
         try {
             ruleValueChange = ruleResultValueChange(task, false, columnRule);
             String subTaskRuleId = task.getSubTaskRuleId();
@@ -461,7 +461,7 @@ public class QuartzJob implements Job {
 
     //表大小
     public Float tableSize(AtomicTaskExecution task, boolean record) throws Exception {
-        Float totalSize = 0F;
+        Float totalSize = null;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         try {
@@ -479,8 +479,8 @@ public class QuartzJob implements Job {
 
     //表大小变化
     public Float tableSizeChange(AtomicTaskExecution task, boolean record) throws Exception {
-        Float tableSize = 0F;
-        Float sizeChange = 0F;
+        Float tableSize = null;
+        Float sizeChange = null;
         try {
             tableSize = tableSize(task, false);
             String subTaskRuleId = task.getSubTaskRuleId();
@@ -499,9 +499,9 @@ public class QuartzJob implements Job {
 
     //表大小变化率
     public Float tableSizeChangeRatio(AtomicTaskExecution task, boolean record) throws Exception {
-        Float tableSizeChange = 0F;
-        Float lastValue = 0F;
-        Float ratio = 0F;
+        Float tableSizeChange = null;
+        Float lastValue = null;
+        Float ratio = null;
         try {
             tableSizeChange = tableSizeChange(task, false);
             String subTaskRuleId = task.getSubTaskRuleId();
@@ -521,7 +521,7 @@ public class QuartzJob implements Job {
     }
 
     public void getProportion(AtomicTaskExecution task) throws Exception {
-        Float ratio = 0F;
+        Float ratio = null;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         Connection conn = null;
