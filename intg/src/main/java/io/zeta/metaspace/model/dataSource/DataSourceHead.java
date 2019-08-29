@@ -14,6 +14,7 @@
 package io.zeta.metaspace.model.dataSource;
 
 public class DataSourceHead {
+    private int count;
     private String sourceId;
     private String sourceName;
     private String sourceType;
@@ -24,7 +25,8 @@ public class DataSourceHead {
 
     public DataSourceHead(){}
 
-    public DataSourceHead(String sourceId,String sourceName, String sourceType, String description, String createTime, String updateTime, String updateUserName) {
+    public DataSourceHead(int count, String sourceId, String sourceName, String sourceType, String description, String createTime, String updateTime, String updateUserName) {
+        this.count = count;
         this.sourceId = sourceId;
         this.sourceName = sourceName;
         this.sourceType = sourceType;
@@ -32,6 +34,22 @@ public class DataSourceHead {
         this.createTime = createTime;
         this.updateTime = updateTime;
         this.updateUserName = updateUserName;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
     }
 
     public String getSourceName() {
@@ -80,26 +98,5 @@ public class DataSourceHead {
 
     public void setUpdateUserName(String updateUserName) {
         this.updateUserName = updateUserName;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    @Override
-    public String toString() {
-        return "DataSourceHead{" +
-               "sourceId='" + sourceId + '\'' +
-               ", sourceName='" + sourceName + '\'' +
-               ", sourceType='" + sourceType + '\'' +
-               ", description='" + description + '\'' +
-               ", createTime='" + createTime + '\'' +
-               ", updateTime='" + updateTime + '\'' +
-               ", updateUserName='" + updateUserName + '\'' +
-               '}';
     }
 }
