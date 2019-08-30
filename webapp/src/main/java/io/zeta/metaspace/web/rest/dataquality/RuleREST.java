@@ -70,6 +70,8 @@ public class RuleREST {
     @Autowired
     private DataManageService dataManageService;
 
+    private static final Integer CATEGORY_RULE = 4;
+
 
     /**
      * 添加规则
@@ -217,7 +219,7 @@ public class RuleREST {
     @OperateType(UPDATE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryInfo.getName());
-        dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
+        dataManageService.updateCategory(categoryInfo, CATEGORY_RULE);
     }
 
     @PUT

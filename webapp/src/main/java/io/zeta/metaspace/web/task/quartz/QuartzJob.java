@@ -22,7 +22,6 @@ import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
 
 import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
-import io.zeta.metaspace.model.dataquality.RuleStatus;
 import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.AtomicTaskExecution;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
@@ -35,7 +34,6 @@ import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
-import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
@@ -198,6 +196,7 @@ public class QuartzJob implements Job {
                     taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
                     break;
                 } catch (Exception e) {
+                    errorMsg = e.getMessage();
                     LOG.error(e.toString());
                     try {
                         retryCount++;
@@ -257,7 +256,7 @@ public class QuartzJob implements Job {
 
     public void runJob(AtomicTaskExecution task) throws Exception {
         try {
-            TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
+             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             switch (jobType) {
                 case TABLE_ROW_NUM:
                     ruleResultValue(task, true, false);
@@ -438,7 +437,7 @@ public class QuartzJob implements Job {
 
     //规则值变化率
     public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
-        Float ratio = null;
+        Float ratio = 0F;
         Float ruleValueChange = null;
         Float lastValue = null;
         try {
@@ -575,10 +574,12 @@ public class QuartzJob implements Job {
         RuleExecuteStatus checkStatus = null;
         try {
             DataQualitySubTaskRule subTaskRule = taskManageDAO.getSubTaskRuleInfo(task.getSubTaskRuleId());
-            int ruleCheckTypeCode = taskManageDAO.getRuleCheckType(task.getSubTaskRuleId());
-            int checkExpressionCode = taskManageDAO.getRuleCheckExpression(task.getSubTaskRuleId());
+            Integer ruleCheckTypeCode = taskManageDAO.getRuleCheckType(task.getSubTaskRuleId());
+            Integer checkExpressionCode = taskManageDAO.getRuleCheckExpression(task.getSubTaskRuleId());
             RuleCheckType ruleCheckType = RuleCheckType.getRuleCheckTypeByCode(ruleCheckTypeCode);
-            CheckExpression checkExpression = CheckExpression.getExpressionByCode(checkExpressionCode);
+
+            CheckExpression checkExpression = null;
+            checkExpression=Objects.nonNull(checkExpressionCode)?CheckExpression.getExpressionByCode(checkExpressionCode):checkExpression;
             Float checkThresholdMinValue = null;
             Float checkThresholdMaxValue = null;
 
@@ -596,13 +597,19 @@ public class QuartzJob implements Job {
 
                 if (Objects.nonNull(subTaskRule.getOrangeCheckExpression())) {
                     RuleCheckType orangeCheckRuleCheckType = RuleCheckType.getRuleCheckTypeByCode(subTaskRule.getOrangeCheckType());
-                    CheckExpression orangeCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getOrangeCheckExpression());
+                    CheckExpression orangeCheckRuleCheckExpression = null;
+                    if(orangeCheckRuleCheckType == RuleCheckType.FIX) {
+                        orangeCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getOrangeCheckExpression());
+                    }
                     orangeWarningcheckStatus = checkResultStatus(orangeCheckRuleCheckType, orangeCheckRuleCheckExpression, resultValue, subTaskRule.getOrangeThresholdMinValue(), subTaskRule.getOrangeThresholdMaxValue());
                 }
 
                 if (Objects.nonNull(subTaskRule.getRedCheckExpression())) {
                     RuleCheckType redCheckRuleCheckType = RuleCheckType.getRuleCheckTypeByCode(subTaskRule.getRedCheckType());
-                    CheckExpression redCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getRedCheckExpression());
+                    CheckExpression redCheckRuleCheckExpression = null;
+                    if(redCheckRuleCheckType == RuleCheckType.FIX) {
+                        redCheckRuleCheckExpression = CheckExpression.getExpressionByCode(subTaskRule.getRedCheckExpression());
+                    }
                     redWarningcheckStatus = checkResultStatus(redCheckRuleCheckType, redCheckRuleCheckExpression, resultValue, subTaskRule.getRedThresholdMinValue(), subTaskRule.getRedThresholdMaxValue());
                 }
             }

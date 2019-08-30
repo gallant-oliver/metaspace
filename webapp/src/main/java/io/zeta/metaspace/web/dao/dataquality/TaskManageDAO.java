@@ -438,7 +438,7 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Select("select reference_value from data_quality_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1)")
+    @Select("select reference_value from data_quality_task_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1")
     public Float getLastValue(@Param("subTaskRuleId") String subTaskRuleId);
 
     /**
@@ -625,7 +625,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select("select category_id from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
-    public String getTypeByRuleId(@Param("ruleId")String id);
+    public String getCategoryIdByRuleId(@Param("ruleId")String id);
 
     @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
@@ -641,7 +641,7 @@ public interface TaskManageDAO {
 
     @Select({" <script>",
              " select count(*) from data_quality_task_rule_execute join data_quality_rule on data_quality_rule.id=data_quality_task_rule_execute.rule_id",
-             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=0 and data_quality_rule.scope=#{dataSourceType}",
+             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=#{checkStatus} and data_quality_rule.scope=#{dataSourceType}",
              " </script>"})
     public Long countTaskRuleExecution(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId, @Param("dataSourceType")Integer dataSourceType, @Param("checkStatus")Integer checkStatus);
 
@@ -656,7 +656,17 @@ public interface TaskManageDAO {
              " <if test='queryType==2'>",
              " red_warning_check_status",
              " </if>",
-             " from data_quality_task_rule_execute where task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
+             " from data_quality_task_rule_execute where ",
+             " <if test='queryType==0'>",
+             " check_status is not null",
+             " </if>",
+             " <if test='queryType==1'>",
+             " orange_warning_check_status is not null",
+             " </if>",
+             " <if test='queryType==2'>",
+             " red_warning_check_status is not null",
+             " </if>",
+             " and task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
              " </script>"})
     public List<Integer> getWarningValueList(@Param("taskId")String taskId, @Param("taskExecuteId")String taskExecuteId,@Param("queryType")Integer queryType);
 

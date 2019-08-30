@@ -555,7 +555,7 @@ public class TaskManageService {
                 ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
             });
             for (TaskRuleHeader rule : lists) {
-                String categoryId = taskManageDAO.getTypeByRuleId(rule.getRuleId());
+                String categoryId = taskManageDAO.getCategoryIdByRuleId(rule.getRuleId());
                 String typeName = ruleTemplateCategoryMap.get(categoryId);
                 rule.setTypeName(typeName);
             }

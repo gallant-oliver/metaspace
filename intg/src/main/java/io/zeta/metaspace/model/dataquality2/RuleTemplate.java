@@ -34,7 +34,7 @@ public class RuleTemplate {
     private String description;
     private Boolean delete;
     private String categoryId;
-    private String ruleType;
+    private Integer ruleType;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
 
@@ -94,11 +94,11 @@ public class RuleTemplate {
         this.categoryId = categoryId;
     }
 
-    public String getRuleType() {
+    public Integer getRuleType() {
         return ruleType;
     }
 
-    public void setRuleType(String ruleType) {
+    public void setRuleType(Integer ruleType) {
         this.ruleType = ruleType;
     }
 

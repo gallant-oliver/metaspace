@@ -45,7 +45,7 @@ public class RuleTemplateService {
     public List<RuleTemplate> getRuleTemplate(String categoryId) throws AtlasBaseException {
         try {
             List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
-            updateRuleType(ruleTemplateList);
+            //updateRuleType(ruleTemplateList);
             return ruleTemplateList;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -56,7 +56,7 @@ public class RuleTemplateService {
         try {
             PageResult pageResult = new PageResult<RuleTemplate>();
             List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters);
-            updateRuleType(lists);
+            //updateRuleType(lists);
             long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
             pageResult.setLists(lists);
             pageResult.setCurrentSize(lists.size());
@@ -67,15 +67,15 @@ public class RuleTemplateService {
         }
     }
 
-    public void updateRuleType(List<RuleTemplate> lists) {
-        Map<String, String> ruleTemplateCategoryMap = new HashMap();
+    /*public void updateRuleType(List<RuleTemplate> lists) {
+        Map<String, Integer> ruleTemplateCategoryMap = new HashMap();
         RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
-            ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+            ruleTemplateCategoryMap.put(ruleTemplateCategory.getName(), ruleTemplateCategory.getCategoryId());
         });
         for (RuleTemplate ruleTemplate : lists) {
-            String ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getCategoryId());
+            Integer ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getName());
             ruleTemplate.setRuleType(ruleType);
         }
-    }
+    }*/
 
 }
