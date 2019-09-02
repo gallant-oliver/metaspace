@@ -475,7 +475,7 @@ public class TaskManageService {
             }
             return basicInfo;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
 
     }

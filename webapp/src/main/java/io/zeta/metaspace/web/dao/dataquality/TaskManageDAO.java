@@ -675,7 +675,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId}")
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
@@ -766,6 +766,7 @@ public interface TaskManageDAO {
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
              " and (executor like '%${params.query}%' ESCAPE '/')",
+             " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",
