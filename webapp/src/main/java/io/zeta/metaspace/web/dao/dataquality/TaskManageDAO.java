@@ -189,7 +189,7 @@ public interface TaskManageDAO {
      * 获取数值类型的规则
      * @return
      */
-    @Select("select id from data_quality_rule_template where category_id='5'")
+    @Select("select id from data_quality_rule_template where rule_type=5")
     public List<String> getNumericTypeTemplateRuleId();
 
     /**
@@ -624,8 +624,8 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select category_id from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
-    public String getCategoryIdByRuleId(@Param("ruleId")String id);
+    @Select("select rule_type from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
+    public Integer getRuleTypeCodeByRuleId(@Param("ruleId")String id);
 
     @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);

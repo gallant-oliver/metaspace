@@ -35,7 +35,7 @@ import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
@@ -550,12 +550,12 @@ public class TaskManageService {
         try {
             PageResult pageResult = new PageResult();
             List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters);
-            Map<String, String> ruleTemplateCategoryMap = new HashMap();
-            RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
-                ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
+                ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });
             for (TaskRuleHeader rule : lists) {
-                String categoryId = taskManageDAO.getCategoryIdByRuleId(rule.getRuleId());
+                Integer categoryId = taskManageDAO.getRuleTypeCodeByRuleId(rule.getRuleId());
                 String typeName = ruleTemplateCategoryMap.get(categoryId);
                 rule.setTypeName(typeName);
             }
