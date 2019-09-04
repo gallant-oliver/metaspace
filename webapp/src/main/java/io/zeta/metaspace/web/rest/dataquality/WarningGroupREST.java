@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,6 +120,9 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteByIdList(List<WarningGroup> warningGroupsLis) throws AtlasBaseException {
+        if(null == warningGroupsLis || warningGroupsLis.size()==0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除告警组列表不能为空");
+        }
         List<String> nameList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getName()).collect(Collectors.toList());
         List<String> idList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getId()).collect(Collectors.toList());
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(nameList) + "]");
