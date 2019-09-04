@@ -98,19 +98,9 @@ public class TaskManageService {
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-
-            String roleIdByUserId = usersService.getRoleIdByUserId(userId);
-            //非管理员无法查看全部任务
-            if (!SystemRole.ADMIN.getCode().equals(roleIdByUserId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色无权限查看全部任务列表");
-            }
-
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             PageResult<TaskHeader> pageResult = new PageResult<>();
-
-            //pageResult.setOffset(parameters.getOffset());
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
