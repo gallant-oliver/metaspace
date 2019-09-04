@@ -53,7 +53,6 @@ public interface RuleDAO {
              " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
-             " </if>",
              " </script>"})
     public List<Rule> queryByCatetoryId(@Param("categoryId") String categoryId, @Param("params") Parameters params);
 
