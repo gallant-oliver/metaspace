@@ -27,7 +27,6 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.user.User;
-
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -36,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +50,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 
 /**
@@ -110,8 +109,8 @@ public class WarningGroupREST {
     }
 
     /**
-     * 批量删除告警组
-     * @param idList
+     * 删除告警组
+     * @param warningGroupsLis
      * @throws AtlasBaseException
      */
     @DELETE
@@ -119,8 +118,10 @@ public class WarningGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByIdList(List<String> idList) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(idList) + "]");
+    public void deleteByIdList(List<WarningGroup> warningGroupsLis) throws AtlasBaseException {
+        List<String> nameList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getName()).collect(Collectors.toList());
+        List<String> idList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getId()).collect(Collectors.toList());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(nameList) + "]");
         warningGroupService.deleteByIdList(idList);
     }
 
@@ -136,21 +137,6 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public WarningGroup getById(@PathParam("id") String id) throws AtlasBaseException {
         return warningGroupService.getById(id);
-    }
-
-    /**
-     * 删除告警组
-     * @param id
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/{id}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
-    public void deleteById(@PathParam("id") String id) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), id);
-        warningGroupService.deleteById(id);
     }
 
     /**
