@@ -35,7 +35,7 @@ import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
 import io.zeta.metaspace.model.dataquality2.TaskInfo;
@@ -98,19 +98,9 @@ public class TaskManageService {
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-
-            String roleIdByUserId = usersService.getRoleIdByUserId(userId);
-            //非管理员无法查看全部任务
-            if (!SystemRole.ADMIN.getCode().equals(roleIdByUserId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户角色无权限查看全部任务列表");
-            }
-
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-
             long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             PageResult<TaskHeader> pageResult = new PageResult<>();
-
-            //pageResult.setOffset(parameters.getOffset());
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
@@ -475,7 +465,7 @@ public class TaskManageService {
             }
             return basicInfo;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
 
     }
@@ -550,12 +540,12 @@ public class TaskManageService {
         try {
             PageResult pageResult = new PageResult();
             List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters);
-            Map<String, String> ruleTemplateCategoryMap = new HashMap();
-            RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
-                ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
+                ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });
             for (TaskRuleHeader rule : lists) {
-                String categoryId = taskManageDAO.getTypeByRuleId(rule.getRuleId());
+                Integer categoryId = taskManageDAO.getRuleTypeCodeByRuleId(rule.getRuleId());
                 String typeName = ruleTemplateCategoryMap.get(categoryId);
                 rule.setTypeName(typeName);
             }

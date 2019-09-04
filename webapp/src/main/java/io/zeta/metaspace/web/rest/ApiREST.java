@@ -52,20 +52,6 @@ public class ApiREST {
     @Context
     private HttpServletRequest httpServletRequest;
 
-    /*@GET
-    @Path("/{version}/share/{url}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
-        try {
-            return shareService.queryAPIData(url, httpServletRequest);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
-        }
-    }*/
-
     @POST
     @Path("/{version}/share/{url}")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})

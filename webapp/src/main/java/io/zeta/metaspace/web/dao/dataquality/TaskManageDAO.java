@@ -189,7 +189,7 @@ public interface TaskManageDAO {
      * 获取数值类型的规则
      * @return
      */
-    @Select("select id from data_quality_rule_template where category_id='5'")
+    @Select("select id from data_quality_rule_template where rule_type=5")
     public List<String> getNumericTypeTemplateRuleId();
 
     /**
@@ -197,7 +197,7 @@ public interface TaskManageDAO {
      * @param categoryId
      * @return
      */
-    @Select("select id,name from warning_group where category_id=#{categoryId}")
+    @Select("select id,name from warning_group where category_id=#{categoryId} and delete=false")
     public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId);
 
     @Select("select id,name from warning_group where delete=false")
@@ -438,7 +438,7 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Select("select reference_value from data_quality_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1)")
+    @Select("select reference_value from data_quality_task_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1")
     public Float getLastValue(@Param("subTaskRuleId") String subTaskRuleId);
 
     /**
@@ -624,8 +624,8 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select category_id from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
-    public String getTypeByRuleId(@Param("ruleId")String id);
+    @Select("select rule_type from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
+    public Integer getRuleTypeCodeByRuleId(@Param("ruleId")String id);
 
     @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
@@ -641,7 +641,7 @@ public interface TaskManageDAO {
 
     @Select({" <script>",
              " select count(*) from data_quality_task_rule_execute join data_quality_rule on data_quality_rule.id=data_quality_task_rule_execute.rule_id",
-             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=0 and data_quality_rule.scope=#{dataSourceType}",
+             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=#{checkStatus} and data_quality_rule.scope=#{dataSourceType}",
              " </script>"})
     public Long countTaskRuleExecution(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId, @Param("dataSourceType")Integer dataSourceType, @Param("checkStatus")Integer checkStatus);
 
@@ -653,10 +653,20 @@ public interface TaskManageDAO {
              " <if test='queryType==1'>",
              " orange_warning_check_status",
              " </if>",
-             " <if test='queryType==1'>",
+             " <if test='queryType==2'>",
              " red_warning_check_status",
              " </if>",
-             " from data_quality_task_rule_execute where task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
+             " from data_quality_task_rule_execute where ",
+             " <if test='queryType==0'>",
+             " check_status is not null",
+             " </if>",
+             " <if test='queryType==1'>",
+             " orange_warning_check_status is not null",
+             " </if>",
+             " <if test='queryType==2'>",
+             " red_warning_check_status is not null",
+             " </if>",
+             " and task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
              " </script>"})
     public List<Integer> getWarningValueList(@Param("taskId")String taskId, @Param("taskExecuteId")String taskExecuteId,@Param("queryType")Integer queryType);
 
@@ -665,7 +675,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId}")
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
@@ -756,6 +766,7 @@ public interface TaskManageDAO {
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
              " and (executor like '%${params.query}%' ESCAPE '/')",
+             " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",

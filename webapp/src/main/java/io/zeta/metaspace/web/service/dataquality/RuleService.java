@@ -16,6 +16,7 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
@@ -33,7 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -99,7 +102,6 @@ public class RuleService {
         List<Rule> list = queryByCatetoryId(categoryId, params);
         PageResult<Rule> pageResult = new PageResult<>();
         long sum = ruleDAO.countByByCatetoryId(categoryId);
-        //pageResult.setOffset(params.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -108,22 +110,35 @@ public class RuleService {
 
     private List<Rule> queryByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
         String path = CategoryRelationUtils.getPath(categoryId);
+        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
+            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
+        });
         List<Rule> list = ruleDAO.queryByCatetoryId(categoryId, params)
                 .stream()
                 .map(rule -> {
                     rule.setPath(path);
+                    String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
+                    rule.setRuleTypeName(ruleTypeName);
                     return rule;
                 }).collect(Collectors.toList());
         return list;
     }
 
     public PageResult<Rule> search(Parameters params) {
+        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
+            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
+        });
         List<Rule> list = ruleDAO.search(params)
                 .stream()
                 .map(rule -> {
                     String path = null;
                     try {
                         path = CategoryRelationUtils.getPath(rule.getCategoryId());
+                        rule.setPath(path);
+                        String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
+                        rule.setRuleTypeName(ruleTypeName);
                     } catch (AtlasBaseException e) {
                         LOG.error(e.getMessage(), e);
                     }
@@ -133,7 +148,6 @@ public class RuleService {
 
         PageResult<Rule> pageResult = new PageResult<>();
         long sum = ruleDAO.countBySearch(params.getQuery());
-        //pageResult.setOffset(params.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);

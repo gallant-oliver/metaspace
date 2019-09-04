@@ -487,7 +487,7 @@ public class RoleService {
     @Transactional
     public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
+        if (userRoleId.equals(SystemRole.ADMIN.getCode()) || 4 == categorytype) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);

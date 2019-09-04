@@ -10,15 +10,15 @@ import java.util.List;
 public interface RuleTemplateDAO {
 
 
-    @Select({" select count(1) from data_quality_rule_template where delete=false and category_id=#{categoryId} "})
-    public long countByCategoryId(@Param("categoryId") String categoryId);
+    @Select({" select count(1) from data_quality_rule_template where delete=false and rule_type=#{ruleType} "})
+    public long countByCategoryId(@Param("ruleType") Integer ruleType);
 
-    @Select("select id,name,scope,unit,description,delete,category_id as categoryId,create_time as createTime from data_quality_rule_template where category_id=#{categoryId}")
-    public List<RuleTemplate> getRuleTemplateByCategoryId(@Param("categoryId")String categoryId);
+    @Select("select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType from data_quality_rule_template where rule_type=#{ruleType}")
+    public List<RuleTemplate> getRuleTemplateByCategoryId(@Param("ruleType")Integer ruleType);
 
 
     @Select({"<script>",
-             " select id,name,scope,unit,description,delete,category_id as categoryId,create_time as createTime from data_quality_rule_template" ,
+             " select id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime from data_quality_rule_template" ,
              " <if test=\"params.query != null and params.query!=''\">",
              " where (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' ) ",
              " </if>",
