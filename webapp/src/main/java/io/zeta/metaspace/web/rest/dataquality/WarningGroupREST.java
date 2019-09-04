@@ -115,7 +115,6 @@ public class WarningGroupREST {
      * @throws AtlasBaseException
      */
     @DELETE
-    @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
