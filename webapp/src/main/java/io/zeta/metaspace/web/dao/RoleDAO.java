@@ -35,10 +35,7 @@ public interface RoleDAO {
              " where role.roleid=users.roleid",
              " and users.roleid=#{roleId}",
              " <if test=\"query != null and query!=''\">",
-             " and username like '%'||#{query}||'%' ESCAPE '/'",
-             "</if>",
-             " <if test=\"query == null or query==''\">",
-             " and (username like '%'||#{query}||'%' ESCAPE '/' or username is null)",
+             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
              "</if>",
              " order by username",
              " <if test='limit!= -1'>",
@@ -48,10 +45,15 @@ public interface RoleDAO {
              " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("select userid,username,account,users.roleid,rolename from users,role where users.roleid=role.roleid and users.roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/' order by username offset #{offset}")
-    public List<User> getUser(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset);
-
-    @Select("select count(1) from users where roleid=#{roleId} and username like '%'||#{query}||'%' ESCAPE '/'")
+    @Select({"<script>",
+             " select count(1)",
+             " from users,role",
+             " where role.roleid=users.roleid",
+             " and users.roleid=#{roleId}",
+             " <if test=\"query != null and query!=''\">",
+             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
+             "</if>",
+             " </script>"})
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",
@@ -60,7 +62,7 @@ public interface RoleDAO {
              " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
              " and valid=true",
              " <if test='contain == false'>",
-             " and status=1",
+             " and status=1 and role.roleId!='1'",
              " </if>",
              " order by roleid",
              " <if test='limit!= -1'>",
@@ -104,7 +106,7 @@ public interface RoleDAO {
 
 
     //获取角色方案
-    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId}")
+    @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId} and valid=true")
     public PrivilegeInfo getPrivilegeByRoleId(String roleId);
 
     //修改角色方案
@@ -280,7 +282,7 @@ public interface RoleDAO {
     @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId}")
     public Role getRoleByUsersId(String userId);
 
-    @Select("select * from role where roleid=#{roleId}")
+    @Select("select * from role where roleid=#{roleId} and valid=true")
     public Role getRoleByRoleId(String roleId);
 
     @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
@@ -374,4 +376,10 @@ public interface RoleDAO {
             "    </foreach>" +
             "     and tableinfo.databaseGuid=#{DB} </script>")
     public long getTableInfosByDBIdCount(@Param("guids") List<String> guids, @Param("DB") String DB);
+
+    @Select("select userId from users")
+    public List<String> getUserIdList();
+
+    @Update("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId}")
+    public int updateUserInfo(@Param("user") User user);
 }
