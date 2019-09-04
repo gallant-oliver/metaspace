@@ -197,7 +197,7 @@ public interface TaskManageDAO {
      * @param categoryId
      * @return
      */
-    @Select("select id,name from warning_group where category_id=#{categoryId}")
+    @Select("select id,name from warning_group where category_id=#{categoryId} and delete=false")
     public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId);
 
     @Select("select id,name from warning_group where delete=false")
