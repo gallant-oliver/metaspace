@@ -12,7 +12,7 @@ variables:
 
 before_script:
   - git submodule sync
-  - git submodule update --remote
+  - git submodule update --init
 # 定义 stages
 stages:
   - test
