@@ -15,6 +15,10 @@ public interface DataStandardDAO {
             "values(#{id},#{number},#{content},#{description},#{createTime},#{updateTime},#{operator},#{version},#{categoryId},#{delete})")
     public int insert(DataStandard dataStandard);
 
+    @Insert("insert into data_standard(id,number,content,description,createtime,updatetime,operator,categoryid,delete,version)" +
+            "values(#{id},#{number},#{content},#{description},#{createTime},#{updateTime},#{operator},#{categoryId},#{delete},(select max(version) from data_standard where number=#{number} GROUP BY number)+1)")
+    public int update(DataStandard dataStandard);
+
     @Select({" select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
              " from data_standard a ",
              " inner join users b on a.operator=b.userid ",
@@ -148,16 +152,14 @@ public interface DataStandardDAO {
     @Select({"<script>",
              " select d.id,d.number,d.content,d.description,d.createtime,d.updatetime,u.username as operator,d.version,d.categoryid ",
              " from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} ",
-             " <if test='params != null'>",
-             " <if test='params.sortby != null and params.order != null'>",
-             " order by ${params.sortby} ${params.order}",
+             " and (u.username like '%${query}%' ESCAPE '/' or d.number like '%${query}%' ESCAPE '/' or d.content like '%${query}%' ESCAPE '/' or d.description like '%${query}%' ESCAPE '/') ",
+             " order by version",
+             " <if test='limit != null and limit != -1'>",
+             " limit #{limit}",
              " </if>",
-             " <if test='params.limit != null and params.limit != -1'>",
-             " limit #{params.limit} offset #{params.offset}",
-             " </if>",
-             " </if>",
+             " offset #{offset}",
              " </script>"})
-    List<DataStandard> history(@Param("number") String number, @Param("params") Parameters parameters);
+    List<DataStandard> history(@Param("number") String number, @Param("limit") Integer limit, @Param("offset") Integer offset, @Param("query") String query);
 
     @Select({"select count(1) from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} "})
     long countByHistory(@Param("number") String number);
