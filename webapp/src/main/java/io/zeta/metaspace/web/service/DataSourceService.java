@@ -235,12 +235,13 @@ public class DataSourceService {
     /**
      * 判断sourceName是否存在
      * @param sourceName
+     * @param sourceId
      * @return
      * @throws AtlasBaseException
      */
-    public int isSourceName(String sourceName) throws AtlasBaseException {
+    public int isSourceName(String sourceName,String sourceId) throws AtlasBaseException {
         try {
-            return dataSourceDAO.isSourceName(sourceName);
+            return dataSourceDAO.isSourceName(sourceName,sourceId);
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"SQL异常");

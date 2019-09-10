@@ -57,8 +57,8 @@ public interface DataSourceDAO {
     public int isSourceId(@Param("sourceId") String sourceId);
 
     //数据源名称是否存在
-    @Select("select count(1) from data_source where source_name=#{sourceName}")
-    public int isSourceName(@Param("sourceName") String sourceName);
+    @Select("select count(1) from data_source where source_name=#{sourceName} and source_id!=#{sourceId}")
+    public int isSourceName(@Param("sourceName") String sourceName,@Param("sourceId") String sourceId);
 
     //查询数据源名字
     @Select("select source_name from data_source where source_id=#{sourceId}")
@@ -127,5 +127,5 @@ public interface DataSourceDAO {
 
     @Select("select source_type sourceType,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
             "from data_source where source_id=#{sourceId};")
-    public DataSourceConnection getConnectionBySourceId(@Param("SourceId") String SourceId);
+    public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
 }

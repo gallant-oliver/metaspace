@@ -75,12 +75,13 @@ public class DataSourceREST {
     public Response setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
-            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+            dataSourceBody.setSourceId(UUID.randomUUID().toString());
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
-            dataSourceBody.setSourceId(UUID.randomUUID().toString());
+
             dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             dataSourceService.setNewDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
@@ -102,7 +103,7 @@ public class DataSourceREST {
     public Response updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
-            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
             }
 
