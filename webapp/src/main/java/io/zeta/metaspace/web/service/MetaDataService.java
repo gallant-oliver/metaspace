@@ -59,6 +59,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -66,6 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 /*
@@ -1122,6 +1124,26 @@ public class MetaDataService {
             tableDAO.updateTableInfo(tableGuid, tableInfo);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+
+    public File exportExcel(List<String> tableGuidList) throws AtlasBaseException {
+        try {
+            for (String tableGuid : tableGuidList) {
+
+            }
+
+            Workbook workbook = null;
+            File file = new File("metadata.xlsx");
+            FileOutputStream output = new FileOutputStream(file);
+            workbook.write(output);
+            output.flush();
+            output.close();
+            return file;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }
 }
