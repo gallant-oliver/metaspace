@@ -210,10 +210,14 @@ public class DataSourceService {
                 dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
 
             List<DataSourceHead> list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch);
-            int count = dataSourceDAO.searchDataSourceCount(parameters,dataSourceSearch);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
-            pageResult.setTotalSize(count);
+            if (list.size()!=0){
+                pageResult.setTotalSize(list.get(0).getCount());
+            }else{
+                pageResult.setTotalSize(0);
+            }
+
             return pageResult;
         }catch (AtlasBaseException e){
             throw e;
