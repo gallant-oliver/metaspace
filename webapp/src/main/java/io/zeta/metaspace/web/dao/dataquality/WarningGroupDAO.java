@@ -70,7 +70,7 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select a.*,category.name as categoryName from",
-             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
+             " (select id,name,description,warning_group.create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
              " from warning_group join users on users.userid=creator where delete=false) a ",
              " join",
              " category on category.guid=a.categoryId",
@@ -88,7 +88,7 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select count(*) from",
-             " (select name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
+             " (select category_id as categoryId,users.username as creator",
              " from warning_group join users on users.userid=creator where delete=false) a ",
              " join",
              " category on category.guid=a.categoryId",
