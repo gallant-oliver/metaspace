@@ -25,6 +25,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.util.AESUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -80,6 +81,7 @@ public class DataSourceREST {
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
             dataSourceBody.setSourceId(UUID.randomUUID().toString());
+            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             dataSourceService.setNewDataSource(dataSourceBody);
             return Response.status(200).entity("success").build();
         }catch (Exception e){
@@ -159,17 +161,17 @@ public class DataSourceREST {
 
     /**
      * 测试连接
-     * @param dataSourceConnection
+     * @param sourceId
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/testjdbc")
+    @Path("/testjdbc/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+    public boolean testConnection(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
         try {
-            return dataSourceService.testConnection(dataSourceConnection);
+            return dataSourceService.testConnection(sourceId);
         }catch (Exception e){
             LOG.warn("连接失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败"+e.getMessage());

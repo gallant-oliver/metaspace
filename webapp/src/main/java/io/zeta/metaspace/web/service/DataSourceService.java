@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -79,6 +80,7 @@ public class DataSourceService {
             }
             String userId = AdminUtils.getUserData().getUserId();
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             return dataSourceDAO.update(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
@@ -131,6 +133,7 @@ public class DataSourceService {
             if (Objects.isNull(dataSourceInfo)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
+            dataSourceInfo.setPassword(AESUtils.AESDecode(dataSourceInfo.getPassword()));
             return dataSourceInfo;
         }catch (AtlasBaseException e) {
             throw e;
@@ -142,10 +145,12 @@ public class DataSourceService {
 
     /**
      * 测试连接
-     * @param dataSourceConnection
+     * @param sourceId
      * @return
      */
-    public boolean testConnection(DataSourceConnection dataSourceConnection){
+    public boolean testConnection(String sourceId){
+        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
+        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
         dataSourceConnection.setUrl();
         dataSourceConnection.setDriver();
 

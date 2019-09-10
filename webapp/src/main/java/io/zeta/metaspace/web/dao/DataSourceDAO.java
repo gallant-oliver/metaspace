@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.dataSource.DataSource;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
+import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
@@ -32,8 +33,8 @@ import java.util.List;
 
 public interface DataSourceDAO {
     //添加数据源
-    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter)" +
-            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter})")
+    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id)" +
+            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId})")
     public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody);
 
     //更新数据源
@@ -123,4 +124,8 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+
+    @Select("select source_type sourceType,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
+            "from data_source where source_id=#{sourceId};")
+    public DataSourceConnection getConnectionBySourceId(@Param("SourceId") String SourceId);
 }
