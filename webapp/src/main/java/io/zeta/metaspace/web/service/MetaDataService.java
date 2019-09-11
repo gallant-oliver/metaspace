@@ -25,6 +25,7 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.model.Progress;
@@ -200,14 +201,18 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-            table.setEditTag(false);
             try {
-                List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                for (Module module : modules) {
-                    if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                        table.setEditTag(true);
-                        if (table.getTablePermission().isWRITE()) {
-                            table.setEdit(true);
+                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
+                if("1" == role.getRoleId()) {
+                    table.setEdit(true);
+                } else {
+                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                    for (Module module : modules) {
+                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                            if (table.getTablePermission().isWRITE()) {
+                                table.setEdit(true);
+                                break;
+                            }
                         }
                     }
                 }
