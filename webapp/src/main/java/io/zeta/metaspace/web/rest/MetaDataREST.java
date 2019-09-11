@@ -553,8 +553,8 @@ public class MetaDataREST {
         }
     }
 
-    @GET
-    @Path("/metadata/export")
+    @POST
+    @Path("/export")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
