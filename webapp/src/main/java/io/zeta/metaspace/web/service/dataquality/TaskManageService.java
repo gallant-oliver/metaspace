@@ -459,9 +459,12 @@ public class TaskManageService {
 
                 Date lastExecuteTime = quartzManager.getJobLastExecuteTime(triggerName, triggerGroupName);
                 Date nextExecuteTime = quartzManager.getJobNextExecuteTime(triggerName, triggerGroupName);
-
-                basicInfo.setLastExecuteTime(new Timestamp(lastExecuteTime.getTime()));
-                basicInfo.setNextExecuteTime(new Timestamp(nextExecuteTime.getTime()));
+                if(Objects.nonNull(lastExecuteTime)) {
+                    basicInfo.setLastExecuteTime(new Timestamp(lastExecuteTime.getTime()));
+                }
+                if(Objects.nonNull(nextExecuteTime)) {
+                    basicInfo.setNextExecuteTime(new Timestamp(nextExecuteTime.getTime()));
+                }
             }
             return basicInfo;
         } catch (Exception e) {

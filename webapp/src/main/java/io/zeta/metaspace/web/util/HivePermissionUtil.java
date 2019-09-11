@@ -73,11 +73,14 @@ public class HivePermissionUtil {
                         tablePermission.setWRITE(false);
                     }
                 } else {
-                    tablePermission.setREAD(true);
-                    tablePermission.setWRITE(true);
+                    tablePermission.setREAD(false);
+                    tablePermission.setWRITE(false);
                     retryCount++;
                 }
             }
+        } else {
+            tablePermission.setREAD(true);
+            tablePermission.setWRITE(true);
         }
         return tablePermission;
     }

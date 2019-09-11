@@ -203,7 +203,7 @@ public class MetaDataService {
             table.setEdit(false);
             try {
                 Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                if("1" == role.getRoleId()) {
+                if("1".equals(role.getRoleId())) {
                     table.setEdit(true);
                 } else {
                     List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
