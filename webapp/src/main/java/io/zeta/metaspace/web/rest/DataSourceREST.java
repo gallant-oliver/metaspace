@@ -16,8 +16,9 @@ package io.zeta.metaspace.web.rest;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
-import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -130,7 +131,9 @@ public class DataSourceREST {
         for (String sourceId:sourceIds
              ) {
             String sourceName = dataSourceService.getSourceNameForSourceId(sourceId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), sourceName);
+            if (sourceName!=null){
+                HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), sourceName);
+            }
         }
         try {
             dataSourceService.deleteDataSource(sourceIds);
@@ -206,5 +209,46 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败"+e.getMessage());
         }
 
+    }
+
+    @GET
+    @Path("/authorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getAuthorizeUserId(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+        try {
+
+            return dataSourceService.getAuthorizeUser(sourceId);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/noAuthorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
+        try {
+            return dataSourceService.getNoAuthorizeUser(sourceId,query);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/authorize")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Response dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
+        try {
+            dataSourceService.dataSourceAuthorize(dataSourceAuthorizeUserId);
+            return Response.status(200).entity("success").build();
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源授权失败:"+e.getMessage());
+
+        }
     }
 }

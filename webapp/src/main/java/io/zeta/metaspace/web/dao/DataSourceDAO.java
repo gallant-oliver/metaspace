@@ -13,13 +13,13 @@
 
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dataSource.DataSource;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.user.UserIdAndName;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -65,7 +65,6 @@ public interface DataSourceDAO {
     public String getSourceNameForSourceId(@Param("sourceId") String sourceId);
 
     //删除数据源
-
     @Delete({"<script>",
              "delete from data_source where source_id in ",
              "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
@@ -74,44 +73,41 @@ public interface DataSourceDAO {
              "</script>"})
     public int deleteDataSource(@Param("sourceIds") List<String> sourceIds);
 
+    //删除授权人
+    @Delete({"<script>",
+             "delete from data_source_authorize where source_id in ",
+             "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+             "#{sourceId}",
+             "</foreach>",
+             "</script>"})
+    public int deleteAuthorizeBySourceId(@Param("sourceIds") List<String> sourceIds);
+
+    //获取数据源详情
     @Select("select source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
+    //搜索数据源
     @Select("<script>" +
-            "select count(*)over() count,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,description,to_char(create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
-            "<if test='dataSourceSearch.sourceName!=null or dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null'>" +
-            "where " +
-            "</if>" +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
+            "where dsa.authorize_user_id=#{userId}" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
-            "source_name like '%${dataSourceSearch.sourceName}%' " +
-            "</if>" +
-            "<if test='dataSourceSearch.sourceName!=null and (dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
-            "and " +
+            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.sourceType!=null'>" +
-            "source_type like '%${dataSourceSearch.sourceType}%' " +
-            "</if>" +
-            "<if test='dataSourceSearch.sourceType!=null and (dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
-            "and " +
+            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "to_char(create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' " +
-            "</if>" +
-            "<if test='dataSourceSearch.createTime!=null and (dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
-            "and " +
+            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "to_char(update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' " +
-            "</if>" +
-            "<if test='dataSourceSearch.updateTime!=null and dataSourceSearch.updateUserName!=null'>" +
-            "and " +
+            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
-            "us.username like '%${dataSourceSearch.updateUserName}%' " +
+            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "order by ${parameters.sortby} " +
+            "order by ds.${parameters.sortby} " +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
             "${parameters.order} " +
@@ -123,9 +119,62 @@ public interface DataSourceDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+    public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
 
+    //获取测试连接参数
     @Select("select source_type sourceType,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
+
+    //判断是否是创建用户
+    @Select("select count(1) from data_source where source_id=#{sourceId} and create_user_id=#{userId}")
+    public int isCreateUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+
+
+
+    //获取数据源已授权人
+    @Select("select count(*)over() totalSize,users.userid,users.userName,users.account from users join data_source_authorize on data_source_authorize.authorize_user_id=users.userid " +
+            "where source_id=#{sourceId} and users.userid!=#{userId}")
+    public List<UserIdAndName> getAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+
+    //获取数据源未授权人
+    @Select("<script>" +
+            "select count(*)over() totalSize,userid,username userName,account from users " +
+            "where userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
+            "<if test='query!=null'>" +
+            "and username like '%${query}%' ESCAPE '/'" +
+            "</if>" +
+            "</script>")
+    public List<UserIdAndName> getNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
+
+    //新增授权人
+    @Insert("insert into data_source_authorize(source_id,authorize_user_id)" +
+            "values(#{sourceId},#{authorizeUserId})")
+    public int addAuthorize(@Param("sourceId") String updateUserId,@Param("authorizeUserId") String authorizeUserId);
+
+    //新增授权人
+    @Insert({"<script>",
+            "insert into data_source_authorize(source_id,authorize_user_id)" ,
+            "values",
+            "<foreach collection='authorizeUserIds' item='userId' index='index' separator='),(' open='(' close=')'>" ,
+            "#{sourceId},#{userId}",
+            "</foreach>",
+            "</script>"})
+    public int addAuthorizes(@Param("sourceId") String updateUserId,@Param("authorizeUserIds") List<String> authorizeUserIds);
+
+
+
+    //删除授权人
+    @Delete({"<script>",
+             "delete from data_source_authorize where source_id=#{sourceId} and authorize_user_id in ",
+             "<foreach collection='noAuthorizeUserIds' item='userId' index='index' separator=',' open='(' close=')'>" ,
+             "#{userId}",
+             "</foreach>",
+             "</script>"})
+    public int deleteAuthorize(@Param("sourceId") String sourceId,@Param("noAuthorizeUserIds") List<String> noAuthorizeUserIds);
+
+    //获取数据源已授权人id
+    @Select("select authorize_user_id from data_source_authorize " +
+            "where source_id=#{sourceId}")
+    public List<String> getAuthorizeUserIds(@Param("sourceId") String sourceId);
 }

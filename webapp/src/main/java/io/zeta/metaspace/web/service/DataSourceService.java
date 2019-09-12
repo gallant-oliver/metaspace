@@ -14,7 +14,8 @@
 package io.zeta.metaspace.web.service;
 
 
-import io.zeta.metaspace.model.dataSource.DataSource;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
@@ -22,6 +23,7 @@ import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -32,10 +34,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AutoPopulatingList;
 
 import java.sql.SQLException;
 import java.sql.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,16 +59,18 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
+    @Transactional
     public int setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+            dataSourceDAO.addAuthorize(dataSourceBody.getSourceId(),userId);
             return dataSourceDAO.add(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
         }catch (Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
         }
     }
 
@@ -79,6 +86,9 @@ public class DataSourceService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
             String userId = AdminUtils.getUserData().getUserId();
+            if (isCreateUserId(dataSourceBody.getSourceId(),userId)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
+            }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
             dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             return dataSourceDAO.update(userId,dataSourceBody);
@@ -86,7 +96,7 @@ public class DataSourceService {
             throw e;
         }catch(Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
         }
     }
 
@@ -102,7 +112,7 @@ public class DataSourceService {
             return sourceName;
         }catch (Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"SQL异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
         }
     }
 
@@ -112,12 +122,20 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
+    @Transactional
     public int deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
         try {
-            return dataSourceDAO.deleteDataSource(sourceIds);
+            String userId = AdminUtils.getUserData().getUserId();
+            for (String sourceId:sourceIds){
+                if (!(dataSourceDAO.isSourceId(sourceId)==0) && isCreateUserId(sourceId,userId)){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在无权限删除的数据源");
+                }
+            }
+            dataSourceDAO.deleteDataSource(sourceIds);
+            return dataSourceDAO.deleteAuthorizeBySourceId(sourceIds);
         }catch (Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据库删除失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
         }
     }
 
@@ -213,12 +231,13 @@ public class DataSourceService {
                 dataSourceSearch.setUpdateTime(dataSourceSearch.getUpdateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
             if(Objects.nonNull(dataSourceSearch.getUpdateUserName()))
                 dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
+            String userId = AdminUtils.getUserData().getUserId();
 
-            List<DataSourceHead> list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch);
+            List<DataSourceHead> list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             if (list.size()!=0){
-                pageResult.setTotalSize(list.get(0).getCount());
+                pageResult.setTotalSize(list.get(0).getTotalSize());
             }else{
                 pageResult.setTotalSize(0);
             }
@@ -228,7 +247,7 @@ public class DataSourceService {
             throw e;
         }catch (Exception e){
             LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
         }
     }
 
@@ -247,6 +266,110 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"SQL异常");
         }
     }
+
+    /**
+     * 获取授权用户
+     * @param sourceId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public DataSourceAuthorizeUser getAuthorizeUser(String sourceId) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            if (isCreateUserId(sourceId,userId)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
+            }
+            DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
+            List<UserIdAndName> authorizeUsers = dataSourceDAO.getAuthorizeUser(sourceId,userId);
+            dataSourceAuthorizeUser.setUsers(authorizeUsers);
+            int totalSize = 0;
+            if (authorizeUsers.size()!=0){
+                totalSize = authorizeUsers.get(0).getTotalSize();
+            }
+            dataSourceAuthorizeUser.setTotalSize(totalSize);
+            return dataSourceAuthorizeUser;
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
+        }
+    }
+
+    /**
+     * 获取未授权用户
+     * @param sourceId
+     * @param query
+     * @return
+     * @throws AtlasBaseException
+     */
+    public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId,String query) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            if (isCreateUserId(sourceId,userId)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
+            }
+            if(Objects.nonNull(query))
+                query.replaceAll("%", "/%").replaceAll("_", "/_");
+
+            DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
+            List<UserIdAndName> noAuthorizeUsers = dataSourceDAO.getNoAuthorizeUser(sourceId,query);
+            dataSourceAuthorizeUser.setUsers(noAuthorizeUsers);
+            int totalSize = 0;
+            if (noAuthorizeUsers.size()!=0){
+                totalSize = noAuthorizeUsers.get(0).getTotalSize();
+            }
+            dataSourceAuthorizeUser.setTotalSize(totalSize);
+            return dataSourceAuthorizeUser;
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
+        }
+    }
+
+    /**
+     * 判断是否是创建人
+     * @param sourceId
+     * @param userId
+     * @return
+     */
+    public boolean isCreateUserId(String sourceId,String userId){
+        return dataSourceDAO.isCreateUser(sourceId,userId)==0;
+    }
+
+    @Transactional
+    public void dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
+        try {
+
+            String sourceId = dataSourceAuthorizeUserId.getSourceId();
+            String userId = AdminUtils.getUserData().getUserId();
+            if (isCreateUserId(sourceId,userId)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
+            }
+
+            List<String> authorizeUserIds = dataSourceAuthorizeUserId.getAuthorizeUserIds();
+            List<String> noAuthorizeUserIds = dataSourceAuthorizeUserId.getNoAuthorizeUserIds();
+            List<String> oldAuthorizeUserIds = dataSourceDAO.getAuthorizeUserIds(sourceId);
+            List<String> newAuthorizeUserIds = new ArrayList<>();
+            if (Objects.nonNull(authorizeUserIds) && authorizeUserIds.size()!=0){
+                for (String authorizeUserId:authorizeUserIds){
+                    if (!oldAuthorizeUserIds.contains(authorizeUserId)){
+                        newAuthorizeUserIds.add(authorizeUserId);
+                    }
+                }
+                if (Objects.nonNull(newAuthorizeUserIds) && newAuthorizeUserIds.size()!=0){
+                    dataSourceDAO.addAuthorizes(sourceId,newAuthorizeUserIds);
+                }
+            }
+            if (Objects.nonNull(noAuthorizeUserIds) && noAuthorizeUserIds.size()!=0){
+                dataSourceDAO.deleteAuthorize(sourceId,noAuthorizeUserIds);
+            }
+
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
+        }
+
+    }
+
 
     /**
      * 判断数据源是否被使用
