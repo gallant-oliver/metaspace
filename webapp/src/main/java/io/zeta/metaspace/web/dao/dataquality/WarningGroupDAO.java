@@ -69,13 +69,10 @@ public interface WarningGroupDAO {
 
 
     @Select({"<script>",
-             " select a.*,category.name as categoryName from",
-             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
-             " from warning_group join users on users.userid=creator where delete=false) a ",
-             " join",
-             " category on category.guid=a.categoryId",
+             " select id,name,description,warning_group.create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
+             " from warning_group join users on users.userid=creator where delete=false",
              " <if test=\"params.query != null and params.query!=''\">",
-             " where a.name like '%${params.query}%' ESCAPE '/'",
+             " and name like '%${params.query}%' ESCAPE '/'",
              " </if>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
@@ -88,12 +85,9 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select count(*) from",
-             " (select name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
-             " from warning_group join users on users.userid=creator where delete=false) a ",
-             " join",
-             " category on category.guid=a.categoryId",
+             " warning_group where delete=false",
              " <if test=\"params.query != null and params.query!=''\">",
-             " where (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/')",
+             " and (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/')",
              " </if>",
              " </script>"})
     public long countWarningGroup(@Param("params") Parameters params);

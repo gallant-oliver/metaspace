@@ -202,7 +202,7 @@ public class RuleREST {
     @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryGuid);
-        dataManageService.deleteCategory(categoryGuid);
+        ruleService.deleteCategory(categoryGuid);
     }
 
     /**
