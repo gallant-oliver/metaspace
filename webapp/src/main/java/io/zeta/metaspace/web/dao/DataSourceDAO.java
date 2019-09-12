@@ -18,7 +18,9 @@ import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -123,4 +125,21 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+
+
+    @Select("select count(*) from data_source ")
+    public int exportDataSource();
+
+    @Select("select source_name as sourceName, source_id as sourceId, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source")
+    public List<DataSource> getDataSource();
+
+    @Select("select source_name from data_source ")
+    public List<String> getDataSourceList();
+
+    @Update({" <script>",
+            " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter} where source_name=#{dataSource.sourceName}",
+            " </script>"})
+    public int updateDataSource(@Param("dataSource")DataSource info);
+
+
 }
