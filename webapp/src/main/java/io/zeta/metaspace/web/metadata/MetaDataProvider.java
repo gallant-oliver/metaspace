@@ -127,6 +127,7 @@ public abstract class MetaDataProvider {
 
     protected Connection getConnection() {
         if (null != dataSource) {
+            dataSource.setUserCredentials(new SingleUseUserCredentials("root", "root"));
             return dataSource.get();
         }
         String           ip             = dataSourceInfo.getIp();
@@ -143,7 +144,7 @@ public abstract class MetaDataProvider {
         }
 
         dataSource = new DatabaseConnectionSource(connectionUrl);
-        dataSource.setUserCredentials(new SingleUseUserCredentials(userName, password));
+        dataSource.setUserCredentials(new SingleUseUserCredentials("root", "root"));
         return dataSource.get();
     }
 
@@ -192,7 +193,7 @@ public abstract class MetaDataProvider {
      * @param databaseName
      * @return
      */
-    protected abstract AtlasEntity toDBEntity(AtlasEntity dbEntity, String instanceId, String databaseName);
+    protected abstract AtlasEntity toDBEntity(AtlasEntity instanceEntity, AtlasEntity dbEntity, String instanceId, String databaseName);
 
     /**
      * 将表信息组装成atlas entity
@@ -225,19 +226,16 @@ public abstract class MetaDataProvider {
      * @throws Exception
      */
     protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId) throws Exception {
-        AtlasEntity.AtlasEntityWithExtInfo ret = null;
+        AtlasEntity.AtlasEntityWithExtInfo ret = findInstance(clusterName, instanceId);
 
-        AtlasEntity.AtlasEntityWithExtInfo dbEntity = findInstance(clusterName, instanceId);
-
-        if (dbEntity == null) {
-            dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(toInstanceEntity(null, instanceId));
-            ret = registerEntity(dbEntity);
+        AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
+        if (ret == null) {
+            instanceEntity = new AtlasEntity.AtlasEntityWithExtInfo(toInstanceEntity(null, instanceId));
+            ret = registerEntity(instanceEntity);
         } else {
-            LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, dbEntity.getEntity().getGuid());
-
-            ret.setEntity(toInstanceEntity(dbEntity.getEntity(), instanceId));
-
-            createOrUpdateEntity(dbEntity.getEntity());
+            LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, ret.getEntity().getGuid());
+            ret.setEntity(toInstanceEntity(ret.getEntity(), instanceId));
+            createOrUpdateEntity(ret.getEntity());
         }
 
         return ret;
@@ -259,24 +257,23 @@ public abstract class MetaDataProvider {
     /**
      * Checks if db is already registered, else creates and registers db entity
      *
+     *
+     * @param entity
      * @param databaseName
      * @return
      * @throws Exception
      */
-    protected AtlasEntity.AtlasEntityWithExtInfo registerDatabase(String instanceId, String databaseName) throws Exception {
-        AtlasEntity.AtlasEntityWithExtInfo ret = null;
+    protected AtlasEntity.AtlasEntityWithExtInfo registerDatabase(AtlasEntity entity, String instanceId, String databaseName) throws Exception {
+        AtlasEntity.AtlasEntityWithExtInfo ret = findDatabase(clusterName, instanceId, databaseName);
 
-        AtlasEntity.AtlasEntityWithExtInfo dbEntity = findDatabase(clusterName, instanceId, databaseName);
-
-        if (dbEntity == null) {
-            dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(toDBEntity(null, instanceId, databaseName));
+        AtlasEntity.AtlasEntityWithExtInfo dbEntity;
+        if (ret == null) {
+            dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(toDBEntity(entity, null, instanceId, databaseName));
             ret = registerEntity(dbEntity);
         } else {
-            LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, dbEntity.getEntity().getGuid());
-
-            ret.setEntity(toDBEntity(dbEntity.getEntity(), instanceId, databaseName));
-
-            createOrUpdateEntity(dbEntity.getEntity());
+            LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, ret.getEntity().getGuid());
+            ret.setEntity(toDBEntity(entity, ret.getEntity(), instanceId, databaseName));
+            createOrUpdateEntity(ret.getEntity());
         }
 
         return ret;
@@ -307,16 +304,16 @@ public abstract class MetaDataProvider {
     }
 
     private AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName) throws Exception {
-        AtlasEntity.AtlasEntityWithExtInfo ret;
-        AtlasEntity.AtlasEntityWithExtInfo tableEntity = findEntity(getTableTypeName(), getTableQualifiedName(clusterName, instanceId, databaseName, tableName.getName()));
+        AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), getTableQualifiedName(clusterName, instanceId, databaseName, tableName.getName()));
 
-        if (tableEntity == null) {
+        AtlasEntity.AtlasEntityWithExtInfo tableEntity;
+        if (ret == null) {
             tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null);
             ret = registerEntity(tableEntity);
         } else {
-            LOG.info("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, tableEntity.getEntity().getGuid());
+            LOG.info("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
 
-            ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, tableEntity);
+            ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret);
 
             createOrUpdateEntity(ret.getEntity());
         }
@@ -335,9 +332,10 @@ public abstract class MetaDataProvider {
         totalTables.set(0);
         updatedTables.set(0);
         startTime.set(System.currentTimeMillis());
+        endTime.set(0);
         init(tableSchema);
         totalTables.set(tableNames.size());
-        registerInstance(tableSchema.getInstance());
+        AtlasEntity.AtlasEntityWithExtInfo instanceEntity = registerInstance(tableSchema.getInstance());
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
@@ -358,7 +356,7 @@ public abstract class MetaDataProvider {
             }
             List<AtlasEntity> dbEntitties = new ArrayList<>();
             for (Schema database : databaseNames) {
-                AtlasEntity.AtlasEntityWithExtInfo dbEntity = registerDatabase(tableSchema.getInstance(), database.getFullName());
+                AtlasEntity.AtlasEntityWithExtInfo dbEntity = registerDatabase(instanceEntity.getEntity(), tableSchema.getInstance(), database.getFullName());
                 dbEntitties.add(dbEntity.getEntity());
                 if (dbEntity != null) {
                     List<String> importTables = catalog.getTables(database).stream().map(NamedObject::getName).collect(Collectors.toList());
@@ -369,7 +367,6 @@ public abstract class MetaDataProvider {
         } else {
             LOG.info("No database found");
         }
-        endTime.set(System.currentTimeMillis());
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 
@@ -445,11 +442,16 @@ public abstract class MetaDataProvider {
                 deleteTableEntity(instanceId, databaseName, tableNames);
 
                 for (Table tableName : tableNames) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("导入{}表的元数据", tableName.getFullName());
+                    }
                     int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError);
 
                     tablesImported += imported;
                     updatedTables.incrementAndGet();
                 }
+            } catch (Exception e) {
+                LOG.error("导入表元数据错误", e);
             } finally {
                 if (tablesImported == tableNames.size()) {
                     LOG.info("Successfully imported {} tables from database {}", tablesImported, databaseName);

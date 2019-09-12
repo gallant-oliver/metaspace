@@ -940,6 +940,7 @@ public class MetaDataService {
             LOG.error(errorMessage);
             return;
         }
+        errorMessage = "";
         IMetaDataProvider metaDataProvider = null;
         try {
             metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity);

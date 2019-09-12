@@ -57,21 +57,16 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     @Override
-    protected AtlasEntity toDBEntity(AtlasEntity dbEntity, String instanceId, String databaseName) {
+    protected AtlasEntity toDBEntity(AtlasEntity instanceEntity, AtlasEntity dbEntity, String instanceId, String databaseName) {
         if (dbEntity == null) {
             dbEntity = new AtlasEntity(getDatabaseTypeName());
         }
         dbEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(clusterName, instanceId, databaseName));
         dbEntity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
         dbEntity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
-        dbEntity.setAttribute(ATTRIBUTE_INSTANCE, getInstanceObjectId(instanceId));
+        dbEntity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
+        dbEntity.setAttribute(ATTRIBUTE_INSTANCE, getObjectId(instanceEntity));
         return dbEntity;
-    }
-
-    private AtlasObjectId getInstanceObjectId(String instanceId) {
-        String instanceQualifiedName = getInstanceQualifiedName(clusterName, instanceId);
-        AtlasObjectId ret = new AtlasObjectId(getInstanceTypeName(), instanceId, instanceQualifiedName);
-        return ret;
     }
 
     @Override
@@ -91,8 +86,9 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table);
         List<AtlasEntity> foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table);
         table.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
-        table.setAttribute(ATTRIBUTE_INDEXES, getObjectIds(indexes));
-        table.setAttribute(ATTRIBUTE_FOREIGN_KEYS, getObjectIds(foreignKeys));
+        //todo 如果column第一次导入，index和fk回报错
+//        table.setAttribute(ATTRIBUTE_INDEXES, getObjectIds(indexes));
+//        table.setAttribute(ATTRIBUTE_FOREIGN_KEYS, getObjectIds(foreignKeys));
         return tableEntity;
     }
 
@@ -170,7 +166,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
 
     private Map<String, String> getTableCreateTimeAndComment(String tableName) {
         Map<String, String> pair = new HashMap<>();
-        final String                   query = String.format("select create_time,table_comment  from tables where table_schema= '%s'", tableName);
+        final String                   query = String.format("select create_time,table_comment  from information_schema.tables where table_schema= '%s'", tableName);
         try (final Connection connection = getConnection();
              final Statement statement = connection.createStatement();
              final ResultSet results = statement.executeQuery(query)) {
