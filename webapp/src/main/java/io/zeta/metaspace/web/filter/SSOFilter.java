@@ -69,6 +69,10 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
                 return;
             }
+            if (httpServletRequest.getMethod().equals("OPTIONS")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String loginData = loginURL + "?service=";
             try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
