@@ -66,8 +66,6 @@ public class WarningGroupService {
 
     public WarningGroup getById(String id) throws AtlasBaseException {
         WarningGroup warningGroup = warningGroupDAO.getById(id);
-        String path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-        warningGroup.setPath(path);
         return warningGroup;
     }
 
@@ -92,20 +90,9 @@ public class WarningGroupService {
 
     public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.search(parameters).stream()
-                    .map(warningGroup -> {
-                        String path = null;
-                        try {
-                            path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-                        } catch (AtlasBaseException e) {
-                            LOG.error(e.getMessage(), e);
-                        }
-                        warningGroup.setPath(path);
-                        return warningGroup;
-                    }).collect(Collectors.toList());
+            List<WarningGroup> list = warningGroupDAO.search(parameters);
             PageResult<WarningGroup> pageResult = new PageResult<>();
             long sum = warningGroupDAO.countBySearch(parameters.getQuery());
-            //pageResult.setOffset(parameters.getOffset());
             pageResult.setTotalSize(sum);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
