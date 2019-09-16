@@ -25,6 +25,7 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.model.Progress;
@@ -116,10 +117,10 @@ public class MetaDataService {
     private String errorMessage;
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
-
     @Autowired
     private ColumnDAO columnDAO;
-
+    @Autowired
+    private SearchService searchService;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -1140,9 +1141,17 @@ public class MetaDataService {
     }
 
 
-    public File exportExcel(List<String> tableGuidList) throws AtlasBaseException {
+    public File exportExcel(MetadataGuidList metadataGuidList) throws AtlasBaseException {
         try {
             List<Table> tableList = new ArrayList<>();
+            List<String> tableGuidList = metadataGuidList.getTableGuidList()==null?new ArrayList<>():metadataGuidList.getTableGuidList();
+            List<String> dbGuidList = metadataGuidList.getDbGuidList();
+            if(null != dbGuidList) {
+                for (String dbGuid : dbGuidList) {
+                    PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
+                    tablePageResult.getLists().stream().forEach(table -> tableGuidList.add(table.getTableId()));
+                }
+            }
             for (String tableGuid : tableGuidList) {
                 Table table = getTableInfoById(tableGuid);
                 tableList.add(table);

@@ -557,7 +557,7 @@ public class MetaDataREST {
     @Path("/export")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
+    public void downloadExcelTemplate(MetadataGuidList metadataGuidList) throws AtlasBaseException {
         try {
             File xlsxFile = metadataService.exportExcel(tableGuidList);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
