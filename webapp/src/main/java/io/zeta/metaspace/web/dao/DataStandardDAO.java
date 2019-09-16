@@ -161,6 +161,10 @@ public interface DataStandardDAO {
              " </script>"})
     List<DataStandard> history(@Param("number") String number, @Param("limit") Integer limit, @Param("offset") Integer offset, @Param("query") String query);
 
-    @Select({"select count(1) from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} "})
-    long countByHistory(@Param("number") String number);
+    @Select({"<script>",
+             " select count(*)",
+             " from data_standard d inner join users u on d.operator=u.userid where d.delete=false and d.number=#{number} ",
+             " and (u.username like '%${query}%' ESCAPE '/' or d.number like '%${query}%' ESCAPE '/' or d.content like '%${query}%' ESCAPE '/' or d.description like '%${query}%' ESCAPE '/')",
+             " </script>"})
+    long countByHistory(@Param("number") String number, @Param("query") String query);
 }

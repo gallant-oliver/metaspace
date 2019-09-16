@@ -175,7 +175,7 @@ public class DataStandardService {
     public PageResult<DataStandard> history(String number, Parameters parameters) {
         List<DataStandard> list = dataStandardDAO.history(number, parameters.getLimit(), parameters.getOffset(), parameters.getQuery());
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long sum = dataStandardDAO.countByHistory(parameters.getQuery());
+        long sum = dataStandardDAO.countByHistory(number, parameters.getQuery());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
