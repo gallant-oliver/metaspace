@@ -559,7 +559,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void downloadExcelTemplate(MetadataGuidList metadataGuidList) throws AtlasBaseException {
         try {
-            File xlsxFile = metadataService.exportExcel(tableGuidList);
+            File xlsxFile = metadataService.exportExcel(metadataGuidList);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
