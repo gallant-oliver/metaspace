@@ -1149,7 +1149,11 @@ public class MetaDataService {
             if(null != dbGuidList) {
                 for (String dbGuid : dbGuidList) {
                     PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
-                    tablePageResult.getLists().stream().forEach(table -> tableGuidList.add(table.getTableId()));
+                    tablePageResult.getLists().stream().forEach(table -> {
+                        if("ACTIVE".equals(table.getStatus())) {
+                            tableGuidList.add(table.getTableId());
+                        }
+                    });
                 }
             }
             for (String tableGuid : tableGuidList) {
@@ -1206,8 +1210,14 @@ public class MetaDataService {
 
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        Sheet sheet = workbook.createSheet(tableName + "-表信息");
+        String sheetName = dbName + "." + tableName + "-表信息";
+        Sheet hasSheet = workbook.getSheet(sheetName);
+        if(null != hasSheet) {
+            return;
+        }
+        Sheet sheet = workbook.createSheet(sheetName);
 
         CellRangeAddress basicInfoRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(basicInfoRangeAddress);
@@ -1267,7 +1277,6 @@ public class MetaDataService {
         updateTimeValueCell.setCellValue(updateTime);
         updateTimeValueCell.setCellStyle(cellStyle);
 
-        String dbName = table.getDatabaseName();
         Row dbNameRow = sheet.createRow(rowNumber++);
         Cell dbNameKeyCell = dbNameRow.createCell(0);
         dbNameKeyCell.setCellValue("所属数据库");
@@ -1487,9 +1496,17 @@ public class MetaDataService {
     }
 
     public void createMetadataColumnSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
+
         String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        Sheet sheet = workbook.createSheet(tableName + "-字段信息");
+        String sheetName = dbName + "." + tableName + "字段-信息";
+        Sheet hasSheet = workbook.getSheet(sheetName);
+        if(null != hasSheet) {
+            return;
+        }
+        Sheet sheet = workbook.createSheet(sheetName);
+
         List<Column> columnList = table.getColumns();
         List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey()==false).collect(Collectors.toList());
         List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()==true).collect(Collectors.toList());
