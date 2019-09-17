@@ -145,12 +145,10 @@ public class DataSourceService {
 
     /**
      * 测试连接
-     * @param sourceId
+     * @param dataSourceConnection
      * @return
      */
-    public boolean testConnection(String sourceId){
-        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
-        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
+    public boolean testConnection(DataSourceConnection dataSourceConnection){
         dataSourceConnection.setUrl();
         dataSourceConnection.setDriver();
 
@@ -163,6 +161,12 @@ public class DataSourceService {
             LOG.error(e.getMessage());
             return false;
         }
+    }
+
+    public DataSourceConnection getDataSourceConnection(String sourceId){
+        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
+        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
+        return dataSourceConnection;
     }
 
     /**
