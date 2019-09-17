@@ -673,7 +673,7 @@ public class QuartzJob implements Job {
             if (FIX == ruleCheckType) {
                 switch (checkExpression) {
                     case EQU: {
-                        if (checkThresholdMaxValue == 0) {
+                        if (resultValue == checkThresholdMaxValue) {
                             ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
                             ruleStatus = RuleExecuteStatus.WARNING;
