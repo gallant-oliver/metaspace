@@ -72,7 +72,8 @@ public class DataSourceREST {
      */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Response setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
             dataSourceBody.setSourceId(UUID.randomUUID().toString());
@@ -84,7 +85,7 @@ public class DataSourceREST {
 
             dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             dataSourceService.setNewDataSource(dataSourceBody);
-            return Response.status(200).entity("success").build();
+            return true;
         }catch (Exception e){
             LOG.warn("添加失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败"+e.getMessage());
@@ -99,8 +100,9 @@ public class DataSourceREST {
      */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
             if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
@@ -110,7 +112,7 @@ public class DataSourceREST {
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
             dataSourceService.updateDataSource(dataSourceBody);
-            return Response.status(200).entity("success").build();
+            return true;
         }catch (Exception e){
             LOG.warn("更新失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"更新失败"+e.getMessage());
@@ -125,8 +127,9 @@ public class DataSourceREST {
      */
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Response deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
+    public boolean deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
         for (String sourceId:sourceIds
              ) {
             String sourceName = dataSourceService.getSourceNameForSourceId(sourceId);
@@ -134,7 +137,7 @@ public class DataSourceREST {
         }
         try {
             dataSourceService.deleteDataSource(sourceIds);
-            return Response.status(200).entity("success").build();
+            return true;
         }catch (Exception e){
             LOG.warn("删除失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除失败"+e.getMessage());
@@ -170,9 +173,29 @@ public class DataSourceREST {
     @Path("/testjdbc/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean testConnection(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+    public boolean testConnection1(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
         try {
-            return dataSourceService.testConnection(sourceId);
+            DataSourceConnection dataSourceConnection = dataSourceService.getDataSourceConnection(sourceId);
+            return dataSourceService.testConnection(dataSourceConnection);
+        }catch (Exception e){
+            LOG.warn("连接失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败"+e.getMessage());
+        }
+    }
+
+    /**
+     * 测试连接
+     * @param dataSourceConnection
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/testjdbc")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean testConnection2(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+        try {
+            return dataSourceService.testConnection(dataSourceConnection);
         }catch (Exception e){
             LOG.warn("连接失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败"+e.getMessage());
