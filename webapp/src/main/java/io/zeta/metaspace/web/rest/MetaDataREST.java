@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.BuildTableSql;
+import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
@@ -27,6 +28,7 @@ import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -36,6 +38,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +48,16 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.List;
@@ -557,9 +563,22 @@ public class MetaDataREST {
     @Path("/export")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadExcelTemplate(MetadataGuidList metadataGuidList) throws AtlasBaseException {
+    public DownloadUri downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
         try {
-            File xlsxFile = metadataService.exportExcel(metadataGuidList);
+            return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), tableGuidList);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        }
+    }
+
+    @GET
+    @Path("/export/{downloadId}")
+    @Valid
+    public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
+        File xlsxFile = null;
+        try {
+            List<String> metadataGuidList = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
+            xlsxFile = metadataService.exportExcel(metadataGuidList);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
@@ -568,8 +587,8 @@ public class MetaDataREST {
             os.write(FileUtils.readFileToByteArray(xlsxFile));
             os.close();
             xlsxFile.delete();
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        } finally {
+            xlsxFile.deleteOnExit();
         }
     }
 
