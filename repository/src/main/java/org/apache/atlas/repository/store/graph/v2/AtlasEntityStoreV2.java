@@ -43,6 +43,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -63,6 +64,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private final AtlasEntityChangeNotifier entityChangeNotifier;
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
+
+    @Autowired
+    DataManageService dataManageService;
 
     @Inject
     public AtlasEntityStoreV2(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
