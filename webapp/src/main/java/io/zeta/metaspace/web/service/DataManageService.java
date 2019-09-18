@@ -990,4 +990,8 @@ public class DataManageService {
             return null;
         }
     }
+
+    public String getCategoryNameById(String guid) {
+        return categoryDao.getCategoryNameById(guid);
+    }
 }

@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
+import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -206,6 +208,7 @@ public class TechnicalREST {
     @Path("/category/{categoryGuid}/assignedEntities")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
@@ -213,6 +216,8 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
+            String categoryName = dataManageService.getCategoryNameById(categoryGuid);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryName);
             dataManageService.assignTablesToCategory(categoryGuid, relations);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -257,12 +262,20 @@ public class TechnicalREST {
      */
     @DELETE
     @Path("/category/relation")
+    @OperateType(DELETE)
     public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
             }
+            List<String> categoryNameList = new ArrayList<>();
+            for (RelationEntityV2 relationEntity : relationshipList) {
+                String categoryGuid = relationEntity.getCategoryGuid();
+                String categoryName = dataManageService.getCategoryNameById(categoryGuid);
+                categoryNameList.add(categoryName);
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]");
             dataManageService.removeRelationAssignmentFromTablesV2(relationshipList);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
