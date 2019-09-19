@@ -65,9 +65,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
 
-    @Autowired
-    DataManageService dataManageService;
-
     @Inject
     public AtlasEntityStoreV2(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
                               AtlasEntityChangeNotifier entityChangeNotifier, EntityGraphMapper entityGraphMapper) {
