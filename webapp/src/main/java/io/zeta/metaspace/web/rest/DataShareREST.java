@@ -22,7 +22,7 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
-import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Joiner;
+import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;

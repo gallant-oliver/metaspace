@@ -53,6 +53,7 @@ import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Singleton;
@@ -154,7 +155,13 @@ public class TaskManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public void deleteTaskList(List<String> taskList) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(taskList) + "]");
+        List<String> taskNameList = new ArrayList<>();
+        for (String guid : taskList) {
+            DataQualityBasicInfo info = taskManageService.getTaskBasicInfo(guid);
+            if(null != info)
+                taskNameList.add(info.getName());
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(taskNameList) + "]");
         taskManageService.deleteTaskList(taskList);
     }
 
