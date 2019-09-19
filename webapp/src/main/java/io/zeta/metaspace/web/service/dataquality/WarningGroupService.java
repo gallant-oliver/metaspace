@@ -78,6 +78,12 @@ public class WarningGroupService {
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
+        for (String guid : numberList) {
+            Integer count = warningGroupDAO.countWarningGroupUserd(guid);
+            if(null!=count && count > 0) {
+                throw new AtlasBaseException("当前告警组正在被使用，不允许删除");
+            }
+        }
         warningGroupDAO.deleteByIdList(numberList);
     }
 

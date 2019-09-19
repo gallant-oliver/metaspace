@@ -88,6 +88,12 @@ public class RuleService {
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
+        for (String number : numberList) {
+            Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+            if(true==enableStatus) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在已被启用规则，不允许删除");
+            }
+        }
         ruleDAO.deleteByIdList(numberList);
     }
 
@@ -203,5 +209,9 @@ public class RuleService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    public String getCategoryName(String categoryGuid) {
+        return ruleDAO.getCategoryName(categoryGuid);
     }
 }

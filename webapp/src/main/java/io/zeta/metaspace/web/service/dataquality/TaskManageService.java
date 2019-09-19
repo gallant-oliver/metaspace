@@ -152,6 +152,7 @@ public class TaskManageService {
                 taskManageDAO.deleteSubTaskList(taskIdList);
                 taskManageDAO.deleteSubTaskObjectList(taskIdList);
                 taskManageDAO.deleteSubTaskRuleList(taskIdList);
+                taskManageDAO.deleteWarningGroupUsed(taskIdList);
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);

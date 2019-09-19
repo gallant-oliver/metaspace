@@ -963,7 +963,27 @@ public class BusinessService {
                 row = sheet.getRow(i);
                 keyCell = row.getCell(0);
                 valueCell = row.getCell(1);
-                key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
+                switch (keyCell.getCellTypeEnum()) {
+                    case NUMERIC:
+                        key = String.valueOf(valueCell.getNumericCellValue());
+                        break;
+                    case BOOLEAN:
+                        key = String.valueOf(valueCell.getBooleanCellValue());
+                        break;
+                    case STRING:
+                        key = valueCell.getStringCellValue();
+                        break;
+                    case BLANK:
+                        key = "";
+                        break;
+                    case FORMULA:
+                        key = valueCell.getCellFormula();
+                        break;
+                    default:
+                        value = "";
+                }
+
+                valueCell = row.getCell(1);
                 switch (valueCell.getCellTypeEnum()) {
                     case NUMERIC:
                         value = String.valueOf(valueCell.getNumericCellValue());

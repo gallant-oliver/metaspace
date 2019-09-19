@@ -59,12 +59,12 @@ public class RuleTemplateREST {
         }).collect(Collectors.toList());
     }
 
-    @GET
+    @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleType}/rules")
-    public List<RuleTemplate> getRuleTemplate(@PathParam("ruleType")Integer categoryId) throws AtlasBaseException {
-        return ruleTemplateService.getRuleTemplate(categoryId);
+    public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")Integer categoryId, Parameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.getRuleTemplate(categoryId, parameters);
     }
 
     @POST
