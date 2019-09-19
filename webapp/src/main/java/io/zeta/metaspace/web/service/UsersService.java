@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.service;
 
+import com.gridsum.gdp.library.commons.utils.StringUtils;
+
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.Item;
@@ -43,6 +45,12 @@ public class UsersService {
     public UsersService getUserService() {
         return usersService;
     }
+
+    public boolean isRole(String userId){
+        String roleId = userDAO.getRoleIdByUserId(userId);
+        return StringUtils.isNULL(roleId);
+    }
+
 
     public void addUser(Map data) {
         String userId = data.get("AccountGuid").toString();
