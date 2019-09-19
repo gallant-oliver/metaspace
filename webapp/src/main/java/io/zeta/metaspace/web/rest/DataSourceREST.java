@@ -19,6 +19,7 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
+import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;

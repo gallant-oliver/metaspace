@@ -24,9 +24,26 @@ public class DataSourceHead {
     private String createTime;
     private String updateTime;
     private String updateUserName;
+    private boolean rely;
+    private boolean permission;
     @JsonIgnore
     private int totalSize;
 
+    public boolean isRely() {
+        return rely;
+    }
+
+    public void setRely(boolean rely) {
+        this.rely = rely;
+    }
+
+    public boolean isPermission() {
+        return permission;
+    }
+
+    public void setPermission(boolean permission) {
+        this.permission = permission;
+    }
 
     public int getTotalSize() {
         return totalSize;
