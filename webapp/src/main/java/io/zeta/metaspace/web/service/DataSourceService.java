@@ -16,6 +16,9 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
+import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
+
+import io.zeta.metaspace.model.dataSource.DataSource;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
@@ -29,6 +32,8 @@ import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.solr.common.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +54,8 @@ public class DataSourceService {
     private static final Logger LOG = LoggerFactory.getLogger(DataSourceService.class);
     @Autowired
     private DataSourceDAO dataSourceDAO;
+    @Autowired
+    private AtlasEntityStoreV2 atlasEntityStoreV2;
 
 
 
@@ -163,12 +170,10 @@ public class DataSourceService {
 
     /**
      * 测试连接
-     * @param sourceId
+     * @param dataSourceConnection
      * @return
      */
-    public boolean testConnection(String sourceId){
-        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
-        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
+    public boolean testConnection(DataSourceConnection dataSourceConnection){
         dataSourceConnection.setUrl();
         dataSourceConnection.setDriver();
 
@@ -181,6 +186,12 @@ public class DataSourceService {
             LOG.error(e.getMessage());
             return false;
         }
+    }
+
+    public DataSourceConnection getDataSourceConnection(String sourceId){
+        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
+        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
+        return dataSourceConnection;
     }
 
     /**
@@ -376,8 +387,19 @@ public class DataSourceService {
      * @param sourceId
      * @return
      */
-    public boolean useDataSource(String sourceId){
-        return false;
+    public boolean useDataSource(String sourceId) throws AtlasBaseException {
+        if (DEBUG_ENABLED) {
+            LOG.debug("==> MetaDataService.getTableInfoById({})", sourceId);
+        }
+        if (Objects.isNull(sourceId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据源id异常");
+        }
+        try {
+            AtlasEntity.AtlasEntityWithExtInfo info = atlasEntityStoreV2.getById(sourceId);
+            return Objects.nonNull(info);
+        }catch (AtlasBaseException e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
 

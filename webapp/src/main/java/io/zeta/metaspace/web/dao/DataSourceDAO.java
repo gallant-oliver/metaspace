@@ -102,6 +102,33 @@ public interface DataSourceDAO {
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
             "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "select count(*)over() count,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid " +
+            "<if test='dataSourceSearch.sourceName!=null or dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null'>" +
+            "where " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "ds.source_name like '%${dataSourceSearch.sourceName}%' " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceName!=null and (dataSourceSearch.sourceType!=null or dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
+            "and " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "ds.source_type like '%${dataSourceSearch.sourceType}%' " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null and (dataSourceSearch.createTime!=null or dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
+            "and " +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' " +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null and (dataSourceSearch.updateTime!=null or dataSourceSearch.updateUserName!=null)'>" +
+            "and " +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' " +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null and dataSourceSearch.updateUserName!=null'>" +
+            "and " +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
