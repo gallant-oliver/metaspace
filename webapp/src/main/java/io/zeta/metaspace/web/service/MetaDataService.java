@@ -1141,9 +1141,20 @@ public class MetaDataService {
     }
 
 
-    public File exportExcel(List<String> tableGuidList) throws AtlasBaseException {
+    public File exportExcel(List<String> dbGuidList) throws AtlasBaseException {
         try {
             List<Table> tableList = new ArrayList<>();
+            List<String> tableGuidList = new ArrayList<>();
+            if(null != dbGuidList) {
+                for (String dbGuid : dbGuidList) {
+                    PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
+                    tablePageResult.getLists().stream().forEach(table -> {
+                        if("ACTIVE".equals(table.getStatus())) {
+                            tableGuidList.add(table.getTableId());
+                        }
+                    });
+                }
+            }
             for (String tableGuid : tableGuidList) {
                 Table table = getTableInfoById(tableGuid);
                 tableList.add(table);
