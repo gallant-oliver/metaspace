@@ -70,6 +70,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
+
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String requestURL = request.getRequestURL().toString();
         if (FilterUtils.isSkipUrl(requestURL)) {
@@ -83,7 +84,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 username = AdminUtils.getUserData().getUsername();
             } catch (AtlasBaseException e) {
                 LOG.warn("查询用户信息失败", e);
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询用户信息失败");
+                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "查询用户信息失败");
             }
 
             Method method = invocation.getMethod();
@@ -94,12 +95,12 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
             Role roleByUserId = usersService.getRoleByUserId(userId);
             if (roleByUserId.getStatus() == 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
+                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
             }
 
             if ("privilegecheck".equals(prefix.toLowerCase().trim())) {
                 if (roleByUserId.getStatus() == 0) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户的角色已被禁用");
+                    throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
                 }
                 String privilegeType = "";
                 String privilegeGuid = "";
@@ -125,14 +126,14 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                             if (count > 0) {
                                 return invocation.proceed();
                             } else {
-                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限不足");
+                                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
                             }
                         default:
-                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户权限不足");
+                            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
                     }
                 } catch (Exception e) {
                     LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有该表的权限");
+                    throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有该表的权限");
                 }
             } else {
                 UserInfo userInfo = usersService.getUserInfoById(userId);
@@ -152,7 +153,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     String ip = HttpRequestContext.get().getIp();
                     auditLog(prefix, ip, userId);
 
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户没有当前调用接口的权限");
+                    throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有当前调用接口的权限");
                 }
             }
         }

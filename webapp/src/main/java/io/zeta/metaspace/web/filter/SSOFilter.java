@@ -14,6 +14,7 @@
 
 package io.zeta.metaspace.web.filter;
 
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
@@ -85,7 +86,12 @@ public class SSOFilter implements Filter {
                 ServletContext servletContext = request.getServletContext();
                 WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
                 UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
-                usersService.addUser(data);
+                String userId = data.get("AccountGuid").toString();
+                if (usersService.isRole(userId)){
+                    loginSkip(403, httpServletResponse, "无角色用户无权限", loginData);
+                    return;
+                }
+
 
             } catch (Exception e) {
                 LOG.error("认证校验失败", e);
