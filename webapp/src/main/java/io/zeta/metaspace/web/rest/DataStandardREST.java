@@ -274,7 +274,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
-        return dataManageService.getAll(categoryType);
+        return dataStandardService.getCategory(categoryType);
     }
 
     /**
@@ -291,7 +291,7 @@ public class DataStandardREST {
     @OperateType(INSERT)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
+        return dataStandardService.addCategory(categoryInfo);
     }
 
     /**
@@ -310,7 +310,7 @@ public class DataStandardREST {
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), category.getName());
-        dataManageService.deleteCategory(categoryGuid);
+        dataStandardService.deleteCategory(categoryGuid);
     }
 
     /**
@@ -327,6 +327,6 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
+        dataStandardService.updateCategory(categoryInfo);
     }
 }
