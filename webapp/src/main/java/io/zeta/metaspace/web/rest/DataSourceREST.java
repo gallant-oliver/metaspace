@@ -273,7 +273,8 @@ public class DataSourceREST {
             File xlsxFile = dataSourceService.exportExcel();
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
-            String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
+            //String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
+            String fileName = new String( xlsxFile.getName());
             // Content-disposition属性设置成以附件方式进行下载
             httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
             OutputStream os = httpServletResponse.getOutputStream();
@@ -302,7 +303,7 @@ public class DataSourceREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if((name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) && (name.length() < 5 || !name.substring(name.length() - 4).equals(".xls"))) {
+            if(name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
             }
 

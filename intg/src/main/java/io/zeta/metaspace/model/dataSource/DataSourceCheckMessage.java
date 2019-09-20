@@ -38,6 +38,17 @@ public class DataSourceCheckMessage {
     public static class DataSourceCheckInfo {
         private int row;
         private String sourceName;
+        private String sourceType;
+        private String Description;
+        private String Ip;
+        private String Port;
+        private String userName;
+        private String password;
+        private String database;
+        private String jdbcParameter;
+        private String errorMessage;
+        private String updateTime;
+
         public void setSourceName(String sourceName) {
             this.sourceName = sourceName;
         }
@@ -102,17 +113,6 @@ public class DataSourceCheckMessage {
         public void setJdbcParameter(String jdbcParameter) {
             this.jdbcParameter = jdbcParameter;
         }
-
-        private String sourceType;
-        private String Description;
-        private String Ip;
-        private String Port;
-        private String userName;
-        private String password;
-        private String database;
-        private String jdbcParameter;
-        private String errorMessage;
-        private String updateTime;
 
         public int getRow() {
             return row;

@@ -137,8 +137,8 @@ public interface DataSourceDAO {
     @Select("select count(*) from data_source ")
     public int exportDataSource();
 
-    @Select("select source_name as sourceName, source_id as sourceId, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source")
-    public List<DataSource> getDataSource();
+    @Select("select source_name as sourceName, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source")
+    public List<DataSourceBody> getDataSource();
 
     @Select("select source_name from data_source ")
     public List<String> getDataSourceList();
@@ -146,7 +146,7 @@ public interface DataSourceDAO {
     @Update({" <script>",
             " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter} where source_name=#{dataSource.sourceName}",
             " </script>"})
-    public int updateDataSource(@Param("dataSource")DataSource info);
+    public int updateDataSource(@Param("dataSource")DataSourceBody info);
 
 
     //获取测试连接参数

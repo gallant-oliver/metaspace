@@ -129,20 +129,4 @@ public class DataSourceBody {
         this.updateTime = updateTime;
     }
 
-    @Override
-    public String toString() {
-        return "DataSourceBody{" +
-               "sourceId='" + sourceId + '\'' +
-               ", sourceName='" + sourceName + '\'' +
-               ", sourceType='" + sourceType + '\'' +
-               ", description='" + description + '\'' +
-               ", ip='" + ip + '\'' +
-               ", port='" + port + '\'' +
-               ", userName='" + userName + '\'' +
-               ", password='" + password + '\'' +
-               ", database='" + database + '\'' +
-               ", jdbcParameter='" + jdbcParameter + '\'' +
-               ", updateTime=" + updateTime +
-               '}';
-    }
 }
