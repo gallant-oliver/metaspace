@@ -60,6 +60,7 @@ import java.sql.SQLException;
 import java.sql.*;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -564,11 +565,8 @@ public class DataSourceService {
     /**
      * 导入数据源
      */
-    public DataSourceCheckMessage checkDataSourceName(List<String> datasourceList, List<DataSourceBody> dataSourcewithDisplayList) throws AtlasBaseException {
+    public DataSourceCheckMessage checkDataSourceName(List<String> dataSourceList, List<DataSourceBody> dataSourceWithDisplayList) throws AtlasBaseException {
         try {
-            //全部字段名称
-            //当前需要编辑的字段名称
-            //数据源导入情况
             DataSourceCheckMessage dataSourceCheckMessage = new DataSourceCheckMessage();
             //数据源错误计数
             int errorDataSourceCount = 0;
@@ -578,7 +576,7 @@ public class DataSourceService {
             List<String> recordDataSourceList = new ArrayList<>();
             DataSourceCheckMessage.DataSourceCheckInfo dataSourceCheckInfo = null;
             int index = 0;
-            for (DataSourceBody dataSource : dataSourcewithDisplayList) {
+            for (DataSourceBody dataSource : dataSourceWithDisplayList) {
                 //获取要导入数据源名称
                 String sourceName = dataSource.getSourceName();
                 dataSourceCheckInfo = new DataSourceCheckMessage.DataSourceCheckInfo();
@@ -586,34 +584,19 @@ public class DataSourceService {
                 dataSourceCheckInfo.setSourceName(sourceName);
                 //是否为重复字段
                 if (recordDataSourceList.contains(sourceName)) {
-                    dataSourceCheckInfo.setErrorMessage("导入重复字段");
+                    dataSourceCheckInfo.setErrorMessage("导入重复数据库名称");
                     errorDataSourceList.add(sourceName);
                     errorDataSourceCount++;
-//                    dataSourceCheckMessageList.add(dataSourceCheckInfo);
 
-                    //表中是否存在当前字段
-                } else if (!datasourceList.contains(sourceName)) {
+                } else if (!dataSourceList.contains(sourceName)) {
                     dataSourceCheckInfo.setErrorMessage("插入新数据库");
-                    String database = dataSource.getDatabase();
-                    DataSourceBody dataSourceBody = new DataSourceBody();
-                    dataSourceBody.setSourceName(dataSource.getSourceName());
-                    dataSourceBody.setSourceType(dataSource.getSourceType());
-                    dataSourceBody.setDescription(dataSource.getDescription());
-                    dataSourceBody.setIp(dataSource.getIp());
-                    dataSourceBody.setPort(dataSource.getPort());
-                    dataSourceBody.setUserName(dataSource.getUserName());
-                    dataSourceBody.setDatabase(dataSource.getDatabase());
-                    dataSourceBody.setPassword(dataSource.getPassword());
-                    dataSourceBody.setJdbcParameter(dataSource.getJdbcParameter());
-                    dataSourceBody.setSourceId(UUID.randomUUID().toString());
-                    System.out.println(dataSourceBody);
-                    //setNewDataSource(dataSourceBody);
-                    dataSourceCheckInfo.setDatabase(database);
+
+                    dataSource.setSourceId(UUID.randomUUID().toString());
+                    setNewDataSource(dataSource);
 
                 } else {
                     dataSourceCheckInfo.setErrorMessage("更新数据库");
-                    //dataSourceDAO.updateDataSource(dataSource);
-//                    dataSourceCheckMessageList.add(dataSourceCheckInfo);
+                    dataSourceDAO.updateDataSource(dataSource);
                 }
                 recordDataSourceList.add(sourceName);
 
@@ -648,7 +631,7 @@ public class DataSourceService {
         }
     }
 
-
+    @Transactional
     public DataSourceCheckMessage importDataSource(File file) throws AtlasBaseException {
         try {
             //提取excel数据
@@ -707,7 +690,14 @@ public class DataSourceService {
 
             for (int i = 1; i < rowNum; i++) {
 
-                 row = sheet.getRow(i);
+                row = sheet.getRow(i);
+                Cell tmpCell = null;
+                for (int j =0; j < 9;j++){
+                    tmpCell = row.getCell(j);
+                    if (Objects.nonNull(tmpCell)){
+                        tmpCell.setCellType(CellType.STRING);
+                    }
+                }
                 sourceNameCell = row.getCell(0);
                 sourceTypeCell = row.getCell(1);
                 descriptionCell = row.getCell(2);
@@ -721,7 +711,7 @@ public class DataSourceService {
                 sourceName = Objects.nonNull(sourceNameCell) ? sourceNameCell.getStringCellValue() : "";
                 sourceType = Objects.nonNull(sourceTypeCell) ? sourceTypeCell.getStringCellValue() : "";
                 description = Objects.nonNull(descriptionCell) ? descriptionCell.getStringCellValue() : null;
-                ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : "";
+                ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : null;
                 port = Objects.nonNull(portCell) ? portCell.getStringCellValue() : "";
                 userName = Objects.nonNull(userNameCell) ? userNameCell.getStringCellValue() : "";
                 password = Objects.nonNull(passwordCell) ? passwordCell.getStringCellValue() : "";
