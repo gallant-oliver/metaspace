@@ -33,7 +33,7 @@ public interface MetadataHistoryDAO {
 
     @Insert({"insert into table_metadata_history(guid,name,creator,update_time,database_name,table_type,partition_table,table_format,store_location,description,status,version)",
              "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.status},",
-             "COALESCE((select max(version)+1 from column_metadata_history where guid='aaa' GROUP BY guid),1)"})
+             "COALESCE((select max(version)+1 from table_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
     public int addTableMetadata(@Param("metadata")TableMetadata metadata);
 
     @Select({" <script>",
@@ -51,7 +51,8 @@ public interface MetadataHistoryDAO {
              " </script>"})
     public List<TableMetadata> getTableMetadataList(@Param("guid")String tableGuid, @Param("limit")int limit, @Param("offset") int offset);
 
-    @Insert("insert into column_metadata_history(guid,name,type,table_guid,description,version,status)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},,#{metadata.description},#{metadata.version},#{metadata.status})")
+    @Insert({"insert into column_metadata_history(guid,name,type,table_guid,description,status,version)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},,#{metadata.description},#{metadata.status},",
+             "COALESCE((select max(version)+1 from table_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
     public int addColumnMetadata(@Param("metadata")ColumnMetadata metadata);
 
     @Select({" <script>",
