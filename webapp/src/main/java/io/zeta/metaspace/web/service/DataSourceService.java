@@ -563,16 +563,18 @@ public class DataSourceService {
         try {
             //全部字段名称
             //当前需要编辑的字段名称
-            List<String> editDataSourceList = dataSourcewithDisplayList.stream().map(dataSource -> dataSource.getSourceName()).collect(Collectors.toList());
-            System.out.println(datasourceList);
+            //数据源导入情况
             DataSourceCheckMessage dataSourceCheckMessage = new DataSourceCheckMessage();
+            //数据源错误计数
             int errorDataSourceCount = 0;
             List<String> errorDataSourceList = new ArrayList<>();
             List<DataSourceCheckMessage.DataSourceCheckInfo> dataSourceCheckMessageList = new ArrayList<>();
+            //已导入数据源名字
             List<String> recordDataSourceList = new ArrayList<>();
             DataSourceCheckMessage.DataSourceCheckInfo dataSourceCheckInfo = null;
             int index = 0;
             for (DataSource dataSource : dataSourcewithDisplayList) {
+                //获取要导入数据源名称
                 String sourceName = dataSource.getSourceName();
                 dataSourceCheckInfo = new DataSourceCheckMessage.DataSourceCheckInfo();
                 dataSourceCheckInfo.setRow(index++);
@@ -631,13 +633,7 @@ public class DataSourceService {
             dataSourceCheckMessage.setErrorDataSourceList(errorDataSourceList);
             dataSourceCheckMessage.setTotalSize(dataSourceCheckMessageList.size());
             dataSourceCheckMessage.setErrorCount(errorDataSourceCount);
-//            if (errorDataSourceCount == 0) {
-//
-//                editTableDataSource(dataSourcewithDisplayList, editDataSourceList, existOnPg);
-//                dataSourceCheckMessage.setStatus(DataSourceCheckMessage.Status.SUCCESS);
-//            } else {
-//                dataSourceCheckMessage.setStatus(DataSourceCheckMessage.Status.FAILURE);
-//            }
+
             return dataSourceCheckMessage;
         } catch (Exception e) {
             e.printStackTrace();
