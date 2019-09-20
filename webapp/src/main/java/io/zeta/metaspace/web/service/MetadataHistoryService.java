@@ -70,35 +70,39 @@ public class MetadataHistoryService {
         return tableSet;
     }
 
-    public void storeHistoryMetadata(String tableGuid) throws AtlasBaseException {
+    public void storeHistoryMetadata(List<AtlasEntity> entities) throws AtlasBaseException {
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = entityStore.getById(tableGuid);
-            if(null != info) {
-                AtlasEntity entity = info.getEntity();
-                TableMetadata tableMetadata = generateTableMetadata(entity);
-                List<ColumnMetadata> columnMetadataList = new ArrayList<>();
-                Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
-                for(String guid : referrencedEntities.keySet()) {
-                    AtlasEntity referrencedEntity = referrencedEntities.get(guid);
-                    String typeName = referrencedEntity.getTypeName();
-                    if("hive_column".equals(typeName)) {
-                        ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity);
-                        columnMetadataList.add(columnMetadata);
-                    } else if("hive_storagedesc".equals(typeName)) {
-                        String location = getEntityAttribute(referrencedEntity, "location");
-                        tableMetadata.setStoreLocation(location);
-                        //格式
-                        String inputFormat = getEntityAttribute(referrencedEntity, "inputFormat");
-                        if (Objects.nonNull(inputFormat)) {
-                            String[] fullFormat = inputFormat.split("\\.");
-                            tableMetadata.setTableFormat(fullFormat[fullFormat.length - 1]);
+            Set<String> tableSet = getTableGuid(entities);
+
+            for(String tableGuid : tableSet) {
+                AtlasEntity.AtlasEntityWithExtInfo info = entityStore.getById(tableGuid);
+                if (null != info) {
+                    AtlasEntity entity = info.getEntity();
+                    TableMetadata tableMetadata = generateTableMetadata(entity);
+                    List<ColumnMetadata> columnMetadataList = new ArrayList<>();
+                    Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
+                    for (String guid : referrencedEntities.keySet()) {
+                        AtlasEntity referrencedEntity = referrencedEntities.get(guid);
+                        String typeName = referrencedEntity.getTypeName();
+                        if ("hive_column".equals(typeName)) {
+                            ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity);
+                            columnMetadataList.add(columnMetadata);
+                        } else if ("hive_storagedesc".equals(typeName)) {
+                            String location = getEntityAttribute(referrencedEntity, "location");
+                            tableMetadata.setStoreLocation(location);
+                            //格式
+                            String inputFormat = getEntityAttribute(referrencedEntity, "inputFormat");
+                            if (Objects.nonNull(inputFormat)) {
+                                String[] fullFormat = inputFormat.split("\\.");
+                                tableMetadata.setTableFormat(fullFormat[fullFormat.length - 1]);
+                            }
                         }
                     }
-                }
 
-                metadataDAO.addTableMetadata(tableMetadata);
-                for (ColumnMetadata columnMetadata : columnMetadataList) {
-                    metadataDAO.addColumnMetadata(columnMetadata);
+                    metadataDAO.addTableMetadata(tableMetadata);
+                    for (ColumnMetadata columnMetadata : columnMetadataList) {
+                        metadataDAO.addColumnMetadata(columnMetadata);
+                    }
                 }
             }
         } catch (Exception e) {

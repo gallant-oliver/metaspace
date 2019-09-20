@@ -31,8 +31,9 @@ import java.util.List;
  */
 public interface MetadataHistoryDAO {
 
-    @Insert({"insert into table_metadata_history(guid,name,creator,update_time,database_name,table_type,partition_table,table_format,store_location,description,version,status)",
-             "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.version},#{metadata.status})"})
+    @Insert({"insert into table_metadata_history(guid,name,creator,update_time,database_name,table_type,partition_table,table_format,store_location,description,status,version)",
+             "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.status},",
+             "COALESCE((select max(version)+1 from column_metadata_history where guid='aaa' GROUP BY guid),1)"})
     public int addTableMetadata(@Param("metadata")TableMetadata metadata);
 
     @Select({" <script>",
