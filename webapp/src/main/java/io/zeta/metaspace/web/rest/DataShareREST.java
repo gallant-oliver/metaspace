@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.rest;
  * @date 2019/3/26 16:10
  */
 
+import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
@@ -416,8 +417,21 @@ public class DataShareREST {
     @Path("/publish")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response publish(List<String> apiGuidList) throws AtlasBaseException {
         try {
+
+            List<String> apiNameList = new ArrayList<>();
+            for (String apiGuid : apiGuidList) {
+                APIInfo apiInfo = shareService.getAPIInfo(apiGuid);
+                if(null != apiInfo) {
+                    apiNameList.add(apiInfo.getName());
+                } else {
+                    apiNameList.add(apiGuid);
+                }
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量发布API:[" + Joiner.on("、").join(apiNameList) + "]");
+
             shareService.publishAPI(apiGuidList);
         } catch (AtlasBaseException e) {
             throw e;
@@ -437,8 +451,19 @@ public class DataShareREST {
     @Path("/publish")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response unPublish(List<String> apiGuidList) throws AtlasBaseException {
         try {
+            List<String> apiNameList = new ArrayList<>();
+            for (String apiGuid : apiGuidList) {
+                APIInfo apiInfo = shareService.getAPIInfo(apiGuid);
+                if(null != apiInfo) {
+                    apiNameList.add(apiInfo.getName());
+                } else {
+                    apiNameList.add(apiGuid);
+                }
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量撤销发布API:[" + Joiner.on("、").join(apiNameList) + "]");
             shareService.unpublishAPI(apiGuidList);
         } catch (AtlasBaseException e) {
             throw e;

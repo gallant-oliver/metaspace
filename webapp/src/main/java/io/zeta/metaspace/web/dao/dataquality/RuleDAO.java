@@ -100,4 +100,7 @@ public interface RuleDAO {
     @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false")
     public Integer getCategoryObjectCount(@Param("categoryId") String guid);
 
+    @Select("select name from category where guid=#{categoryId}")
+    public String getCategoryName(@Param("categoryId") String guid);
+
 }

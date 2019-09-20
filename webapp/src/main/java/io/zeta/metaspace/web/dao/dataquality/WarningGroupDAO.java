@@ -42,6 +42,9 @@ public interface WarningGroupDAO {
              " </script>"})
     public void deleteByIdList(@Param("idList") List<String> idList);
 
+    @Select("select count(*) from data_quality_task2warning_group where warning_group_id=#{warningGroupId}")
+    public int countWarningGroupUserd(@Param("warningGroupId")String id);
+
 
     @Select({"<script>",
              " select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
