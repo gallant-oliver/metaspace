@@ -14,7 +14,7 @@
  * @author sunhaoning@gridsum.com
  * @date 2019/9/19 9:33
  */
-package io.zeta.metaspace.metadata.model;
+package io.zeta.metaspace.model.metadata;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;

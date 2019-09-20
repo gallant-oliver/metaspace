@@ -14,7 +14,9 @@
  * @author sunhaoning@gridsum.com
  * @date 2019/9/19 9:44
  */
-package io.zeta.metaspace.metadata.model;
+package io.zeta.metaspace.model.metadata;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /*
  * @description
@@ -29,7 +31,17 @@ public class ColumnMetadata {
     private Integer version;
     private String description;
     private String status;
+    @JsonIgnore
     private Integer total;
+
+    public ColumnMetadata(String guid, String name, String type, String tableGuid, String description, String status) {
+        this.guid = guid;
+        this.name = name;
+        this.type = type;
+        this.tableGuid = tableGuid;
+        this.description = description;
+        this.status = status;
+    }
 
     public String getGuid() {
         return guid;

@@ -43,7 +43,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -64,6 +63,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private final AtlasEntityChangeNotifier entityChangeNotifier;
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
+
+    /*@Autowired
+    private HistoryMetadataService metadataService;*/
 
     @Inject
     public AtlasEntityStoreV2(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
@@ -717,7 +719,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     AtlasVertex     vertex     = context.getVertex(guid);
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
                     boolean         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED; // entity status could be updated during import
-
+                    /*if("hive_table".equals(entity.getTypeName())) {
+                        metadataService.storeHistoryMetadata(guid);
+                    }*/
                     if (!hasUpdates && MapUtils.isNotEmpty(entity.getAttributes())) { // check for attribute value change
                         for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {
                             String attributeName = attribute.getName();

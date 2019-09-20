@@ -14,12 +14,10 @@
  * @author sunhaoning@gridsum.com
  * @date 2019/9/18 10:33
  */
-package io.zeta.metaspace.metadata.dao;
+package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.metadata.model.ColumnMetadata;
-import io.zeta.metaspace.metadata.model.TableMetadata;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.metadata.ColumnMetadata;
+import io.zeta.metaspace.model.metadata.TableMetadata;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -31,7 +29,7 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/9/18 10:33
  */
-public interface MetadataDAO {
+public interface MetadataHistoryDAO {
 
     @Insert({"insert into table_metadata_history(guid,name,creator,update_time,database_name,table_type,partition_table,table_format,store_location,description,version,status)",
              "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.version},#{metadata.status})"})
