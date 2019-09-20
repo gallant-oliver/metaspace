@@ -47,7 +47,6 @@ public class DataSourceCheckMessage {
         private String database;
         private String jdbcParameter;
         private String errorMessage;
-        private String updateTime;
 
         public void setSourceName(String sourceName) {
             this.sourceName = sourceName;
@@ -134,13 +133,6 @@ public class DataSourceCheckMessage {
             this.errorMessage = errorMessage;
         }
 
-        public String getUpdateTime() {
-            return updateTime;
-        }
-
-        public void setUpdateTime(String updateTime) {
-            this.updateTime = updateTime;
-        }
     }
 
     public List<DataSourceCheckMessage.DataSourceCheckInfo> getDataSourceCheckInfoList() {
