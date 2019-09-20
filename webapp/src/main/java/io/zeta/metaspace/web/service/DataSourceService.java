@@ -82,12 +82,41 @@ public class DataSourceService {
     }
 
     /**
-     * 更新数据源
+     * 更新无依赖数据源
      * @param dataSourceBody
      * @return
      * @throws AtlasBaseException
      */
-    public int updateDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
+    public int updateNoRelyDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
+        try {
+            if (dataSourceDAO.isSourceId(dataSourceBody.getSourceId())==0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
+            }
+            String userId = AdminUtils.getUserData().getUserId();
+            if (noCreateUserId(dataSourceBody.getSourceId(),userId)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
+            }
+            if(getRely(dataSourceBody.getSourceId())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源有依赖,无法编辑ip等属性");
+            }
+            dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+            return dataSourceDAO.updateNoRely(userId,dataSourceBody);
+        }catch (AtlasBaseException e) {
+            throw e;
+        }catch(Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e.getMessage());
+        }
+    }
+
+    /**
+     * 更新有依赖数据源
+     * @param dataSourceBody
+     * @return
+     * @throws AtlasBaseException
+     */
+    public int updateRelyDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
         try {
             if (dataSourceDAO.isSourceId(dataSourceBody.getSourceId())==0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
@@ -97,8 +126,7 @@ public class DataSourceService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
             }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
-            return dataSourceDAO.update(userId,dataSourceBody);
+            return dataSourceDAO.updateRely(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
         }catch(Exception e){
@@ -136,6 +164,9 @@ public class DataSourceService {
             for (String sourceId:sourceIds){
                 if (!(dataSourceDAO.isSourceId(sourceId)==0) && noCreateUserId(sourceId,userId)){
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在无权限删除的数据源");
+                }
+                if(getRely(sourceId)){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在有依赖的数据源");
                 }
             }
             dataSourceDAO.deleteDataSource(sourceIds);
@@ -353,6 +384,11 @@ public class DataSourceService {
         return dataSourceDAO.isCreateUser(sourceId,userId)==0;
     }
 
+    /**
+     * 数据源授权
+     * @param dataSourceAuthorizeUserId
+     * @throws AtlasBaseException
+     */
     @Transactional
     public void dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
         try {
@@ -390,7 +426,7 @@ public class DataSourceService {
 
 
     /**
-     * 判断数据源是否被使用
+     * 判断数据源是否依赖
      * @param sourceId
      * @return
      */

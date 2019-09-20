@@ -104,7 +104,7 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public boolean updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean updateDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
             if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
@@ -113,7 +113,12 @@ public class DataSourceREST {
 
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
-            dataSourceService.updateDataSource(dataSourceBody);
+            if (dataSourceBody.isRely()){
+                dataSourceService.updateRelyDataSource(dataSourceBody);
+            }else{
+                dataSourceService.updateNoRelyDataSource(dataSourceBody);
+            }
+
             return true;
         }catch (Exception e){
             LOG.warn("更新失败");

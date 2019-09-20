@@ -28,23 +28,17 @@ public class DataSourceBody {
     private String password;
     private String database;
     private String jdbcParameter;
+    private boolean rely;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     public DataSourceBody(){}
 
+    public boolean isRely() {
+        return rely;
+    }
 
-    public DataSourceBody(String sourceId, String sourceName, String sourceType, String description, String ip, String port, String userName, String password, String database, String jdbcParameter, Timestamp updateTime) {
-        this.sourceId = sourceId;
-        this.sourceName = sourceName;
-        this.sourceType = sourceType;
-        this.description = description;
-        this.ip = ip;
-        this.port = port;
-        this.userName = userName;
-        this.password = password;
-        this.database = database;
-        this.jdbcParameter = jdbcParameter;
-        this.updateTime = updateTime;
+    public void setRely(boolean rely) {
+        this.rely = rely;
     }
 
     public String getSourceId() {

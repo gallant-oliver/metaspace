@@ -50,7 +50,16 @@ public interface DataSourceDAO {
             "update_user_id=#{updateUserId}," +
             "update_time=#{dataSourceBody.updateTime}" +
             "where source_id=#{dataSourceBody.sourceId}")
-    public int update(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
+    public int updateNoRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
+
+    //更新数据源
+    @Update("update data_source set " +
+            "source_name=#{dataSourceBody.sourceName}," +
+            "description=#{dataSourceBody.description}," +
+            "update_user_id=#{updateUserId}," +
+            "update_time=#{dataSourceBody.updateTime}" +
+            "where source_id=#{dataSourceBody.sourceId}")
+    public int updateRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
 
     //数据源id是否存在
     @Select("select count(1) from data_source where source_id=#{sourceId}")
