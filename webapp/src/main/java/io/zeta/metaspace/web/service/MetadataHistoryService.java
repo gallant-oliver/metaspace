@@ -22,12 +22,14 @@ import io.zeta.metaspace.model.metadata.TableMetadata;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -70,6 +72,7 @@ public class MetadataHistoryService {
         return tableSet;
     }
 
+    @Transactional
     public void storeHistoryMetadata(List<AtlasEntity> entities) throws AtlasBaseException {
         try {
             Set<String> tableSet = getTableGuid(entities);
@@ -84,7 +87,7 @@ public class MetadataHistoryService {
                     for (String guid : referrencedEntities.keySet()) {
                         AtlasEntity referrencedEntity = referrencedEntities.get(guid);
                         String typeName = referrencedEntity.getTypeName();
-                        if ("hive_column".equals(typeName)) {
+                        if ("hive_column".equals(typeName) && AtlasEntity.Status.ACTIVE == referrencedEntity.getStatus()) {
                             ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity);
                             columnMetadataList.add(columnMetadata);
                         } else if ("hive_storagedesc".equals(typeName)) {

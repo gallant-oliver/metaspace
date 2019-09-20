@@ -51,8 +51,8 @@ public interface MetadataHistoryDAO {
              " </script>"})
     public List<TableMetadata> getTableMetadataList(@Param("guid")String tableGuid, @Param("limit")int limit, @Param("offset") int offset);
 
-    @Insert({"insert into column_metadata_history(guid,name,type,table_guid,description,status,version)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},,#{metadata.description},#{metadata.status},",
-             "COALESCE((select max(version)+1 from table_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
+    @Insert({"insert into column_metadata_history(guid,name,type,table_guid,description,status,version)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},#{metadata.description},#{metadata.status},",
+             "COALESCE((select max(version)+1 from column_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
     public int addColumnMetadata(@Param("metadata")ColumnMetadata metadata);
 
     @Select({" <script>",
