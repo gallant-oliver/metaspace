@@ -493,19 +493,11 @@ public class DataSourceService {
             boolean existOnPg = dataSourceDAO.exportDataSource() > 0 ? true : false;
             List<Map> sourceMapList = null;
             List<String> sourceList = new ArrayList<>();
-            List<DataSource> datasourceList = null;
+            List<DataSourceBody> datasourceList = null;
             if (existOnPg) {
                 datasourceList = dataSourceDAO.getDataSource();
             } else {
-                String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_NAME_LIST);
-                String columnQuery = String.format(query);
-                sourceMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
-                sourceMapList.forEach(obj -> {
-                    List<String> nameList = (List) obj.get("Asset.name");
-                    if (Objects.nonNull(nameList) && nameList.size() > 0) {
-                        sourceList.add(nameList.get(0));
-                    }
-                });
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无数据源");
             }
             List<String> attributes = new ArrayList<>();
             attributes.add("数据源名称");
@@ -519,31 +511,44 @@ public class DataSourceService {
             attributes.add("数据库名");
             List<List<String>> datas = new ArrayList<>();
             List<String> data = null;
-            if (existOnPg) {
-                for (DataSource datasource : datasourceList) {
-                    data = new ArrayList<>();
-
-                    data.add(datasource.getSourceName());
-                    data.add(datasource.getSourceType());
-                    data.add(datasource.getDescription());
-                    data.add(datasource.getIp());
-                    data.add(datasource.getPort());
-                    data.add(datasource.getUserName());
-                    data.add(datasource.getPassword());
-                    data.add(datasource.getJdbcParameter());
-                    data.add(datasource.getDatabase());
-                    datas.add(data);
-                }
-            } else {
-                for (String dataSource : sourceList) {
-                    data = new ArrayList<>();
-                    data.add(dataSource);
-                    datas.add(data);
-                }
+//            if (existOnPg) {
+//                for (DataSourceBody dataSourceBody : datasourceList) {
+//                    data = new ArrayList<>();
+//
+//                    data.add(dataSourceBody.getSourceName());
+//                    data.add(dataSourceBody.getSourceType());
+//                    data.add(dataSourceBody.getDescription());
+//                    data.add(dataSourceBody.getIp());
+//                    data.add(dataSourceBody.getPort());
+//                    data.add(dataSourceBody.getUserName());
+//                    data.add(dataSourceBody.getPassword());
+//                    data.add(dataSourceBody.getJdbcParameter());
+//                    data.add(dataSourceBody.getDatabase());
+//                    datas.add(data);
+//                }
+//            } else {
+//                for (String dataSource : sourceList) {
+//                    data = new ArrayList<>();
+//                    data.add(dataSource);
+//                    datas.add(data);
+//                }
+//            }
+            for (DataSourceBody dataSourceBody : datasourceList) {
+                data = new ArrayList<>();
+                data.add(dataSourceBody.getSourceName());
+                data.add(dataSourceBody.getSourceType());
+                data.add(dataSourceBody.getDescription());
+                data.add(dataSourceBody.getIp());
+                data.add(dataSourceBody.getPort());
+                data.add(dataSourceBody.getUserName());
+                data.add(dataSourceBody.getPassword());
+                data.add(dataSourceBody.getJdbcParameter());
+                data.add(dataSourceBody.getDatabase());
+                datas.add(data);
             }
             //文件名定义
             Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
-            File file = new File("DataSource" + ".xlsx");
+            File file = new File("DataSource."+ new Timestamp(System.currentTimeMillis()).toString().substring(0,10) + ".xlsx");
             FileOutputStream output = new FileOutputStream(file);
             workbook.write(output);
             output.flush();
@@ -559,7 +564,7 @@ public class DataSourceService {
     /**
      * 导入数据源
      */
-    public DataSourceCheckMessage checkDataSourceName(List<String> datasourceList, List<DataSource> dataSourcewithDisplayList) throws AtlasBaseException {
+    public DataSourceCheckMessage checkDataSourceName(List<String> datasourceList, List<DataSourceBody> dataSourcewithDisplayList) throws AtlasBaseException {
         try {
             //全部字段名称
             //当前需要编辑的字段名称
@@ -573,7 +578,7 @@ public class DataSourceService {
             List<String> recordDataSourceList = new ArrayList<>();
             DataSourceCheckMessage.DataSourceCheckInfo dataSourceCheckInfo = null;
             int index = 0;
-            for (DataSource dataSource : dataSourcewithDisplayList) {
+            for (DataSourceBody dataSource : dataSourcewithDisplayList) {
                 //获取要导入数据源名称
                 String sourceName = dataSource.getSourceName();
                 dataSourceCheckInfo = new DataSourceCheckMessage.DataSourceCheckInfo();
@@ -602,12 +607,12 @@ public class DataSourceService {
                     dataSourceBody.setJdbcParameter(dataSource.getJdbcParameter());
                     dataSourceBody.setSourceId(UUID.randomUUID().toString());
                     System.out.println(dataSourceBody);
-                    setNewDataSource(dataSourceBody);
+                    //setNewDataSource(dataSourceBody);
                     dataSourceCheckInfo.setDatabase(database);
 
                 } else {
                     dataSourceCheckInfo.setErrorMessage("更新数据库");
-                    dataSourceDAO.updateDataSource(dataSource);
+                    //dataSourceDAO.updateDataSource(dataSource);
 //                    dataSourceCheckMessageList.add(dataSourceCheckInfo);
                 }
                 recordDataSourceList.add(sourceName);
@@ -619,7 +624,9 @@ public class DataSourceService {
                 String userName = dataSource.getUserName();
                 String password = dataSource.getPassword();
                 String jdbcParameter = dataSource.getJdbcParameter();
+                String database = dataSource.getDatabase();
                 dataSourceCheckInfo.setSourceType(sourceType);
+                dataSourceCheckInfo.setDatabase(database);
                 dataSourceCheckInfo.setDescription(description);
                 dataSourceCheckInfo.setIp(Ip);
                 dataSourceCheckInfo.setPort(Port);
@@ -645,7 +652,7 @@ public class DataSourceService {
     public DataSourceCheckMessage importDataSource(File file) throws AtlasBaseException {
         try {
             //提取excel数据
-            List<DataSource> dataSourceMap = convertExceltoMap(file);
+            List<DataSourceBody> dataSourceMap = convertExceltoMap(file);
             //pg中取出dataSource信息，datasouce信息即为一个list
             List<String> dataSourceList= dataSourceDAO.getDataSourceList();
 
@@ -660,7 +667,7 @@ public class DataSourceService {
     }
 
     //把excel文档导入到一个list里
-    public List<DataSource> convertExceltoMap (File file)throws AtlasBaseException {
+    public List<DataSourceBody> convertExceltoMap (File file)throws AtlasBaseException {
         try {
             Workbook workbook = new WorkbookFactory().create(file);
             Sheet sheet = workbook.getSheetAt(0);
@@ -685,8 +692,8 @@ public class DataSourceService {
             String password = null;
             String database = null;
             String jdbcParameter = null;
-            List resultList = new ArrayList();
-            DataSource dataSource = null;
+            List<DataSourceBody> resultList = new ArrayList();
+            DataSourceBody dataSource = null;
 
             row = sheet.getRow(0);
             sourceNameCell = row.getCell(0);
@@ -710,56 +717,19 @@ public class DataSourceService {
                 passwordCell = row.getCell(6);
                 jdbcParameterCell = row.getCell(7);
                 databaseCell = row.getCell(8);
-//                CellType.BLANK
-//                List<String> list = new ArrayList<>();
-//                String li = null;
-//                try {
-//                    row.getCell(8).setCellType(Cell.CELL_TYPE_STRING);
-//                    li =row.getCell(8).getStringCellValue();
-//                    list.add(li);
-//                } catch (NullPointerException e) {
-//                    if (li == null) {
-//                        list.add("");
-//                        continue;
-//                    }
-//                }
-                    row.getCell(0).setCellType(CellType.STRING);
-                    row.getCell(1).setCellType(CellType.STRING);
-                    row.getCell(2).setCellType(CellType.STRING);
-                    row.getCell(3).setCellType(CellType.STRING);
-                    row.getCell(4).setCellType(CellType.STRING);
-                    row.getCell(5).setCellType(CellType.STRING);
-                    row.getCell(6).setCellType(CellType.STRING);
-                    row.getCell(7).setCellType(CellType.STRING);
-                    row.getCell(8).setCellType(CellType.STRING);
-//                row.getCell(8).setCellType(Cell.CELL_TYPE_STRING);
-
-//                    for(Row row : sheet){
-//                        int index=0;
-//                        for(Cell cell : row){
-//                            cell.setCellType(CellType.STRING);
-//                            String value = cell.getStringCellValue();
-//                            System.out.print("value:"+value+"");
-//                            index++;
-//                        }
-//                        System.out.println();
-//                    }
-//                passwordCell = row.getCell(0);
-//                passwordCell.setCellType.(CellType.STRING);
-//                String cellValue = passwordCell.getStringCellValue();
 
                 sourceName = Objects.nonNull(sourceNameCell) ? sourceNameCell.getStringCellValue() : "";
                 sourceType = Objects.nonNull(sourceTypeCell) ? sourceTypeCell.getStringCellValue() : "";
-                description = Objects.nonNull(descriptionCell) ? descriptionCell.getStringCellValue() : "";
+                description = Objects.nonNull(descriptionCell) ? descriptionCell.getStringCellValue() : null;
                 ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : "";
                 port = Objects.nonNull(portCell) ? portCell.getStringCellValue() : "";
                 userName = Objects.nonNull(userNameCell) ? userNameCell.getStringCellValue() : "";
                 password = Objects.nonNull(passwordCell) ? passwordCell.getStringCellValue() : "";
-                jdbcParameter = Objects.nonNull(jdbcParameterCell) ? jdbcParameterCell.getStringCellValue() : "";
+                jdbcParameter = Objects.nonNull(jdbcParameterCell) ? jdbcParameterCell.getStringCellValue() : null;
                 database = Objects.nonNull(databaseCell) ? databaseCell.getStringCellValue() : "";
 
 
-                dataSource = new DataSource();
+                dataSource = new DataSourceBody();
                 dataSource.setSourceName(sourceName);
                 dataSource.setSourceType(sourceType);
                 dataSource.setDescription(description);
