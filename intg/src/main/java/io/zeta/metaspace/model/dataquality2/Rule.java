@@ -39,6 +39,8 @@ public class Rule {
     private Timestamp updateTime;
     private boolean delete;
     private String path;
+    private Integer ruleType;
+    private String ruleTypeName;
 
     public String getId() {
         return id;
@@ -183,5 +185,21 @@ public class Rule {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Integer getRuleType() {
+        return ruleType;
+    }
+
+    public void setRuleType(Integer ruleType) {
+        this.ruleType = ruleType;
+    }
+
+    public String getRuleTypeName() {
+        return ruleTypeName;
+    }
+
+    public void setRuleTypeName(String ruleTypeName) {
+        this.ruleTypeName = ruleTypeName;
     }
 }

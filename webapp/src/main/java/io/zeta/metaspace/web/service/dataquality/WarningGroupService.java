@@ -174,10 +174,8 @@ public class WarningGroupService {
 
     public void closeTaskExecutionWarning(Integer warningType, List<String> taskIdList) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
-            warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList, currentTime, userId);
+            //warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList, currentTime, userId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }

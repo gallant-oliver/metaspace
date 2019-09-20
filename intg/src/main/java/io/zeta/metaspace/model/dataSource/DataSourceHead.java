@@ -13,8 +13,10 @@
 
 package io.zeta.metaspace.model.dataSource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class DataSourceHead {
-    private int count;
+
     private String sourceId;
     private String sourceName;
     private String sourceType;
@@ -22,27 +24,35 @@ public class DataSourceHead {
     private String createTime;
     private String updateTime;
     private String updateUserName;
+    private boolean rely;
+    private boolean permission;
+    @JsonIgnore
+    private int totalSize;
 
-    public DataSourceHead(){}
-
-    public DataSourceHead(int count, String sourceId, String sourceName, String sourceType, String description, String createTime, String updateTime, String updateUserName) {
-        this.count = count;
-        this.sourceId = sourceId;
-        this.sourceName = sourceName;
-        this.sourceType = sourceType;
-        this.description = description;
-        this.createTime = createTime;
-        this.updateTime = updateTime;
-        this.updateUserName = updateUserName;
+    public boolean isRely() {
+        return rely;
     }
 
-    public int getCount() {
-        return count;
+    public void setRely(boolean rely) {
+        this.rely = rely;
     }
 
-    public void setCount(int count) {
-        this.count = count;
+    public boolean isPermission() {
+        return permission;
     }
+
+    public void setPermission(boolean permission) {
+        this.permission = permission;
+    }
+
+    public int getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
 
     public String getSourceId() {
         return sourceId;

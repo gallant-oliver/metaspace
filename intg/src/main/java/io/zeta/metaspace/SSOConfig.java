@@ -12,6 +12,7 @@ public class SSOConfig {
     private static String infoURL;
     private static String organizationURL;
     private static String organizationCountURL;
+    private static String userInfoURL;
 
     public static String getLoginURL() {
         return loginURL;
@@ -30,6 +31,10 @@ public class SSOConfig {
         return organizationCountURL;
     }
 
+    public static String getUserInfoURL() {
+        return userInfoURL;
+    }
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -37,6 +42,7 @@ public class SSOConfig {
             infoURL = conf.getString("sso.info.url");
             organizationURL = conf.getString("sso.organization.url");
             organizationCountURL = conf.getString("sso.organization.count.url");
+            userInfoURL = conf.getString("sso.user.info.url");
             if (loginURL == null || loginURL.equals("")) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.login.url未正确配置");
             }
@@ -48,6 +54,9 @@ public class SSOConfig {
             }
             if(StringUtils.isEmpty(organizationCountURL)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.organization.count.url未正确配置");
+            }
+            if(StringUtils.isEmpty(userInfoURL)) {
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.user.info.url未正确配置");
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

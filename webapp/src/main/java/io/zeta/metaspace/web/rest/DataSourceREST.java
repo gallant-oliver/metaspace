@@ -19,11 +19,18 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataSource.*;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
+import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
+import io.zeta.metaspace.model.dataSource.DataSourceBody;
+import io.zeta.metaspace.model.dataSource.DataSourceConnection;
+import io.zeta.metaspace.model.dataSource.DataSourceHead;
+import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.util.AESUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -82,17 +89,20 @@ public class DataSourceREST {
      */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Response setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
-            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+            dataSourceBody.setSourceId(UUID.randomUUID().toString());
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
-            dataSourceBody.setSourceId(UUID.randomUUID().toString());
+
+            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
             dataSourceService.setNewDataSource(dataSourceBody);
-            return Response.status(200).entity("success").build();
+            return true;
         }catch (Exception e){
             LOG.warn("添加失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败"+e.getMessage());
@@ -107,18 +117,24 @@ public class DataSourceREST {
      */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updataDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean updateDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
 
         try {
-            if (dataSourceService.isSourceName(dataSourceBody.getSourceName())!=0){
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
             }
 
             HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
-            dataSourceService.updateDataSource(dataSourceBody);
-            return Response.status(200).entity("success").build();
+            if (dataSourceBody.isRely()){
+                dataSourceService.updateRelyDataSource(dataSourceBody);
+            }else{
+                dataSourceService.updateNoRelyDataSource(dataSourceBody);
+            }
+
+            return true;
         }catch (Exception e){
             LOG.warn("更新失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"更新失败"+e.getMessage());
@@ -133,16 +149,19 @@ public class DataSourceREST {
      */
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Response deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
+    public boolean deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
         for (String sourceId:sourceIds
              ) {
             String sourceName = dataSourceService.getSourceNameForSourceId(sourceId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), sourceName);
+            if (sourceName!=null){
+                HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), sourceName);
+            }
         }
         try {
             dataSourceService.deleteDataSource(sourceIds);
-            return Response.status(200).entity("success").build();
+            return true;
         }catch (Exception e){
             LOG.warn("删除失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除失败"+e.getMessage());
@@ -170,6 +189,29 @@ public class DataSourceREST {
 
     /**
      * 测试连接
+     * @param sourceId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/testjdbc/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean testConnection1(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+        try {
+            DataSourceConnection dataSourceConnection = dataSourceService.getDataSourceConnection(sourceId);
+            if (Objects.isNull(dataSourceConnection)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
+            }
+            return dataSourceService.testConnection(dataSourceConnection);
+        }catch (Exception e){
+            LOG.warn("连接失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"连接失败"+e.getMessage());
+        }
+    }
+
+    /**
+     * 测试连接
      * @param dataSourceConnection
      * @return
      * @throws AtlasBaseException
@@ -178,7 +220,7 @@ public class DataSourceREST {
     @Path("/testjdbc")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+    public boolean testConnection2(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         try {
             return dataSourceService.testConnection(dataSourceConnection);
         }catch (Exception e){
@@ -281,10 +323,44 @@ public class DataSourceREST {
         }
     }
 
+    @GET
+    @Path("/authorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getAuthorizeUserId(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+        try {
 
+            return dataSourceService.getAuthorizeUser(sourceId);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
 
+    @GET
+    @Path("/noAuthorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
+        try {
+            return dataSourceService.getNoAuthorizeUser(sourceId,query);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
 
+    @POST
+    @Path("/authorize")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Response dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
+        try {
+            dataSourceService.dataSourceAuthorize(dataSourceAuthorizeUserId);
+            return Response.status(200).entity("success").build();
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源授权失败:"+e.getMessage());
 
-
-
+        }
+    }
 }

@@ -97,15 +97,15 @@ public class DataSourceConnection {
     }
 
     public void setDriver() {
-        if (sourceType.equals("MYSQL")){
+        if (sourceType.toUpperCase().equals("MYSQL")){
             driver = "com.mysql.jdbc.Driver";
-        }else if (sourceType.equals("ORACLE")){
+        }else if (sourceType.toUpperCase().equals("ORACLE")){
             driver = "oracle.jdbc.driver.OracleDriver";
-        }else if (sourceType.equals("SQL SERVER")){
+        }else if (sourceType.toUpperCase().equals("SQL SERVER")){
             driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-        }else if (sourceType.equals("HIVE")){
+        }else if (sourceType.toUpperCase().equals("HIVE")){
             driver = "org.apache.hive.jdbc.HiveDriver";
-        }else if (sourceType.equals("POSTGRESQL")){
+        }else if (sourceType.toUpperCase().equals("POSTGRESQL")){
             driver = "org.postgresql.Driver";
         }
     }
@@ -115,15 +115,15 @@ public class DataSourceConnection {
     }
 
     public void setUrl() {
-        if (sourceType.equals("MYSQL")){
+        if (sourceType.toUpperCase().equals("MYSQL")){
             url = "jdbc:mysql://" + ip + ":" + port + "/" + database;
-        }else if (sourceType.equals("ORACLE")){
+        }else if (sourceType.toUpperCase().equals("ORACLE")){
             url = "jdbc:oracle:thin:@" + ip + ":" + port + ":"+database;
-        }else if (sourceType.equals("SQL SERVER")){
+        }else if (sourceType.toUpperCase().equals("SQL SERVER")){
             url = "jdbc:sqlserver://" + ip + ":" + port + ";DatabaseName="+database;
-        }else if (sourceType.equals("HIVE")){
+        }else if (sourceType.toUpperCase().equals("HIVE")){
             url = "jdbc:hive2://" + ip + ":" + port + "/" + database;
-        }else if (sourceType.equals("POSTGRESQL")){
+        }else if (sourceType.toUpperCase().equals("POSTGRESQL")){
             url = "jdbc:postgresql://" + ip + ":" + port + "/" + database;
         }
     }

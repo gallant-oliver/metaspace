@@ -33,8 +33,8 @@ public class RuleTemplate {
     private String unit;
     private String description;
     private Boolean delete;
-    private String categoryId;
-    private String ruleType;
+    private Integer ruleType;
+    private String ruleTypeName;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
 
@@ -86,19 +86,11 @@ public class RuleTemplate {
         this.delete = delete;
     }
 
-    public String getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getRuleType() {
+    public Integer getRuleType() {
         return ruleType;
     }
 
-    public void setRuleType(String ruleType) {
+    public void setRuleType(Integer ruleType) {
         this.ruleType = ruleType;
     }
 
@@ -108,5 +100,13 @@ public class RuleTemplate {
 
     public void setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
+    }
+
+    public String getRuleTypeName() {
+        return ruleTypeName;
+    }
+
+    public void setRuleTypeName(String ruleTypeName) {
+        this.ruleTypeName = ruleTypeName;
     }
 }
