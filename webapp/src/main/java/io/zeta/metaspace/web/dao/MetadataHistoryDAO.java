@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
+import io.zeta.metaspace.model.result.PageResult;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

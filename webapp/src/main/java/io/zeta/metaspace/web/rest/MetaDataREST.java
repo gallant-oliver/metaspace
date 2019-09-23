@@ -573,4 +573,17 @@ public class MetaDataREST {
         }
     }
 
+    @POST
+    @Path("/{tableGuid}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void getHistoryList(@PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+
 }
