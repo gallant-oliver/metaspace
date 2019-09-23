@@ -1547,8 +1547,12 @@ public class MetaDataService {
     public PageResult getHistoryList(String tableGuid, Parameters parameters) {
         PageResult pageResult = new PageResult();
         List<TableMetadata> tableMetadataList = metadataHistoryDAO.getTableMetadataList(tableGuid, parameters.getLimit(), parameters.getOffset());
-        pageResult.setLists(tableMetadataList);
-        pageResult.setCurrentSize(tableMetadataList.size());
+        if(null != tableMetadataList && tableMetadataList.size()>0) {
+            Integer totalSize = tableMetadataList.get(0).getTotal();
+            pageResult.setLists(tableMetadataList);
+            pageResult.setCurrentSize(tableMetadataList.size());
+            pageResult.setTotalSize(totalSize);
+        }
         return pageResult;
     }
 }
