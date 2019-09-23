@@ -633,9 +633,6 @@ public class DataSourceService {
             dataSourceCheckMessage.setErrorDataSourceList(errorDataSourceList);
             dataSourceCheckMessage.setTotalSize(dataSourceCheckMessageList.size());
             dataSourceCheckMessage.setErrorCount(errorDataSourceCount);
-            if (errorDataSourceCount==0){
-                dataSourceCheckMessage.setStatus(DataSourceCheckMessage.Status.SUCCESS);
-            }
             return dataSourceCheckMessage;
         } catch (Exception e) {
             e.printStackTrace();
@@ -728,15 +725,43 @@ public class DataSourceService {
                 databaseCell = row.getCell(7);
                 jdbcParameterCell = row.getCell(8);
 
-                sourceName = Objects.nonNull(sourceNameCell) ? sourceNameCell.getStringCellValue() : "";
-                sourceType = Objects.nonNull(sourceTypeCell) ? sourceTypeCell.getStringCellValue() : "";
+                if (Objects.nonNull(sourceNameCell)){
+                    sourceName = sourceNameCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据源名字不能为空");
+                }
+                if (Objects.nonNull(sourceTypeCell)){
+                    sourceType = sourceTypeCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据源类型不能为空");
+                }
                 description = Objects.nonNull(descriptionCell) ? descriptionCell.getStringCellValue() : null;
-                ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : "";
-                port = Objects.nonNull(portCell) ? portCell.getStringCellValue() : "";
-                userName = Objects.nonNull(userNameCell) ? userNameCell.getStringCellValue() : "";
-                password = Objects.nonNull(passwordCell) ? passwordCell.getStringCellValue() : "";
+                if (Objects.nonNull(ipCell)){
+                    ip = ipCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据源ip不能为空");
+                }
+                if (Objects.nonNull(portCell)){
+                    port = portCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据源端口不能为空");
+                }
+                if (Objects.nonNull(userNameCell)){
+                    userName = userNameCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据库用户名不能为空");
+                }
+                if (Objects.nonNull(passwordCell)){
+                    password = passwordCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据库用户密码不能为空");
+                }
                 jdbcParameter = Objects.nonNull(jdbcParameterCell) ? jdbcParameterCell.getStringCellValue() : null;
-                database = Objects.nonNull(databaseCell) ? databaseCell.getStringCellValue() : "";
+                if (Objects.nonNull(databaseCell)){
+                    database = databaseCell.getStringCellValue();
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "第"+i+"行数据库名不能为空");
+                }
 
 
                 dataSource = new DataSourceBody();

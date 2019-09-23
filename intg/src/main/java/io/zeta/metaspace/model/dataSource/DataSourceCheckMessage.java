@@ -17,23 +17,10 @@ import java.util.List;
 
 public class DataSourceCheckMessage {
     private List<DataSourceCheckInfo> dataSourceCheckInfoList;
-    private int status;
     private int errorCount;
     private int totalSize;
     private List<String> errorDataSourceList;
 
-    public enum Status {
-        SUCCESS(1), FAILURE(0);
-
-        private int status;
-        Status(int status) {
-            this.status = status;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-    }
 
     public static class DataSourceCheckInfo {
         private int row;
@@ -143,13 +130,6 @@ public class DataSourceCheckMessage {
         this.dataSourceCheckInfoList = dataSourceCheckInfoList;
     }
 
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(DataSourceCheckMessage.Status status) {
-        this.status = status.getStatus();
-    }
 
     public int getErrorCount() {
         return errorCount;
