@@ -489,14 +489,12 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public File exportExcel() throws AtlasBaseException {
+    public File exportExcel(List<String> sourceIds) throws AtlasBaseException {
         try {
             boolean existOnPg = dataSourceDAO.exportDataSource() > 0 ? true : false;
-            List<Map> sourceMapList = null;
-            List<String> sourceList = new ArrayList<>();
             List<DataSourceBody> datasourceList = null;
             if (existOnPg) {
-                datasourceList = dataSourceDAO.getDataSource();
+                datasourceList = dataSourceDAO.getDataSource(sourceIds);
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无数据源");
             }
@@ -508,8 +506,8 @@ public class DataSourceService {
             attributes.add("端口");
             attributes.add("用户名");
             attributes.add("密码");
-            attributes.add("Jdbc连接参数");
             attributes.add("数据库名");
+            attributes.add("Jdbc连接参数");
             List<List<String>> datas = new ArrayList<>();
             List<String> data = null;
 //            if (existOnPg) {
@@ -543,8 +541,8 @@ public class DataSourceService {
                 data.add(dataSourceBody.getPort());
                 data.add(dataSourceBody.getUserName());
                 data.add(dataSourceBody.getPassword());
-                data.add(dataSourceBody.getJdbcParameter());
                 data.add(dataSourceBody.getDatabase());
+                data.add(dataSourceBody.getJdbcParameter());
                 datas.add(data);
             }
             //文件名定义
@@ -567,12 +565,13 @@ public class DataSourceService {
      */
     public DataSourceCheckMessage checkDataSourceName(List<String> dataSourceList, List<DataSourceBody> dataSourceWithDisplayList) throws AtlasBaseException {
         try {
+            String userId = AdminUtils.getUserData().getUserId();
             DataSourceCheckMessage dataSourceCheckMessage = new DataSourceCheckMessage();
             //数据源错误计数
             int errorDataSourceCount = 0;
             List<String> errorDataSourceList = new ArrayList<>();
             List<DataSourceCheckMessage.DataSourceCheckInfo> dataSourceCheckMessageList = new ArrayList<>();
-            //已导入数据源名字
+            //已导入数据源名称
             List<String> recordDataSourceList = new ArrayList<>();
             DataSourceCheckMessage.DataSourceCheckInfo dataSourceCheckInfo = null;
             int index = 0;
@@ -582,21 +581,32 @@ public class DataSourceService {
                 dataSourceCheckInfo = new DataSourceCheckMessage.DataSourceCheckInfo();
                 dataSourceCheckInfo.setRow(index++);
                 dataSourceCheckInfo.setSourceName(sourceName);
-                //是否为重复字段
                 if (recordDataSourceList.contains(sourceName)) {
-                    dataSourceCheckInfo.setErrorMessage("导入重复数据库名称");
+                    dataSourceCheckInfo.setErrorMessage("导入重复数据源名字");
                     errorDataSourceList.add(sourceName);
                     errorDataSourceCount++;
 
                 } else if (!dataSourceList.contains(sourceName)) {
-                    dataSourceCheckInfo.setErrorMessage("插入新数据库");
+                    dataSourceCheckInfo.setErrorMessage("插入新数据源");
 
                     dataSource.setSourceId(UUID.randomUUID().toString());
                     setNewDataSource(dataSource);
 
                 } else {
-                    dataSourceCheckInfo.setErrorMessage("更新数据库");
-                    dataSourceDAO.updateDataSource(dataSource);
+                    String sourceId = dataSourceDAO.getSourceIdBySourceName(sourceName);
+                    if (getRely(sourceId)){
+                        dataSourceCheckInfo.setErrorMessage("更新数据源失败，数据源存在依赖");
+                        errorDataSourceCount++;
+                        errorDataSourceList.add(sourceName);
+                    }else if (noCreateUserId(sourceId,userId)){
+                        dataSourceCheckInfo.setErrorMessage("更新数据源失败，没有更新该数据源的权限");
+                        errorDataSourceCount++;
+                        errorDataSourceList.add(sourceName);
+                    }else{
+                        dataSourceCheckInfo.setErrorMessage("更新数据源");
+                        dataSource.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+                        dataSourceDAO.updateDataSource(userId,dataSource);
+                    }
                 }
                 recordDataSourceList.add(sourceName);
 
@@ -623,7 +633,9 @@ public class DataSourceService {
             dataSourceCheckMessage.setErrorDataSourceList(errorDataSourceList);
             dataSourceCheckMessage.setTotalSize(dataSourceCheckMessageList.size());
             dataSourceCheckMessage.setErrorCount(errorDataSourceCount);
-
+            if (errorDataSourceCount==0){
+                dataSourceCheckMessage.setStatus(DataSourceCheckMessage.Status.SUCCESS);
+            }
             return dataSourceCheckMessage;
         } catch (Exception e) {
             e.printStackTrace();
@@ -636,7 +648,6 @@ public class DataSourceService {
         try {
             //提取excel数据
             List<DataSourceBody> dataSourceMap = convertExceltoMap(file);
-            //pg中取出dataSource信息，datasouce信息即为一个list
             List<String> dataSourceList= dataSourceDAO.getDataSourceList();
 
             return checkDataSourceName(dataSourceList, dataSourceMap);
@@ -655,6 +666,18 @@ public class DataSourceService {
             Workbook workbook = new WorkbookFactory().create(file);
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
+
+            List<String> attributes = new ArrayList<>();
+            attributes.add("数据源名称");
+            attributes.add("数据源类型");
+            attributes.add("描述");
+            attributes.add("主机IP");
+            attributes.add("端口");
+            attributes.add("用户名");
+            attributes.add("密码");
+            attributes.add("数据库名");
+            attributes.add("Jdbc连接参数");
+
             Row row = null;
             Cell sourceNameCell = null;
             Cell sourceTypeCell = null;
@@ -679,13 +702,10 @@ public class DataSourceService {
             DataSourceBody dataSource = null;
 
             row = sheet.getRow(0);
-            sourceNameCell = row.getCell(0);
-            sourceTypeCell = row.getCell(1);
-            sourceName = Objects.nonNull(sourceNameCell) ? sourceNameCell.getStringCellValue() : "";
-            sourceType = Objects.nonNull(sourceTypeCell) ? sourceTypeCell.getStringCellValue() : "";
-
-            if (!"数据源名称".equals(sourceName) || !"数据源类型".equals(sourceType)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Excel表头错误，表头名称应为【数据源名称】和【数据源类型】");
+            for (int i=0;i < 9;i++){
+                if (!attributes.get(i).equals(row.getCell(i).getStringCellValue())){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Excel表头错误，表头名称"+row.getCell(i).getStringCellValue()+"应为"+attributes.get(i));
+                }
             }
 
             for (int i = 1; i < rowNum; i++) {
@@ -705,13 +725,13 @@ public class DataSourceService {
                 portCell = row.getCell(4);
                 userNameCell = row.getCell(5);
                 passwordCell = row.getCell(6);
-                jdbcParameterCell = row.getCell(7);
-                databaseCell = row.getCell(8);
+                databaseCell = row.getCell(7);
+                jdbcParameterCell = row.getCell(8);
 
                 sourceName = Objects.nonNull(sourceNameCell) ? sourceNameCell.getStringCellValue() : "";
                 sourceType = Objects.nonNull(sourceTypeCell) ? sourceTypeCell.getStringCellValue() : "";
                 description = Objects.nonNull(descriptionCell) ? descriptionCell.getStringCellValue() : null;
-                ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : null;
+                ip = Objects.nonNull(ipCell) ? ipCell.getStringCellValue() : "";
                 port = Objects.nonNull(portCell) ? portCell.getStringCellValue() : "";
                 userName = Objects.nonNull(userNameCell) ? userNameCell.getStringCellValue() : "";
                 password = Objects.nonNull(passwordCell) ? passwordCell.getStringCellValue() : "";

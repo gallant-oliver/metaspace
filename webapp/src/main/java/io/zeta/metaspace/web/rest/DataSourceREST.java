@@ -264,13 +264,13 @@ public class DataSourceREST {
      * @throws IOException
      * @throws SQLException
      */
-    @GET
+    @POST
     @Path("/export")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadExcelTemplate() throws AtlasBaseException, IOException, SQLException {
+    public void downloadExcelTemplate(List<String> sourceIds) throws AtlasBaseException, IOException, SQLException {
         try {
-            File xlsxFile = dataSourceService.exportExcel();
+            File xlsxFile = dataSourceService.exportExcel(sourceIds);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             //String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");

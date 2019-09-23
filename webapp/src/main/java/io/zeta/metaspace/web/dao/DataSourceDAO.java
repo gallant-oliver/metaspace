@@ -137,16 +137,23 @@ public interface DataSourceDAO {
     @Select("select count(*) from data_source ")
     public int exportDataSource();
 
-    @Select("select source_name as sourceName, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source")
-    public List<DataSourceBody> getDataSource();
+    @Select("<script>" +
+            "select source_name as sourceName, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source" +
+            " where source_id in " +
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" +
+            "#{sourceId}" +
+            "</foreach>" +
+            "</script>")
+    public List<DataSourceBody> getDataSource(@Param("sourceIds") List<String> sourceIds);
+
 
     @Select("select source_name from data_source ")
     public List<String> getDataSourceList();
 
     @Update({" <script>",
-            " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter} where source_name=#{dataSource.sourceName}",
+            " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter},update_time=#{dataSource.updateTime},update_user_id=#{userId} where source_name=#{dataSource.sourceName}",
             " </script>"})
-    public int updateDataSource(@Param("dataSource")DataSourceBody info);
+    public int updateDataSource(@Param("userId")String userId,@Param("dataSource")DataSourceBody dataSource);
 
 
     //获取测试连接参数
@@ -205,4 +212,8 @@ public interface DataSourceDAO {
     @Select("select authorize_user_id from data_source_authorize " +
             "where source_id=#{sourceId}")
     public List<String> getAuthorizeUserIds(@Param("sourceId") String sourceId);
+
+    //根据数据源名字获取数据源id
+    @Select("select source_id from data_source where source_name=#{sourceName}")
+    public String getSourceIdBySourceName(@Param("sourceName") String sourceName);
 }
