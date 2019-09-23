@@ -41,31 +41,50 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
 
 
     @Override
-    protected AtlasEntity toInstanceEntity(AtlasEntity dbEntity, String instanceId) {
-        if (dbEntity == null) {
-            dbEntity = new AtlasEntity(getInstanceTypeName());
+    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId) {
+        if (instanceEntity == null) {
+            instanceEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getInstanceTypeName()));
         }
-        dbEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getInstanceQualifiedName(clusterName, instanceId));
-        dbEntity.setAttribute(ATTRIBUTE_NAME, dataSourceInfo.getSourceName());
-        dbEntity.setAttribute(ATTRIBUTE_RDBMS_TYPE, getRMDBType());
-        dbEntity.setAttribute(ATTRIBUTE_PLATFORM, getRMDBType());
-        dbEntity.setAttribute(ATTRIBUTE_HOSTNAME, dataSourceInfo.getIp());
-        dbEntity.setAttribute(ATTRIBUTE_PORT, dataSourceInfo.getPort());
-        dbEntity.setAttribute(ATTRIBUTE_COMMENT, dataSourceInfo.getDescription());
-        dbEntity.setAttribute(ATTRIBUTE_CONTACT_INFO, catalog.getJdbcDriverInfo().getConnectionUrl());
-        return dbEntity;
+        AtlasEntity entity = instanceEntity.getEntity();
+        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getInstanceQualifiedName(instanceId));
+        entity.setAttribute(ATTRIBUTE_NAME, dataSourceInfo.getSourceName());
+        entity.setAttribute(ATTRIBUTE_RDBMS_TYPE, getRMDBType());
+        entity.setAttribute(ATTRIBUTE_PLATFORM, getRMDBType());
+        entity.setAttribute(ATTRIBUTE_HOSTNAME, dataSourceInfo.getIp());
+        entity.setAttribute(ATTRIBUTE_PORT, dataSourceInfo.getPort());
+        entity.setAttribute(ATTRIBUTE_COMMENT, dataSourceInfo.getDescription());
+        entity.setAttribute(ATTRIBUTE_CONTACT_INFO, catalog.getJdbcDriverInfo().getConnectionUrl());
+        List<AtlasEntity> dbEntities = new ArrayList<>();
+        for (Schema schema : databaseNames) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
+            String dbQualifiedName = getDBQualifiedName(instanceId, schema.getFullName());
+            if (metaDataContext.isKownEntity(dbQualifiedName)) {
+                dbEntity = metaDataContext.getEntity(dbQualifiedName);
+            }else {
+                dbEntity = toDBEntity(instanceEntity.getEntity(), null, instanceId, schema.getFullName());
+                metaDataContext.putEntity(dbQualifiedName, dbEntity);
+            }
+            dbEntities.add(dbEntity.getEntity());
+            instanceEntity.addReferredEntity(dbEntity.getEntity());
+        }
+        entity.setAttribute(ATTRIBUTE_DATABASES, getObjectIds(dbEntities));
+
+        return instanceEntity;
     }
 
     @Override
-    protected AtlasEntity toDBEntity(AtlasEntity instanceEntity, AtlasEntity dbEntity, String instanceId, String databaseName) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity instanceEntity, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName) {
         if (dbEntity == null) {
-            dbEntity = new AtlasEntity(getDatabaseTypeName());
+            dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getDatabaseTypeName()));
         }
-        dbEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(clusterName, instanceId, databaseName));
-        dbEntity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
-        dbEntity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
-        dbEntity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
-        dbEntity.setAttribute(ATTRIBUTE_INSTANCE, getObjectId(instanceEntity));
+        AtlasEntity entity = dbEntity.getEntity();
+        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
+        entity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
+        entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
+        entity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
+        entity.setAttribute(ATTRIBUTE_INSTANCE, getObjectId(instanceEntity));
+        //todo ATTRIBUTE_TABLES 需要在表插入janusgraph以后才能设置
+//      entity.setAttribute(ATTRIBUTE_TABLES, getObjectIds(tableEntities));
         return dbEntity;
     }
 
@@ -75,7 +94,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
             tableEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getTableTypeName()));
         }
         AtlasEntity table = tableEntity.getEntity();
-        table.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(clusterName, instanceId, databaseName, tableName.getName()));
+        table.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, tableName.getName()));
         table.setAttribute(ATTRIBUTE_NAME, tableName.getName().toLowerCase());
         table.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
         Map<String, String> tableCreateTimeAndComment = getTableCreateTimeAndComment(tableName.getName());
@@ -84,28 +103,52 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         table.setAttribute(ATTRIBUTE_NAME_PATH, tableName.getFullName());
         List<AtlasEntity> columns = toColumns(tableName.getColumns(), table);
         List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table);
-        List<AtlasEntity> foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table);
+        List<AtlasEntity> foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table, dbEntity, instanceId);
         table.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
-        //todo 如果column第一次导入，index和fk回报错
-//        table.setAttribute(ATTRIBUTE_INDEXES, getObjectIds(indexes));
-//        table.setAttribute(ATTRIBUTE_FOREIGN_KEYS, getObjectIds(foreignKeys));
+        for (AtlasEntity column : columns) {
+            tableEntity.addReferredEntity(column);
+        }
+        table.setAttribute(ATTRIBUTE_INDEXES, getObjectIds(indexes));
+        for (AtlasEntity index : indexes) {
+            tableEntity.addReferredEntity(index);
+        }
+        table.setAttribute(ATTRIBUTE_FOREIGN_KEYS, getObjectIds(foreignKeys));
+        for (AtlasEntity foreignKey : foreignKeys) {
+            tableEntity.addReferredEntity(foreignKey);
+        }
         return tableEntity;
     }
 
-    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table) {
+    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceId) {
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey : foreignKeys) {
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
             foreignEntity.setAttribute(ATTRIBUTE_NAME, foreignKey.getName());
             foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
             foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
-            foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, getKeyColumns(foreignKey,columns));
-//            foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getReferencsTable(foreignKey));
-//            foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, getReferencesColumns(foreignKey));
+            foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, getKeyColumns(foreignKey, columns));
+            //todo ATTRIBUTE_REFERENCES_TABLE 和 ATTRIBUTE_REFERENCES_COLUMNS 需要需要表已经存在janusgraph中
+//            visitForeignEntity(foreignEntity, foreignKey, dbEntity, instanceId);
 
             ret.add(foreignEntity);
         }
         return ret;
+    }
+
+    private void visitForeignEntity(AtlasEntity foreignEntity, ForeignKey foreignKey, AtlasEntity dbEntity, String instanceId) {
+        for (ForeignKeyColumnReference columnReference : foreignKey.getColumnReferences()) {
+            Table parentTable = columnReference.getForeignKeyColumn().getParent();
+            try {
+                AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = findEntity(getTableTypeName(), getTableQualifiedName(instanceId, parentTable.getSchema().getFullName(), parentTable.getName()));
+                if (null == atlasEntityWithExtInfo) {
+                    atlasEntityWithExtInfo = registerTable(dbEntity, instanceId, parentTable.getSchema().getFullName(), parentTable);
+                }
+                foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(atlasEntityWithExtInfo.getEntity()));
+
+            } catch (Exception e) {
+                LOG.error("导入表{}元数据失败", parentTable.getFullName(), e);
+            }
+        }
     }
 
     /**
