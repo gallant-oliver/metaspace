@@ -1597,7 +1597,7 @@ public class MetaDataService {
         Set<String> changedFiledSet = new HashSet<>();
         try {
             List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
-            List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadataList(tableGuid, version, null);
+            List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
 
             Map<String, Map> currentColumnMedataMap = new HashMap<>();
             for (ColumnMetadata metadata : currentMetadata) {

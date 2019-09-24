@@ -585,6 +585,18 @@ public class MetaDataREST {
         }
     }
 
+    @GET
+    @Path("/table/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableMetadata getTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
 
     @POST
     @Path("/column/{tableGuid}/{version}/history")
@@ -598,7 +610,7 @@ public class MetaDataREST {
         }
     }
 
-    @POST
+    @GET
     @Path("/table/{tableGuid}/compare/{version}/history")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -610,7 +622,7 @@ public class MetaDataREST {
         }
     }
 
-    @POST
+    @GET
     @Path("/column/{tableGuid}/compare/{version}/history")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

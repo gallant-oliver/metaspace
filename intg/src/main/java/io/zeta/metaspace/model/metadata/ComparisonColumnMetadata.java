@@ -25,23 +25,23 @@ import java.util.Set;
  * @date 2019/9/24 14:09
  */
 public class ComparisonColumnMetadata {
-    private List<BasicMetadata> currentMetadata;
-    private List<BasicMetadata> oldMetadata;
+    private List<ColumnMetadata> currentMetadata;
+    private List<ColumnMetadata> oldMetadata;
     private Set<String> changedSet;
 
-    public List<BasicMetadata> getCurrentMetadata() {
+    public List<ColumnMetadata> getCurrentMetadata() {
         return currentMetadata;
     }
 
-    public void setCurrentMetadata(List<BasicMetadata> currentMetadata) {
+    public void setCurrentMetadata(List<ColumnMetadata> currentMetadata) {
         this.currentMetadata = currentMetadata;
     }
 
-    public List<BasicMetadata> getOldMetadata() {
+    public List<ColumnMetadata> getOldMetadata() {
         return oldMetadata;
     }
 
-    public void setOldMetadata(List<BasicMetadata> oldMetadata) {
+    public void setOldMetadata(List<ColumnMetadata> oldMetadata) {
         this.oldMetadata = oldMetadata;
     }
 

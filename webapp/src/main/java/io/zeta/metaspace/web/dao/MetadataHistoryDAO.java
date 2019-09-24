@@ -86,7 +86,15 @@ public interface MetadataHistoryDAO {
     public TableMetadata getLastTableMetadata(@Param("guid")String tableGuid);
 
     @Select({" select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
-             " creator,updater,create_time as createTime,update_time as updateTime,",
+             " creator,updater,create_time as createTime,update_time as updateTime",
              " from column_metadata_history where table_guid=#{guid} and version=(select max(version) from column_metadata_history where table_guid=#{guid})"})
     public List<ColumnMetadata> getLastColumnMetadata(@Param("guid")String tableGuid);
+
+    @Select({" <script>",
+             " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
+             " creator,updater,create_time as createTime,update_time as updateTime",
+             " from column_metadata_history where",
+             " table_guid=#{guid} and version=#{version}",
+             " </script>"})
+    public List<ColumnMetadata> getColumnMetadata(@Param("guid")String tableGuid, @Param("version")Integer version);
 }
