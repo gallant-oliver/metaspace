@@ -16,34 +16,53 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.sql.Timestamp;
 
 /*
  * @description
  * @author sunhaoning
  * @date 2019/9/19 9:44
  */
-public class ColumnMetadata {
-    private String guid;
-    private String name;
+public class ColumnMetadata extends BasicMetadata {
+    /*private String guid;
+    private String name;*/
     private String type;
     private String tableGuid;
-    private Integer version;
+    /*private Integer version;
     private String description;
-    private String status;
-    @JsonIgnore
-    private Integer total;
+    private String status;*/
+    private Boolean partitionField;
 
-    public ColumnMetadata(String guid, String name, String type, String tableGuid, String description, String status) {
+    /*private String creator;
+    private String updater;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
+    @JsonIgnore
+    private Integer total;*/
+
+    public ColumnMetadata() { }
+
+    public ColumnMetadata(String guid, String name, String type, String tableGuid, String description, String status, Boolean partitionField,
+                          String creator, String updater, Timestamp createTime, Timestamp updateTime) {
         this.guid = guid;
         this.name = name;
         this.type = type;
         this.tableGuid = tableGuid;
         this.description = description;
         this.status = status;
+        this.partitionField = partitionField;
+        this.creator = creator;
+        this.updater = updater;
+        this.createTime = createTime;
+        this.updateTime = updateTime;
     }
 
-    public String getGuid() {
+    /*public String getGuid() {
         return guid;
     }
 
@@ -57,7 +76,7 @@ public class ColumnMetadata {
 
     public void setName(String name) {
         this.name = name;
-    }
+    }*/
 
     public String getType() {
         return type;
@@ -75,7 +94,7 @@ public class ColumnMetadata {
         this.tableGuid = tableGuid;
     }
 
-    public Integer getVersion() {
+    /*public Integer getVersion() {
         return version;
     }
 
@@ -105,5 +124,45 @@ public class ColumnMetadata {
 
     public void setTotal(Integer total) {
         this.total = total;
+    }*/
+
+    public Boolean getPartitionField() {
+        return partitionField;
     }
+
+    public void setPartitionField(Boolean partitionField) {
+        this.partitionField = partitionField;
+    }
+
+    /*public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
+    }
+
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
+    }*/
 }

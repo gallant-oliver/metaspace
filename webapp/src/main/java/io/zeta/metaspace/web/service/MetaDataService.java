@@ -68,6 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import org.apache.commons.beanutils.BeanUtils;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -1544,7 +1545,7 @@ public class MetaDataService {
     }
 
 
-    public PageResult getHistoryList(String tableGuid, Parameters parameters) {
+    public PageResult getTableHistoryList(String tableGuid, Parameters parameters) {
         PageResult pageResult = new PageResult();
         List<TableMetadata> tableMetadataList = metadataHistoryDAO.getTableMetadataList(tableGuid, parameters.getLimit(), parameters.getOffset());
         if(null != tableMetadataList && tableMetadataList.size()>0) {
@@ -1554,5 +1555,83 @@ public class MetaDataService {
             pageResult.setTotalSize(totalSize);
         }
         return pageResult;
+    }
+
+    public TableMetadata getTableMetadata(String tableGuid, Integer version) {
+        return metadataHistoryDAO.getTableMetadata(tableGuid, version);
+    }
+
+    public List<ColumnMetadata> getColumnHistoryInfo(String tableGuid, Integer version, ColumnQuery query) {
+        List<ColumnMetadata> columnMetadataList = metadataHistoryDAO.getColumnMetadataList(tableGuid, version, query.getColumnFilter());
+        return columnMetadataList;
+    }
+
+    public ComparisonMetadata getComparisionTableMetadata(String tableGuid, Integer version) throws AtlasBaseException {
+        ComparisonMetadata comparisonMetadata = new ComparisonMetadata();
+        Set<String> changedFiledSet = new HashSet<>();
+        try {
+            TableMetadata currentMetadata = metadataHistoryDAO.getLastTableMetadata(tableGuid);
+            TableMetadata oldMetadata = metadataHistoryDAO.getTableMetadata(tableGuid, version);
+            Map<String, String> currentMetadataMap = BeanUtils.describe(currentMetadata);
+            Map<String, String> oldMetadataMap = BeanUtils.describe(oldMetadata);
+            for(String key : currentMetadataMap.keySet()) {
+                String currentValue = currentMetadataMap.get(key);
+                String oldValue = oldMetadataMap.get(key);
+                currentValue = Objects.isNull(currentValue)? "":currentValue;
+                oldValue = Objects.isNull(oldValue)? "":oldValue;
+                if(!currentValue.equals(oldValue)) {
+                    changedFiledSet.add(key);
+                }
+            }
+            comparisonMetadata.setCurrentMetadata(currentMetadata);
+            comparisonMetadata.setOldMetadata(oldMetadata);
+            comparisonMetadata.setChangedSet(changedFiledSet);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        return comparisonMetadata;
+    }
+
+    public ComparisonColumnMetadata getComparisionColumnMetadata(String tableGuid, Integer version) throws AtlasBaseException {
+        ComparisonColumnMetadata comparisonMetadata = new ComparisonColumnMetadata();
+        Set<String> changedFiledSet = new HashSet<>();
+        try {
+            List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
+            List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadataList(tableGuid, version, null);
+
+            Map<String, Map> currentColumnMedataMap = new HashMap<>();
+            for (ColumnMetadata metadata : currentMetadata) {
+                String name = metadata.getName();
+                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
+                currentColumnMedataMap.put(name, columnMetadataMap);
+            }
+            Map<String, Map> oldColumnMedataMap = new HashMap<>();
+            for (ColumnMetadata metadata : oldMetadata) {
+                String name = metadata.getName();
+                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
+                oldColumnMedataMap.put(name, columnMetadataMap);
+            }
+
+            for(String name : currentColumnMedataMap.keySet()) {
+                Map<String, String> currentValueMap = currentColumnMedataMap.get(name);
+                Map<String, String> oldValueMap = oldColumnMedataMap.get(name);
+
+                for(String key : currentValueMap.keySet()) {
+                    String currentValue = currentValueMap.get(key);
+                    String oldValue = oldValueMap.get(key);
+                    currentValue = Objects.isNull(currentValue)? "":currentValue;
+                    oldValue = Objects.isNull(oldValue)? "":oldValue;
+                    if(!currentValue.equals(oldValue)) {
+                        changedFiledSet.add(key);
+                    }
+                }
+            }
+            comparisonMetadata.setCurrentMetadata(currentMetadata);
+            comparisonMetadata.setOldMetadata(oldMetadata);
+            comparisonMetadata.setChangedSet(changedFiledSet);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        return comparisonMetadata;
     }
 }

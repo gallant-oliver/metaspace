@@ -579,11 +579,46 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getHistoryList(@PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
         try {
-            return metadataService.getHistoryList(tableGuid, parameters);
+            return metadataService.getTableHistoryList(tableGuid, parameters);
         }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
 
+    @POST
+    @Path("/column/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnMetadata> getColumnHistoryList(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version, ColumnQuery query) throws AtlasBaseException {
+        try {
+            return metadataService.getColumnHistoryInfo(tableGuid, version, query);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/table/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonMetadata getComparisionTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/column/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonColumnMetadata getComparisionColumnTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionColumnMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
 }

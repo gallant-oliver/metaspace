@@ -81,6 +81,7 @@ public class MetadataHistoryService {
                 AtlasEntity.AtlasEntityWithExtInfo info = entityStore.getById(tableGuid);
                 if (null != info) {
                     AtlasEntity entity = info.getEntity();
+                    List<String> partitionKeyList = extractPartitionKeyInfo(entity);
                     TableMetadata tableMetadata = generateTableMetadata(entity);
                     List<ColumnMetadata> columnMetadataList = new ArrayList<>();
                     Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
@@ -88,7 +89,7 @@ public class MetadataHistoryService {
                         AtlasEntity referrencedEntity = referrencedEntities.get(guid);
                         String typeName = referrencedEntity.getTypeName();
                         if ("hive_column".equals(typeName) && AtlasEntity.Status.ACTIVE == referrencedEntity.getStatus()) {
-                            ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity);
+                            ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity, partitionKeyList);
                             columnMetadataList.add(columnMetadata);
                         } else if ("hive_storagedesc".equals(typeName)) {
                             String location = getEntityAttribute(referrencedEntity, "location");
@@ -119,6 +120,8 @@ public class MetadataHistoryService {
         AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
         String dbName = relatedObject.getDisplayText();
         String creator = entity.getCreatedBy();
+        String updater = entity.getUpdatedBy();
+        Timestamp createTime = new Timestamp(entity.getCreateTime().getTime());
         Timestamp updateTime = new Timestamp(entity.getUpdateTime().getTime());
         String tableType = getEntityAttribute(entity, "tableType");
         tableType = tableType.contains("EXTERNAL")?"EXTERNAL_TABLE":"INTERNAL_TABLE";
@@ -128,20 +131,26 @@ public class MetadataHistoryService {
         String description = getEntityAttribute(entity, "description");
         String status = entity.getStatus().name();
 
-        TableMetadata metadata = new TableMetadata(guid,dbName,name,creator,updateTime,tableType,isPartitionTable,tableFormat,storeLocation,description,status);
+        TableMetadata metadata = new TableMetadata(guid,dbName,name,creator,updater, createTime, updateTime,tableType,isPartitionTable,tableFormat,storeLocation,description,status);
 
 
 
         return metadata;
     }
 
-    public ColumnMetadata generateColumnMetadata(String tableGuid, AtlasEntity entity) {
+    public ColumnMetadata generateColumnMetadata(String tableGuid, AtlasEntity entity, List<String> partitionKeys) {
         String guid = entity.getGuid();
         String name = getEntityAttribute(entity, "name");
         String type = getEntityAttribute(entity, "type");
         String description = getEntityAttribute(entity, "commnet");
+        Boolean isPartitionKey = partitionKeys.contains(guid)?true:false;
         String status = entity.getStatus().name();
-        ColumnMetadata metadata = new ColumnMetadata(guid, name, type, tableGuid, description, status);
+        String creator = entity.getCreatedBy();
+        String updater = entity.getUpdatedBy();
+        Timestamp createTime = new Timestamp(entity.getCreateTime().getTime());
+        Timestamp updateTime = new Timestamp(entity.getUpdateTime().getTime());
+
+        ColumnMetadata metadata = new ColumnMetadata(guid, name, type, tableGuid, description, status, isPartitionKey, creator, updater, createTime, updateTime);
         return metadata;
     }
 
@@ -151,6 +160,21 @@ public class MetadataHistoryService {
         } else {
             return null;
         }
+    }
+
+    public List<String> extractPartitionKeyInfo(AtlasEntity entity) {
+        List<AtlasObjectId> partitionKeys = null;
+        if (Objects.nonNull(entity.getAttribute("partitionKeys"))) {
+            Object partitionObjects = entity.getAttribute("partitionKeys");
+            if (partitionObjects instanceof ArrayList<?>) {
+                partitionKeys = (ArrayList<AtlasObjectId>) partitionObjects;
+            }
+        }
+        List<String> guidList = new ArrayList<>();
+        for (AtlasObjectId partitionKey : partitionKeys) {
+            guidList.add(partitionKey.getGuid());
+        }
+        return guidList;
     }
 
     public boolean extractPartitionInfo(AtlasEntity entity) {
