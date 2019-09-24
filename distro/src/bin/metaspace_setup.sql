@@ -1094,16 +1094,19 @@ INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '
 INSERT INTO "public"."role" VALUES ('3', '管理员', '管理员', '3', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
 INSERT INTO "public"."role" VALUES ('6', '业务目录管理员', '业务目录管理员', '6', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
 INSERT INTO "public"."role" VALUES ('7', '技术目录管理员', '技术目录管理员', '7', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
-INSERT INTO "public"."module" VALUES (1, '技术数据', 1);
-INSERT INTO "public"."module" VALUES (2, '业务对象', 1);
-INSERT INTO "public"."module" VALUES (3, '技术信息', 0);
-INSERT INTO "public"."module" VALUES (4, '业务信息', 0);
 INSERT INTO "public"."module" VALUES (5, '业务对象管理', 1);
 INSERT INTO "public"."module" VALUES (6, '权限', 1);
 INSERT INTO "public"."module" VALUES (7, '元数据管理', 1);
-INSERT INTO "public"."module" VALUES (8, '技术目录', 0);
-INSERT INTO "public"."module" VALUES (9, '业务目录', 0);
-INSERT INTO "public"."module" VALUES (10, 'API信息', 1);
+INSERT INTO "public"."module" VALUES (1, '技术数据', 1);
+INSERT INTO "public"."module" VALUES (2, '业务对象', 1);
+INSERT INTO "public"."module" VALUES (3, '编辑技术信息', 0);
+INSERT INTO "public"."module" VALUES (8, '管理技术目录', 0);
+INSERT INTO "public"."module" VALUES (9, '管理业务目录', 0);
+INSERT INTO "public"."module" VALUES (4, '编辑业务信息', 0);
+INSERT INTO "public"."module" VALUES (11, '数据标准', 1);
+INSERT INTO "public"."module" VALUES (12, '日志审计', 1);
+INSERT INTO "public"."module" VALUES (10, '数据分享', 1);
+INSERT INTO "public"."module" VALUES (13, '数据质量', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 2);
 INSERT INTO "public"."privilege2module" VALUES ('1', 3);
@@ -1140,6 +1143,8 @@ INSERT INTO "public"."privilege2module" VALUES ('7', 1);
 INSERT INTO "public"."privilege2module" VALUES ('7', 8);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
+INSERT INTO "public"."privilege2module" VALUES ('3', 13);
+INSERT INTO "public"."privilege2module" VALUES ('1', 13);
 INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
@@ -1295,3 +1300,446 @@ INSERT INTO "public"."rule2datatype" VALUES (29, 2);
 INSERT INTO "public"."rule2datatype" VALUES (10, 2);
 INSERT INTO "public"."rule2datatype" VALUES (11, 2);
 INSERT INTO "public"."rule2datatype" VALUES (12, 2);
+
+
+-- ----------------------------
+-- Table structure for data_quality_rule_template
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_rule_template";
+CREATE TABLE "public"."data_quality_rule_template" (
+  "name" varchar COLLATE "pg_catalog"."default",
+  "type" int4,
+  "scope" int4,
+  "unit" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "category_id" varchar COLLATE "pg_catalog"."default"
+)
+;
+
+-- ----------------------------
+-- Records of data_quality_rule_template
+-- ----------------------------
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化', 14, 1, '', '相比上一周期，字段汇总值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '20', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化', 15, 1, '', '相比上一周期，字段最小值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '21', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('
+字段最大值变化', 16, 1, '', '相比上一周期，字段最大值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '22', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化率', 6, 1, '%', '相比上一周期，字段平均值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '23', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值', 20, 1, NULL, '计算字段平均值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '24', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值', 21, 1, NULL, '计算字段汇总值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '25', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化', 3, 0, '字节', '相比上一周期，表大小变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '1', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化率', 0, 0, '%', '相比上一周期，表行数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '2', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化', 2, 0, '行', '相比上一周期，表行数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '3', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化率', 1, 0, '%', '相比上一周期，表大小变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '4', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表行数', 4, 0, '行', '表行数是否符合预期', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '5', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表大小', 5, 0, '字节', '表大小是否符合预期', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '6', '1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数/总行数', 28, 1, '%', '计算字段空值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '7', '2');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化率', 11, 1, '%', '相比上一周期，字段空值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '8', '2');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数', 25, 1, '个', '计算字段空值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '9', '2');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化', 18, 1, '个', '相比上一周期，字段空值个数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '10', '2');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数/总行数', 27, 1, '%', '计算字段唯一值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '11', '3');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化率', 10, 1, '%', '相比上一周期，字段唯一值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '12', '3');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数', 24, 1, '个', '计算字段唯一值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '13', '3');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化', 17, 1, '个', '相比上一周期，字段唯一值个数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '14', '3');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数/总行数', 29, 1, '%', '计算字段重复值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '15', '4');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化率', 12, 1, '%', '相比上一周期，字段重复值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '16', '4');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数', 26, 1, '个', '计算字段重复值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '17', '4');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化', 19, 1, '个', '相比上一周期，字段重复值个数变化
+', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '18', '4');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化', 13, 1, '', '相比上一周期，字段平均值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '19', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值', 22, 1, NULL, '计算字段最小值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '26', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值
+', 23, 1, NULL, '计算字段最大值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '27', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 7, 1, '%', '相比上一周期，字段汇总值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '28', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 8, 1, '%', '相比上一周期，字段最小值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '29', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 9, 1, '%', '相比上一周期，字段最大值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '30', '5');
+
+-- ----------------------------
+-- Primary Key structure for table data_quality_rule_template
+-- ----------------------------
+ALTER TABLE "public"."data_quality_rule_template" ADD CONSTRAINT "data_quality_rule_template_pkey" PRIMARY KEY ("id");
+
+
+-- ----------------------------
+-- Table structure for data_quality_rule
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_rule";
+CREATE TABLE "public"."data_quality_rule" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "rule_template_id" varchar COLLATE "pg_catalog"."default",
+  "name" varchar COLLATE "pg_catalog"."default",
+  "code" varchar COLLATE "pg_catalog"."default",
+  "category_id" varchar COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "check_type" int4,
+  "check_expression_type" int4,
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "check_threshold_min_value" float8,
+  "check_threshold_max_value" float8,
+  "scope" int2,
+  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."data_quality_rule"."rule_template_id" IS '规则模版id';
+COMMENT ON COLUMN "public"."data_quality_rule"."code" IS '规则编码';
+COMMENT ON COLUMN "public"."data_quality_rule"."category_id" IS '分组id';
+COMMENT ON COLUMN "public"."data_quality_rule"."enable" IS '是否开启';
+COMMENT ON COLUMN "public"."data_quality_rule"."description" IS '描述';
+COMMENT ON COLUMN "public"."data_quality_rule"."check_type" IS '0-固定值,1-波动值';
+COMMENT ON COLUMN "public"."data_quality_rule"."check_expression_type" IS '校验表达式的类型,>=、=等的代码值';
+COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_min_value" IS '校验阈值最小值';
+COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_max_value" IS '校验阈值最大值';
+COMMENT ON COLUMN "public"."data_quality_rule"."scope" IS '作用域';
+COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_unit" IS '单位';
+
+
+-- ----------------------------
+-- Table structure for data_quality_sub_task
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_sub_task";
+CREATE TABLE "public"."data_quality_sub_task" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "datasource_type" int4,
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool
+)
+;
+COMMENT ON COLUMN "public"."data_quality_sub_task"."task_id" IS '所属任务id';
+COMMENT ON COLUMN "public"."data_quality_sub_task"."datasource_type" IS '数据源类型:1-表,2-字段';
+COMMENT ON COLUMN "public"."data_quality_sub_task"."sequence" IS '子任务顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task"."delete" IS '是否删除';
+
+-- ----------------------------
+-- Table structure for data_quality_sub_task_object
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_sub_task_object";
+CREATE TABLE "public"."data_quality_sub_task_object" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "object_id" varchar COLLATE "pg_catalog"."default",
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "task_id" varchar COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."subtask_id" IS '所属子任务id';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."object_id" IS '表或字段id';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."sequence" IS '数据源顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."delete" IS '是否删除';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."task_id" IS '所属任务id';
+
+
+-- ----------------------------
+-- Table structure for data_quality_sub_task_rule
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_sub_task_rule";
+CREATE TABLE "public"."data_quality_sub_task_rule" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "ruleid" varchar COLLATE "pg_catalog"."default",
+  "check_threshold_min_value" float8,
+  "orange_check_type" int4,
+  "orange_check_expression_type" int4,
+  "red_check_type" int4,
+  "red_check_expression_type" int4,
+  "red_warning_groupid" varchar COLLATE "pg_catalog"."default",
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "orange_threshold_min_value" float8,
+  "orange_threshold_max_value" float8,
+  "red_threshold_min_value" float8,
+  "red_threshold_max_value" float8,
+  "check_threshold_max_value" float8,
+  "check_type" int4,
+  "check_expression_type" int4,
+  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."subtask_id" IS '所属子任务id';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."ruleid" IS '规则id';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_min_value" IS '校验阈值最小值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_check_type" IS '橙色校验类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_check_expression_type" IS '橙色校验表达式类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."sequence" IS '规则顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."delete" IS '是否删除';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_threshold_min_value" IS ' 橙色告警最小阈值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_threshold_max_value" IS '橙色告警最大阈值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_threshold_min_value" IS '红色告警最小阈值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_threshold_max_value" IS '红色告警最大阈值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_max_value" IS '校验阈值最大值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_unit" IS '单位';
+
+
+-- ----------------------------
+-- Table structure for data_quality_task
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_task";
+CREATE TABLE "public"."data_quality_task" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "level" int4,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "cron_expression" varchar COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "start_time" timestamptz(0),
+  "end_time" timestamptz(0),
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "delete" bool,
+  "number" int8 NOT NULL,
+  "qrtz_job" varchar(255) COLLATE "pg_catalog"."default",
+  "execution_count" int8,
+  "orange_warning_total_count" int8,
+  "red_warning_total_count" int8,
+  "error_total_count" int8,
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "current_execution_percent" float4,
+  "current_execution_status" int2
+)
+;
+COMMENT ON COLUMN "public"."data_quality_task"."name" IS '任务名';
+COMMENT ON COLUMN "public"."data_quality_task"."level" IS '任务级别:1-普通,2-重要,3-非常重要';
+COMMENT ON COLUMN "public"."data_quality_task"."description" IS '任务描述';
+COMMENT ON COLUMN "public"."data_quality_task"."cron_expression" IS 'cron表达式';
+COMMENT ON COLUMN "public"."data_quality_task"."enable" IS '是否启用';
+COMMENT ON COLUMN "public"."data_quality_task"."start_time" IS '开始时间';
+COMMENT ON COLUMN "public"."data_quality_task"."end_time" IS '结束时间';
+COMMENT ON COLUMN "public"."data_quality_task"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_task"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."data_quality_task"."delete" IS '是否删除';
+COMMENT ON COLUMN "public"."data_quality_task"."number" IS '任务ID';
+COMMENT ON COLUMN "public"."data_quality_task"."qrtz_job" IS 'jobName';
+COMMENT ON COLUMN "public"."data_quality_task"."execution_count" IS '执行次数';
+COMMENT ON COLUMN "public"."data_quality_task"."orange_warning_total_count" IS '橙色告警次数统计';
+COMMENT ON COLUMN "public"."data_quality_task"."red_warning_total_count" IS '红色告警次数统计';
+COMMENT ON COLUMN "public"."data_quality_task"."error_total_count" IS '执行失败统计次数';
+COMMENT ON COLUMN "public"."data_quality_task"."updater" IS '修改人';
+
+-- ----------------------------
+-- Primary Key structure for table data_quality_task
+-- ----------------------------
+ALTER TABLE "public"."data_quality_task" ADD CONSTRAINT "data_quality_task_pkey" PRIMARY KEY ("id");
+
+
+CREATE SEQUENCE number_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE "public"."data_quality_task" ALTER COLUMN number set default nextval('number_seq');
+
+
+-- ----------------------------
+-- Table structure for data_quality_task_execute
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_task_execute";
+CREATE TABLE "public"."data_quality_task_execute" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "percent" float8,
+  "execute_status" int4,
+  "executor" varchar COLLATE "pg_catalog"."default",
+  "error_msg" text COLLATE "pg_catalog"."default",
+  "execute_time" timestamptz(0),
+  "closer" varchar COLLATE "pg_catalog"."default",
+  "close_time" timestamptz(0),
+  "cost_time" int8,
+  "orange_warning_count" int4,
+  "red_warning_count" int4,
+  "rule_error_count" int4,
+  "warning_status" int2,
+  "number" varchar COLLATE "pg_catalog"."default",
+  "counter" int8,
+  "error_status" int2
+)
+;
+COMMENT ON COLUMN "public"."data_quality_task_execute"."task_id" IS '所属任务id';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."percent" IS '执行进度';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."execute_status" IS '执行状态:1-执行中,2-成功,3-失败,0-未执行';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."executor" IS '执行者id';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."error_msg" IS '程序执行错误日志';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."closer" IS '告警处理人';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."close_time" IS '告警处理时间';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."cost_time" IS '执行耗时';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."orange_warning_count" IS '橙色告警数';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."red_warning_count" IS '红色告警数';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."rule_error_count" IS '规则异常数';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."warning_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."number" IS '编号';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."counter" IS '任务执行次数';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."error_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
+
+-- ----------------------------
+-- Table structure for data_quality_task_rule_execute
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_task_rule_execute";
+CREATE TABLE "public"."data_quality_task_rule_execute" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_execute_id" varchar COLLATE "pg_catalog"."default",
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_object_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_rule_id" varchar COLLATE "pg_catalog"."default",
+  "result" float8,
+  "check_status" int4,
+  "waring_send_status" int2,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "reference_value" float8,
+  "orange_warning_check_status" int2,
+  "red_warning_check_status" int2,
+  "error_msg" varchar(255) COLLATE "pg_catalog"."default",
+  "warning_status" int2,
+  "error_status" int2,
+  "rule_id" varchar(32) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."task_id" IS '所属任务id';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_id" IS '所属子任务id';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_object_id" IS '所属子任务对象id';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_rule_id" IS '所属子任务规则id';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."result" IS '规则执行结果(sql直接结果)';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."check_status" IS '0-合格,1-不合格,2-失败';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."waring_send_status" IS '告警状态:1-待发送,2发送中,3发送成功,4发送失败';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."reference_value" IS '计算变化值/变化率中计算值存储';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."orange_warning_check_status" IS '0-无告警,1-有告警';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."red_warning_check_status" IS '0-无告警,1-有告警';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."error_msg" IS '错误信息';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."warning_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."error_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
+
+
+-- ----------------------------
+-- Table structure for data_quality_task2warning_group
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_quality_task2warning_group";
+CREATE TABLE "public"."data_quality_task2warning_group" (
+  "task_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "warning_group_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "warning_type" int2 NOT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table data_quality_task2warning_group
+-- ----------------------------
+ALTER TABLE "public"."data_quality_task2warning_group" ADD CONSTRAINT "data_quality_task2warning_group_pkey" PRIMARY KEY ("task_id", "warning_group_id", "warning_type");
+
+
+-- ----------------------------
+-- Table structure for warning_group
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."warning_group";
+CREATE TABLE "public"."warning_group" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "type" int4,
+  "contacts" varchar COLLATE "pg_catalog"."default",
+  "category_id" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "delete" bool
+)
+;
+COMMENT ON COLUMN "public"."warning_group"."name" IS '告警组名称';
+COMMENT ON COLUMN "public"."warning_group"."type" IS '告警类型:0-系统,1-邮件,2-短信,';
+COMMENT ON COLUMN "public"."warning_group"."contacts" IS '联系人';
+COMMENT ON COLUMN "public"."warning_group"."category_id" IS '告警组id，共用规则分组';
+COMMENT ON COLUMN "public"."warning_group"."description" IS '描述';
+COMMENT ON COLUMN "public"."warning_group"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."warning_group"."creator" IS '创建者id';
+
+
+-- ----------------------------
+-- Table structure for api_module
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."api_module";
+CREATE TABLE "public"."api_module" (
+  "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "method" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "module_id" int2,
+  "prefix_check" bool
+)
+;
+
+-- ----------------------------
+-- Records of api_module
+-- ----------------------------
+INSERT INTO "public"."api_module" VALUES ('/businesses/categories/{categoryGuid}', 'DELETE', 9, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'DELETE', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'GET', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/technical', 'GET', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/{apiGuid}', 'GET', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/categories', 'GET', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}', 'GET', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/excel/{tableGuid}/template', 'GET', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/category/{categoryId}', 'POST', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/relations', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/category/relations/{categoryId}', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/datashare', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/test/{randomName}', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/categories', 'POST', 9, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/tables', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}/columns', 'POST', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/excel/import/{guid}', 'POST', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'PUT', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/test/{randomName}', 'PUT', 2, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/technical', 'PUT', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/categories/{categoryId}', 'PUT', 9, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}/columns', 'PUT', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businesses/table', 'PUT', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('datashare', 'OPTION', 10, 't');
+INSERT INTO "public"."api_module" VALUES ('role', 'OPTION', 6, 't');
+INSERT INTO "public"."api_module" VALUES ('/technical/category', 'GET', 1, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage', 'POST', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/search/database/{categoryId}', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/search/database/table/{databaseGuid}/{categoryId}', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/search/table/{categoryId}', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/category', 'POST', 8, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/update/category', 'POST', 8, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/category/{categoryGuid}/assignedEntities', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/category/relations/{categoryGuid}', 'POST', 1, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/table/relations', 'POST', 1, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/owner/table', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/organization/{pId}', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/organization', 'POST', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}', 'PUT', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}/business', 'PUT', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/organization', 'PUT', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/category/{categoryGuid}', 'DELETE', 8, 'f');
+INSERT INTO "public"."api_module" VALUES ('/technical/category/relation', 'DELETE', 3, 'f');
+INSERT INTO "public"."api_module" VALUES ('privilege', 'OPTION', 6, 't');
+INSERT INTO "public"."api_module" VALUES ('datastandard', 'OPTION', 11, 't');
+INSERT INTO "public"."api_module" VALUES ('operatelog', 'OPTION', 12, 't');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/test/{randomName}', 'PUT', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}/datashare', 'POST', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/test/{randomName}', 'POST', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/{apiGuid}', 'GET', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}', 'GET', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}/technical', 'GET', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('/businessManage/table/{guid}', 'GET', 5, 'f');
+INSERT INTO "public"."api_module" VALUES ('dataquality', 'OPTION', 13, 't');
+
+-- ----------------------------
+-- Primary Key structure for table api_module
+-- ----------------------------
+ALTER TABLE "public"."api_module" ADD CONSTRAINT "api_module_pkey" PRIMARY KEY ("path", "method");

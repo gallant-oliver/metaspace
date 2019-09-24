@@ -183,4 +183,7 @@ public interface CategoryDAO {
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid")
     public List<String> getCategoryGuidByTableGuid(String guid);
 
+    @Select("select name from category where guid=#{guid}")
+    public String getCategoryNameById(String guid);
+
 }
