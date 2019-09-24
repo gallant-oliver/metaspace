@@ -13,8 +13,7 @@ public class FilterUtils {
                 || requestURL.contains("api/metaspace/role/roles/sso")
                 || requestURL.contains("api/metaspace/role/users/sso")
                 || requestURL.contains("api/metaspace/market/business")
-                || requestURL.contains("api/metaspace/metadata/refreshcache")
-                || requestURL.contains("api/metaspace/api")) {
+                || requestURL.contains("api/metaspace/metadata/refreshcache")) {
 
             return true;
         }
