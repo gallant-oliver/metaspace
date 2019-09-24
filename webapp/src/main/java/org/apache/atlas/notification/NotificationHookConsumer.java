@@ -19,7 +19,6 @@ package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.zeta.metaspace.web.service.MetadataHistoryService;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -114,9 +113,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
     @VisibleForTesting
     List<HookConsumer> consumers;
-
-    @Autowired
-    MetadataHistoryService metadataHistoryService;
 
     @Inject
     public NotificationHookConsumer(NotificationInterface notificationInterface, AtlasEntityStore atlasEntityStore,

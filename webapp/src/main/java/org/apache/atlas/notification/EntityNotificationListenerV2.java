@@ -40,6 +40,7 @@ import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import io.zeta.metaspace.web.service.DataManageService;
 
@@ -69,7 +70,8 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Autowired
     DataManageService dataManageService;
 
-    @Autowired
+    @Lazy
+    @Autowired(required = false)
     MetadataHistoryService metadataHistoryService;
 
     @Inject
@@ -84,6 +86,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_CREATE);
         dataManageService.addEntity(entities);
+        metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
@@ -97,6 +100,7 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_DELETE);
         dataManageService.updateStatus(entities);
+        metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
