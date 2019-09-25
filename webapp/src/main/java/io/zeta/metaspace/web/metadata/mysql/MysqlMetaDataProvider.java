@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,7 @@ import static io.zeta.metaspace.web.metadata.BaseFields.*;
 @Component
 public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaDataProvider {
     private static final Logger LOG = LoggerFactory.getLogger(MysqlMetaDataProvider.class);
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public MysqlMetaDataProvider() {
         super();
@@ -39,7 +41,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return RMDBEnum.MYSQL.getName();
     }
 
-
+    //更新数据源的点
     @Override
     protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId) {
         if (instanceEntity == null) {
@@ -97,9 +99,15 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         table.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, tableName.getName()));
         table.setAttribute(ATTRIBUTE_NAME, tableName.getName().toLowerCase());
         table.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
-        Map<String, String> tableCreateTimeAndComment = getTableCreateTimeAndComment(tableName.getName());
-        table.setAttribute(ATTRIBUTE_CREATE_TIME, tableCreateTimeAndComment.get("create_time"));
-        table.setAttribute(ATTRIBUTE_COMMENT, tableCreateTimeAndComment.get("comment"));
+        Map<String, String> tableCreateTimeAndComment = getTableCreateTimeAndComment(databaseName,tableName.getName());
+        try {
+            long time = formatter.parse(tableCreateTimeAndComment.get("create_time")).getTime();
+            table.setAttribute(ATTRIBUTE_CREATE_TIME, time);
+        }catch (Exception e){
+            table.setAttribute(ATTRIBUTE_CREATE_TIME, null);
+        }
+
+        table.setAttribute(ATTRIBUTE_COMMENT, tableCreateTimeAndComment.get("table_comment"));
         table.setAttribute(ATTRIBUTE_NAME_PATH, tableName.getFullName());
         List<AtlasEntity> columns = toColumns(tableName.getColumns(), table);
         List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table);
@@ -207,19 +215,19 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return ret;
     }
 
-    private Map<String, String> getTableCreateTimeAndComment(String tableName) {
+    private Map<String, String> getTableCreateTimeAndComment(String databaseName,String tableName) {
         Map<String, String> pair = new HashMap<>();
-        final String                   query = String.format("select create_time,table_comment  from information_schema.tables where table_schema= '%s'", tableName);
+        final String                   query = String.format("select create_time,table_comment  from information_schema.tables where table_schema= '%s' and table_name = '%s'", databaseName,tableName);
         try (final Connection connection = getConnection();
              final Statement statement = connection.createStatement();
              final ResultSet results = statement.executeQuery(query)) {
             // Get result set metadata
             final ResultsColumns resultColumns = SchemaCrawlerUtility
                     .getResultsColumns(results);
-            for (final ResultsColumn column : resultColumns) {
-                if (results.next()) {
+            if (results.next()) {
+                for (final ResultsColumn column : resultColumns) {
                     String columnLabel = column.getLabel();
-                    pair.put(columnLabel, results.getString(columnLabel));
+                    pair.put(columnLabel.toLowerCase(), results.getString(columnLabel));
                 }
             }
         } catch (Exception e) {
