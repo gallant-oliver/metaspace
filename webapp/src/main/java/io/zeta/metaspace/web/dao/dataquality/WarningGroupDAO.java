@@ -16,18 +16,18 @@ import java.util.List;
 
 public interface WarningGroupDAO {
 
-    @Insert({" insert into warning_group(id,name,type,contacts,category_id,description,create_time,update_time,creator,delete) ",
-             " values(#{id},#{name},#{type},#{contacts},#{categoryId},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
+    @Insert({" insert into warning_group(id,name,type,contacts,description,create_time,update_time,creator,delete) ",
+             " values(#{id},#{name},#{type},#{contacts},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
     public int insert(WarningGroup warningGroup);
 
-    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},category_id=#{categoryId},description=#{description},update_time=#{updateTime} where id=#{id}")
+    @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},description=#{description},update_time=#{updateTime} where id=#{id}")
     public int update(WarningGroup warningGroup);
 
-    @Select({" select a.id,a.name,a.type,a.contacts,a.category_id as categoryId,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
+    @Select({" select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and a.id=#{id}"})
     public WarningGroup getById(@Param("id") String id);
 
-    @Select({" select a.id,a.name,a.type,a.contacts,a.category_id as categoryId,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
+    @Select({" select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} "})
     public WarningGroup getByName(@Param("name") String name);
 
@@ -42,9 +42,12 @@ public interface WarningGroupDAO {
              " </script>"})
     public void deleteByIdList(@Param("idList") List<String> idList);
 
+    @Select("select count(*) from data_quality_task2warning_group where warning_group_id=#{warningGroupId}")
+    public int countWarningGroupUserd(@Param("warningGroupId")String id);
+
 
     @Select({"<script>",
-             " select a.id,a.name,a.type,a.contacts,a.category_id as categoryId,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
+             " select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (a.name like '%${params.query}%' ESCAPE '/' ) ",
@@ -69,13 +72,10 @@ public interface WarningGroupDAO {
 
 
     @Select({"<script>",
-             " select a.*,category.name as categoryName from",
-             " (select id,name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator,type",
-             " from warning_group join users on users.userid=creator where delete=false) a ",
-             " join",
-             " category on category.guid=a.categoryId",
+             " select id,name,description,warning_group.create_time as createTime,contacts,users.username as creator,type",
+             " from warning_group join users on users.userid=creator where delete=false",
              " <if test=\"params.query != null and params.query!=''\">",
-             " where a.name like '%${params.query}%' ESCAPE '/'",
+             " and name like '%${params.query}%' ESCAPE '/'",
              " </if>",
              " <if test='params.sortby != null and params.order != null'>",
              " order by ${params.sortby} ${params.order}",
@@ -88,12 +88,9 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select count(*) from",
-             " (select name,description,create_time as createTime,category_id as categoryId,contacts,users.username as creator",
-             " from warning_group join users on users.userid=creator where delete=false) a ",
-             " join",
-             " category on category.guid=a.categoryId",
+             " warning_group where delete=false",
              " <if test=\"params.query != null and params.query!=''\">",
-             " where (a.name like '%${params.query}%' ESCAPE '/' or  category.name like '%${params.query}%' ESCAPE '/')",
+             " and (a.name like '%${params.query}%' ESCAPE '/')",
              " </if>",
              " </script>"})
     public long countWarningGroup(@Param("params") Parameters params);

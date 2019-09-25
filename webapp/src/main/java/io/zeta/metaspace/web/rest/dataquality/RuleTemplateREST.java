@@ -13,9 +13,8 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 
-import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
@@ -51,21 +50,21 @@ public class RuleTemplateREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/categories")
-    public List<RuleTemplateCategory> templateCategory() throws AtlasBaseException {
-        return RuleTemplateCategory.all().stream().map(ruleTemplateCategory -> {
-            String categoryId = ruleTemplateCategory.getCategoryId();
+    public List<RuleTemplateType> templateCategory() throws AtlasBaseException {
+        return RuleTemplateType.all().stream().map(ruleTemplateCategory -> {
+            Integer categoryId = ruleTemplateCategory.getRuleType();
             long count = ruleTemplateService.countByCategoryId(categoryId);
             ruleTemplateCategory.setCount(count);
             return ruleTemplateCategory;
         }).collect(Collectors.toList());
     }
 
-    @GET
+    @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/{categoryId}/rules")
-    public List<RuleTemplate> getRuleTemplate(@PathParam("categoryId")String categoryId) throws AtlasBaseException {
-        return ruleTemplateService.getRuleTemplate(categoryId);
+    @Path("/{ruleType}/rules")
+    public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")Integer categoryId, Parameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.getRuleTemplate(categoryId, parameters);
     }
 
     @POST

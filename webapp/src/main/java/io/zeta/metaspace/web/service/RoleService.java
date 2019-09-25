@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
+import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -13,6 +15,7 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserWithRole;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
@@ -21,6 +24,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,23 +123,26 @@ public class RoleService {
 
     @Transactional
     public PageResult<User> getUsers(String roleId, String query, long offset, long limit) throws AtlasBaseException {
-        PageResult<User> userPageResult = new PageResult<>();
-        List<User> users;
+        try {
+            PageResult<User> userPageResult = new PageResult<>();
+            List<User> users;
         /*if (limit == -1) {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUser(roleId, query, offset);
         } else {*/
-            if(Objects.nonNull(query))
+            if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
-        //}
-        long usersCount = roleDAO.getUsersCount(roleId, query);
-        userPageResult.setLists(users);
-        //userPageResult.setOffset(offset);
-        userPageResult.setTotalSize(usersCount);
-        userPageResult.setCurrentSize(users.size());
-        return userPageResult;
+            //}
+            long usersCount = roleDAO.getUsersCount(roleId, query);
+            userPageResult.setLists(users);
+            userPageResult.setTotalSize(usersCount);
+            userPageResult.setCurrentSize(users.size());
+            return userPageResult;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @Transactional
@@ -170,7 +177,7 @@ public class RoleService {
             for(int i=0; i<roles.size(); i++) {
                 Role role = roles.get(i);
                 Boolean valid = role.isValid();
-                if(false == valid) {
+                if(false == valid || "1".equals(role.getRoleId())) {
                     role.setOpType(OpType.DELETE.getDesc());
                     continue;
                 }
@@ -216,6 +223,9 @@ public class RoleService {
             Role role = roleDAO.getRoleByRoleId(roleId);
             if(Objects.isNull(role) || !role.isValid()) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
+            }
+            if("1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改用户角色为平台管理员");
             }
             int status = role.getStatus();
             if(0 == status) {
@@ -477,7 +487,7 @@ public class RoleService {
     @Transactional
     public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
+        if (userRoleId.equals(SystemRole.ADMIN.getCode()) || 4 == categorytype) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
@@ -605,6 +615,47 @@ public class RoleService {
         } catch (Exception e) {
             LOG.info(e.toString());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        }
+    }
+
+    @Transactional
+    public void updateUserInfo() throws AtlasBaseException {
+        try {
+            List<String> userIdList = roleDAO.getUserIdList();
+            for (String userId : userIdList) {
+                User user = getUserInfo(userId);
+                if(null==user || "".equals(user.getUsername())) {
+                    continue;
+                }
+                roleDAO.updateUserInfo(user);
+            }
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public User getUserInfo(String userId) throws AtlasBaseException {
+        try {
+            String userInfoURL = SSOConfig.getUserInfoURL();
+            HashMap<String, String> header = new HashMap<>();
+            Map<String, String> queryDataParamMap = new HashMap<>();
+            queryDataParamMap.put("id", userId);
+            String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
+            Gson gson = new Gson();
+            Map userBody = gson.fromJson(userSession, Map.class);
+            if (StringUtils.isEmpty(userBody.get("data").toString())) {
+                return null;
+            }
+            Map userData = (Map) userBody.get("data");
+            String email = userData.get("loginEmail").toString();
+            String name = userData.get("displayName").toString();
+            User user = new User();
+            user.setUserId(userId);
+            user.setUsername(name);
+            user.setAccount(email);
+            return user;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 

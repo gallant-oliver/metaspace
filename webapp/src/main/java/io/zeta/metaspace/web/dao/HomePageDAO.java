@@ -65,7 +65,7 @@ public interface HomePageDAO {
 
     @Select({" <script>",
             " select role.roleId,role.roleName,count(users.userId) as number from role",
-            " left join users on role.roleId=users.roleId group by role.roleId,role.roleName",
+            " left join users on role.roleId=users.roleId where valid=true group by role.roleId,role.roleName",
             " order by number desc",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -77,10 +77,10 @@ public interface HomePageDAO {
     @Select("select count(*) from users")
     public long getTotalUserNumber();
 
-    @Select("select count(*) from role")
+    @Select("select count(*) from role where valid=true")
     public long getCountRole();
 
-    @Select("select * from role order by roleId")
+    @Select("select * from role where valid=true order by roleId")
     public List<Role> getAllRole();
 
     @Select({" <script>",

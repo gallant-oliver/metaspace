@@ -13,7 +13,7 @@
 package io.zeta.metaspace.web.service.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateCategory;
+import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
@@ -38,15 +38,23 @@ public class RuleTemplateService {
     @Autowired
     private RuleTemplateDAO ruleTemplateDAO;
 
-    public long countByCategoryId(String categoryId) {
+    public long countByCategoryId(Integer categoryId) {
         return ruleTemplateDAO.countByCategoryId(categoryId);
     }
 
-    public List<RuleTemplate> getRuleTemplate(String categoryId) throws AtlasBaseException {
+    public PageResult<RuleTemplate> getRuleTemplate(Integer ruleType, Parameters parameters) throws AtlasBaseException {
         try {
-            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(categoryId);
+            PageResult pageResult = new PageResult();
+            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters);
             updateRuleType(ruleTemplateList);
-            return ruleTemplateList;
+            pageResult.setLists(ruleTemplateList);
+            pageResult.setCurrentSize(ruleTemplateList.size());
+            if(null != ruleTemplateList && ruleTemplateList.size()>0) {
+                pageResult.setTotalSize(ruleTemplateList.get(0).getTotal());
+            } else {
+                pageResult.setTotalSize(0);
+            }
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
@@ -68,13 +76,13 @@ public class RuleTemplateService {
     }
 
     public void updateRuleType(List<RuleTemplate> lists) {
-        Map<String, String> ruleTemplateCategoryMap = new HashMap();
-        RuleTemplateCategory.all().stream().forEach(ruleTemplateCategory -> {
-            ruleTemplateCategoryMap.put(ruleTemplateCategory.getCategoryId(), ruleTemplateCategory.getName());
+        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
+            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
         });
         for (RuleTemplate ruleTemplate : lists) {
-            String ruleType = ruleTemplateCategoryMap.get(ruleTemplate.getCategoryId());
-            ruleTemplate.setRuleType(ruleType);
+            String ruleTypeName = ruleTemplateCategoryMap.get(ruleTemplate.getRuleType());
+            ruleTemplate.setRuleTypeName(ruleTypeName);
         }
     }
 

@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
+import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.dataquality2.TaskHeader;
@@ -37,6 +38,7 @@ import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -138,7 +140,7 @@ public interface TaskManageDAO {
              " #{taskId}",
              " </foreach>",
              " )",
-            " </script>"})
+             " </script>"})
     public int deleteSubTaskObjectList(@Param("taskIdList")List<String> taskIdList);
 
     /**
@@ -155,6 +157,14 @@ public interface TaskManageDAO {
              " )",
              " </script>"})
     public int deleteSubTaskRuleList(@Param("taskIdList")List<String> taskIdList);
+
+    @Delete({" <script>",
+             " delete from data_quality_task2warning_group where task_id in",
+             " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
+             " #{taskId}",
+             " </foreach>",
+             " </script>"})
+    public int deleteWarningGroupUsed(@Param("taskIdList")List<String> taskIdList);
 
     /**
      * 获取规则分组下规则列表
@@ -188,7 +198,7 @@ public interface TaskManageDAO {
      * 获取数值类型的规则
      * @return
      */
-    @Select("select id from data_quality_rule_template where category_id='5'")
+    @Select("select id from data_quality_rule_template where rule_type=5")
     public List<String> getNumericTypeTemplateRuleId();
 
     /**
@@ -196,7 +206,7 @@ public interface TaskManageDAO {
      * @param categoryId
      * @return
      */
-    @Select("select id,name from warning_group where category_id=#{categoryId}")
+    @Select("select id,name from warning_group where category_id=#{categoryId} and delete=false")
     public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId);
 
     @Select("select id,name from warning_group where delete=false")
@@ -208,7 +218,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count) ",
-            " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount})"})
+             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount})"})
     public int addDataQualityTask(@Param("task")DataQualityTask task);
 
     /**
@@ -437,7 +447,7 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Select("select reference_value from data_quality_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1)")
+    @Select("select reference_value from data_quality_task_rule_execute where subtask_rule_id=#{subTaskRuleId} order by create_time desc limit 1")
     public Float getLastValue(@Param("subTaskRuleId") String subTaskRuleId);
 
     /**
@@ -449,7 +459,7 @@ public interface TaskManageDAO {
              " select check_threshold_min_value as checkThresholdMinValue,check_threshold_max_value as checkThresholdMaxValue,orange_check_type as orangeCheckType,orange_check_expression_type as orangeCheckExpression,orange_threshold_min_value as orangeThresholdMinValue,orange_threshold_max_value as orangeThresholdMaxValue,",
              " red_check_type as redCheckType,red_check_expression_type as redCheckExpression,red_threshold_min_value as redThresholdMinValue,red_threshold_max_value as redThresholdMaxValue",
              " from data_quality_sub_task_rule where id=#{subTaskRuleId}",
-            " </script>"})
+             " </script>"})
     public DataQualitySubTaskRule getSubTaskRuleInfo(@Param("subTaskRuleId") String subTaskRuleId);
 
     /**
@@ -623,18 +633,58 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select category_id from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
-    public String getTypeByRuleId(@Param("ruleId")String id);
+    @Select("select rule_type from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
+    public Integer getRuleTypeCodeByRuleId(@Param("ruleId")String id);
 
     @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
+
+    @Select({" <script>",
+             " SELECT data_quality_task.id as taskId,data_quality_task.name as taskName,'TID-'||data_quality_task.number as taskNumber,data_quality_task.level,",
+             " data_quality_task.start_time as startTime,data_quality_task.end_time as endTime,data_quality_task.cron_expression as cronExpression,",
+             "data_quality_task_execute.id as executionId,data_quality_task_execute.execute_time as executeTime",
+             " from data_quality_task join data_quality_task_execute on data_quality_task_execute.task_id=data_quality_task.id",
+             " where data_quality_task.id=#{taskId} and data_quality_task_execute.id=#{taskExecuteId}",
+             " </script>"})
+    public ExecutionReportData.TaskBasicInfo getTaskExecutionBasicInfo(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId);
+
+    @Select({" <script>",
+             " select count(*) from data_quality_task_rule_execute join data_quality_rule on data_quality_rule.id=data_quality_task_rule_execute.rule_id",
+             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=#{checkStatus} and data_quality_rule.scope=#{dataSourceType}",
+             " </script>"})
+    public Long countTaskRuleExecution(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId, @Param("dataSourceType")Integer dataSourceType, @Param("checkStatus")Integer checkStatus);
+
+    @Select({" <script>",
+             " select ",
+             " <if test='queryType==0'>",
+             " check_status",
+             " </if>",
+             " <if test='queryType==1'>",
+             " orange_warning_check_status",
+             " </if>",
+             " <if test='queryType==2'>",
+             " red_warning_check_status",
+             " </if>",
+             " from data_quality_task_rule_execute where ",
+             " <if test='queryType==0'>",
+             " check_status is not null",
+             " </if>",
+             " <if test='queryType==1'>",
+             " orange_warning_check_status is not null",
+             " </if>",
+             " <if test='queryType==2'>",
+             " red_warning_check_status is not null",
+             " </if>",
+             " and task_id=#{taskId} and task_execute_id=#{taskExecuteId}",
+             " </script>"})
+    public List<Integer> getWarningValueList(@Param("taskId")String taskId, @Param("taskExecuteId")String taskExecuteId,@Param("queryType")Integer queryType);
 
     /**
      * 获取任务执行记录
      * @param id
      * @return
      */
-    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId}")
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
@@ -683,7 +733,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,",
+             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,",
              " d.name as ruleName,d.scope as objectType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
              " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
              " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}) c",
@@ -695,6 +745,9 @@ public interface TaskManageDAO {
              " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
              " </script>"})
     List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId);
+
+    @Select("select sequence from data_quality_sub_task where id=#{subTaskId}")
+    Integer getSubTaskSequence(@Param("subTaskId")String subTaskId);
 
     /**
      * 获取校验规则名称
@@ -722,6 +775,7 @@ public interface TaskManageDAO {
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
              " and (executor like '%${params.query}%' ESCAPE '/')",
+             " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",

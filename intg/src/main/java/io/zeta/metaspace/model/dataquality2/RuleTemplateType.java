@@ -17,12 +17,12 @@ import com.google.common.collect.Lists;
 import java.util.List;
 
 
-public class RuleTemplateCategory {
+public class RuleTemplateType {
 
     /**
      * 规则模版分类:1-空值校验,2-表体积,3-唯一值校验,4-重复值校验,5-数值型校验
      */
-    private String categoryId;
+    private Integer ruleType;
     /**
      * 分类名
      */
@@ -32,17 +32,17 @@ public class RuleTemplateCategory {
      */
     private long count;
 
-    public RuleTemplateCategory(String categoryId, String name) {
-        this.categoryId = categoryId;
+    public RuleTemplateType(Integer ruleType, String name) {
+        this.ruleType = ruleType;
         this.name = name;
     }
 
-    public String getCategoryId() {
-        return categoryId;
+    public Integer getRuleType() {
+        return ruleType;
     }
 
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
+    public void setRuleType(Integer ruleType) {
+        this.ruleType = ruleType;
     }
 
     public String getName() {
@@ -61,11 +61,11 @@ public class RuleTemplateCategory {
         this.count = count;
     }
 
-    public static List<RuleTemplateCategory> all() {
-        return Lists.newArrayList(new RuleTemplateCategory("1", "表体积"),
-                                  new RuleTemplateCategory("2", "空值校验"),
-                                  new RuleTemplateCategory("3", "唯一值校验"),
-                                  new RuleTemplateCategory("4", "重复值校验"),
-                                  new RuleTemplateCategory("5", "数值型校验"));
+    public static List<RuleTemplateType> all() {
+        return Lists.newArrayList(new RuleTemplateType(1, "表体积"),
+                                  new RuleTemplateType(2, "空值校验"),
+                                  new RuleTemplateType(3, "唯一值校验"),
+                                  new RuleTemplateType(4, "重复值校验"),
+                                  new RuleTemplateType(5, "数值型校验"));
     }
 }
