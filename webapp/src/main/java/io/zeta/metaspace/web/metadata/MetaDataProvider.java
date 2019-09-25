@@ -337,6 +337,7 @@ public abstract class MetaDataProvider {
      * @throws Exception
      */
     public void importDatabases(TableSchema tableSchema) throws Exception {
+        entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         totalTables.set(0);
         updatedTables.set(0);
@@ -345,12 +346,14 @@ public abstract class MetaDataProvider {
         init(tableSchema);
         totalTables.set(tableNames.size());
         String instanceId = tableSchema.getInstance();
-        registerInstance(instanceId);
+
+        //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId);
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
             //删除JanusGraph中已经不存在的database,以及database中的table
-            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_BY_STATE), instanceId, AtlasEntity.Status.ACTIVE);
+            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_BY_STATE), atlasEntityWithExtInfo.getEntity().getGuid(), AtlasEntity.Status.ACTIVE);
             List<AtlasVertex> dbVertices    = (List) graph.executeGremlinScript(databaseQuery, false);
             for (AtlasVertex vertex : dbVertices) {
                 if (Objects.nonNull(vertex)) {
