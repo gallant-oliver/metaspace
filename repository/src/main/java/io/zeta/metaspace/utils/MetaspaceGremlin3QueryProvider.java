@@ -103,7 +103,7 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
             case DB_TABLE_BY_STATE:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', '%s').inE().outV().has('__typeName','hive_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
             case RDBMS_DB_TABLE_BY_STATE:
-                return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('guid', '%s').inE().outV().has('__typeName','rdbms_db').has('Asset.name', '%s').inE().outV().has('__typeName','rdbms_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+                return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('__guid', '%s').inE().outV().has('__typeName','rdbms_db').has('Asset.name', '%s').inE().outV().has('__typeName','rdbms_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
             case FULL_DB_BY_STATE:
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
             case FULL_RDBMS_DB_BY_STATE:
