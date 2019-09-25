@@ -459,6 +459,8 @@ public class DataShareService {
                     } else {
                         retryCount++;
                     }
+                } else {
+                    retryCount++;
                 }
             }
             if(!"0.0".equals(error_id)) {

@@ -32,6 +32,9 @@ public interface RuleDAO {
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} "})
     public List<Rule> getByCode(@Param("code") String code);
 
+    @Select("select enable from data_quality_rule where id=#{id}")
+    public Boolean getEnableStatusById(@Param("id") String id);
+
     @Select("update data_quality_rule set delete=true where id=#{id}")
     public void deleteById(@Param("id") String id);
 
@@ -85,6 +88,9 @@ public interface RuleDAO {
              " </script>"})
     public long countBySearch(@Param("query") String query);
 
+    @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id}")
+    public int getRuleUsedCount(@Param("id") String guid);
+
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
 
@@ -93,5 +99,8 @@ public interface RuleDAO {
 
     @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false")
     public Integer getCategoryObjectCount(@Param("categoryId") String guid);
+
+    @Select("select name from category where guid=#{categoryId}")
+    public String getCategoryName(@Param("categoryId") String guid);
 
 }

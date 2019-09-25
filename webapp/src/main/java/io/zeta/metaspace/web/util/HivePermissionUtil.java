@@ -78,6 +78,9 @@ public class HivePermissionUtil {
                     retryCount++;
                 }
             }
+        } else {
+            tablePermission.setREAD(true);
+            tablePermission.setWRITE(true);
         }
         return tablePermission;
     }

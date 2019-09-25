@@ -12,7 +12,11 @@
 // ======================================================================
 /**
  * @author sunhaoning@gridsum.com
+<<<<<<< HEAD
  * @date 2019/7/22 10:15
+=======
+ * @date 2019/7/16 18:11
+>>>>>>> feature/1.5.0-cache-redis
  */
 package io.zeta.metaspace.web.cache;
 
@@ -34,15 +38,25 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/7/22 10:15
+=======
+
+/*
+ * @description
+ * @author sunhaoning
+ * @date 2019/7/16 18:11
+>>>>>>> feature/1.5.0-cache-redis
  */
 @Configuration
 @EnableCaching
 public class CacheConfig extends CachingConfigurerSupport {
+
     private static final Logger LOG = LoggerFactory.getLogger(CacheConfig.class);
+
 
     private static String hostName;
     private static int port;
@@ -78,15 +92,16 @@ public class CacheConfig extends CachingConfigurerSupport {
         return redisTemplate;
     }
 
+
     @Bean("customKeyGenerator")
     @Override
     public KeyGenerator keyGenerator() {
         return new CustomKeyGenerator();
     }
 
+
     @Bean
     public CacheManager cacheManager(RedisTemplate redisTemplate) {
-        LOG.info("cache engine:" + engine);
         if(CACHE_ON_REDIS.equals(engine)) {
             RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
             cacheManager.setDefaultExpiration(expiration);

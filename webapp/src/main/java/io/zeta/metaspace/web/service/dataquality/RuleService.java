@@ -80,10 +80,20 @@ public class RuleService {
     }
 
     public void deleteById(String number) throws AtlasBaseException {
+        Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+        if(true==enableStatus) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
+        }
         ruleDAO.deleteById(number);
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
+        for (String number : numberList) {
+            Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+            if(true==enableStatus) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在已被启用规则，不允许删除");
+            }
+        }
         ruleDAO.deleteByIdList(numberList);
     }
 
@@ -169,6 +179,12 @@ public class RuleService {
 
     public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {
         try {
+            if(false == enable) {
+                int count = ruleDAO.getRuleUsedCount(id);
+                if(count > 0) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前规则已被使用，禁止关闭");
+                }
+            }
             return ruleDAO.updateRuleStatus(id, enable);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -181,5 +197,21 @@ public class RuleService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
+    }
+
+    public void deleteCategory(String categoryGuid) throws AtlasBaseException {
+        try {
+            int count = ruleDAO.getCategoryObjectCount(categoryGuid);
+            if(count > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
+            }
+            dataManageService.deleteCategory(categoryGuid);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public String getCategoryName(String categoryGuid) {
+        return ruleDAO.getCategoryName(categoryGuid);
     }
 }

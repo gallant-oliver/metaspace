@@ -54,6 +54,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -950,7 +951,6 @@ public class BusinessService {
             String value = null;
             List resultList = new ArrayList();
             Column column = null;
-
             row = sheet.getRow(0);
             keyCell = row.getCell(0);
             valueCell = row.getCell(1);
@@ -962,9 +962,46 @@ public class BusinessService {
             for(int i=1; i<rowNum; i++) {
                 row = sheet.getRow(i);
                 keyCell = row.getCell(0);
+                switch (keyCell.getCellTypeEnum()) {
+                    case NUMERIC:
+                        key = String.valueOf(keyCell.getNumericCellValue());
+                        break;
+                    case BOOLEAN:
+                        key = String.valueOf(keyCell.getBooleanCellValue());
+                        break;
+                    case STRING:
+                        key = keyCell.getStringCellValue();
+                        break;
+                    case BLANK:
+                        key = "";
+                        break;
+                    case FORMULA:
+                        key = keyCell.getCellFormula();
+                        break;
+                    default:
+                        value = "";
+                }
+
                 valueCell = row.getCell(1);
-                key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
-                value = Objects.nonNull(valueCell)?valueCell.getStringCellValue():"";
+                switch (valueCell.getCellTypeEnum()) {
+                    case NUMERIC:
+                        value = String.valueOf(valueCell.getNumericCellValue());
+                        break;
+                    case BOOLEAN:
+                        value = String.valueOf(valueCell.getBooleanCellValue());
+                        break;
+                    case STRING:
+                        value = valueCell.getStringCellValue();
+                        break;
+                    case BLANK:
+                        value = "";
+                        break;
+                    case FORMULA:
+                        value = valueCell.getCellFormula();
+                        break;
+                    default:
+                        value = "";
+                }
                 column = new Column();
                 column.setColumnName(key);
                 column.setDisplayName(value);

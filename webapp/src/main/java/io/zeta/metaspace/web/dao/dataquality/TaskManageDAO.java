@@ -38,6 +38,7 @@ import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -156,6 +157,14 @@ public interface TaskManageDAO {
              " )",
              " </script>"})
     public int deleteSubTaskRuleList(@Param("taskIdList")List<String> taskIdList);
+
+    @Delete({" <script>",
+             " delete from data_quality_task2warning_group where task_id in",
+             " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
+             " #{taskId}",
+             " </foreach>",
+             " </script>"})
+    public int deleteWarningGroupUsed(@Param("taskIdList")List<String> taskIdList);
 
     /**
      * 获取规则分组下规则列表
