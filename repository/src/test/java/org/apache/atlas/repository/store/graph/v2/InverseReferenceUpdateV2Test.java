@@ -112,7 +112,7 @@ public abstract class InverseReferenceUpdateV2Test {
         RequestContext.get().setUser(TestUtilsV2.TEST_USER, null);
     }
 
-    @Test
+   /* @Test
     public void testInverseReferenceAutoUpdate_NonComposite_OneToMany() throws Exception {
         AtlasObjectId juliusId = nameIdMap.get("Julius");
 
@@ -139,11 +139,11 @@ public abstract class InverseReferenceUpdateV2Test {
         verifyReferenceList(storedEntity, "subordinates", ImmutableList.of(maxId));
         storedEntity = storedEntities.getEntity(janeGuid);
         verify_testInverseReferenceAutoUpdate_NonComposite_OneToMany(storedEntity);
-    }
+    }*/
 
     protected abstract void verify_testInverseReferenceAutoUpdate_NonComposite_OneToMany(AtlasEntity jane) throws Exception;
 
-    @Test
+    /*@Test
     public void testInverseReferenceAutoUpdate_NonCompositeManyToOne() throws Exception {
         AtlasEntityType bType = typeRegistry.getEntityTypeByName("B");
         AtlasEntity a1 = new AtlasEntity("A");
@@ -200,11 +200,11 @@ public abstract class InverseReferenceUpdateV2Test {
 
         verify_testInverseReferenceAutoUpdate_NonCompositeManyToOne(storedEntities.getEntity(a1.getGuid()), storedEntities.getEntity(a2.getGuid()),
             storedEntities.getEntity(a3.getGuid()), storedEntities.getEntity(b.getGuid()));
-    }
+    }*/
 
     protected abstract void verify_testInverseReferenceAutoUpdate_NonCompositeManyToOne(AtlasEntity a1, AtlasEntity a2, AtlasEntity a3, AtlasEntity b);
 
-    @Test
+    /*@Test
     public void testInverseReferenceAutoUpdate_NonComposite_OneToOne() throws Exception {
         AtlasEntityType bType = typeRegistry.getEntityTypeByName("B");
         AtlasEntity a1 = new AtlasEntity("A");
@@ -253,11 +253,11 @@ public abstract class InverseReferenceUpdateV2Test {
         storedEntity = storedEntities.getEntity(a1.getGuid());
         Object refValue = storedEntity.getAttribute("b");
         verify_testInverseReferenceAutoUpdate_NonComposite_OneToOne(storedEntities.getEntity(a1.getGuid()), storedEntities.getEntity(b.getGuid()));
-    }
+    }*/
 
     protected abstract void verify_testInverseReferenceAutoUpdate_NonComposite_OneToOne(AtlasEntity a1, AtlasEntity b);
 
-    @Test
+    /*@Test
     public void testInverseReferenceAutoUpdate_NonComposite_ManyToMany() throws Exception {
         AtlasEntityType bType = typeRegistry.getEntityTypeByName("B");
         AtlasEntity a1 = new AtlasEntity("A");
@@ -292,9 +292,9 @@ public abstract class InverseReferenceUpdateV2Test {
         verifyReferenceList(storedEntity, "manyB", ImmutableList.of(AtlasTypeUtil.getAtlasObjectId(b1)));
         storedEntity = storedEntities.getEntity(a2.getGuid());
         verifyReferenceList(storedEntity, "manyB", ImmutableList.of(AtlasTypeUtil.getAtlasObjectId(b1)));
-    }
+    }*/
 
-    @Test
+   /* @Test
     public void testInverseReferenceAutoUpdate_Map() throws Exception {
         AtlasEntity a1 = new AtlasEntity("A");
         a1.setAttribute(NAME, TestUtilsV2.randomString());
@@ -352,7 +352,7 @@ public abstract class InverseReferenceUpdateV2Test {
         AtlasEntity storedB3 = storedEntities.getEntity(b3.getGuid());
         verifyReferenceValue(storedB3, "mappedFromA", a1.getGuid());
         verify_testInverseReferenceAutoUpdate_Map(storedEntities.getEntity(a1.getGuid()), storedEntities.getEntity(b1.getGuid()), storedEntities.getEntity(b2.getGuid()), storedB3);
-    }
+    }*/
 
     protected abstract void verify_testInverseReferenceAutoUpdate_Map(AtlasEntity a1, AtlasEntity b1, AtlasEntity b2, AtlasEntity b3);
 
