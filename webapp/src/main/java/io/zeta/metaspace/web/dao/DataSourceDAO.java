@@ -44,6 +44,7 @@ public interface DataSourceDAO {
     @Update("update data_source set " +
             "source_name=#{dataSourceBody.sourceName}," +
             "description=#{dataSourceBody.description}," +
+            "source_type=#{dataSourceBody.sourceType}" +
             "ip=#{dataSourceBody.ip}," +
             "port=#{dataSourceBody.port}," +
             "username=#{dataSourceBody.userName}," +
