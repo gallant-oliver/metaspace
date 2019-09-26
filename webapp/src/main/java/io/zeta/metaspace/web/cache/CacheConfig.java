@@ -57,7 +57,7 @@ public class CacheConfig extends CachingConfigurerSupport {
         // Defaults
         redisConnectionFactory.setHostName(hostName);
         redisConnectionFactory.setPort(port);
-        if(null!=password || "".equals(password)) {
+        if(null!=password && !"".equals(password)) {
             redisConnectionFactory.setPassword(password);
         }
         redisConnectionFactory.setPoolConfig(config);
