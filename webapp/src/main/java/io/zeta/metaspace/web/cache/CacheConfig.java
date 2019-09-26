@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.cache;
 
 import org.apache.atlas.ApplicationProperties;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
@@ -57,7 +58,7 @@ public class CacheConfig extends CachingConfigurerSupport {
         // Defaults
         redisConnectionFactory.setHostName(hostName);
         redisConnectionFactory.setPort(port);
-        if(null!=password || "".equals(password)) {
+        if(StringUtils.isNotBlank(password)) {
             redisConnectionFactory.setPassword(password);
         }
         redisConnectionFactory.setPoolConfig(config);
