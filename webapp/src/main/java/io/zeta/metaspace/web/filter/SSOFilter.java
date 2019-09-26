@@ -107,6 +107,9 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, getIpAdress(httpServletRequest), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            if(requestURL.contains("/roles/sso/incr")) {
+                return;
+            }
             AUDIT_LOG.info(auditLog.toString());
         }
 
