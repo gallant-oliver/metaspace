@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import io.swagger.models.Info;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.Operation;
@@ -59,10 +60,8 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
-
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -1026,7 +1025,7 @@ public class DataShareService {
         }
     }
 
-
+    @HystrixCommand()
     public QueryResult queryAPIData(String path, QueryInfo queryInfo, String acceptHeader) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
