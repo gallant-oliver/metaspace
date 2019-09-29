@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.metadata.mysql;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.metadata.MetaDataProvider;
 import io.zeta.metaspace.web.metadata.RMDBEnum;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.slf4j.Logger;
@@ -30,7 +31,6 @@ import static io.zeta.metaspace.web.metadata.BaseFields.*;
 @Component
 public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaDataProvider {
     private static final Logger LOG = LoggerFactory.getLogger(MysqlMetaDataProvider.class);
-    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public MysqlMetaDataProvider() {
         super();
@@ -91,7 +91,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     @Override
-    protected AtlasEntity.AtlasEntityWithExtInfo toTableEntity(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, AtlasEntity.AtlasEntityWithExtInfo tableEntity) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toTableEntity(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, AtlasEntity.AtlasEntityWithExtInfo tableEntity,String instanceGuid) throws AtlasBaseException {
         if (null == tableEntity) {
             tableEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getTableTypeName()));
         }
@@ -109,9 +109,9 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
 
         table.setAttribute(ATTRIBUTE_COMMENT, tableCreateTimeAndComment.get("table_comment"));
         table.setAttribute(ATTRIBUTE_NAME_PATH, tableName.getFullName());
-        List<AtlasEntity> columns = toColumns(tableName.getColumns(), table);
-        List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table);
-        List<AtlasEntity> foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table, dbEntity, instanceId);
+        List<AtlasEntity> columns = toColumns(tableName.getColumns(), table,databaseName,instanceGuid);
+        List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table,databaseName,instanceGuid);
+        List<AtlasEntity> foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table, dbEntity, instanceId,instanceGuid);
         table.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
         for (AtlasEntity column : columns) {
             tableEntity.addReferredEntity(column);
@@ -127,7 +127,9 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return tableEntity;
     }
 
-    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceId) {
+    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
+        //先删除数据库中不存在的
+        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),foreignKeys,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey : foreignKeys) {
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
@@ -143,21 +145,21 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return ret;
     }
 
-    private void visitForeignEntity(AtlasEntity foreignEntity, ForeignKey foreignKey, AtlasEntity dbEntity, String instanceId) {
-        for (ForeignKeyColumnReference columnReference : foreignKey.getColumnReferences()) {
-            Table parentTable = columnReference.getForeignKeyColumn().getParent();
-            try {
-                AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = findEntity(getTableTypeName(), getTableQualifiedName(instanceId, parentTable.getSchema().getFullName(), parentTable.getName()));
-                if (null == atlasEntityWithExtInfo) {
-                    atlasEntityWithExtInfo = registerTable(dbEntity, instanceId, parentTable.getSchema().getFullName(), parentTable);
-                }
-                foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(atlasEntityWithExtInfo.getEntity()));
-
-            } catch (Exception e) {
-                LOG.error("导入表{}元数据失败", parentTable.getFullName(), e);
-            }
-        }
-    }
+//    private void visitForeignEntity(AtlasEntity foreignEntity, ForeignKey foreignKey, AtlasEntity dbEntity, String instanceId) {
+//        for (ForeignKeyColumnReference columnReference : foreignKey.getColumnReferences()) {
+//            Table parentTable = columnReference.getForeignKeyColumn().getParent();
+//            try {
+//                AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = findEntity(getTableTypeName(), getTableQualifiedName(instanceId, parentTable.getSchema().getFullName(), parentTable.getName()));
+//                if (null == atlasEntityWithExtInfo) {
+//                    atlasEntityWithExtInfo = registerTable(dbEntity, instanceId, parentTable.getSchema().getFullName(), parentTable);
+//                }
+//                foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(atlasEntityWithExtInfo.getEntity()));
+//
+//            } catch (Exception e) {
+//                LOG.error("导入表{}元数据失败", parentTable.getFullName(), e);
+//            }
+//        }
+//    }
 
     /**
      * 获取外键关键字段
@@ -175,7 +177,8 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return columnObjectIds;
     }
 
-    private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity table) {
+    private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
+        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),indexes,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (Index index : indexes) {
             AtlasEntity indexEntity = new AtlasEntity(RDBMS_INDEX);
@@ -196,7 +199,8 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return ret;
     }
 
-    private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity table) {
+    private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
+        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),columns,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
@@ -238,12 +242,12 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     @Override
-    protected List<String> getSkipSchemas() {
-        return Collections.singletonList("sys");
+    protected String getSkipSchemas() {
+        return "sys";
     }
 
     @Override
-    protected List<String> getSkipTables() {
+    protected String getSkipTables() {
         return null;
     }
 
