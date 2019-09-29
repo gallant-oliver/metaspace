@@ -28,6 +28,9 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
+import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
@@ -67,6 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.web.service.MetaDataService.DatabaseType.values;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 /*
@@ -100,9 +104,15 @@ public class MetaDataService {
     BusinessDAO businessDAO;
     @Autowired
     DataManageService dataManageService;
-    private String errorMessage;
+    private String errorMessage = "";
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
+
+    @Autowired
+    private MysqlMetaDataProvider mysqlMetaDataProvider;
+
+    @Autowired
+    private OracleMetaDataProvider oracleMetaDataProvider;
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -562,7 +572,7 @@ public class MetaDataService {
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if (Objects.nonNull(entities) && entities.size() != 0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
-                if (atlasEntity.getTypeName().contains("table") || atlasEntity.getTypeName().contains("hdfs")) {
+                if (atlasEntity.getDatabaseTypeName().contains("table") || atlasEntity.getDatabaseTypeName().contains("hdfs")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasTableEntity = getEntityById(guid);
@@ -747,7 +757,7 @@ public class MetaDataService {
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if (Objects.nonNull(entities) && entities.size() != 0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
-                if (atlasEntity.getTypeName().contains("column")) {
+                if (atlasEntity.getDatabaseTypeName().contains("column")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasColumnEntity = getEntityById(guid);
@@ -940,31 +950,33 @@ public class MetaDataService {
             LOG.error(errorMessage);
             return;
         }
-        if (hiveMetaStoreBridgeUtils == null) {
-            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
-            LOG.error(errorMessage);
-            return;
-        }
         errorMessage = "";
+        IMetaDataProvider metaDataProvider = null;
         try {
-            switch (databaseTypeEntity) {
-                case HIVE:
-                    hiveMetaStoreBridgeUtils.getStartTime().set(System.currentTimeMillis());
-                    hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
-                    break;
-                case MYSQL:
-                case ORACLE:
-                case POSTGRESQL:
-                    errorMessage = String.format("not support database type %s", databaseType);
-                    LOG.error(errorMessage);
-                    break;
-            }
+            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity);
+            metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
             errorMessage = "同步元数据出错，无法连接到hive";
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
             errorMessage = String.format("同步元数据出错，%s", e.getMessage());
             LOG.error("import metadata error", e);
+        }
+        if (null != metaDataProvider) {
+            metaDataProvider.getEndTime().set(System.currentTimeMillis());
+        }
+    }
+
+    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity) throws Exception {
+        switch (databaseTypeEntity) {
+            case HIVE:
+                return hiveMetaStoreBridgeUtils;
+            case MYSQL:
+                return mysqlMetaDataProvider;
+            case ORACLE:
+                return oracleMetaDataProvider;
+            default:
+                throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
         }
     }
 
@@ -996,21 +1008,31 @@ public class MetaDataService {
         }
         switch (databaseTypeEntity) {
             case HIVE:
-                AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
-                AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
-                AtomicLong startTime = hiveMetaStoreBridgeUtils.getStartTime();
-                AtomicLong endTime = hiveMetaStoreBridgeUtils.getEndTime();
-                progress = new Progress(totalTables.get(), updatedTables.get());
-                progress.setError(errorMessage);
-                progress.setStartTime(startTime.get());
-                progress.setEndTime(endTime.get());
+                progress = getProgress(hiveMetaStoreBridgeUtils);
                 break;
             case MYSQL:
+                progress = getProgress(mysqlMetaDataProvider);
+                break;
             case ORACLE:
+                progress = getProgress(oracleMetaDataProvider);
+                break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
         }
+        return progress;
+    }
+
+    private Progress getProgress(IMetaDataProvider metaDataProvider) {
+        Progress progress;
+        AtomicInteger totalTables = metaDataProvider.getTotalTables();
+        AtomicInteger updatedTables = metaDataProvider.getUpdatedTables();
+        AtomicLong startTime = metaDataProvider.getStartTime();
+        AtomicLong endTime = metaDataProvider.getEndTime();
+        progress = new Progress(totalTables.get(), updatedTables.get());
+        progress.setError(errorMessage);
+        progress.setStartTime(startTime.get());
+        progress.setEndTime(endTime.get());
         return progress;
     }
 

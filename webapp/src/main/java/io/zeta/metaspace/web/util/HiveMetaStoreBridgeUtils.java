@@ -18,19 +18,15 @@
 
 package io.zeta.metaspace.web.util;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.jersey.api.client.ClientResponse;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.model.TableSchema;
-import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasClientV2;
-import org.apache.atlas.AtlasConstants;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.AtlasServiceException;
+import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.model.instance.*;
@@ -62,7 +58,6 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -79,7 +74,7 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  */
 @Singleton
 @Component
-public class HiveMetaStoreBridgeUtils {
+public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
 
     public static final String CONF_PREFIX                     = "atlas.hook.hive.";
@@ -163,7 +158,8 @@ public class HiveMetaStoreBridgeUtils {
             databaseToImport = tableSchema.getDatabase();
             tableToImport = tableSchema.getTable();
         }
-        init();
+        initAtlasClientV2();
+        initHiveMetaStoreClient();
         if (StringUtils.isEmpty(databaseToImport)) {
             databaseNames = hiveMetaStoreClient.getAllDatabases();
 
@@ -227,12 +223,12 @@ public class HiveMetaStoreBridgeUtils {
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 
-    private void init() {
+    private void initAtlasClientV2() {
         if (null == atlasClientV2) {
             String[] atlasEndpoint = atlasConf.getStringArray(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
 
             if (atlasEndpoint == null || atlasEndpoint.length == 0) {
-                atlasEndpoint = new String[] {AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
+                atlasEndpoint = new String[]{AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
             }
             try {
                 atlasClientV2 = new AtlasClientV2(atlasEndpoint);
@@ -240,6 +236,8 @@ public class HiveMetaStoreBridgeUtils {
                 LOG.error("init atlasClientV2 error,", e);
             }
         }
+    }
+    private void initHiveMetaStoreClient() {
         if (null == hiveMetaStoreClient) {
             HiveConf hiveConf = new HiveConf();
             hiveConf.addResource(new Path(MetaspaceConfig.getHiveConfig() + File.separator + "hive-site.xml"));
@@ -310,7 +308,6 @@ public class HiveMetaStoreBridgeUtils {
         atlasEntityStore.deleteByUniqueAttributes(type, objectId.getUniqueAttributes());
     }
 
-    @VisibleForTesting
     public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError) throws Exception {
         try {
             Table                  table       = hiveMetaStoreClient.getTable(databaseName, tableName);
