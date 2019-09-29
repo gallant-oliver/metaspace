@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
@@ -69,6 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.web.service.MetaDataService.DatabaseType.values;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 /*
@@ -108,6 +110,9 @@ public class MetaDataService {
 
     @Autowired
     private MysqlMetaDataProvider mysqlMetaDataProvider;
+
+    @Autowired
+    private OracleMetaDataProvider oracleMetaDataProvider;
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -968,6 +973,8 @@ public class MetaDataService {
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
                 return mysqlMetaDataProvider;
+            case ORACLE:
+                return oracleMetaDataProvider;
             default:
                 throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
         }
@@ -1007,6 +1014,8 @@ public class MetaDataService {
                 progress = getProgress(mysqlMetaDataProvider);
                 break;
             case ORACLE:
+                progress = getProgress(oracleMetaDataProvider);
+                break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
