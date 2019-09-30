@@ -234,7 +234,6 @@ public class DataSourceService {
             if (Objects.isNull(dataSourceInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不存在");
             }
-            dataSourceInfo.setPassword(AESUtils.AESDecode(dataSourceInfo.getPassword()));
             return dataSourceInfo;
         } catch (AtlasBaseException e) {
             throw e;
