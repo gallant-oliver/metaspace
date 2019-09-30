@@ -376,8 +376,8 @@ public class DataSourceREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/import/{databaseType}")
-    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, String sourceId) throws Exception {
+    @Path("/import/{databaseType}/{sourceId}")
+    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
         TableSchema  tableSchema = new TableSchema();
         tableSchema.setInstance(sourceId);
         try {
