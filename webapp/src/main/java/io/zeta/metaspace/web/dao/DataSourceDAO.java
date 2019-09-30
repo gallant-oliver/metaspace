@@ -173,6 +173,11 @@ public interface DataSourceDAO {
             "where source_id=#{sourceId} and users.userid!=#{userId}")
     public List<UserIdAndName> getAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
+    //获取数据源已授权人
+    @Select("select count(1) from users join data_source_authorize on data_source_authorize.authorize_user_id=users.userid " +
+            "where source_id=#{sourceId} and users.userid!=#{userId}")
+    public int isAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+
     //获取数据源未授权人
     @Select("<script>" +
             "select count(*)over() totalSize,userid,username userName,account from users " +
