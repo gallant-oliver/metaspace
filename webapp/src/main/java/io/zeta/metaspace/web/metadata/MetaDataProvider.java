@@ -6,6 +6,7 @@ import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.util.AESUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -146,7 +147,7 @@ public abstract class MetaDataProvider {
         String           database       = dataSourceInfo.getDatabase();
         String           jdbcParameter  = dataSourceInfo.getJdbcParameter();
         String           userName       = dataSourceInfo.getUserName();
-        String           password       = dataSourceInfo.getPassword();
+        String           password       = AESUtils.AESDecode(dataSourceInfo.getPassword());
         if (null != dataSource) {
             dataSource.setUserCredentials(new SingleUseUserCredentials(userName, password));
             return dataSource.get();
