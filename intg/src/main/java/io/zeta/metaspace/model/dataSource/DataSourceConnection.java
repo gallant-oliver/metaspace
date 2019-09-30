@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.dataSource;
 
+import org.apache.commons.lang.StringUtils;
+
 public class DataSourceConnection {
     private String sourceType;
     private String ip;
@@ -125,6 +127,9 @@ public class DataSourceConnection {
             url = "jdbc:hive2://" + ip + ":" + port + "/" + database;
         }else if (sourceType.toUpperCase().equals("POSTGRESQL")){
             url = "jdbc:postgresql://" + ip + ":" + port + "/" + database;
+        }
+        if (StringUtils.isEmpty(jdbcParameter)){
+            url =url + "?" + jdbcParameter;
         }
     }
 }
