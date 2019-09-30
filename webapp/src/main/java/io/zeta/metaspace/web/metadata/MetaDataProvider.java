@@ -154,7 +154,7 @@ public abstract class MetaDataProvider {
         String connectUrl = RMDBEnum.of(sourceType).getConnectUrl();
         String connectionUrl = String.format(connectUrl, ip, port, database);
         if (StringUtils.isNotEmpty(jdbcParameter)) {
-            connectionUrl += connectionUrl + "?" + jdbcParameter;
+            connectionUrl = connectionUrl + "?" + jdbcParameter;
         }
 
         dataSource = new DatabaseConnectionSource(connectionUrl);
@@ -270,7 +270,7 @@ public abstract class MetaDataProvider {
     }
 
 
-    private AtlasEntity.AtlasEntityWithExtInfo findInstance(String instanceId) throws AtlasBaseException {
+    public AtlasEntity.AtlasEntityWithExtInfo findInstance(String instanceId) throws AtlasBaseException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Searching Atlas for instance {}", instanceId);
         }
