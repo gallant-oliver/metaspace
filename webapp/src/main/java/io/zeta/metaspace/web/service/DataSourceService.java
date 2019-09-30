@@ -800,11 +800,19 @@ public class DataSourceService {
             }
             return resultList;
         } catch (Exception e) {
-            e.printStackTrace();
-                LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
 
         }
+    }
 
+    public List<String> getUpdateUserName() throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            return dataSourceDAO.getUpdateUserName(userId);
+        } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }

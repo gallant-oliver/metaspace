@@ -398,4 +398,17 @@ public class DataSourceREST {
         }
         return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
     }
+
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/updateUser")
+    public List<String> getUpdateUserName(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
+        try {
+            return dataSourceService.getUpdateUserName();
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
 }

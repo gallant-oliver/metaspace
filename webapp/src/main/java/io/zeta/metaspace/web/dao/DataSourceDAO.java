@@ -222,4 +222,10 @@ public interface DataSourceDAO {
     //根据数据源名字获取数据源id
     @Select("select source_id from data_source where source_name=#{sourceName}")
     public String getSourceIdBySourceName(@Param("sourceName") String sourceName);
+
+    @Select("select username from users where userid in " +
+            "(select distinct s.update_user_id from data_source s " +
+            "join data_source_authorize a on s.source_id=a.source_id " +
+            "where a.authorize_user_id = #{userId})")
+    public List<String> getUpdateUserName(@Param("userId") String userId);
 }
