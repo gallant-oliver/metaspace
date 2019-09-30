@@ -29,8 +29,11 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -49,6 +52,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -78,6 +83,9 @@ public class DataSourceREST {
     @Autowired
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
+    private AtomicBoolean importing = new AtomicBoolean(false);
+    @Autowired
+    private MetaDataService metadataService;
 
 
 
@@ -363,5 +371,32 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源授权失败:"+e.getMessage());
 
         }
+    }
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/import/{databaseType}")
+    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, String sourceId) throws Exception {
+        TableSchema  tableSchema = new TableSchema();
+        tableSchema.setInstance(sourceId);
+        try {
+            if (dataSourceService.isAuthorizeUser(sourceId)) {
+                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("获取当前用户的userId出错", e);
+        }
+
+        if (!importing.getAndSet(true)) {
+            CompletableFuture.runAsync(() -> {
+                metadataService.synchronizeMetaData(databaseType, tableSchema);
+                importing.set(false);
+                metadataService.refreshCache();
+            });
+        } else {
+            return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
+        }
+        return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
     }
 }
