@@ -99,6 +99,9 @@ public class SearchService {
             } else {
                 categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0);
             }
+            if (categoryIds.size()==0){
+                return categoryIds;
+            }
             List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0);
             ArrayList<String> strings = new ArrayList<>();
             for (RoleModulesCategories.Category child : childs) {
@@ -578,6 +581,24 @@ public class SearchService {
             databasePageResult.setTotalSize(roleDAO.getDBCountV2(strings, parameters.getQuery()));
         }
         return databasePageResult;
+    }
+
+    /**
+     * 获取用户管理的所有表id
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<String> getUserTableIds() throws AtlasBaseException {
+        try {
+            List<String> categoryIds = getPermissionCategoryIds();
+            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
+                return new ArrayList<String>();
+            }
+            return roleDAO.getTableIds(categoryIds);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
 }

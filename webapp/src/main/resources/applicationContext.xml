@@ -136,7 +136,8 @@
                 </property>
         </bean>-->
 
-
+        <bean class="com.netflix.hystrix.contrib.javanica.aop.aspectj.HystrixCommandAspect"/>
+        <bean id="testInitializingBean" class="io.zeta.metaspace.web.util.HystrixInitConfiguration" ></bean>
         <context:annotation-config/>
         <aop:config proxy-target-class="true"/>
         <context:component-scan base-package="org.apache.atlas" />

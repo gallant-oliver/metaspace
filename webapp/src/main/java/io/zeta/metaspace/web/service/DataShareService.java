@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import io.swagger.models.Info;
 import io.swagger.models.ModelImpl;
 import io.swagger.models.Operation;
@@ -59,10 +60,8 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
-
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
-
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -439,6 +438,7 @@ public class DataShareService {
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
             checkTableStatus(guidList);
+            checkApiPermission(guidList);
             Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
             Gson gson = new Gson();
@@ -485,6 +485,24 @@ public class DataShareService {
         }
     }
 
+    public void checkApiPermission(List<String> guidList) throws AtlasBaseException {
+        List<String> tableIds = searchService.getUserTableIds();
+        if (Objects.isNull(tableIds) || tableIds.size() == 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限:"+guidList);
+        }
+        List<String> apiIds = shareDAO.getAPIIdsByRelatedTable(tableIds);
+        List<String> noApiIds = new ArrayList<>();
+        for (String guid:guidList
+        ) {
+            if (!apiIds.contains(guid)){
+                noApiIds.add(guid);
+            }
+        }
+        if (noApiIds.size()!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限:"+noApiIds);
+        }
+    }
+
     public Map convertMobiusResponse(String message) {
         Gson gson = new Gson();
         Map response = gson.fromJson(message, Map.class);
@@ -493,6 +511,7 @@ public class DataShareService {
 
     public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
         try {
+            checkApiPermission(apiGuid);
             Configuration configuration = ApplicationProperties.get();
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
             Map param = new HashMap();
@@ -1006,7 +1025,7 @@ public class DataShareService {
         }
     }
 
-
+    @HystrixCommand()
     public QueryResult queryAPIData(String path, QueryInfo queryInfo, String acceptHeader) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
