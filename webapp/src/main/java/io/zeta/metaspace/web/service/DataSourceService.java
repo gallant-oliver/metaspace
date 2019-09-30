@@ -16,6 +16,9 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
+
+import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME;
+import static io.zeta.metaspace.web.metadata.BaseFields.RMDB_INSTANCE;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 import io.zeta.metaspace.model.dataSource.DataSource;
@@ -35,13 +38,17 @@ import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.commons.configuration.Configuration;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
@@ -59,6 +66,7 @@ import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.sql.*;
 import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
@@ -85,6 +93,9 @@ public class DataSourceService {
 
     @Autowired
     private DataSourceService dataSourceService;
+
+    @Autowired
+    private MysqlMetaDataProvider mysqlMetaDataProvider;
 
 
     private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -421,6 +432,18 @@ public class DataSourceService {
         return dataSourceDAO.isCreateUser(sourceId,userId)==0;
     }
 
+    public boolean isAuthorizeUser(String sourceId) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            return dataSourceDAO.isAuthorizeUser(sourceId,userId)!=0;
+        }catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户id失败"+e.getMessage());
+        }
+
+
+    }
+
     /**
      * 数据源授权
      * @param dataSourceAuthorizeUserId
@@ -475,7 +498,7 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据源id异常");
         }
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = atlasEntityStoreV2.getById(sourceId);
+            AtlasEntity.AtlasEntityWithExtInfo info = mysqlMetaDataProvider.findInstance(sourceId);
             return Objects.nonNull(info);
         }catch (AtlasBaseException e){
             LOG.error(e.getMessage());
