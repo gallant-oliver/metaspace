@@ -132,9 +132,13 @@ public class DataStandardService {
     public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
         List<DataStandard> list = queryByCatetoryId(categoryId, parameters);
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long sum = dataStandardDAO.countByByCatetoryId(categoryId);
+        //long totalSize = dataStandardDAO.countByByCatetoryId(categoryId);
+        long totalSize = 0;
+        if (list.size()!=0){
+            totalSize = list.get(0).getTotal();
+        }
         //pageResult.setOffset(parameters.getOffset());
-        pageResult.setTotalSize(sum);
+        pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
@@ -166,9 +170,12 @@ public class DataStandardService {
                 }).collect(Collectors.toList());
 
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long sum = dataStandardDAO.countBySearch(parameters.getQuery(), parameters.getCategoryId());
+        long totalSize = 0;
+        if (list.size()!=0){
+            totalSize = list.get(0).getTotal();
+        }
         //pageResult.setOffset(parameters.getOffset());
-        pageResult.setTotalSize(sum);
+        pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
@@ -177,9 +184,12 @@ public class DataStandardService {
     public PageResult<DataStandard> history(String number, Parameters parameters) {
         List<DataStandard> list = dataStandardDAO.history(number, parameters);
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long sum = dataStandardDAO.countByHistory(parameters.getQuery());
+        long totalSize = 0;
+        if (list.size()!=0){
+            totalSize = list.get(0).getTotal();
+        }
         //pageResult.setOffset(parameters.getOffset());
-        pageResult.setTotalSize(sum);
+        pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;

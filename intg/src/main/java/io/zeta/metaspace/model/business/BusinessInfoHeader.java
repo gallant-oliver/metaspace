@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.business;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /*
  * @description
  * @author sunhaoning
@@ -33,6 +35,16 @@ public class BusinessInfoHeader {
     private String ticketNumber;
     private String categoryGuid;
     private String trustTable;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getBusinessId() {
         return businessId;

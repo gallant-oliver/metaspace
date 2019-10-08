@@ -88,7 +88,7 @@ public interface PrivilegeDAO {
     public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select({" <script>",
-             " select * from privilege where privilegeName like '%'||#{privilegeName}||'%' ESCAPE '/' order by privilegeId",
+             " select count(*)over() total,* from privilege where privilegeName like '%'||#{privilegeName}||'%' ESCAPE '/' order by privilegeId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -100,8 +100,6 @@ public interface PrivilegeDAO {
     @Select("select * from role where privilegeId=#{privilegeId} and valid=true order by roleId")
     public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(1) from privilege where privilegeName like '%'||#{query}||'%' ESCAPE '/'")
-    public long getRolesCount(@Param("query") String query);
 
     @Select("select * from privilege where privilegeId = #{privilegeId} order by privilegeId")
     public PrivilegeInfo getPrivilegeInfo(@Param("privilegeId")String privilegeId);
@@ -119,7 +117,7 @@ public interface PrivilegeDAO {
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
 
     @Select({" <script>",
-             " select * from role where edit=1 and valid=true order by roleId",
+             " select count(*)over() total,* from role where edit=1 and valid=true order by roleId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -127,6 +125,4 @@ public interface PrivilegeDAO {
              " </script>"})
     public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);
 
-    @Select("select count(*) from role where edit=1 and valid=true")
-    public long getCountAllPermissionRole();
 }
