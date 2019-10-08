@@ -17,6 +17,7 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -37,6 +38,16 @@ public class TaskErrorHeader {
     private Timestamp executionTime;
     private Integer errorStatus;
     private List<TaskWarningHeader.WarningGroupHeader> warningGroupList;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getTaskId() {
         return taskId;

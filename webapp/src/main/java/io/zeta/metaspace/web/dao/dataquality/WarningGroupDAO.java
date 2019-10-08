@@ -47,7 +47,7 @@ public interface WarningGroupDAO {
 
 
     @Select({"<script>",
-             " select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
+             " select count(*)over() total,a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (a.name like '%${params.query}%' ESCAPE '/' ) ",
@@ -61,14 +61,6 @@ public interface WarningGroupDAO {
              " </script>"})
     public List<WarningGroup> search(@Param("params") Parameters params);
 
-    @Select({"<script>",
-             " select count(1) ",
-             " from warning_group a inner join users b on a.creator=b.userid where a.delete=false ",
-             " <if test=\"query != null and query!=''\">",
-             " and (a.name like '%${query}%' ESCAPE '/' ) ",
-             " </if>",
-             " </script>"})
-    public long countBySearch(@Param("query") String query);
 
 
     @Select({"<script>",
@@ -97,7 +89,7 @@ public interface WarningGroupDAO {
 
 
     @Select({" <script>",
-             " select data_quality_task.id as taskId, data_quality_task_execute.id as executionId, data_quality_task.name as taskName,data_quality_task_execute.number,warning_status as warningStatus,orange_warning_count as orangeWarningCount,",
+             " select count(*)over() total,data_quality_task.id as taskId, data_quality_task_execute.id as executionId, data_quality_task.name as taskName,data_quality_task_execute.number,warning_status as warningStatus,orange_warning_count as orangeWarningCount,",
              " red_warning_count as redWarningCount,execute_time as executionTime from data_quality_task_execute join data_quality_task on data_quality_task_execute.task_id=data_quality_task.id",
              " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
              " <if test='warningType==1'>",
@@ -120,7 +112,7 @@ public interface WarningGroupDAO {
     public List<TaskWarningHeader> getWarningList(@Param("warningType")Integer warningType, @Param("params") Parameters params);
 
     @Select({" <script>",
-             " select data_quality_task.id as taskId,data_quality_task_execute.id as executionId,data_quality_task.name as taskName,data_quality_task_execute.number,error_status as errorStatus,",
+             " select count(*)over() total,data_quality_task.id as taskId,data_quality_task_execute.id as executionId,data_quality_task.name as taskName,data_quality_task_execute.number,error_status as errorStatus,",
              " error_msg as errorMsg,execute_time as executionTime from data_quality_task_execute join data_quality_task on data_quality_task_execute.task_id=data_quality_task.id",
              " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
              " <if test='errorType==1'>",
@@ -142,37 +134,6 @@ public interface WarningGroupDAO {
              " </script>"})
     public List<TaskErrorHeader> getErrorWarningList(@Param("errorType")Integer errorType, @Param("params") Parameters params);
 
-    @Select({" <script>",
-             " select count(*)",
-             " from data_quality_task_execute join data_quality_task on data_quality_task.id=data_quality_task_execute.task_id",
-             " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
-             " <if test='warningType==1'>",
-             " and warning_status=1",
-             " </if>",
-             " <if test='warningType==2'>",
-             " and warning_status=2",
-             " </if>",
-             " <if test='warningType==0'>",
-             " and warning_status!=0",
-             " </if>",
-             " </script>"})
-    public Long countWarning(@Param("warningType")Integer warningType,@Param("params") Parameters params);
-
-    @Select({" <script>",
-             " select count(*)",
-             " from data_quality_task_execute join data_quality_task on data_quality_task.id=data_quality_task_execute.task_id",
-             " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
-             " <if test='errorType==1'>",
-             " and error_status=1",
-             " </if>",
-             " <if test='errorType==2'>",
-             " and error_status=2",
-             " </if>",
-             " <if test='errorType==0'>",
-             " and error_status!=0",
-             " </if>",
-             " </script>"})
-    public Long countError(@Param("errorType")Integer errorType, @Param("params") Parameters params);
 
     @Select("select id,name from warning_group where id in (select warning_group_id from data_quality_task2warning_group where task_id=#{taskId} and warning_type=#{warningType})")
     public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("taskId") String taskId, @Param("warningType") Integer warningType);

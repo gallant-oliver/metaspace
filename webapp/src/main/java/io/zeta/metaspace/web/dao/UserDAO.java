@@ -38,7 +38,7 @@ public interface UserDAO {
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
     @Select({" <script>",
-             " select users.*,role.roleName from users join role on users.roleId = role.roleId",
+             " select count(*)over() total,users.*,role.roleName from users join role on users.roleId = role.roleId",
              " <if test=\"query == null or query==''\">",
              " order by account",
              " </if>",
