@@ -41,19 +41,23 @@ public interface DataSourceDAO {
     public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody);
 
     //更新数据源
-    @Update("update data_source set " +
+    @Update("<script>" +
+            "update data_source set " +
             "source_name=#{dataSourceBody.sourceName}," +
             "description=#{dataSourceBody.description}," +
             "source_type=#{dataSourceBody.sourceType}," +
             "ip=#{dataSourceBody.ip}," +
             "port=#{dataSourceBody.port}," +
             "username=#{dataSourceBody.userName}," +
-            "password=#{dataSourceBody.password}," +
             "database=#{dataSourceBody.database}," +
+            "<if test='dataSourceBody.password!=null'>" +
+            "password=#{dataSourceBody.password}," +
+            "</if>" +
             "jdbc_parameter=#{dataSourceBody.jdbcParameter}," +
             "update_user_id=#{updateUserId}," +
             "update_time=#{dataSourceBody.updateTime}" +
-            "where source_id=#{dataSourceBody.sourceId}")
+            "where source_id=#{dataSourceBody.sourceId}" +
+            "</script>")
     public int updateNoRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
 
     //更新数据源
@@ -158,7 +162,7 @@ public interface DataSourceDAO {
 
 
     //获取测试连接参数
-    @Select("select source_type sourceType,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
+    @Select("select source_type sourceType,ip,port,username userName,password as AESPassword,database,jdbc_parameter jdbcParameter " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
 
@@ -173,9 +177,9 @@ public interface DataSourceDAO {
             "where source_id=#{sourceId} and users.userid!=#{userId}")
     public List<UserIdAndName> getAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
-    //获取数据源已授权人
-    @Select("select count(1) from users join data_source_authorize on data_source_authorize.authorize_user_id=users.userid " +
-            "where source_id=#{sourceId} and users.userid!=#{userId}")
+    //判断用户是否是数据源已授权人
+    @Select("select count(1) from data_source_authorize " +
+            "where source_id=#{sourceId} and authorize_user_id=#{userId}")
     public int isAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
     //获取数据源未授权人

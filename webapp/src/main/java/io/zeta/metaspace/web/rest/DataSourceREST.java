@@ -380,11 +380,12 @@ public class DataSourceREST {
         TableSchema  tableSchema = new TableSchema();
         tableSchema.setInstance(sourceId);
         try {
-            if (dataSourceService.isAuthorizeUser(sourceId)) {
+            if (!dataSourceService.isAuthorizeUser(sourceId)) {
                 throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
             }
         } catch (AtlasBaseException e) {
             LOG.error("获取当前用户的userId出错", e);
+            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
         }
 
         if (!importing.getAndSet(true)) {
@@ -403,7 +404,7 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/updateUser")
-    public List<String> getUpdateUserName(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
+    public List<String> getUpdateUserName() throws Exception {
         try {
             return dataSourceService.getUpdateUserName();
         }catch (Exception e){

@@ -142,7 +142,9 @@ public class DataSourceService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源有依赖,无法编辑ip等属性");
             }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+            if (dataSourceBody.getPassword()!=null){
+                dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+            }
             return dataSourceDAO.updateNoRely(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
@@ -249,7 +251,16 @@ public class DataSourceService {
      * @param dataSourceConnection
      * @return
      */
-    public boolean testConnection(DataSourceConnection dataSourceConnection) {
+    public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+        String password;
+        if (dataSourceConnection.getPassword()==null){
+            if (dataSourceConnection.getAESPassword()!=null) {
+                password = AESUtils.AESDecode(dataSourceConnection.getAESPassword());
+                dataSourceConnection.setPassword(password);
+            }else{
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");
+            }
+        }
         dataSourceConnection.setUrl();
         dataSourceConnection.setDriver();
 

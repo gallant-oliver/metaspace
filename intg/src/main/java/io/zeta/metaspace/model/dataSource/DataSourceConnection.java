@@ -25,6 +25,15 @@ public class DataSourceConnection {
     private String jdbcParameter;
     private String driver;
     private String url;
+    private String AESPassword;
+
+    public String getAESPassword() {
+        return AESPassword;
+    }
+
+    public void setAESPassword(String AESPassword) {
+        this.AESPassword = AESPassword;
+    }
 
     public DataSourceConnection(){}
 
