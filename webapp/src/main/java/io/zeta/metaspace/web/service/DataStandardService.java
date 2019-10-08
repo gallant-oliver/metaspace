@@ -123,10 +123,9 @@ public class DataStandardService {
         dataStandard.setCreateTime(old.getCreateTime());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
-        dataStandard.setVersion(old.getVersion() + 1);
         dataStandard.setCategoryId(old.getCategoryId());
         dataStandard.setDelete(false);
-        return dataStandardDAO.insert(dataStandard);
+        return dataStandardDAO.update(dataStandard);
     }
 
     public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
@@ -167,7 +166,6 @@ public class DataStandardService {
 
         PageResult<DataStandard> pageResult = new PageResult<>();
         long sum = dataStandardDAO.countBySearch(parameters.getQuery(), parameters.getCategoryId());
-        //pageResult.setOffset(parameters.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -175,10 +173,9 @@ public class DataStandardService {
     }
 
     public PageResult<DataStandard> history(String number, Parameters parameters) {
-        List<DataStandard> list = dataStandardDAO.history(number, parameters);
+        List<DataStandard> list = dataStandardDAO.history(number, parameters.getLimit(), parameters.getOffset(), parameters.getQuery());
         PageResult<DataStandard> pageResult = new PageResult<>();
         long sum = dataStandardDAO.countByHistory(parameters.getQuery());
-        //pageResult.setOffset(parameters.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);

@@ -18,6 +18,7 @@
 package org.apache.atlas.notification;
 
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.service.MetadataHistoryService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -39,6 +40,7 @@ import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import io.zeta.metaspace.web.service.DataManageService;
 
@@ -68,6 +70,10 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     @Autowired
     DataManageService dataManageService;
 
+    @Lazy
+    @Autowired(required = false)
+    MetadataHistoryService metadataHistoryService;
+
     @Inject
     public EntityNotificationListenerV2(AtlasTypeRegistry typeRegistry,
                                         NotificationInterface notificationInterface,
@@ -80,18 +86,21 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_CREATE);
         dataManageService.addEntity(entities);
+        metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_UPDATE);
         dataManageService.updateEntityInfo(entities);
+        metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
     public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         notifyEntityEvents(entities, ENTITY_DELETE);
         dataManageService.updateStatus(entities);
+        metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override

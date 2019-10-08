@@ -35,6 +35,7 @@ import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +44,15 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -78,8 +83,8 @@ public class MetaDataREST {
     @Autowired
     private BusinessService businessService;
 
-    @Autowired
-    private AtlasEntityStore entitiesStore;
+    @Context
+    private HttpServletResponse httpServletResponse;
 
     @Autowired
     private UsersService usersService;
@@ -548,5 +553,84 @@ public class MetaDataREST {
         }
     }
 
+    @POST
+    @Path("/export")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
+        try {
+            File xlsxFile = metadataService.exportExcel(tableGuidList);
+            httpServletResponse.setContentType("application/msexcel;charset=utf-8");
+            httpServletResponse.setCharacterEncoding("utf-8");
+            String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
+            httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+            OutputStream os = httpServletResponse.getOutputStream();
+            os.write(FileUtils.readFileToByteArray(xlsxFile));
+            os.close();
+            xlsxFile.delete();
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        }
+    }
 
+    @POST
+    @Path("/{tableGuid}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getHistoryList(@PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return metadataService.getTableHistoryList(tableGuid, parameters);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/table/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableMetadata getTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+
+    @POST
+    @Path("/column/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnMetadata> getColumnHistoryList(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version, ColumnQuery query) throws AtlasBaseException {
+        try {
+            return metadataService.getColumnHistoryInfo(tableGuid, version, query);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/table/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonMetadata getComparisionTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/column/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonColumnMetadata getComparisionColumnTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionColumnMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
 }
