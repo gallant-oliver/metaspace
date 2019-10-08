@@ -37,6 +37,7 @@ import schemacrawler.schema.ResultsColumns;
 import schemacrawler.schema.Schema;
 import schemacrawler.schema.Table;
 import schemacrawler.schemacrawler.ExcludeAll;
+import schemacrawler.schemacrawler.RegularExpressionExclusionRule;
 import schemacrawler.schemacrawler.RegularExpressionInclusionRule;
 import schemacrawler.schemacrawler.SchemaCrawlerOptions;
 import schemacrawler.schemacrawler.SchemaInfoLevel;
@@ -463,13 +464,14 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
 
     @Override
     protected String getSkipTables() {
-        return "(.*/.*|.*\\.\")";
+        //return "(.*/.*|.*\\..*\\..*|.*[- =%].*)";
+        return "[^/.]*\\.\"?([a-zA-Z]{1}\\w*(\\$|\\#)*\\w*)\"?";
     }
 
 
     @Override
     protected void addTableNames(){
-        optionsBuilder.includeTables(new RegularExpressionInclusionRule(getSkipTables()));
+        optionsBuilder.includeTables(new RegularExpressionExclusionRule(getSkipTables()));
         optionsBuilder.includeColumns(new ExcludeAll());
         SchemaInfoLevel schemaInfoLevel = SchemaInfoLevelBuilder.builder()
                 //                    .setRetrieveDatabaseInfo(true)

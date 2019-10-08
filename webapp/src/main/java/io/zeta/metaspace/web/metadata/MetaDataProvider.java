@@ -130,12 +130,13 @@ public abstract class MetaDataProvider {
     protected void addTableNames(){};
 
     private void skipSchemaTable() {
+        //如果不为空，则为要过滤的库
         if (StringUtils.isNotEmpty(getSkipSchemas())) {
             optionsBuilder.includeSchemas(new RegularExpressionExclusionRule(getSkipSchemas()));
         }
-
+        //如果不为空，则为要查询的表
         if (StringUtils.isNotEmpty(getSkipTables())) {
-            optionsBuilder.includeTables(new RegularExpressionExclusionRule(getSkipTables()));
+            optionsBuilder.includeTables(new RegularExpressionInclusionRule(getSkipTables()));
         }
     }
 
