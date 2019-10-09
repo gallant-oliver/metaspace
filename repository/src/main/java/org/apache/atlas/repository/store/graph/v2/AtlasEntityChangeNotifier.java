@@ -100,9 +100,9 @@ public class AtlasEntityChangeNotifier {
 
         // complete full text mapping before calling toReferenceables(), from notifyListners(), to
         // include all vertex updates in the current graph-transaction
-        doFullTextMapping(createdEntities);
-        doFullTextMapping(updatedEntities);
-        doFullTextMapping(partiallyUpdatedEntities);
+//        doFullTextMapping(createdEntities);
+//        doFullTextMapping(updatedEntities);
+//        doFullTextMapping(partiallyUpdatedEntities);
 
         notifyListeners(createdEntities, EntityOperation.CREATE, isImport);
         notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport);

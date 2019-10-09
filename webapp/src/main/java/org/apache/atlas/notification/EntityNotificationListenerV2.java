@@ -84,21 +84,21 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
 
     @Override
     public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
-        notifyEntityEvents(entities, ENTITY_CREATE);
+        //notifyEntityEvents(entities, ENTITY_CREATE);
         dataManageService.addEntity(entities);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
-        notifyEntityEvents(entities, ENTITY_UPDATE);
+        //notifyEntityEvents(entities, ENTITY_UPDATE);
         dataManageService.updateEntityInfo(entities);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
     public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
-        notifyEntityEvents(entities, ENTITY_DELETE);
+        //notifyEntityEvents(entities, ENTITY_DELETE);
         dataManageService.updateStatus(entities);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
