@@ -59,6 +59,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AutoPopulatingList;
+import org.springframework.util.ObjectUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -275,8 +276,11 @@ public class DataSourceService {
         }
     }
 
-    public DataSourceConnection getDataSourceConnection(String sourceId){
+    public DataSourceConnection getDataSourceConnection(String sourceId) throws AtlasBaseException {
         DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
+        if(null==dataSourceConnection){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
+        }
         dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
         return dataSourceConnection;
     }
