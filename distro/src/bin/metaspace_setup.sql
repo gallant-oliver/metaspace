@@ -1,3 +1,36 @@
+
+-- ----------------------------
+-- Table structure for data_standard
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_standard";
+CREATE TABLE "public"."data_standard" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "content" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(0),
+  "updatetime" timestamptz(0),
+  "operator" varchar COLLATE "pg_catalog"."default",
+  "version" int4,
+  "categoryid" varchar COLLATE "pg_catalog"."default",
+  "delete" bool
+)
+;
+COMMENT ON COLUMN "public"."data_standard"."number" IS '标准编号';
+COMMENT ON COLUMN "public"."data_standard"."content" IS '标准内容';
+COMMENT ON COLUMN "public"."data_standard"."description" IS '描述';
+COMMENT ON COLUMN "public"."data_standard"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."data_standard"."updatetime" IS '修改时间';
+COMMENT ON COLUMN "public"."data_standard"."operator" IS '操作人';
+COMMENT ON COLUMN "public"."data_standard"."version" IS '版本';
+COMMENT ON COLUMN "public"."data_standard"."categoryid" IS '所属组Id';
+COMMENT ON COLUMN "public"."data_standard"."delete" IS '是否删除';
+
+-- ----------------------------
+-- Primary Key structure for table data_standard
+-- ----------------------------
+ALTER TABLE "public"."data_standard" ADD CONSTRAINT "data_standard_pkey" PRIMARY KEY ("id", "number");
+
 -- ----------------------------
 -- Table structure for organization
 -- ----------------------------
