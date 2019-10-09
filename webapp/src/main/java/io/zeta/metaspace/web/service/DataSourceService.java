@@ -254,8 +254,8 @@ public class DataSourceService {
     public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         String password;
         if (dataSourceConnection.getPassword()==null){
-            if (dataSourceConnection.getAESPassword()!=null) {
-                password = AESUtils.AESDecode(dataSourceConnection.getAESPassword());
+            if (dataSourceConnection.getAesPassword()!=null) {
+                password = AESUtils.AESDecode(dataSourceConnection.getAesPassword());
                 dataSourceConnection.setPassword(password);
             }else{
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");

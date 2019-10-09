@@ -25,27 +25,17 @@ public class DataSourceConnection {
     private String jdbcParameter;
     private String driver;
     private String url;
-    private String AESPassword;
+    private String aesPassword;
 
-    public String getAESPassword() {
-        return AESPassword;
+    public String getAesPassword() {
+        return aesPassword;
     }
 
-    public void setAESPassword(String AESPassword) {
-        this.AESPassword = AESPassword;
+    public void setAesPassword(String AESPassword) {
+        this.aesPassword = AESPassword;
     }
 
-    public DataSourceConnection(){}
 
-    public DataSourceConnection(String sourceType, String ip, String port, String userName, String password, String database, String jdbcParameter) {
-        this.sourceType = sourceType;
-        this.ip = ip;
-        this.port = port;
-        this.userName = userName;
-        this.password = password;
-        this.database = database;
-        this.jdbcParameter = jdbcParameter;
-    }
 
     public String getSourceType() {
         return sourceType;
@@ -137,7 +127,7 @@ public class DataSourceConnection {
         }else if (sourceType.toUpperCase().equals("POSTGRESQL")){
             url = "jdbc:postgresql://" + ip + ":" + port + "/" + database;
         }
-        if (StringUtils.isEmpty(jdbcParameter)){
+        if (!StringUtils.isEmpty(jdbcParameter)){
             url =url + "?" + jdbcParameter;
         }
     }
