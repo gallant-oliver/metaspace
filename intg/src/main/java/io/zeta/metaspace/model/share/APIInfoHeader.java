@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.share;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 /*
@@ -39,6 +41,16 @@ public class APIInfoHeader {
     private Boolean star;
     private Boolean enableClone;
     private String tableDisplayName;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getGuid() {
         return guid;

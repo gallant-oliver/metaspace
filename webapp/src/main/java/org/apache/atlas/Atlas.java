@@ -62,7 +62,9 @@ public final class Atlas {
                 try {
                     LOG.info("==> Shutdown of Atlas");
                     shutdown();
-                    LocalSolrRunner.stop();
+                    if (LocalSolrRunner.isLocalSolrRunning()) {
+                        LocalSolrRunner.stop();
+                    }
                 } catch (Exception e) {
                     LOG.error("Failed to shutdown", e);
                 } finally {

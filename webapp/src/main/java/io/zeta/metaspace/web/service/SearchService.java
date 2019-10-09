@@ -466,7 +466,12 @@ public class SearchService {
                 if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
                 else e.setCheck(0);
             });
-            tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
+            if (tableInfo.size()!=0){
+                tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
+            }else{
+                tablePageResult.setTotalSize(0);
+            }
+            //tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
             tablePageResult.setCurrentSize(tableInfo.size());
             //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
@@ -498,7 +503,11 @@ public class SearchService {
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> tables = getTables(tableInfo);
-            tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
+            //tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
+            tablePageResult.setTotalSize(0);
+            if (tableInfo.size()!=0){
+                tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
+            }
             tablePageResult.setCurrentSize(tableInfo.size());
             //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);

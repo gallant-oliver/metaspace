@@ -13,6 +13,7 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.sql.Timestamp;
 
@@ -31,6 +32,16 @@ public class WarningGroup {
     private Timestamp updateTime;
     private String creator;
     private boolean delete;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getId() {
         return id;

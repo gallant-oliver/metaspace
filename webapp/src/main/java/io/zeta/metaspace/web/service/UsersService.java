@@ -159,10 +159,14 @@ public class UsersService {
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserList(query, limit, offset);
             userPageResult.setLists(userList);
-            long userCount = userDAO.getUsersCount(query);
+            //long userCount = userDAO.getUsersCount(query);
+            long userTotalSize = 0;
+            if (userList.size()!=0){
+                userTotalSize = userList.get(0).getTotal();
+            }
             //userPageResult.setOffset(offset);
             userPageResult.setCurrentSize(userList.size());
-            userPageResult.setTotalSize(userCount);
+            userPageResult.setTotalSize(userTotalSize);
             return userPageResult;
         } catch (Exception e) {
             LOG.error(e.getMessage());

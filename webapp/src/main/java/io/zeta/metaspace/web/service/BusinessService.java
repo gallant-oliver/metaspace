@@ -296,9 +296,13 @@ public class BusinessService {
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
             }
-            long sum = businessDao.queryBusinessCountByByCatetoryId(categoryId);
+            //long totalSize = businessDao.queryBusinessCountByByCatetoryId(categoryId);
+            long totalSize = 0;
+            if(list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
             //pageResult.setOffset(offset);
-            pageResult.setTotalSize(sum);
+            pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
@@ -344,9 +348,13 @@ public class BusinessService {
                     level2Category = pathArr[1];
                 infoHeader.setLevel2Category(level2Category);
             }
-            long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
+            //long businessCount = businessDao.queryBusinessCountByName(businessName, categoryIds);
+            long businessTotal = 0;
+            if(businessInfoList.size()!=0){
+                businessTotal = businessInfoList.get(0).getTotal();
+            }
             //pageResult.setOffset(offset);
-            pageResult.setTotalSize(businessCount);
+            pageResult.setTotalSize(businessTotal);
             pageResult.setLists(businessInfoList);
             pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
@@ -397,8 +405,12 @@ public class BusinessService {
                 }
                 //pageResult.setOffset(offset);
                 pageResult.setLists(businessInfoList);
-                long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
-                pageResult.setTotalSize(businessCount);
+                //long businessCount = businessDao.queryBusinessCountByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter);
+                long totalsize = 0;
+                if(businessInfoList.size()!=0){
+                    totalsize = businessInfoList.get(0).getTotal();
+                }
+                pageResult.setTotalSize(totalsize);
                 pageResult.setCurrentSize(businessInfoList.size());
             }
             return pageResult;
@@ -541,7 +553,7 @@ public class BusinessService {
             Integer offset = parameters.getOffset();
             List<APIInfoHeader> APIList = new ArrayList<>();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
-            int apiCount = 0;
+            int totalSize = 0;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset);
                 for (APIInfoHeader api : APIList) {
@@ -556,10 +568,13 @@ public class BusinessService {
                     }
                     api.setDataOwner(dataOwnerName);
                 }
-                apiCount = shareDAO.countTableRelatedAPI(tableList);
+                //totalSize = shareDAO.countTableRelatedAPI(tableList);
+                if (APIList.size()!=0) {
+                    totalSize = APIList.get(0).getTotal();
+                }
             }
             //pageResult.setOffset(offset);
-            pageResult.setTotalSize(apiCount);
+            pageResult.setTotalSize(totalSize);
             pageResult.setLists(APIList);
             pageResult.setCurrentSize(APIList.size());
             return pageResult;
@@ -604,7 +619,6 @@ public class BusinessService {
                     tableHeader.setDisplayName(displayName);
                 }
             });
-
             long count = businessDao.getCountBusinessRelatedTable(businessId, query);
             PageResult pageResult = new PageResult();
             pageResult.setLists(tableHeaderList);
@@ -640,7 +654,11 @@ public class BusinessService {
             String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn.toLowerCase()))?"display_updatetime":"column_name";
 
             List<Column> resultColumnInfoList = columnDAO.getTableColumnList(tableGuid, queryText, sqlsortColumn, sqlSortOrder, limit, offset);
-            int totalCount = columnDAO.countTableColumnList(tableGuid, queryText);
+            //int totalCount = columnDAO.countTableColumnList(tableGuid, queryText);
+            int totalCount = 0;
+            if (resultColumnInfoList.size()!=0){
+                totalCount=resultColumnInfoList.get(0).getTotal();
+            }
 
             resultColumnInfoList.forEach(column -> {
                 if(Objects.isNull(column.getDisplayName()) || "".equals(column.getColumnName().trim())) {
