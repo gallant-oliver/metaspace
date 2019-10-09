@@ -1,5 +1,35 @@
 
 -- ----------------------------
+-- Table structure for operate_log
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."operate_log";
+CREATE TABLE "public"."operate_log" (
+  "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar(20) COLLATE "pg_catalog"."default",
+  "userid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "type" varchar(20) COLLATE "pg_catalog"."default",
+  "module" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "content" varchar COLLATE "pg_catalog"."default",
+  "result" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
+  "ip" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(0) NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."operate_log"."number" IS '日志序号';
+COMMENT ON COLUMN "public"."operate_log"."userid" IS '用户id';
+COMMENT ON COLUMN "public"."operate_log"."type" IS '操作类型';
+COMMENT ON COLUMN "public"."operate_log"."module" IS '功能模块';
+COMMENT ON COLUMN "public"."operate_log"."content" IS '操作内容';
+COMMENT ON COLUMN "public"."operate_log"."result" IS '操作结果';
+COMMENT ON COLUMN "public"."operate_log"."ip" IS '客户端ip地址';
+COMMENT ON COLUMN "public"."operate_log"."createtime" IS '记录时间';
+
+-- ----------------------------
+-- Primary Key structure for table operate_log
+-- ----------------------------
+ALTER TABLE "public"."operate_log" ADD CONSTRAINT "operate_log_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
 -- Table structure for data_standard
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_standard";
