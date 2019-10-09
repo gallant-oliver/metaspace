@@ -1717,6 +1717,11 @@ COMMENT ON COLUMN "public"."warning_group"."description" IS '描述';
 COMMENT ON COLUMN "public"."warning_group"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."warning_group"."creator" IS '创建者id';
 
+-- ----------------------------
+-- Primary Key structure for table warning_group
+-- ----------------------------
+ALTER TABLE "public"."warning_group" ADD CONSTRAINT "warning_group_pkey" PRIMARY KEY ("id");
+
 
 -- ----------------------------
 -- Table structure for api_module
