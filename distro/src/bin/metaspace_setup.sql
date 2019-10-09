@@ -66,12 +66,12 @@ ALTER TABLE "public"."data_standard" ADD CONSTRAINT "data_standard_pkey" PRIMARY
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."organization";
 CREATE TABLE "public"."organization" (
-  "checked" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "checked" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "disable" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "id" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "isopen" bool DEFAULT NULL,
   "isvm" int8 DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "name" text COLLATE "pg_catalog"."default" DEFAULT NULL,
   "open" bool DEFAULT NULL,
   "pid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
