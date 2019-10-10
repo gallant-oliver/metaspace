@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.share;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /*
  * @description
  * @author sunhaoning
@@ -35,6 +37,16 @@ public class Organization {
     private String type;
     private String updateTime;
     private String path;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public Organization() { }
 

@@ -66,8 +66,6 @@ public class WarningGroupService {
 
     public WarningGroup getById(String id) throws AtlasBaseException {
         WarningGroup warningGroup = warningGroupDAO.getById(id);
-        String path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-        warningGroup.setPath(path);
         return warningGroup;
     }
 
@@ -80,6 +78,12 @@ public class WarningGroupService {
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
+        for (String guid : numberList) {
+            Integer count = warningGroupDAO.countWarningGroupUserd(guid);
+            if(null!=count && count > 0) {
+                throw new AtlasBaseException("当前告警组正在被使用，不允许删除");
+            }
+        }
         warningGroupDAO.deleteByIdList(numberList);
     }
 
@@ -92,21 +96,15 @@ public class WarningGroupService {
 
     public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.search(parameters).stream()
-                    .map(warningGroup -> {
-                        String path = null;
-                        try {
-                            path = CategoryRelationUtils.getPath(warningGroup.getCategoryId());
-                        } catch (AtlasBaseException e) {
-                            LOG.error(e.getMessage(), e);
-                        }
-                        warningGroup.setPath(path);
-                        return warningGroup;
-                    }).collect(Collectors.toList());
+            List<WarningGroup> list = warningGroupDAO.search(parameters);
             PageResult<WarningGroup> pageResult = new PageResult<>();
-            long sum = warningGroupDAO.countBySearch(parameters.getQuery());
+            //long totalSize = warningGroupDAO.countBySearch(parameters.getQuery());
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
             //pageResult.setOffset(parameters.getOffset());
-            pageResult.setTotalSize(sum);
+            pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
@@ -144,8 +142,12 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warning.getTaskId(), 0);
                 warning.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countWarning(warningType, parameters);
-            pageResult.setTotalSize(count);
+            //Long totalSize = warningGroupDAO.countWarning(warningType, parameters);
+            long totalSize = 0;
+            if (warningList.size()!=0){
+                totalSize = warningList.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
             pageResult.setLists(warningList);
             pageResult.setCurrentSize(warningList.size());
             return pageResult;
@@ -162,8 +164,12 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
                 error.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countError(errorType, parameters);
-            pageResult.setTotalSize(count);
+            //Long totalSize = warningGroupDAO.countError(errorType, parameters);
+            long totalSize = 0;
+            if (warningList.size()!=0){
+                totalSize = warningList.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
             pageResult.setLists(warningList);
             pageResult.setCurrentSize(warningList.size());
             return pageResult;

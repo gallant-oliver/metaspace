@@ -12,6 +12,10 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 public interface UserDAO {
+    @Select("select roleid from users where userid=#{userId}")
+    public String getRoleIdByUserId(String userId);
+
+
     @Select("select count(1) from users where userid=#{userid}")
     public Integer ifUserExists(String userid);
 
@@ -34,7 +38,7 @@ public interface UserDAO {
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
     @Select({" <script>",
-             " select users.*,role.roleName from users join role on users.roleId = role.roleId",
+             " select count(*)over() total,users.*,role.roleName from users join role on users.roleId = role.roleId",
              " <if test=\"query == null or query==''\">",
              " order by account",
              " </if>",

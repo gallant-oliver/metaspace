@@ -1,5 +1,7 @@
 package io.zeta.metaspace.model.role;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 public class Role implements Serializable {
@@ -30,6 +32,16 @@ public class Role implements Serializable {
 
     private String creator;
     private String updater;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public int getMembers() {
         return members;

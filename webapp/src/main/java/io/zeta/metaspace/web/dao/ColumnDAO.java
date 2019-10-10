@@ -70,7 +70,7 @@ public interface ColumnDAO {
     public int updateTableDisplay(@Param("tableGuid")String tableGuid, @Param("displayName")String displayName, @Param("displayOperator")String displayOperator, @Param("displayUpdateTime")String displayUpdateTime);
 
     @Select({" <script>",
-             " select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime, type",
+             " select count(*)over() total,column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime, type",
              " from column_info",
              " where table_guid=#{tableGuid}",
              " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
@@ -89,14 +89,6 @@ public interface ColumnDAO {
     public List<Column> getTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText, @Param("sortColumn")String sortColumn, @Param("sortOrder")String sortOrder, @Param("limit")int limit, @Param("offset")int offset);
 
 
-    @Select({" <script>",
-             " select count(*)",
-             " from column_info",
-             " where table_guid=#{tableGuid}",
-             " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
-             " and status !='DELETED' ",
-             " </script>"})
-    public int countTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText);
 
     @Select("select column_guid as columnId, column_name as columnName, display_name as displayName, display_updatetime as displayNameUpdateTime from column_info where column_guid=#{columnId}")
     public Column getColumnInfoByGuid(@Param("columnId")String columnId);

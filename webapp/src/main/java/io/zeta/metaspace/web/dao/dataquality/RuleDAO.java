@@ -32,6 +32,9 @@ public interface RuleDAO {
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} "})
     public List<Rule> getByCode(@Param("code") String code);
 
+    @Select("select enable from data_quality_rule where id=#{id}")
+    public Boolean getEnableStatusById(@Param("id") String id);
+
     @Select("update data_quality_rule set delete=true where id=#{id}")
     public void deleteById(@Param("id") String id);
 
@@ -45,7 +48,7 @@ public interface RuleDAO {
 
 
     @Select({"<script>",
-             "select c.*, data_quality_rule_template.rule_type as ruleType from",
+             "select count(*)over() total,c.*, data_quality_rule_template.rule_type as ruleType from",
              " (select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit" ,
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId}) c",
              " join data_quality_rule_template on c.ruleTemplateId=data_quality_rule_template.id",
@@ -63,7 +66,7 @@ public interface RuleDAO {
     public long countByByCatetoryId(@Param("categoryId") String categoryId);
 
     @Select({"<script>",
-             " select c.*, data_quality_rule_template.rule_type as ruleType from",
+             " select count(*)over() total,c.*, data_quality_rule_template.rule_type as ruleType from",
              " (select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false",
              " <if test=\"params.query != null and params.query!=''\">",
@@ -85,6 +88,9 @@ public interface RuleDAO {
              " </script>"})
     public long countBySearch(@Param("query") String query);
 
+    @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id}")
+    public int getRuleUsedCount(@Param("id") String guid);
+
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
 
@@ -93,5 +99,8 @@ public interface RuleDAO {
 
     @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false")
     public Integer getCategoryObjectCount(@Param("categoryId") String guid);
+
+    @Select("select name from category where guid=#{categoryId}")
+    public String getCategoryName(@Param("categoryId") String guid);
 
 }

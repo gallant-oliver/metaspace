@@ -13,6 +13,7 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.sql.Timestamp;
 
@@ -24,16 +25,23 @@ public class WarningGroup {
     private Integer type;
     private String contacts;
     private Integer numberCount;
-    private String categoryId;
-    private String categoryName;
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     private String creator;
-    private String path;
     private boolean delete;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getId() {
         return id;
@@ -75,22 +83,6 @@ public class WarningGroup {
         this.numberCount = numberCount;
     }
 
-    public String getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -121,14 +113,6 @@ public class WarningGroup {
 
     public void setCreator(String creator) {
         this.creator = creator;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 
     public boolean isDelete() {

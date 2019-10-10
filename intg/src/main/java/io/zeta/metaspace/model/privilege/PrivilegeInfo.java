@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.model.privilege;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.role.Role;
 
 import java.util.List;
@@ -32,6 +33,16 @@ public class PrivilegeInfo {
     private String createTime;
     private int edit;
     private int delete;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     private List<Module> modules;
     private List<Role> roles;

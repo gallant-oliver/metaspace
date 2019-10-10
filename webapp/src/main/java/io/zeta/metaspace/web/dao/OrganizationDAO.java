@@ -44,7 +44,7 @@ public interface OrganizationDAO {
     public int deleteOrganization();
 
     @Select({" <script>",
-             " select * from organization where pId=#{pId}",
+             " select count(*)over() total,* from organization where pId=#{pId}",
             " <if test=\"query != null and query!=''\">",
              " and name like '%${query}%' ESCAPE '/'",
              " </if>",
@@ -58,16 +58,9 @@ public interface OrganizationDAO {
              " </script>"})
     public List<Organization> getOrganizationByPid(@Param("pId")String pId, @Param("query")String query, @Param("limit")Integer limit, @Param("offset")Integer offset);
 
-    @Select({" <script>",
-             " select count(*) from organization where pId=#{pId}",
-             " <if test=\"query != null and query!=''\">",
-             " and name like '%${query}%' ESCAPE '/'",
-             " </if>",
-             " </script>"})
-    public long countOrganizationByPid(@Param("pId")String pId, @Param("query")String query);
 
     @Select({" <script>",
-             " select * from organization",
+             " select count(*)over() total,* from organization",
              " <if test=\"query != null and query!=''\">",
              " where name like '%${query}%' ESCAPE '/'",
              " </if>",
@@ -81,10 +74,6 @@ public interface OrganizationDAO {
              " </script>"})
     public List<Organization> getOrganizationByName(@Param("query")String query, @Param("limit")Integer limit, @Param("offset")Integer offset);
 
-    @Select({" <script>",
-             " select count(1) from organization where name like '%'||#{query}||'%' ESCAPE '/'",
-             " </script>"})
-    public long countOrganizationByName(@Param("query")String query);
 
     @Select({"WITH RECURSIVE T(id, name, pid, PATH, DEPTH)  AS" +
             "(SELECT id,name,pid, ARRAY[name] AS PATH, 1 AS DEPTH " +

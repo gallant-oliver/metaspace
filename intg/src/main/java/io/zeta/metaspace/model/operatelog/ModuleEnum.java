@@ -15,6 +15,7 @@ public enum ModuleEnum {
     USER("用户管理", "user"),
     ROLE("角色管理", "role"),
     PRIVILEGE("权限管理", "privilege"),
+    DATASOURCE("数据源管理","dataSource"),
     ;
 
     private String name;

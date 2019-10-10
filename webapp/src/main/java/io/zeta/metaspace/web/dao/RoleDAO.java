@@ -30,7 +30,7 @@ public interface RoleDAO {
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select({"<script>",
-             " select userid,username,account,users.roleid,rolename",
+             " select count(1)over() total,userid,username,account,users.roleid,rolename",
              " from users,role",
              " where role.roleid=users.roleid",
              " and users.roleid=#{roleId}",
@@ -45,19 +45,9 @@ public interface RoleDAO {
              " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select({"<script>",
-             " select count(1)",
-             " from users,role",
-             " where role.roleid=users.roleid",
-             " and users.roleid=#{roleId}",
-             " <if test=\"query != null and query!=''\">",
-             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
-             "</if>",
-             " </script>"})
-    public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",
-             " select role.*,privilegename,(select count(1)",
+             " select count(*)over() total,role.*,privilegename,(select count(1)",
              " from users where users.roleid=role.roleid) members",
              " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
              " and valid=true",
@@ -75,15 +65,6 @@ public interface RoleDAO {
     @Select("select * from role where status=1 and (updateTime>=#{startTime} or createTime>=#{startTime})")
     public List<Role> getIncrRoles(@Param("startTime") String startTime);
 
-    @Select({"<script>",
-             " select count(1) from role",
-             " where rolename like '%'||#{query}||'%' ESCAPE '/'",
-             " and valid=true",
-             " <if test='contain == false'>",
-             " and status=1",
-             " </if>",
-             " </script>"})
-    public long getRolesCount(@Param("query") String query, @Param("contain") boolean contain);
 
     //添加成员&更换一批人的角色
     //@Update("update user set roleid=#{roleId} where userid in ")
@@ -339,7 +320,7 @@ public interface RoleDAO {
             "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
     public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select distinct tableinfo.tableguid,count(1)over() total,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -347,13 +328,6 @@ public interface RoleDAO {
             "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
-    @Select("<script>select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'</script>")
-    public long getTableCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")
     public List<String> getTopCategoryGuid(int categoryType);
@@ -376,6 +350,14 @@ public interface RoleDAO {
             "    </foreach>" +
             "     and tableinfo.databaseGuid=#{DB} </script>")
     public long getTableInfosByDBIdCount(@Param("guids") List<String> guids, @Param("DB") String DB);
+
+    @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<String> getTableIds(@Param("guids") List<String> guids);
 
     @Select("select userId from users")
     public List<String> getUserIdList();

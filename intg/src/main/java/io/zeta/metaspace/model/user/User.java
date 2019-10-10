@@ -1,5 +1,7 @@
 package io.zeta.metaspace.model.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 public class User implements Serializable {
@@ -9,6 +11,16 @@ public class User implements Serializable {
     private String roleId;
     private String roleName;
     private int status;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public int getStatus() {
         return status;
