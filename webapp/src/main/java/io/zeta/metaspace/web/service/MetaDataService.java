@@ -995,6 +995,9 @@ public class MetaDataService {
                     metaDataProvider=mysqlMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    if (metaDataProvider.getEndTime().get()==0){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
+                    }
                 }
                 break;
             case ORACLE:
@@ -1004,6 +1007,9 @@ public class MetaDataService {
                     metaDataProvider=oracleMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    if (metaDataProvider.getEndTime().get()==0){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
+                    }
                 }
                 break;
             default:
