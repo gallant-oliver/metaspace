@@ -1122,6 +1122,22 @@ INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,cat
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('3','规范层','2','4',0,1);
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('4','通过层','3','5',0,1);
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('5','应用层','4',NULL,0,1);
+
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-1', '基础类数据标准','基础类数据标准',null,null,'Standard-2',1,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-2', '指标类数据标准','指标类数据标准',null,'Standard-1',null,1,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-3', '参考数据标准','参考数据标准','Standard-1',null,'Standard-4',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-4', '主数据标准','主数据标准','Standard-1','Standard-3','Standard-5',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-5', '逻辑数据模型标准','逻辑数据模型标准','Standard-1','Standard-4','Standard-6',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-6', '物理数据模型标准','物理数据模型标准','Standard-1','Standard-5','Standard-7',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-7', '元数据标准','元数据标准','Standard-1','Standard-6','Standard-8',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-8', '公共代码标准','公共代码标准','Standard-1','Standard-7','Standard-9',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-9', '编码标准','编码标准','Standard-1','Standard-8',null,2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-10', '基础指标标准','基础指标标准','Standard-2',null,'Standard-11',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-11', '计算指标标准','计算指标标准','Standard-2','Standard-10',null,2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-12', '业务元数据标准','业务元数据标准','Standard-7',null,'Standard-13',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-13', '技术元数据标准','技术元数据标准','Standard-7','Standard-12','Standard-14',2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-14', '管理元数据标准','业管理元数据标准','Standard-7','Standard-13',null,2,3);
+
 INSERT INTO "public"."privilege" VALUES ('2', '访客', '访客', NULL, 0, 0);
 INSERT INTO "public"."privilege" VALUES ('1', 'Admin', '平台管理员', NULL, 0, 0);
 INSERT INTO "public"."privilege" VALUES ('3', '管理', '技术权限', NULL, 1, 0);
