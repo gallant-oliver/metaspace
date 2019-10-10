@@ -84,6 +84,14 @@ public abstract class MetaDataProvider {
     protected MetaDataContext metaDataContext;
     protected SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    public void set(AtlasEntityStore entitiesStore,DataSourceService  dataSourceService,AtlasTypeRegistry atlasTypeRegistry,AtlasGraph graph){
+        this.entitiesStore=entitiesStore;
+        this.dataSourceService=dataSourceService;
+        this.atlasEntityStore=entitiesStore;
+        this.atlasTypeRegistry=atlasTypeRegistry;
+        this.graph=graph;
+    }
+
     protected MetaDataProvider() {
         entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
         gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -421,7 +429,7 @@ public abstract class MetaDataProvider {
         return findEntity(getDatabaseTypeName(), getDBQualifiedName(instanceId, databaseName));
     }
 
-    protected String getInstanceQualifiedName(String instanceId) {
+    public String getInstanceQualifiedName(String instanceId) {
         return String.format("%s@%s", instanceId, clusterName);
     }
 
