@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.metadata.MetaDataProvider;
 import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
@@ -38,6 +39,7 @@ import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +72,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import org.apache.atlas.type.AtlasTypeRegistry;
 
 import org.apache.commons.beanutils.BeanUtils;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
@@ -116,12 +119,19 @@ public class MetaDataService {
 
     @Autowired
     private OracleMetaDataProvider oracleMetaDataProvider;
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
 
     @Autowired
     private ColumnDAO columnDAO;
 
     @Autowired
     private MetadataHistoryDAO metadataHistoryDAO;
+    @Autowired
+    private DataSourceService dataSourceService;
+    @Autowired
+    private AtlasTypeRegistry atlasTypeRegistry;
+    @Autowired
+    private AtlasGraph graph;
 
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
@@ -959,7 +969,7 @@ public class MetaDataService {
         errorMessage = "";
         IMetaDataProvider metaDataProvider = null;
         try {
-            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity);
+            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity,tableSchema);
             metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
             errorMessage = "同步元数据出错，无法连接到hive";
@@ -973,17 +983,34 @@ public class MetaDataService {
         }
     }
 
-    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity) throws Exception {
+    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity,TableSchema tableSchema) throws Exception {
+        IMetaDataProvider metaDataProvider;
         switch (databaseTypeEntity) {
             case HIVE:
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
-                return mysqlMetaDataProvider;
+                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                    MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
+                    mysqlMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
+                    metaDataProvider=mysqlMetaDataProvider;
+                }else{
+                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                }
+                break;
             case ORACLE:
-                return oracleMetaDataProvider;
+                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                    OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
+                    oracleMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
+                    metaDataProvider=oracleMetaDataProvider;
+                }else{
+                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                }
+                break;
             default:
                 throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
         }
+        metaDataProviderMap.put(tableSchema.getInstance(),metaDataProvider);
+        return metaDataProvider;
     }
 
     private DatabaseType getDatabaseType(String databaseType) {
@@ -997,7 +1024,7 @@ public class MetaDataService {
         return databaseTypeEntity;
     }
 
-    public Progress importProgress(String databaseType) throws Exception {
+    public Progress importProgress(String databaseType,String sourceId) throws Exception {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
@@ -1017,20 +1044,24 @@ public class MetaDataService {
                 progress = getProgress(hiveMetaStoreBridgeUtils);
                 break;
             case MYSQL:
-                progress = getProgress(mysqlMetaDataProvider);
-                break;
             case ORACLE:
-                progress = getProgress(oracleMetaDataProvider);
+                progress = getProgress(metaDataProviderMap.get(sourceId));
                 break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
         }
+        if (progress.getEndTime()!=0&&sourceId!=null){
+            metaDataProviderMap.remove(sourceId);
+        }
         return progress;
     }
 
-    private Progress getProgress(IMetaDataProvider metaDataProvider) {
+    private Progress getProgress(IMetaDataProvider metaDataProvider) throws AtlasBaseException {
         Progress progress;
+        if (metaDataProvider==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
+        }
         AtomicInteger totalTables = metaDataProvider.getTotalTables();
         AtomicInteger updatedTables = metaDataProvider.getUpdatedTables();
         AtomicLong startTime = metaDataProvider.getStartTime();

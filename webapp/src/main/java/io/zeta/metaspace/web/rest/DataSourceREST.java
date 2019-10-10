@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
+import com.google.gson.Gson;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
@@ -29,6 +30,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -398,6 +400,13 @@ public class DataSourceREST {
             return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
         }
         return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
+    }
+
+    @GET
+    @Path("/import/progress/{databaseType}/{sourceId}")
+    public Response importProgress(@PathParam("databaseType") String databaseType,@PathParam("sourceId") String sourceId) throws Exception {
+        Progress progress = metadataService.importProgress(databaseType, sourceId);
+        return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @GET

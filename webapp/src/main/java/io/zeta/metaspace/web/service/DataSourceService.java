@@ -48,6 +48,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -97,6 +98,8 @@ public class DataSourceService {
 
     @Autowired
     private MysqlMetaDataProvider mysqlMetaDataProvider;
+    @Autowired
+    private AtlasTypeRegistry atlasTypeRegistry;
 
 
     private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -281,7 +284,6 @@ public class DataSourceService {
         if(null==dataSourceConnection){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
         }
-        dataSourceConnection.setPassword(AESUtils.AESDecode(dataSourceConnection.getPassword()));
         return dataSourceConnection;
     }
 
@@ -512,10 +514,9 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据源id异常");
         }
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = mysqlMetaDataProvider.findInstance(sourceId);
-            return Objects.nonNull(info);
+            String uuid = atlasEntityStoreV2.getGuidByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(mysqlMetaDataProvider.getInstanceTypeName()), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, mysqlMetaDataProvider.getInstanceQualifiedName(sourceId)));
+            return Objects.nonNull(uuid);
         }catch (AtlasBaseException e){
-            LOG.error(e.getMessage());
             return false;
         }
     }
