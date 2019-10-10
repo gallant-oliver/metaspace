@@ -107,7 +107,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private ExecutorService       executors;
     private Configuration         applicationProperties;
     private AtlasClientV2 atlasClientV2;
-
+    private String restAddress;
     @VisibleForTesting
     final int consumerRetryInterval;
 
@@ -131,7 +131,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
         consumerDisabled = applicationProperties.getBoolean(CONSUMER_DISABLED, false);
-        String restAddress = applicationProperties.getString(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
+        restAddress = applicationProperties.getString(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
         if (StringUtils.isEmpty(restAddress)) {
             restAddress = AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS;
         }
@@ -177,6 +177,14 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
             consumers.add(hookConsumer);
             executors.submit(hookConsumer);
+        }
+        if (StringUtils.isEmpty(restAddress)) {
+            restAddress = AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS;
+        }
+        try {
+            atlasClientV2 = new AtlasClientV2(restAddress);
+        } catch (AtlasException e) {
+            LOG.error("实例化atlasClientV2失败", e);
         }
     }
 

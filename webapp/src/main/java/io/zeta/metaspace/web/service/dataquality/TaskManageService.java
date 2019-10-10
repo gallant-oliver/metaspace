@@ -99,7 +99,12 @@ public class TaskManageService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-            long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
+
+            //long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
             PageResult<TaskHeader> pageResult = new PageResult<>();
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());

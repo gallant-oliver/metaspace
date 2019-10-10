@@ -1,11 +1,23 @@
 package io.zeta.metaspace.model.result;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class ReportResult {
     private String reportId;
     private String reportName;
     private String orangeAlerts;
     private String redAlerts;
     private String reportProduceDate;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getReportName() {
         return reportName;

@@ -63,7 +63,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({"<script>",
-             " select data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
+             " select count(*)over() total,data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
              " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
              " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
              " from data_quality_task join users on users.userid=data_quality_task.creator",
@@ -90,17 +90,6 @@ public interface TaskManageDAO {
      * @param params
      * @return
      */
-    @Select({"<script>",
-             " select count(*)",
-             " from data_quality_task",
-             " where ",
-             " delete=false",
-             " and (name like '%${params.query}%' ESCAPE '/' or 'TID-'||number like '%${params.query}%' ESCAPE '/')",
-             " <if test='my==0'>",
-             " and creator=#{creator}",
-             " </if>",
-             " </script>"})
-    public long countTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params);
 
     /**
      * 删除任务

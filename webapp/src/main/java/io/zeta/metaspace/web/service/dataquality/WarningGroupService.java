@@ -98,8 +98,13 @@ public class WarningGroupService {
         try {
             List<WarningGroup> list = warningGroupDAO.search(parameters);
             PageResult<WarningGroup> pageResult = new PageResult<>();
-            long sum = warningGroupDAO.countBySearch(parameters.getQuery());
-            pageResult.setTotalSize(sum);
+            //long totalSize = warningGroupDAO.countBySearch(parameters.getQuery());
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
+            //pageResult.setOffset(parameters.getOffset());
+            pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
@@ -137,8 +142,12 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warning.getTaskId(), 0);
                 warning.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countWarning(warningType, parameters);
-            pageResult.setTotalSize(count);
+            //Long totalSize = warningGroupDAO.countWarning(warningType, parameters);
+            long totalSize = 0;
+            if (warningList.size()!=0){
+                totalSize = warningList.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
             pageResult.setLists(warningList);
             pageResult.setCurrentSize(warningList.size());
             return pageResult;
@@ -155,8 +164,12 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
                 error.setWarningGroupList(groupHeaderList);
             }
-            Long count = warningGroupDAO.countError(errorType, parameters);
-            pageResult.setTotalSize(count);
+            //Long totalSize = warningGroupDAO.countError(errorType, parameters);
+            long totalSize = 0;
+            if (warningList.size()!=0){
+                totalSize = warningList.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
             pageResult.setLists(warningList);
             pageResult.setCurrentSize(warningList.size());
             return pageResult;

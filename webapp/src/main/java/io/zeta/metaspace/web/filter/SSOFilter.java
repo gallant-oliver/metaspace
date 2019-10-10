@@ -70,6 +70,10 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
                 return;
             }
+            if (httpServletRequest.getMethod().equals("OPTIONS")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String loginData = loginURL + "?service=";
             try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
@@ -107,6 +111,9 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, getIpAdress(httpServletRequest), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            if(requestURL.contains("/roles/sso/incr")) {
+                return;
+            }
             AUDIT_LOG.info(auditLog.toString());
         }
 

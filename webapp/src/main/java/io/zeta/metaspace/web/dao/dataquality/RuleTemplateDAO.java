@@ -26,7 +26,7 @@ public interface RuleTemplateDAO {
 
 
     @Select({"<script>",
-             " select id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime from data_quality_rule_template" ,
+             " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime from data_quality_rule_template" ,
              " <if test=\"params.query != null and params.query!=''\">",
              " where (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' ) ",
              " </if>",
@@ -36,12 +36,5 @@ public interface RuleTemplateDAO {
              " </script>"})
     public List<RuleTemplate> searchRuleTemplate(@Param("params") Parameters params);
 
-    @Select({"<script>",
-             " select count(1) from data_quality_rule_template" ,
-             " <if test=\"params.query != null and params.query!=''\">",
-             " where (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' ) ",
-             " </if>",
-             " </script>"})
-    public long coutSearchRuleTemplate(@Param("params") Parameters params);
 
 }

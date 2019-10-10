@@ -1308,7 +1308,6 @@ INSERT INTO "public"."rule2datatype" VALUES (12, 2);
 DROP TABLE IF EXISTS "public"."data_quality_rule_template";
 CREATE TABLE "public"."data_quality_rule_template" (
   "name" varchar COLLATE "pg_catalog"."default",
-  "type" int4,
   "scope" int4,
   "unit" varchar COLLATE "pg_catalog"."default",
   "description" varchar COLLATE "pg_catalog"."default",
@@ -1316,51 +1315,53 @@ CREATE TABLE "public"."data_quality_rule_template" (
   "update_time" timestamptz(0),
   "delete" bool,
   "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-  "category_id" varchar COLLATE "pg_catalog"."default"
+  "rule_type" int2,
+  "type" int8
 )
 ;
 
 -- ----------------------------
 -- Records of data_quality_rule_template
 -- ----------------------------
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化', 14, 1, '', '相比上一周期，字段汇总值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '20', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化', 15, 1, '', '相比上一周期，字段最小值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '21', '5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化', 1, '', '相比上一周期，字段汇总值变化', current_timestamp, current_timestamp, 'f', '20', 5, 14);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化', 1, '', '相比上一周期，字段最小值变化', current_timestamp, current_timestamp, 'f', '21', 5, 15);
 INSERT INTO "public"."data_quality_rule_template" VALUES ('
-字段最大值变化', 16, 1, '', '相比上一周期，字段最大值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '22', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化率', 6, 1, '%', '相比上一周期，字段平均值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '23', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值', 20, 1, NULL, '计算字段平均值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '24', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值', 21, 1, NULL, '计算字段汇总值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '25', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化', 3, 0, '字节', '相比上一周期，表大小变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '1', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化率', 0, 0, '%', '相比上一周期，表行数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '2', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化', 2, 0, '行', '相比上一周期，表行数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '3', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化率', 1, 0, '%', '相比上一周期，表大小变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '4', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表行数', 4, 0, '行', '表行数是否符合预期', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '5', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表大小', 5, 0, '字节', '表大小是否符合预期', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '6', '1');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数/总行数', 28, 1, '%', '计算字段空值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '7', '2');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化率', 11, 1, '%', '相比上一周期，字段空值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '8', '2');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数', 25, 1, '个', '计算字段空值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '9', '2');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化', 18, 1, '个', '相比上一周期，字段空值个数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '10', '2');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数/总行数', 27, 1, '%', '计算字段唯一值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '11', '3');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化率', 10, 1, '%', '相比上一周期，字段唯一值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '12', '3');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数', 24, 1, '个', '计算字段唯一值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '13', '3');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化', 17, 1, '个', '相比上一周期，字段唯一值个数变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '14', '3');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数/总行数', 29, 1, '%', '计算字段重复值行数所占的比例', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '15', '4');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化率', 12, 1, '%', '相比上一周期，字段重复值个数变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '16', '4');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数', 26, 1, '个', '计算字段重复值个数', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '17', '4');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化', 19, 1, '个', '相比上一周期，字段重复值个数变化
-', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '18', '4');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化', 13, 1, '', '相比上一周期，字段平均值变化', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '19', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值', 22, 1, NULL, '计算字段最小值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '26', '5');
+字段最大值变化', 1, '', '相比上一周期，字段最大值变化', current_timestamp, current_timestamp, 'f', '22', 5, 16);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化率', 1, '%', '相比上一周期，字段平均值变化率', current_timestamp, current_timestamp, 'f', '23', 5, 6);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值', 1, NULL, '计算字段平均值', current_timestamp, current_timestamp, 'f', '24', 5, 20);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值', 1, NULL, '计算字段汇总值', current_timestamp, current_timestamp, 'f', '25', 5, 21);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化', 0, '字节', '相比上一周期，表大小变化', current_timestamp, current_timestamp, 'f', '1', 1, 3);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化率', 0, '%', '相比上一周期，表行数变化率', current_timestamp, current_timestamp, 'f', '2', 1, 0);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化', 0, '行', '相比上一周期，表行数变化', current_timestamp, current_timestamp, 'f', '3', 1, 2);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化率', 0, '%', '相比上一周期，表大小变化率', current_timestamp, current_timestamp, 'f', '4', 1, 1);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表行数', 0, '行', '表行数是否符合预期', current_timestamp, current_timestamp, 'f', '5', 1, 4);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表大小', 0, '字节', '表大小是否符合预期', current_timestamp, current_timestamp, 'f', '6', 1, 5);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数/总行数', 1, '%', '计算字段空值行数所占的比例', current_timestamp, current_timestamp, 'f', '7', 2, 28);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化率', 1, '%', '相比上一周期，字段空值个数变化率', current_timestamp, current_timestamp, 'f', '8', 2, 11);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数', 1, '个', '计算字段空值个数', current_timestamp, current_timestamp, 'f', '9', 2, 25);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数/总行数', 1, '%', '计算字段重复值行数所占的比例', current_timestamp, current_timestamp, 'f', '15', 4, 29);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化率', 1, '%', '相比上一周期，字段重复值个数变化率', current_timestamp, current_timestamp, 'f', '16', 4, 12);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化', 1, '个', '相比上一周期，字段空值个数变化', current_timestamp, current_timestamp, 'f', '10', 2, 18);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数/总行数', 1, '%', '计算字段唯一值行数所占的比例', current_timestamp, current_timestamp, 'f', '11', 3, 27);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化率', 1, '%', '相比上一周期，字段唯一值个数变化率', current_timestamp, current_timestamp, 'f', '12', 3, 10);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数', 1, '个', '计算字段重复值个数', current_timestamp, current_timestamp, 'f', '17', 4, 26);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数', 1, '个', '计算字段唯一值个数', current_timestamp, current_timestamp, 'f', '13', 3, 24);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化', 1, '个', '相比上一周期，字段唯一值个数变化', current_timestamp, current_timestamp, 'f', '14', 3, 17);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化', 1, '个', '相比上一周期，字段重复值个数变化
+', current_timestamp, current_timestamp, 'f', '18', 4, 19);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化', 1, '', '相比上一周期，字段平均值变化', current_timestamp, current_timestamp, 'f', '19', 5, 13);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值', 1, NULL, '计算字段最小值', current_timestamp, current_timestamp, 'f', '26', 5, 22);
 INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值
-', 23, 1, NULL, '计算字段最大值', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '27', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 7, 1, '%', '相比上一周期，字段汇总值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '28', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 8, 1, '%', '相比上一周期，字段最小值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '29', '5');
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 9, 1, '%', '相比上一周期，字段最大值变化率', '2019-07-23 10:15:21+08', '2019-07-23 10:15:21+08', 'f', '30', '5');
+', 1, NULL, '计算字段最大值', current_timestamp, current_timestamp, 'f', '27', 5, 23);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 1, '%', '相比上一周期，字段汇总值变化率', current_timestamp, current_timestamp, 'f', '28', 5, 7);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 1, '%', '相比上一周期，字段最小值变化率', current_timestamp, current_timestamp, 'f', '29', 5, 8);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 1, '%', '相比上一周期，字段最大值变化率', current_timestamp, current_timestamp, 'f', '30', 5, 9);
 
 -- ----------------------------
 -- Primary Key structure for table data_quality_rule_template
 -- ----------------------------
 ALTER TABLE "public"."data_quality_rule_template" ADD CONSTRAINT "data_quality_rule_template_pkey" PRIMARY KEY ("id");
+
 
 
 -- ----------------------------

@@ -83,7 +83,7 @@ public interface BusinessDAO {
 
     //根据业务信息名称查询列表(有权限)
     @Select({"<script>",
-             " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
@@ -104,7 +104,7 @@ public interface BusinessDAO {
 
 
     @Select({"<script>",
-             " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
@@ -129,24 +129,10 @@ public interface BusinessDAO {
     @Select("select departmentId from businessInfo where businessId = #{businessId}")
     public String queryCategoryIdByBusinessId(@Param("businessId")String businessId);
 
-    //根据业务信息名称查询列表总数
-    @Select({"<script>",
-             " select count(*) from businessInfo",
-             " join business_relation on",
-             " business_relation.businessId=businessInfo.businessId",
-             " where",
-             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
-             " and",
-             " categoryGuid in",
-             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
-             " #{categoryGuid}",
-             " </foreach>",
-             " </script>"})
-    public long queryBusinessCountByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds);
 
     //多条件查询业务信息列表
     @Select({"<script>",
-             " select businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
              " join business_relation on businessInfo.businessId = business_relation.businessId",
              " where categoryGuid in(",
              " select guid from category where guid in",
@@ -167,27 +153,10 @@ public interface BusinessDAO {
                                                        @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
 
 
-    //多条件查询业务信息列表总数
-    @Select({"<script>",
-             " select count(*) from businessInfo",
-             " join business_relation on businessInfo.businessId = business_relation.businessId",
-             " where categoryGuid in(",
-             " select guid from category where guid in",
-             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
-             " #{categoryGuid}",
-             " </foreach>",
-             " and categoryType=1)",
-             " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
-             " and level2CategoryId=#{level2CategoryId}",
-             " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/'",
-             " </script>"})
-    public long queryBusinessCountByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
-                                              @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter);
 
     //查询业务目录关系业务信息列表
     @Select({"<script>",
-             " select businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation",
              " on",
              " businessInfo.businessId = business_relation.businessId",
@@ -200,15 +169,6 @@ public interface BusinessDAO {
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
 
-    @Select({"<script>",
-             " select count(*) from businessInfo",
-             " join business_relation",
-             " on",
-             " businessInfo.businessId = business_relation.businessId",
-             " and",
-             " business_relation.categoryGuid=#{categoryGuid}",
-             " </script>"})
-    public long queryBusinessCountByByCatetoryId(@Param("categoryGuid")String categoryGuid);
 
     //更新技术信息操作者及更新时间
     @Update("update businessInfo set technicalOperator=#{technicalOperator},technicalLastUpdate=#{technicalLastUpdate} where businessId=#{businessId}")

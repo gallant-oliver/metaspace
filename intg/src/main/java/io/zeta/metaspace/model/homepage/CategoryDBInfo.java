@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.homepage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 /*
@@ -28,6 +30,16 @@ public class CategoryDBInfo implements Serializable {
     private String name;
     private long logicDBTotal;
     private long entityDBTotal;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getGuid() {
         return guid;

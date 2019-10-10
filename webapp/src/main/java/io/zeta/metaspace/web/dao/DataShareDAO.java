@@ -56,7 +56,7 @@ public interface DataShareDAO {
     public APIInfo getAPIInfoByGuid(@Param("guid")String guid);
 
     @Select({" <script>",
-             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
+             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " tableInfo.tableName,apiGroup.name as groupName",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
@@ -79,22 +79,6 @@ public interface DataShareDAO {
     public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query, @Param("limit")int limit, @Param("offset")int offset);
 
 
-    @Select({" <script>",
-             " select count(1)",
-             " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
-             " <if test=\"groupGuid!='1'.toString()\">",
-             " and apiInfo.groupGuid=#{groupGuid}",
-             " </if>",
-             " <if test='my==0'>",
-             " and keeper=#{keeper}",
-             " </if>",
-             " <choose>",
-             " <when test=\"publish=='unpublish'\"> and publish=false </when>",
-             " <when test=\"publish=='publish'\"> and publish=true </when>",
-             " </choose>",
-             " </script>"})
-    public int getAPICount(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query);
 
     @Select("select fields from apiInfo where guid=#{guid}")
     public Object getQueryFiledsByGuid(@Param("guid")String guid);
@@ -166,7 +150,7 @@ public interface DataShareDAO {
     public Object getAPIFields(@Param("path")String path);
 
     @Select({" <script>",
-             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
+             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
              " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
              " from apiInfo,tableInfo,apiGroup,users where",
              " apiInfo.tableGuid in",
@@ -183,17 +167,7 @@ public interface DataShareDAO {
              " </if>",
              " </script>"})
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset);
-
-    @Select({" <script>",
-             " select count(1)",
-             " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid in",
-             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
-             " #{tableGuid}",
-             " </foreach>",
-             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
-             " </script>"})
-    public int countTableRelatedAPI(@Param("tableList")List<String> tableList);
+    
 
     @Select("select count(1) from apiInfo where keeper=#{keeper} and guid=#{guid}")
     public int countUserAPI(@Param("keeper")String keeper, @Param("guid")String apiGuid);
@@ -218,4 +192,12 @@ public interface DataShareDAO {
 
     @Select("select status from tableInfo where tableGuid = #{tableGuid}")
     public String getTableStatusByGuid(@Param("tableGuid")String tableGuid);
+
+    @Select({"<script>",
+             "select guid from apiInfo where tableGuid in",
+             " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
+             " #{tableGuid}",
+             " </foreach>",
+             " </script>"})
+    public List<String> getAPIIdsByRelatedTable(@Param("tableGuidList")List<String> tableList);
 }
