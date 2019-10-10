@@ -24,7 +24,6 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryResult;
-import io.zeta.metaspace.model.share.XmlQueryResult;
 import io.zeta.metaspace.web.service.DataShareService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -51,7 +50,7 @@ public class ApiREST {
     private DataShareService shareService;
     @Context
     private HttpServletRequest httpServletRequest;
-
+    
     @POST
     @Path("/{version}/share/{url}")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
@@ -63,7 +62,7 @@ public class ApiREST {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 }

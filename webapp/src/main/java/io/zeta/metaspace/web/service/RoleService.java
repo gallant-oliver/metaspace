@@ -135,9 +135,13 @@ public class RoleService {
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
             //}
-            long usersCount = roleDAO.getUsersCount(roleId, query);
+            //long usersTotalSize = roleDAO.getUsersCount(roleId, query);
+            long usersTotalSize = 0;
+            if (users.size()!=0){
+                usersTotalSize = users.get(0).getTotal();
+            }
             userPageResult.setLists(users);
-            userPageResult.setTotalSize(usersCount);
+            userPageResult.setTotalSize(usersTotalSize);
             userPageResult.setCurrentSize(users.size());
             return userPageResult;
         } catch (Exception e) {
@@ -155,10 +159,14 @@ public class RoleService {
                 query = "";
             }
             List<Role> roles = roleDAO.getRoles(query, offset, limit, containUnenable);
-            long rolesCount = roleDAO.getRolesCount(query, containUnenable);
+            //long rolesTotalSize = roleDAO.getRolesCount(query, containUnenable);
+            long rolesTotalSize = 0;
+            if (roles.size()!=0){
+                rolesTotalSize = roles.get(0).getTotal();
+            }
             rolePageResult.setLists(roles);
             //rolePageResult.setOffset(offset);
-            rolePageResult.setTotalSize(rolesCount);
+            rolePageResult.setTotalSize(rolesTotalSize);
             rolePageResult.setCurrentSize(roles.size());
             return rolePageResult;
         } catch (Exception e) {

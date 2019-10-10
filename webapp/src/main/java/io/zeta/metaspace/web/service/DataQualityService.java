@@ -505,10 +505,16 @@ public class DataQualityService {
             long total = 0;
             if ("-1".equals(templateId)) {
                 reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit);
-                total = qualityDao.getCountByTableGuid(tableGuid);
+                //total = qualityDao.getCountByTableGuid(tableGuid);
+                if (reports.size()!=0){
+                    total = reports.get(0).getTotal();
+                }
             } else {
                 reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
-                total = qualityDao.getCount(tableGuid, templateId);
+                //total = qualityDao.getCount(tableGuid, templateId);
+                if (reports.size()!=0){
+                    total = reports.get(0).getTotal();
+                }
             }
             //pageResult.setOffset(offset);
             pageResult.setLists(reports);

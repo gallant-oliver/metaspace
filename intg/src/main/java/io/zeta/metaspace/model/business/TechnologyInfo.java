@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.business;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 /*
@@ -39,6 +41,16 @@ public class TechnologyInfo {
         private boolean trust;
         private String databaseGuid;
         private String displayName;
+        @JsonIgnore
+        private int total;
+
+        public int getTotal() {
+            return total;
+        }
+
+        public void setTotal(int total) {
+            this.total = total;
+        }
 
         public String getTableGuid() {
             return tableGuid;

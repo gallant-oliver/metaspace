@@ -111,7 +111,12 @@ public class RuleService {
     public PageResult<Rule> queryPageByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
         List<Rule> list = queryByCatetoryId(categoryId, params);
         PageResult<Rule> pageResult = new PageResult<>();
-        long sum = ruleDAO.countByByCatetoryId(categoryId);
+        //long sum = ruleDAO.countByByCatetoryId(categoryId);
+        long sum = 0;
+        if (list.size()!=0){
+            sum = list.get(0).getTotal();
+        }
+        //pageResult.setOffset(params.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -157,7 +162,12 @@ public class RuleService {
                 }).collect(Collectors.toList());
 
         PageResult<Rule> pageResult = new PageResult<>();
-        long sum = ruleDAO.countBySearch(params.getQuery());
+        //long sum = ruleDAO.countBySearch(params.getQuery());
+        long sum = 0;
+        if (list.size()!=0){
+            sum = list.get(0).getTotal();
+        }
+        //pageResult.setOffset(params.getOffset());
         pageResult.setTotalSize(sum);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);

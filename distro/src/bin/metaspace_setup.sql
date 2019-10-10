@@ -1413,6 +1413,7 @@ INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化
 ALTER TABLE "public"."data_quality_rule_template" ADD CONSTRAINT "data_quality_rule_template_pkey" PRIMARY KEY ("id");
 
 
+
 -- ----------------------------
 -- Table structure for data_quality_rule
 -- ----------------------------

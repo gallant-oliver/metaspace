@@ -121,7 +121,11 @@ public class MarketService {
                     level2Category = pathArr[1];
                 infoHeader.setLevel2Category(level2Category);
             }
-            long businessCount = businessDao.queryBusinessCountByNameWithoutPrivilege(businessName);
+            //long businessCount = businessDao.queryBusinessCountByNameWithoutPrivilege(businessName);
+            long businessCount = 0;
+            if (businessInfoList.size()!=0){
+                businessCount = businessInfoList.get(0).getTotal();
+            }
             pageResult.setTotalSize(businessCount);
             pageResult.setLists(businessInfoList);
             pageResult.setCurrentSize(businessInfoList.size());
@@ -218,7 +222,10 @@ public class MarketService {
                     }
                     api.setDataOwner(dataOwnerName);
                 }
-                apiCount = shareDao.countTableRelatedAPI(tableList);
+                //apiCount = shareDao.countTableRelatedAPI(tableList);
+                if (APIList.size()!=0){
+                    apiCount = APIList.get(0).getTotal();
+                }
             }
             pageResult.setTotalSize(apiCount);
             pageResult.setLists(APIList);
