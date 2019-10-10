@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.result.TableColumnRules;
 import io.zeta.metaspace.model.result.TemplateResult;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataQualityService;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -328,13 +329,7 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException {
         try {
-            String downloadId = UUID.randomUUID().toString();
-            String address = httpServletRequest.getRequestURL().toString();
-            String downURL = address + "/" + downloadId;
-            dataQualityService.getDownloadList(reportIds, downloadId);
-            DownloadUri uri = new DownloadUri();
-            uri.setDownloadUri(downURL);
-            return uri;
+            return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), reportIds);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取下载报表url失败");
@@ -345,8 +340,8 @@ public class DataQualityREST {
     @Path("/reports/{downloadId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException,IOException,SQLException {
-        List<String> downloadList = dataQualityService.getDownloadList(null, downloadId);
+    public void downloadReports(@PathParam("downloadId") String downloadId) throws AtlasBaseException {
+        List<String> downloadList = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
         try {
             File zipFile = dataQualityService.exportExcel(downloadList);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
