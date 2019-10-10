@@ -13,6 +13,7 @@
 package io.zeta.metaspace.model.datastandard;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.validator.constraints.NotBlank;
 
 import java.sql.Timestamp;
@@ -36,6 +37,16 @@ public class DataStandard {
     private String categoryId;
     boolean delete;
     private String path;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public DataStandard() {
     }
