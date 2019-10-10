@@ -42,11 +42,19 @@ public class RuleTemplateService {
         return ruleTemplateDAO.countByCategoryId(categoryId);
     }
 
-    public List<RuleTemplate> getRuleTemplate(Integer ruleType) throws AtlasBaseException {
+    public PageResult<RuleTemplate> getRuleTemplate(Integer ruleType, Parameters parameters) throws AtlasBaseException {
         try {
-            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType);
+            PageResult pageResult = new PageResult();
+            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters);
             updateRuleType(ruleTemplateList);
-            return ruleTemplateList;
+            pageResult.setLists(ruleTemplateList);
+            pageResult.setCurrentSize(ruleTemplateList.size());
+            if(null != ruleTemplateList && ruleTemplateList.size()>0) {
+                pageResult.setTotalSize(ruleTemplateList.get(0).getTotal());
+            } else {
+                pageResult.setTotalSize(0);
+            }
+            return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
@@ -57,7 +65,11 @@ public class RuleTemplateService {
             PageResult pageResult = new PageResult<RuleTemplate>();
             List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters);
             updateRuleType(lists);
-            long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
+            //long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
+            long totalCount = 0;
+            if (lists.size()!=0){
+                totalCount = lists.get(0).getTotal();
+            }
             pageResult.setLists(lists);
             pageResult.setCurrentSize(lists.size());
             pageResult.setTotalSize(totalCount);

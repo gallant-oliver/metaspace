@@ -99,7 +99,12 @@ public class TaskManageService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
-            long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
+
+            //long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
             PageResult<TaskHeader> pageResult = new PageResult<>();
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
@@ -152,6 +157,7 @@ public class TaskManageService {
                 taskManageDAO.deleteSubTaskList(taskIdList);
                 taskManageDAO.deleteSubTaskObjectList(taskIdList);
                 taskManageDAO.deleteSubTaskRuleList(taskIdList);
+                taskManageDAO.deleteWarningGroupUsed(taskIdList);
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -459,9 +465,12 @@ public class TaskManageService {
 
                 Date lastExecuteTime = quartzManager.getJobLastExecuteTime(triggerName, triggerGroupName);
                 Date nextExecuteTime = quartzManager.getJobNextExecuteTime(triggerName, triggerGroupName);
-
-                basicInfo.setLastExecuteTime(new Timestamp(lastExecuteTime.getTime()));
-                basicInfo.setNextExecuteTime(new Timestamp(nextExecuteTime.getTime()));
+                if(Objects.nonNull(lastExecuteTime)) {
+                    basicInfo.setLastExecuteTime(new Timestamp(lastExecuteTime.getTime()));
+                }
+                if(Objects.nonNull(nextExecuteTime)) {
+                    basicInfo.setNextExecuteTime(new Timestamp(nextExecuteTime.getTime()));
+                }
             }
             return basicInfo;
         } catch (Exception e) {

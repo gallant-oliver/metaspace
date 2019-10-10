@@ -16,6 +16,7 @@
  */
 package org.apache.atlas.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 
 import java.util.List;
@@ -38,6 +39,16 @@ public class RelationEntityV2 {
     private String generateTime;
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public RelationEntityV2() { }
 

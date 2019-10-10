@@ -25,6 +25,14 @@
   <display-name>Apache Atlas</display-name>
   <description>Metadata Management and Data Governance Platform over Hadoop</description>
 
+  <context-param>
+
+  <param-name>contextConfigLocation</param-name>
+
+  <param-value>classpath:applicationContext.xml</param-value>
+
+  </context-param>
+
   <servlet>
     <servlet-name>jersey-servlet</servlet-name>
     <servlet-class>
@@ -54,6 +62,33 @@
     <servlet-name>jersey-servlet</servlet-name>
     <url-pattern>/api/metaspace/*</url-pattern>
   </servlet-mapping>
+
+  <filter>
+    <description>跨域过滤器</description>
+    <filter-name>CORS</filter-name>
+    <filter-class>com.thetransactioncompany.cors.CORSFilter</filter-class>
+    <init-param>
+      <param-name>cors.allowOrigin</param-name>
+      <param-value>*</param-value>
+    </init-param>
+    <init-param>
+      <param-name>cors.supportedMethods</param-name>
+      <param-value>GET, POST, HEAD, PUT, DELETE,OPTIONS</param-value>
+    </init-param>
+    <init-param>
+      <param-name>cors.supportedHeaders</param-name>
+      <param-value>Accept, Origin, X-Requested-With, Content-Type, Last-Modified,X-SSO-FullticketId</param-value>
+    </init-param>
+    <init-param>
+      <param-name>cors.maxAge</param-name>
+      <param-value>3600</param-value>
+    </init-param>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>CORS</filter-name>
+    <url-pattern>/api/metaspace/*</url-pattern>
+  </filter-mapping>
 
   <filter>
     <filter-name>SSOFilter</filter-name>

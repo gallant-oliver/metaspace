@@ -14,6 +14,7 @@
 
 package io.zeta.metaspace.web.filter;
 
+
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
@@ -69,6 +70,10 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
                 return;
             }
+            if (httpServletRequest.getMethod().equals("OPTIONS")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String loginData = loginURL + "?service=";
             try {
                 String ticket = httpServletRequest.getHeader(TICKET_KEY);
@@ -85,7 +90,12 @@ public class SSOFilter implements Filter {
                 ServletContext servletContext = request.getServletContext();
                 WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
                 UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
-                usersService.addUser(data);
+                String userId = data.get("AccountGuid").toString();
+                if (usersService.isRole(userId)){
+                    loginSkip(403, httpServletResponse, "无角色用户无权限", loginData);
+                    return;
+                }
+
 
             } catch (Exception e) {
                 LOG.error("认证校验失败", e);
@@ -101,6 +111,9 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, getIpAdress(httpServletRequest), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
+            if(requestURL.contains("/roles/sso/incr")) {
+                return;
+            }
             AUDIT_LOG.info(auditLog.toString());
         }
 

@@ -19,6 +19,7 @@ public class PageResult<E> implements Serializable {
     private long totalSize;
     private long currentSize;
     private List<E> lists;
+    private long offset;
 
     public long getTotalSize() {
         return totalSize;
@@ -42,5 +43,13 @@ public class PageResult<E> implements Serializable {
 
     public void setLists(List<E> lists) {
         this.lists = lists;
+    }
+
+    public long getOffset() {
+        return offset;
+    }
+
+    public void setOffset(long offset) {
+        this.offset = offset;
     }
 }

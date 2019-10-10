@@ -16,23 +16,19 @@
  */
 package io.zeta.metaspace.web.service;
 
-import com.google.common.base.Ascii;
-import com.google.common.base.Preconditions;
-import com.gridsum.gdp.library.commons.exception.VerifyException;
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.*;
@@ -41,7 +37,6 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.avro.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -56,9 +51,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,20 +59,16 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
-import javax.swing.text.Style;
 
 /*
  * @description
@@ -215,14 +203,18 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-            table.setEditTag(false);
             try {
-                List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                for (Module module : modules) {
-                    if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                        table.setEditTag(true);
-                        if (table.getTablePermission().isWRITE()) {
-                            table.setEdit(true);
+                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
+                if("1".equals(role.getRoleId())) {
+                    table.setEdit(true);
+                } else {
+                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                    for (Module module : modules) {
+                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                            if (table.getTablePermission().isWRITE()) {
+                                table.setEdit(true);
+                                break;
+                            }
                         }
                     }
                 }

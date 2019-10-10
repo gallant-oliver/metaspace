@@ -662,7 +662,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             lists.add(tb);
         }
         tablePageResult.setCurrentSize(lists.size());
-        //tablePageResult.setOffset(offset);
+        tablePageResult.setOffset(offset);
         tablePageResult.setLists(lists);
         String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_TOTAL_BY_DB);
         String numQuery = String.format(gremlinQuery, databaseId);

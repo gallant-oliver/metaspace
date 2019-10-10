@@ -194,6 +194,7 @@ public class DataStandardREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
+    @OperateType(UPDATE)
     public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
         File exportExcel = dataStandardService.exportExcel(ids);
@@ -204,6 +205,7 @@ public class DataStandardREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
         } finally {
             exportExcel.delete();
         }
@@ -230,12 +232,14 @@ public class DataStandardREST {
     @Path("/import/{categoryId}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response importDataStandard(@PathParam("categoryId") String categoryId,
                                        @FormDataParam("file") InputStream fileInputStream,
                                        @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
             if(!(name.endsWith(".xlsx") || name.endsWith(".xls"))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
             }

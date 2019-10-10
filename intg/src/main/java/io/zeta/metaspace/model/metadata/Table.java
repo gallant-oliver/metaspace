@@ -36,11 +36,9 @@ public class Table implements Serializable {
     private String status;
     private List<Tag> tags;
     private boolean edit;
-    private boolean editTag;
 
     private String subordinateSystem;
     private String subordinateDatabase;
-    /*private List<String> systemAdmin;*/
     private String systemAdmin;
     private String createTime;
 
@@ -58,7 +56,6 @@ public class Table implements Serializable {
     private String databaseStatus;
 
     private List<String> relations;
-    /*private List<String> catalogAdmin;*/
     private String catalogAdmin;
     private String relationTime;
 
@@ -77,15 +74,6 @@ public class Table implements Serializable {
     public void setUpdateTime(String updateTime) {
         this.updateTime = updateTime;
     }
-
-    public boolean isEditTag() {
-        return editTag;
-    }
-
-    public void setEditTag(boolean editTag) {
-        this.editTag = editTag;
-    }
-
 
     public String getSubordinateSystem() {
         return subordinateSystem;
