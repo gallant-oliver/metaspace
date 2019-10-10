@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.scheduler;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.web.util.BaseHiveEvent;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -178,105 +179,122 @@ public class MetaspaceScheduler {
      * @throws Exception
      */
     private List<TableStat> buildTableStat(String tableId, String date) throws Exception {
-        List<TableStat> tableStatList = new ArrayList<>();
-        TableStat tableStat = new TableStat();
-        tableStat.setTableId(tableId);
-        AtlasEntity.AtlasEntityWithExtInfo table = entitiesStore.getById(tableId);
-        AtlasEntity entity = table.getEntity();
-        //字段数量
-        Object columns = entity.getAttribute("columns");
-        if (columns != null) {
-            Integer fieldNum = ((ArrayList) columns).size();
-            tableStat.setFieldNum(fieldNum);
-        }
-        //表名
-        String qualifiedName = entity.getAttribute("qualifiedName").toString();
-        String displayName = entity.getAttribute("name").toString();
-        String tableName = qualifiedName.substring(0, qualifiedName.indexOf("@"));
+        try {
+            List<TableStat> tableStatList = new ArrayList<>();
+            TableStat tableStat = new TableStat();
+            tableStat.setTableId(tableId);
+            AtlasEntity.AtlasEntityWithExtInfo table = entitiesStore.getById(tableId);
+            AtlasEntity entity = table.getEntity();
+            //字段数量
+            Object columns = entity.getAttribute("columns");
+            if (columns != null) {
+                Integer fieldNum = ((ArrayList) columns).size();
+                tableStat.setFieldNum(fieldNum);
+            }
+            //表名
+            String qualifiedName = entity.getAttribute("qualifiedName").toString();
+            String displayName = entity.getAttribute("name").toString();
+            String dbAndtableName = qualifiedName.substring(0, qualifiedName.indexOf("@"));
 
-        tableStat.setTableName(displayName);
+            tableStat.setTableName(displayName);
 
 
-        Object parameters = entity.getAttribute(BaseHiveEvent.ATTRIBUTE_PARAMETERS);
-        if(parameters != null){
-            Map params = (Map)parameters;
-            //表数据量
-            Object totalSizeStr =  params.get("totalSize");
-            long totalSize = totalSizeStr != null ? Integer.valueOf(totalSizeStr.toString()) : 0;
-            tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
-            tableStat.setDataVolumeBytes(totalSize);
-            //文件个数
-            Object numFilesStr = params.get("numFiles").toString();
-            long numFiles = numFilesStr != null ? Integer.valueOf(numFilesStr.toString()) : 0;
-            tableStat.setFileNum(numFiles);
-        }
+            Object parameters = entity.getAttribute(BaseHiveEvent.ATTRIBUTE_PARAMETERS);
+            Object totalSizeObj = null;
+            Object numFilesObj = null;
+            if (parameters != null) {
+                Map params = (Map) parameters;
+                //表数据量
+                totalSizeObj = params.get("totalSize");
+                long totalSize = totalSizeObj != null ? Integer.valueOf(totalSizeObj.toString()) : 0;
+                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
+                tableStat.setDataVolumeBytes(totalSize);
+                //文件个数
+                numFilesObj = params.get("numFiles");
+                long numFiles = numFilesObj != null ? Integer.valueOf(numFilesObj.toString()) : 0;
+                tableStat.setFileNum(numFiles);
+            }
+            if(null == totalSizeObj || null == numFilesObj) {
+                TableMetadata metadata = HiveJdbcUtils.systemMetadata(dbAndtableName);
+                //表数据量
+                long totalSize = metadata.getTotalSize();
+                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
+                tableStat.setDataVolumeBytes(totalSize);
+                //文件个数
+                long fieldNum = metadata.getNumFiles();
+                tableStat.setFileNum(fieldNum);
+            }
 
-        //数据来源表
-        AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3);
-        Map<String, List<String>> toFromGuidMap = new HashMap<>();
-        lineage.getRelations().stream().forEach(relation -> {
-            String key = relation.getToEntityId();
-            String value = relation.getFromEntityId();
-            toFromGuidMap.compute(key, new BiFunction<String, List<String>, List<String>>() {
-                @Override
-                public List<String> apply(String oldValue, List<String> list) {
-                    if (list == null) {
-                        list = new ArrayList<>();
+            //数据来源表
+            AtlasLineageInfo lineage = atlasLineageService.getAtlasLineageInfo(tableId, AtlasLineageInfo.LineageDirection.INPUT, 3);
+            Map<String, List<String>> toFromGuidMap = new HashMap<>();
+            lineage.getRelations().stream().forEach(relation -> {
+                String key = relation.getToEntityId();
+                String value = relation.getFromEntityId();
+                toFromGuidMap.compute(key, new BiFunction<String, List<String>, List<String>>() {
+                    @Override
+                    public List<String> apply(String oldValue, List<String> list) {
+                        if (list == null) {
+                            list = new ArrayList<>();
+                        }
+                        list.add(value);
+                        return list;
                     }
-                    list.add(value);
-                    return list;
-                }
+                });
             });
-        });
-        List<String> fromProcessGuids = toFromGuidMap.get(tableId);
-        if (fromProcessGuids != null) {
-            List<Table> sourceTableList = new ArrayList<>();
-            fromProcessGuids.forEach(fromProcessGuid -> {
-                String sourceTableGuid = toFromGuidMap.get(fromProcessGuid).get(0);
-                AtlasEntityHeader entityHeader = lineage.getGuidEntityMap().get(sourceTableGuid);
-                String sourceTableQualifiedName = entityHeader.getAttribute("qualifiedName").toString();
-                String sourceTableTypeName = entityHeader.getTypeName();
-                String sourceDisplayName = entityHeader.getAttribute("name").toString();
-                String sourceTableName = sourceTableQualifiedName.substring(0, sourceTableQualifiedName.indexOf("@"));
-                if ("hdfs_path".equals(sourceTableTypeName)) {
-                    sourceTableList.add(new Table(sourceTableGuid, "", sourceTableName));
-                } else if ("hive_table".equals(sourceTableTypeName)) {
-                    String[] split = sourceTableName.split("\\.");
-                    sourceTableList.add(new Table(sourceTableGuid, split[0], sourceDisplayName));
-                }
-            });
-            tableStat.setSourceTable(sourceTableList);
+            List<String> fromProcessGuids = toFromGuidMap.get(tableId);
+            if (fromProcessGuids != null) {
+                List<Table> sourceTableList = new ArrayList<>();
+                fromProcessGuids.forEach(fromProcessGuid -> {
+                    String sourceTableGuid = toFromGuidMap.get(fromProcessGuid).get(0);
+                    AtlasEntityHeader entityHeader = lineage.getGuidEntityMap().get(sourceTableGuid);
+                    String sourceTableQualifiedName = entityHeader.getAttribute("qualifiedName").toString();
+                    String sourceTableTypeName = entityHeader.getTypeName();
+                    String sourceDisplayName = entityHeader.getAttribute("name").toString();
+                    String sourceTableName = sourceTableQualifiedName.substring(0, sourceTableQualifiedName.indexOf("@"));
+                    if ("hdfs_path".equals(sourceTableTypeName)) {
+                        sourceTableList.add(new Table(sourceTableGuid, "", sourceTableName));
+                    } else if ("hive_table".equals(sourceTableTypeName)) {
+                        String[] split = sourceTableName.split("\\.");
+                        sourceTableList.add(new Table(sourceTableGuid, split[0], sourceDisplayName));
+                    }
+                });
+                tableStat.setSourceTable(sourceTableList);
+            }
+
+            //数据增量
+            Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, date);
+            tableStat.setDateType(DateType.DAY.getLiteral());
+            long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
+            log.info(">>" + tableStat.getDataVolumeBytes() + "\t" + lastDataVolumn.get("day"));
+            tableStat.setDataIncrementBytes(dayIncrement);
+            tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
+            tableStat.setDate(date);
+            log.info("day tableStat={}", tableStat);
+            tableStatList.add(tableStat);
+
+            TableStat tableStatMonth = (TableStat) tableStat.clone();
+            tableStatMonth.setDateType(DateType.MONTH.getLiteral());
+            long monthIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("month");
+            tableStatMonth.setDataIncrementBytes(monthIncrement);
+            tableStatMonth.setDataIncrement(BytesUtils.humanReadableByteCount(monthIncrement));
+            tableStatMonth.setDate(DateUtils.month(date));
+            tableStatList.add(tableStatMonth);
+            log.info("month tableStat={}", tableStat);
+
+            TableStat tableStatYear = (TableStat) tableStat.clone();
+            tableStatYear.setDateType(DateType.YEAR.getLiteral());
+            long yearIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("year");
+            tableStatYear.setDataIncrementBytes(yearIncrement);
+            tableStatYear.setDataIncrement(BytesUtils.humanReadableByteCount(yearIncrement));
+            tableStatYear.setDate(DateUtils.year(date));
+            tableStatList.add(tableStatYear);
+            log.info("year tableStat={}", tableStat);
+            return tableStatList;
+        } catch (Exception e) {
+            log.error("手动生成统计信息失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-
-        //数据增量
-        Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, date);
-        tableStat.setDateType(DateType.DAY.getLiteral());
-        long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
-        log.info(">>"+tableStat.getDataVolumeBytes()+"\t"+lastDataVolumn.get("day"));
-        tableStat.setDataIncrementBytes(dayIncrement);
-        tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
-        tableStat.setDate(date);
-        log.info("day tableStat={}",tableStat);
-        tableStatList.add(tableStat);
-
-        TableStat tableStatMonth = (TableStat) tableStat.clone();
-        tableStatMonth.setDateType(DateType.MONTH.getLiteral());
-        long monthIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("month");
-        tableStatMonth.setDataIncrementBytes(monthIncrement);
-        tableStatMonth.setDataIncrement(BytesUtils.humanReadableByteCount(monthIncrement));
-        tableStatMonth.setDate(DateUtils.month(date));
-        tableStatList.add(tableStatMonth);
-        log.info("month tableStat={}",tableStat);
-
-        TableStat tableStatYear = (TableStat) tableStat.clone();
-        tableStatYear.setDateType(DateType.YEAR.getLiteral());
-        long yearIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("year");
-        tableStatYear.setDataIncrementBytes(yearIncrement);
-        tableStatYear.setDataIncrement(BytesUtils.humanReadableByteCount(yearIncrement));
-        tableStatYear.setDate(DateUtils.year(date));
-        tableStatList.add(tableStatYear);
-        log.info("year tableStat={}",tableStat);
-        return tableStatList;
     }
 
 }
