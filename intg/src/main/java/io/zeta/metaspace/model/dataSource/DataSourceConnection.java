@@ -127,8 +127,5 @@ public class DataSourceConnection {
         }else if (sourceType.toUpperCase().equals("POSTGRESQL")){
             url = "jdbc:postgresql://" + ip + ":" + port + "/" + database;
         }
-        if (!StringUtils.isEmpty(jdbcParameter)){
-            url =url + "?" + jdbcParameter;
-        }
     }
 }

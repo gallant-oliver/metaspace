@@ -53,7 +53,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
-import org.apache.solr.common.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +72,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -270,7 +271,24 @@ public class DataSourceService {
 
         try {
             Class.forName(dataSourceConnection.getDriver());
-            Connection con = DriverManager.getConnection(dataSourceConnection.getUrl(), dataSourceConnection.getUserName(), dataSourceConnection.getPassword());
+            Properties properties = new Properties();
+            if (dataSourceConnection.getUserName() != null)
+            {
+                properties.put("user", dataSourceConnection.getUserName());
+            }
+            if (dataSourceConnection.getPassword() != null)
+            {
+                properties.put("password", dataSourceConnection.getPassword());
+            }
+            if (StringUtils.isNotEmpty(dataSourceConnection.getJdbcParameter())){
+                for (String str :dataSourceConnection.getJdbcParameter().split("&")){
+                    String[] strings = str.split("=");
+                    if (strings.length==2){
+                        properties.put(strings[0],strings[1]);
+                    }
+                }
+            }
+            Connection con = DriverManager.getConnection(dataSourceConnection.getUrl(), properties);
             con.close();
             return true;
         } catch (Exception e) {
