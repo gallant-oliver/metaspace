@@ -99,15 +99,15 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         table.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, tableName.getName()));
         table.setAttribute(ATTRIBUTE_NAME, tableName.getName().toLowerCase());
         table.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
-        Map<String, String> tableCreateTimeAndComment = getTableCreateTimeAndComment(databaseName,tableName.getName());
+        Map<String, String> tableCreateTime = getTableCreateTime(databaseName,tableName.getName());
         try {
-            long time = formatter.parse(tableCreateTimeAndComment.get("create_time")).getTime();
+            long time = formatter.parse(tableCreateTime.get("create_time")).getTime();
             table.setAttribute(ATTRIBUTE_CREATE_TIME, time);
         }catch (Exception e){
             table.setAttribute(ATTRIBUTE_CREATE_TIME, null);
         }
 
-        table.setAttribute(ATTRIBUTE_COMMENT, tableCreateTimeAndComment.get("table_comment"));
+        table.setAttribute(ATTRIBUTE_COMMENT, tableName.getRemarks());
         table.setAttribute(ATTRIBUTE_NAME_PATH, tableName.getFullName());
         List<AtlasEntity> columns = toColumns(tableName.getColumns(), table,databaseName,instanceGuid);
         List<AtlasEntity> indexes = toIndexes(tableName.getIndexes(), columns, table,databaseName,instanceGuid);
@@ -219,9 +219,9 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return ret;
     }
 
-    private Map<String, String> getTableCreateTimeAndComment(String databaseName,String tableName) {
+    private Map<String, String> getTableCreateTime(String databaseName,String tableName) {
         Map<String, String> pair = new HashMap<>();
-        final String                   query = String.format("select create_time,table_comment  from information_schema.tables where table_schema= '%s' and table_name = '%s'", databaseName,tableName);
+        final String                   query = String.format("select create_time from information_schema.tables where table_schema= '%s' and table_name = '%s'", databaseName,tableName);
         try (final Connection connection = getConnection();
              final Statement statement = connection.createStatement();
              final ResultSet results = statement.executeQuery(query)) {
@@ -251,5 +251,8 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         return null;
     }
 
-
+    @Override
+    protected void jdbcConnectionProperties(Map<String,String> map){
+        map.put("useInformationSchema","true");
+    }
 }

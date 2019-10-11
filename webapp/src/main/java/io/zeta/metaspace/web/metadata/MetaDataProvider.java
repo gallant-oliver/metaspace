@@ -29,7 +29,6 @@ import schemacrawler.schema.Column;
 import schemacrawler.schema.DatabaseObject;
 import schemacrawler.schema.ForeignKey;
 import schemacrawler.schema.Index;
-import schemacrawler.schema.NamedObject;
 import schemacrawler.schema.Schema;
 import schemacrawler.schema.Table;
 import schemacrawler.schemacrawler.*;
@@ -43,7 +42,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.*;
 
@@ -163,14 +161,22 @@ public abstract class MetaDataProvider {
         }
         String connectUrl = RMDBEnum.of(sourceType).getConnectUrl();
         String connectionUrl = String.format(connectUrl, ip, port, database);
+        Map<String,String> map = new HashMap<>();
+        jdbcConnectionProperties(map);
         if (StringUtils.isNotEmpty(jdbcParameter)) {
-            connectionUrl = connectionUrl + "?" + jdbcParameter;
+            for (String str :jdbcParameter.split("&")){
+                String[] strings = str.split("=");
+                if (strings.length==2){
+                    map.put(strings[0],strings[1]);
+                }
+            }
         }
 
-        dataSource = new DatabaseConnectionSource(connectionUrl);
+        dataSource = new DatabaseConnectionSource(connectionUrl,map);
         dataSource.setUserCredentials(new SingleUseUserCredentials(userName, password));
         return dataSource.get();
     }
+    protected abstract void jdbcConnectionProperties(Map<String,String> map);
 
     /**
      * 导入表

@@ -136,15 +136,15 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         table.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, tableName.getName()));
         table.setAttribute(ATTRIBUTE_NAME, tableName.getName().toLowerCase());
         table.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
-        Map<String, String> tableCreateTimeAndComment = getTableCreateTimeAndComment(databaseName,tableName.getName());
+        Map<String, String> tableCreateTime = getTableCreateTime(databaseName,tableName.getName());
         try {
-            long time = formatter.parse(tableCreateTimeAndComment.get("create")).getTime();
+            long time = formatter.parse(tableCreateTime.get("create")).getTime();
             table.setAttribute(ATTRIBUTE_CREATE_TIME, time);
         }catch (Exception e){
             table.setAttribute(ATTRIBUTE_CREATE_TIME, null);
         }
 
-        table.setAttribute(ATTRIBUTE_COMMENT, tableCreateTimeAndComment.get("comments"));
+        table.setAttribute(ATTRIBUTE_COMMENT, tableName.getRemarks());
         table.setAttribute(ATTRIBUTE_NAME_PATH, tableName.getFullName());
         List<AtlasEntity> columns =null;
         List<AtlasEntity> indexes =null;
@@ -432,9 +432,9 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return ret;
     }
 
-    private Map<String, String> getTableCreateTimeAndComment(String databaseName,String tableName) {
+    private Map<String, String> getTableCreateTime(String databaseName,String tableName) {
         Map<String, String> pair = new HashMap<>();
-        final String                   query = "SELECT c.comments,o.created from all_objects o join all_tab_comments c on o.owner=c.owner and o.object_name=c.table_name where o.object_name=? and o.owner=?";
+        final String                   query = "SELECT o.created from all_objects o where o.object_name=? and o.owner=?";
 
         try (final Connection connection = getConnection();
              final PreparedStatement prepare = connection.prepareStatement(query)) {
@@ -499,6 +499,10 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             tableNames.addAll(addTableNames);
         }
 
+    }
+    @Override
+    protected void jdbcConnectionProperties(Map<String,String> map){
+        map.put("remarksReporting","true");
     }
 
 }
