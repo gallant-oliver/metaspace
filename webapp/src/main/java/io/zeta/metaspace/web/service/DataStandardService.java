@@ -18,6 +18,7 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
@@ -26,6 +27,7 @@ import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -173,7 +175,6 @@ public class DataStandardService {
         if (list.size()!=0){
             totalSize = list.get(0).getTotal();
         }
-        //pageResult.setOffset(parameters.getOffset());
         pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -187,7 +188,6 @@ public class DataStandardService {
         if (list.size()!=0){
             totalSize = list.get(0).getTotal();
         }
-        //pageResult.setOffset(parameters.getOffset());
         pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -316,6 +316,14 @@ public class DataStandardService {
         }
     }
 
+    public List<CategoryPrivilege> getCategory(Integer categoryType) throws AtlasBaseException {
+        return dataManageService.getAll(categoryType);
+    }
+
+    public CategoryPrivilege addCategory(CategoryInfoV2 categoryInfo) throws Exception {
+        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
+    }
+
     public void deleteCategory(String categoryGuid) throws AtlasBaseException {
         try {
             if(dataStandardDAO.countByByCatetoryId(categoryGuid) > 0) {
@@ -325,6 +333,10 @@ public class DataStandardService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    public void updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+        dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
     }
 
 }

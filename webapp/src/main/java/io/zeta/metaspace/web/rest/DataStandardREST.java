@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -187,13 +188,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> ids) throws Exception {
-        String downloadId = UUID.randomUUID().toString();
-        String address = request.getRequestURL().toString();
-        String downURL = address + "/" + downloadId;
-        dataQualityService.getDownloadList(ids, downloadId);
-        DownloadUri uri = new DownloadUri();
-        uri.setDownloadUri(downURL);
-        return uri;
+        return ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
     }
 
     @GET
@@ -201,7 +196,7 @@ public class DataStandardREST {
     @Valid
     @OperateType(UPDATE)
     public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
-        List<String> ids = dataQualityService.getDownloadList(null, downloadId);
+        List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
         File exportExcel = dataStandardService.exportExcel(ids);
         try {
             String filePath = exportExcel.getAbsolutePath();
@@ -278,7 +273,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
-        return dataManageService.getAll(categoryType);
+        return dataStandardService.getCategory(categoryType);
     }
 
     /**
@@ -295,7 +290,7 @@ public class DataStandardREST {
     @OperateType(INSERT)
     public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
+        return dataStandardService.addCategory(categoryInfo);
     }
 
     /**
@@ -314,7 +309,7 @@ public class DataStandardREST {
     public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
         CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), category.getName());
-        dataManageService.deleteCategory(categoryGuid);
+        dataStandardService.deleteCategory(categoryGuid);
     }
 
     /**
@@ -331,6 +326,6 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
+        dataStandardService.updateCategory(categoryInfo);
     }
 }

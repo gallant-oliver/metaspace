@@ -1,14 +1,77 @@
+
+-- ----------------------------
+-- Table structure for operate_log
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."operate_log";
+CREATE TABLE "public"."operate_log" (
+  "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar(20) COLLATE "pg_catalog"."default",
+  "userid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "type" varchar(20) COLLATE "pg_catalog"."default",
+  "module" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "content" varchar COLLATE "pg_catalog"."default",
+  "result" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
+  "ip" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(0) NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."operate_log"."number" IS '日志序号';
+COMMENT ON COLUMN "public"."operate_log"."userid" IS '用户id';
+COMMENT ON COLUMN "public"."operate_log"."type" IS '操作类型';
+COMMENT ON COLUMN "public"."operate_log"."module" IS '功能模块';
+COMMENT ON COLUMN "public"."operate_log"."content" IS '操作内容';
+COMMENT ON COLUMN "public"."operate_log"."result" IS '操作结果';
+COMMENT ON COLUMN "public"."operate_log"."ip" IS '客户端ip地址';
+COMMENT ON COLUMN "public"."operate_log"."createtime" IS '记录时间';
+
+-- ----------------------------
+-- Primary Key structure for table operate_log
+-- ----------------------------
+ALTER TABLE "public"."operate_log" ADD CONSTRAINT "operate_log_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Table structure for data_standard
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_standard";
+CREATE TABLE "public"."data_standard" (
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "content" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(0),
+  "updatetime" timestamptz(0),
+  "operator" varchar COLLATE "pg_catalog"."default",
+  "version" int4,
+  "categoryid" varchar COLLATE "pg_catalog"."default",
+  "delete" bool
+)
+;
+COMMENT ON COLUMN "public"."data_standard"."number" IS '标准编号';
+COMMENT ON COLUMN "public"."data_standard"."content" IS '标准内容';
+COMMENT ON COLUMN "public"."data_standard"."description" IS '描述';
+COMMENT ON COLUMN "public"."data_standard"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."data_standard"."updatetime" IS '修改时间';
+COMMENT ON COLUMN "public"."data_standard"."operator" IS '操作人';
+COMMENT ON COLUMN "public"."data_standard"."version" IS '版本';
+COMMENT ON COLUMN "public"."data_standard"."categoryid" IS '所属组Id';
+COMMENT ON COLUMN "public"."data_standard"."delete" IS '是否删除';
+
+-- ----------------------------
+-- Primary Key structure for table data_standard
+-- ----------------------------
+ALTER TABLE "public"."data_standard" ADD CONSTRAINT "data_standard_pkey" PRIMARY KEY ("id", "number");
+
 -- ----------------------------
 -- Table structure for organization
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."organization";
 CREATE TABLE "public"."organization" (
-  "checked" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
+  "checked" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "disable" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "id" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "isopen" bool DEFAULT NULL,
   "isvm" int8 DEFAULT NULL,
-  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "name" text COLLATE "pg_catalog"."default" DEFAULT NULL,
   "open" bool DEFAULT NULL,
   "pid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
@@ -1117,6 +1180,9 @@ INSERT INTO "public"."privilege2module" VALUES ('1', 7);
 INSERT INTO "public"."privilege2module" VALUES ('1', 8);
 INSERT INTO "public"."privilege2module" VALUES ('1', 9);
 INSERT INTO "public"."privilege2module" VALUES ('1', 10);
+INSERT INTO "public"."privilege2module" VALUES ('1', 11);
+INSERT INTO "public"."privilege2module" VALUES ('1', 12);
+INSERT INTO "public"."privilege2module" VALUES ('1', 13);
 INSERT INTO "public"."privilege2module" VALUES ('2', 2);
 INSERT INTO "public"."privilege2module" VALUES ('3', 1);
 INSERT INTO "public"."privilege2module" VALUES ('3', 2);
@@ -1144,7 +1210,6 @@ INSERT INTO "public"."privilege2module" VALUES ('7', 8);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
 INSERT INTO "public"."privilege2module" VALUES ('3', 13);
-INSERT INTO "public"."privilege2module" VALUES ('1', 13);
 INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
@@ -1356,6 +1421,7 @@ INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值
 INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 1, '%', '相比上一周期，字段汇总值变化率', current_timestamp, current_timestamp, 'f', '28', 5, 7);
 INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 1, '%', '相比上一周期，字段最小值变化率', current_timestamp, current_timestamp, 'f', '29', 5, 8);
 INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 1, '%', '相比上一周期，字段最大值变化率', current_timestamp, current_timestamp, 'f', '30', 5, 9);
+
 
 -- ----------------------------
 -- Primary Key structure for table data_quality_rule_template
@@ -1668,6 +1734,11 @@ COMMENT ON COLUMN "public"."warning_group"."category_id" IS '告警组id，共�
 COMMENT ON COLUMN "public"."warning_group"."description" IS '描述';
 COMMENT ON COLUMN "public"."warning_group"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."warning_group"."creator" IS '创建者id';
+
+-- ----------------------------
+-- Primary Key structure for table warning_group
+-- ----------------------------
+ALTER TABLE "public"."warning_group" ADD CONSTRAINT "warning_group_pkey" PRIMARY KEY ("id");
 
 
 -- ----------------------------

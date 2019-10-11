@@ -64,7 +64,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
@@ -77,6 +76,7 @@ import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.beanutils.BeanUtils;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
+
 
 /*
  * @description
@@ -113,7 +113,6 @@ public class MetaDataService {
     private String errorMessage = "";
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
-
     @Autowired
     private MysqlMetaDataProvider mysqlMetaDataProvider;
 
@@ -133,6 +132,8 @@ public class MetaDataService {
     @Autowired
     private AtlasGraph graph;
 
+    @Autowired
+    private SearchService searchService;
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -1196,9 +1197,20 @@ public class MetaDataService {
     }
 
 
-    public File exportExcel(List<String> tableGuidList) throws AtlasBaseException {
+    public File exportExcel(List<String> dbGuidList) throws AtlasBaseException {
         try {
             List<Table> tableList = new ArrayList<>();
+            List<String> tableGuidList = new ArrayList<>();
+            if(null != dbGuidList) {
+                for (String dbGuid : dbGuidList) {
+                    PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
+                    tablePageResult.getLists().stream().forEach(table -> {
+                        if("ACTIVE".equals(table.getStatus())) {
+                            tableGuidList.add(table.getTableId());
+                        }
+                    });
+                }
+            }
             for (String tableGuid : tableGuidList) {
                 Table table = getTableInfoById(tableGuid);
                 tableList.add(table);
@@ -1253,8 +1265,14 @@ public class MetaDataService {
 
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        Sheet sheet = workbook.createSheet(tableName + "-表信息");
+        String sheetName = dbName + "." + tableName + "-表信息";
+        Sheet hasSheet = workbook.getSheet(sheetName);
+        if(null != hasSheet) {
+            return;
+        }
+        Sheet sheet = workbook.createSheet(sheetName);
 
         CellRangeAddress basicInfoRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(basicInfoRangeAddress);
@@ -1314,7 +1332,6 @@ public class MetaDataService {
         updateTimeValueCell.setCellValue(updateTime);
         updateTimeValueCell.setCellStyle(cellStyle);
 
-        String dbName = table.getDatabaseName();
         Row dbNameRow = sheet.createRow(rowNumber++);
         Cell dbNameKeyCell = dbNameRow.createCell(0);
         dbNameKeyCell.setCellValue("所属数据库");
@@ -1534,9 +1551,17 @@ public class MetaDataService {
     }
 
     public void createMetadataColumnSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
+
         String tableName = table.getTableName();
+        String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        Sheet sheet = workbook.createSheet(tableName + "-字段信息");
+        String sheetName = dbName + "." + tableName + "字段-信息";
+        Sheet hasSheet = workbook.getSheet(sheetName);
+        if(null != hasSheet) {
+            return;
+        }
+        Sheet sheet = workbook.createSheet(sheetName);
+
         List<Column> columnList = table.getColumns();
         List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey()==false).collect(Collectors.toList());
         List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()==true).collect(Collectors.toList());
