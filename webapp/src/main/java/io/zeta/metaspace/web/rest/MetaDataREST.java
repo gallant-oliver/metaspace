@@ -471,7 +471,7 @@ public class MetaDataREST {
     @GET
     @Path("/import/progress/{databaseType}")
     public Response importProgress(@PathParam("databaseType") String databaseType) throws Exception {
-        Progress progress = metadataService.importProgress(databaseType);
+        Progress progress = metadataService.importProgress(databaseType,null);
         return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -592,4 +592,64 @@ public class MetaDataREST {
         }
     }
 
+    @POST
+    @Path("/{tableGuid}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getHistoryList(@PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return metadataService.getTableHistoryList(tableGuid, parameters);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/table/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableMetadata getTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+
+    @POST
+    @Path("/column/{tableGuid}/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<ColumnMetadata> getColumnHistoryList(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version, ColumnQuery query) throws AtlasBaseException {
+        try {
+            return metadataService.getColumnHistoryInfo(tableGuid, version, query);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/table/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonMetadata getComparisionTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionTableMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/column/{tableGuid}/compare/{version}/history")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public ComparisonColumnMetadata getComparisionColumnTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
+        try {
+            return metadataService.getComparisionColumnMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
 }

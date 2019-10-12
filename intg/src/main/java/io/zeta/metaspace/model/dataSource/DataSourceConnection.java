@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.dataSource;
 
+import org.apache.commons.lang.StringUtils;
+
 public class DataSourceConnection {
     private String sourceType;
     private String ip;
@@ -23,18 +25,17 @@ public class DataSourceConnection {
     private String jdbcParameter;
     private String driver;
     private String url;
+    private String aesPassword;
 
-    public DataSourceConnection(){}
-
-    public DataSourceConnection(String sourceType, String ip, String port, String userName, String password, String database, String jdbcParameter) {
-        this.sourceType = sourceType;
-        this.ip = ip;
-        this.port = port;
-        this.userName = userName;
-        this.password = password;
-        this.database = database;
-        this.jdbcParameter = jdbcParameter;
+    public String getAesPassword() {
+        return aesPassword;
     }
+
+    public void setAesPassword(String AESPassword) {
+        this.aesPassword = AESPassword;
+    }
+
+
 
     public String getSourceType() {
         return sourceType;

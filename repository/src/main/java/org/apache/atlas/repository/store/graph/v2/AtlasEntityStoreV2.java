@@ -64,6 +64,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
 
+    /*@Autowired
+    private HistoryMetadataService metadataService;*/
+
     @Inject
     public AtlasEntityStoreV2(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
                               AtlasEntityChangeNotifier entityChangeNotifier, EntityGraphMapper entityGraphMapper) {
@@ -716,7 +719,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     AtlasVertex     vertex     = context.getVertex(guid);
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
                     boolean         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED; // entity status could be updated during import
-
+                    /*if("hive_table".equals(entity.getTypeName())) {
+                        metadataService.storeHistoryMetadata(guid);
+                    }*/
                     if (!hasUpdates && MapUtils.isNotEmpty(entity.getAttributes())) { // check for attribute value change
                         for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {
                             String attributeName = attribute.getName();

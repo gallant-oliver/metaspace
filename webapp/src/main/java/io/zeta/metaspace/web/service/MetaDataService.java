@@ -25,6 +25,10 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.metadata.MetaDataProvider;
+import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
+import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
@@ -35,6 +39,7 @@ import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.commons.lang3.StringUtils;
@@ -66,6 +71,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import org.apache.atlas.type.AtlasTypeRegistry;
+
+import org.apache.commons.beanutils.BeanUtils;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -102,11 +110,28 @@ public class MetaDataService {
     BusinessDAO businessDAO;
     @Autowired
     DataManageService dataManageService;
-    private String errorMessage;
+    private String errorMessage = "";
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
     @Autowired
+    private MysqlMetaDataProvider mysqlMetaDataProvider;
+
+    @Autowired
+    private OracleMetaDataProvider oracleMetaDataProvider;
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
+
+    @Autowired
     private ColumnDAO columnDAO;
+
+    @Autowired
+    private MetadataHistoryDAO metadataHistoryDAO;
+    @Autowired
+    private DataSourceService dataSourceService;
+    @Autowired
+    private AtlasTypeRegistry atlasTypeRegistry;
+    @Autowired
+    private AtlasGraph graph;
+
     @Autowired
     private SearchService searchService;
 
@@ -564,7 +589,7 @@ public class MetaDataService {
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if (Objects.nonNull(entities) && entities.size() != 0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
-                if (atlasEntity.getTypeName().contains("table") || atlasEntity.getTypeName().contains("hdfs")) {
+                if (atlasEntity.getDatabaseTypeName().contains("table") || atlasEntity.getDatabaseTypeName().contains("hdfs")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasTableEntity = getEntityById(guid);
@@ -749,7 +774,7 @@ public class MetaDataService {
             Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
             if (Objects.nonNull(entities) && entities.size() != 0) {
                 AtlasEntityHeader atlasEntity = entities.get(guid);
-                if (atlasEntity.getTypeName().contains("column")) {
+                if (atlasEntity.getDatabaseTypeName().contains("column")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasColumnEntity = getEntityById(guid);
@@ -942,25 +967,11 @@ public class MetaDataService {
             LOG.error(errorMessage);
             return;
         }
-        if (hiveMetaStoreBridgeUtils == null) {
-            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
-            LOG.error(errorMessage);
-            return;
-        }
         errorMessage = "";
+        IMetaDataProvider metaDataProvider = null;
         try {
-            switch (databaseTypeEntity) {
-                case HIVE:
-                    hiveMetaStoreBridgeUtils.getStartTime().set(System.currentTimeMillis());
-                    hiveMetaStoreBridgeUtils.importDatabases(tableSchema);
-                    break;
-                case MYSQL:
-                case ORACLE:
-                case POSTGRESQL:
-                    errorMessage = String.format("not support database type %s", databaseType);
-                    LOG.error(errorMessage);
-                    break;
-            }
+            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity,tableSchema);
+            metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
             errorMessage = "同步元数据出错，无法连接到hive";
             LOG.error("import metadata error,", e);
@@ -968,6 +979,45 @@ public class MetaDataService {
             errorMessage = String.format("同步元数据出错，%s", e.getMessage());
             LOG.error("import metadata error", e);
         }
+        if (null != metaDataProvider) {
+            metaDataProvider.getEndTime().set(System.currentTimeMillis());
+        }
+    }
+
+    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity,TableSchema tableSchema) throws Exception {
+        IMetaDataProvider metaDataProvider;
+        switch (databaseTypeEntity) {
+            case HIVE:
+                return hiveMetaStoreBridgeUtils;
+            case MYSQL:
+                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                    MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
+                    mysqlMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
+                    metaDataProvider=mysqlMetaDataProvider;
+                }else{
+                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    if (metaDataProvider.getEndTime().get()==0){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
+                    }
+                }
+                break;
+            case ORACLE:
+                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                    OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
+                    oracleMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
+                    metaDataProvider=oracleMetaDataProvider;
+                }else{
+                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    if (metaDataProvider.getEndTime().get()==0){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
+                    }
+                }
+                break;
+            default:
+                throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
+        }
+        metaDataProviderMap.put(tableSchema.getInstance(),metaDataProvider);
+        return metaDataProvider;
     }
 
     private DatabaseType getDatabaseType(String databaseType) {
@@ -981,7 +1031,7 @@ public class MetaDataService {
         return databaseTypeEntity;
     }
 
-    public Progress importProgress(String databaseType) throws Exception {
+    public Progress importProgress(String databaseType,String sourceId) throws Exception {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
@@ -998,21 +1048,35 @@ public class MetaDataService {
         }
         switch (databaseTypeEntity) {
             case HIVE:
-                AtomicInteger totalTables = hiveMetaStoreBridgeUtils.getTotalTables();
-                AtomicInteger updatedTables = hiveMetaStoreBridgeUtils.getUpdatedTables();
-                AtomicLong startTime = hiveMetaStoreBridgeUtils.getStartTime();
-                AtomicLong endTime = hiveMetaStoreBridgeUtils.getEndTime();
-                progress = new Progress(totalTables.get(), updatedTables.get());
-                progress.setError(errorMessage);
-                progress.setStartTime(startTime.get());
-                progress.setEndTime(endTime.get());
+                progress = getProgress(hiveMetaStoreBridgeUtils);
                 break;
             case MYSQL:
             case ORACLE:
+                progress = getProgress(metaDataProviderMap.get(sourceId));
+                break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
         }
+        if (progress.getEndTime()!=0&&sourceId!=null){
+            metaDataProviderMap.remove(sourceId);
+        }
+        return progress;
+    }
+
+    private Progress getProgress(IMetaDataProvider metaDataProvider) throws AtlasBaseException {
+        Progress progress;
+        if (metaDataProvider==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
+        }
+        AtomicInteger totalTables = metaDataProvider.getTotalTables();
+        AtomicInteger updatedTables = metaDataProvider.getUpdatedTables();
+        AtomicLong startTime = metaDataProvider.getStartTime();
+        AtomicLong endTime = metaDataProvider.getEndTime();
+        progress = new Progress(totalTables.get(), updatedTables.get());
+        progress.setError(errorMessage);
+        progress.setStartTime(startTime.get());
+        progress.setEndTime(endTime.get());
         return progress;
     }
 
@@ -1561,5 +1625,96 @@ public class MetaDataService {
             descriptionCell.setCellValue(description);
             descriptionCell.setCellStyle(cellStyle);
         }
+    }
+
+
+    public PageResult getTableHistoryList(String tableGuid, Parameters parameters) {
+        PageResult pageResult = new PageResult();
+        List<TableMetadata> tableMetadataList = metadataHistoryDAO.getTableMetadataList(tableGuid, parameters.getLimit(), parameters.getOffset());
+        if(null != tableMetadataList && tableMetadataList.size()>0) {
+            Integer totalSize = tableMetadataList.get(0).getTotal();
+            pageResult.setLists(tableMetadataList);
+            pageResult.setCurrentSize(tableMetadataList.size());
+            pageResult.setTotalSize(totalSize);
+        }
+        return pageResult;
+    }
+
+    public TableMetadata getTableMetadata(String tableGuid, Integer version) {
+        return metadataHistoryDAO.getTableMetadata(tableGuid, version);
+    }
+
+    public List<ColumnMetadata> getColumnHistoryInfo(String tableGuid, Integer version, ColumnQuery query) {
+        List<ColumnMetadata> columnMetadataList = metadataHistoryDAO.getColumnMetadataList(tableGuid, version, query.getColumnFilter());
+        return columnMetadataList;
+    }
+
+    public ComparisonMetadata getComparisionTableMetadata(String tableGuid, Integer version) throws AtlasBaseException {
+        ComparisonMetadata comparisonMetadata = new ComparisonMetadata();
+        Set<String> changedFiledSet = new HashSet<>();
+        try {
+            TableMetadata currentMetadata = metadataHistoryDAO.getLastTableMetadata(tableGuid);
+            TableMetadata oldMetadata = metadataHistoryDAO.getTableMetadata(tableGuid, version);
+            Map<String, String> currentMetadataMap = BeanUtils.describe(currentMetadata);
+            Map<String, String> oldMetadataMap = BeanUtils.describe(oldMetadata);
+            for(String key : currentMetadataMap.keySet()) {
+                String currentValue = currentMetadataMap.get(key);
+                String oldValue = oldMetadataMap.get(key);
+                currentValue = Objects.isNull(currentValue)? "":currentValue;
+                oldValue = Objects.isNull(oldValue)? "":oldValue;
+                if(!currentValue.equals(oldValue)) {
+                    changedFiledSet.add(key);
+                }
+            }
+            comparisonMetadata.setCurrentMetadata(currentMetadata);
+            comparisonMetadata.setOldMetadata(oldMetadata);
+            comparisonMetadata.setChangedSet(changedFiledSet);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        return comparisonMetadata;
+    }
+
+    public ComparisonColumnMetadata getComparisionColumnMetadata(String tableGuid, Integer version) throws AtlasBaseException {
+        ComparisonColumnMetadata comparisonMetadata = new ComparisonColumnMetadata();
+        Set<String> changedFiledSet = new HashSet<>();
+        try {
+            List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
+            List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
+
+            Map<String, Map> currentColumnMedataMap = new HashMap<>();
+            for (ColumnMetadata metadata : currentMetadata) {
+                String name = metadata.getName();
+                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
+                currentColumnMedataMap.put(name, columnMetadataMap);
+            }
+            Map<String, Map> oldColumnMedataMap = new HashMap<>();
+            for (ColumnMetadata metadata : oldMetadata) {
+                String name = metadata.getName();
+                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
+                oldColumnMedataMap.put(name, columnMetadataMap);
+            }
+
+            for(String name : currentColumnMedataMap.keySet()) {
+                Map<String, String> currentValueMap = currentColumnMedataMap.get(name);
+                Map<String, String> oldValueMap = oldColumnMedataMap.get(name);
+
+                for(String key : currentValueMap.keySet()) {
+                    String currentValue = currentValueMap.get(key);
+                    String oldValue = oldValueMap.get(key);
+                    currentValue = Objects.isNull(currentValue)? "":currentValue;
+                    oldValue = Objects.isNull(oldValue)? "":oldValue;
+                    if(!currentValue.equals(oldValue)) {
+                        changedFiledSet.add(key);
+                    }
+                }
+            }
+            comparisonMetadata.setCurrentMetadata(currentMetadata);
+            comparisonMetadata.setOldMetadata(oldMetadata);
+            comparisonMetadata.setChangedSet(changedFiledSet);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        return comparisonMetadata;
     }
 }

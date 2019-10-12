@@ -1,22 +1,13 @@
 package io.zeta.metaspace.web.model;
 
+import lombok.Data;
+
+@Data
 public class TableSchema {
+    /**
+     * 数据源id
+     */
+    String instance;
     String database;
     String table;
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public void setDatabase(String database) {
-        this.database = database;
-    }
-
-    public String getTable() {
-        return table;
-    }
-
-    public void setTable(String table) {
-        this.table = table;
-    }
 }

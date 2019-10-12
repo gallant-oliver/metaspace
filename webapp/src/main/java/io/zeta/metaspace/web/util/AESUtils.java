@@ -54,7 +54,9 @@ public class AESUtils {
     public static String AESEncode(String password) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
-            keygen.init(128,new SecureRandom(AESKey.getBytes(CHARACTER)));
+            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
+            secureRandom.setSeed(AESKey.getBytes(CHARACTER));
+            keygen.init(128,secureRandom);
             SecretKey originalKey = keygen.generateKey();
             byte[] raw = originalKey.getEncoded();
             SecretKey key = new SecretKeySpec(raw,AES);
@@ -82,7 +84,9 @@ public class AESUtils {
     public static String AESDecode(String AESPassword) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
-            keygen.init(128,new SecureRandom(AESKey.getBytes(CHARACTER)));
+            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
+            secureRandom.setSeed(AESKey.getBytes(CHARACTER));
+            keygen.init(128,secureRandom);
             SecretKey originalKey = keygen.generateKey();
             byte[] raw = originalKey.getEncoded();
             SecretKey key = new SecretKeySpec(raw,AES);

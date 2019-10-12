@@ -27,7 +27,11 @@
         </logger>
 
         <!-- to avoid logs - The configuration log.flush.interval.messages = 1 was supplied but isn't a known config -->
-        <logger name="org.apache.kafka.common.config.AbstractConfig" level="error">
+        <logger name="org.apache.kafka" level="error">
+        </logger>
+        <logger name="org.apache.solr" level="error">
+        </logger>
+        <logger name="org.apache.zookeeper" level="error">
         </logger>
 
         <logger name="AUDIT" level="info">
@@ -39,7 +43,7 @@
         <logger name="FAILED" level="info">
         </logger>
 
-        <root level="info">
+        <root level="INFO">
             <appender-ref ref="console"/>
         </root>
     </Loggers>
