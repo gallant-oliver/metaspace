@@ -32,6 +32,11 @@
 
     <dependencies>
         <dependency>
+        <groupId>com.cloudera.impala.jdbc</groupId>
+        <artifactId>ImpalaJDBC41</artifactId>
+        <version>2.5.41</version>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
         </dependency>
