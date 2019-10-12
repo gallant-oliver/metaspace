@@ -1170,6 +1170,7 @@ INSERT INTO "public"."module" VALUES (11, '数据标准', 1);
 INSERT INTO "public"."module" VALUES (12, '日志审计', 1);
 INSERT INTO "public"."module" VALUES (10, '数据分享', 1);
 INSERT INTO "public"."module" VALUES (13, '数据质量', 1);
+INSERT INTO "public"."module" VALUES (14, '数据源管理', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 1);
 INSERT INTO "public"."privilege2module" VALUES ('1', 2);
 INSERT INTO "public"."privilege2module" VALUES ('1', 3);
@@ -1183,6 +1184,7 @@ INSERT INTO "public"."privilege2module" VALUES ('1', 10);
 INSERT INTO "public"."privilege2module" VALUES ('1', 11);
 INSERT INTO "public"."privilege2module" VALUES ('1', 12);
 INSERT INTO "public"."privilege2module" VALUES ('1', 13);
+INSERT INTO "public"."privilege2module" VALUES ('1', 14);
 INSERT INTO "public"."privilege2module" VALUES ('2', 2);
 INSERT INTO "public"."privilege2module" VALUES ('3', 1);
 INSERT INTO "public"."privilege2module" VALUES ('3', 2);
@@ -1802,6 +1804,7 @@ INSERT INTO "public"."api_module" VALUES ('/technical/category/relation', 'DELET
 INSERT INTO "public"."api_module" VALUES ('privilege', 'OPTION', 6, 't');
 INSERT INTO "public"."api_module" VALUES ('datastandard', 'OPTION', 11, 't');
 INSERT INTO "public"."api_module" VALUES ('operatelog', 'OPTION', 12, 't');
+INSERT INTO "public"."api_module" VALUES ('datasource', 'OPTION', 14, 't');
 INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/test/{randomName}', 'PUT', 5, 'f');
 INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}/datashare', 'POST', 5, 'f');
 INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/test/{randomName}', 'POST', 5, 'f');
@@ -1815,3 +1818,62 @@ INSERT INTO "public"."api_module" VALUES ('dataquality', 'OPTION', 13, 't');
 -- Primary Key structure for table api_module
 -- ----------------------------
 ALTER TABLE "public"."api_module" ADD CONSTRAINT "api_module_pkey" PRIMARY KEY ("path", "method");
+
+-- ----------------------------
+-- Table structure for data_source
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_source";
+CREATE TABLE "public"."data_source" (
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_type" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "update_time" timestamptz(6) NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "ip" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
+  "port" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
+  "username" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "password" varchar(255) COLLATE "pg_catalog"."default",
+  "database" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "jdbc_parameter" varchar COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."data_source"."source_id" IS '数据源id';
+COMMENT ON COLUMN "public"."data_source"."source_name" IS '数据源名称';
+COMMENT ON COLUMN "public"."data_source"."source_type" IS '数据源类型';
+COMMENT ON COLUMN "public"."data_source"."description" IS '数据源描述';
+COMMENT ON COLUMN "public"."data_source"."create_time" IS '数据源创建时间';
+COMMENT ON COLUMN "public"."data_source"."update_time" IS '数据源更新时间';
+COMMENT ON COLUMN "public"."data_source"."update_user_id" IS '数据源更新人id';
+COMMENT ON COLUMN "public"."data_source"."ip" IS '数据源主机ip';
+COMMENT ON COLUMN "public"."data_source"."port" IS '数据源端口';
+COMMENT ON COLUMN "public"."data_source"."username" IS '数据库用户名';
+COMMENT ON COLUMN "public"."data_source"."password" IS '数据库用户密码';
+COMMENT ON COLUMN "public"."data_source"."database" IS '数据库名';
+COMMENT ON COLUMN "public"."data_source"."jdbc_parameter" IS 'jdbc连接参数';
+COMMENT ON COLUMN "public"."data_source"."create_user_id" IS '数据源创建人id';
+
+-- ----------------------------
+-- Primary Key structure for table data_source
+-- ----------------------------
+ALTER TABLE "public"."data_source" ADD CONSTRAINT "data_source_pkey1" PRIMARY KEY ("source_id");
+
+
+-- ----------------------------
+-- Table structure for data_source_authorize
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_source_authorize";
+CREATE TABLE "public"."data_source_authorize" (
+  "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."data_source_authorize"."source_id" IS '数据源id';
+COMMENT ON COLUMN "public"."data_source_authorize"."authorize_user_id" IS '授权人id';
+
+-- ----------------------------
+-- Primary Key structure for table data_source_authorize
+-- ----------------------------
+ALTER TABLE "public"."data_source_authorize" ADD CONSTRAINT "data_source_authorize_pkey" PRIMARY KEY ("source_id", "authorize_user_id");
