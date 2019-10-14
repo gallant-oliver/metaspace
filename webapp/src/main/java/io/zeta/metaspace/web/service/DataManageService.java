@@ -883,7 +883,7 @@ public class DataManageService {
         //添加到tableinfo
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
-            if (typeName.contains("table")) {
+            if (typeName.contains("table")&&typeName.equals("rdbms_table")) {
                 if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                     String guid = entity.getGuid();
                     String name = getEntityAttribute(entity, "name");
