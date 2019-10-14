@@ -87,7 +87,7 @@ public class HomePageService {
 
     }
 
-    @Cacheable(value = "TimeAndDbCache")
+    @Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'")
     public TimeDBTB getTimeDbTb() throws AtlasBaseException {
         try {
             String date = DateUtils.getNow2();
@@ -114,9 +114,7 @@ public class HomePageService {
         }
     }
 
-    ;
-
-    @Cacheable(value = "DbTotalCache")
+    @Cacheable(value = "DbTotalCache", key = "'DbTotalCache'")
     public BrokenLine getDBTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL);
@@ -210,14 +208,14 @@ public class HomePageService {
         return statistical;
     }
 
-    @Cacheable(value = "TbTotalCache")
+    @Cacheable(value = "TbTotalCache", key = "'TbTotalCache'")
     public BrokenLine getTBTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.TB_TOTAL);
         return brokenLine;
     }
 
-    @Cacheable(value = "BusinessTotalCache")
+    @Cacheable(value = "BusinessTotalCache", key = "'BusinessTotalCache'")
     public BrokenLine getBusinessTotals() throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.BUSINESS_TOTAL);
@@ -232,7 +230,7 @@ public class HomePageService {
      * @return
      * @throws AtlasBaseException
      */
-    @Cacheable(value = "TableUseProportionCache", key = "#parameters.limit + #parameters.offset")
+    @Cacheable(value = "TableUseProportionCache", key = "'TableUseProportionCache' + #parameters.limit + #parameters.offset")
     public PageResult<TableUseInfo> getTableRelatedInfo(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<TableUseInfo> pageResult = new PageResult<>();
@@ -249,67 +247,8 @@ public class HomePageService {
             DecimalFormat df = new DecimalFormat("0.00");
             tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes() / total))));
             long sum = homePageDAO.getCountBusinessRelatedTable();
-            //pageResult.setOffset(offset);
             pageResult.setLists(tableList);
             pageResult.setCurrentSize(tableList.size());
-            pageResult.setTotalSize(sum);
-            return pageResult;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
-        }
-    }
-
-    /**
-     * 获取系统角色用户数与占比topN
-     * @param parameters
-     * @return
-     * @throws AtlasBaseException
-     */
-    @Cacheable(value = "RoleUseProportionCache", key = "#parameters.limit + #parameters.offset")
-    public PageResult<RoleUseInfo> getRoleRelatedInfo(Parameters parameters) throws AtlasBaseException {
-        try {
-            PageResult<RoleUseInfo> pageResult = new PageResult<>();
-            int limit = parameters.getLimit();
-            int offset = parameters.getOffset();
-            List<RoleUseInfo> roleList = homePageDAO.getRoleRelatedInfo(limit, offset);
-            //long total = roleList.stream().map(RoleUseInfo::getNumber).reduce(Long::sum).get();
-            long total = homePageDAO.getTotalUserNumber();
-            DecimalFormat df = new DecimalFormat("0.00");
-            roleList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getNumber() / total))));
-            long sum = homePageDAO.getCountRole();
-            //pageResult.setOffset(offset);
-            pageResult.setLists(roleList);
-            pageResult.setCurrentSize(roleList.size());
-            pageResult.setTotalSize(sum);
-            return pageResult;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
-        }
-    }
-
-    @Cacheable(value = "RoleCache")
-    public List<Role> getAllRole() throws AtlasBaseException {
-        try {
-            return homePageDAO.getAllRole();
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
-        }
-    }
-
-    @Cacheable(value = "RoleUserListCache", key = "#roleId +  #parameters.limit + #parameters.offset")
-    public PageResult<User> getUserListByRoleId(String roleId, Parameters parameters) throws AtlasBaseException {
-        try {
-            PageResult<User> pageResult = new PageResult<>();
-            int limit = parameters.getLimit();
-            int offset = parameters.getOffset();
-            List<User> userList = homePageDAO.getUserListByRoleId(roleId, limit, offset);
-            long sum = homePageDAO.getCountUserRelatedRole(roleId);
-            //pageResult.setOffset(offset);
-            pageResult.setLists(userList);
-            pageResult.setCurrentSize(userList.size());
             pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
@@ -323,7 +262,7 @@ public class HomePageService {
      * @return
      * @throws AtlasBaseException
      */
-    @Cacheable(value = "TechnicalSupplementProportionCache")
+    @Cacheable(value = "TechnicalSupplementProportionCache", key = "'TechnicalSupplementProportionCache'")
     public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
         try {
             List<DataDistribution> dataDistributionList = new ArrayList<>();
@@ -351,7 +290,7 @@ public class HomePageService {
      * @return
      * @throws AtlasBaseException
      */
-    @Cacheable(value = "SourceLayerListCache", key = "#parameters.limit + #parameters.offset")
+    @Cacheable(value = "SourceLayerListCache", key = "'SourceLayerListCache' + #parameters.limit + #parameters.offset")
     public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();
@@ -359,7 +298,6 @@ public class HomePageService {
             int offset = parameters.getOffset();
 
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, limit, offset);
-            //pageResult.setOffset(offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCurrentSize(categoryDBInfoList.size());
             long sum = homePageDAO.getCountCategory(sourceLayerCategoryGuid);
@@ -378,14 +316,13 @@ public class HomePageService {
      * @return
      * @throws AtlasBaseException
      */
-    @Cacheable(value = "SourceChildLayerListCache", key = "#categoryGuid + #parameters.limit + #parameters.offset")
+    @Cacheable(value = "SourceChildLayerListCache", key = "'SourceChildLayerListCache' + #categoryGuid + #parameters.limit + #parameters.offset")
     public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(String categoryGuid, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<CategoryDBInfo> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<CategoryDBInfo> categoryDBInfoList = homePageDAO.getChildSystemDBCount(categoryGuid, limit, offset);
-            //pageResult.setOffset(offset);
             pageResult.setLists(categoryDBInfoList);
             pageResult.setCurrentSize(categoryDBInfoList.size());
             long sum = homePageDAO.getCountCategory(categoryGuid);
@@ -399,7 +336,7 @@ public class HomePageService {
 
 
     @CacheEvict(value = {"TableByDBCache", "TableUseProportionCache", "RoleUseProportionCache", "TechnicalSupplementProportionCache", "SourceLayerListCache",
-                         "SourceChildLayerListCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
+            "SourceChildLayerListCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
