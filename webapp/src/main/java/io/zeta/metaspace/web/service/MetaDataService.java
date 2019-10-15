@@ -988,6 +988,9 @@ public class MetaDataService {
         IMetaDataProvider metaDataProvider;
         switch (databaseTypeEntity) {
             case HIVE:
+                if (hiveMetaStoreBridgeUtils.getEndTime().get()==0&&hiveMetaStoreBridgeUtils.getStartTime().get()!=0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive正在采集");
+                }
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
                 if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
