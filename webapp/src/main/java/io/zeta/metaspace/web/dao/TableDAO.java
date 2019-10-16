@@ -74,4 +74,7 @@ public interface TableDAO {
     @Update("update tableInfo set subordinatesystem=#{info.subordinateSystem},subordinatedatabase=#{info.subordinateDatabase},systemadmin=#{info.systemAdmin},datawarehouseadmin=#{info.dataWarehouseAdmin},datawarehousedescription=#{info.dataWarehouseDescription},catalogAdmin=#{info.catalogAdmin} where tableGuid=#{tableGuid}")
     public int updateTableInfo(@Param("tableGuid")String tableGuid, @Param("info")Table info);
 
+    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{guid}")
+    public Table getDbAndTableName(@Param("guid")String guid);
+
 }
