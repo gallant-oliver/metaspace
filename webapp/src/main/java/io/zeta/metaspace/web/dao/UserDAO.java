@@ -12,20 +12,20 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 public interface UserDAO {
-    @Select("select roleid from users where userid=#{userId}")
+    @Select("select roleid from users where userid=#{userId} and valid=true")
     public String getRoleIdByUserId(String userId);
 
 
-    @Select("select count(1) from users where userid=#{userid}")
+    @Select("select count(1) from users where userid=#{userid} and valid=true")
     public Integer ifUserExists(String userid);
 
-    @Insert("insert into users(userid,username,account,roleid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId})")
+    @Insert("insert into users(userid,username,account,roleid,create_time,update_time,valid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId},#{user.createTime},#{user.updateTime},#{user.valid})")
     public int addUser(@Param("user") User user);
 
-    @Select("select * from users where userId=#{userId}")
+    @Select("select * from users where userId=#{userId} and valid=true")
     public User getUser(@Param("userId") String userId);
 
-    @Select("select * from role where roleId in (select roleId from users where userId=#{userId}) and valid=true")
+    @Select("select * from role where roleId in (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true")
     public Role getRoleByUserId(@Param("userId") String userId);
 
     @Select("select * from category where guid in (select categoryId from role2category where roleId=#{roleId}) and categoryType=0")
@@ -44,6 +44,7 @@ public interface UserDAO {
              " </if>",
              " <if test=\"query != null and query!=''\">",
              " where  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
+             " and users.valid=true",
              " order by",
              " (case ",
              " when username=#{query} or account=#{query} then 1",
@@ -60,14 +61,15 @@ public interface UserDAO {
              " </script>"})
     public List<User> getUserList(@Param("query") String query, @Param("limit") int limit, @Param("offset") int offset);
 
-    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' ESCAPE '/' and role.roleid!='1' <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
+    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' ESCAPE '/' and role.roleid!='1' and users.valid=true <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
     public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
 
     @Select({" <script>",
              " select count(1) from users",
+             " where valid=true",
              " <if test=\"query != null and query!=''\">",
-             " where  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
+             " and username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
              " </if>",
              " </script>"})
     public long getUsersCount(@Param("query") String query);
@@ -80,7 +82,7 @@ public interface UserDAO {
             " and tableguid=#{tableGuid}</script>")
     public Integer ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
 
-    @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and userid=#{userId}")
+    @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and users.valid=true and userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
 
     @Select({"<script>",

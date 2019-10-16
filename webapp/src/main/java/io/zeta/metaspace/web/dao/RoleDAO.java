@@ -1,10 +1,8 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
-import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
-import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
@@ -12,79 +10,93 @@ import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import org.apache.ibatis.annotations.*;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface RoleDAO {
     @Insert("insert into role values(#{role.roleId},#{role.roleName},#{role.description},#{role.privilegeId},#{role.updateTime},#{role.status},#{role.createTime},#{role.disable},#{role.delete},#{role.edit},#{role.valid},#{role.creator},#{role.updater})")
     public int addRoles(@Param("role") Role role);
 
-    @Select("select count(1) from role where rolename=#{roleName} and valid=true")
+    @Select("select count(*) from role where rolename=#{roleName} and valid=true")
     public Integer ifRole(@Param("roleName") String roleName);
 
     @Update("update role set status=#{status},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
     public int updateRoleStatus(@Param("roleId") String roleId, @Param("status") int status, @Param("updateTime") String updateTime, @Param("updater") String updater);
 
-    /*@Delete("delete from role where roleid=#{roleId}")
-    public int deleteRole(String roleId);*/
     @Update("update role set valid=#{valid},updater=#{updater},updateTime=#{updateTime} where roleId=#{roleId}")
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select({"<script>",
-             " select count(1)over() total,userid,username,account,users.roleid,rolename",
-             " from users,role",
-             " where role.roleid=users.roleid",
-             " and users.roleid=#{roleId}",
-             " <if test=\"query != null and query!=''\">",
-             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
-             "</if>",
-             " order by username",
-             " <if test='limit!= -1'>",
-             " limit #{limit}",
-             " </if>",
-             " offset #{offset}",
-             " </script>"})
+            " select userid,username,account,users.roleid,rolename",
+            " from users,role",
+            " where role.roleid=users.roleid",
+            " and users.roleid=#{roleId}",
+            " and users.valid=true and role.valid=true",
+            " <if test=\"query != null and query!=''\">",
+            " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
+            "</if>",
+            " order by username",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
     public List<User> getUsers(@Param("roleId") String roleId, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
 
     @Select({"<script>",
-             " select count(*)over() total,role.*,privilegename,(select count(1)",
-             " from users where users.roleid=role.roleid) members",
-             " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
-             " and valid=true",
-             " <if test='contain == false'>",
-             " and status=1 and role.roleId!='1'",
-             " </if>",
-             " order by roleid",
-             " <if test='limit!= -1'>",
-             " limit #{limit} ",
-             " </if>",
-             " offset #{offset}",
-             " </script>"})
+            " select count(1)",
+            " from users,role",
+            " where role.roleid=users.roleid",
+            " and users.valid=true and role.valid=true",
+            " and users.roleid=#{roleId}",
+            " <if test=\"query != null and query!=''\">",
+            " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
+            "</if>",
+            " </script>"})
+    public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
+
+    @Select({"<script>",
+            " select role.*,privilegename,(select count(1)",
+            " from users where users.roleid=role.roleid and users.valid=true) members",
+            " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
+            " and role.valid=true",
+            " <if test='contain == false'>",
+            " and status=1 and role.roleId!='1'",
+            " </if>",
+            " order by roleid",
+            " <if test='limit!= -1'>",
+            " limit #{limit} ",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
     public List<Role> getRoles(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit, @Param("contain") boolean contain);
 
     @Select("select * from role where status=1 and (updateTime>=#{startTime} or createTime>=#{startTime})")
     public List<Role> getIncrRoles(@Param("startTime") String startTime);
 
+    @Select({"<script>",
+            " select count(1) from role",
+            " where rolename like '%'||#{query}||'%' ESCAPE '/'",
+            " and valid=true",
+            " <if test='contain == false'>",
+            " and status=1 and roleId!='1'",
+            " </if>",
+            " </script>"})
+    public long getRolesCount(@Param("query") String query, @Param("contain") boolean contain);
 
     //添加成员&更换一批人的角色
-    //@Update("update user set roleid=#{roleId} where userid in ")
-    @Update({"<script>update users set roleid=#{roleId} where userid in",
+    @Update({"<script>update users set roleid=#{roleId},valid=#{valid},update_time=#{updateTime} where userid in",
             "<foreach item='item' index='index' collection='userIds'",
             "open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
             "</script>"})
-    public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds);
+    public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds, @Param("valid") Boolean valid, @Param("updateTime") Timestamp updateTime);
 
     //添加成员&更换一个角色的成员的角色
-    //@Update("update user set roleid=#{roleId} where userid in ")
-    @Update("update users set roleid=#{roleId} where userid in (select userid from users where roleid=#{oldRoleId})")
-    public int updateUsersByRoleId(@Param("roleId") String roleId, @Param("oldRoleId") String oldRoleId);
-
-    //移除成员&更换角色
-    @Update("update users set roleid=#{roleId} where userid=#{userId}")
-    public int updateUser(@Param("roleId") String roleId, @Param("userId") String userId);
-
+    @Update("update users set roleid=#{roleId},update_time=#{updateTime} where userid in (select userid from users where roleid=#{oldRoleId} and users.valid=true)")
+    public int updateUsersByRoleId(@Param("roleId") String roleId, @Param("oldRoleId") String oldRoleId, @Param("updateTime") Timestamp updateTime);
 
     //获取角色方案
     @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId} and valid=true")
@@ -106,20 +118,8 @@ public interface RoleDAO {
     public int addRole2category(@Param("roleId") String roleId, @Param("categoryId") String categoryId, @Param("operation") int operation);
 
     //根据userid查roleid
-    @Select("select roleid from users where userid=#{userId}")
+    @Select("select roleid from users where userid=#{userId} and valid=true")
     public String getRoleIdByUserId(String userId);
-
-    //递归找子节点
-    @Select("WITH RECURSIVE categoryTree AS " +
-            "(" +
-            "    SELECT * from category" +
-            "    where parentCategoryGuid = #{parentCategoryGuid} and categoryType=#{categoryType}" +
-            "    UNION " +
-            "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
-            ")" +
-            "SELECT * FROM categoryTree")
-    public List<RoleModulesCategories.Category> getChilds(@Param("parentCategoryGuid") String parentCategoryGuid, @Param("categoryType") int categoryType);
 
     //递归找子节点
     @Select("<script>WITH RECURSIVE categoryTree AS " +
@@ -161,19 +161,6 @@ public interface RoleDAO {
             "    </foreach>" +
             "</script>")
     public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType);
-
-    //递归找父节点，结果集包含自己
-    @Select("<script>WITH RECURSIVE categoryTree AS" +
-            "(" +
-            "    SELECT * from category where " +
-            "    guid =#{guid} " +
-            "    and categoryType=#{categoryType}" +
-            "    UNION " +
-            "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
-            ")" +
-            "SELECT * from categoryTree</script>")
-    public List<RoleModulesCategories.Category> getParents(@Param("guid") String guid, @Param("categoryType") int categoryType);
 
     //递归找父节点,结果集不包含自己了
     @Select("<script>WITH RECURSIVE categoryTree AS" +
@@ -236,47 +223,11 @@ public interface RoleDAO {
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
 
 
-    @Update({
-            "<script>",
-            "<foreach item='roleId' index='index' collection='roleIds' separator=';'>",
-            "update role set privilegeId=#{privilegeId} where roleId=#{roleId}",
-            "</foreach>",
-            "</script>"
-    })
-    public int updatePrivilege(@Param("roleId") String roleId);
-
-    @Select("<script>select DISTINCT tableinfo.dbname from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
-    public List<String> getDBNames(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
-
-    @Select("select COUNT(DISTINCT tableinfo.dbname) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'")
-    public long getDBCount(@Param("guid") String guid, @Param("query") String query);
-
-    @Select("<script>select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
-    public List<TechnologyInfo.Table> getTableInfos(@Param("guid") String guid, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
-
-    @Select("select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'")
-    public long getTableCount(@Param("guid") String guid, @Param("query") String query);
-
-    @Select("select * from category where guid=#{guid}")
-    public RoleModulesCategories.Category getCategoryByGuid(String guid);
-
-    @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId}")
+    @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId} and role.valid=true and users.valid=true")
     public Role getRoleByUsersId(String userId);
 
     @Select("select * from role where roleid=#{roleId} and valid=true")
     public Role getRoleByRoleId(String roleId);
-
-    @Select("select tableinfo.* from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid=#{guid} and tableinfo.dbname=#{DB} order by tableinfo.tablename ")
-    public List<TechnologyInfo.Table> getTableInfosByDB(@Param("guid") String guid, @Param("DB") String DB);
-
-    @Select("<script>select DISTINCT tableinfo.dbname,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
-    public List<String> getDBNamesV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
-
 
     @Select("<script>select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
@@ -295,23 +246,6 @@ public interface RoleDAO {
             "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
-
-    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "     and tableinfo.dbname=#{DB} order by tableinfo.tablename</script>")
-    public List<TechnologyInfo.Table> getTableInfosByDBV2(@Param("guids") List<String> guids, @Param("DB") String DB);
-
-    /*@Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
-    public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);*/
-
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
@@ -320,7 +254,7 @@ public interface RoleDAO {
             "     and tableinfo.databaseGuid=#{DB} order by tableinfo.tablename</script>")
     public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-    @Select("<script>select distinct tableinfo.tableguid,count(1)over() total,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -328,6 +262,13 @@ public interface RoleDAO {
             "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit);
 
+    @Select("<script>select count(1) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'</script>")
+    public long getTableCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1")
     public List<String> getTopCategoryGuid(int categoryType);
@@ -351,17 +292,12 @@ public interface RoleDAO {
             "     and tableinfo.databaseGuid=#{DB} </script>")
     public long getTableInfosByDBIdCount(@Param("guids") List<String> guids, @Param("DB") String DB);
 
-    @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "</script>")
-    public List<String> getTableIds(@Param("guids") List<String> guids);
-
-    @Select("select userId from users")
+    @Select("select userId from users where valid=true")
     public List<String> getUserIdList();
 
-    @Update("update users set username=#{user.username},account=#{user.account} where userId=#{user.userId}")
+    @Update("update users set username=#{user.username},account=#{user.account},update_time=#{user.updateTime} where userId=#{user.userId}")
     public int updateUserInfo(@Param("user") User user);
+
+    @Update("update users set valid=false and update_time=#{updateTime} where userId=#{userId}")
+    public int deleteUser(@Param("userId") String userId, @Param("updateTime") Timestamp updateTime);
 }

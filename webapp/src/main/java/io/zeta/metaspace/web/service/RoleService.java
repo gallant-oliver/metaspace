@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -629,12 +630,14 @@ public class RoleService {
     @Transactional
     public void updateUserInfo() throws AtlasBaseException {
         try {
+            Timestamp updateTime = new Timestamp(System.currentTimeMillis());
             List<String> userIdList = roleDAO.getUserIdList();
             for (String userId : userIdList) {
                 User user = getUserInfo(userId);
                 if(null==user || "".equals(user.getUsername())) {
-                    continue;
+                    roleDAO.deleteUser(userId, updateTime);
                 }
+
                 roleDAO.updateUserInfo(user);
             }
         } catch (Exception e) {
