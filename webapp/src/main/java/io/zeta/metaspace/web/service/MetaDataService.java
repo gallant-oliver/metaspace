@@ -26,7 +26,6 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.metadata.MetaDataProvider;
 import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
@@ -66,6 +65,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
 import org.apache.atlas.type.AtlasTypeRegistry;
 
 import org.apache.commons.beanutils.BeanUtils;
+
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -109,6 +110,8 @@ public class MetaDataService {
     @Autowired
     BusinessDAO businessDAO;
     @Autowired
+    MetadataSubscribeDAO metadataSubscribeDAO;
+    @Autowired
     DataManageService dataManageService;
     private String errorMessage = "";
     @Autowired
@@ -131,7 +134,6 @@ public class MetaDataService {
     private AtlasTypeRegistry atlasTypeRegistry;
     @Autowired
     private AtlasGraph graph;
-
     @Autowired
     private SearchService searchService;
 
@@ -1717,4 +1719,28 @@ public class MetaDataService {
         }
         return comparisonMetadata;
     }
+
+    public void addMetadataSubscription(String tableGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            Timestamp generateTime = new Timestamp(System.currentTimeMillis());
+            SubscriptionInfo subscriptionInfo = new SubscriptionInfo(userId, tableGuid, generateTime);
+            metadataSubscribeDAO.addMetadataSubscription(subscriptionInfo);
+        } catch (Exception e) {
+            LOG.error("添加订阅元数据变更失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public void removeMetadataSubscription(String tableGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            metadataSubscribeDAO.removeMetadataSubscription(userId, tableGuid);
+        } catch (Exception e) {
+            LOG.error("添加订阅元数据变更失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+
 }
