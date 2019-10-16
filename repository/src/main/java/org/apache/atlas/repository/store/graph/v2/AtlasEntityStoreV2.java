@@ -875,12 +875,12 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     //判断重复添加
                     try {
                         AtlasEntityType storedEntityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
-                        AtlasEntity.AtlasEntityWithExtInfo storedEntity = getByUniqueAttributes(storedEntityType, entity.getAttributes());
-                        if (null != storedEntity) {
+                        String storedEntityGuid = getGuidByUniqueAttributes(storedEntityType, entity.getAttributes());
+                        if (null != storedEntityGuid) {
                             continue;
                         }
                     } catch (Exception e) {
-                        LOG.info("addCreated");
+                        LOG.error("判断重复插入失败", e);
                     }
 
                     graphDiscoverer.validateAndNormalize(entity);
