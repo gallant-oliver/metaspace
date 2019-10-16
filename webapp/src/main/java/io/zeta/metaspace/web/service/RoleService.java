@@ -116,9 +116,10 @@ public class RoleService {
         String userId = user.getUserId();
         //roleDAO.deleteRole(roleId);
         //删除更新状态
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
+        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId, timestamp);
         return "success";
     }
 
@@ -214,8 +215,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(roleId, users);
+            roleDAO.updateUsers(roleId, users, true, timestamp);
         return "success";
     }
 
@@ -258,8 +260,9 @@ public class RoleService {
                     userIds.add(userId);
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (userIds.size() > 0) {
-                roleDAO.updateUsers(roleId, userIds);
+                roleDAO.updateUsers(roleId, userIds, true, timestamp);
             }
         }
     }
@@ -272,8 +275,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
         return "success";
     }
 
@@ -304,8 +308,9 @@ public class RoleService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (users.size() > 0) {
-                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
             }
         }
     }
