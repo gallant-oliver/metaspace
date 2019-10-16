@@ -184,8 +184,9 @@ public interface DataSourceDAO {
 
     //获取数据源未授权人
     @Select("<script>" +
-            "select count(*)over() totalSize,userid,username userName,account from users " +
-            "where userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "where p.moduleid='14' and r.status=1 " +
+            "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
             "<if test='query!=null'>" +
             "and username like '%${query}%' ESCAPE '/'" +
             "</if>" +
