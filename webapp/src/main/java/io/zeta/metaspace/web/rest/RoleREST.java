@@ -209,9 +209,6 @@ public class RoleREST {
         try {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",移除用户:[" + Joiner.on("、").join(users)+"]");
-            if(roleId.equals(SystemRole.GUEST.getCode())){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"访客不能移除成员");
-            }
             return roleService.removeUser(users);
         }
         catch(AtlasBaseException e){
