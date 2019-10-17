@@ -300,4 +300,12 @@ public interface RoleDAO {
 
     @Update("update users set valid=false and update_time=#{updateTime} where userId=#{userId}")
     public int deleteUser(@Param("userId") String userId, @Param("updateTime") Timestamp updateTime);
+
+    @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<String> getTableIds(@Param("guids") List<String> guids);
 }
