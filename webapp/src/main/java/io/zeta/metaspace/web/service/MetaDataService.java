@@ -1266,11 +1266,22 @@ public class MetaDataService {
         return workbook;
     }
 
+    public void processSpecialCharacter(String sheetName) {
+        sheetName.replace(":","_");
+        sheetName.replace("\\","_");
+        sheetName.replace("/","_");
+        sheetName.replace("?","_");
+        sheetName.replace("*","_");
+        sheetName.replace("[","_");
+        sheetName.replace("]","_");
+    }
+
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = dbName + "." + tableName + "-表信息";
+        processSpecialCharacter(sheetName);
         Sheet hasSheet = workbook.getSheet(sheetName);
         if(null != hasSheet) {
             return;
@@ -1559,6 +1570,7 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = dbName + "." + tableName + "字段-信息";
+        processSpecialCharacter(sheetName);
         Sheet hasSheet = workbook.getSheet(sheetName);
         if(null != hasSheet) {
             return;

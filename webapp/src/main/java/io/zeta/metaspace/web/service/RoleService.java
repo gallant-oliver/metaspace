@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -115,9 +116,10 @@ public class RoleService {
         String userId = user.getUserId();
         //roleDAO.deleteRole(roleId);
         //删除更新状态
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
+        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(),true, roleId, timestamp);
         return "success";
     }
 
@@ -213,8 +215,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(roleId, users);
+            roleDAO.updateUsers(roleId, users, true, timestamp);
         return "success";
     }
 
@@ -257,8 +260,9 @@ public class RoleService {
                     userIds.add(userId);
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (userIds.size() > 0) {
-                roleDAO.updateUsers(roleId, userIds);
+                roleDAO.updateUsers(roleId, userIds, true, timestamp);
             }
         }
     }
@@ -271,8 +275,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
         return "success";
     }
 
@@ -303,8 +308,9 @@ public class RoleService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (users.size() > 0) {
-                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
             }
         }
     }
@@ -629,12 +635,14 @@ public class RoleService {
     @Transactional
     public void updateUserInfo() throws AtlasBaseException {
         try {
+            Timestamp updateTime = new Timestamp(System.currentTimeMillis());
             List<String> userIdList = roleDAO.getUserIdList();
             for (String userId : userIdList) {
                 User user = getUserInfo(userId);
                 if(null==user || "".equals(user.getUsername())) {
-                    continue;
+                    roleDAO.deleteUser(userId, updateTime);
                 }
+
                 roleDAO.updateUserInfo(user);
             }
         } catch (Exception e) {
