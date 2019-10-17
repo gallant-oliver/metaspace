@@ -119,7 +119,7 @@ public class RoleService {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId, timestamp);
+        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(),true, roleId, timestamp);
         return "success";
     }
 

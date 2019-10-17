@@ -63,47 +63,6 @@ public interface HomePageDAO {
     @Select("SELECT count(distinct tableGuid) from  business2Table")
     public long getCountBusinessRelatedTable();
 
-    @Select({" <script>",
-            " select role.roleId,role.roleName,count(users.userId) as number from role",
-            " left join users on role.roleId=users.roleId where valid=true group by role.roleId,role.roleName",
-            " order by number desc",
-            " <if test='limit!= -1'>",
-            " limit #{limit}",
-            " </if>",
-            " offset #{offset}",
-            " </script>"})
-    public List<RoleUseInfo> getRoleRelatedInfo(@Param("limit") int limit, @Param("offset") int offset);
-
-    @Select("select count(*) from users")
-    public long getTotalUserNumber();
-
-    @Select("select count(*) from role where valid=true")
-    public long getCountRole();
-
-    @Select("select * from role where valid=true order by roleId")
-    public List<Role> getAllRole();
-
-    @Select({" <script>",
-            " select * from users",
-            " join role on users.roleId=role.roleId",
-            " where",
-            " users.roleId=#{roleId}",
-            " order by userId",
-            " <if test='limit!= -1'>",
-            " limit #{limit}",
-            " </if>",
-            " offset #{offset}",
-            " </script>"})
-    public List<User> getUserListByRoleId(@Param("roleId") String roleId, @Param("limit") int limit, @Param("offset") int offset);
-
-    @Select({" <script>",
-            " select count(*) from users",
-            " where",
-            " roleId = #{roleId}",
-            " order by count desc",
-            " </script>"})
-    public long getCountUserRelatedRole(@Param("roleId") String roleId);
-
     @Select("select count(*) from businessInfo where technicalStatus=#{technicalStatus}")
     public long getTechnicalStatusNumber(@Param("technicalStatus") int type);
 

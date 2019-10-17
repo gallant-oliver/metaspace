@@ -95,8 +95,8 @@ public interface RoleDAO {
     public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds, @Param("valid") Boolean valid, @Param("updateTime") Timestamp updateTime);
 
     //添加成员&更换一个角色的成员的角色
-    @Update("update users set roleid=#{roleId},update_time=#{updateTime} where userid in (select userid from users where roleid=#{oldRoleId} and users.valid=true)")
-    public int updateUsersByRoleId(@Param("roleId") String roleId, @Param("oldRoleId") String oldRoleId, @Param("updateTime") Timestamp updateTime);
+    @Update("update users set roleid=#{roleId},valid=#{valid},update_time=#{updateTime} where userid in (select userid from users where roleid=#{oldRoleId} and users.valid=true)")
+    public int updateUsersByRoleId(@Param("roleId") String roleId, @Param("valid") Boolean valid, @Param("oldRoleId") String oldRoleId, @Param("updateTime") Timestamp updateTime);
 
     //获取角色方案
     @Select("select privilege.privilegeid,privilegename from role,privilege where role.privilegeid=privilege.privilegeid and roleid=#{roleId} and valid=true")
