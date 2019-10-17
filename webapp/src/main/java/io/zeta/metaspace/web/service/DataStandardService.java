@@ -24,7 +24,6 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -46,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -317,7 +317,19 @@ public class DataStandardService {
     }
 
     public List<CategoryPrivilege> getCategory(Integer categoryType) throws AtlasBaseException {
-        return dataManageService.getAll(categoryType);
+        List<CategoryPrivilege> result = dataManageService.getAll(categoryType);
+        for (CategoryPrivilege category : result) {
+            String categoryGuid = category.getGuid();
+            String pattern = "^Standard-([1-9])+-l$";
+            CategoryPrivilege.Privilege privilege = null;
+            if(Pattern.matches(pattern, categoryGuid)) {
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false);
+            } else {
+                privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+            }
+            category.setPrivilege(privilege);
+        }
+        return result;
     }
 
     public CategoryPrivilege addCategory(CategoryInfoV2 categoryInfo) throws Exception {
