@@ -136,6 +136,44 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
 
             case FULL_TABLE_COLUMN_COUNT:
                 return "g.V().has('__guid', '%s').outE('__hive_table.columns').inV().has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).count().toList()";
+
+            case FUll_RDBMS_SOURCE:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().toList()";
+            case RDBMS_SOURCE_BY_QUERY:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
+            case RDBMS_SOURCE_TOTAL_NUM_BY_QUERY:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().count().toList()";
+            case FULL_RDBMS_DATABASE:
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').order().by('__timestamp').dedup().toList()";
+            case RDBMS_DATABASE_BY_SOURCE:
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
+            case RDBMS_DATABASE_TOTAL_BY_SOURCE:
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').dedup().count().toList()";
+            case FULL_RDBMS_TABLE:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__guid').order().by('__timestamp').dedup().toList()";
+            case RDBMS_TABLE_BY_DB:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__guid').order().by('__timestamp').range(%s,%s).dedup().toList()";
+            case RDBMS_TABLE_TOTAL_BY_DB:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__guid').dedup().count().toList()";
+            case FULL_RDBMS_DB_SOURCE:
+                return "g.V().has('__typeName','rdbms_db').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('db').outE().inV().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').select('db','instance').toList()";
+            case RDBMS_DB_SOURCE_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_db').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('db').outE().inV().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').select('db','instance').range(%s,%s).toList()";
+            case RDBMS_DB_COUNT_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_db').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().outE().inV().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').count().toList()";
+            case FULL_RDBMS_TABLE_DB_SOURCE:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('table').select('table','db','instance').toList()";
+            case RDBMS_TABLE_DB_SOURCE_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('table').select('table','db','instance').range(%s,%s).toList()";
+            case RDBMS_TABLE_COUNT_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').inE().outV().has('__typeName','rdbms_db').inE().outV().has('__typeName','rdbms_table').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().count().toList()";
+
+            case FULL_RDBMS_COLUMN_TABLE_DB_SOURCE:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').as('table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').select('column','table','db','instance').toList()";
+            case RDBMS_COLUMN_TABLE_DB_SOURCE_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').as('table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').select('column','table','db','instance').range(%s,%s).toList()";
+            case RDBMS_COLUMN_COUNT_BY_QUERY:
+                return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').inE().outV().has('__typeName','rdbms_db').inE().outV().has('__typeName','rdbms_table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().count().toList()";
         }
         return null;
     }
