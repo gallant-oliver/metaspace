@@ -42,6 +42,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -118,7 +119,7 @@ public class MetaDataService {
 
     @Autowired
     private OracleMetaDataProvider oracleMetaDataProvider;
-    private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new LRUMap(30);
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -988,9 +989,6 @@ public class MetaDataService {
         IMetaDataProvider metaDataProvider;
         switch (databaseTypeEntity) {
             case HIVE:
-                if (hiveMetaStoreBridgeUtils.getEndTime().get()==0&&hiveMetaStoreBridgeUtils.getStartTime().get()!=0){
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive正在采集");
-                }
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
                 if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
