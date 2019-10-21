@@ -792,7 +792,7 @@
                             <goal>timestamp-property</goal>
                         </goals>
                         <configuration>
-                            <name>build.time</name>
+                            <name>buildTime</name>
                             <pattern>yyyy-MM-dd HH:mm:ss</pattern>
                             <timeZone>GMT+8</timeZone>
                         </configuration>
