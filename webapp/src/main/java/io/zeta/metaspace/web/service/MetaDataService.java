@@ -168,7 +168,10 @@ public class MetaDataService {
 
             return table;
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
+            if (e.getMessage().contains("无效的实体ID")){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息"+e.getMessage());
         }
     }
 
