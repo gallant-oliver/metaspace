@@ -27,7 +27,7 @@ public interface RoleDAO {
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select({"<script>",
-            " select userid,username,account,users.roleid,rolename",
+            " select count(*)over() total,userid,username,account,users.roleid,rolename",
             " from users,role",
             " where role.roleid=users.roleid",
             " and users.roleid=#{roleId}",
@@ -57,7 +57,7 @@ public interface RoleDAO {
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",
-            " select role.*,privilegename,(select count(1)",
+            " select count(*)over() total,role.*,privilegename,(select count(1)",
             " from users where users.roleid=role.roleid and users.valid=true) members",
             " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
             " and role.valid=true",
