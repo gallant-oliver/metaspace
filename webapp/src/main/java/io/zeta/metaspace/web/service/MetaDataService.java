@@ -1263,25 +1263,29 @@ public class MetaDataService {
         return workbook;
     }
 
-    public void processSpecialCharacter(String sheetName) {
-        sheetName.replace(":","_");
-        sheetName.replace("\\","_");
-        sheetName.replace("/","_");
-        sheetName.replace("?","_");
-        sheetName.replace("*","_");
-        sheetName.replace("[","_");
-        sheetName.replace("]","_");
+    public String processSpecialCharacter(String sheetName) {
+        return sheetName.replace(":","_")
+                 .replace("\\","_")
+                 .replace("/","_")
+                 .replace("?","_")
+                 .replace("*","_")
+                 .replace("[","_")
+                 .replace("]","_");
     }
 
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetName = dbName + "." + tableName + "-表信息";
-        processSpecialCharacter(sheetName);
+        String sheetNamePrefix = dbName + "." + tableName;
+        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
+        String sheetName = sheetNamePrefix + "-表信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
-        if(null != hasSheet) {
-            return;
+        int sheetIndex = 1;
+        while(null != hasSheet) {
+            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
+            sheetName = sheetNamePrefix + "-表信息";
+            hasSheet = workbook.getSheet(sheetName);
         }
         Sheet sheet = workbook.createSheet(sheetName);
 
@@ -1566,12 +1570,17 @@ public class MetaDataService {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetName = dbName + "." + tableName + "字段-信息";
-        processSpecialCharacter(sheetName);
+        String sheetNamePrefix = dbName + "." + tableName;
+        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
+        String sheetName = sheetNamePrefix + "-字段信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
-        if(null != hasSheet) {
-            return;
+        int sheetIndex = 1;
+        while(null != hasSheet) {
+            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
+            sheetName = sheetNamePrefix + "-字段信息";
+            hasSheet = workbook.getSheet(sheetName);
         }
+
         Sheet sheet = workbook.createSheet(sheetName);
 
         List<Column> columnList = table.getColumns();
