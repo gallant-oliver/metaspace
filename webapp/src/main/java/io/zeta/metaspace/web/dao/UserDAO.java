@@ -25,6 +25,9 @@ public interface UserDAO {
     @Select("select * from users where userId=#{userId} and valid=true")
     public User getUser(@Param("userId") String userId);
 
+    @Select("select * from users where userId=#{userId}")
+    public User getUserInfo(@Param("userId") String userId);
+
     @Select("select * from role where roleId in (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true")
     public Role getRoleByUserId(@Param("userId") String userId);
 

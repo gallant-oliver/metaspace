@@ -248,13 +248,17 @@ public class RoleService {
                 if (Objects.isNull(userId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户Id不能为空");
                 }
-                String userRole = usersService.getRoleIdByUserId(userId);
-                if (Objects.isNull(userRole)) {
+                User userInfo = userDAO.getUserInfo(userId);
+                if (Objects.isNull(userInfo)) {
+                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                     User user = new User();
                     user.setUserId(userId);
                     user.setRoleId(roleId);
+                    user.setValid(true);
+                    user.setCreateTime(timestamp);
+                    user.setUpdateTime(timestamp);
                     userDAO.addUser(user);
-                } else if (userRole.equals("1")) {
+                } else if ("1".equals(userInfo.getRoleId())) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, userId + "为平台管理员，不允许修改平台管理员用户");
                 } else {
                     userIds.add(userId);
@@ -264,6 +268,8 @@ public class RoleService {
             if (userIds.size() > 0) {
                 roleDAO.updateUsers(roleId, userIds, true, timestamp);
             }
+            //更新用户信息
+            updateUserInfo();
         }
     }
 
@@ -310,7 +316,7 @@ public class RoleService {
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (users.size() > 0) {
-                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
+                roleDAO.updateUsers(null, users, false, timestamp);
             }
         }
     }
@@ -642,7 +648,7 @@ public class RoleService {
                 if(null==user || "".equals(user.getUsername())) {
                     roleDAO.deleteUser(userId, updateTime);
                 }
-
+                user.setUpdateTime(updateTime);
                 roleDAO.updateUserInfo(user);
             }
         } catch (Exception e) {
