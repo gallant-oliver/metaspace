@@ -103,7 +103,7 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = getSystemConnection("")) {
+        try (Connection conn = getConnection("default")) {
             List<String> ret = new ArrayList<>();
             Statement statement = conn.createStatement();
             ResultSet resultSet = statement.executeQuery("show databases");
