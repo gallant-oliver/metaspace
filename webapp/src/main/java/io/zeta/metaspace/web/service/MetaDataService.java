@@ -119,7 +119,8 @@ public class MetaDataService {
 
     @Autowired
     private OracleMetaDataProvider oracleMetaDataProvider;
-    private Map<String, IMetaDataProvider> metaDataProviderMap = new LRUMap(30);
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new LRUMap(50);
+    private Map<String, String> errorMap = new LRUMap(50);
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -966,21 +967,24 @@ public class MetaDataService {
      */
     public void synchronizeMetaData(String databaseType, TableSchema tableSchema){
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        if (databaseTypeEntity==DatabaseType.HIVE){
+            tableSchema.setInstance("hive");
+        }
         if (null == databaseTypeEntity) {
-            errorMessage = String.format("not support database type %s", databaseType);
-            LOG.error(errorMessage);
+            errorMap.put(tableSchema.getInstance(),String.format("not support database type %s", databaseType));
+            LOG.error(errorMap.get(tableSchema.getInstance()));
             return;
         }
-        errorMessage = "";
         IMetaDataProvider metaDataProvider = null;
+        errorMap.put(tableSchema.getInstance(),"");
         try {
             metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity,tableSchema);
             metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
-            errorMessage = "同步元数据出错，无法连接到hive";
+            errorMap.put(tableSchema.getInstance(),"同步元数据出错，无法连接到hive");
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
-            errorMessage = String.format("同步元数据出错，%s", e.getMessage());
+            errorMap.put(tableSchema.getInstance(),String.format("同步元数据出错，%s", e.getMessage()));
             LOG.error("import metadata error", e);
         }
         if (null != metaDataProvider) {
@@ -994,27 +998,21 @@ public class MetaDataService {
             case HIVE:
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
-                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
                     mysqlMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
                     metaDataProvider=mysqlMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
-                    if (metaDataProvider.getEndTime().get()==0){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
-                    }
                 }
                 break;
             case ORACLE:
-                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
                     oracleMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
                     metaDataProvider=oracleMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
-                    if (metaDataProvider.getEndTime().get()==0){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
-                    }
                 }
                 break;
             default:
@@ -1039,36 +1037,33 @@ public class MetaDataService {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
-            errorMessage = String.format("not support database type %s", databaseType);
-            LOG.error(errorMessage);
-            progress.setError(errorMessage);
+            errorMap.put(sourceId,String.format("not support database type %s", databaseType));
+            LOG.error(errorMap.get(sourceId));
+            progress.setError(errorMap.get(sourceId));
             return progress;
         }
         if (hiveMetaStoreBridgeUtils == null) {
-            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
-            LOG.error(errorMessage);
-            progress.setError(errorMessage);
+            errorMap.put(sourceId,String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
+            LOG.error(errorMap.get(sourceId));
+            progress.setError(errorMap.get(sourceId));
             return progress;
         }
         switch (databaseTypeEntity) {
             case HIVE:
-                progress = getProgress(hiveMetaStoreBridgeUtils);
+                progress = getProgress(hiveMetaStoreBridgeUtils,sourceId);
                 break;
             case MYSQL:
             case ORACLE:
-                progress = getProgress(metaDataProviderMap.get(sourceId));
+                progress = getProgress(metaDataProviderMap.get(sourceId),sourceId);
                 break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
         }
-        if (progress.getEndTime()!=0&&sourceId!=null){
-            metaDataProviderMap.remove(sourceId);
-        }
         return progress;
     }
 
-    private Progress getProgress(IMetaDataProvider metaDataProvider) throws AtlasBaseException {
+    private Progress getProgress(IMetaDataProvider metaDataProvider,String sourceId) throws AtlasBaseException {
         Progress progress;
         if (metaDataProvider==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
@@ -1078,7 +1073,11 @@ public class MetaDataService {
         AtomicLong startTime = metaDataProvider.getStartTime();
         AtomicLong endTime = metaDataProvider.getEndTime();
         progress = new Progress(totalTables.get(), updatedTables.get());
-        progress.setError(errorMessage);
+        if (errorMap.containsKey(sourceId)){
+            progress.setError(errorMap.get(sourceId));
+        }else{
+            progress.setError("");
+        }
         progress.setStartTime(startTime.get());
         progress.setEndTime(endTime.get());
         return progress;
