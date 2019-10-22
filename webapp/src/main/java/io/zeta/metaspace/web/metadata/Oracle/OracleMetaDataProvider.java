@@ -175,7 +175,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
 
     private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
         //先删除数据库中不存在的
-        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),foreignKeys,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey:foreignKeys){
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
@@ -237,7 +236,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
         //删除数据库中不存在的
-        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,map.keySet());
         return ret;
     }
 
@@ -258,7 +256,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
     }
 
     private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),indexes,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (Index index : indexes) {
             AtlasEntity indexEntity = new AtlasEntity(RDBMS_INDEX);
@@ -282,7 +279,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
     }
 
     private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),columns,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
@@ -361,7 +357,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         }catch (SQLException e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,columnNames);
         return ret;
     }
 
@@ -428,7 +423,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             LOG.info("获取表"+table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString()+"索引失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,map.keySet());
         return ret;
     }
 
