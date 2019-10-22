@@ -165,7 +165,8 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from " + name + " limit " + guidCount.getCount();
-        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+        String user = AdminUtils.getUserName();
+        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -214,7 +215,8 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+        String user = AdminUtils.getUserName();
+        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
