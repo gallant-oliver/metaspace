@@ -25,6 +25,9 @@ public interface UserDAO {
     @Select("select * from users where userId=#{userId} and valid=true")
     public User getUser(@Param("userId") String userId);
 
+    @Select("select * from users where userId=#{userId}")
+    public User getUserInfo(@Param("userId") String userId);
+
     @Select("select * from role where roleId in (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true")
     public Role getRoleByUserId(@Param("userId") String userId);
 
@@ -39,12 +42,9 @@ public interface UserDAO {
 
     @Select({" <script>",
              " select count(*)over() total,users.*,role.roleName from users join role on users.roleId = role.roleId",
-             " <if test=\"query == null or query==''\">",
-             " order by account",
-             " </if>",
+             " where users.valid=true",
              " <if test=\"query != null and query!=''\">",
-             " where  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
-             " and users.valid=true",
+             " and  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
              " order by",
              " (case ",
              " when username=#{query} or account=#{query} then 1",
@@ -53,6 +53,9 @@ public interface UserDAO {
              " when username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/' then 4",
              " else 0",
              " end)",
+             " </if>",
+             " <if test=\"query == null or query==''\">",
+             " order by account",
              " </if>",
              " <if test='limit!= -1'>",
              " limit #{limit}",
