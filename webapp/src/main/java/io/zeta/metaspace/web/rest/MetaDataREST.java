@@ -31,6 +31,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
@@ -209,7 +210,9 @@ public class MetaDataREST {
             throw e;
         } catch (IOException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-        } finally {
+        }  catch (AtlasException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
+        }finally {
             AtlasPerfTracer.log(perf);
         }
     }
@@ -238,6 +241,8 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
         } catch (IOException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
+        } catch (AtlasException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
         }
