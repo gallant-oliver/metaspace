@@ -186,15 +186,10 @@ public class AdminResource {
                 PropertiesConfiguration configProperties = new PropertiesConfiguration("atlas-buildinfo.properties");
 
                 Map<String, Object> response = new HashMap<String, Object>();
-                response.put("Version", configProperties.getString("build.version", "UNKNOWN"));
-                response.put("Revision",configProperties.getString("vc.revision", "UNKNOWN"));
-                response.put("Name", configProperties.getString("project.name", "apache-atlas"));
-                response.put("Description", configProperties.getString("project.description",
-                        "Metadata Management and Data Governance Platform over Hadoop"));
-
-                // todo: add hadoop version?
-                // response.put("Hadoop", VersionInfo.getVersion() + "-r" + VersionInfo.getRevision());
+                response.put("version", configProperties.getString("build.version", "UNKNOWN"));
+                response.put("buildTime",configProperties.getString("build.time", "UNKNOWN"));
                 version = Response.ok(AtlasJson.toV1Json(response)).build();
+
             } catch (ConfigurationException e) {
                 throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.INTERNAL_SERVER_ERROR));
             }
