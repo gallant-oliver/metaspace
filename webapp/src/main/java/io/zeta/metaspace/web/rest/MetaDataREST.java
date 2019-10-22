@@ -471,7 +471,7 @@ public class MetaDataREST {
     @GET
     @Path("/import/progress/{databaseType}")
     public Response importProgress(@PathParam("databaseType") String databaseType) throws Exception {
-        Progress progress = metadataService.importProgress(databaseType,null);
+        Progress progress = metadataService.importProgress(databaseType,"hive");
         return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
