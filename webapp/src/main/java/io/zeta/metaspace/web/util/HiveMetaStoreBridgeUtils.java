@@ -152,6 +152,8 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         List<String> databaseNames = null;
         totalTables.set(0);
         updatedTables.set(0);
+        getStartTime().set(System.currentTimeMillis());
+        getEndTime().set(0);
         String databaseToImport = "";
         String tableToImport = "";
         if (null != tableSchema) {
