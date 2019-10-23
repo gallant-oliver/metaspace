@@ -883,7 +883,7 @@ public class DataManageService {
         //添加到tableinfo
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
-            if (typeName.contains("table")&&!typeName.equals("rdbms_table")) {
+            if (("hive_table").equals(typeName)) {
                 if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
                     String guid = entity.getGuid();
                     String name = getEntityAttribute(entity, "name");
@@ -903,7 +903,7 @@ public class DataManageService {
                         tableDAO.addTable(tableInfo);
                     }
                 }
-            } else if(typeName.contains("hive_column")) {
+            } else if(("hive_column").equals(typeName)) {
                 AtlasRelatedObjectId table = (AtlasRelatedObjectId)entity.getRelationshipAttribute("table");
                 String tableGuid = table.getGuid();
                 String guid = entity.getGuid();
@@ -970,7 +970,7 @@ public class DataManageService {
     public void updateEntityInfo(List<AtlasEntity> entities) {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
-            if (typeName.contains("table")) {
+            if (("hive_table").equals(typeName)) {
                 if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")) {
                     TableInfo tableInfo = new TableInfo();
                     tableInfo.setTableGuid(entity.getGuid());
@@ -979,7 +979,7 @@ public class DataManageService {
                     tableInfo.setDbName(relatedDB.getDisplayText());
                     tableDAO.updateTable(tableInfo);
                 }
-            } else if(typeName.contains("hive_column")) {
+            } else if(("hive_column").equals(typeName)) {
                 String guid = entity.getGuid();
                 String name = entity.getAttribute("name").toString();
                 String type = entity.getAttribute("type").toString();

@@ -1719,20 +1719,31 @@ public class MetaDataService {
                 oldColumnMedataMap.put(name, columnMetadataMap);
             }
 
-            for(String name : currentColumnMedataMap.keySet()) {
+            /*Set<String> keySet = new HashSet<>();
+            keySet.addAll(currentColumnMedataMap.keySet());
+            keySet.addAll(oldColumnMedataMap.keySet());
+            for(String name : keySet) {
                 Map<String, String> currentValueMap = currentColumnMedataMap.get(name);
                 Map<String, String> oldValueMap = oldColumnMedataMap.get(name);
+
+                if((currentColumnMedataMap.containsKey(name) && !oldColumnMedataMap.containsKey(name)) ||
+                        (!currentColumnMedataMap.containsKey(name) && oldColumnMedataMap.containsKey(name))) {
+                    if(currentColumnMedataMap.containsKey(name)) {
+
+                    }
+                }
 
                 for(String key : currentValueMap.keySet()) {
                     String currentValue = currentValueMap.get(key);
                     String oldValue = oldValueMap.get(key);
                     currentValue = Objects.isNull(currentValue)? "":currentValue;
                     oldValue = Objects.isNull(oldValue)? "":oldValue;
+
                     if(!currentValue.equals(oldValue)) {
                         changedFiledSet.add(key);
                     }
                 }
-            }
+            }*/
             comparisonMetadata.setCurrentMetadata(currentMetadata);
             comparisonMetadata.setOldMetadata(oldMetadata);
             comparisonMetadata.setChangedSet(changedFiledSet);
