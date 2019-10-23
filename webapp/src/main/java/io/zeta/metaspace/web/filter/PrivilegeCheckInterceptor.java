@@ -131,6 +131,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                         default:
                             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
                     }
+                } catch (AtlasBaseException e){
+                    throw e;
                 } catch (Exception e) {
                     LOG.warn("用户" + username + "没有" + privilegeType + " " + privilegeGuid + " 的权限", e);
                     throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有该表的权限");

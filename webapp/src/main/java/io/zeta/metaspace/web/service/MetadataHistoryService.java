@@ -83,6 +83,11 @@ public class MetadataHistoryService {
                     AtlasEntity entity = info.getEntity();
                     List<String> partitionKeyList = extractPartitionKeyInfo(entity);
                     TableMetadata tableMetadata = generateTableMetadata(entity);
+
+                    int sameCount = metadataDAO.getSameUpdateEntityCount(tableMetadata);
+                    if(sameCount > 0) {
+                        return;
+                    }
                     List<ColumnMetadata> columnMetadataList = new ArrayList<>();
                     Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
                     for (String guid : referrencedEntities.keySet()) {
@@ -102,8 +107,9 @@ public class MetadataHistoryService {
                             }
                         }
                     }
-
                     metadataDAO.addTableMetadata(tableMetadata);
+                    int version = metadataDAO.getTableVersion(tableGuid);
+                    columnMetadataList.forEach(columnMetadata -> columnMetadata.setVersion(version));
                     for (ColumnMetadata columnMetadata : columnMetadataList) {
                         metadataDAO.addColumnMetadata(columnMetadata);
                     }

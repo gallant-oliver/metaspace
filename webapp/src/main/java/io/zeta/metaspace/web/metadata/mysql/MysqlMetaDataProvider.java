@@ -129,7 +129,6 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
 
     private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
         //先删除数据库中不存在的
-        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),foreignKeys,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey : foreignKeys) {
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
@@ -178,7 +177,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),indexes,null);
+
         List<AtlasEntity> ret = new ArrayList<>();
         for (Index index : indexes) {
             AtlasEntity indexEntity = new AtlasEntity(RDBMS_INDEX);
@@ -200,7 +199,6 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),columns,null);
         List<AtlasEntity> ret = new ArrayList<>();
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);

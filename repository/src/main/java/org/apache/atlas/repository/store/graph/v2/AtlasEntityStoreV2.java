@@ -880,7 +880,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                             continue;
                         }
                     } catch (Exception e) {
-                        LOG.error("判断重复插入失败", e);
+                        LOG.info("新的Entity，执行插入操作");
                     }
 
                     graphDiscoverer.validateAndNormalize(entity);
