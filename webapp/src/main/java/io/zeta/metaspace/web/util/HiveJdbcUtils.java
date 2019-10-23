@@ -39,63 +39,62 @@ public class HiveJdbcUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
-    private static String hiveUrl = "";
+    private static String[] hiveUrlArr ;
     private static String hivePrincipal = "";
+    private static String hiveUrlPrefix = "jdbc:hive2://";
 
 
     static {
         try {
             Class.forName(hivedriverClassName);
-            hiveUrl = MetaspaceConfig.getHiveUrl();
+            hiveUrlArr = MetaspaceConfig.getHiveUrl();
             hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Connection getConnection(String db) throws SQLException, IOException, AtlasBaseException {
-
+    public static Connection getConnection(String db, String user) throws AtlasBaseException {
         Connection connection = null;
-        String user = AdminUtils.getUserName();
         String jdbcUrl;
-        if (KerberosConfig.isKerberosEnable()) {
-            jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
+        if (hiveUrlArr != null && hiveUrlArr.length > 0) {
+            for (int i = 0; i < hiveUrlArr.length; i++) {
+                try {
+                    String hiveUrl = hiveUrlArr[i];
+                    if (KerberosConfig.isKerberosEnable()) {
+                        jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
+                    } else {
+                        jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
+                    }
+                    connection = DriverManager.getConnection(jdbcUrl);
+                    return connection;
+                } catch (Exception e) {
+                    LOG.error("获取hive连接失败", e);
+                }
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取hive连接失败");
         } else {
-            jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive的URL配置为空");
         }
-        return connection;
+
     }
 
     /**
      * 系统调度
      */
-    static Connection connection;
-    public static Connection getSystemConnection(String db) throws SQLException, IOException {
-            String user = "hive";
-
-            String jdbcUrl;
-            if (KerberosConfig.isKerberosEnable()) {
-                jdbcUrl = hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
-                //jdbcUrl += "?tez.am.resource.memory.mb=256";
-                connection = DriverManager.getConnection(jdbcUrl);
-            } else {
-                jdbcUrl = hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
-                connection = DriverManager.getConnection(jdbcUrl, user, "");
-                //jdbcUrl += "?tez.am.resource.memory.mb=256";
-            }
-        return connection;
+    public static Connection getSystemConnection(String db) throws AtlasBaseException {
+        String user = "hive";
+        return getConnection(db, user);
     }
 
     public static void execute(String sql) throws AtlasBaseException {
-
-        try (Connection conn = getConnection("default")) {
+        String user = AdminUtils.getUserName();
+        try (Connection conn = getConnection("", user)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             String stackTrace = ExceptionUtils.getStackTrace(e);
             if (stackTrace.contains("Permission denied: user=hive, access=WRITE"))
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,hive没有权限在此路径新建离线表");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败," + user + "没有权限在此路径新建离线表");
                 else
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,请检查表单信息和hive服务");
         }
@@ -103,7 +102,8 @@ public class HiveJdbcUtils {
 
 
     public static List<String> databases() throws AtlasBaseException {
-        try (Connection conn = getConnection("default")) {
+        String user = AdminUtils.getUserName();
+        try (Connection conn = getConnection("", user)) {
             List<String> ret = new ArrayList<>();
             Statement statement = conn.createStatement();
             ResultSet resultSet = statement.executeQuery("show databases");
@@ -187,7 +187,8 @@ public class HiveJdbcUtils {
     }
 
     public static void execute(String sql, String db) throws AtlasBaseException {
-        try (Connection conn = getConnection(db)) {
+        String user = AdminUtils.getUserName();
+        try (Connection conn = getConnection(db, user)) {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
@@ -195,7 +196,8 @@ public class HiveJdbcUtils {
     }
 
     public static boolean tableExists(String db, String tableName) throws AtlasBaseException {
-        try(Connection conn = getConnection(db);
+        String user = AdminUtils.getUserName();
+        try(Connection conn = getConnection(db, user);
             ResultSet resultSet = conn.createStatement().executeQuery("show tables in " + db + " like '" + tableName + "'")){
             boolean next = resultSet.next();
             resultSet.close();
