@@ -377,6 +377,7 @@ public abstract class MetaDataProvider {
         updatedTables.set(0);
         startTime.set(System.currentTimeMillis());
         endTime.set(0);
+        metaDataContext = new MetaDataContext();
         init(tableSchema);
         totalTables.set(tableNames.size());
         String instanceId = tableSchema.getInstance();
