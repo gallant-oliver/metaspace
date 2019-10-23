@@ -34,47 +34,52 @@ import java.util.List;
 public interface MetadataHistoryDAO {
 
     @Insert({"insert into table_metadata_history(guid,name,creator,updater,create_time,update_time,database_name,table_type,partition_table,table_format,store_location,description,status,version)",
-             "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.status},",
-             "COALESCE((select max(version)+1 from table_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
+            "values(#{metadata.guid},#{metadata.name},#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},#{metadata.databaseName},#{metadata.tableType},#{metadata.partitionTable},#{metadata.tableFormat},#{metadata.storeLocation},#{metadata.description},#{metadata.status},",
+            "COALESCE((select max(version)+1 from table_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
     public int addTableMetadata(@Param("metadata")TableMetadata metadata);
 
+    @Select("select max(version) from table_metadata_history where guid=#{tableGuid}")
+    public int getTableVersion(@Param("tableGuid")String tableGuid);
+
+    @Select("select count(*) from table_metadata_history where guid=#{metadata.guid} and create_time=#{metadata.createTime} and update_time=#{metadata.updateTime}")
+    public int getSameUpdateEntityCount(@Param("metadata")TableMetadata metadata);
+
     @Select({" <script>",
-             " select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status,",
-             " count(*)over() as total",
-             " from table_metadata_history where",
-             " guid=#{guid}",
-             " order by version desc" ,
-             " <if test='limit != null and limit!=-1'>",
-             " limit #{limit}",
-             " </if>",
-             " <if test='offset != null'>",
-             " offset #{offset}",
-             " </if>",
-             " </script>"})
+            " select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status,",
+            " count(*)over() as total",
+            " from table_metadata_history where",
+            " guid=#{guid}",
+            " order by version desc" ,
+            " <if test='limit != null and limit!=-1'>",
+            " limit #{limit}",
+            " </if>",
+            " <if test='offset != null'>",
+            " offset #{offset}",
+            " </if>",
+            " </script>"})
     public List<TableMetadata> getTableMetadataList(@Param("guid")String tableGuid, @Param("limit")int limit, @Param("offset") int offset);
 
     @Insert({"insert into column_metadata_history(guid,name,type,table_guid,description,status,partition_field,creator,updater,create_time,update_time,version)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},#{metadata.description},#{metadata.status},#{metadata.partitionField},",
-             "#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},",
-             "COALESCE((select max(version)+1 from column_metadata_history where guid=#{metadata.guid} GROUP BY guid),1))"})
+            "#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},#{metadata.version})"})
     public int addColumnMetadata(@Param("metadata")ColumnMetadata metadata);
 
     @Select({" <script>",
-             " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
-             " creator,updater,create_time as createTime,update_time as updateTime,",
-             " count(*)over() as total",
-             " from column_metadata_history where",
-             " table_guid=#{guid} and version=#{version}",
-             " <if test=\"query!=null and query.columnName != null and query.columnName!=''\">",
-             " and name like '%${query.columnName}%' ESCAPE '/'",
-             " </if>",
-             " <if test=\"query!=null and query.type != null and query.type!=''\">",
-             " and type like '%${query.type}%' ESCAPE '/'",
-             " </if>",
-             " <if test=\"query!=null and query.description != null and query.description!=''\">",
-             " and description like '%${query.description}%' ESCAPE '/'",
-             " </if>",
-             " order by version desc" ,
-             " </script>"})
+            " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
+            " creator,updater,create_time as createTime,update_time as updateTime,",
+            " count(*)over() as total",
+            " from column_metadata_history where",
+            " table_guid=#{guid} and version=#{version}",
+            " <if test=\"query!=null and query.columnName != null and query.columnName!=''\">",
+            " and name like '%${query.columnName}%' ESCAPE '/'",
+            " </if>",
+            " <if test=\"query!=null and query.type != null and query.type!=''\">",
+            " and type like '%${query.type}%' ESCAPE '/'",
+            " </if>",
+            " <if test=\"query!=null and query.description != null and query.description!=''\">",
+            " and description like '%${query.description}%' ESCAPE '/'",
+            " </if>",
+            " order by version desc" ,
+            " </script>"})
     public List<ColumnMetadata> getColumnMetadataList(@Param("guid")String tableGuid, @Param("version")Integer version, @Param("query")ColumnQuery.ColumnFilter query);
 
     @Select({"select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status",
@@ -82,19 +87,19 @@ public interface MetadataHistoryDAO {
     public TableMetadata getTableMetadata(@Param("guid")String tableGuid, @Param("version")Integer version);
 
     @Select({"select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status",
-             " from table_metadata_history where guid=#{guid} and version=(select max(version) from table_metadata_history where guid=#{guid})"})
+            " from table_metadata_history where guid=#{guid} and version=(select max(version) from table_metadata_history where guid=#{guid})"})
     public TableMetadata getLastTableMetadata(@Param("guid")String tableGuid);
 
     @Select({" select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
-             " creator,updater,create_time as createTime,update_time as updateTime",
-             " from column_metadata_history where table_guid=#{guid} and version=(select max(version) from column_metadata_history where table_guid=#{guid})"})
+            " creator,updater,create_time as createTime,update_time as updateTime",
+            " from column_metadata_history where table_guid=#{guid} and version=(select max(version) from column_metadata_history where table_guid=#{guid})"})
     public List<ColumnMetadata> getLastColumnMetadata(@Param("guid")String tableGuid);
 
     @Select({" <script>",
-             " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
-             " creator,updater,create_time as createTime,update_time as updateTime",
-             " from column_metadata_history where",
-             " table_guid=#{guid} and version=#{version}",
-             " </script>"})
+            " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
+            " creator,updater,create_time as createTime,update_time as updateTime",
+            " from column_metadata_history where",
+            " table_guid=#{guid} and version=#{version}",
+            " </script>"})
     public List<ColumnMetadata> getColumnMetadata(@Param("guid")String tableGuid, @Param("version")Integer version);
 }
