@@ -83,7 +83,6 @@ public abstract class MetaDataProvider {
     protected SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private boolean isSource;
-    private boolean isTable;
 
     public void set(AtlasEntityStore entitiesStore,DataSourceService  dataSourceService,AtlasTypeRegistry atlasTypeRegistry,AtlasGraph graph){
         this.entitiesStore=entitiesStore;
@@ -193,11 +192,7 @@ public abstract class MetaDataProvider {
      */
     protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,String instanceGuid) throws Exception {
         try {
-            AtlasEntity.AtlasEntityWithExtInfo tableInfo = registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid);
-            deleteColumnEntity(tableInfo);
-            deleteForeignKeyEntity(tableInfo);
-            deleteIndexEntity(tableInfo);
-
+            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid);
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(),tableName, e);
@@ -357,13 +352,10 @@ public abstract class MetaDataProvider {
 
         AtlasEntity.AtlasEntityWithExtInfo tableEntity;
         if (ret == null) {
-            isTable = false;
             tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null,instanceGuid);
             ret = registerEntity(tableEntity);
         } else {
-            isTable = true;
             LOG.info("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
-            deleteIndexEntity(ret);
             ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret,instanceGuid);
 
             createOrUpdateEntity(ret);
@@ -385,6 +377,7 @@ public abstract class MetaDataProvider {
         updatedTables.set(0);
         startTime.set(System.currentTimeMillis());
         endTime.set(0);
+        metaDataContext = new MetaDataContext();
         init(tableSchema);
         totalTables.set(tableNames.size());
         String instanceId = tableSchema.getInstance();
@@ -397,23 +390,23 @@ public abstract class MetaDataProvider {
             LOG.info("Found {} databases", databaseNames.size());
 
             //删除JanusGraph中已经不存在的database,以及database中的table
-            if (isSource){
-                String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_BY_STATE), instanceGuid, AtlasEntity.Status.ACTIVE);
-                List<AtlasVertex> dbVertices    = (List) graph.executeGremlinScript(databaseQuery, false);
-                for (AtlasVertex vertex : dbVertices) {
-                    if (Objects.nonNull(vertex)) {
-                        List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
-                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                        AtlasEntity                        dbEntity            = dbEntityWithExtInfo.getEntity();
-                        String                             databaseInGraph     = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                        if (databaseNames.stream().noneMatch(schema -> schema.getFullName().equalsIgnoreCase(databaseInGraph))) {
-                            deleteTableEntity(instanceGuid, databaseInGraph, new ArrayList<>());
-                            LOG.info("数据库{}已经在数据源删除，在metaspace中同样删除之", databaseInGraph);
-                            deleteEntity(dbEntity);
-                        }
-                    }
-                }
-            }
+//            if (isSource){
+//                String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_BY_STATE), instanceGuid, AtlasEntity.Status.ACTIVE);
+//                List<AtlasVertex> dbVertices    = (List) graph.executeGremlinScript(databaseQuery, false);
+//                for (AtlasVertex vertex : dbVertices) {
+//                    if (Objects.nonNull(vertex)) {
+//                        List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
+//                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+//                        AtlasEntity                        dbEntity            = dbEntityWithExtInfo.getEntity();
+//                        String                             databaseInGraph     = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
+//                        if (databaseNames.stream().noneMatch(schema -> schema.getFullName().equalsIgnoreCase(databaseInGraph))) {
+//                            deleteTableEntity(instanceGuid, databaseInGraph, new ArrayList<>());
+//                            LOG.info("数据库{}已经在数据源删除，在metaspace中同样删除之", databaseInGraph);
+//                            deleteEntity(dbEntity);
+//                        }
+//                    }
+//                }
+//            }
             //导入table
             for (Schema database : databaseNames) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntity;
@@ -582,10 +575,10 @@ public abstract class MetaDataProvider {
                 String                             tableNameInGraph    = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
                 if (tableNames.stream().noneMatch(table -> table.getName().equalsIgnoreCase(tableNameInGraph))) {
                     LOG.info("表{}已经在数据源删除，同样在metaspace中删除之", tableNameInGraph);
-                    deleteEntity(tableEntity);
                     deleteColumnEntity(dbEntityWithExtInfo);
                     deleteForeignKeyEntity(dbEntityWithExtInfo);
                     deleteIndexEntity(dbEntityWithExtInfo);
+                    deleteEntity(tableEntity);
                 }
             }
         }
@@ -593,9 +586,6 @@ public abstract class MetaDataProvider {
 
 
     protected void deleteColumnEntity(AtlasEntity.AtlasEntityWithExtInfo tableInfo) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
         AtlasEntity tableEntity = tableInfo.getEntity();
         List<AtlasObjectId> columns = new ArrayList<>();
         if (tableEntity.getAttribute(ATTRIBUTE_COLUMNS)!=null){
@@ -620,9 +610,6 @@ public abstract class MetaDataProvider {
     }
 
     protected void deleteForeignKeyEntity(AtlasEntity.AtlasEntityWithExtInfo tableInfo) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
         AtlasEntity tableEntity = tableInfo.getEntity();
         List<AtlasObjectId> foreignKeys = new ArrayList<>();
         if (tableEntity.getAttribute(ATTRIBUTE_FOREIGN_KEYS)!=null){
@@ -646,9 +633,6 @@ public abstract class MetaDataProvider {
     }
 
     protected void deleteIndexEntity(AtlasEntity.AtlasEntityWithExtInfo tableInfo) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
         AtlasEntity tableEntity = tableInfo.getEntity();
         List<AtlasObjectId> indexes = new ArrayList<>();
         if (tableEntity.getAttribute(ATTRIBUTE_INDEXES)!=null){
@@ -672,88 +656,6 @@ public abstract class MetaDataProvider {
         }
     }
 
-    protected void deleteColumnEntity(String instanceId, String databaseName,String tableName, Collection<Column> columnNames,Collection<String> columnNames2) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
-        String columnQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_COLUMN_BY_STATE), instanceId, databaseName.toLowerCase(), tableName.toLowerCase() ,AtlasEntity.Status.ACTIVE);
-        List<AtlasVertex> vertices = (List) graph.executeGremlinScript(columnQuery, false);
-        for (AtlasVertex vertex : vertices) {
-            if (Objects.nonNull(vertex)) {
-                List<String>                       attributes          = Lists.newArrayList(ATTRIBUTE_NAME, BaseFields.ATTRIBUTE_QUALIFIED_NAME);
-                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                AtlasEntity                        columnEntity         = dbEntityWithExtInfo.getEntity();
-                String                             columnNameInGraph    = columnEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                if (columnNames!=null){
-                    if (columnNames.stream().noneMatch(column -> column.getName().equalsIgnoreCase(columnNameInGraph))) {
-                        LOG.info("列{}已经在数据源删除，同样在metaspace中删除之", columnNameInGraph);
-                        deleteEntity(columnEntity);
-                    }
-                }else{
-                    if (columnNames2.stream().noneMatch(column -> column.equalsIgnoreCase(columnNameInGraph))) {
-                        LOG.info("列{}已经在数据源删除，同样在metaspace中删除之", columnNameInGraph);
-                        deleteEntity(columnEntity);
-                    }
-                }
-
-            }
-        }
-    }
-
-    protected void deleteForeignKeyEntity(String instanceId, String databaseName, String tableName, Collection<ForeignKey> foreignKeyNames,Collection<String> foreignKeyNames2) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
-        String foreignKeyQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_FOREIGNKEY_BY_STATE), instanceId, databaseName, tableName ,AtlasEntity.Status.ACTIVE);
-        List<AtlasVertex> vertices = (List) graph.executeGremlinScript(foreignKeyQuery, false);
-        for (AtlasVertex vertex : vertices) {
-            if (Objects.nonNull(vertex)) {
-                List<String>                       attributes          = Lists.newArrayList(ATTRIBUTE_NAME, BaseFields.ATTRIBUTE_QUALIFIED_NAME);
-                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                AtlasEntity                        foreignKeyEntity         = dbEntityWithExtInfo.getEntity();
-                String                             foreignKeyNameInGraph    = foreignKeyEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                if (foreignKeyNames!=null){
-                    if (foreignKeyNames.stream().noneMatch(foreignKey -> foreignKey.getName().equalsIgnoreCase(foreignKeyNameInGraph))) {
-                        LOG.info("键{}已经在数据源删除，同样在metaspace中删除之", foreignKeyNameInGraph);
-                        deleteEntity(foreignKeyEntity);
-                    }
-                }else{
-                    if (foreignKeyNames2.stream().noneMatch(foreignKey -> foreignKey.equalsIgnoreCase(foreignKeyNameInGraph))) {
-                        LOG.info("键{}已经在数据源删除，同样在metaspace中删除之", foreignKeyNameInGraph);
-                        deleteEntity(foreignKeyEntity);
-                    }
-                }
-            }
-        }
-    }
-
-    protected void deleteIndexEntity(String instanceId, String databaseName,String tableName, Collection<Index> indexNames,Collection<String> indexNames2) throws AtlasBaseException {
-        if (!isTable){
-            return;
-        }
-        String indexQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_INDEX_BY_STATE), instanceId, databaseName, tableName ,AtlasEntity.Status.ACTIVE);
-        List<AtlasVertex> vertices = (List) graph.executeGremlinScript(indexQuery, false);
-        for (AtlasVertex vertex : vertices) {
-            if (Objects.nonNull(vertex)) {
-                List<String>                       attributes          = Lists.newArrayList(ATTRIBUTE_NAME, BaseFields.ATTRIBUTE_QUALIFIED_NAME);
-                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                AtlasEntity                        indexEntity         = dbEntityWithExtInfo.getEntity();
-                String                             indexNameInGraph    = indexEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                if (indexNames!=null){
-                    if (indexNames.stream().noneMatch(index -> index.getName().equalsIgnoreCase(indexNameInGraph))) {
-                        LOG.info("索引{}已经在数据源删除，同样在metaspace中删除之", indexNameInGraph);
-                        deleteEntity(indexEntity);
-                    }
-                }else{
-                    if (indexNames2.stream().noneMatch(index -> index.equalsIgnoreCase(indexNameInGraph))) {
-                        LOG.info("索引{}已经在数据源删除，同样在metaspace中删除之", indexNameInGraph);
-                        deleteEntity(indexEntity);
-                    }
-                }
-
-            }
-        }
-    }
 
     private void deleteEntity(AtlasEntity tableEntity) throws AtlasBaseException {
         AtlasEntityType     type     = (AtlasEntityType) atlasTypeRegistry.getType(tableEntity.getTypeName());

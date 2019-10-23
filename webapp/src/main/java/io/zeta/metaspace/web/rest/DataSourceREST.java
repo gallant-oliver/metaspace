@@ -88,7 +88,6 @@ public class DataSourceREST {
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     private Map<String,AtomicBoolean> importings = new LRUMap(30);
-    private AtomicBoolean importing = new AtomicBoolean(false);
     @Autowired
     private MetaDataService metadataService;
 
@@ -393,6 +392,7 @@ public class DataSourceREST {
             LOG.error("获取当前用户的userId出错", e);
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
         }
+        AtomicBoolean importing;
         if (importings.containsKey(sourceId)){
             importing = importings.get(sourceId);
         }else{
