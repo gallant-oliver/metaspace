@@ -224,7 +224,7 @@ public abstract class MetaDataProvider {
      * @param databaseName
      * @return
      */
-    protected abstract AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity instanceEntity, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName);
+    protected abstract AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity.AtlasEntityWithExtInfo instance, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName);
 
     /**
      * 将表信息组装成atlas entity
@@ -297,31 +297,6 @@ public abstract class MetaDataProvider {
         return findEntity(getInstanceTypeName(), getInstanceQualifiedName(instanceId));
     }
 
-
-    /**
-     * Checks if db is already registered, else creates and registers db entity
-     *
-     *
-     * @param entity
-     * @param databaseName
-     * @return
-     * @throws Exception
-     */
-    protected AtlasEntity.AtlasEntityWithExtInfo registerDatabase(AtlasEntity entity, String instanceId, String databaseName) throws Exception {
-        AtlasEntity.AtlasEntityWithExtInfo ret = findDatabase(instanceId, databaseName);
-
-        AtlasEntity.AtlasEntityWithExtInfo dbEntity;
-        if (ret == null) {
-            dbEntity = toDBEntity(entity, null, instanceId, databaseName);
-            ret = registerEntity(dbEntity);
-        } else {
-            LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, ret.getEntity().getGuid());
-            ret = toDBEntity(entity, ret, instanceId, databaseName);
-            createOrUpdateEntity(ret);
-        }
-
-        return ret;
-    }
 
     /**
      * 获取数据源类型
