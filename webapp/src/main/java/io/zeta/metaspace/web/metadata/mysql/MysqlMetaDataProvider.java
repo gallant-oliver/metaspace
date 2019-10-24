@@ -65,7 +65,7 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
             if (metaDataContext.isKownEntity(dbQualifiedName)) {
                 dbEntity = metaDataContext.getEntity(dbQualifiedName);
             }else {
-                dbEntity = toDBEntity(instanceEntity.getEntity(), null, instanceId, schema.getFullName());
+                dbEntity = toDBEntity(instanceEntity, null, instanceId, schema.getFullName());
                 metaDataContext.putEntity(dbQualifiedName, dbEntity);
             }
             dbEntities.add(dbEntity.getEntity());
@@ -77,11 +77,25 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
     }
 
     @Override
-    protected AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity instanceEntity, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity.AtlasEntityWithExtInfo instance, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName) {
+        AtlasEntity instanceEntity = instance.getEntity();
         if (dbEntity == null) {
             dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getDatabaseTypeName()));
         }
+
+        String DBId = null;
+        if (instance.getReferredEntities()!=null){
+            List<String> DBIds = instance.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(getDatabaseTypeName())&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(databaseName)).map(entity->entity.getGuid()).collect(Collectors.toList());
+            if(DBIds!=null && DBIds.size()!=0){
+                DBId = DBIds.get(0);
+            }
+        }
+
         AtlasEntity entity = dbEntity.getEntity();
+        if (DBId!=null) {
+            entity.setGuid(DBId);
+        }
+
         entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
         entity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
         entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
@@ -134,14 +148,15 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey : foreignKeys) {
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
-
-            List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(foreignKey.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
-            String keyId = null;
-            if(keyIds!=null && keyIds.size()!=0){
-                keyId = keyIds.get(0);
-            }
-            if (keyId!=null) {
-                foreignEntity.setGuid(keyId);
+            if (tableEntity.getReferredEntities()!=null){
+                List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(foreignKey.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String keyId = null;
+                if(keyIds!=null && keyIds.size()!=0){
+                    keyId = keyIds.get(0);
+                }
+                if (keyId!=null) {
+                    foreignEntity.setGuid(keyId);
+                }
             }
             foreignEntity.setAttribute(ATTRIBUTE_NAME, foreignKey.getName());
             foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
@@ -193,14 +208,15 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         for (Index index : indexes) {
             AtlasEntity indexEntity = new AtlasEntity(RDBMS_INDEX);
 
-            List<String> indexIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_INDEX)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(index.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
-            String indexId = null;
-            if(indexIds!=null && indexIds.size()!=0){
-                indexId = indexIds.get(0);
-            }
-
-            if (indexId!=null) {
-                indexEntity.setGuid(indexId);
+            if (tableEntity.getReferredEntities()!=null){
+                List<String> indexIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_INDEX)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(index.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String indexId = null;
+                if(indexIds!=null && indexIds.size()!=0){
+                    indexId = indexIds.get(0);
+                }
+                if (indexId!=null) {
+                    indexEntity.setGuid(indexId);
+                }
             }
             //名称统一小写
             indexEntity.setAttribute(ATTRIBUTE_NAME, index.getName().toLowerCase());
@@ -225,18 +241,15 @@ public class MysqlMetaDataProvider extends MetaDataProvider implements IMetaData
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
             //再次导入时，要保持guid一致，不然可能会导致entity在没有变化的情况下，依旧更新
-            List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(column.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
-            List<String> columnIds1 = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE).map(entity->entity.getGuid()).collect(Collectors.toList());
-            List<String> columnIds2 = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)).map(entity->entity.getGuid()).collect(Collectors.toList());
-            List<String> columnIds3 = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(column.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
-
-
-            String columnId = null;
-            if(columnIds!=null && columnIds.size()!=0){
-                columnId = columnIds.get(0);
-            }
-            if (columnId!=null) {
-                columnEntity.setGuid(columnId);
+            if (tableEntity.getReferredEntities()!=null){
+                List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(column.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String columnId = null;
+                if(columnIds!=null && columnIds.size()!=0){
+                    columnId = columnIds.get(0);
+                }
+                if (columnId!=null) {
+                    columnEntity.setGuid(columnId);
+                }
             }
             columnEntity.setAttribute(ATTRIBUTE_NAME, column.getName());
             columnEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), column.getName()));
