@@ -47,6 +47,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -65,6 +66,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
@@ -75,15 +77,14 @@ public class TaskManageREST {
 
     @Autowired
     TaskManageService taskManageService;
-
     @Autowired
     SearchService searchService;
-
     @Autowired
     BusinessService businessService;
-
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    RuleTemplateService ruleTemplateService;
 
     private static final int CategoryType = 4;
 
@@ -422,6 +423,15 @@ public class TaskManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ExecutionLog getExecutionLogList(@PathParam("ruleExecutionId")String ruleExecutionId) throws AtlasBaseException {
         return taskManageService.getExecutionLogList(ruleExecutionId);
+    }
+
+    @POST
+    @Path("/{ruleExecutionId}/relation")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response addReport2RuleType(@PathParam("ruleExecutionId")String ruleExecutionId, List<String> ruleTypeList) throws AtlasBaseException {
+        ruleTemplateService.addReport2RuleType(ruleExecutionId, ruleTypeList);
+        return Response.status(200).entity("success").build();
     }
 
 }
