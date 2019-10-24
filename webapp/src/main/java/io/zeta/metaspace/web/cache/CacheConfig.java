@@ -2,11 +2,14 @@ package io.zeta.metaspace.web.cache;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.ehcache.EhCacheCacheManager;
 import org.springframework.cache.ehcache.EhCacheManagerUtils;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +21,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import redis.clients.jedis.JedisPoolConfig;
+
+import org.slf4j.Logger;
 
 /*
  * @description
@@ -88,6 +93,40 @@ public class CacheConfig extends CachingConfigurerSupport {
             ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
             Resource location = resolver.getResource("classpath:ehcache-setting.xml");
             return new EhCacheCacheManager(EhCacheManagerUtils.buildCacheManager(location));
+        }
+    }
+
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new RedisCacheErrorHandler();
+    }
+
+    public static class RedisCacheErrorHandler implements CacheErrorHandler {
+
+        private static final Logger log = LoggerFactory.getLogger(RedisCacheErrorHandler.class);
+
+        @Override
+        public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+            log.warn("handleCacheGetError key = {}, value = {}", key, cache);
+            log.error("cache get error", exception);
+        }
+
+        @Override
+        public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+            log.warn("handleCachePutError key = {}, value = {}", key, cache);
+            log.error("cache put error", exception);
+        }
+
+        @Override
+        public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+            log.warn("handleCacheEvictError key = {}, value = {}", key, cache);
+            log.error("cache evict error", exception);
+        }
+
+        @Override
+        public void handleCacheClearError(RuntimeException exception, Cache cache) {
+            log.warn("handleCacheClearError value = {}", cache);
+            log.error("cache clear error", exception);
         }
     }
 }
