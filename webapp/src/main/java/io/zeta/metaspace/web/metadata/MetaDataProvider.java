@@ -550,9 +550,6 @@ public abstract class MetaDataProvider {
                 String                             tableNameInGraph    = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
                 if (tableNames.stream().noneMatch(table -> table.getName().equalsIgnoreCase(tableNameInGraph))) {
                     LOG.info("表{}已经在数据源删除，同样在metaspace中删除之", tableNameInGraph);
-                    deleteColumnEntity(dbEntityWithExtInfo);
-                    deleteForeignKeyEntity(dbEntityWithExtInfo);
-                    deleteIndexEntity(dbEntityWithExtInfo);
                     deleteEntity(tableEntity);
                 }
             }
