@@ -24,7 +24,6 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
-import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -46,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -104,15 +104,30 @@ public class DataStandardService {
     }
 
     public List<DataStandard> getByNumber(String number) throws AtlasBaseException {
-        return dataStandardDAO.getByNumber(number);
+        try {
+            return dataStandardDAO.getByNumber(number);
+        } catch (Exception e) {
+            LOG.error("获取标准失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标准失败");
+        }
     }
 
     public void deleteByNumber(String number) throws AtlasBaseException {
-        dataStandardDAO.deleteByNumber(number);
+        try {
+            dataStandardDAO.deleteByNumber(number);
+        } catch (Exception e) {
+            LOG.error("删除失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+        }
     }
 
     public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
-        dataStandardDAO.deleteByNumberList(numberList);
+        try {
+            dataStandardDAO.deleteByNumberList(numberList);
+        } catch (Exception e) {
+            LOG.error("批量删除失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "批量删除失败");
+        }
     }
 
     /**
@@ -133,12 +148,10 @@ public class DataStandardService {
     public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters) throws AtlasBaseException {
         List<DataStandard> list = queryByCatetoryId(categoryId, parameters);
         PageResult<DataStandard> pageResult = new PageResult<>();
-        //long totalSize = dataStandardDAO.countByByCatetoryId(categoryId);
         long totalSize = 0;
         if (list.size()!=0){
             totalSize = list.get(0).getTotal();
         }
-        //pageResult.setOffset(parameters.getOffset());
         pageResult.setTotalSize(totalSize);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -266,13 +279,13 @@ public class DataStandardService {
     public void importDataStandard(String categoryId, File fileInputStream) throws Exception {
         List<DataStandard> dataList = file2Data(fileInputStream);
         if(dataList.isEmpty()){
-            throw new AtlasBaseException("没有数据。");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空");
         }
         List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
         List<String> existDataStandard = queryByNumberList(numberList).stream().map(DataStandard::getNumber).collect(Collectors.toList());
         if (!existDataStandard.isEmpty()) {
             List<String> showList = existDataStandard.subList(0, Math.min(existDataStandard.size(), 5));
-            throw new AtlasBaseException("标准编号为: " + Joiner.on("、").join(showList) + "已存在，请修改后上传。");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号为: " + Joiner.on("、").join(showList) + "已存在，请修改后上传。");
         }
         batchInsert(categoryId, dataList);
     }
@@ -311,13 +324,28 @@ public class DataStandardService {
                 dataList.add(data);
             }
             return dataList;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
     public List<CategoryPrivilege> getCategory(Integer categoryType) throws AtlasBaseException {
-        return dataManageService.getAll(categoryType);
+        List<CategoryPrivilege> result = dataManageService.getAll(categoryType);
+        for (CategoryPrivilege category : result) {
+            String categoryGuid = category.getGuid();
+            String pattern = "^Standard-([1-9])+-l$";
+            CategoryPrivilege.Privilege privilege = null;
+            if(Pattern.matches(pattern, categoryGuid)) {
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false);
+            } else {
+                privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+            }
+            category.setPrivilege(privilege);
+        }
+        return result;
     }
 
     public CategoryPrivilege addCategory(CategoryInfoV2 categoryInfo) throws Exception {

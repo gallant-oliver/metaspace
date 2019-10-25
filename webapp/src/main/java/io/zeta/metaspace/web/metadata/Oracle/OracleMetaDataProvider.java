@@ -23,6 +23,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -102,7 +103,7 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             if (metaDataContext.isKownEntity(dbQualifiedName)) {
                 dbEntity = metaDataContext.getEntity(dbQualifiedName);
             }else {
-                dbEntity = toDBEntity(instanceEntity.getEntity(), null, instanceId, schema.getFullName());
+                dbEntity = toDBEntity(instanceEntity, null, instanceId, schema.getFullName());
                 metaDataContext.putEntity(dbQualifiedName, dbEntity);
             }
             dbEntities.add(dbEntity.getEntity());
@@ -114,11 +115,26 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
     }
 
     @Override
-    protected AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity instanceEntity, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toDBEntity(AtlasEntity.AtlasEntityWithExtInfo instance, AtlasEntity.AtlasEntityWithExtInfo dbEntity, String instanceId, String databaseName) {
+        AtlasEntity instanceEntity = instance.getEntity();
         if(dbEntity == null){
             dbEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getDatabaseTypeName()));
         }
+
+        String DBId = null;
+        if (instance.getReferredEntities()!=null){
+            List<String> DBIds = instance.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(getDatabaseTypeName())&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(databaseName)).map(entity->entity.getGuid()).collect(Collectors.toList());
+            if(DBIds!=null && DBIds.size()!=0){
+                DBId = DBIds.get(0);
+            }
+        }
+
         AtlasEntity entity = dbEntity.getEntity();
+
+        if (DBId!=null) {
+            entity.setGuid(DBId);
+        }
+
         entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
         entity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
         entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
@@ -150,13 +166,13 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         List<AtlasEntity> indexes =null;
         List<AtlasEntity> foreignKeys = null;
         if (addTableNames.stream().anyMatch(table1 -> table1.getName().equals(tableName.getName()))){
-            columns = toColumns(table, databaseName, instanceGuid,tableName);
-            indexes = toIndexes(columns, table, databaseName, instanceGuid,tableName);;
-            foreignKeys = toForeignKeys(columns, table, dbEntity, instanceId, databaseName,tableName);
+            columns = toColumns(tableEntity, databaseName, instanceGuid,tableName);
+            indexes = toIndexes(columns, tableEntity, databaseName, instanceGuid,tableName);;
+            foreignKeys = toForeignKeys(columns, tableEntity, dbEntity, instanceId, databaseName,tableName);
         }else {
-            columns = toColumns(tableName.getColumns(), table, databaseName, instanceGuid);
-            indexes = toIndexes(tableName.getIndexes(), columns, table, databaseName, instanceGuid);
-            foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, table, dbEntity, instanceId, databaseName);
+            columns = toColumns(tableName.getColumns(), tableEntity, databaseName, instanceGuid);
+            indexes = toIndexes(tableName.getIndexes(), columns, tableEntity, databaseName, instanceGuid);
+            foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, tableEntity, dbEntity, instanceId, databaseName);
         }
         table.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
         for (AtlasEntity column : columns) {
@@ -173,12 +189,23 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return tableEntity;
     }
 
-    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
-        //先删除数据库中不存在的
-        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),foreignKeys,null);
+    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
+        AtlasEntity table = tableEntity.getEntity();
         List<AtlasEntity> ret = new ArrayList<>();
         for (ForeignKey foreignKey:foreignKeys){
             AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
+
+            if (tableEntity.getReferredEntities()!=null){
+                List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(foreignKey.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String keyId = null;
+                if(keyIds!=null && keyIds.size()!=0){
+                    keyId = keyIds.get(0);
+                }
+                if (keyId!=null) {
+                    foreignEntity.setGuid(keyId);
+                }
+            }
+
             foreignEntity.setAttribute(ATTRIBUTE_NAME,foreignKey.getName());
             foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME,getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
             foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
@@ -188,8 +215,9 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return ret;
     }
 
-    private List<AtlasEntity> toForeignKeys(List<AtlasEntity> columns, AtlasEntity table, AtlasEntity dbEntity, String instanceGuid,String databaseName,Table tableName) throws AtlasBaseException {
+    private List<AtlasEntity> toForeignKeys(List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity, AtlasEntity dbEntity, String instanceGuid,String databaseName,Table tableName) throws AtlasBaseException {
         List<AtlasEntity> ret = new ArrayList<>();
+        AtlasEntity table = tableEntity.getEntity();
         String query = "SELECT NULL AS table_cat,\n" +
                        "       c.owner AS table_schem,\n" +
                        "       c.table_name,\n" +
@@ -215,6 +243,17 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
                 AtlasEntity foreignEntity = map.get(name);
                 if ( foreignEntity == null){
                     foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
+                    if (tableEntity.getReferredEntities()!=null){
+                        List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(name)).map(entity->entity.getGuid()).collect(Collectors.toList());
+                        String keyId = null;
+                        if(keyIds!=null && keyIds.size()!=0){
+                            keyId = keyIds.get(0);
+                        }
+                        if (keyId!=null) {
+                            foreignEntity.setGuid(keyId);
+                        }
+                    }
+
                     map.put(name,foreignEntity);
                     foreignEntity.setAttribute(ATTRIBUTE_NAME,name);
                     foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME,getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), name));
@@ -237,7 +276,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
         //删除数据库中不存在的
-        deleteForeignKeyEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,map.keySet());
         return ret;
     }
 
@@ -257,11 +295,23 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return columnObjectIds;
     }
 
-    private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),indexes,null);
+    private List<AtlasEntity> toIndexes(Collection<Index> indexes, List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity,String databaseName, String instanceGuid) throws AtlasBaseException {
+        AtlasEntity table = tableEntity.getEntity();
         List<AtlasEntity> ret = new ArrayList<>();
         for (Index index : indexes) {
             AtlasEntity indexEntity = new AtlasEntity(RDBMS_INDEX);
+            if (tableEntity.getReferredEntities()!=null){
+                List<String> indexIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_INDEX)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(index.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String indexId = null;
+                if(indexIds!=null && indexIds.size()!=0){
+                    indexId = indexIds.get(0);
+                }
+
+                if (indexId!=null) {
+                    indexEntity.setGuid(indexId);
+                }
+            }
+
             //名称统一小写
             indexEntity.setAttribute(ATTRIBUTE_NAME, index.getName().toLowerCase());
             indexEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), index.getName()));
@@ -281,12 +331,23 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return ret;
     }
 
-    private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity table,String databaseName, String instanceGuid) throws AtlasBaseException {
-        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),columns,null);
+    private List<AtlasEntity> toColumns(List<Column> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity,String databaseName, String instanceGuid) throws AtlasBaseException {
         List<AtlasEntity> ret = new ArrayList<>();
+        AtlasEntity table = tableEntity.getEntity();
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
             //再次导入时，要保持guid一致，不然可能会导致entity在没有变化的情况下，依旧更新
+            if (tableEntity!=null){
+                List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(column.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                String columnId = null;
+                if(columnIds!=null && columnIds.size()!=0){
+                    columnId = columnIds.get(0);
+                }
+                if (columnId!=null) {
+                    columnEntity.setGuid(columnId);
+                }
+            }
+
             columnEntity.setAttribute(ATTRIBUTE_NAME, column.getName());
             columnEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), column.getName()));
             columnEntity.setAttribute(ATTRIBUTE_DATA_TYPE, column.getColumnDataType());
@@ -301,8 +362,8 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return ret;
     }
 
-    private List<AtlasEntity> toColumns(AtlasEntity table,String databaseName, String instanceGuid,Table tableName) throws AtlasBaseException {
-
+    private List<AtlasEntity> toColumns(AtlasEntity.AtlasEntityWithExtInfo tableEntity,String databaseName, String instanceGuid,Table tableName) throws AtlasBaseException {
+        AtlasEntity table = tableEntity.getEntity();
         String tableTmp = tableName.getName().replace("/", "//").replace("%","/%").replace("_","/_");
         databaseName = databaseName.replace("/", "//").replace("%","/%").replace("_","/_");
         List<String> columnNames = new ArrayList<>();
@@ -345,7 +406,19 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             while(results.next()){
                 AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
                 //再次导入时，要保持guid一致，不然可能会导致entity在没有变化的情况下，依旧更新
-                columnEntity.setAttribute(ATTRIBUTE_NAME, results.getString("column_name"));
+                String columnName = results.getString("column_name");
+                if (tableEntity!=null){
+                    List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(columnName)).map(entity->entity.getGuid()).collect(Collectors.toList());
+                    String columnId = null;
+                    if(columnIds!=null && columnIds.size()!=0){
+                        columnId = columnIds.get(0);
+                    }
+                    if (columnId!=null) {
+                        columnEntity.setGuid(columnId);
+                    }
+                }
+
+                columnEntity.setAttribute(ATTRIBUTE_NAME, columnName);
                 columnEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), results.getString("column_name")));
                 columnEntity.setAttribute(ATTRIBUTE_DATA_TYPE, results.getString("data_type"));
                 columnEntity.setAttribute(ATTRIBUTE_LENGTH, results.getString("column_size"));
@@ -361,11 +434,11 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         }catch (SQLException e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-        deleteColumnEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,columnNames);
         return ret;
     }
 
-    private List<AtlasEntity> toIndexes( List<AtlasEntity> columns, AtlasEntity table,String databaseName, String instanceGuid,Table tableName) throws AtlasBaseException {
+    private List<AtlasEntity> toIndexes( List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity,String databaseName, String instanceGuid,Table tableName) throws AtlasBaseException {
+        AtlasEntity table = tableEntity.getEntity();
         List<AtlasEntity> ret = new ArrayList<>();
         String query = "select null as table_cat,\n" +
                        "       i.owner as table_schem,\n" +
@@ -403,6 +476,16 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
                 AtlasEntity indexEntity = map.get(indexName);
                 if ( indexEntity == null){
                     indexEntity = new AtlasEntity(RDBMS_INDEX);
+                    if (tableEntity.getReferredEntities()!=null){
+                        List<String> indexIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_INDEX)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(indexName.toLowerCase())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                        String indexId = null;
+                        if(indexIds!=null && indexIds.size()!=0){
+                            indexId = indexIds.get(0);
+                        }
+                        if (indexId!=null) {
+                            indexEntity.setGuid(indexId);
+                        }
+                    }
                     indexEntity.setAttribute(ATTRIBUTE_NAME, indexName.toLowerCase());
                     indexEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), indexName));
                     indexEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
@@ -428,7 +511,6 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
             LOG.info("获取表"+table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString()+"索引失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
-        deleteIndexEntity(instanceGuid,databaseName,table.getAttribute(ATTRIBUTE_NAME).toString(),null,map.keySet());
         return ret;
     }
 

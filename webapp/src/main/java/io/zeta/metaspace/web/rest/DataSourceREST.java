@@ -39,6 +39,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -84,7 +87,7 @@ public class DataSourceREST {
     @Autowired
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
-    private AtomicBoolean importing = new AtomicBoolean(false);
+    private Map<String,AtomicBoolean> importings = new LRUMap(30);
     @Autowired
     private MetaDataService metadataService;
 
@@ -389,7 +392,13 @@ public class DataSourceREST {
             LOG.error("获取当前用户的userId出错", e);
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
         }
-
+        AtomicBoolean importing;
+        if (importings.containsKey(sourceId)){
+            importing = importings.get(sourceId);
+        }else{
+            importing = new AtomicBoolean(false);
+            importings.put(sourceId,importing);
+        }
         if (!importing.getAndSet(true)) {
             CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);

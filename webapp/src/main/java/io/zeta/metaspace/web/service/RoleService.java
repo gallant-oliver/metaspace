@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -115,9 +116,10 @@ public class RoleService {
         String userId = user.getUserId();
         //roleDAO.deleteRole(roleId);
         //删除更新状态
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(), roleId);
+        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(),true, roleId, timestamp);
         return "success";
     }
 
@@ -213,8 +215,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(roleId, users);
+            roleDAO.updateUsers(roleId, users, true, timestamp);
         return "success";
     }
 
@@ -245,21 +248,28 @@ public class RoleService {
                 if (Objects.isNull(userId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户Id不能为空");
                 }
-                String userRole = usersService.getRoleIdByUserId(userId);
-                if (Objects.isNull(userRole)) {
+                User userInfo = userDAO.getUserInfo(userId);
+                if (Objects.isNull(userInfo)) {
+                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                     User user = new User();
                     user.setUserId(userId);
                     user.setRoleId(roleId);
+                    user.setValid(true);
+                    user.setCreateTime(timestamp);
+                    user.setUpdateTime(timestamp);
                     userDAO.addUser(user);
-                } else if (userRole.equals("1")) {
+                } else if ("1".equals(userInfo.getRoleId())) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, userId + "为平台管理员，不允许修改平台管理员用户");
                 } else {
                     userIds.add(userId);
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (userIds.size() > 0) {
-                roleDAO.updateUsers(roleId, userIds);
+                roleDAO.updateUsers(roleId, userIds, true, timestamp);
             }
+            //更新用户信息
+            updateUserInfo();
         }
     }
 
@@ -271,8 +281,9 @@ public class RoleService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
             }
         }
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (users.size() > 0)
-            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
         return "success";
     }
 
@@ -303,8 +314,9 @@ public class RoleService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
                 }
             }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (users.size() > 0) {
-                roleDAO.updateUsers(SystemRole.GUEST.getCode(), users);
+                roleDAO.updateUsers(null, users, false, timestamp);
             }
         }
     }
@@ -629,12 +641,14 @@ public class RoleService {
     @Transactional
     public void updateUserInfo() throws AtlasBaseException {
         try {
+            Timestamp updateTime = new Timestamp(System.currentTimeMillis());
             List<String> userIdList = roleDAO.getUserIdList();
             for (String userId : userIdList) {
                 User user = getUserInfo(userId);
                 if(null==user || "".equals(user.getUsername())) {
-                    continue;
+                    roleDAO.deleteUser(userId, updateTime);
                 }
+                user.setUpdateTime(updateTime);
                 roleDAO.updateUserInfo(user);
             }
         } catch (Exception e) {

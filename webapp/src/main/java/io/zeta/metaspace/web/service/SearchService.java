@@ -20,7 +20,9 @@ import io.zeta.metaspace.web.metadata.RMDBEnum;
 import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -30,6 +32,7 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,7 +195,7 @@ public class SearchService {
         return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
     }
 
-    public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
+    public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException, AtlasException {
         TableShow tableShow = new TableShow();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
         AtlasEntity entity = info.getEntity();
@@ -206,7 +209,11 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from " + name + " limit " + guidCount.getCount();
-        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+
+        Configuration conf = ApplicationProperties.get();
+        String user = AdminUtils.getUserName();
+        String secure = conf.getString("metaspace.secureplus.enable");
+        try (Connection conn = secure.equals("false")?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -234,7 +241,7 @@ public class SearchService {
 
     }
 
-    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException, IOException {
+    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, SQLException, IOException, AtlasException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
@@ -255,7 +262,10 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        try (Connection conn = HiveJdbcUtils.getConnection(dbDisplayText);
+        String user = AdminUtils.getUserName();
+        Configuration conf = ApplicationProperties.get();
+        String secure = conf.getString("metaspace.secureplus.enable");
+        try (Connection conn = secure.equals("false")?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {

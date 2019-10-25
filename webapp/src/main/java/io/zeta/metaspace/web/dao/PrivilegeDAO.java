@@ -61,7 +61,7 @@ public interface PrivilegeDAO {
     })
     public int updateRolePrivilege(@Param("privilegeId")String privilegeId, @Param("roleIds")List<String> roleIds);
 
-    @Delete("delete from role2Category where roleId in (select roleId from role where privilegeId=#{privilegeId}) and categoryId in (select categoryId from role2Category join category on role2Category.categoryId=category.guid where category.categoryType=#{type})")
+    @Delete("delete from role2Category where roleId in (select roleId from role where privilegeId=#{privilegeId} and valid=true) and categoryId in (select categoryId from role2Category join category on role2Category.categoryId=category.guid where category.categoryType=#{type})")
     public int deleteRole2Category(@Param("privilegeId")String privilegeId, @Param("type")int type);
 
     @Select("select * from module")
@@ -113,7 +113,7 @@ public interface PrivilegeDAO {
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId=#{privilegeId})")
     public List<Module> getRelatedModuleWithPrivilege(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId}) and valid=true) and moduleId=#{moduleId}")
+    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true) and moduleId=#{moduleId}")
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
 
     @Select({" <script>",

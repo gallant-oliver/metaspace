@@ -42,6 +42,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -118,7 +119,8 @@ public class MetaDataService {
 
     @Autowired
     private OracleMetaDataProvider oracleMetaDataProvider;
-    private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new LRUMap(50);
+    private Map<String, String> errorMap = new LRUMap(50);
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -167,7 +169,10 @@ public class MetaDataService {
 
             return table;
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
+            if (e.getMessage().contains("无效的实体ID")){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
+            }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息"+e.getMessage());
         }
     }
 
@@ -1389,21 +1394,24 @@ public class MetaDataService {
      */
     public void synchronizeMetaData(String databaseType, TableSchema tableSchema){
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
+        if (databaseTypeEntity==DatabaseType.HIVE){
+            tableSchema.setInstance("hive");
+        }
         if (null == databaseTypeEntity) {
-            errorMessage = String.format("not support database type %s", databaseType);
-            LOG.error(errorMessage);
+            errorMap.put(tableSchema.getInstance(),String.format("not support database type %s", databaseType));
+            LOG.error(errorMap.get(tableSchema.getInstance()));
             return;
         }
-        errorMessage = "";
         IMetaDataProvider metaDataProvider = null;
+        errorMap.put(tableSchema.getInstance(),"");
         try {
             metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity,tableSchema);
             metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
-            errorMessage = "同步元数据出错，无法连接到hive";
+            errorMap.put(tableSchema.getInstance(),"同步元数据出错，无法连接到hive");
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
-            errorMessage = String.format("同步元数据出错，%s", e.getMessage());
+            errorMap.put(tableSchema.getInstance(),String.format("同步元数据出错，%s", e.getMessage()));
             LOG.error("import metadata error", e);
         }
         if (null != metaDataProvider) {
@@ -1417,27 +1425,21 @@ public class MetaDataService {
             case HIVE:
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
-                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
                     mysqlMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
                     metaDataProvider=mysqlMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
-                    if (metaDataProvider.getEndTime().get()==0){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
-                    }
                 }
                 break;
             case ORACLE:
-                if (metaDataProviderMap.get(tableSchema.getInstance())==null) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
                     oracleMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
                     metaDataProvider=oracleMetaDataProvider;
                 }else{
                     metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
-                    if (metaDataProvider.getEndTime().get()==0){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源正在采集");
-                    }
                 }
                 break;
             default:
@@ -1462,36 +1464,33 @@ public class MetaDataService {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
-            errorMessage = String.format("not support database type %s", databaseType);
-            LOG.error(errorMessage);
-            progress.setError(errorMessage);
+            errorMap.put(sourceId,String.format("not support database type %s", databaseType));
+            LOG.error(errorMap.get(sourceId));
+            progress.setError(errorMap.get(sourceId));
             return progress;
         }
         if (hiveMetaStoreBridgeUtils == null) {
-            errorMessage = String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error");
-            LOG.error(errorMessage);
-            progress.setError(errorMessage);
+            errorMap.put(sourceId,String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
+            LOG.error(errorMap.get(sourceId));
+            progress.setError(errorMap.get(sourceId));
             return progress;
         }
         switch (databaseTypeEntity) {
             case HIVE:
-                progress = getProgress(hiveMetaStoreBridgeUtils);
+                progress = getProgress(hiveMetaStoreBridgeUtils,sourceId);
                 break;
             case MYSQL:
             case ORACLE:
-                progress = getProgress(metaDataProviderMap.get(sourceId));
+                progress = getProgress(metaDataProviderMap.get(sourceId),sourceId);
                 break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
                 break;
         }
-        if (progress.getEndTime()!=0&&sourceId!=null){
-            metaDataProviderMap.remove(sourceId);
-        }
         return progress;
     }
 
-    private Progress getProgress(IMetaDataProvider metaDataProvider) throws AtlasBaseException {
+    private Progress getProgress(IMetaDataProvider metaDataProvider,String sourceId) throws AtlasBaseException {
         Progress progress;
         if (metaDataProvider==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
@@ -1501,7 +1500,11 @@ public class MetaDataService {
         AtomicLong startTime = metaDataProvider.getStartTime();
         AtomicLong endTime = metaDataProvider.getEndTime();
         progress = new Progress(totalTables.get(), updatedTables.get());
-        progress.setError(errorMessage);
+        if (errorMap.containsKey(sourceId)){
+            progress.setError(errorMap.get(sourceId));
+        }else{
+            progress.setError("");
+        }
         progress.setStartTime(startTime.get());
         progress.setEndTime(endTime.get());
         return progress;
@@ -1690,14 +1693,29 @@ public class MetaDataService {
         return workbook;
     }
 
+    public String processSpecialCharacter(String sheetName) {
+        return sheetName.replace(":","_")
+                 .replace("\\","_")
+                 .replace("/","_")
+                 .replace("?","_")
+                 .replace("*","_")
+                 .replace("[","_")
+                 .replace("]","_");
+    }
+
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetName = dbName + "." + tableName + "-表信息";
+        String sheetNamePrefix = dbName + "." + tableName;
+        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
+        String sheetName = sheetNamePrefix + "-表信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
-        if(null != hasSheet) {
-            return;
+        int sheetIndex = 1;
+        while(null != hasSheet) {
+            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
+            sheetName = sheetNamePrefix + "-表信息";
+            hasSheet = workbook.getSheet(sheetName);
         }
         Sheet sheet = workbook.createSheet(sheetName);
 
@@ -1982,11 +2000,17 @@ public class MetaDataService {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetName = dbName + "." + tableName + "字段-信息";
+        String sheetNamePrefix = dbName + "." + tableName;
+        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
+        String sheetName = sheetNamePrefix + "-字段信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
-        if(null != hasSheet) {
-            return;
+        int sheetIndex = 1;
+        while(null != hasSheet) {
+            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
+            sheetName = sheetNamePrefix + "-字段信息";
+            hasSheet = workbook.getSheet(sheetName);
         }
+
         Sheet sheet = workbook.createSheet(sheetName);
 
         List<Column> columnList = table.getColumns();
@@ -2122,20 +2146,31 @@ public class MetaDataService {
                 oldColumnMedataMap.put(name, columnMetadataMap);
             }
 
-            for(String name : currentColumnMedataMap.keySet()) {
+            /*Set<String> keySet = new HashSet<>();
+            keySet.addAll(currentColumnMedataMap.keySet());
+            keySet.addAll(oldColumnMedataMap.keySet());
+            for(String name : keySet) {
                 Map<String, String> currentValueMap = currentColumnMedataMap.get(name);
                 Map<String, String> oldValueMap = oldColumnMedataMap.get(name);
+
+                if((currentColumnMedataMap.containsKey(name) && !oldColumnMedataMap.containsKey(name)) ||
+                        (!currentColumnMedataMap.containsKey(name) && oldColumnMedataMap.containsKey(name))) {
+                    if(currentColumnMedataMap.containsKey(name)) {
+
+                    }
+                }
 
                 for(String key : currentValueMap.keySet()) {
                     String currentValue = currentValueMap.get(key);
                     String oldValue = oldValueMap.get(key);
                     currentValue = Objects.isNull(currentValue)? "":currentValue;
                     oldValue = Objects.isNull(oldValue)? "":oldValue;
+
                     if(!currentValue.equals(oldValue)) {
                         changedFiledSet.add(key);
                     }
                 }
-            }
+            }*/
             comparisonMetadata.setCurrentMetadata(currentMetadata);
             comparisonMetadata.setOldMetadata(oldMetadata);
             comparisonMetadata.setChangedSet(changedFiledSet);

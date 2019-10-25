@@ -110,7 +110,7 @@ public final class Atlas {
 
         setApplicationHome();
         Configuration configuration = ApplicationProperties.get();
-        final String enableTLSFlag = configuration.getString(SecurityProperties.TLS_ENABLED);
+        final String enableTLSFlag = configuration.getString(SecurityProperties.TLS_ENABLED, "false");
         final String appHost = configuration.getString(SecurityProperties.BIND_ADDRESS, EmbeddedServer.ATLAS_DEFAULT_BIND_ADDRESS);
 
         if (!isLocalAddress(InetAddress.getByName(appHost))) {
