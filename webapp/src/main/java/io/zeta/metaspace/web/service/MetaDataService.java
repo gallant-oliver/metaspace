@@ -489,7 +489,7 @@ public class MetaDataService {
     @Cacheable(value = "RDBMSColumnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
     public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(ColumnQuery query, Boolean refreshCache) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
-            LOG.debug("==> MetaDataService.getColumnInfoById({})", query);
+            LOG.debug("==> MetaDataService.getRDBMSColumnInfoById({})", query);
         }
         RDBMSColumnAndIndexAndForeignKey cik = new RDBMSColumnAndIndexAndForeignKey();
         String guid = query.getGuid();
@@ -554,9 +554,6 @@ public class MetaDataService {
     }
 
     public List<RDBMSIndex> extractRDBMSIndexInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid,AtlasRelatedObjectId relatedDB,AtlasRelatedObjectId relatedInstance,List<RDBMSColumn> columns,Boolean refreshCache) throws AtlasBaseException {
-        if (DEBUG_ENABLED) {
-            LOG.debug("==> MetaDataService.extractRDBMSIndexInfo({})",guid);
-        }
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSIndex> indexes = new ArrayList<>();
