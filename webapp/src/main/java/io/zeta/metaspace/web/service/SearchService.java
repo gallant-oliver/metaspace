@@ -294,14 +294,38 @@ public class SearchService {
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(guidCount.getGuid(), attributes, relationshipAttributes).getEntity();
 
         String name_path = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
+        String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
         String sourceId = qualifiedName.split("\\.")[0];
         DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+        StringBuffer dbName = new StringBuffer();
+        StringBuffer  tableName = new StringBuffer();
+        String[] strs = name_path.split("\\.");
+        for (int i=0;i<strs.length;i++){
+            if (i<strs.length-name.split("\\.").length){
+                dbName.append(strs[i]);
+                dbName.append(".");
+            }else{
+                tableName.append(strs[i]);
+                tableName.append(".");
+            }
+        }
+
+        String db = dbName.substring(0,dbName.length()-1);
+        String table = "";
+        if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
+            table = tableName.substring(0,tableName.length()-1);
+        }else {
+            table = tableName.substring(1,tableName.length()-2);
+        }
+
         String sql = "";
         if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
-            sql = "select * from "+ name_path +" limit " + guidCount.getCount();
+            db.replace("`","``");
+            table.replace("``","``");
+            sql = "select * from `"+ db +"`.`"+ table +"` limit " + guidCount.getCount();
         }else if (dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
-            sql = "select * from "+ name_path +" where rownum <" + guidCount.getCount();
+            sql = "select * from \""+ db +"\".\""+ table +"\" where rownum <" + guidCount.getCount();
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
         }
@@ -357,9 +381,18 @@ public class SearchService {
         for (int i=0;i<strs.length;i++){
             if (i<strs.length-name.split("\\.").length){
                 dbName.append(strs[i]);
+                dbName.append(".");
             }else{
                 tableName.append(strs[i]);
+                tableName.append(".");
             }
+        }
+        String db = dbName.substring(0,dbName.length()-1);
+        String table = "";
+        if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
+            table = tableName.substring(0,tableName.length()-1);
+        }else {
+            table = tableName.substring(1,tableName.length()-2);
         }
 
         if (name.equals("")) {
@@ -369,13 +402,17 @@ public class SearchService {
 
         String sql = "";
         if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
-            sql = "SHOW CREATE TABLE " + tableName;
+            db.replace("`","``");
+            table.replace("``","``");
+            sql = "SHOW CREATE TABLE `" + table+"`";
         }else if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
-            sql = "select dbms_metadata.get_ddl('TABLE','"+ tableName +"','"+ dbName +"') from dual";
+            db.replace("'","''");
+            table.replace("'","''");
+            sql = "select dbms_metadata.get_ddl('TABLE','"+ table +"','"+ db +"') from dual";
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
         }
-        try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,dbName.toString());
+        try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,db);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
