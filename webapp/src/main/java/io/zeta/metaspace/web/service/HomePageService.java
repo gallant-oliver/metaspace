@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /*
  * @description
@@ -92,10 +93,48 @@ public class HomePageService {
         try {
             String date = DateUtils.getNow2();
             TimeDBTB timeDBTB = new TimeDBTB();
-            List<Long> dbTotal = metaspaceGremlinService.getDBTotal();
-            List<Long> tbTotal = metaspaceGremlinService.getTBTotal();
-            long subSystemTotal = homePageDAO.getSubSystemTotal(sourceLayerCategoryGuid);
-            List<CategoryDBInfo> categoryRelatedDBCount = homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, -1, 0);
+
+            CompletableFuture<List<Long>> dbTotalFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return metaspaceGremlinService.getDBTotal();
+                } catch (Exception e) {
+                    LOG.error("查询库总量失败", e);
+                }
+                return null;
+            });
+
+            CompletableFuture<List<Long>> tbTotalFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return metaspaceGremlinService.getTBTotal();
+                } catch (Exception e) {
+                    LOG.error("查询表总量失败", e);
+                }
+                return null;
+            });
+
+            CompletableFuture<Long> subSystemFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return homePageDAO.getSubSystemTotal(sourceLayerCategoryGuid);
+                } catch (Exception e) {
+                    LOG.error("查询贴源层子系统数量失败", e);
+                }
+                return null;
+            });
+
+            CompletableFuture<List<CategoryDBInfo>> categoryRelatedDBCountFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return homePageDAO.getCategoryRelatedDBCount(sourceLayerCategoryGuid, -1, 0);
+                } catch (Exception e) {
+                    LOG.error("查询贴源层逻辑库和实体库数量失败", e);
+                }
+                return null;
+            });
+            CompletableFuture<Void> future = CompletableFuture.allOf(dbTotalFuture, tbTotalFuture, subSystemFuture, categoryRelatedDBCountFuture);
+            future.join();
+            List<Long> dbTotal = dbTotalFuture.get();
+            List<Long> tbTotal = tbTotalFuture.get();
+            Long subSystemTotal = subSystemFuture.get();
+            List<CategoryDBInfo> categoryRelatedDBCount = categoryRelatedDBCountFuture.get();
             long entityDBTotal=0;
             long logicDBTotal=0;
             for (CategoryDBInfo categoryDBInfo : categoryRelatedDBCount) {
