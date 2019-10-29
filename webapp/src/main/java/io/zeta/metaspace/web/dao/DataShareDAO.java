@@ -32,10 +32,10 @@ public interface DataShareDAO {
 
     @Insert({" <script>",
              " insert into apiInfo(guid,name,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,",
-             " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star",
+             " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count",
              " )values(",
              " #{guid},#{name},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star})",
+             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount})",
              " </script>"})
     public int insertAPIInfo(APIInfo info);
 
@@ -57,7 +57,7 @@ public interface DataShareDAO {
 
     @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
-             " tableInfo.tableName,apiGroup.name as groupName",
+             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
@@ -145,6 +145,9 @@ public interface DataShareDAO {
              " and path=#{path}",
              " </script>"})
     public APIInfo getAPIInfo(@Param("path")String path);
+
+    @Update("update apiInfo set used_count=used_count+1 where path=#{path}")
+    public int updateUsedCount(@Param("path")String path);
 
     @Select("select fields from apiInfo where path=#{path}")
     public Object getAPIFields(@Param("path")String path);
