@@ -75,6 +75,9 @@ import java.util.stream.Collectors;
 import org.apache.atlas.type.AtlasTypeRegistry;
 
 import org.apache.commons.beanutils.BeanUtils;
+
+import static io.zeta.metaspace.web.metadata.BaseFields.RDBMS_COLUMN;
+import static io.zeta.metaspace.web.metadata.BaseFields.RMDB_INSTANCE;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -1597,6 +1600,59 @@ public class MetaDataService {
                 //唯一信任数据
                 businessDAO.removeBusinessTrustTableByTableId(tableGuid);
             }
+            return response;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
+        }
+    }
+
+    @Transactional
+    public EntityMutationResponse hardDeleteRDBMSByGuid(String guid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            if(!"1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
+            }
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid,true);
+            AtlasEntity entity = info.getEntity();
+            AtlasEntity.Status status = entity.getStatus();
+            if(AtlasEntity.Status.DELETED != status) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
+            }
+            List<String> deleteAllGuids = new ArrayList<>();
+            deleteAllGuids.add(guid);
+            EntityMutationResponse response = entitiesStore.hardDeleteById(deleteAllGuids);
+            return response;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "硬删除失败");
+        }
+    }
+
+    @Transactional
+    public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(String guid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            if(!"1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
+            }
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid,true);
+            AtlasEntity entity = info.getEntity();
+            AtlasEntity.Status status = entity.getStatus();
+            if (!RMDB_INSTANCE.equalsIgnoreCase(entity.getTypeName())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体并非数据源，不能删除");
+            }
+            if(AtlasEntity.Status.ACTIVE == status) {
+                entitiesStore.deleteById(guid);
+            }
+            List<String> deleteAllGuids = new ArrayList<>();
+            deleteAllGuids.add(guid);
+            EntityMutationResponse response = entitiesStore.hardDeleteById(deleteAllGuids);
             return response;
         } catch (AtlasBaseException e) {
             throw e;

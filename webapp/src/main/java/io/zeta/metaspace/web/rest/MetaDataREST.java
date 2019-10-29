@@ -883,4 +883,50 @@ public class MetaDataREST {
             AtlasPerfTracer.log(perf);
         }
     }
+    /**
+     * Delete an entity identified by its GUID.
+     * @param  guid GUID for the entity
+     * @return EntityMutationResponse
+     */
+    @DELETE
+    @Path("/rdbms/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteRDBMSByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSByGuid(" + guid + ")");
+            }
+            EntityMutationResponse entityMutationResponse = metadataService.hardDeleteRDBMSByGuid(guid);
+            refreshCache();
+            return entityMutationResponse;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @DELETE
+    @Path("/rdbms/instance/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSInstanceByGuid(" + guid + ")");
+            }
+            EntityMutationResponse entityMutationResponse =metadataService.hardDeleteRDBMSInstanceByGuid(guid);
+            refreshCache();
+            return entityMutationResponse;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }
