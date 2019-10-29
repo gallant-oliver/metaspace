@@ -671,6 +671,8 @@ public class TaskManageService {
                     record.setTableName(column.getTableName());
                     record.setObjectName(column.getColumnName());
                 }
+                Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
+                record.setFiling(filing);
             }
             return list;
         } catch (Exception e) {

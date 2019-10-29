@@ -51,6 +51,7 @@ public class TaskRuleExecutionRecord {
     private Float redWarningMaxValue;
     private Integer redCheckStatus;
     private String checkThresholdUnit;
+    private Boolean filing;
 
     public Integer getObjectType() {
         return objectType;
@@ -283,5 +284,13 @@ public class TaskRuleExecutionRecord {
 
     public void setCheckThresholdUnit(String checkThresholdUnit) {
         this.checkThresholdUnit = checkThresholdUnit;
+    }
+
+    public Boolean getFiling() {
+        return filing;
+    }
+
+    public void setFiling(Boolean filing) {
+        this.filing = filing;
     }
 }
