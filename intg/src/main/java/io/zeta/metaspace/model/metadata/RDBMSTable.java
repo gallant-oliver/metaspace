@@ -36,7 +36,15 @@ public class RDBMSTable implements Serializable {
     private List<RDBMSColumn> columns;
     private List<RDBMSForeignKey> foreignKeys;
     private List<RDBMSIndex> indexes;
+    private String subsribeTo;
 
+    public String getSubsribeTo() {
+        return subsribeTo;
+    }
+
+    public void setSubsribeTo(String subsribeTo) {
+        this.subsribeTo = subsribeTo;
+    }
 
     public List<RDBMSForeignKey> getForeignKeys() {
         return foreignKeys;
