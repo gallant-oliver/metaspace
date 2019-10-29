@@ -1387,6 +1387,11 @@ public class MetaDataService {
         LOG.info("元数据管理缓存已被清除");
     }
 
+    @CacheEvict(value = {"RDBMSDataSourceSearchCache", "RDBMSDBBySourceCache", "RDBMSTableByDBCache", "RDBMSDBPageCache", "RDBMSTablePageCache","RDBMSColumnPageCache"}, allEntries = true)
+    public void refreshRDBMSCache(){
+        LOG.info("关系型元数据管理缓存已被清除");
+    }
+
     /**
      * 同步元数据
      *

@@ -902,7 +902,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSByGuid(" + guid + ")");
             }
             EntityMutationResponse entityMutationResponse = metadataService.hardDeleteRDBMSByGuid(guid);
-            refreshCache();
+            refreshRDBMSCache();
             return entityMutationResponse;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -923,10 +923,27 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSInstanceByGuid(" + guid + ")");
             }
             EntityMutationResponse entityMutationResponse =metadataService.hardDeleteRDBMSInstanceByGuid(guid);
-            refreshCache();
+            refreshRDBMSCache();
             return entityMutationResponse;
         } finally {
             AtlasPerfTracer.log(perf);
         }
+    }
+
+    /**
+     * 清除关系型缓存
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/refreshRdbmsCache")
+    public Response refreshRDBMSCache() throws AtlasBaseException {
+        try {
+            metadataService.refreshRDBMSCache();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+        }
+        return Response.status(200).entity("success").build();
     }
 }
