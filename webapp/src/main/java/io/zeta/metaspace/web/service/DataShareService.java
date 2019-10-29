@@ -1114,11 +1114,13 @@ public class DataShareService {
                 queryData.setData(queryDataList);
                 queryResult.setTotalCount(count);
                 queryResult.setDatas(queryData);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             } else {
                 JsonQueryResult queryResult = new JsonQueryResult();
                 queryResult.setDatas(queryDataList);
                 queryResult.setTotalCount(count);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             }
         } catch (ExecutionException e) {
@@ -1130,8 +1132,6 @@ public class DataShareService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
-        } finally {
-            shareDAO.updateUsedCount(path);
         }
     }
 
