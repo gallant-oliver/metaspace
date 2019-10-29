@@ -41,6 +41,7 @@ public class APIInfoHeader {
     private Boolean star;
     private Boolean enableClone;
     private String tableDisplayName;
+    private String manager;
     @JsonIgnore
     private int total;
 
@@ -170,5 +171,13 @@ public class APIInfoHeader {
 
     public void setTableDisplayName(String tableDisplayName) {
         this.tableDisplayName = tableDisplayName;
+    }
+
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
     }
 }

@@ -534,4 +534,34 @@ public class DataShareREST {
         }
     }
 
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getUserList(Parameters parameters) throws Exception {
+        try {
+            return shareService.getUserList(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
+
+    @PUT
+    @Path("/manager/{apiGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateManager(@PathParam("apiGuid") String apiGuid, String user_id) throws Exception {
+        try {
+            shareService.updateManager(apiGuid, user_id);
+            return Response.status(200).entity("success").build();
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
 }

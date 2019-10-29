@@ -153,6 +153,8 @@ public class DataShareService {
             info.setKeeper(user);
             //updater
             info.setUpdater(user);
+            //manager
+            info.setManager(user);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             long currentTime = System.currentTimeMillis();
             String currentTimeFormat = sdf.format(currentTime);
@@ -199,7 +201,15 @@ public class DataShareService {
      */
     public int deleteAPIInfo(String guid) throws AtlasBaseException {
         try {
+            User userInfo = AdminUtils.getUserData();
+            String userId = userInfo.getUserId();
+            String roleId = userInfo.getRoleId();
+            Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
+            if(!manage && "1" != roleId) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
+            }
             return shareDAO.deleteAPIInfo(guid);
+
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
@@ -215,6 +225,14 @@ public class DataShareService {
      */
     public int updateAPIInfo(String guid, APIInfo info) throws AtlasBaseException {
         try {
+            User userInfo = AdminUtils.getUserData();
+            String userId = userInfo.getUserId();
+            String roleId = userInfo.getRoleId();
+            Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
+            if(!manage && "1" != roleId) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
+            }
+
             String apiName = info.getName();
             APIInfo currentAPI = shareDAO.getAPIInfoByGuid(guid);
             int count = shareDAO.querySameName(apiName);
@@ -368,16 +386,14 @@ public class DataShareService {
                 } else {
                     header.setEnableClone(false);
                 }
-                //keeper
-                String keeperGuid = header.getKeeper();
-                User keeperUser = userDAO.getUser(keeperGuid);
-                String keeper = keeperUser.getUsername();
+                String keeper = userDAO.getUserName(header.getKeeper());
                 header.setKeeper(keeper);
                 //updater
-                String updaterGuid = header.getUpdater();
-                User updaterUser = userDAO.getUser(updaterGuid);
-                String updater = updaterUser.getUsername();
+                String updater = userDAO.getUserName(header.getUpdater());
                 header.setUpdater(updater);
+                //manager
+                String manger = userDAO.getUserName(header.getManager());
+                header.setManager(manger);
                 if(starAPIList.contains(header.getGuid())) {
                     header.setStar(true);
                 } else {
@@ -1342,5 +1358,32 @@ public class DataShareService {
             }
         });
         return columnList;
+    }
+
+    public PageResult getUserList(Parameters parameters) throws AtlasBaseException {
+        PageResult pageResult = new PageResult();
+        try {
+            List<User> userList = userDAO.getUserList(null, parameters.getLimit(), parameters.getOffset());
+            pageResult.setLists(userList);
+            long userTotalSize = 0;
+            if (userList.size()!=0){
+                userTotalSize = userList.get(0).getTotal();
+            }
+            pageResult.setCurrentSize(userList.size());
+            pageResult.setTotalSize(userTotalSize);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("获取用户列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
+        }
+    }
+
+    public int updateManager(String apiGuid, String userId) throws AtlasBaseException {
+        try {
+            return shareDAO.updateManager(apiGuid, userId);
+        } catch (Exception e) {
+            LOG.error("更新管理者失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
+        }
     }
 }

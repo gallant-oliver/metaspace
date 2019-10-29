@@ -49,6 +49,7 @@ public class APIInfo {
     private Boolean star;
     private Boolean edit;
     private String tableDisplayName;
+    private String manager;
 
     public String getGuid() {
         return guid;
@@ -250,6 +251,14 @@ public class APIInfo {
         this.tableDisplayName = tableDisplayName;
     }
 
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
+    }
+
     public static class Field {
         private String columnName;
         private Boolean filter;
@@ -305,6 +314,7 @@ public class APIInfo {
         public void setType(String type) {
             this.type = type;
         }
+
     }
 
     public static class FieldWithDisplay extends Field {
