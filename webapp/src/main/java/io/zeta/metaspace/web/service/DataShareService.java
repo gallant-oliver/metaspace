@@ -1384,9 +1384,8 @@ public class DataShareService {
         }
     }
 
-    public void updateManager(String apiGuid, User user) throws AtlasBaseException {
+    public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
         try {
-            String userId = user.getUserId();
             shareDAO.updateManager(apiGuid, userId);
             List<String> apiList = new ArrayList<>();
             apiList.add(apiGuid);

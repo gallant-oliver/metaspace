@@ -536,12 +536,12 @@ public class DataShareREST {
 
 
     @PUT
-    @Path("/manager/{apiGuid}")
+    @Path("/manager/{apiGuid}/{userId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updateManager(@PathParam("apiGuid") String apiGuid, User user) throws Exception {
+    public Response updateManager(@PathParam("apiGuid") String apiGuid, @PathParam("userId") String userId) throws Exception {
         try {
-            shareService.updateManager(apiGuid, user);
+            shareService.updateManager(apiGuid, userId);
             return Response.status(200).entity("success").build();
         } catch (AtlasBaseException e) {
             throw e;
