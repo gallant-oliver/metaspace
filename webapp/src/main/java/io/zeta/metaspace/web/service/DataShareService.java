@@ -41,6 +41,7 @@ import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
@@ -1378,9 +1379,15 @@ public class DataShareService {
         }
     }
 
-    public int updateManager(String apiGuid, String userId) throws AtlasBaseException {
+    public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
         try {
-            return shareDAO.updateManager(apiGuid, userId);
+            shareDAO.updateManager(apiGuid, userId);
+            List<String> apiList = new ArrayList<>();
+            apiList.add(apiGuid);
+            List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
+            List<String> apiOwnerList = new ArrayList<>();
+            apiOwnerList.add(userId);
+            dataManageService.sendToMobius(apiList, tableOwners, apiOwnerList);
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");

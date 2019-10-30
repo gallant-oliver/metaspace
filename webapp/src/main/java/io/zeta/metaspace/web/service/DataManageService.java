@@ -60,6 +60,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
@@ -559,14 +560,12 @@ public class DataManageService {
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                 entity.setDataOwner(ownerHeaders);
             }
-            //long totalNum = relationDao.queryTotalNumByName(tableName, tag, categoryIds);
             long totalNum = 0;
             if (list.size()!=0){
                 totalNum = list.get(0).getTotal();
             }
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
-            //pageResult.setOffset(query.getOffset());
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -597,14 +596,12 @@ public class DataManageService {
             List<RelationEntityV2> list = relationDao.queryByTableNameFilter(tableName, tag, categoryIds, limit, offset);
 
             getPath(list);
-            //long totalNum = relationDao.queryTotalNumByNameFilter(tableName, tag, categoryIds);
             long totalNum = 0;
             if (list.size()!=0){
                 totalNum=list.get(0).getTotal();
             }
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
-            //pageResult.setOffset(query.getOffset());
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -618,7 +615,6 @@ public class DataManageService {
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
             String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
-            //joiner.add(path).add(entity.getTableName());
             entity.setPath(path);
         }
     }
@@ -652,53 +648,13 @@ public class DataManageService {
     @Transactional
     public int addTableOwner(TableOwner tableOwner) throws AtlasBaseException {
         try {
-            Configuration configuration = ApplicationProperties.get();
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/reviews/user";
             List<String> tableList = tableOwner.getTables();
-            APIDataOwner dataOwner = new APIDataOwner();
             //api
             List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
             List<TableOwner.Owner> tableOwners = tableOwner.getOwners();
+            List<String> apiOwnerList = new ArrayList<>();
             if(Objects.nonNull(apiList) && apiList.size()>0) {
-                dataOwner.setApi_id_list(apiList);
-                //organization
-                List<APIDataOwner.Organization> organizations = new ArrayList<>();
-                for (TableOwner.Owner owner : tableOwners) {
-                    APIDataOwner.Organization organization = new APIDataOwner.Organization();
-                    organization.setOrganization(owner.getPkid());
-                    organization.setOrganization_type(owner.getType());
-                    organizations.add(organization);
-                }
-                //owner
-                dataOwner.setOrganization_list(organizations);
-                List<String> api_owner = new ArrayList<>();
-                dataOwner.setApi_owner(api_owner);
-                Gson gson = new Gson();
-                String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
-                //向云平台发请求
-
-                int retryCount = 0;
-                String error_id = null;
-                String error_reason = null;
-                while(retryCount < 3) {
-                    String res = OKHttpClient.doPut(mobiusURL, jsonStr);
-                    LOG.info(res);
-                    if(StringUtils.isNotEmpty(res)) {
-                        Map response = gson.fromJson(res, Map.class);
-                        error_id = String.valueOf(response.get("error-id"));
-                        error_reason = String.valueOf(response.get("reason"));
-                        if ("0.0".equals(error_id)) {
-                            break;
-                        } else {
-                            retryCount++;
-                        }
-                    } else {
-                        retryCount++;
-                    }
-                }
-                if(!"0.0".equals(error_id)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
-                }
+                sendToMobius(apiList, tableOwners, apiOwnerList);
             }
             //删除旧关系
             categoryDao.deleteDataOwner(tableOwner.getTables());
@@ -729,6 +685,50 @@ public class DataManageService {
         }
     }
 
+    public void sendToMobius(List<String> apiList, List<TableOwner.Owner> tableOwners, List<String> apiOwner) throws AtlasException, AtlasBaseException {
+        APIDataOwner dataOwner = new APIDataOwner();
+        Configuration configuration = ApplicationProperties.get();
+        String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/reviews/user";
+        dataOwner.setApi_id_list(apiList);
+        //organization
+        List<APIDataOwner.Organization> organizations = new ArrayList<>();
+        for (TableOwner.Owner owner : tableOwners) {
+            APIDataOwner.Organization organization = new APIDataOwner.Organization();
+            organization.setOrganization(owner.getPkid());
+            organization.setOrganization_type(owner.getType());
+            organizations.add(organization);
+        }
+        //owner
+        dataOwner.setOrganization_list(organizations);
+        dataOwner.setApi_owner(apiOwner);
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
+        //向云平台发请求
+
+        int retryCount = 0;
+        String error_id = null;
+        String error_reason = null;
+        while(retryCount < 3) {
+            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(StringUtils.isNotEmpty(res)) {
+                Map response = gson.fromJson(res, Map.class);
+                error_id = String.valueOf(response.get("error-id"));
+                error_reason = String.valueOf(response.get("reason"));
+                if ("0.0".equals(error_id)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!"0.0".equals(error_id)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
+        }
+    }
+
     public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
         try {
             String query = parameters.getQuery();
@@ -744,14 +744,12 @@ public class DataManageService {
                 String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
                 organization.setPath(path);
             }
-            //long totalSize = organizationDAO.countOrganizationByPid(pId, query);
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();
             }
             long count = list.size();
             PageResult pageResult = new PageResult();
-            //pageResult.setOffset(offset);
             pageResult.setLists(list);
             pageResult.setCurrentSize(count);
             pageResult.setTotalSize(totalSize);
@@ -776,8 +774,6 @@ public class DataManageService {
                 String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
                 organization.setPath(path);
             }
-
-            //long totalSize = organizationDAO.countOrganizationByName(query);
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();
@@ -924,7 +920,6 @@ public class DataManageService {
             }
         }
         addFullRelation();
-
     }
 
     @Transactional
@@ -962,7 +957,6 @@ public class DataManageService {
                 tableDAO.addTable(tableInfo);
             }
         }
-
         addFullRelation();
     }
 
@@ -988,7 +982,6 @@ public class DataManageService {
             }
         }
     }
-
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;

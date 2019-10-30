@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
@@ -57,7 +58,7 @@ public interface DataShareDAO {
 
     @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
-             " tableInfo.tableName,apiGroup.name as groupName",
+             " tableInfo.tableName,apiGroup.name as groupName,manager",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
@@ -206,4 +207,7 @@ public interface DataShareDAO {
 
     @Update("update apiInfo set manager=#{userId} where guid=#{apiGuid}")
     public int updateManager(@Param("apiGuid")String apiGuid, @Param("userId")String userId);
+
+    @Select("select id,type,pkid from organization where pkid in (select pkid from table2owner where tableguid=(select tableguid from apiinfo where guid=#{apiGuid}))")
+    public List<TableOwner.Owner> getOwnerList(@Param("apiGuid")String apiGuid);
 }
