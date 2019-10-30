@@ -647,17 +647,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             relationAttributes.add("db");
             if (Objects.nonNull(table)) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
-                AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                tb.setTableName(dbEntity.getAttribute("name").toString());
-                if(Boolean.getBoolean(dbEntity.getAttribute("temporary").toString()) == true) {
+                AtlasEntity entity = dbEntityWithExtInfo.getEntity();
+                tb.setTableName(entity.getAttribute("name").toString());
+                if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
                     tb.setVirtualTable(true);
                 } else {
                     tb.setVirtualTable(false);
                 }
                 //setVirtualTable(tb);
-                tb.setTableId(dbEntity.getGuid());
-                tb.setStatus(dbEntity.getStatus().name());
-                tb.setDescription(dbEntity.getAttribute("comment")==null?"-":dbEntity.getAttribute("comment").toString());
+                tb.setTableId(entity.getGuid());
+                tb.setStatus(entity.getStatus().name());
+                tb.setDescription(entity.getAttribute("comment")==null?"-":entity.getAttribute("comment").toString());
             }
             lists.add(tb);
         }
