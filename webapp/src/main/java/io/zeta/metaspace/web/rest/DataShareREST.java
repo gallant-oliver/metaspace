@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.DataShareGroupService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -502,20 +503,6 @@ public class DataShareREST {
         }
     }
 
-    /*@GET
-    @Path("/data/{version}/{url}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
-        try {
-            return shareService.queryAPIData(url, httpServletRequest);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
-        }
-    }*/
-
     @GET
     @Path("/swagger/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -552,9 +539,9 @@ public class DataShareREST {
     @Path("/manager/{apiGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response updateManager(@PathParam("apiGuid") String apiGuid, String user_id) throws Exception {
+    public Response updateManager(@PathParam("apiGuid") String apiGuid, User user) throws Exception {
         try {
-            shareService.updateManager(apiGuid, user_id);
+            shareService.updateManager(apiGuid, user);
             return Response.status(200).entity("success").build();
         } catch (AtlasBaseException e) {
             throw e;
