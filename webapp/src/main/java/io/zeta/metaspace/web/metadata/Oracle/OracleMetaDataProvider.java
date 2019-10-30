@@ -337,7 +337,7 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         for (Column column : columns) {
             AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
             //再次导入时，要保持guid一致，不然可能会导致entity在没有变化的情况下，依旧更新
-            if (tableEntity!=null){
+            if (tableEntity.getReferredEntities()!=null){
                 List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(column.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
                 String columnId = null;
                 if(columnIds!=null && columnIds.size()!=0){
@@ -407,7 +407,7 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
                 AtlasEntity columnEntity = new AtlasEntity(RDBMS_COLUMN);
                 //再次导入时，要保持guid一致，不然可能会导致entity在没有变化的情况下，依旧更新
                 String columnName = results.getString("column_name");
-                if (tableEntity!=null){
+                if (tableEntity.getReferredEntities()!=null){
                     List<String> columnIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(columnName)).map(entity->entity.getGuid()).collect(Collectors.toList());
                     String columnId = null;
                     if(columnIds!=null && columnIds.size()!=0){

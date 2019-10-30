@@ -164,5 +164,56 @@
          timeToIdleSeconds="1200"
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
+  <cache name="RDBMSDataSourceSearchCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="RDBMSDBBySourceCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="RDBMSTableByDBCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+  <cache name="RDBMSDBPageCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+  <cache name="RDBMSTablePageCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+  <cache name="RDBMSColumnPageCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+  <cache name="RDBMSColumnCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
 
 </ehcache>
