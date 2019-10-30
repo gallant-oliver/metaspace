@@ -29,6 +29,15 @@ public class CategoryInfoV2 {
     private String direction;
     private String parentCategoryGuid;
     private Integer categoryType;
+    private String safe;
+
+    public String getSafe() {
+        return safe;
+    }
+
+    public void setSafe(String safe) {
+        this.safe = safe;
+    }
 
     public String getGuid() {
         return guid;

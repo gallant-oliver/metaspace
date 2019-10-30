@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -945,5 +946,28 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
         }
         return Response.status(200).entity("success").build();
+    }
+    @POST
+    @Path("/influence/api/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getTableInfluenceWithAPI( @PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return metadataService.getTableInfluenceWithAPI(tableGuid, parameters);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/influence/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TableHeader> getTableInfluenceWithDbAndTable( @PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            return metadataService.getTableInfluenceWithDbAndTable(tableGuid);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }
