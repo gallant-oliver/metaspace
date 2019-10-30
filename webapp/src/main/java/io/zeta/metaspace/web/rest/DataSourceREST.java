@@ -403,7 +403,7 @@ public class DataSourceREST {
             CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
                 importing.set(false);
-                metadataService.refreshCache();
+                metadataService.refreshRDBMSCache();
             });
         } else {
             return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();

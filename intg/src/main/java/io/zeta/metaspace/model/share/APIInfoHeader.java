@@ -42,6 +42,7 @@ public class APIInfoHeader {
     private Boolean enableClone;
     private String tableDisplayName;
     private String manager;
+    private Integer usedCount;
     @JsonIgnore
     private int total;
 
@@ -179,5 +180,13 @@ public class APIInfoHeader {
 
     public void setManager(String manager) {
         this.manager = manager;
+    }
+
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
     }
 }

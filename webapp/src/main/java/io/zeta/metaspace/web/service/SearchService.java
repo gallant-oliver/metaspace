@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -15,6 +16,9 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.metadata.RMDBEnum;
+import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.ApplicationProperties;
@@ -28,15 +32,19 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
+import schemacrawler.tools.databaseconnector.DatabaseConnectionSource;
+import schemacrawler.tools.databaseconnector.SingleUseUserCredentials;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -64,6 +72,10 @@ public class SearchService {
     CategoryDAO categoryDAO;
     @Autowired
     RelationDAO relationDAO;
+    @Autowired
+    DataSourceService  dataSourceService;
+    @Autowired
+    MetadataSubscribeDAO subscribeDAO;
 
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
@@ -80,9 +92,33 @@ public class SearchService {
         return metaspaceEntityService.getDatabaseByQuery(queryDb, true, offset, limit);
     }
 
+    @Cacheable(value = "RDBMSDataSourceSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset + #sourceType")
+    public PageResult<RDBMSDataSource> getDataSourcePageResult(Parameters parameters,String sourceType) throws AtlasBaseException {
+        long limit = parameters.getLimit();
+        long offset = parameters.getOffset();
+        String querySource = parameters.getQuery();
+        return metaspaceEntityService.getRDBMSDataSourceByQuery(querySource,offset, limit,sourceType);
+    }
+    @Cacheable(value = "RDBMSDBBySourceCache", key = "#sourceId + #offset + #limit")
+    public PageResult<RDBMSDatabase> getRDBMSDBBySource(String sourceId, long offset, long limit) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSDBBySource(sourceId, offset, limit);
+    }
+
+    @Cacheable(value = "RDBMSTableByDBCache", key = "#databaseId + #offset + #limit")
+    public PageResult<RDBMSTable> getRDBMSTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSTableByDB(databaseId, offset, limit);
+    }
+
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
     public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
-        return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+        PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+        List<Table> tableList = pageResult.getLists();
+        String userId = AdminUtils.getUserData().getUserId();
+        tableList.forEach(table -> {
+            boolean subTo = subscribeDAO.existSubscribe(table.getTableId(), userId)==0 ? false : true;
+            table.setSubscribeTo(subTo);
+        });
+        return pageResult;
     }
 
 
@@ -146,6 +182,21 @@ public class SearchService {
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResultV2(Parameters parameters) throws AtlasBaseException {
         return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+    }
+
+    @Cacheable(value = "RDBMSDBPageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
+    public PageResult<RDBMSDatabase> getRDBMSDBPageResultV2(Parameters parameters,String sourceType) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSDBNameAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType);
+    }
+
+    @Cacheable(value = "RDBMSTablePageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
+    public PageResult<RDBMSTable> getRDBMSTablePageResultV2(Parameters parameters,String sourceType) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSTableNameAndDBAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType);
+    }
+
+    @Cacheable(value = "RDBMSColumnPageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
+    public PageResult<RDBMSColumn> getRDBMSColumnPageResultV2(Parameters parameters,String sourceType) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSColumnNameTableNameAndDBAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType);
     }
 
 
@@ -238,6 +289,195 @@ public class SearchService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }
+
+    public TableShow getRDBMSTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
+        TableShow tableShow = new TableShow();
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("name_path");
+        attributes.add("qualifiedName");
+        List<String> relationshipAttributes = new ArrayList<>();
+        relationshipAttributes.add("db");
+        if (Objects.isNull(guidCount.getGuid()) || guidCount.getGuid().isEmpty()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
+        }
+        AtlasEntity entity = entitiesStore.getByIdWithAttributes(guidCount.getGuid(), attributes, relationshipAttributes).getEntity();
+
+        String name_path = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
+        String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
+        String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
+        String sourceId = qualifiedName.split("\\.")[0];
+        DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+        StringBuffer dbName = new StringBuffer();
+        StringBuffer  tableName = new StringBuffer();
+        String[] strs = name_path.split("\\.");
+        for (int i=0;i<strs.length;i++){
+            if (i<strs.length-name.split("\\.").length){
+                dbName.append(strs[i]);
+                dbName.append(".");
+            }else{
+                tableName.append(strs[i]);
+                tableName.append(".");
+            }
+        }
+
+        String db = dbName.substring(0,dbName.length()-1);
+        String table = "";
+        if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
+            table = tableName.substring(0,tableName.length()-1);
+        }else {
+            table = tableName.substring(1,tableName.length()-2);
+        }
+
+        String sql = "";
+        if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+            db.replace("`","``");
+            table.replace("``","``");
+            sql = "select * from `"+ db +"`.`"+ table +"` limit " + guidCount.getCount();
+        }else if (dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
+            sql = "select * from \""+ db +"\".\""+ table +"\" where rownum <" + guidCount.getCount();
+        }else {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
+        }
+
+        try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,null);
+             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            List<String> columns = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<Map<String, String>> resultList = new ArrayList<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                columns.add(columnName);
+            }
+            while (resultSet.next()) {
+                Map<String, String> map = new HashMap<>();
+                for (String column : columns) {
+                    String s = resultSet.getObject(column) == null ? "NULL" : resultSet.getString(column);
+                    map.put(column, s);
+                }
+                resultList.add(map);
+            }
+            tableShow.setTableId(guidCount.getGuid());
+            tableShow.setColumnNames(columns);
+            tableShow.setLines(resultList);
+            return tableShow;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据"+e.getMessage());
+        }
+
+
+    }
+
+    public BuildTableSql getBuildRDBMSTableSql(String tableId) throws AtlasBaseException, SQLException, IOException {
+        BuildTableSql buildTableSql = new BuildTableSql();
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("name_path");
+        attributes.add("qualifiedName");
+        List<String> relationshipAttributes = new ArrayList<>();
+        relationshipAttributes.add("db");
+        if (Objects.isNull(tableId) || tableId.isEmpty()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
+        }
+        AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
+
+        String name_path = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
+        String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
+        String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
+        String sourceId = qualifiedName.split("\\.")[0];
+        StringBuffer dbName = new StringBuffer();
+        StringBuffer  tableName = new StringBuffer();
+        String[] strs = name_path.split("\\.");
+        for (int i=0;i<strs.length;i++){
+            if (i<strs.length-name.split("\\.").length){
+                dbName.append(strs[i]);
+                dbName.append(".");
+            }else{
+                tableName.append(strs[i]);
+                tableName.append(".");
+            }
+        }
+        String db = dbName.substring(0,dbName.length()-1);
+        String table = "";
+        if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
+            table = tableName.substring(0,tableName.length()-1);
+        }else {
+            table = tableName.substring(1,tableName.length()-2);
+        }
+
+        if (name.equals("")) {
+            System.out.println("该id不存在");
+        }
+        DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+
+        String sql = "";
+        if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+            db.replace("`","``");
+            table.replace("``","``");
+            sql = "SHOW CREATE TABLE `" + table+"`";
+        }else if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
+            db.replace("'","''");
+            table.replace("'","''");
+            sql = "select dbms_metadata.get_ddl('TABLE','"+ table +"','"+ db +"') from dual";
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
+        }
+        try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,db);
+             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            StringBuffer stringBuffer = new StringBuffer();
+            while (resultSet.next()) {
+                String object = resultSet.getString(getSqlPlace(dataSourceInfo.getSourceType()));
+                stringBuffer.append(object);
+            }
+            buildTableSql.setSql(stringBuffer.toString());
+            buildTableSql.setTableId(tableId);
+            return buildTableSql;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源服务异常");
+        }
+    }
+
+    public int getSqlPlace(String sourceType) throws AtlasBaseException {
+        if (sourceType.toLowerCase().equals("mysql")){
+            return 2;
+        }else if(sourceType.toLowerCase().equals("oracle")){
+            return 1;
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+sourceType);
+        }
+    }
+
+    public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo,String dbName) throws AtlasBaseException {
+        String           ip             = dataSourceInfo.getIp();
+        String           port           = dataSourceInfo.getPort();
+        String           sourceType     = dataSourceInfo.getSourceType();
+        String           jdbcParameter  = dataSourceInfo.getJdbcParameter();
+        String           userName       = dataSourceInfo.getUserName();
+        String           password       = AESUtils.AESDecode(dataSourceInfo.getPassword());
+        String connectUrl = RMDBEnum.of(sourceType).getConnectUrl();
+        String connectionUrl = "";
+        if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")|| dbName==null){
+            connectionUrl = String.format(connectUrl, ip, port, dataSourceInfo.getDatabase());
+        } else if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+            connectionUrl = String.format(connectUrl, ip, port, dbName);
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
+        }
+        Map<String,String> map = new HashMap<>();
+        if (StringUtils.isNotEmpty(jdbcParameter)) {
+            for (String str :jdbcParameter.split("&")){
+                String[] strings = str.split("=");
+                if (strings.length==2){
+                    map.put(strings[0],strings[1]);
+                }
+            }
+        }
+
+        DatabaseConnectionSource dataSource = new DatabaseConnectionSource(connectionUrl, map);
+        dataSource.setUserCredentials(new SingleUseUserCredentials(userName, password));
+        return dataSource.get();
+    }
+
 
     //1.4获取关联表，获取有权限的目录下的库
     @Transactional

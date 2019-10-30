@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -653,6 +654,344 @@ public class MetaDataREST {
     public ComparisonColumnMetadata getComparisionColumnTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
         try {
             return metadataService.getComparisionColumnMetadata(tableGuid, version);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * 根据搜索条件返回关系型数据库的数据源
+     *
+     * @return List<RDBMSDataSource>
+     */
+    @POST
+    @Path("/search/rdbms/datasource/{sourceType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSDataSource> getDataSourceByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDataSourceByQuery(" + parameters + " )");
+            }
+            PageResult<RDBMSDataSource> pageResult = searchService.getDataSourcePageResult(parameters,sourceType);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据数据源id返回库
+     *
+     * @return List<RDBMSDatabase>
+     */
+    @POST
+    @Path("/rdbms/databases/{sourceId}/{offset}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSDatabase> getRDBMSDBBySource(@PathParam("sourceId") String sourceId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSDBBySource(" + sourceId + "," + limit + "," + offset + " )");
+            }
+            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBBySource(sourceId, offset, limit);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据库id返回表
+     *
+     * @return List<RDBMSTable>
+     */
+    @POST
+    @Path("/rdbms/tables/{databaseId}/{offset}/{limit}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSTable> getRDBMSTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSTableByDB(" + databaseId + "," + limit + "," + offset + " )");
+            }
+            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTableByDB(databaseId, offset, limit);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据搜索条件返回库
+     *
+     * @return List<RDBMSDatabase>
+     */
+    @POST
+    @Path("/search/rdbms/db/{sourceType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSDatabase> getRDBMSDBByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSDBByQuery(" + parameters + " )");
+            }
+            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBPageResultV2(parameters,sourceType);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据搜索条件返回表
+     *
+     * @return List<RDBMSTable>
+     */
+    @POST
+    @Path("/search/rdbms/table/{sourceType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSTable> getRDBMSTableByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSTableByQuery(" + parameters + " )");
+            }
+            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTablePageResultV2(parameters,sourceType);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据搜索条件返回列
+     *
+     * @return List<RDBMSTable>
+     */
+    @POST
+    @Path("/search/rdbms/column/{sourceType}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RDBMSColumn> getRDBMSColumnByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSColumnByQuery(" + parameters + " )");
+            }
+            PageResult<RDBMSColumn> pageResult = searchService.getRDBMSColumnPageResultV2(parameters,sourceType);
+            return pageResult;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    /**
+     * sql
+     *
+     * @return BuildTableSql
+     */
+    @GET
+    @Path("/rdbms/table/sql/{tableId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
+            }
+            BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId);
+            return buildTableSql;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (SQLException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
+        } catch (IOException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 获取表详情
+     *
+     * @param tableId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/rdbms/table/{tableId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId) throws AtlasBaseException {
+        return metadataService.getRDBMSTableInfoById(tableId);
+    }
+
+    /**
+     * 获取字段详情
+     *
+     * @param query
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/rdbms/table/column/")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", query.getGuid());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnInfoById");
+            }
+            return metadataService.getRDBMSColumnInfoById(query, refreshCache);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 数据预览
+     *
+     * @return TableShow
+     */
+    @POST
+    @Path("/rdbms/table/preview")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableShow selectRDBMSData(GuidCount guidCount) throws AtlasBaseException, SQLException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectRDBMSData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
+            }
+            TableShow tableShow = searchService.getRDBMSTableShow(guidCount);
+            return tableShow;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+    /**
+     * Delete an entity identified by its GUID.
+     * @param  guid GUID for the entity
+     * @return EntityMutationResponse
+     */
+    @DELETE
+    @Path("/rdbms/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteRDBMSByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSByGuid(" + guid + ")");
+            }
+            EntityMutationResponse entityMutationResponse = metadataService.hardDeleteRDBMSByGuid(guid);
+            refreshRDBMSCache();
+            return entityMutationResponse;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @DELETE
+    @Path("/rdbms/instance/guid/{guid}")
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_JSON})
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(@PathParam("guid") final String guid) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("guid", guid);
+
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.hardDeleteRDBMSInstanceByGuid(" + guid + ")");
+            }
+            EntityMutationResponse entityMutationResponse =metadataService.hardDeleteRDBMSInstanceByGuid(guid);
+            refreshRDBMSCache();
+            return entityMutationResponse;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 清除关系型缓存
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/refreshRdbmsCache")
+    public Response refreshRDBMSCache() throws AtlasBaseException {
+        try {
+            metadataService.refreshRDBMSCache();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+        }
+        return Response.status(200).entity("success").build();
+    }
+
+    @PUT
+    @Path("/subscribe/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response subscribeTableMetadata(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            metadataService.addMetadataSubscription(tableGuid);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/influence/api/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getTableInfluenceWithAPI( @PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+        try {
+            return metadataService.getTableInfluenceWithAPI(tableGuid, parameters);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/unsubscribe/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response unsubscribeTableMetadata(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            metadataService.removeMetadataSubscription(tableGuid);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+    @GET
+    @Path("/influence/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TableHeader> getTableInfluenceWithDbAndTable( @PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            return metadataService.getTableInfluenceWithDbAndTable(tableGuid);
         }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }

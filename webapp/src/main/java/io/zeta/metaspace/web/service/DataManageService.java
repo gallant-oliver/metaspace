@@ -47,15 +47,7 @@ import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.ColumnDAO;
-import io.zeta.metaspace.web.dao.DataShareDAO;
-import io.zeta.metaspace.web.dao.OrganizationDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.TableDAO;
-import io.zeta.metaspace.web.dao.TableTagDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.ApplicationProperties;
@@ -77,15 +69,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,6 +105,8 @@ public class DataManageService {
     TableTagDAO tableTagDAO;
     @Autowired
     ColumnDAO columnDAO;
+    @Autowired
+    MetadataSubscribeDAO metadataSubscribeDAO;
 
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
@@ -168,6 +161,10 @@ public class DataManageService {
             //description
             entity.setDescription(info.getDescription());
             entity.setCategoryType(type);
+            entity.setSafe(info.getSafe());
+            if (StringUtils.isEmpty(entity.getSafe())){
+                entity.setSafe("1");
+            }
 
             //创建第一个目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
@@ -192,7 +189,7 @@ public class DataManageService {
                 returnEntity.setParentCategoryGuid(null);
                 returnEntity.setUpBrotherCategoryGuid(null);
                 returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
                 if(type==0){
                     privilege.setDeleteRelation(false);
                 }
@@ -272,15 +269,15 @@ public class DataManageService {
             CategoryPrivilege.Privilege privilege =null;
             if(type==0) {
                 if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
                 }else{
                 if(modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
             }
             returnEntity.setPrivilege(privilege);
@@ -384,6 +381,7 @@ public class DataManageService {
             entity.setName(info.getName());
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
+            entity.setSafe(info.getSafe());
             categoryDao.updateCategoryInfo(entity);
             return "success";
         } catch (SQLException e) {
@@ -962,24 +960,29 @@ public class DataManageService {
 
     @Transactional
     public void updateEntityInfo(List<AtlasEntity> entities) {
-        for (AtlasEntity entity : entities) {
-            String typeName = entity.getTypeName();
-            if (("hive_table").equals(typeName)) {
-                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")) {
-                    TableInfo tableInfo = new TableInfo();
-                    tableInfo.setTableGuid(entity.getGuid());
-                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                    tableInfo.setDbName(relatedDB.getDisplayText());
-                    tableDAO.updateTable(tableInfo);
+        try {
+            for (AtlasEntity entity : entities) {
+                String typeName = entity.getTypeName();
+                if (typeName.equals("hive_table")) {
+                    if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
+                        TableInfo tableInfo = new TableInfo();
+                        tableInfo.setTableGuid(entity.getGuid());
+                        tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                        tableInfo.setDbName(relatedDB.getDisplayText());
+                        tableDAO.updateTable(tableInfo);
+                        sendMetadataChangedMail(entity.getGuid());
+                    }
+                } else if (typeName.equals("hive_column")) {
+                    String guid = entity.getGuid();
+                    String name = entity.getAttribute("name").toString();
+                    String type = entity.getAttribute("type").toString();
+                    String status = entity.getStatus().name();
+                    columnDAO.updateColumnBasicInfo(guid, name, type, status);
                 }
-            } else if(("hive_column").equals(typeName)) {
-                String guid = entity.getGuid();
-                String name = entity.getAttribute("name").toString();
-                String type = entity.getAttribute("type").toString();
-                String status = entity.getStatus().name();
-                columnDAO.updateColumnBasicInfo(guid, name, type, status);
             }
+        } catch (Exception e) {
+            LOG.error("更新tableinfo表失败", e);
         }
     }
 
@@ -1008,5 +1011,57 @@ public class DataManageService {
 
     public String getCategoryNameById(String guid) {
         return categoryDao.getCategoryNameById(guid);
+    }
+
+    public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
+        try {
+            List<String> userIdList = metadataSubscribeDAO.getSubscribeUserIdList(tableGuid);
+
+            Table info = tableDAO.getDbAndTableName(tableGuid);
+            String sendMessage = "数据库[" + info.getDatabaseName() + "]下的表[" + info.getTableName() + "]元数据发生变更";
+            String subject = "元数据变更提醒";
+            List<String> emails = userDAO.getUsersEmail(userIdList);
+            sendMail(emails, subject, sendMessage);
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    public void sendMail(List<String> toList, String subject, String content) throws AtlasBaseException {
+        try {
+            StringJoiner mailJoiner = new StringJoiner(",");
+            toList.forEach(to -> mailJoiner.add(to));
+
+            Configuration configuration = ApplicationProperties.get();
+
+            String user = configuration.getString("metaspace.mail.user");
+            String passwd = configuration.getString("metaspace.mail.password");
+
+            Properties props = new Properties();
+            Iterator<String> mailKeys = configuration.getKeys("metaspace.mail.service");
+            while(mailKeys.hasNext()) {
+                String mailKey = mailKeys.next();
+                String key = mailKey.replace("metaspace.mail.service.", "");
+                String value = configuration.getString(mailKey);
+                props.setProperty(key, value);
+            }
+
+            Session session = Session.getInstance(props);
+            session.setDebug(true);
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(user));
+            message.setRecipients(Message.RecipientType.TO, mailJoiner.toString());
+            message.setSubject(subject);
+            message.setText(content);
+            message.saveChanges();
+
+            Transport ts = session.getTransport();
+            ts.connect(user, passwd);
+            ts.sendMessage(message, message.getAllRecipients());
+            ts.close();
+        } catch (Exception e) {
+            LOG.error("获取邮件发送方失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }

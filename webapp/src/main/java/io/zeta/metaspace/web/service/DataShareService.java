@@ -175,6 +175,9 @@ public class DataShareService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复路径");
             }
+            //使用次数初始化为0
+            info.setUsedCount(0);
+
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -1114,11 +1117,13 @@ public class DataShareService {
                 queryData.setData(queryDataList);
                 queryResult.setTotalCount(count);
                 queryResult.setDatas(queryData);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             } else {
                 JsonQueryResult queryResult = new JsonQueryResult();
                 queryResult.setDatas(queryDataList);
                 queryResult.setTotalCount(count);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             }
         } catch (ExecutionException e) {

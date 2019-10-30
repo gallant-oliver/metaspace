@@ -50,6 +50,7 @@ public class APIInfo {
     private Boolean edit;
     private String tableDisplayName;
     private String manager;
+    private Integer usedCount;
 
     public String getGuid() {
         return guid;
@@ -251,12 +252,20 @@ public class APIInfo {
         this.tableDisplayName = tableDisplayName;
     }
 
+
     public String getManager() {
         return manager;
     }
 
     public void setManager(String manager) {
         this.manager = manager;
+    }
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
     }
 
     public static class Field {

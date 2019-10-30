@@ -2,9 +2,11 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
+import io.zeta.metaspace.model.metadata.MetaDataRelatedAPI;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -71,4 +73,15 @@ public interface TableDAO {
     @Update("update tableInfo set subordinatesystem=#{info.subordinateSystem},subordinatedatabase=#{info.subordinateDatabase},systemadmin=#{info.systemAdmin},datawarehouseadmin=#{info.dataWarehouseAdmin},datawarehousedescription=#{info.dataWarehouseDescription},catalogAdmin=#{info.catalogAdmin} where tableGuid=#{tableGuid}")
     public int updateTableInfo(@Param("tableGuid")String tableGuid, @Param("info")Table info);
 
+    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{guid}")
+    public Table getDbAndTableName(@Param("guid")String guid);
+
+    @Select({"<script>",
+            " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from apiInfo join users on users.userid=apiInfo.keeper where tableGuid=#{tableGuid}",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    public List<MetaDataRelatedAPI> getTableInfluenceWithAPI(@Param("tableGuid")String tableGuid, @Param("limit") int limit, @Param("offset") int offset);
 }

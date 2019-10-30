@@ -43,8 +43,8 @@ import javax.ws.rs.DELETE;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level)" +
-            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType},#{level})")
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe)" +
+            "values(#{guid},#{name},#{description},#{upBrotherCategoryGuid},#{downBrotherCategoryGuid},#{parentCategoryGuid},#{qualifiedName},#{categoryType},#{level},#{safe})")
     public int add(CategoryEntityV2 category);
 
     @Select("select count(*) from category where categoryType=#{categoryType}")
@@ -91,7 +91,7 @@ public interface CategoryDAO {
     @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
 
-    @Update("update category set name=#{name},description=#{description},qualifiedName=#{qualifiedName} where guid=#{guid}")
+    @Update("update category set name=#{name},description=#{description},qualifiedName=#{qualifiedName},safe=#{safe} where guid=#{guid}")
     public int updateCategoryInfo(CategoryEntity category);
 
     @Delete("delete from category where guid=#{guid}")

@@ -19,6 +19,11 @@ package io.zeta.metaspace.discovery;
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
 
+
+import io.zeta.metaspace.model.metadata.RDBMSColumn;
+import io.zeta.metaspace.model.metadata.RDBMSDataSource;
+import io.zeta.metaspace.model.metadata.RDBMSDatabase;
+import io.zeta.metaspace.model.metadata.RDBMSTable;
 import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasErrorCode;
@@ -487,6 +492,182 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return tablePageResult;
     }
 
+    public PageResult<RDBMSDatabase> getRDBMSDBNameAndSourceNameByQuery(String queryTable, int offset, int limit,String sourceType) throws AtlasBaseException {
+        PageResult<RDBMSDatabase> dbPageResult = new PageResult<>();
+        ArrayList<RDBMSDatabase> dbs = new ArrayList<>();
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_SOURCE_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQuery);
+        String dbQuery = String.format(query, queryTable,sourceType.toLowerCase(), offset, offset + limit);
+        List<Map<String, AtlasVertex>> sourceDBs = (List) graph.executeGremlinScript(dbQuery, false);
+        for (Map<String, AtlasVertex> sourceDB : sourceDBs) {
+            AtlasVertex dbVertex = sourceDB.get("db");
+            AtlasVertex sourceVertex = sourceDB.get("instance");
+            RDBMSDatabase db = getRDBMSDBByVertex(dbVertex, sourceVertex);
+            dbs.add(db);
+        }
+        dbPageResult.setLists(dbs);
+        dbPageResult.setCurrentSize(dbs.size());
+        //tablePageResult.setOffset(offset);
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_COUNT_BY_QUERY);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable,sourceType.toLowerCase()), false);
+        dbPageResult.setTotalSize(counts.get(0));
+        return dbPageResult;
+    }
+
+    private RDBMSDatabase getRDBMSDBByVertex(AtlasVertex dbVertex, AtlasVertex sourceVertex) throws AtlasBaseException {
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("createTime");
+        RDBMSDatabase db = new RDBMSDatabase();
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            db.setDatabaseId(dbEntity.getGuid());
+            db.setDatabaseName(dbEntity.getAttribute("name").toString());
+            //setVirtualTable(table);
+            db.setStatus(dbEntity.getStatus().name());
+            db.setDatabaseDescription(dbEntity.getAttribute("comment") == null||dbEntity.getAttribute("comment").toString().length() == 0 ? "-" : dbEntity.getAttribute("comment").toString());
+            Date createTime = dbEntity.getCreateTime();
+            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(createTime);
+        }
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo sourceEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(sourceVertex, attributes, null, true);
+            AtlasEntity sourceEntity = sourceEntityWithExtInfo.getEntity();
+            db.setSourceName(sourceEntity.getAttribute("name").toString());
+            db.setSourceId(sourceEntity.getGuid());
+            db.setSourceStatus(sourceEntity.getStatus().toString());
+        }
+        return db;
+    }
+
+    public PageResult<RDBMSTable> getRDBMSTableNameAndDBAndSourceNameByQuery(String queryTable, int offset, int limit,String sourceType) throws AtlasBaseException {
+        PageResult<RDBMSTable> tablePageResult = new PageResult<>();
+        ArrayList<RDBMSTable> tables = new ArrayList<>();
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_TABLE_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_TABLE_DB_SOURCE_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQuery);
+        String tableQuery = String.format(query,sourceType.toLowerCase(), queryTable, offset, offset + limit);
+        List<Map<String, AtlasVertex>> sourceDBTables = (List) graph.executeGremlinScript(tableQuery, false);
+        for (Map<String, AtlasVertex> sourceDBTable : sourceDBTables) {
+            AtlasVertex tableVertex = sourceDBTable.get("table");
+            AtlasVertex dbVertex = sourceDBTable.get("db");
+            AtlasVertex sourceVertex = sourceDBTable.get("instance");
+            RDBMSTable table = getRDBMSTableByVertex(tableVertex,dbVertex, sourceVertex);
+            tables.add(table);
+        }
+        tablePageResult.setLists(tables);
+        tablePageResult.setCurrentSize(tables.size());
+        //tablePageResult.setOffset(offset);
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_TABLE_COUNT_BY_QUERY);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery,sourceType.toLowerCase(), queryTable), false);
+        tablePageResult.setTotalSize(counts.get(0));
+        return tablePageResult;
+    }
+
+    private RDBMSTable getRDBMSTableByVertex(AtlasVertex tableVertex, AtlasVertex dbVertex,AtlasVertex sourceVertex) throws AtlasBaseException {
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("description");
+        attributes.add("createTime");
+        attributes.add("temporary");
+        RDBMSTable table = new RDBMSTable();
+        if (Objects.nonNull(tableVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+            AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+            table.setTableId(tableEntity.getGuid());
+            table.setTableName(tableEntity.getAttribute("name").toString());
+            //setVirtualTable(table);
+            table.setStatus(tableEntity.getStatus().name());
+            table.setTableDescription(tableEntity.getAttribute("comment") == null||tableEntity.getAttribute("comment").toString().length() == 0  ? "null" : tableEntity.getAttribute("comment").toString());
+            Date createTime = tableEntity.getCreateTime();
+            SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(createTime);
+            table.setCreateTime(formatDateStr);
+        }
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            table.setDatabaseName(dbEntity.getAttribute("name").toString());
+            table.setDatabaseId(dbEntity.getGuid());
+            table.setDatabaseStatus(dbEntity.getStatus().name());
+        }
+        if (Objects.nonNull(sourceVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo sourceEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(sourceVertex, attributes, null, true);
+            AtlasEntity sourceEntity = sourceEntityWithExtInfo.getEntity();
+            table.setSourceName(sourceEntity.getAttribute("name").toString());
+            table.setSourceId(sourceEntity.getGuid());
+            table.setSourceStatus(sourceEntity.getStatus().name());
+        }
+        return table;
+    }
+
+    public PageResult<RDBMSColumn> getRDBMSColumnNameTableNameAndDBAndSourceNameByQuery(String queryTable, int offset, int limit, String sourceType) throws AtlasBaseException {
+        PageResult<RDBMSColumn> columnPageResult = new PageResult<>();
+        ArrayList<RDBMSColumn> columns = new ArrayList<>();
+        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_COLUMN_TABLE_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_COLUMN_TABLE_DB_SOURCE_BY_QUERY);
+        String query = gremlinQueryProvider.getQuery(gremlinQuery);
+        String columnQuery = String.format(query,sourceType.toLowerCase(), queryTable, offset, offset + limit);
+        List<Map<String, AtlasVertex>> sourceDBTableColumns = (List) graph.executeGremlinScript(columnQuery, false);
+        for (Map<String, AtlasVertex> sourceDBTableColumn : sourceDBTableColumns) {
+            AtlasVertex columnVertex = sourceDBTableColumn.get("column");
+            AtlasVertex tableVertex = sourceDBTableColumn.get("table");
+            AtlasVertex dbVertex = sourceDBTableColumn.get("db");
+            AtlasVertex sourceVertex = sourceDBTableColumn.get("instance");
+            RDBMSColumn column = getRDBMSColumnByVertex(columnVertex,tableVertex,dbVertex, sourceVertex);
+            columns.add(column);
+        }
+        columnPageResult.setLists(columns);
+        columnPageResult.setCurrentSize(columns.size());
+        //tablePageResult.setOffset(offset);
+        String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_COLUMN_COUNT_BY_QUERY);
+        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, sourceType.toLowerCase(),queryTable), false);
+
+        columnPageResult.setTotalSize(counts.get(0));
+        return columnPageResult;
+    }
+
+    private RDBMSColumn getRDBMSColumnByVertex(AtlasVertex columnVertex,AtlasVertex tableVertex, AtlasVertex dbVertex, AtlasVertex sourceVertex) throws AtlasBaseException {
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("description");
+        RDBMSColumn column = new RDBMSColumn();
+        if (Objects.nonNull(columnVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo columnEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(columnVertex, attributes, null, true);
+            AtlasEntity columnEntity = columnEntityWithExtInfo.getEntity();
+            column.setColumnId(columnEntity.getGuid());
+            column.setColumnName(columnEntity.getAttribute("name").toString());
+            //setVirtualTable(table);
+            column.setStatus(columnEntity.getStatus().name());
+            column.setColumnDescription(columnEntity.getAttribute("comment") == null||columnEntity.getAttribute("comment").toString().length() == 0 ? "null" : columnEntity.getAttribute("comment").toString());
+        }
+        if (Objects.nonNull(tableVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
+            AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+            column.setTableId(tableEntity.getGuid());
+            column.setTableName(tableEntity.getAttribute("name").toString());
+            //setVirtualTable(table);
+            column.setTableStatus(tableEntity.getStatus().name());
+        }
+        if (Objects.nonNull(dbVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dbVertex, attributes, null, true);
+            AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+            column.setDatabaseName(dbEntity.getAttribute("name").toString());
+            column.setDatabaseId(dbEntity.getGuid());
+            column.setDatabaseStatus(dbEntity.getStatus().name());
+        }
+        if (Objects.nonNull(sourceVertex)) {
+            AtlasEntity.AtlasEntityWithExtInfo sourceEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(sourceVertex, attributes, null, true);
+            AtlasEntity sourceEntity = sourceEntityWithExtInfo.getEntity();
+            column.setSourceName(sourceEntity.getAttribute("name").toString());
+            column.setSourceId(sourceEntity.getGuid());
+            column.setSourceStatus(sourceEntity.getStatus().name());
+        }
+        return column;
+    }
+
     public List<AtlasEntityHeader> getAllTables() throws AtlasBaseException {
         String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ALL_TABLE);
         List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(query, false);
@@ -632,6 +813,113 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return databasePageResult;
     }
 
+
+    public PageResult<RDBMSDataSource> getRDBMSDataSourceByQuery(String queryDb, long offset, long limit, String sourceType) throws AtlasBaseException {
+        PageResult<RDBMSDataSource> databasePageResult = new PageResult<>();
+        List<RDBMSDataSource> lists = new ArrayList<>();
+        String queryStr = "";
+        if((offset == 0 && limit == -1)) {
+            queryStr = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FUll_RDBMS_SOURCE);
+        } else {
+            queryStr =gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_SOURCE_BY_QUERY);
+        }
+        String format = (offset == 0 && limit == -1) ? String.format(queryStr,sourceType.toLowerCase(),queryDb) : String.format(queryStr, sourceType.toLowerCase(),queryDb,offset, offset + limit);
+        List<String> attributes = new ArrayList<>();
+        attributes.add("name");
+        attributes.add("comment");
+        attributes.add("qualifiedName");
+        attributes.add("platform");
+        List<AtlasVertex> dataSources = (List) graph.executeGremlinScript(format, false);
+        List<AtlasEntity> test = new ArrayList<>();
+        for (AtlasVertex dataSource : dataSources) {
+            RDBMSDataSource source = new RDBMSDataSource();
+            if (Objects.nonNull(dataSource)) {
+                AtlasEntity.AtlasEntityWithExtInfo sourceEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(dataSource, attributes, null, true);
+                AtlasEntity sourceEntity = sourceEntityWithExtInfo.getEntity();
+                test.add(sourceEntity);
+                source.setSourceName(sourceEntity.getAttribute("name").toString());
+                source.setSourceId(sourceEntity.getGuid());
+                source.setStatus(sourceEntity.getStatus().name());
+                source.setSourceDescription(sourceEntity.getAttribute("comment")==null || sourceEntity.getAttribute("comment").toString().length()==0 ?"-":sourceEntity.getAttribute("comment").toString());
+            }
+            lists.add(source);
+        }
+        databasePageResult.setCurrentSize(lists.size());
+        //databasePageResult.setOffset(offset);
+        databasePageResult.setLists(lists);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_SOURCE_TOTAL_NUM_BY_QUERY);
+        String numQuery = String.format(gremlinQuery, sourceType.toLowerCase(),queryDb);
+        List num = (List) graph.executeGremlinScript(numQuery, false);
+        databasePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
+        return databasePageResult;
+    }
+
+    public PageResult<RDBMSDatabase> getRDBMSDBBySource(String sourceId, long offset, long limit) throws AtlasBaseException {
+        PageResult<RDBMSDatabase> databasePageResult = new PageResult<>();
+        List<RDBMSDatabase> lists = new ArrayList<>();
+        String format = (offset == 0 && limit == -1) ? String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DATABASE),sourceId):String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DATABASE_BY_SOURCE),sourceId,offset,offset+limit);
+        List<AtlasVertex> databases = (List) graph.executeGremlinScript(format, false);
+        for (AtlasVertex database : databases) {
+            RDBMSDatabase db = new RDBMSDatabase();
+            List<String> attributes = new ArrayList<>();
+            attributes.add("name");
+            attributes.add("comment");
+            List<String> relationAttributes = new ArrayList<>();
+            relationAttributes.add("db");
+            if (Objects.nonNull(database)) {
+                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(database, attributes, null, true);
+                AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                db.setDatabaseName(dbEntity.getAttribute("name").toString());
+                //setVirtualTable(tb);
+                db.setDatabaseId(dbEntity.getGuid());
+                db.setStatus(dbEntity.getStatus().name());
+                db.setDatabaseDescription(dbEntity.getAttribute("comment")==null || dbEntity.getAttribute("comment").toString().length()==0 ?"-":dbEntity.getAttribute("comment").toString());
+            }
+            lists.add(db);
+        }
+        databasePageResult.setCurrentSize(lists.size());
+        databasePageResult.setOffset(offset);
+        databasePageResult.setLists(lists);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DATABASE_TOTAL_BY_SOURCE);
+        String numQuery = String.format(gremlinQuery, sourceId);
+        List num = (List) graph.executeGremlinScript(numQuery, false);
+        databasePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
+        return databasePageResult;
+    }
+
+    public PageResult<RDBMSTable> getRDBMSTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
+        PageResult<RDBMSTable> tablePageResult = new PageResult<>();
+        List<RDBMSTable> lists = new ArrayList<>();
+        String format = (offset == 0 && limit == -1) ? String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_TABLE),databaseId):String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_TABLE_BY_DB),databaseId,offset,offset+limit);
+        List<AtlasVertex> tables = (List) graph.executeGremlinScript(format, false);
+        for (AtlasVertex table : tables) {
+            RDBMSTable tb = new RDBMSTable();
+            List<String> attributes = new ArrayList<>();
+            attributes.add("name");
+            attributes.add("comment");
+            List<String> relationAttributes = new ArrayList<>();
+            relationAttributes.add("db");
+            if (Objects.nonNull(table)) {
+                AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
+                AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
+                tb.setTableName(tableEntity.getAttribute("name").toString());
+                //setVirtualTable(tb);
+                tb.setTableId(tableEntity.getGuid());
+                tb.setStatus(tableEntity.getStatus().name());
+                tb.setTableDescription(tableEntity.getAttribute("comment")==null || tableEntity.getAttribute("comment").toString().length()==0 ? "-":tableEntity.getAttribute("comment").toString());
+            }
+            lists.add(tb);
+        }
+        tablePageResult.setCurrentSize(lists.size());
+        tablePageResult.setOffset(offset);
+        tablePageResult.setLists(lists);
+        String gremlinQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_TABLE_TOTAL_BY_DB);
+        String numQuery = String.format(gremlinQuery, databaseId);
+        List num = (List) graph.executeGremlinScript(numQuery, false);
+        tablePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
+        return tablePageResult;
+    }
+
     public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
         PageResult<Table> tablePageResult = new PageResult<>();
         List<Table> lists = new ArrayList<>();
@@ -647,17 +935,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             relationAttributes.add("db");
             if (Objects.nonNull(table)) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
-                AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                tb.setTableName(dbEntity.getAttribute("name").toString());
-                if(Boolean.getBoolean(dbEntity.getAttribute("temporary").toString()) == true) {
+                AtlasEntity entity = dbEntityWithExtInfo.getEntity();
+                tb.setTableName(entity.getAttribute("name").toString());
+                if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
                     tb.setVirtualTable(true);
                 } else {
                     tb.setVirtualTable(false);
                 }
                 //setVirtualTable(tb);
-                tb.setTableId(dbEntity.getGuid());
-                tb.setStatus(dbEntity.getStatus().name());
-                tb.setDescription(dbEntity.getAttribute("comment")==null?"-":dbEntity.getAttribute("comment").toString());
+                tb.setTableId(entity.getGuid());
+                tb.setStatus(entity.getStatus().name());
+                tb.setDescription(entity.getAttribute("comment")==null?"-":entity.getAttribute("comment").toString());
             }
             lists.add(tb);
         }

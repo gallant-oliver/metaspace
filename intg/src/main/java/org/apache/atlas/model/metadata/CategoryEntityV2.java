@@ -16,6 +16,8 @@
  */
 package org.apache.atlas.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /*
  * @description
  * @author sunhaoning
@@ -34,6 +36,16 @@ public class CategoryEntityV2 {
     private int level;
     private int status;
     private boolean show;
+    @JsonIgnore
+    private String safe;
+
+    public String getSafe() {
+        return safe;
+    }
+
+    public void setSafe(String safe) {
+        this.safe = safe;
+    }
 
     public CategoryEntityV2() { }
     public CategoryEntityV2(String guid, String qualifiedName, String name, String description, String upBrotherCategoryGuid, String downBrotherCategoryGuid, String parentCategoryGuid, Integer categoryType) {
