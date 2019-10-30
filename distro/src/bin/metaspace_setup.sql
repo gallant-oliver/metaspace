@@ -1880,6 +1880,23 @@ ALTER TABLE "public"."data_source_authorize" ADD CONSTRAINT "data_source_authori
 
 
 -- ----------------------------
+-- Table structure for metadata_subscribe
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."metadata_subscribe";
+CREATE TABLE "public"."metadata_subscribe" (
+  "user_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "table_guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6)
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table metadata_subscribe
+-- ----------------------------
+ALTER TABLE "public"."metadata_subscribe" ADD CONSTRAINT "metadata_subscribe_pkey" PRIMARY KEY ("user_id", "table_guid");
+
+
+-- ----------------------------
 -- Table structure for report2ruletype
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report2ruletype";
@@ -1888,10 +1905,10 @@ CREATE TABLE "public"."report2ruletype" (
   "data_quality_execute_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "creator" varchar(255) COLLATE "pg_catalog"."default",
   "create_time" timestamptz(6)
-)
-;
+);
 
 -- ----------------------------
 -- Primary Key structure for table report2ruletype
 -- ----------------------------
 ALTER TABLE "public"."report2ruletype" ADD CONSTRAINT "report2ruletype_pkey" PRIMARY KEY ("rule_type_id", "data_quality_execute_id");
+
