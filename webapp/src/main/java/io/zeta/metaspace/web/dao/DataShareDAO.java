@@ -58,7 +58,7 @@ public interface DataShareDAO {
 
     @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
-             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount,,manager",
+             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
