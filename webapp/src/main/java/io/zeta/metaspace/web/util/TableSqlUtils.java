@@ -14,6 +14,7 @@
 package io.zeta.metaspace.web.util;
 
 import com.google.common.base.Joiner;
+import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.Field;
@@ -23,12 +24,13 @@ import io.zeta.metaspace.model.table.TableType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-import java.util.List;
+import java.util.*;
 
 public class TableSqlUtils {
 
     public static String format(TableForm tableForm) throws AtlasBaseException {
         try {
+            keyWordIdentify(tableForm);
             String database = tableForm.getDatabase();
             String tableName = tableForm.getTableName();
             String comment = tableForm.getComment();
@@ -41,7 +43,6 @@ public class TableSqlUtils {
             String lineTerminated = tableForm.getLineTerminated();
             TableType tableTypeEnum = TableType.of(tableForm.getTableType());
             String fieldsLiteral = Joiner.on(",").join(tableForm.getFields());
-
             StringBuffer sqlFormat = new StringBuffer("CREATE %s TABLE %s.%s (%s)");
             if (StringUtils.isNotBlank(comment)) {
                 sqlFormat.append(" COMMENT '" + comment + "'");
@@ -78,11 +79,52 @@ public class TableSqlUtils {
             }
 
             String sql = String.format(sqlFormat.toString(), tableTypeEnum.getLiteral(),
-                                       database, tableName, fieldsLiteral);
+                    database, tableName, fieldsLiteral);
             return sql;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, ExceptionUtils.getStackTrace(e));
         }
-
     }
+
+    public static void keyWordIdentify(TableForm tableForm) throws AtlasBaseException {
+        List<String> columnNameList = new ArrayList<>();
+        tableForm.getFields().forEach(field -> columnNameList.add(field.getColumnName()));
+        Set<String> keyWordSet = new HashSet<>();
+        keyWordSet.addAll(Arrays.asList(keyWords));
+        Set<String> hitSet = new HashSet<>();
+        for (String columnName : columnNameList) {
+            if(keyWordSet.contains(columnName.toUpperCase())) {
+                hitSet.add(columnName);
+            }
+        }
+        if(hitSet.size() > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段集合中包含hive关键字:[" + Joiner.on(",").join(hitSet) + "]");
+        }
+    }
+
+    private static String[] keyWords = {"ADD","ADMIN","AFTER","ALL","ALTER","ANALYZE","AND","ARCHIVE","ARRAY","AS","ASC","AUTHORIZATION","BEFORE","BETWEEN",
+            "BIGINT","BINARY","BOOLEAN","BOTH","BUCKET","BUCKETS","BY","CASCADE","CASE","CAST","CHANGE","CHAR","CLUSTER",
+            "CLUSTERED","CLUSTERSTATUS","COLLECTION","COLUMN","COLUMNS","COMMENT","COMPACT","COMPACTIONS","COMPUTE",
+            "CONCATENATE","CONF","CONTINUE","CREATE","CROSS","CUBE","CURRENT","CURRENT_DATE","CURRENT_TIMESTAMP","CURSOR",
+            "DATA","DATABASE","DATABASES","DATE","DATETIME","DAY","DBPROPERTIES","DECIMAL","DEFERRED","DEFINED","DELETE",
+            "DELIMITED","DEPENDENCY","DESC","DESCRIBE","DIRECTORIES","DIRECTORY","DISABLE","DISTINCT","DISTRIBUTE",
+            "DOUBLE","DROP","ELEM_TYPE","ELSE","ENABLE","END","ESCAPED","EXCHANGE","EXCLUSIVE","EXISTS","EXPLAIN","EXPORT",
+            "EXTENDED","EXTERNAL","FALSE","FETCH","FIELDS","FILE","FILEFORMAT","FIRST","FLOAT","FOLLOWING","FOR","FORMAT",
+            "FORMATTED","FROM","FULL","FUNCTION","FUNCTIONS","GRANT","GROUP","GROUPING","HAVING","HOLD_DDLTIME","HOUR",
+            "IDXPROPERTIES","IF","IGNORE","IMPORT","IN","INDEX","INDEXES","INNER","INPATH","INPUTDRIVER","INPUTFORMAT",
+            "INSERT","INT","INTERSECT","INTERVAL","INTO","IS","ITEMS","JAR","JOIN","KEYS","KEY_TYPE","LATERAL","LEFT","LESS",
+            "LIKE","LIMIT","LINES","LOAD","LOCAL","LOCATION","LOCK","LOCKS","LOGICAL","LONG","MACRO","MAP","MAPJOIN",
+            "MATERIALIZED","MINUS","MINUTE","MONTH","MORE","MSCK","NONE","NOSCAN","NOT","NO_DROP","NULL","OF","OFFLINE","ON",
+            "OPTION","OR","ORDER","OUT","OUTER","OUTPUTDRIVER","OUTPUTFORMAT","OVER","OVERWRITE","OWNER","PARTIALSCAN",
+            "PARTITION","PARTITIONED","PARTITIONS","PERCENT","PLUS","PRECEDING","PRESERVE","PRETTY","PRINCIPALS",
+            "PROCEDURE","PROTECTION","PURGE","RANGE","READ","READONLY","READS","REBUILD","RECORDREADER","RECORDWRITER",
+            "REDUCE","REGEXP","RELOAD","RENAME","REPAIR","REPLACE","RESTRICT","REVOKE","REWRITE","RIGHT","RLIKE","ROLE","ROLES",
+            "ROLLUP","ROW","ROWS","SCHEMA","SCHEMAS","SECOND","SELECT","SEMI","SERDE","SERDEPROPERTIES","SERVER","SET","SETS",
+            "SHARED","SHOW","SHOW_DATABASE","SKEWED","SMALLINT","SORT","SORTED","SSL","STATISTICS","STORED","STREAMTABLE",
+            "STRING","STRUCT","TABLE","TABLES","TABLESAMPLE","TBLPROPERTIES","TEMPORARY","TERMINATED","THEN","TIMESTAMP",
+            "TINYINT","TO","TOUCH","TRANSACTIONS","TRANSFORM","TRIGGER","TRUE","TRUNCATE","UNARCHIVE","UNBOUNDED","UNDO",
+            "UNION","UNIONTYPE","UNIQUEJOIN","UNLOCK","UNSET","UNSIGNED","UPDATE","URI","USE","USER","USING","UTC",
+            "UTCTIMESTAMP","VALUES","VALUE_TYPE","VARCHAR","VIEW","WHEN","WHERE","WHILE","WINDOW","WITH","YEAR"};
 }

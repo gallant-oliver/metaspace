@@ -49,6 +49,7 @@ public class APIInfo {
     private Boolean star;
     private Boolean edit;
     private String tableDisplayName;
+    private Integer usedCount;
 
     public String getGuid() {
         return guid;
@@ -248,6 +249,14 @@ public class APIInfo {
 
     public void setTableDisplayName(String tableDisplayName) {
         this.tableDisplayName = tableDisplayName;
+    }
+
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
     }
 
     public static class Field {

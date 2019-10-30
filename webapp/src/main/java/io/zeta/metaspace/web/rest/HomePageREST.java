@@ -89,7 +89,9 @@ public class HomePageREST {
     @Path("/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TimeDBTB getTimeDbTb() throws AtlasBaseException {
-        return homePageService.getTimeDbTb();
+        synchronized (HomePageREST.class) {
+            return homePageService.getTimeDbTb();
+        }
     }
 
     /**

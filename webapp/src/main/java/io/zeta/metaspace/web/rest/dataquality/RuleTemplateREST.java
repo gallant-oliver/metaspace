@@ -13,11 +13,11 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 
-import io.zeta.metaspace.model.dataquality2.RuleTemplate;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +45,8 @@ public class RuleTemplateREST {
 
     @Autowired
     private RuleTemplateService ruleTemplateService;
+    @Autowired
+    private TaskManageService taskManageService;
 
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -75,5 +77,39 @@ public class RuleTemplateREST {
         return ruleTemplateService.search(parameters);
     }
 
+    @POST
+    @Path("/{ruleType}/report")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Report2RuleType> getReportByRuleType(@PathParam("ruleType")String ruleType,Parameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.getReportByRuleType(ruleType, parameters);
+    }
 
+    /**
+     * 报告规则记录详情
+     * @param executionId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{executionId}/record")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(executionId);
+    }
+
+    /**
+     * 任务详情-基本信息
+     * @param taskId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/task/{taskId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataQualityBasicInfo getTaskBasicInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        return taskManageService.getTaskBasicInfo(taskId);
+    }
 }
