@@ -339,9 +339,9 @@ public class DataStandardService {
             String pattern = "^Standard-([1-9])+-l$";
             CategoryPrivilege.Privilege privilege = null;
             if(Pattern.matches(pattern, categoryGuid)) {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false);
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false,false);
             } else {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false);
+                privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false,false);
             }
             category.setPrivilege(privilege);
         }

@@ -167,6 +167,10 @@ public class DataManageService {
             //description
             entity.setDescription(info.getDescription());
             entity.setCategoryType(type);
+            entity.setSafe(info.getSafe());
+            if (StringUtils.isEmpty(entity.getSafe())){
+                entity.setSafe("1");
+            }
 
             //创建第一个目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
@@ -191,7 +195,7 @@ public class DataManageService {
                 returnEntity.setParentCategoryGuid(null);
                 returnEntity.setUpBrotherCategoryGuid(null);
                 returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
                 if(type==0){
                     privilege.setDeleteRelation(false);
                 }
@@ -271,15 +275,15 @@ public class DataManageService {
             CategoryPrivilege.Privilege privilege =null;
             if(type==0) {
                 if(modules.contains(SystemModule.TECHNICAL_OPERATE.getCode())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
                 }else{
                 if(modules.contains(SystemModule.BUSINESSE_OPERATE.getCode())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true);
+                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
                 }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true);
+                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
             }
             returnEntity.setPrivilege(privilege);
@@ -383,6 +387,7 @@ public class DataManageService {
             entity.setName(info.getName());
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
+            entity.setSafe(info.getSafe());
             categoryDao.updateCategoryInfo(entity);
             return "success";
         } catch (SQLException e) {
