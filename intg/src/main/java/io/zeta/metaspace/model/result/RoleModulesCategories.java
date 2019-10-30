@@ -52,6 +52,15 @@ public class RoleModulesCategories {
         private int status;
         private String description;
         private int level;
+        private String safe;
+
+        public String getSafe() {
+            return safe;
+        }
+
+        public void setSafe(String safe) {
+            this.safe = safe;
+        }
 
         public int getLevel() {
             return level;
@@ -71,6 +80,7 @@ public class RoleModulesCategories {
             this.upBrotherCategoryGuid = category.upBrotherCategoryGuid;
             this.downBrotherCategoryGuid = category.downBrotherCategoryGuid;
             this.description = category.description;
+            this.safe = category.safe;
         }
 
         @Override

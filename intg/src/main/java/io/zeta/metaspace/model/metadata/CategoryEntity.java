@@ -36,6 +36,7 @@ public class CategoryEntity implements Serializable {
     private AtlasGlossaryHeader anchor;
     private String upBrothCategoryGuid;
     private String downBrothCategoryGuid;
+    private String safe;
 
     private String parentCategoryGuid;
     private Set<String> childrenCategoriesGuid;
@@ -43,6 +44,14 @@ public class CategoryEntity implements Serializable {
     // Category hierarchy links
     private AtlasRelatedCategoryHeader parentCategory;
     private Set<AtlasRelatedCategoryHeader> childrenCategories;
+
+    public String getSafe() {
+        return safe;
+    }
+
+    public void setSafe(String safe) {
+        this.safe = safe;
+    }
 
     public String getGuid() {
         return guid;

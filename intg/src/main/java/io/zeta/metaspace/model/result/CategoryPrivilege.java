@@ -33,6 +33,15 @@ public class CategoryPrivilege {
     private Privilege privilege;
     private int level;
     private Integer objectCount;
+    private String safe;
+
+    public String getSafe() {
+        return safe;
+    }
+
+    public void setSafe(String safe) {
+        this.safe = safe;
+    }
 
     public int getLevel() {
         return level;
@@ -50,6 +59,7 @@ public class CategoryPrivilege {
         this.downBrotherCategoryGuid = category.getDownBrotherCategoryGuid();
         this.description = category.getDescription();
         this.level = category.getLevel();
+        this.safe=category.getSafe();
     }
 
 
@@ -135,12 +145,22 @@ public class CategoryPrivilege {
         private boolean delete;
         //编辑目录
         private boolean edit;
+        //是否只能编辑安全等级
+        private boolean editSafe;
         //添加关联
         private boolean createRelation;
         //删除关联
         private boolean deleteRelation;
         //添加owner
         private boolean addOwner;
+
+        public boolean isEditSafe() {
+            return editSafe;
+        }
+
+        public void setEditSafe(boolean editSafe) {
+            this.editSafe = editSafe;
+        }
 
         public Privilege() {
 
@@ -228,15 +248,17 @@ public class CategoryPrivilege {
             this.deleteRelation = privilege.isDeleteRelation();
             this.addOwner = privilege.isAddOwner();
             this.edit=privilege.isEdit();
+            this.editSafe=privilege.isEditSafe();
         }
 
-        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner,boolean edit) {
+        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner,boolean edit,boolean editSafe) {
             this.hide = hide;
             this.ash = ash;
             this.addSibling = addSibling;
             this.addChildren = addChildren;
             this.delete = delete;
             this.edit = edit;
+            this.editSafe=editSafe;
             this.createRelation = createRelation;
             this.deleteRelation = deleteRelation;
             this.addOwner = addOwner;
