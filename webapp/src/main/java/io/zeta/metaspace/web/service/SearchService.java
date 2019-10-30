@@ -18,6 +18,7 @@ import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.metadata.RMDBEnum;
 import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.ApplicationProperties;
@@ -73,6 +74,8 @@ public class SearchService {
     RelationDAO relationDAO;
     @Autowired
     DataSourceService  dataSourceService;
+    @Autowired
+    MetadataSubscribeDAO subscribeDAO;
 
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
@@ -108,7 +111,14 @@ public class SearchService {
 
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
     public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
-        return metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+        PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+        List<Table> tableList = pageResult.getLists();
+        String userId = AdminUtils.getUserData().getUserId();
+        tableList.forEach(table -> {
+            boolean subTo = subscribeDAO.existSubscribe(table.getTableId(), userId)==0 ? false : true;
+            table.setSubscribeTo(subTo);
+        });
+        return pageResult;
     }
 
 

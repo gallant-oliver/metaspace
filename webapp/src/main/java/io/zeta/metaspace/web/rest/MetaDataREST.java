@@ -947,6 +947,20 @@ public class MetaDataREST {
         }
         return Response.status(200).entity("success").build();
     }
+
+    @PUT
+    @Path("/subscribe/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response subscribeTableMetadata(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            metadataService.addMetadataSubscription(tableGuid);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
     @POST
     @Path("/influence/api/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -959,6 +973,18 @@ public class MetaDataREST {
         }
     }
 
+    @PUT
+    @Path("/unsubscribe/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response unsubscribeTableMetadata(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            metadataService.removeMetadataSubscription(tableGuid);
+            return Response.status(200).entity("success").build();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
     @GET
     @Path("/influence/table/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

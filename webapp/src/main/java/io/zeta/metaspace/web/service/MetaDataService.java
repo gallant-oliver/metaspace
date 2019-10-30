@@ -23,11 +23,9 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.metadata.MetaDataProvider;
 import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
@@ -68,6 +66,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,6 +113,8 @@ public class MetaDataService {
     @Autowired
     BusinessDAO businessDAO;
     @Autowired
+    MetadataSubscribeDAO metadataSubscribeDAO;
+    @Autowired
     DataManageService dataManageService;
     private String errorMessage = "";
     @Autowired
@@ -137,7 +138,6 @@ public class MetaDataService {
     private AtlasTypeRegistry atlasTypeRegistry;
     @Autowired
     private AtlasGraph graph;
-
     @Autowired
     private SearchService searchService;
 
@@ -2204,32 +2204,6 @@ public class MetaDataService {
                 Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
                 oldColumnMedataMap.put(name, columnMetadataMap);
             }
-
-            /*Set<String> keySet = new HashSet<>();
-            keySet.addAll(currentColumnMedataMap.keySet());
-            keySet.addAll(oldColumnMedataMap.keySet());
-            for(String name : keySet) {
-                Map<String, String> currentValueMap = currentColumnMedataMap.get(name);
-                Map<String, String> oldValueMap = oldColumnMedataMap.get(name);
-
-                if((currentColumnMedataMap.containsKey(name) && !oldColumnMedataMap.containsKey(name)) ||
-                        (!currentColumnMedataMap.containsKey(name) && oldColumnMedataMap.containsKey(name))) {
-                    if(currentColumnMedataMap.containsKey(name)) {
-
-                    }
-                }
-
-                for(String key : currentValueMap.keySet()) {
-                    String currentValue = currentValueMap.get(key);
-                    String oldValue = oldValueMap.get(key);
-                    currentValue = Objects.isNull(currentValue)? "":currentValue;
-                    oldValue = Objects.isNull(oldValue)? "":oldValue;
-
-                    if(!currentValue.equals(oldValue)) {
-                        changedFiledSet.add(key);
-                    }
-                }
-            }*/
             comparisonMetadata.setCurrentMetadata(currentMetadata);
             comparisonMetadata.setOldMetadata(oldMetadata);
             comparisonMetadata.setChangedSet(changedFiledSet);
@@ -2237,6 +2211,30 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
         return comparisonMetadata;
+    }
+
+    public void addMetadataSubscription(String tableGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            Timestamp generateTime = new Timestamp(System.currentTimeMillis());
+            SubscriptionInfo subscriptionInfo = new SubscriptionInfo(userId, tableGuid, generateTime);
+            metadataSubscribeDAO.addMetadataSubscription(subscriptionInfo);
+            refreshCache();
+        } catch (Exception e) {
+            LOG.error("添加订阅元数据变更失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public void removeMetadataSubscription(String tableGuid) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            metadataSubscribeDAO.removeMetadataSubscription(userId, tableGuid);
+            refreshCache();
+        } catch (Exception e) {
+            LOG.error("添加订阅元数据变更失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
     public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters) {

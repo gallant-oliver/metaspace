@@ -36,6 +36,7 @@ public class Table implements Serializable {
     private String status;
     private List<Tag> tags;
     private boolean edit;
+    private boolean subscribeTo;
 
     private String subordinateSystem;
     private String subordinateDatabase;
@@ -310,6 +311,14 @@ public class Table implements Serializable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public boolean isSubscribeTo() {
+        return subscribeTo;
+    }
+
+    public void setSubscribeTo(boolean subscribeTo) {
+        this.subscribeTo = subscribeTo;
     }
 
     public static class BusinessObject {
