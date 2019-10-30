@@ -41,6 +41,7 @@ public class APIInfoHeader {
     private Boolean star;
     private Boolean enableClone;
     private String tableDisplayName;
+    private Integer usedCount;
     @JsonIgnore
     private int total;
 
@@ -170,5 +171,13 @@ public class APIInfoHeader {
 
     public void setTableDisplayName(String tableDisplayName) {
         this.tableDisplayName = tableDisplayName;
+    }
+
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
     }
 }

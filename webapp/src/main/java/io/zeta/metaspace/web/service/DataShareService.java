@@ -111,6 +111,8 @@ public class DataShareService {
 
     public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
+    public static final String METASPACE_HA_ENABLE = "atlas.server.ha.enabled";
+    public static final String METASPACE_HA_ADDRESS = "metaspace.ha.rest.address";
     private static String engine;
 
     @Autowired
@@ -170,6 +172,9 @@ public class DataShareService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "重复路径");
             }
+            //使用次数初始化为0
+            info.setUsedCount(0);
+
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -569,7 +574,7 @@ public class DataShareService {
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url ="http://" + getLocalIP() + "/api/metaspace";
+            String upstream_url ="http://" + getAccessURL() + "/api/metaspace";
             String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
@@ -599,8 +604,18 @@ public class DataShareService {
         return pathStr;
     }
 
-    public static String getLocalIP() throws AtlasException {
-            InetAddress addr = null;
+    public static String getAccessURL() throws Exception {
+        Configuration configuration = ApplicationProperties.get();
+        Boolean haEnable = configuration.getBoolean(METASPACE_HA_ENABLE, false);
+        if(haEnable) {
+            return configuration.getString(METASPACE_HA_ADDRESS, getLocalURL());
+        } else {
+            return getLocalURL();
+        }
+    }
+
+    public static String getLocalURL() throws AtlasException {
+        InetAddress addr = null;
         Configuration configuration = null;
             try {
                 configuration = ApplicationProperties.get();
@@ -611,8 +626,6 @@ public class DataShareService {
             } catch (AtlasException e) {
                 throw e;
             }
-
-
             byte[] ipAddr = addr.getAddress();
             String ipAddrStr = "";
             for (int i = 0; i < ipAddr.length; i++) {
@@ -621,13 +634,8 @@ public class DataShareService {
                 }
                 ipAddrStr += ipAddr[i] & 0xFF;
             }
-            //System.out.println(ipAddrStr);
             String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
-            /*String[] hostArr = hostStr.split("http://");*/
             String[] hostArr = hostStr.split(":");
-            Swagger swagger = new Swagger();
-            //host
-            /*String host = hostArr[1];*/
             String port = hostArr[hostArr.length - 1];
             ipAddrStr += ":" + port;
             return ipAddrStr;
@@ -635,8 +643,7 @@ public class DataShareService {
 
     public String generateSwaggerContent(APIInfo info) throws Exception {
         try {
-
-            String ip=getLocalIP();
+            String ip = getAccessURL();
             Swagger swagger = new Swagger();
             swagger.setHost(ip);
             //basePath
@@ -678,14 +685,6 @@ public class DataShareService {
 
             List<String> columnList = new ArrayList<>();
             List<APIInfo.Field> values = getQueryFileds(info.getGuid());
-
-            /*Gson gson = new Gson();
-            for (Object obj : getQueryFileds(info.getGuid())) {
-                Type type = new TypeToken<APIInfo.Field>() {
-                }.getType();
-                APIInfo.Field field = gson.fromJson(gson.toJson(obj), type);
-                values.add(field);
-            }*/
 
             //response
             ArrayProperty responseProperty = new ArrayProperty();
@@ -729,8 +728,6 @@ public class DataShareService {
                             if(userDefaultValue) {
                                 filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));
                             }
-                            /*if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Boolean.valueOf(defaultValue));*/
                         }
                         filterColumnProperty.setType(type);
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -750,8 +747,6 @@ public class DataShareService {
                             if(userDefaultValue) {
                                 filterColumnProperty.setDefault(Integer.valueOf(defaultValue));
                             }
-                            /*if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Integer.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("integer");
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -771,8 +766,6 @@ public class DataShareService {
                             if(userDefaultValue) {
                                 filterColumnProperty.setDefault(Double.valueOf(defaultValue));
                             }
-                            /*if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Double.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("number");
                         filterColumnProperty.setFormat(type);
@@ -792,8 +785,6 @@ public class DataShareService {
                             if(userDefaultValue) {
                                 filterColumnProperty.setDefault(Float.valueOf(defaultValue));
                             }
-                            /*if (StringUtil.isEmpty(defaultValue))
-                                filterColumnProperty.setDefault(Float.valueOf(field.getDefaultValue()));*/
                         }
                         filterColumnProperty.setType("number");
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -813,8 +804,6 @@ public class DataShareService {
                             if(userDefaultValue) {
                                 filterColumnProperty.setDefault(defaultValue);
                             }
-                            /*if (Objects.nonNull(defaultValue))
-                                filterColumnProperty.setDefault(field.getDefaultValue());*/
                         }
                         filterColumnProperty.setType(type);
                         filterPropertyMap.put(columnName, filterColumnProperty);
@@ -1111,11 +1100,13 @@ public class DataShareService {
                 queryData.setData(queryDataList);
                 queryResult.setTotalCount(count);
                 queryResult.setDatas(queryData);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             } else {
                 JsonQueryResult queryResult = new JsonQueryResult();
                 queryResult.setDatas(queryDataList);
                 queryResult.setTotalCount(count);
+                shareDAO.updateUsedCount(path);
                 return queryResult;
             }
         } catch (ExecutionException e) {
