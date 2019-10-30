@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
@@ -75,6 +76,9 @@ import java.util.stream.Collectors;
 import org.apache.atlas.type.AtlasTypeRegistry;
 
 import org.apache.commons.beanutils.BeanUtils;
+
+import javax.ws.rs.PathParam;
+
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -1751,5 +1755,56 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
         return comparisonMetadata;
+    }
+
+    public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters) {
+        PageResult pageResult = new PageResult();
+        List<MetaDataRelatedAPI> influenceAPIList = tableDAO.getTableInfluenceWithAPI(tableGuid, parameters.getLimit(), parameters.getOffset());
+        influenceAPIList.forEach(api -> {
+            String version = api.getVersion();
+            String path = api.getPath();
+            api.setPath("/api/" + version + "/share/" + path);
+        });
+        if(null != influenceAPIList && influenceAPIList.size()>0) {
+            Integer totalSize = influenceAPIList.get(0).getTotal();
+            pageResult.setLists(influenceAPIList);
+            pageResult.setCurrentSize(influenceAPIList.size());
+            pageResult.setTotalSize(totalSize);
+        }
+        pageResult.setOffset(parameters.getOffset());
+        return pageResult;
+    }
+
+    public List<TableHeader> getTableInfluenceWithDbAndTable(String tableGuid) throws AtlasBaseException {
+        try {
+            List<TableHeader> result = new ArrayList<>();
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(tableGuid, AtlasLineageInfo.LineageDirection.BOTH, 1);
+            Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
+
+            for (String key : entities.keySet()) {
+                TableHeader tableHeader = new TableHeader();
+                AtlasEntityHeader atlasEntity = entities.get(key);
+                if("hive_process".equals(atlasEntity.getTypeName())) {
+                    continue;
+                }
+                String guid = atlasEntity.getGuid();
+                tableHeader.setTableId(guid);
+                //tableName
+                if (atlasEntity.hasAttribute("name") && Objects.nonNull(atlasEntity.getAttribute("name")))
+                    tableHeader.setTableName(atlasEntity.getAttribute("name").toString());
+                //dbName
+                AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
+                AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
+                if (Objects.nonNull(relatedObject)) {
+                    tableHeader.setDatabaseName(relatedObject.getGuid());
+                    tableHeader.setDatabaseName(relatedObject.getDisplayText());
+                }
+                result.add(tableHeader);
+            }
+            return result;
+        } catch (Exception e) {
+            LOG.error("获取库表影响失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }
