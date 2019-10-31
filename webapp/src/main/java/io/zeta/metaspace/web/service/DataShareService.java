@@ -209,7 +209,7 @@ public class DataShareService {
             String userId = userInfo.getUserId();
             String roleId = userInfo.getRoleId();
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && "1" != roleId) {
+            if(!manage && "1".equals(roleId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
             return shareDAO.deleteAPIInfo(guid);
@@ -233,7 +233,7 @@ public class DataShareService {
             String userId = userInfo.getUserId();
             String roleId = userInfo.getRoleId();
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && "1" != roleId) {
+            if(!manage && "1".equals(roleId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
 
@@ -410,12 +410,10 @@ public class DataShareService {
                 }
                 header.setDataOwner(dataOwnerName);
             }
-            //int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
             int apiTotalSize = 0;
             if (list.size()!=0){
                 apiTotalSize = list.get(0).getTotal();
             }
-            //pageResult.setOffset(offset);
             pageResult.setTotalSize(apiTotalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
@@ -583,8 +581,6 @@ public class DataShareService {
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
-            //String userId = info.getKeeper();
-            //String api_owner = userDAO.getUserAccount(userId);
             List<String> owners = new ArrayList<>();
             List<APIContent.APIDetail.Organization> organizations = getOrganization(tableGuid);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
@@ -917,11 +913,8 @@ public class DataShareService {
             long maxRowNumber = parameter.getMaxRowNumber();
             limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
             offset = Objects.nonNull(offset)?offset:0;
-            //Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
             String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
             APITask task = new APITask(randomName, sql, dbName, true);
-            /*Future<List<LinkedHashMap>> futureResult = pool.submit(task);
-            List<LinkedHashMap> result = futureResult.get();*/
             Future<Map> futureResultMap = pool.submit(task);
             Map resultMap = futureResultMap.get();
             List<LinkedHashMap> result = (List<LinkedHashMap>)resultMap.get("queryResult");
@@ -1277,9 +1270,7 @@ public class DataShareService {
             }
             String orderColumnName = queryColumns.get(0);
             StringBuffer querySql = new StringBuffer();
-            //StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
-            //countSql.append("select count(1) ");
             StringJoiner columnJoiner = new StringJoiner(",");
             queryColumns.stream().forEach(column -> columnJoiner.add(column));
             querySql.append(columnJoiner.toString());
@@ -1288,8 +1279,6 @@ public class DataShareService {
             }
             querySql.append(" from ");
             querySql.append(tableName);
-            //countSql.append(" from ");
-            //countSql.append(tableName);
             //过滤条件
             if (Objects.nonNull(kvList) && kvList.size() > 0) {
                 querySql.append(" where ");
@@ -1326,7 +1315,6 @@ public class DataShareService {
                     filterJoiner.add(valueBuffer.toString());
                 }
                 querySql.append(filterJoiner.toString());
-                //countSql.append(filterJoiner.toString());
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
@@ -1341,9 +1329,6 @@ public class DataShareService {
             }
             LOG.info("querySQL：" + querySql.toString());
             LOG.info("countSQL：" + querySql.toString());
-            /*Map result = new HashMap();
-            result.put("query", querySql.toString());
-            result.put("count", countSql.toString());*/
             return querySql.toString();
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
@@ -1393,6 +1378,8 @@ public class DataShareService {
             List<String> apiOwnerList = new ArrayList<>();
             apiOwnerList.add(userId);
             dataManageService.sendToMobius(apiList, tableOwners, apiOwnerList);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
