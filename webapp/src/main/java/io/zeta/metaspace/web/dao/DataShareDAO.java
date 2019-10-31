@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
@@ -32,10 +33,10 @@ public interface DataShareDAO {
 
     @Insert({" <script>",
              " insert into apiInfo(guid,name,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,",
-             " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count",
+             " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager",
              " )values(",
              " #{guid},#{name},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount})",
+             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount},#{manager})",
              " </script>"})
     public int insertAPIInfo(APIInfo info);
 
@@ -57,7 +58,7 @@ public interface DataShareDAO {
 
     @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
-             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount",
+             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
              " from apiInfo,tableInfo,apiGroup where",
              " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
@@ -91,6 +92,9 @@ public interface DataShareDAO {
 
     @Delete("delete from apiInfo where guid=#{guid}")
     public int deleteAPIInfo(@Param("guid")String guid);
+
+    @Select("select count(*) from apiInfo where guid=#{guid} and (keeper=#{userId} or manager=#{userId})")
+    public int countManager(@Param("guid")String guid, @Param("userId")String userId);
 
     @Update("update apiInfo set star=#{star} where guid=#{guid}")
     public int updateStarStatus(@Param("guid")String guid, @Param("star")Boolean starStatus);
@@ -203,4 +207,10 @@ public interface DataShareDAO {
              " </foreach>",
              " </script>"})
     public List<String> getAPIIdsByRelatedTable(@Param("tableGuidList")List<String> tableList);
+
+    @Update("update apiInfo set manager=#{userId} where guid=#{apiGuid}")
+    public int updateManager(@Param("apiGuid")String apiGuid, @Param("userId")String userId);
+
+    @Select("select id,type,pkid from organization where pkid in (select pkid from table2owner where tableguid=(select tableguid from apiinfo where guid=#{apiGuid}))")
+    public List<TableOwner.Owner> getOwnerList(@Param("apiGuid")String apiGuid);
 }

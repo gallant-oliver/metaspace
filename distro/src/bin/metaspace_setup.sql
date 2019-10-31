@@ -125,7 +125,9 @@ CREATE TABLE "public"."apiinfo" (
   "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "groupguid" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "star" bool DEFAULT NULL,
-  "publish" bool DEFAULT NULL
+  "publish" bool DEFAULT NULL,
+  "used_count" int8,
+  "manager" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 

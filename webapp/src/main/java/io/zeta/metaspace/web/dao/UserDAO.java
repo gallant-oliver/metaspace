@@ -25,6 +25,9 @@ public interface UserDAO {
     @Select("select * from users where userId=#{userId} and valid=true")
     public User getUser(@Param("userId") String userId);
 
+    @Select("select username from users where userId=#{userId} and valid=true")
+    public String getUserName(@Param("userId") String userId);
+
     @Select("select * from users where userId=#{userId}")
     public User getUserInfo(@Param("userId") String userId);
 

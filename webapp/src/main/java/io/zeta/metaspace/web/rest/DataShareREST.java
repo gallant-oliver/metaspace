@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.DataShareGroupService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -199,7 +200,6 @@ public class DataShareREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
-
 
     /**
      * 创建API分组
@@ -503,20 +503,6 @@ public class DataShareREST {
         }
     }
 
-    /*@GET
-    @Path("/data/{version}/{url}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Map> queryAPIData(@PathParam("url") String url) throws Exception {
-        try {
-            return shareService.queryAPIData(url, httpServletRequest);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
-        }
-    }*/
-
     @GET
     @Path("/swagger/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -527,6 +513,36 @@ public class DataShareREST {
             list.add(guid);
             APIContent content = shareService.generateAPIContent(list);
             return content;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
+    @POST
+    @Path("/users")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getUserList(Parameters parameters) throws Exception {
+        try {
+            return shareService.getUserList(parameters);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
+        }
+    }
+
+
+    @PUT
+    @Path("/manager/{apiGuid}/{userId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response updateManager(@PathParam("apiGuid") String apiGuid, @PathParam("userId") String userId) throws Exception {
+        try {
+            shareService.updateManager(apiGuid, userId);
+            return Response.status(200).entity("success").build();
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

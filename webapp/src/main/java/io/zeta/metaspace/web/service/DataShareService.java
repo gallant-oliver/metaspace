@@ -41,6 +41,7 @@ import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIContent;
@@ -153,6 +154,8 @@ public class DataShareService {
             info.setKeeper(user);
             //updater
             info.setUpdater(user);
+            //manager
+            info.setManager(user);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             long currentTime = System.currentTimeMillis();
             String currentTimeFormat = sdf.format(currentTime);
@@ -202,7 +205,15 @@ public class DataShareService {
      */
     public int deleteAPIInfo(String guid) throws AtlasBaseException {
         try {
+            User userInfo = AdminUtils.getUserData();
+            String userId = userInfo.getUserId();
+            String roleId = userInfo.getRoleId();
+            Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
+            if(!manage && "1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
+            }
             return shareDAO.deleteAPIInfo(guid);
+
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
@@ -218,6 +229,14 @@ public class DataShareService {
      */
     public int updateAPIInfo(String guid, APIInfo info) throws AtlasBaseException {
         try {
+            User userInfo = AdminUtils.getUserData();
+            String userId = userInfo.getUserId();
+            String roleId = userInfo.getRoleId();
+            Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
+            if(!manage && "1".equals(roleId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
+            }
+
             String apiName = info.getName();
             APIInfo currentAPI = shareDAO.getAPIInfoByGuid(guid);
             int count = shareDAO.querySameName(apiName);
@@ -371,16 +390,14 @@ public class DataShareService {
                 } else {
                     header.setEnableClone(false);
                 }
-                //keeper
-                String keeperGuid = header.getKeeper();
-                User keeperUser = userDAO.getUser(keeperGuid);
-                String keeper = keeperUser.getUsername();
+                String keeper = userDAO.getUserName(header.getKeeper());
                 header.setKeeper(keeper);
                 //updater
-                String updaterGuid = header.getUpdater();
-                User updaterUser = userDAO.getUser(updaterGuid);
-                String updater = updaterUser.getUsername();
+                String updater = userDAO.getUserName(header.getUpdater());
                 header.setUpdater(updater);
+                //manager
+                String manger = userDAO.getUserName(header.getManager());
+                header.setManager(manger);
                 if(starAPIList.contains(header.getGuid())) {
                     header.setStar(true);
                 } else {
@@ -393,12 +410,10 @@ public class DataShareService {
                 }
                 header.setDataOwner(dataOwnerName);
             }
-            //int apiCount = shareDAO.getAPICount(guid, my, publish, userId, query);
             int apiTotalSize = 0;
             if (list.size()!=0){
                 apiTotalSize = list.get(0).getTotal();
             }
-            //pageResult.setOffset(offset);
             pageResult.setTotalSize(apiTotalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
@@ -566,8 +581,6 @@ public class DataShareService {
             String api_name = info.getName();
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
-            //String userId = info.getKeeper();
-            //String api_owner = userDAO.getUserAccount(userId);
             List<String> owners = new ArrayList<>();
             List<APIContent.APIDetail.Organization> organizations = getOrganization(tableGuid);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
@@ -900,11 +913,8 @@ public class DataShareService {
             long maxRowNumber = parameter.getMaxRowNumber();
             limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
             offset = Objects.nonNull(offset)?offset:0;
-            //Map sqlMap = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
             String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
             APITask task = new APITask(randomName, sql, dbName, true);
-            /*Future<List<LinkedHashMap>> futureResult = pool.submit(task);
-            List<LinkedHashMap> result = futureResult.get();*/
             Future<Map> futureResultMap = pool.submit(task);
             Map resultMap = futureResultMap.get();
             List<LinkedHashMap> result = (List<LinkedHashMap>)resultMap.get("queryResult");
@@ -1260,9 +1270,7 @@ public class DataShareService {
             }
             String orderColumnName = queryColumns.get(0);
             StringBuffer querySql = new StringBuffer();
-            //StringBuffer countSql = new StringBuffer();
             querySql.append("select ");
-            //countSql.append("select count(1) ");
             StringJoiner columnJoiner = new StringJoiner(",");
             queryColumns.stream().forEach(column -> columnJoiner.add(column));
             querySql.append(columnJoiner.toString());
@@ -1271,8 +1279,6 @@ public class DataShareService {
             }
             querySql.append(" from ");
             querySql.append(tableName);
-            //countSql.append(" from ");
-            //countSql.append(tableName);
             //过滤条件
             if (Objects.nonNull(kvList) && kvList.size() > 0) {
                 querySql.append(" where ");
@@ -1309,7 +1315,6 @@ public class DataShareService {
                     filterJoiner.add(valueBuffer.toString());
                 }
                 querySql.append(filterJoiner.toString());
-                //countSql.append(filterJoiner.toString());
             }
             //limit
             if (Objects.nonNull(limit) && -1 != limit) {
@@ -1324,9 +1329,6 @@ public class DataShareService {
             }
             LOG.info("querySQL：" + querySql.toString());
             LOG.info("countSQL：" + querySql.toString());
-            /*Map result = new HashMap();
-            result.put("query", querySql.toString());
-            result.put("count", countSql.toString());*/
             return querySql.toString();
         } catch (NumberFormatException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
@@ -1347,5 +1349,40 @@ public class DataShareService {
             }
         });
         return columnList;
+    }
+
+    public PageResult getUserList(Parameters parameters) throws AtlasBaseException {
+        PageResult pageResult = new PageResult();
+        try {
+            List<User> userList = userDAO.getUserList(null, parameters.getLimit(), parameters.getOffset());
+            pageResult.setLists(userList);
+            long userTotalSize = 0;
+            if (userList.size()!=0){
+                userTotalSize = userList.get(0).getTotal();
+            }
+            pageResult.setCurrentSize(userList.size());
+            pageResult.setTotalSize(userTotalSize);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("获取用户列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
+        }
+    }
+
+    public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
+        try {
+            shareDAO.updateManager(apiGuid, userId);
+            List<String> apiList = new ArrayList<>();
+            apiList.add(apiGuid);
+            List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
+            List<String> apiOwnerList = new ArrayList<>();
+            apiOwnerList.add(userId);
+            dataManageService.sendToMobius(apiList, tableOwners, apiOwnerList);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("更新管理者失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
+        }
     }
 }
