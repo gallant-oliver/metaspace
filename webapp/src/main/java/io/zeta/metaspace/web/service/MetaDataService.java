@@ -66,11 +66,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.atlas.type.AtlasTypeRegistry;
 
@@ -159,24 +162,24 @@ public class MetaDataService {
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
-            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+            if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
                 table.setDisplayName(tableName);
             }
             List<Column> columnList = table.getColumns();
             columnList.forEach(column -> {
                 String columnName = column.getColumnName();
                 String displayName = column.getDisplayName();
-                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                if (Objects.isNull(displayName) || "".equals(displayName.trim())) {
                     column.setDisplayName(columnName);
                 }
             });
 
             return table;
         } catch (AtlasBaseException e) {
-            if (e.getMessage().contains("无效的实体ID")){
+            if (e.getMessage().contains("无效的实体ID")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
             }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息"+e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
         }
     }
 
@@ -188,13 +191,13 @@ public class MetaDataService {
             table.setTableName(getEntityAttribute(entity, "name"));
             //中文别名
             String displayName = columnDAO.getTableDisplayInfoByGuid(guid);
-            if(Objects.nonNull(displayName)) {
+            if (Objects.nonNull(displayName)) {
                 table.setDisplayName(displayName);
             } else {
                 table.setDisplayName(table.getTableName());
             }
             //判断是否为虚拟表
-            if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
+            if (Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
                 table.setVirtualTable(true);
             } else {
                 table.setVirtualTable(false);
@@ -239,7 +242,7 @@ public class MetaDataService {
             table.setEdit(false);
             try {
                 Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                if("1".equals(role.getRoleId())) {
+                if ("1".equals(role.getRoleId())) {
                     table.setEdit(true);
                 } else {
                     List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
@@ -302,8 +305,8 @@ public class MetaDataService {
                 //目录管理员
 //                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
-                if(relations.size()==1)
-                        table.setRelationTime(tableDAO.getDateByTableguid(guid));
+                if (relations.size() == 1)
+                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
@@ -333,18 +336,18 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = extractRDBMSTableInfo(entity, guid,info);
+            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
-            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+            if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
                 table.setDisplayName(tableName);
             }
             List<RDBMSColumn> columnList = table.getColumns();
             columnList.forEach(column -> {
                 String columnName = column.getColumnName();
                 String displayName = column.getDisplayName();
-                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                if (Objects.isNull(displayName) || "".equals(displayName.trim())) {
                     column.setDisplayName(columnName);
                 }
             });
@@ -355,7 +358,7 @@ public class MetaDataService {
         }
     }
 
-    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid,AtlasEntity.AtlasEntityWithExtInfo info) throws AtlasBaseException {
+    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
         if (entity.getTypeName().contains("table")) {
@@ -366,10 +369,11 @@ public class MetaDataService {
             //创建时间
             if (entity.hasAttribute("createTime") && Objects.nonNull(entity.getAttribute("createTime"))) {
 
-                Date createTime = (Date)entity.getAttribute("createTime");;
-                SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Date createTime = (Date) entity.getAttribute("createTime");
+                ;
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 table.setCreateTime(sdf.format(createTime));
-            }else {
+            } else {
                 table.setCreateTime("");
             }
 
@@ -507,11 +511,11 @@ public class MetaDataService {
             AtlasEntity.AtlasEntityWithExtInfo DBInfo = entitiesStore.getById(relatedDB.getGuid());
             AtlasRelatedObjectId relatedInstance = getRelatedInstance(DBInfo.getEntity());
             //columns
-            columns = extractRDBMSColumnInfo(info, guid,relatedDB,relatedInstance);
+            columns = extractRDBMSColumnInfo(info, guid, relatedDB, relatedInstance);
             //filter
             columns = filterRDBMSColumn(query, columns);
-            foreignKeys = extractRDBMSForeignKeyInfo(info,guid,relatedDB, relatedInstance,columns,refreshCache);
-            indexes = extractRDBMSIndexInfo(info,guid,relatedDB, relatedInstance,columns,refreshCache);
+            foreignKeys = extractRDBMSForeignKeyInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
+            indexes = extractRDBMSIndexInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
             cik.setColumns(columns);
             cik.setForeignKeys(foreignKeys);
             cik.setIndexes(indexes);
@@ -522,7 +526,7 @@ public class MetaDataService {
     }
 
 
-    public List<RDBMSColumn> extractRDBMSColumnInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid,AtlasRelatedObjectId relatedDB,AtlasRelatedObjectId relatedInstance) throws AtlasBaseException {
+    public List<RDBMSColumn> extractRDBMSColumnInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance) throws AtlasBaseException {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSColumn> columns = new ArrayList<>();
@@ -557,7 +561,7 @@ public class MetaDataService {
         return columns;
     }
 
-    public List<RDBMSIndex> extractRDBMSIndexInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid,AtlasRelatedObjectId relatedDB,AtlasRelatedObjectId relatedInstance,List<RDBMSColumn> columns,Boolean refreshCache) throws AtlasBaseException {
+    public List<RDBMSIndex> extractRDBMSIndexInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns, Boolean refreshCache) throws AtlasBaseException {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSIndex> indexes = new ArrayList<>();
@@ -594,7 +598,7 @@ public class MetaDataService {
                     index.setName("");
                 }
                 if (attributes.containsKey("isUnique") && Objects.nonNull(attributes.get("isUnique"))) {
-                    index.setUnique((boolean)attributes.get("isUnique"));
+                    index.setUnique((boolean) attributes.get("isUnique"));
                 } else {
                     index.setUnique(true);
                 }
@@ -605,7 +609,7 @@ public class MetaDataService {
                 }
 
                 if (attributes.containsKey("columns") && Objects.nonNull(attributes.get("columns"))) {
-                    List<AtlasObjectId> indexColumns= (List<AtlasObjectId>) attributes.get("columns");
+                    List<AtlasObjectId> indexColumns = (List<AtlasObjectId>) attributes.get("columns");
                     List<RDBMSColumn> indexColumnsV2 = columns.stream().filter(column -> indexColumns.stream().anyMatch(indexColumn -> indexColumn.getGuid().equals(column.getColumnId()))).collect(Collectors.toList());
                     index.setColumns(indexColumnsV2);
                 } else {
@@ -618,7 +622,7 @@ public class MetaDataService {
         return indexes;
     }
 
-    public List<RDBMSForeignKey> extractRDBMSForeignKeyInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid,AtlasRelatedObjectId relatedDB,AtlasRelatedObjectId relatedInstance,List<RDBMSColumn> columns,Boolean refreshCache) throws AtlasBaseException {
+    public List<RDBMSForeignKey> extractRDBMSForeignKeyInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns, Boolean refreshCache) throws AtlasBaseException {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSForeignKey> foreignKeys = new ArrayList<>();
@@ -650,7 +654,7 @@ public class MetaDataService {
                     foreignKey.setName("");
                 }
                 if (attributes.containsKey("key_columns") && Objects.nonNull(attributes.get("key_columns"))) {
-                    List<AtlasObjectId> keyColumns= (List<AtlasObjectId>) attributes.get("key_columns");
+                    List<AtlasObjectId> keyColumns = (List<AtlasObjectId>) attributes.get("key_columns");
                     List<RDBMSColumn> keyColumnsV2 = columns.stream().filter(column -> keyColumns.stream().anyMatch(keyColumn -> keyColumn.getGuid().equals(column.getColumnId()))).collect(Collectors.toList());
                     foreignKey.setColumns(keyColumnsV2);
                 } else {
@@ -676,7 +680,7 @@ public class MetaDataService {
             column.setType("");
         }
         if (attributes.containsKey("length") && Objects.nonNull(attributes.get("length"))) {
-            column.setLength((int)attributes.get("length"));
+            column.setLength((int) attributes.get("length"));
         } else {
             column.setLength(-1);
         }
@@ -686,12 +690,12 @@ public class MetaDataService {
             column.setDefaultValue("");
         }
         if (attributes.containsKey("isNullable") && Objects.nonNull(attributes.get("isNullable"))) {
-            column.setNullable((boolean)attributes.get("isNullable"));
+            column.setNullable((boolean) attributes.get("isNullable"));
         } else {
             column.setNullable(true);
         }
         if (attributes.containsKey("isPrimaryKey") && Objects.nonNull(attributes.get("isPrimaryKey"))) {
-            column.setPrimaryKey((boolean)attributes.get("isPrimaryKey"));
+            column.setPrimaryKey((boolean) attributes.get("isPrimaryKey"));
         } else {
             column.setPrimaryKey(false);
         }
@@ -914,7 +918,7 @@ public class MetaDataService {
             column.setDescription("");
         }
         Column pgColumnInfo = columnDAO.getColumnInfoByGuid(column.getColumnId());
-        if(Objects.nonNull(pgColumnInfo)) {
+        if (Objects.nonNull(pgColumnInfo)) {
             String displayName = pgColumnInfo.getDisplayName();
             if (Objects.nonNull(displayName) && !"".equals(displayName.trim())) {
                 column.setDisplayName(displayName);
@@ -922,7 +926,7 @@ public class MetaDataService {
                 column.setDisplayName(column.getColumnName());
             }
             String displayUpdateTime = pgColumnInfo.getDisplayNameUpdateTime();
-            if(Objects.nonNull(displayUpdateTime) && !"".equals(displayUpdateTime.trim())) {
+            if (Objects.nonNull(displayUpdateTime) && !"".equals(displayUpdateTime.trim())) {
                 column.setDisplayNameUpdateTime(displayUpdateTime);
             }
         } else {
@@ -999,7 +1003,7 @@ public class MetaDataService {
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
             AtlasEntity entity = entitiesStore.getById(guid).getEntity();
-            if(Objects.nonNull(entity)) {
+            if (Objects.nonNull(entity)) {
                 if (entity.getTypeName().contains("table") || entity.getTypeName().contains("hdfs")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
@@ -1008,12 +1012,12 @@ public class MetaDataService {
                     //displayText
                     //lineageDepthEntity.setDisplayText(entity);
                     //updateTime
-                    SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(entity.getUpdateTime());
                     lineageDepthEntity.setUpdateTime(formatDateStr);
                     //dbName
                     AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
-                    if(Objects.nonNull(relatedObject))
+                    if (Objects.nonNull(relatedObject))
                         lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
@@ -1176,7 +1180,7 @@ public class MetaDataService {
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
             AtlasEntity entity = entitiesStore.getById(guid).getEntity();
-            if(Objects.nonNull(entity)) {
+            if (Objects.nonNull(entity)) {
                 if (entity.getTypeName().contains("column")) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
@@ -1184,12 +1188,12 @@ public class MetaDataService {
                     //columnName && displayText
                     lineageDepthEntity.setDisplayText(getEntityAttribute(atlasColumnEntity, "name"));
                     //updateTime
-                    SimpleDateFormat  sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(atlasColumnEntity.getUpdateTime());
                     lineageDepthEntity.setUpdateTime(formatDateStr);
 
-                    AtlasRelatedObjectId relatedTable = (AtlasRelatedObjectId)atlasColumnEntity.getRelationshipAttribute("table");
-                    if(Objects.nonNull(relatedTable)) {
+                    AtlasRelatedObjectId relatedTable = (AtlasRelatedObjectId) atlasColumnEntity.getRelationshipAttribute("table");
+                    if (Objects.nonNull(relatedTable)) {
                         AtlasEntity atlasTableEntity = entitiesStore.getById(relatedTable.getGuid()).getEntity();
                         //tableName
                         if (atlasTableEntity.hasAttribute("name") && Objects.nonNull(atlasTableEntity.getAttribute("name")))
@@ -1384,12 +1388,12 @@ public class MetaDataService {
     }
 
     @CacheEvict(value = {"columnCache", "tablePageCache", "columnPageCache", "databaseSearchCache", "TableByDBCache"}, allEntries = true)
-    public void refreshCache(){
+    public void refreshCache() {
         LOG.info("元数据管理缓存已被清除");
     }
 
-    @CacheEvict(value = {"RDBMSDataSourceSearchCache", "RDBMSDBBySourceCache", "RDBMSTableByDBCache", "RDBMSDBPageCache", "RDBMSTablePageCache","RDBMSColumnPageCache"}, allEntries = true)
-    public void refreshRDBMSCache(){
+    @CacheEvict(value = {"RDBMSDataSourceSearchCache", "RDBMSDBBySourceCache", "RDBMSTableByDBCache", "RDBMSDBPageCache", "RDBMSTablePageCache", "RDBMSColumnPageCache"}, allEntries = true)
+    public void refreshRDBMSCache() {
         LOG.info("关系型元数据管理缓存已被清除");
     }
 
@@ -1398,26 +1402,26 @@ public class MetaDataService {
      *
      * @return
      */
-    public void synchronizeMetaData(String databaseType, TableSchema tableSchema){
+    public void synchronizeMetaData(String databaseType, TableSchema tableSchema) {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
-        if (databaseTypeEntity==DatabaseType.HIVE){
+        if (databaseTypeEntity == DatabaseType.HIVE) {
             tableSchema.setInstance("hive");
         }
         if (null == databaseTypeEntity) {
-            errorMap.put(tableSchema.getInstance(),String.format("not support database type %s", databaseType));
+            errorMap.put(tableSchema.getInstance(), String.format("not support database type %s", databaseType));
             LOG.error(errorMap.get(tableSchema.getInstance()));
             return;
         }
         IMetaDataProvider metaDataProvider = null;
-        errorMap.put(tableSchema.getInstance(),"");
+        errorMap.put(tableSchema.getInstance(), "");
         try {
-            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity,tableSchema);
+            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity, tableSchema);
             metaDataProvider.importDatabases(tableSchema);
         } catch (HiveException e) {
-            errorMap.put(tableSchema.getInstance(),"同步元数据出错，无法连接到hive");
+            errorMap.put(tableSchema.getInstance(), "同步元数据出错，无法连接到hive");
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
-            errorMap.put(tableSchema.getInstance(),String.format("同步元数据出错，%s", e.getMessage()));
+            errorMap.put(tableSchema.getInstance(), String.format("同步元数据出错，%s", e.getMessage()));
             LOG.error("import metadata error", e);
         }
         if (null != metaDataProvider) {
@@ -1425,7 +1429,7 @@ public class MetaDataService {
         }
     }
 
-    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity,TableSchema tableSchema) throws Exception {
+    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity, TableSchema tableSchema) throws Exception {
         IMetaDataProvider metaDataProvider;
         switch (databaseTypeEntity) {
             case HIVE:
@@ -1433,25 +1437,25 @@ public class MetaDataService {
             case MYSQL:
                 if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
-                    mysqlMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
-                    metaDataProvider=mysqlMetaDataProvider;
-                }else{
-                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    mysqlMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
+                    metaDataProvider = mysqlMetaDataProvider;
+                } else {
+                    metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
                 }
                 break;
             case ORACLE:
                 if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
                     OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
-                    oracleMetaDataProvider.set(entitiesStore, dataSourceService,atlasTypeRegistry,graph);
-                    metaDataProvider=oracleMetaDataProvider;
-                }else{
-                    metaDataProvider=metaDataProviderMap.get(tableSchema.getInstance());
+                    oracleMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
+                    metaDataProvider = oracleMetaDataProvider;
+                } else {
+                    metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
                 }
                 break;
             default:
                 throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
         }
-        metaDataProviderMap.put(tableSchema.getInstance(),metaDataProvider);
+        metaDataProviderMap.put(tableSchema.getInstance(), metaDataProvider);
         return metaDataProvider;
     }
 
@@ -1466,28 +1470,28 @@ public class MetaDataService {
         return databaseTypeEntity;
     }
 
-    public Progress importProgress(String databaseType,String sourceId) throws Exception {
+    public Progress importProgress(String databaseType, String sourceId) throws Exception {
         DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
         if (null == databaseTypeEntity) {
-            errorMap.put(sourceId,String.format("not support database type %s", databaseType));
+            errorMap.put(sourceId, String.format("not support database type %s", databaseType));
             LOG.error(errorMap.get(sourceId));
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
         if (hiveMetaStoreBridgeUtils == null) {
-            errorMap.put(sourceId,String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
+            errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
             LOG.error(errorMap.get(sourceId));
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
         switch (databaseTypeEntity) {
             case HIVE:
-                progress = getProgress(hiveMetaStoreBridgeUtils,sourceId);
+                progress = getProgress(hiveMetaStoreBridgeUtils, sourceId);
                 break;
             case MYSQL:
             case ORACLE:
-                progress = getProgress(metaDataProviderMap.get(sourceId),sourceId);
+                progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
                 break;
             case POSTGRESQL:
                 progress.setError(String.format("not support database type %s, hive is support", databaseType));
@@ -1496,9 +1500,9 @@ public class MetaDataService {
         return progress;
     }
 
-    private Progress getProgress(IMetaDataProvider metaDataProvider,String sourceId) throws AtlasBaseException {
+    private Progress getProgress(IMetaDataProvider metaDataProvider, String sourceId) throws AtlasBaseException {
         Progress progress;
-        if (metaDataProvider==null){
+        if (metaDataProvider == null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
         }
         AtomicInteger totalTables = metaDataProvider.getTotalTables();
@@ -1506,9 +1510,9 @@ public class MetaDataService {
         AtomicLong startTime = metaDataProvider.getStartTime();
         AtomicLong endTime = metaDataProvider.getEndTime();
         progress = new Progress(totalTables.get(), updatedTables.get());
-        if (errorMap.containsKey(sourceId)){
+        if (errorMap.containsKey(sourceId)) {
             progress.setError(errorMap.get(sourceId));
-        }else{
+        } else {
             progress.setError("");
         }
         progress.setStartTime(startTime.get());
@@ -1560,13 +1564,13 @@ public class MetaDataService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String roleId = roleDAO.getRoleIdByUserId(userId);
-            if(!"1".equals(roleId)) {
+            if (!"1".equals(roleId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
-            if(AtlasEntity.Status.DELETED != status) {
+            if (AtlasEntity.Status.DELETED != status) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
             }
             List<String> deleteAllGuids = new ArrayList<>();
@@ -1619,13 +1623,13 @@ public class MetaDataService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String roleId = roleDAO.getRoleIdByUserId(userId);
-            if(!"1".equals(roleId)) {
+            if (!"1".equals(roleId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
-            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid,true);
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
-            if(AtlasEntity.Status.DELETED != status) {
+            if (AtlasEntity.Status.DELETED != status) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体未被删除，禁止使用硬删除");
             }
             List<String> deleteAllGuids = new ArrayList<>();
@@ -1644,16 +1648,16 @@ public class MetaDataService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             String roleId = roleDAO.getRoleIdByUserId(userId);
-            if(!"1".equals(roleId)) {
+            if (!"1".equals(roleId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
-            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid,true);
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
-            if (!RMDB_INSTANCE.equalsIgnoreCase(entity.getTypeName())){
+            if (!RMDB_INSTANCE.equalsIgnoreCase(entity.getTypeName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前实体并非数据源，不能删除");
             }
-            if(AtlasEntity.Status.ACTIVE == status) {
+            if (AtlasEntity.Status.ACTIVE == status) {
                 entitiesStore.deleteById(guid);
             }
             List<String> deleteAllGuids = new ArrayList<>();
@@ -1667,7 +1671,7 @@ public class MetaDataService {
         }
     }
 
-    public int updateTableEditInfo(String tableGuid,Table info) throws AtlasBaseException {
+    public int updateTableEditInfo(String tableGuid, Table info) throws AtlasBaseException {
         try {
             return tableDAO.updateTableEditInfo(tableGuid, info);
         } catch (Exception e) {
@@ -1690,11 +1694,11 @@ public class MetaDataService {
         try {
             List<Table> tableList = new ArrayList<>();
             List<String> tableGuidList = new ArrayList<>();
-            if(null != dbGuidList) {
+            if (null != dbGuidList) {
                 for (String dbGuid : dbGuidList) {
                     PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
                     tablePageResult.getLists().stream().forEach(table -> {
-                        if("ACTIVE".equals(table.getStatus())) {
+                        if ("ACTIVE".equals(table.getStatus())) {
                             tableGuidList.add(table.getTableId());
                         }
                     });
@@ -1744,7 +1748,7 @@ public class MetaDataService {
             cellStyle.setBorderLeft(CellStyle.BORDER_THIN);//左边框
             cellStyle.setBorderTop(CellStyle.BORDER_THIN);//上边框
             cellStyle.setBorderRight(CellStyle.BORDER_THIN);//右边框*/
-            for(Table table : tableList) {
+            for (Table table : tableList) {
                 createMetadataTableSheet(workbook, table, headerStyle, cellStyle);
                 createMetadataColumnSheet(workbook, table, headerStyle, cellStyle);
             }
@@ -1753,13 +1757,13 @@ public class MetaDataService {
     }
 
     public String processSpecialCharacter(String sheetName) {
-        return sheetName.replace(":","_")
-                 .replace("\\","_")
-                 .replace("/","_")
-                 .replace("?","_")
-                 .replace("*","_")
-                 .replace("[","_")
-                 .replace("]","_");
+        return sheetName.replace(":", "_")
+                .replace("\\", "_")
+                .replace("/", "_")
+                .replace("?", "_")
+                .replace("*", "_")
+                .replace("[", "_")
+                .replace("]", "_");
     }
 
     public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
@@ -1771,7 +1775,7 @@ public class MetaDataService {
         String sheetName = sheetNamePrefix + "-表信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
         int sheetIndex = 1;
-        while(null != hasSheet) {
+        while (null != hasSheet) {
             sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
             sheetName = sheetNamePrefix + "-表信息";
             hasSheet = workbook.getSheet(sheetName);
@@ -1850,7 +1854,7 @@ public class MetaDataService {
         typeKeyCell.setCellValue("类型");
         typeKeyCell.setCellStyle(cellStyle);
         Cell typeValueCell = typeRow.createCell(1);
-        typeValueCell.setCellValue("INTERNAL_TABLE".equals(type)?"内部表":"外部表");
+        typeValueCell.setCellValue("INTERNAL_TABLE".equals(type) ? "内部表" : "外部表");
         typeValueCell.setCellStyle(cellStyle);
 
         Boolean isPartitionTable = table.getPartitionTable();
@@ -1859,7 +1863,7 @@ public class MetaDataService {
         isPartitionTableKeyCell.setCellValue("分区表");
         isPartitionTableKeyCell.setCellStyle(cellStyle);
         Cell isPartitionTableValueCell = isPartitionTableRow.createCell(1);
-        isPartitionTableValueCell.setCellValue((true==isPartitionTable)?"是":"否");
+        isPartitionTableValueCell.setCellValue((true == isPartitionTable) ? "是" : "否");
         isPartitionTableValueCell.setCellStyle(cellStyle);
 
         String format = table.getFormat();
@@ -1889,7 +1893,7 @@ public class MetaDataService {
         descriptionValueCell.setCellValue(description);
         descriptionValueCell.setCellStyle(cellStyle);
 
-        CellRangeAddress sourceSystemRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,1);
+        CellRangeAddress sourceSystemRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(sourceSystemRangeAddress);
         Row sourceSystemRow = sheet.createRow(rowNumber++);
         Cell sourceSystemRowCell = sourceSystemRow.createCell(0);
@@ -1937,7 +1941,7 @@ public class MetaDataService {
         createTimeValueCell.setCellValue(createTime);
         createTimeValueCell.setCellStyle(cellStyle);
 
-        CellRangeAddress dataWarehouseRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,1);
+        CellRangeAddress dataWarehouseRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(dataWarehouseRangeAddress);
         Row dataWarehouseRow = sheet.createRow(rowNumber++);
         Cell dataWarehouseRowCell = dataWarehouseRow.createCell(0);
@@ -1967,7 +1971,7 @@ public class MetaDataService {
         dataWarehouseDescriptionValueCell.setCellValue(dataWarehouseDescription);
         dataWarehouseDescriptionValueCell.setCellStyle(cellStyle);
 
-        CellRangeAddress catalogRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,1);
+        CellRangeAddress catalogRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(catalogRangeAddress);
         Row catalogRangeAddressRow = sheet.createRow(rowNumber++);
         Cell catalogRangeAddressRowCell = catalogRangeAddressRow.createCell(0);
@@ -2008,8 +2012,8 @@ public class MetaDataService {
         relationTimeValueCell.setCellStyle(cellStyle);
 
         List<Table.BusinessObject> businessObjectList = table.getBusinessObjects();
-        for(Table.BusinessObject businessObject : businessObjectList) {
-            CellRangeAddress businessRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,1);
+        for (Table.BusinessObject businessObject : businessObjectList) {
+            CellRangeAddress businessRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
             sheet.addMergedRegion(businessRangeAddress);
             Row businessRangeAddressRow = sheet.createRow(rowNumber++);
             Cell businessRangeAddressRowCell = businessRangeAddressRow.createCell(0);
@@ -2064,7 +2068,7 @@ public class MetaDataService {
         String sheetName = sheetNamePrefix + "-字段信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
         int sheetIndex = 1;
-        while(null != hasSheet) {
+        while (null != hasSheet) {
             sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
             sheetName = sheetNamePrefix + "-字段信息";
             hasSheet = workbook.getSheet(sheetName);
@@ -2073,10 +2077,10 @@ public class MetaDataService {
         Sheet sheet = workbook.createSheet(sheetName);
 
         List<Column> columnList = table.getColumns();
-        List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey()==false).collect(Collectors.toList());
-        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()==true).collect(Collectors.toList());
+        List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
+        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey() == true).collect(Collectors.toList());
 
-        CellRangeAddress normalColumnRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,2);
+        CellRangeAddress normalColumnRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
         sheet.addMergedRegion(normalColumnRangeAddress);
         Row normalColumnRow = sheet.createRow(rowNumber++);
         Cell normalColumnRowCell = normalColumnRow.createCell(0);
@@ -2087,9 +2091,9 @@ public class MetaDataService {
         RegionUtil.setBorderBottom(BorderStyle.THIN.getCode(), normalColumnRangeAddress, sheet);
         RegionUtil.setBorderTop(BorderStyle.THIN.getCode(), normalColumnRangeAddress, sheet);
 
-        String[] headers = new String[]{"名称","类型","描述"};
+        String[] headers = new String[]{"名称", "类型", "描述"};
         Row normalColumnHeaderRow = sheet.createRow(rowNumber++);
-        for(int i=0; i<headers.length; i++) {
+        for (int i = 0; i < headers.length; i++) {
             Cell headerCell = normalColumnHeaderRow.createCell(i);
             headerCell.setCellValue(headers[i]);
             headerCell.setCellStyle(cellStyle);
@@ -2097,7 +2101,7 @@ public class MetaDataService {
 
         createDataCell(normalColumnList, sheet, rowNumber, cellStyle);
         rowNumber += normalColumnList.size();
-        CellRangeAddress partitionColumnRangeAddress = new CellRangeAddress(rowNumber,rowNumber,0,2);
+        CellRangeAddress partitionColumnRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
         sheet.addMergedRegion(partitionColumnRangeAddress);
         Row partitionColumnRow = sheet.createRow(rowNumber++);
         Cell partitionColumnRowCell = partitionColumnRow.createCell(0);
@@ -2109,7 +2113,7 @@ public class MetaDataService {
         RegionUtil.setBorderTop(BorderStyle.THIN.getCode(), partitionColumnRangeAddress, sheet);
 
         Row partitionColumnHeaderRow = sheet.createRow(rowNumber++);
-        for(int i=0; i<headers.length; i++) {
+        for (int i = 0; i < headers.length; i++) {
             Cell headerCell = partitionColumnHeaderRow.createCell(i);
             headerCell.setCellValue(headers[i]);
             headerCell.setCellStyle(cellStyle);
@@ -2119,7 +2123,7 @@ public class MetaDataService {
     }
 
     public void createDataCell(List<Column> columnList, Sheet sheet, Integer rowNumber, CellStyle cellStyle) {
-        for(int i=0; i<columnList.size(); i++) {
+        for (int i = 0; i < columnList.size(); i++) {
             Row dataRow = sheet.createRow(rowNumber++);
             Column column = columnList.get(i);
             String columnName = column.getColumnName();
@@ -2141,7 +2145,7 @@ public class MetaDataService {
     public PageResult getTableHistoryList(String tableGuid, Parameters parameters) {
         PageResult pageResult = new PageResult();
         List<TableMetadata> tableMetadataList = metadataHistoryDAO.getTableMetadataList(tableGuid, parameters.getLimit(), parameters.getOffset());
-        if(null != tableMetadataList && tableMetadataList.size()>0) {
+        if (null != tableMetadataList && tableMetadataList.size() > 0) {
             Integer totalSize = tableMetadataList.get(0).getTotal();
             pageResult.setLists(tableMetadataList);
             pageResult.setCurrentSize(tableMetadataList.size());
@@ -2167,12 +2171,12 @@ public class MetaDataService {
             TableMetadata oldMetadata = metadataHistoryDAO.getTableMetadata(tableGuid, version);
             Map<String, String> currentMetadataMap = BeanUtils.describe(currentMetadata);
             Map<String, String> oldMetadataMap = BeanUtils.describe(oldMetadata);
-            for(String key : currentMetadataMap.keySet()) {
+            for (String key : currentMetadataMap.keySet()) {
                 String currentValue = currentMetadataMap.get(key);
                 String oldValue = oldMetadataMap.get(key);
-                currentValue = Objects.isNull(currentValue)? "":currentValue;
-                oldValue = Objects.isNull(oldValue)? "":oldValue;
-                if(!currentValue.equals(oldValue)) {
+                currentValue = Objects.isNull(currentValue) ? "" : currentValue;
+                oldValue = Objects.isNull(oldValue) ? "" : oldValue;
+                if (!currentValue.equals(oldValue)) {
                     changedFiledSet.add(key);
                 }
             }
@@ -2245,7 +2249,7 @@ public class MetaDataService {
             String path = api.getPath();
             api.setPath("/api/" + version + "/share/" + path);
         });
-        if(null != influenceAPIList && influenceAPIList.size()>0) {
+        if (null != influenceAPIList && influenceAPIList.size() > 0) {
             Integer totalSize = influenceAPIList.get(0).getTotal();
             pageResult.setLists(influenceAPIList);
             pageResult.setCurrentSize(influenceAPIList.size());
@@ -2264,7 +2268,7 @@ public class MetaDataService {
             for (String key : entities.keySet()) {
                 TableHeader tableHeader = new TableHeader();
                 AtlasEntityHeader atlasEntity = entities.get(key);
-                if("hive_process".equals(atlasEntity.getTypeName())) {
+                if ("hive_process".equals(atlasEntity.getTypeName())) {
                     continue;
                 }
                 String guid = atlasEntity.getGuid();
@@ -2286,5 +2290,78 @@ public class MetaDataService {
             LOG.error("获取库表影响失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    public CheckingInfo getCheckingTableInfo(String tableGuid) throws AtlasBaseException {
+        CheckingInfo checkingInfo = new CheckingInfo();
+        checkingInfo.setTableGuid(tableGuid);
+        try {
+            Table tableInfo = getTableInfoById(tableGuid);
+            String tableName = tableInfo.getTableName();
+            String namingConvention = "";
+            boolean containChinese = isContainChinese(tableName);
+            boolean contailSpecialChar = isSpecialChar(tableName);
+            if(containChinese) {
+                namingConvention += "(包含中文)";
+            }
+            if(contailSpecialChar) {
+                namingConvention += "(包含特殊字符)";
+            }
+            if(namingConvention.length() == 0) {
+                namingConvention = "符合规范";
+            } else {
+                namingConvention = "不符合" + namingConvention;
+            }
+            checkingInfo.setNamingConvention(namingConvention);
+
+            int ratio = checkBasicInfo(tableInfo);
+            checkingInfo.setFillRate(ratio);
+            if(ratio != 100) {
+                checkingInfo.setMessageIntegrity("不完整");
+            } else {
+                checkingInfo.setMessageIntegrity("完整");
+            }
+            return checkingInfo;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("元数据稽核失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "元数据稽核失败");
+        }
+
+    }
+
+    public int checkBasicInfo(Table tableInfo) throws Exception {
+        int filledCount = 0;
+        Field[] fileds = tableInfo.getClass().getDeclaredFields();
+        for(Field field : fileds) {
+            field.setAccessible(true);
+            Object obj = field.get(tableInfo);
+            if(obj != null && !obj.toString().trim().equals("")) {
+                filledCount++;
+            }
+        }
+        if(fileds.length == 0) {
+            return 0;
+        } else {
+            return filledCount*100/fileds.length;
+        }
+    }
+
+    public static boolean isContainChinese(String str) {
+        Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
+        Matcher m = p.matcher(str);
+        if (m.find()) {
+            return true;
+        }
+        return false;
+    }
+
+    public static final String DEFAULT_QUERY_REGEX = "[!$^&*+=|{}';'\",<>/?~！#￥%……&*——|{}【】‘；：”“'。，、？]";
+
+    public static boolean isSpecialChar(String str) {
+        Pattern p = Pattern.compile(DEFAULT_QUERY_REGEX);
+        Matcher m = p.matcher(str);
+        return m.find();
     }
 }
