@@ -81,7 +81,7 @@ public class RuleTemplateREST {
     @Path("/{ruleType}/report")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Report2RuleType> getReportByRuleType(@PathParam("ruleType")String ruleType,Parameters parameters) throws AtlasBaseException {
+    public PageResult<Report2RuleTemplate> getReportByRuleType(@PathParam("ruleType")String ruleType,Parameters parameters) throws AtlasBaseException {
         return ruleTemplateService.getReportByRuleType(ruleType, parameters);
     }
 

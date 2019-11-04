@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.sql.Timestamp;
 
-public class Report2RuleType {
+public class Report2RuleTemplate {
+    private String ruleTemplateId;
     private String ruleTypeId;
     private String taskId;
     private String taskName;
@@ -17,6 +18,14 @@ public class Report2RuleType {
     private Integer number;
     @JsonIgnore
     private int total;
+
+    public String getRuleTemplateId() {
+        return ruleTemplateId;
+    }
+
+    public void setRuleTemplateId(String ruleTemplateId) {
+        this.ruleTemplateId = ruleTemplateId;
+    }
 
     public String getRuleTypeId() {
         return ruleTypeId;
