@@ -821,6 +821,6 @@ public interface TaskManageDAO {
     @Select("select qrtz_job from data_quality_task where id=#{taskId}")
     public String getJobName(@Param("taskId")String taskId);
 
-    @Select("select count(*) from report2ruleType where data_quality_execute_id=#{executionId}")
+    @Select("select count(*) from report2ruleTemplate where data_quality_execute_id=#{executionId}")
     public int getFilingStatus(@Param("executionId")String executionId);
 }

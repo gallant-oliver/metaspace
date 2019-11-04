@@ -1899,18 +1899,20 @@ ALTER TABLE "public"."metadata_subscribe" ADD CONSTRAINT "metadata_subscribe_pke
 
 
 -- ----------------------------
--- Table structure for report2ruletype
+-- Table structure for report2ruletemplate
 -- ----------------------------
-DROP TABLE IF EXISTS "public"."report2ruletype";
-CREATE TABLE "public"."report2ruletype" (
-  "rule_type_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+DROP TABLE IF EXISTS "public"."report2ruletemplate";
+CREATE TABLE "public"."report2ruletemplate" (
+  "rule_template_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "data_quality_execute_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "creator" varchar(255) COLLATE "pg_catalog"."default",
   "create_time" timestamptz(6)
-);
+)
+;
 
 -- ----------------------------
--- Primary Key structure for table report2ruletype
+-- Primary Key structure for table report2ruletemplate
 -- ----------------------------
-ALTER TABLE "public"."report2ruletype" ADD CONSTRAINT "report2ruletype_pkey" PRIMARY KEY ("rule_type_id", "data_quality_execute_id");
+ALTER TABLE "public"."report2ruletemplate" ADD CONSTRAINT "report2ruletype_pkey" PRIMARY KEY ("rule_template_id", "data_quality_execute_id");
+
 

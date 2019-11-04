@@ -429,8 +429,8 @@ public class TaskManageREST {
     @Path("/{ruleExecutionId}/relation")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response addReport2RuleType(@PathParam("ruleExecutionId")String ruleExecutionId, List<String> ruleTypeList) throws AtlasBaseException {
-        ruleTemplateService.addReport2RuleType(ruleExecutionId, ruleTypeList);
+    public Response addReport2RuleType(@PathParam("ruleExecutionId")String ruleExecutionId, List<String> ruleTemplateList) throws AtlasBaseException {
+        ruleTemplateService.addReport2RuleType(ruleExecutionId, ruleTemplateList);
         return Response.status(200).entity("success").build();
     }
 
