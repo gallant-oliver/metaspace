@@ -616,13 +616,13 @@ public class SearchService {
             List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit());
             List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
             List<AddRelationTable> tables = getTables(tableInfos);
+            supplyPath(tables);
             tables.forEach(e -> {
                 String tableGuid = e.getTableId();
                 if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
                 else e.setCheck(0);
             });
             tablePageResult.setLists(tables);
-            //tablePageResult.setOffset(parameters.getOffset());
             tablePageResult.setCurrentSize(tableInfos.size());
             tablePageResult.setTotalSize(roleDAO.getTableInfosByDBIdCount(strings, databaseGuid));
         }
@@ -682,7 +682,6 @@ public class SearchService {
             }
         }
         return null;
-        //throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
     }
 
 
@@ -703,7 +702,6 @@ public class SearchService {
             if (strings.size() == 0) {
                 tablePageResult.setTotalSize(0);
                 tablePageResult.setCurrentSize(0);
-                //tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
             if (Objects.nonNull(query))
@@ -711,6 +709,7 @@ public class SearchService {
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
             List<AddRelationTable> tables = getTables(tableInfo);
+            supplyPath(tables);
             tables.forEach(e -> {
                 String tableGuid = e.getTableId();
                 if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
@@ -721,9 +720,7 @@ public class SearchService {
             }else{
                 tablePageResult.setTotalSize(0);
             }
-            //tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
             tablePageResult.setCurrentSize(tableInfo.size());
-            //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
         }
         return tablePageResult;
@@ -746,14 +743,12 @@ public class SearchService {
             if (strings.size() == 0) {
                 tablePageResult.setTotalSize(0);
                 tablePageResult.setCurrentSize(0);
-                //tablePageResult.setOffset(offset);
                 return tablePageResult;
             }
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> tables = getTables(tableInfo);
-            //tablePageResult.setTotalSize(roleDAO.getTableCountV2(strings, query));
             tablePageResult.setTotalSize(0);
             if (tableInfo.size()!=0){
                 tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
@@ -775,17 +770,30 @@ public class SearchService {
             tb.setCreateTime(table.getCreateTime());
             tb.setDatabaseId(table.getDatabaseGuid());
             tb.setStatus(table.getStatus());
-            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableGuid());
-            if (categoryGuidByTableGuid == null) {
-                tb.setPath("");
-            } else if (categoryGuidByTableGuid.size() != 1) {
-                tb.setPath("");
-            } else {
-                tb.setPath(categoryDAO.queryPathByGuid(categoryGuidByTableGuid.get(0)).replace(",", "/").replace("\"", "").replace("{", "").replace("}", ""));
-            }
             lists.add(tb);
         }
         return lists;
+    }
+
+    public void supplyPath(List<AddRelationTable> list) {
+        Map<String, String> category2Path = new HashMap();
+        for(AddRelationTable table : list) {
+            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableId());
+            if (categoryGuidByTableGuid == null) {
+                table.setPath("");
+            } else if (categoryGuidByTableGuid.size() != 1) {
+                table.setPath("");
+            } else {
+                String categoryGuid = categoryGuidByTableGuid.get(0);
+                if(category2Path.containsKey(categoryGuid)) {
+                    table.setPath(category2Path.get(categoryGuid));
+                } else {
+                    String path = categoryDAO.queryPathByGuid(categoryGuid).replace(",", "/").replace("\"", "").replace("{", "").replace("}", "");
+                    table.setPath(path);
+                    category2Path.put(categoryGuid, path);
+                }
+            }
+        }
     }
 
 
