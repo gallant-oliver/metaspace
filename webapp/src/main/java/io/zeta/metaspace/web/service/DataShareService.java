@@ -335,16 +335,14 @@ public class DataShareService {
             }
             int userAPICount = shareDAO.countUserAPI(userId, guid);
             info.setEdit(userAPICount==0?false:true);
-            //keeper
-            String keeperGuid = info.getKeeper();
-            User keeperUser = userDAO.getUser(keeperGuid);
-            String keeper = keeperUser.getUsername();
+            String keeper = userDAO.getUserName(info.getKeeper());
             info.setKeeper(keeper);
             //updater
-            String updaterGuid = info.getUpdater();
-            User updaterUser = userDAO.getUser(updaterGuid);
-            String updater = updaterUser.getUsername();
+            String updater = userDAO.getUserName(info.getUpdater());
             info.setUpdater(updater);
+            //manager
+            String manger = userDAO.getUserName(info.getManager());
+            info.setManager(manger);
             return info;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
