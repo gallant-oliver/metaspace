@@ -996,4 +996,17 @@ public class MetaDataREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
+
+    @GET
+    @Path("/check/table/{tableGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public CheckingInfo getCheckingTableInfo( @PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+            return metadataService.getCheckingTableInfo(tableGuid);
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
 }
