@@ -267,15 +267,18 @@ public class TechnicalREST {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.removeRelationAssignmentFromEntities(" + relationshipList + ")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "TechnicalREST.removeRelationAssignmentFromTables(" + relationshipList + ")");
             }
             List<String> categoryNameList = new ArrayList<>();
             for (RelationEntityV2 relationEntity : relationshipList) {
-                String categoryGuid = relationEntity.getCategoryGuid();
-                String categoryName = dataManageService.getCategoryNameById(categoryGuid);
-                categoryNameList.add(categoryName);
+                String guid = relationEntity.getRelationshipGuid();
+                String categoryName = dataManageService.getCategoryNameByRelationId(guid);
+                if(categoryName != null)
+                    categoryNameList.add(categoryName);
             }
-            HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]");
+            if(categoryNameList!=null && categoryNameList.size()>0) {
+                HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]中的表关联");
+            }
             dataManageService.removeRelationAssignmentFromTablesV2(relationshipList);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
