@@ -1015,12 +1015,10 @@ public class DataManageService {
 
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
         try {
-            List<String> userIdList = metadataSubscribeDAO.getSubscribeUserIdList(tableGuid);
-
             Table info = tableDAO.getDbAndTableName(tableGuid);
             String sendMessage = "数据库[" + info.getDatabaseName() + "]下的表[" + info.getTableName() + "]元数据发生变更";
             String subject = "元数据变更提醒";
-            List<String> emails = userDAO.getUsersEmail(userIdList);
+            List<String> emails = userDAO.getUsersEmail(tableGuid);
             sendMail(emails, subject, sendMessage);
         } catch (AtlasBaseException e) {
             throw e;
@@ -1036,6 +1034,10 @@ public class DataManageService {
 
             String user = configuration.getString("metaspace.mail.user");
             String passwd = configuration.getString("metaspace.mail.password");
+
+            if(user==null || passwd==null) {
+                LOG.warn("发件邮箱用户名和密码不能为空");
+            }
 
             Properties props = new Properties();
             Iterator<String> mailKeys = configuration.getKeys("metaspace.mail.service");
