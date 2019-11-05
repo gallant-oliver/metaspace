@@ -43,15 +43,15 @@
                 <!-- 密码 -->
                 <property name="password" value="${metaspace.database.password}" />
                 <!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数  -->
-                <property name="acquireIncrement" value="5"></property>
+                <property name="acquireIncrement" value="${metaspace.database.acquireIncrement}"></property>
                 <!-- 初始连接池大小 -->
-                <property name="initialPoolSize" value="10"></property>
+                <property name="initialPoolSize" value="${metaspace.database.initialPoolSize}"></property>
                 <!-- 连接池中连接最小个数 -->
-                <property name="minPoolSize" value="5"></property>
+                <property name="minPoolSize" value="${metaspace.database.minPoolSize}"></property>
                 <!-- 连接池中连接最大个数 -->
-                <property name="maxPoolSize" value="20"></property>
+                <property name="maxPoolSize" value="${metaspace.database.maxPoolSize}"></property>
                 <!--连接的最大空闲时间,秒-->
-                <property name="maxIdleTime" value="10"></property>
+                <property name="maxIdleTime" value="${metaspace.database.maxIdleTime}"></property>
         </bean>
 
         <!--3 会话工厂bean sqlSessionFactoryBean -->
