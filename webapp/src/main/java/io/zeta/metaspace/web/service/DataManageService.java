@@ -961,6 +961,8 @@ public class DataManageService {
     @Transactional
     public void updateEntityInfo(List<AtlasEntity> entities) {
         try {
+            Configuration configuration = ApplicationProperties.get();
+            Boolean enableEmail = configuration.getBoolean("metaspace.mail.enable", false);
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (typeName.equals("hive_table")) {
@@ -971,7 +973,9 @@ public class DataManageService {
                         AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                         tableInfo.setDbName(relatedDB.getDisplayText());
                         tableDAO.updateTable(tableInfo);
-                        sendMetadataChangedMail(entity.getGuid());
+                        if(enableEmail) {
+                            sendMetadataChangedMail(entity.getGuid());
+                        }
                     }
                 } else if (typeName.equals("hive_column")) {
                     String guid = entity.getGuid();
