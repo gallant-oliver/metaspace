@@ -91,13 +91,7 @@ public interface UserDAO {
     @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and users.valid=true and userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
 
-    @Select({"<script>",
-            " select account from users where userid in",
-            " <foreach item='userId' index='index' collection='userIdList'",
-            " open='(' separator=',' close=')'>",
-            " #{userId}",
-            " </foreach>",
-            "</script>"})
-    public List<String> getUsersEmail(@Param("userIdList") List<String> userIdList);
+    @Select("select account from users join metadata_subscribe on metadata_subscribe.user_id=users.userid where table_guid=#{tableGuid}")
+    public List<String> getUsersEmail(@Param("tableGuid")String tableGuid);
 
 }
