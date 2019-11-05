@@ -48,6 +48,7 @@ public class HbaseUtils {
             configuration.set("hbase.client.scanner.timeout.period", "50000");
             configuration.set("zookeeper.recovery.retry", "3");
             configuration.set("zookeeper.recovery.retry.intervalmill", "200");
+            configuration.set("hbase.client.keyvalue.maxsize", "0");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
