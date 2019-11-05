@@ -282,10 +282,11 @@ public class HomePageService {
                     table.setDisplayName(table.getTableName());
                 }
             });
-            long total = homePageDAO.getTotalTableUserTimes();
+            Map<String, Long> totalQuery = homePageDAO.getTotalInfo();
+            long total = totalQuery.get("totalbusiness");
             DecimalFormat df = new DecimalFormat("0.00");
             tableList.stream().forEach(info -> info.setProportion(String.valueOf(df.format((float) info.getTimes() / total))));
-            long sum = homePageDAO.getCountBusinessRelatedTable();
+            long sum = totalQuery.get("totaltable");
             pageResult.setLists(tableList);
             pageResult.setCurrentSize(tableList.size());
             pageResult.setTotalSize(sum);

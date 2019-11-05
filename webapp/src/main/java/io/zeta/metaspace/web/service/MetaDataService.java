@@ -1387,7 +1387,7 @@ public class MetaDataService {
         }
     }
 
-    @CacheEvict(value = {"columnCache", "tablePageCache", "columnPageCache", "databaseSearchCache", "TableByDBCache"}, allEntries = true)
+    @CacheEvict(value = {"columnCache", "tablePageCache", "columnPageCache", "databaseSearchCache", "TableByDBCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache"}, allEntries = true)
     public void refreshCache() {
         LOG.info("元数据管理缓存已被清除");
     }

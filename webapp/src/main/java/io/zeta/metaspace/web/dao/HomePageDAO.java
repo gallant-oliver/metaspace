@@ -29,6 +29,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /*
  * @description
@@ -56,12 +57,8 @@ public interface HomePageDAO {
             " </script>"})
     public List<TableUseInfo> getTableRelatedInfo(@Param("limit") int limit, @Param("offset") int offset);
 
-    //@Select("SELECT sum(total) from (select count(*) as total from role join users on role.roleId=users.roleId group by role.roleId) A")
-    @Select("select count(DISTINCT businessId) from business2table")
-    public long getTotalTableUserTimes();
-
-    @Select("SELECT count(distinct tableGuid) from  business2Table")
-    public long getCountBusinessRelatedTable();
+    @Select("select count(DISTINCT businessId) as totalBusiness,count(distinct tableGuid) as totalTable from business2table")
+    public Map<String, Long> getTotalInfo();
 
     @Select("select count(*) from businessInfo where technicalStatus=#{technicalStatus}")
     public long getTechnicalStatusNumber(@Param("technicalStatus") int type);
