@@ -82,7 +82,7 @@ public class CreateHiveProcess extends BaseHiveEvent {
             // skip insert into tbl_x values() statements
             if (CollectionUtils.isNotEmpty(readEntities) && readEntities.size() == 1) {
                 ReadEntity input = readEntities.iterator().next();
-                if (input.getType() == Entity.Type.TABLE && input.getTable().isTemporary()) {
+                if ((input.getType() == Entity.Type.TABLE && input.getTable().isTemporary()) || getContext().getHiveOperation() == HiveOperation.LOAD) {
                     processOutputs(ret, outputs, processedNames, writeEntities);
                     AtlasEntity process = getHiveProcessEntity(outputs);
                     ret.addEntity(process);
