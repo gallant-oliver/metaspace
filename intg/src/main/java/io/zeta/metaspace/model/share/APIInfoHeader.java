@@ -41,6 +41,7 @@ public class APIInfoHeader {
     private Boolean star;
     private Boolean enableClone;
     private String tableDisplayName;
+    private Boolean enableEditManager;
     private String manager;
     private Integer usedCount;
     @JsonIgnore
@@ -172,6 +173,14 @@ public class APIInfoHeader {
 
     public void setTableDisplayName(String tableDisplayName) {
         this.tableDisplayName = tableDisplayName;
+    }
+
+    public Boolean getEnableEditManager() {
+        return enableEditManager;
+    }
+
+    public void setEnableEditManager(Boolean enableEditManager) {
+        this.enableEditManager = enableEditManager;
     }
 
     public String getManager() {
