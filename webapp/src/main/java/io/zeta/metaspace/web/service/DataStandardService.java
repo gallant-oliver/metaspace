@@ -15,18 +15,27 @@ package io.zeta.metaspace.web.service;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+
+import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandAndRule;
+import io.zeta.metaspace.model.datastandard.DataStandAndTable;
+import io.zeta.metaspace.model.datastandard.DataStandToRule;
+import io.zeta.metaspace.model.datastandard.DataStandToTable;
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.ibatis.annotations.Param;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -58,6 +67,8 @@ public class DataStandardService {
     DataStandardDAO dataStandardDAO;
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    TableDAO tableDAO;
 
     public int insert(DataStandard dataStandard) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -111,9 +122,11 @@ public class DataStandardService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标准失败");
         }
     }
-
+    @Transactional
     public void deleteByNumber(String number) throws AtlasBaseException {
         try {
+            dataStandardDAO.deleteStandard2RuleByRuleId(number);
+            dataStandardDAO.deleteStandard2TableByNumber(number);
             dataStandardDAO.deleteByNumber(number);
         } catch (Exception e) {
             LOG.error("删除失败", e);
@@ -368,6 +381,162 @@ public class DataStandardService {
 
     public void updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType());
+    }
+
+    @Transactional
+    public void assignTableToStandard(DataStandAndTable dataStandAndTable,String tableName) throws AtlasBaseException {
+        try {
+            dataStandAndTable.setOperator(AdminUtils.getUserData().getUserId());
+            dataStandAndTable.setCreateTime(DateUtils.currentTimestamp());
+            dataStandardDAO.deleteByTableId(dataStandAndTable.getTableGuid());
+            for (String number : dataStandAndTable.getNumbers()){
+                String content = dataStandardDAO.getContentByNumber(number);
+                if (content==null){
+                    LOG.error("数据标准不存在或已删除");
+                    continue;
+                }
+                try{
+                    dataStandardDAO.assignTableToStandard(number,dataStandAndTable);
+                }catch (Exception e) {
+                    LOG.error("表"+ tableName +" 依赖标准 " + content + " 失败,错误信息:" + e.getMessage(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("依赖标准更新失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void assignRuleToStandard(DataStandAndRule dataStandAndRule,String ruleName) throws AtlasBaseException {
+        try {
+            dataStandAndRule.setOperator(AdminUtils.getUserData().getUserId());
+            dataStandAndRule.setCreateTime(DateUtils.currentTimestamp());
+            dataStandardDAO.deleteByRuleId(dataStandAndRule.getRuleId());
+            for (String number : dataStandAndRule.getNumbers()){
+                String content = dataStandardDAO.getContentByNumber(number);
+                if (content==null){
+                    LOG.error("数据标准不存在或已删除");
+                    continue;
+                }
+                try{
+                    dataStandardDAO.assignRuleToStandard(number,dataStandAndRule);
+                }catch (Exception e) {
+                    LOG.error("质量规则"+ ruleName +" 依赖标准 " + content + " 失败,错误信息:" + e.getMessage(), e);
+                }
+
+            }
+        } catch (Exception e) {
+            LOG.error("依赖标准更新失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public List<DataStandardHead> getDataStandardByTable(String tableGuid) throws AtlasBaseException {
+        try {
+            List<DataStandardHead> dataStandards = dataStandardDAO.getDataStandardByTableGuid(tableGuid);
+            dataStandards = dataStandards.stream().map(dataStandard -> {
+                String[] pathIds = null;
+                try {
+                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId());
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage(), e);
+                }
+                dataStandard.setPathIds(pathIds);
+                return dataStandard;
+            }).collect(Collectors.toList());
+            return dataStandards;
+        } catch (Exception e) {
+            LOG.error("获取表的依赖数据标准失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public List<DataStandardHead> getDataStandardByRule(String ruleId) throws AtlasBaseException {
+        try {
+            List<DataStandardHead> dataStandards = dataStandardDAO.getDataStandardByRuleId(ruleId);
+            dataStandards = dataStandards.stream().map(dataStandard -> {
+                String[] pathIds = null;
+                try {
+                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId());
+                } catch (AtlasBaseException e) {
+                    LOG.error(e.getMessage(), e);
+                }
+                dataStandard.setPathIds(pathIds);
+                return dataStandard;
+            }).collect(Collectors.toList());
+            return dataStandards;
+        } catch (Exception e) {
+            LOG.error("获取规则的依赖数据标准失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public PageResult<DataStandToTable> getTableByNumber(String number,Parameters parameters) throws AtlasBaseException {
+        try {
+            List<DataStandToTable> list = dataStandardDAO.getTableByNumber(number,parameters);
+            PageResult<DataStandToTable> pageResult = new PageResult<>();
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+
+        } catch (Exception e) {
+            LOG.error("获取元数据关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public PageResult<DataStandToRule> getRuleByNumber(String number,Parameters parameters) throws AtlasBaseException {
+        try {
+            List<DataStandToRule> list = dataStandardDAO.getRuleByNumber(number,parameters);
+            PageResult<DataStandToRule> pageResult = new PageResult<>();
+            long totalSize = 0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("获取数据质量关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public List<CategoryAndDataStandard> getCategoryAndStandard() throws AtlasBaseException {
+        try {
+            List<CategoryAndDataStandard> categoryAndDataStandards = new ArrayList<>();
+            List<CategoryPrivilege> categoryPrivileges = getCategory(3);
+            for (CategoryPrivilege categoryPrivilege:categoryPrivileges){
+                CategoryAndDataStandard categoryAndDataStandard = new CategoryAndDataStandard(categoryPrivilege);
+                List<DataStandardHead> dataStandardHeads = dataStandardDAO.getStandardByCategoyrId(categoryAndDataStandard.getGuid());
+                if (dataStandardHeads!=null && dataStandardHeads.size()!=0){
+                    try {
+                        String[] pathIds = CategoryRelationUtils.getPathIds(categoryAndDataStandard.getGuid());
+                        dataStandardHeads = dataStandardHeads.stream().map(dataStandard -> {
+                            dataStandard.setPathIds(pathIds);
+                            return dataStandard;
+                        }).collect(Collectors.toList());
+                    } catch (AtlasBaseException e) {
+                        LOG.error(e.getMessage(), e);
+                    }
+                }
+                if (dataStandardHeads!=null){
+                    categoryAndDataStandard.setDataStandards(dataStandardHeads);
+                }
+                categoryAndDataStandards.add(categoryAndDataStandard);
+            }
+            return categoryAndDataStandards;
+        } catch (Exception e) {
+            LOG.error("获取所有目录和数据标准失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 
 }

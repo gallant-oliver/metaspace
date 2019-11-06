@@ -14,6 +14,8 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.datastandard.DataStandAndTable;
+import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -25,6 +27,7 @@ import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.*;
@@ -85,6 +88,12 @@ public class MetaDataREST {
 
     @Autowired
     private DataManageService dataManageService;
+
+    @Autowired
+    private TableDAO tableDAO;
+
+    @Autowired
+    private DataStandardService dataStandardService;
 
     private final MetaDataService metadataService;
 
@@ -660,6 +669,30 @@ public class MetaDataREST {
     }
 
     /**
+     * 更新依赖标准
+     * @param dataStandAndTable
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/dataStandard")
+    public boolean assignTableToStandard(DataStandAndTable dataStandAndTable) throws AtlasBaseException {
+        String tableName = tableDAO.getTableNameByTableGuid(dataStandAndTable.getTableGuid());
+        if (tableName==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表不存在或已删除，请刷新或者检查元数据");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableName);
+        try {
+            dataStandardService.assignTableToStandard(dataStandAndTable,tableName);
+            return true;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
      * 根据搜索条件返回关系型数据库的数据源
      *
      * @return List<RDBMSDataSource>
@@ -997,6 +1030,23 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 获取表依赖标准
+     * @param tableGuid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/dataStandard/{tableGuid}")
+    public List<DataStandardHead> getDataStandard(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+        try {
+           return dataStandardService.getDataStandardByTable(tableGuid);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
     @GET
     @Path("/check/table/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

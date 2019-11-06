@@ -1,13 +1,21 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.datastandard.DataStandAndRule;
+import io.zeta.metaspace.model.datastandard.DataStandAndTable;
+import io.zeta.metaspace.model.datastandard.DataStandToRule;
+import io.zeta.metaspace.model.datastandard.DataStandToTable;
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+
+import javax.ws.rs.DELETE;
 
 public interface DataStandardDAO {
 
@@ -139,5 +147,93 @@ public interface DataStandardDAO {
              " offset #{offset}",
              " </script>"})
     List<DataStandard> history(@Param("number") String number, @Param("limit") Integer limit, @Param("offset") Integer offset, @Param("query") String query);
+
+    @Delete({"delete from data_standard2table where tableGuid=#{tableGuid}"})
+    int deleteByTableId(@Param("tableGuid") String tableGuid);
+
+    @Delete({"delete from data_standard2table where number=#{number}"})
+    int deleteStandard2TableByNumber(@Param("number") String number);
+
+    @Insert("insert into data_standard2table(number,tableguid,createtime,operator) values(#{number},#{dataStandAndTable.tableGuid},#{dataStandAndTable.createTime},#{dataStandAndTable.operator})")
+    public int assignTableToStandard(@Param("number") String number,@Param("dataStandAndTable")DataStandAndTable dataStandAndTable);
+
+    @Delete({"delete from data_standard2data_quality_rule where ruleId=#{ruleId}"})
+    int deleteByRuleId(@Param("ruleId") String ruleId);
+
+    @Delete({"delete from data_standard2data_quality_rule where number=#{number}"})
+    int deleteStandard2RuleByRuleId(@Param("number") String number);
+
+    @Insert("insert into data_standard2data_quality_rule(number,ruleid,createtime,operator) values(#{number},#{dataStandAndRule.ruleId},#{dataStandAndRule.createTime},#{dataStandAndRule.operator})")
+    public int assignRuleToStandard(@Param("number") String number,@Param("dataStandAndRule") DataStandAndRule dataStandAndRule);
+
+    @Select("select b.content from " +
+            " (select number,max(version) as version from data_standard where number=#{number} and delete=false group by number) as a " +
+            " inner join data_standard b on a.number=b.number and a.version=b.version and delete=false")
+    String getContentByNumber(@Param("number") String number);
+
+    @Select({"<script>",
+             "select count(*)over() total,s.tableguid,t.tablename,s.createtime,u.username as operator from " +
+             " data_standard2table as s " +
+             " inner join tableinfo t on s.tableguid=t.tableguid " +
+             " inner join users u on s.operator=u.userid " +
+             " where s.number=#{number}",
+             " <if test='params != null'>",
+             " <if test='params.sortby != null'>",
+             " order by ${params.sortby} ",
+             "<if test='params.order != null'>",
+             "${params.order}",
+             "</if>",
+             " </if>",
+             " <if test='params.limit != 0 and params.limit != -1'>",
+             " limit #{params.limit} offset #{params.offset}",
+             " </if>",
+             " </if>",
+             " </script>"})
+    List<DataStandToTable> getTableByNumber(@Param("number") String number,@Param("params")Parameters parameters);
+
+    @Select({"<script>",
+             "select count(*)over() total,s.ruleid,r.name as ruleName,s.createtime,u.username as operator from " +
+             " data_standard2data_quality_rule as s " +
+             " inner join data_quality_rule r on s.ruleid=r.id " +
+             " inner join users u on s.operator=u.userid " +
+             " where s.number=#{number}",
+             " <if test='params != null'>",
+             " <if test='params.sortby != null'>",
+             " order by ${params.sortby} ",
+             "<if test='params.order != null'>",
+             "${params.order}",
+             "</if>",
+             " </if>",
+             " <if test='params.limit != 0 and params.limit != -1'>",
+             " limit #{params.limit} offset #{params.offset}",
+             " </if>",
+             " </if>",
+             " </script>"})
+    List<DataStandToRule> getRuleByNumber(@Param("number") String number,@Param("params")Parameters parameters);
+
+    @Select({"<script>",
+             " select b.id,b.number,b.content,b.description,b.categoryid from ",
+             " (select d.number,max(d.version) as version from data_standard d join data_standard2table t on d.number=t.number where d.delete=false and t.tableguid=#{tableGuid} group by d.number) as a ",
+             " inner join data_standard b on a.number=b.number and a.version=b.version ",
+             " where b.delete=false ",
+             " </script>"})
+    public List<DataStandardHead> getDataStandardByTableGuid(@Param("tableGuid") String tableGuid);
+
+    @Select({"<script>",
+             " select b.id,b.number,b.content,b.description,b.categoryid from ",
+             " (select d.number,max(d.version) as version from data_standard d join data_standard2data_quality_rule t on d.number=t.number where d.delete=false and t.ruleid=#{ruleId} group by d.number) as a ",
+             " inner join data_standard b on a.number=b.number and a.version=b.version ",
+             " where b.delete=false ",
+             " </script>"})
+    public List<DataStandardHead> getDataStandardByRuleId(@Param("ruleId") String ruleId);
+
+    @Select({"<script>",
+             " select b.id,b.number,b.content,b.description,b.categoryid from ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
+             " inner join data_standard b on a.number=b.number and a.version=b.version ",
+             " where b.delete=false and b.categoryid=#{categoryId} ",
+             " </script>"})
+    public List<DataStandardHead> getStandardByCategoyrId(@Param("categoryId") String categoryId);
+
 
 }

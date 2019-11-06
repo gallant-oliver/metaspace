@@ -194,7 +194,8 @@ CREATE TABLE "public"."category" (
   "parentcategoryguid" text COLLATE "pg_catalog"."default" DEFAULT NULL,
   "qualifiedname" text COLLATE "pg_catalog"."default" DEFAULT NULL,
   "categorytype" int2 DEFAULT NULL,
-  "level" int2 DEFAULT NULL
+  "level" int2 DEFAULT NULL,
+  "safe" varchar(225) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -1119,11 +1120,11 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('1','贴源层',NUll,'2',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('2','基础层','1','3',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('3','规范层','2','4',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('4','通过层','3','5',0,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level) VALUES('5','应用层','4',NULL,0,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('4','通过层','3','5',0,1,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('5','应用层','4',NULL,0,1,1);
 
 INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-1', '基础类数据标准','基础类数据标准',null,null,'Standard-2',1,3);
 INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-2', '指标类数据标准','指标类数据标准',null,'Standard-1',null,1,3);
@@ -1915,4 +1916,32 @@ CREATE TABLE "public"."report2ruletemplate" (
 -- ----------------------------
 ALTER TABLE "public"."report2ruletemplate" ADD CONSTRAINT "report2ruletype_pkey" PRIMARY KEY ("rule_template_id", "data_quality_execute_id");
 
+
+DROP TABLE IF EXISTS "public"."data_standard2table";
+CREATE TABLE "public"."data_standard2table" (
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6),
+  "operator" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table data_standard2table
+-- ----------------------------
+ALTER TABLE "public"."data_standard2table" ADD CONSTRAINT "data_standard2table_pkey" PRIMARY KEY ("number", "tableguid");
+
+DROP TABLE IF EXISTS "public"."data_standard2data_quality_rule";
+CREATE TABLE "public"."data_standard2data_quality_rule" (
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6),
+  "operator" varchar COLLATE "pg_catalog"."default"
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table data_standard2data_quality_rule
+-- ----------------------------
+ALTER TABLE "public"."data_standard2data_quality_rule" ADD CONSTRAINT "data_standard2data_quality_rule_pkey" PRIMARY KEY ("number", "ruleid");
 

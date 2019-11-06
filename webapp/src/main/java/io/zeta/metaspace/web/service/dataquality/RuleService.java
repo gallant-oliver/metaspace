@@ -21,9 +21,11 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -48,6 +50,9 @@ public class RuleService {
 
     @Autowired
     private RuleDAO ruleDAO;
+
+    @Autowired
+    private DataStandardDAO dataStandardDAO;
 
     @Autowired
     private DataManageService dataManageService;
@@ -79,11 +84,13 @@ public class RuleService {
         return ruleDAO.getByCode(code);
     }
 
+    @Transactional
     public void deleteById(String number) throws AtlasBaseException {
         Boolean enableStatus = ruleDAO.getEnableStatusById(number);
         if(true==enableStatus) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
         }
+        dataStandardDAO.deleteByRuleId(number);
         ruleDAO.deleteById(number);
     }
 
@@ -223,5 +230,9 @@ public class RuleService {
 
     public String getCategoryName(String categoryGuid) {
         return ruleDAO.getCategoryName(categoryGuid);
+    }
+
+    public String getNameById(String id) {
+        return ruleDAO.getNameById(id);
     }
 }

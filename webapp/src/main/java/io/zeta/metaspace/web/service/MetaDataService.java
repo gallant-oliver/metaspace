@@ -79,8 +79,9 @@ import org.apache.atlas.type.AtlasTypeRegistry;
 
 import org.apache.commons.beanutils.BeanUtils;
 
+import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_TABLE;
+import static io.zeta.metaspace.web.metadata.BaseFields.RDBMS_FOREIGN_KEY;
 import static io.zeta.metaspace.web.metadata.BaseFields.RMDB_INSTANCE;
-import javax.ws.rs.PathParam;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -179,6 +180,8 @@ public class MetaDataService {
             if (e.getMessage().contains("无效的实体ID")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
             }
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
+        } catch(Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
         }
     }
@@ -630,7 +633,7 @@ public class MetaDataService {
 
         for (String key : referredEntities.keySet()) {
             AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains("rdbms_foreign_key") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+            if (referredEntity.getTypeName().contains(RDBMS_FOREIGN_KEY) && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE) && referredEntity.getAttribute(ATTRIBUTE_TABLE)!=null && entity.getGuid().equals(((AtlasObjectId)referredEntity.getAttribute(ATTRIBUTE_TABLE)).getGuid())) {
                 foreignKey = new RDBMSForeignKey();
                 //tableId
                 foreignKey.setTableId(guid);
@@ -1395,6 +1398,11 @@ public class MetaDataService {
     @CacheEvict(value = {"RDBMSDataSourceSearchCache", "RDBMSDBBySourceCache", "RDBMSTableByDBCache", "RDBMSDBPageCache", "RDBMSTablePageCache", "RDBMSColumnPageCache"}, allEntries = true)
     public void refreshRDBMSCache() {
         LOG.info("关系型元数据管理缓存已被清除");
+    }
+
+    @CacheEvict(value = {"RDBMSTableByDBCache","RDBMSTablePageCache"}, allEntries = true)
+    public void refreshRDBMSTableCache(){
+        LOG.info("关系型表元数据管理缓存已被清除");
     }
 
     /**
@@ -2217,24 +2225,25 @@ public class MetaDataService {
         return comparisonMetadata;
     }
 
+    @CacheEvict(value = {"RDBMSTableByDBCache","TableByDBCache"}, allEntries = true)
     public void addMetadataSubscription(String tableGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             Timestamp generateTime = new Timestamp(System.currentTimeMillis());
             SubscriptionInfo subscriptionInfo = new SubscriptionInfo(userId, tableGuid, generateTime);
             metadataSubscribeDAO.addMetadataSubscription(subscriptionInfo);
-            refreshCache();
         } catch (Exception e) {
             LOG.error("添加订阅元数据变更失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
+
+    @CacheEvict(value = {"RDBMSTableByDBCache","TableByDBCache"}, allEntries = true)
     public void removeMetadataSubscription(String tableGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             metadataSubscribeDAO.removeMetadataSubscription(userId, tableGuid);
-            refreshCache();
         } catch (Exception e) {
             LOG.error("添加订阅元数据变更失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
