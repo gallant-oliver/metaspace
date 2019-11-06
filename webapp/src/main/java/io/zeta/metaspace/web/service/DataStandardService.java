@@ -336,12 +336,15 @@ public class DataStandardService {
         List<CategoryPrivilege> result = dataManageService.getAll(categoryType);
         for (CategoryPrivilege category : result) {
             String categoryGuid = category.getGuid();
-            String pattern = "^Standard-([1-9])+-l$";
+            String childPattern = "^Standard-([1-9])+-l$";
+            String parentPattern = "^Standard-([1-9])+$";
             CategoryPrivilege.Privilege privilege = null;
-            if(Pattern.matches(pattern, categoryGuid)) {
+            if(Pattern.matches(childPattern, categoryGuid)) {
                 privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false,false);
-            } else {
+            } else if(Pattern.matches(parentPattern, categoryGuid)) {
                 privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false,false);
+            } else {
+                privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             }
             category.setPrivilege(privilege);
         }
