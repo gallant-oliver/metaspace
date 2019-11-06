@@ -30,9 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class HiveJdbcUtils {
@@ -42,12 +40,16 @@ public class HiveJdbcUtils {
     private static String[] hiveUrlArr ;
     private static String hivePrincipal = "";
     private static String hiveUrlPrefix = "jdbc:hive2://";
+    private static Queue<String> hiveUrlQueue = new LinkedList<>();
 
 
     static {
         try {
             Class.forName(hivedriverClassName);
             hiveUrlArr = MetaspaceConfig.getHiveUrl();
+            if(hiveUrlArr != null && hiveUrlArr.length > 0) {
+                hiveUrlQueue.addAll(Arrays.asList(hiveUrlArr));
+            }
             hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -57,18 +59,21 @@ public class HiveJdbcUtils {
     public static Connection getConnection(String db, String user) throws AtlasBaseException {
         Connection connection = null;
         String jdbcUrl;
-        if (hiveUrlArr != null && hiveUrlArr.length > 0) {
-            for (int i = 0; i < hiveUrlArr.length; i++) {
+        if (hiveUrlQueue != null && hiveUrlQueue.size() > 0) {
+            for (int i = 0; i < hiveUrlQueue.size(); i++) {
                 try {
-                    String hiveUrl = hiveUrlArr[i];
+                    String hiveUrl = hiveUrlQueue.peek();
                     if (KerberosConfig.isKerberosEnable()) {
                         jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
                     } else {
                         jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
                     }
+                    LOG.info("hive jdbc url:" + jdbcUrl);
                     connection = DriverManager.getConnection(jdbcUrl);
                     return connection;
                 } catch (Exception e) {
+                    String badUrl = hiveUrlQueue.remove();
+                    hiveUrlQueue.add(badUrl);
                     LOG.error("获取hive连接失败", e);
                 }
             }
