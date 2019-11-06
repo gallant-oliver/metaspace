@@ -88,7 +88,7 @@ public class CategoryRelationUtils {
     public static String[] getPathIds(String categoryId) throws AtlasBaseException {
         try {
             String pathStr = utils.categoryDAO.queryPathIdsByGuid(categoryId);
-            return pathStr.substring(1, pathStr.length()-1).split(",");
+            return pathStr.substring(1, pathStr.length()-1).replace("\"","").split(",");
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
