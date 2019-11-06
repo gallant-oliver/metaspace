@@ -326,6 +326,9 @@ public class SearchService {
         }
 
         String db = dbName.substring(0,dbName.length()-1);
+        if (db.startsWith("\"")){
+            db = db.substring(1,db.length()-1);
+        }
         String table = "";
         if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
             table = tableName.substring(0,tableName.length()-1);
@@ -402,6 +405,9 @@ public class SearchService {
             }
         }
         String db = dbName.substring(0,dbName.length()-1);
+        if (db.startsWith("\"")){
+            db = db.substring(1,db.length()-1);
+        }
         String table = "";
         if (tableName.substring(0,tableName.length()-1).equalsIgnoreCase(name)){
             table = tableName.substring(0,tableName.length()-1);
