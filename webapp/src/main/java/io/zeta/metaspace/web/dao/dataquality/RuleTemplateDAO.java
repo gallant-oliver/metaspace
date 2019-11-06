@@ -54,7 +54,7 @@ public interface RuleTemplateDAO {
             " (select rule_template_id as ruleTemplateId,data_quality_execute_id as executeId,",
             " report2ruletemplate.creator as creatorId,report2ruletemplate.create_time as createTime,rule_type as ruleTypeId",
             " from report2ruletemplate join data_quality_rule_template on data_quality_rule_template.id=report2ruletemplate.rule_template_id",
-            " where rule_type=#{ruleType}) a",
+            " where rule_template_id=#{templateId}) a",
             " join data_quality_task_execute",
             " on data_quality_task_execute.id=a.executeId)b",
             " join data_quality_task on data_quality_task.id=b.taskId) c",
@@ -64,5 +64,5 @@ public interface RuleTemplateDAO {
             " limit #{params.limit} offset #{params.offset}",
             " </if>",
             " </script>"})
-    public List<Report2RuleTemplate> getReportByRuleType(@Param("ruleType")String ruleType, @Param("params") Parameters params);
+    public List<Report2RuleTemplate> getReportByRuleType(@Param("templateId")String templateId, @Param("params") Parameters params);
 }

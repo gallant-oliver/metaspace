@@ -78,11 +78,11 @@ public class RuleTemplateREST {
     }
 
     @POST
-    @Path("/{ruleType}/report")
+    @Path("/{templateId}/report")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Report2RuleTemplate> getReportByRuleType(@PathParam("ruleType")String ruleType,Parameters parameters) throws AtlasBaseException {
-        return ruleTemplateService.getReportByRuleType(ruleType, parameters);
+    public PageResult<Report2RuleTemplate> getReportByRuleType(@PathParam("templateId")String templateId,Parameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.getReportByRuleType(templateId, parameters);
     }
 
     /**
