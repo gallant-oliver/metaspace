@@ -285,7 +285,7 @@ public abstract class MetaDataProvider {
         return ret;
     }
 
-    private void createOrUpdateEntity(AtlasEntity.AtlasEntityWithExtInfo dbEntity) throws AtlasBaseException {
+    protected void createOrUpdateEntity(AtlasEntity.AtlasEntityWithExtInfo dbEntity) throws AtlasBaseException {
         entitiesStore.createOrUpdate(new AtlasEntityStream(dbEntity), false);
     }
 
@@ -454,6 +454,18 @@ public abstract class MetaDataProvider {
         return ret;
     }
 
+    protected AtlasEntity.AtlasEntityWithExtInfo getById(final String guid,boolean isMinExtInfo) throws AtlasBaseException {
+        AtlasEntity.AtlasEntityWithExtInfo ret = null;
+        try {
+            ret = atlasEntityStore.getById(guid,isMinExtInfo);
+        } catch (AtlasBaseException e) {
+            return null;
+        }
+        clearRelationshipAttributes(ret);
+
+        return ret;
+    }
+
     /**
      * Imports all tables for the given db
      * @param dbEntity
@@ -505,7 +517,7 @@ public abstract class MetaDataProvider {
      * @return
      * @throws Exception
      */
-    private AtlasEntity.AtlasEntityWithExtInfo registerEntity(AtlasEntity.AtlasEntityWithExtInfo entity) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerEntity(AtlasEntity.AtlasEntityWithExtInfo entity) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("creating {} entity: {}", entity.getEntity().getTypeName(), entity);
         }

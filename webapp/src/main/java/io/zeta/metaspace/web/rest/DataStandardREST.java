@@ -17,6 +17,9 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
+import io.zeta.metaspace.model.datastandard.DataStandToRule;
+import io.zeta.metaspace.model.datastandard.DataStandToTable;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandardQuery;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -327,5 +330,58 @@ public class DataStandardREST {
     public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
         dataStandardService.updateCategory(categoryInfo);
+    }
+
+    /**
+     * 获取元数据关联
+     * @param number
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/table/{number}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public PageResult<DataStandToTable> getTableByNumber(@PathParam("number") String number,Parameters parameters) throws AtlasBaseException {
+        try {
+            return dataStandardService.getTableByNumber(number,parameters);
+
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取元数据关联失败"+e.getMessage());
+        }
+    }
+
+    /**
+     * 获取数据质量关联
+     * @param number
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/rule/{number}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public PageResult<DataStandToRule> getRuleByNumber(@PathParam("number") String number,Parameters parameters) throws AtlasBaseException {
+        try {
+            return dataStandardService.getRuleByNumber(number,parameters);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据质量关联失败"+e.getMessage());
+        }
+    }
+
+
+    @GET
+    @Path("/category/standard")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public List<CategoryAndDataStandard> getCategoryAndStandard() throws AtlasBaseException {
+        try {
+            return dataStandardService.getCategoryAndStandard();
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取所有目录和数据标准失败："+e.getMessage());
+        }
     }
 }

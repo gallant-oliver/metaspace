@@ -174,7 +174,7 @@ public interface DataSourceDAO {
 
     //获取数据源已授权人
     @Select("select count(*)over() totalSize,users.userid,users.userName,users.account from users join data_source_authorize on data_source_authorize.authorize_user_id=users.userid " +
-            "where source_id=#{sourceId} and users.userid!=#{userId}")
+            "where source_id=#{sourceId} and users.userid!=#{userId} and users.valid=true")
     public List<UserIdAndName> getAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
     //判断用户是否是数据源已授权人
@@ -185,7 +185,7 @@ public interface DataSourceDAO {
     //获取数据源未授权人
     @Select("<script>" +
             "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
-            "where p.moduleid='14' and r.status=1 " +
+            "where p.moduleid='14' and r.status=1 and u.valid=true " +
             "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
             "<if test='query!=null'>" +
             "and username like '%${query}%' ESCAPE '/'" +

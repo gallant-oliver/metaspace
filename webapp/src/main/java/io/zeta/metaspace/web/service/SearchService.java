@@ -29,7 +29,6 @@ import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.commons.lang.StringUtils;
@@ -44,13 +43,11 @@ import schemacrawler.tools.databaseconnector.SingleUseUserCredentials;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @AtlasService
 public class SearchService {
@@ -106,7 +103,14 @@ public class SearchService {
 
     @Cacheable(value = "RDBMSTableByDBCache", key = "#databaseId + #offset + #limit")
     public PageResult<RDBMSTable> getRDBMSTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
-        return metaspaceEntityService.getRDBMSTableByDB(databaseId, offset, limit);
+        PageResult<RDBMSTable> pageResult = metaspaceEntityService.getRDBMSTableByDB(databaseId, offset, limit);
+        List<RDBMSTable> tableList = pageResult.getLists();
+        String userId = AdminUtils.getUserData().getUserId();
+        tableList.forEach(table -> {
+            boolean subTo = subscribeDAO.existSubscribe(table.getTableId(), userId)==0 ? false : true;
+            table.setSubscribeTo(subTo);
+        });
+        return pageResult;
     }
 
     @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
@@ -332,7 +336,7 @@ public class SearchService {
         String sql = "";
         if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
             db.replace("`","``");
-            table.replace("``","``");
+            table.replace("`","``");
             sql = "select * from `"+ db +"`.`"+ table +"` limit " + guidCount.getCount();
         }else if (dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
             sql = "select * from \""+ db +"\".\""+ table +"\" where rownum <" + guidCount.getCount();
@@ -413,7 +417,7 @@ public class SearchService {
         String sql = "";
         if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
             db.replace("`","``");
-            table.replace("``","``");
+            table.replace("`","``");
             sql = "SHOW CREATE TABLE `" + table+"`";
         }else if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
             db.replace("'","''");

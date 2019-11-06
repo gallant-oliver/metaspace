@@ -172,7 +172,7 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         }else {
             columns = toColumns(tableName.getColumns(), tableEntity, databaseName, instanceGuid);
             indexes = toIndexes(tableName.getIndexes(), columns, tableEntity, databaseName, instanceGuid);
-            foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, tableEntity, dbEntity, instanceId, databaseName);
+            foreignKeys = toForeignKeys(tableName.getForeignKeys(), columns, tableEntity, databaseName);
         }
         table.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
         for (AtlasEntity column : columns) {
@@ -189,28 +189,55 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
         return tableEntity;
     }
 
-    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity, AtlasEntity dbEntity, String instanceGuid,String databaseName) throws AtlasBaseException {
+    private List<AtlasEntity> toForeignKeys(Collection<ForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity,String databaseName) throws AtlasBaseException {
         AtlasEntity table = tableEntity.getEntity();
         List<AtlasEntity> ret = new ArrayList<>();
-        for (ForeignKey foreignKey:foreignKeys){
-            AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
-
-            if (tableEntity.getReferredEntities()!=null){
-                List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(foreignKey.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
-                String keyId = null;
-                if(keyIds!=null && keyIds.size()!=0){
-                    keyId = keyIds.get(0);
+        for (ForeignKey foreignKey : foreignKeys) {
+            Column foreignKeyColumn = foreignKey.getColumnReferences().get(0).getForeignKeyColumn();
+            Column primaryKeyColumn = foreignKey.getColumnReferences().get(0).getPrimaryKeyColumn();
+            if (foreignKeyColumn.getSchema().getFullName().equalsIgnoreCase(databaseName) &&foreignKeyColumn.getParent().getName().equalsIgnoreCase(table.getAttribute(ATTRIBUTE_NAME).toString())){
+                AtlasEntity foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
+                if (tableEntity.getReferredEntities()!=null){
+                    List<String> keyIds = tableEntity.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_FOREIGN_KEY)&&entity.getAttribute(ATTRIBUTE_NAME).toString().equalsIgnoreCase(foreignKey.getName())).map(entity->entity.getGuid()).collect(Collectors.toList());
+                    String keyId = null;
+                    if(keyIds!=null && keyIds.size()!=0){
+                        keyId = keyIds.get(0);
+                    }
+                    if (keyId!=null) {
+                        foreignEntity.setGuid(keyId);
+                    }
                 }
-                if (keyId!=null) {
-                    foreignEntity.setGuid(keyId);
+                foreignEntity.setAttribute(ATTRIBUTE_NAME, foreignKey.getName());
+                foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
+                //todo ATTRIBUTE_REFERENCES_TABLE 和 ATTRIBUTE_REFERENCES_COLUMNS 需要需要表已经存在janusgraph中
+                //            visitForeignEntity(foreignEntity, foreignKey, dbEntity, instanceId);
+                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0],primaryKeyColumn.getSchema().getFullName(),primaryKeyColumn.getParent().getName());
+                AtlasEntity.AtlasEntityWithExtInfo tableInfo = findEntity(getTableTypeName(), tableQualifiedName);
+                if (tableInfo!=null){
+                    tableInfo = getById(tableInfo.getEntity().getGuid(),false);
+                    foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(tableInfo.getEntity()));
+                    List<AtlasEntity> primaryColumns = tableInfo.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)).collect(Collectors.toList());
+                    foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, getPrimaryKeyColumns(foreignKey, primaryColumns));
+                    tableInfo.addReferredEntity(foreignEntity);
+                    ((List<AtlasObjectId>)tableInfo.getEntity().getAttribute(ATTRIBUTE_FOREIGN_KEYS)).add(getObjectId(foreignEntity));
+                    createOrUpdateEntity(tableInfo);
+                }
+                foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
+                foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, getKeyColumns(foreignKey, columns));
+
+                ret.add(foreignEntity);
+            }else{
+                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0],foreignKeyColumn.getSchema().getFullName(),foreignKeyColumn.getParent().getName());
+                String foreignQualifiedName = getColumnQualifiedName(tableQualifiedName,foreignKey.getName());
+                AtlasEntity.AtlasEntityWithExtInfo info = findEntity(RDBMS_FOREIGN_KEY, foreignQualifiedName);
+                if (info!=null){
+                    info = getById(info.getEntity().getGuid(),true);
+                    AtlasEntity foreignEntity = info.getEntity();
+                    foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(table));
+                    foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, getPrimaryKeyColumns(foreignKey, columns));
+                    ret.add(foreignEntity);
                 }
             }
-
-            foreignEntity.setAttribute(ATTRIBUTE_NAME,foreignKey.getName());
-            foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME,getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
-            foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
-            foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS,getKeyColumns(foreignKey,columns));
-            ret.add(foreignEntity);
         }
         return ret;
     }
@@ -218,29 +245,61 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
     private List<AtlasEntity> toForeignKeys(List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity, AtlasEntity dbEntity, String instanceGuid,String databaseName,Table tableName) throws AtlasBaseException {
         List<AtlasEntity> ret = new ArrayList<>();
         AtlasEntity table = tableEntity.getEntity();
-        String query = "SELECT NULL AS table_cat,\n" +
-                       "       c.owner AS table_schem,\n" +
-                       "       c.table_name,\n" +
-                       "       c.column_name,\n" +
-                       "       c.constraint_name AS foreign_key_name\n" +
-                       "FROM all_cons_columns c, all_constraints k\n" +
-                       "WHERE k.constraint_type = 'R'\n" +
-                       "  AND k.constraint_name = c.constraint_name \n" +
-                       "  AND k.table_name = c.table_name \n" +
-                       "  AND k.owner = c.owner \n" +
-                       "  AND k.table_name =  ?\n" +
-                       "  AND k.owner = ? \n" +
-                       "ORDER BY column_name";
+        String query = "SELECT NULL AS table_cat, \n" +
+                       "       c.owner AS table_schem, \n" +
+                       "       c.table_name, \n" +
+                       "       c.column_name, \n" +
+                       "       c2.owner r_table_schem ,\n" +
+                       "       c2.table_name r_table_name,\n" +
+                       "       c2.column_name r_column_name,\n" +
+                       "       c.POSITION, \n" +
+                       "       c.constraint_name AS foreign_key_name \n" +
+                       "FROM all_cons_columns c, all_constraints k , all_cons_columns c2\n" +
+                       "WHERE k.constraint_type = 'R' \n" +
+                       "  AND k.constraint_name = c.constraint_name  \n" +
+                       "  AND k.table_name = c.table_name  \n" +
+                       "  AND k.owner = c.owner  \n" +
+                       "  AND k.r_constraint_name = c2.constraint_name \n" +
+                       "  AND c2.POSITION = c.POSITION \n" +
+                       "  AND c.table_name =  ?\n" +
+                       "  AND c.owner = ?  \n" +
+                       "ORDER BY POSITION ";
+        String foreignQuery = "SELECT NULL AS table_cat, \n" +
+                              "       c.owner AS table_schem, \n" +
+                              "       c.table_name, \n" +
+                              "       c.column_name, \n" +
+                              "       c2.owner r_table_schem ,\n" +
+                              "       c2.table_name r_table_name,\n" +
+                              "       c2.column_name r_column_name,\n" +
+                              "       c.POSITION, \n" +
+                              "       c.constraint_name AS foreign_key_name \n" +
+                              "FROM all_cons_columns c, all_constraints k , all_cons_columns c2\n" +
+                              "WHERE k.constraint_type = 'R' \n" +
+                              "  AND k.constraint_name = c.constraint_name  \n" +
+                              "  AND k.table_name = c.table_name  \n" +
+                              "  AND k.owner = c.owner  \n" +
+                              "  AND k.r_constraint_name = c2.constraint_name \n" +
+                              "  AND c2.POSITION = c.POSITION \n" +
+                              "  AND c2.table_name =  ?\n" +
+                              "  AND c2.owner = ?  \n" +
+                              "ORDER BY POSITION ";
         Map<String,AtlasEntity> map = new HashMap<>();
+        Map<String,AtlasEntity.AtlasEntityWithExtInfo> tableMap = new HashMap<>();
 
-        try (final Connection connection = getConnection();
-             final PreparedStatement prepare = connection.prepareStatement(query)){
+        try (final Connection connection = getConnection()){
+            PreparedStatement prepare = connection.prepareStatement(query);
             prepare.setString(1,tableName.getName());
             prepare.setString(2,databaseName);
             ResultSet resultSet = prepare.executeQuery();
             while(resultSet.next()){
                 String name = resultSet.getString("foreign_key_name");
+
+                String primaryTableName = resultSet.getString("r_table_name");
+                String primaryDbName = resultSet.getString("r_table_schem");
+                String primary_column_name = resultSet.getString("r_column_name");
+                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0],primaryDbName,primaryTableName);
                 AtlasEntity foreignEntity = map.get(name);
+                AtlasEntity.AtlasEntityWithExtInfo primaryTableInfo = null;
                 if ( foreignEntity == null){
                     foreignEntity = new AtlasEntity(RDBMS_FOREIGN_KEY);
                     if (tableEntity.getReferredEntities()!=null){
@@ -257,6 +316,22 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
                     map.put(name,foreignEntity);
                     foreignEntity.setAttribute(ATTRIBUTE_NAME,name);
                     foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME,getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), name));
+
+
+                    primaryTableInfo = findEntity(getTableTypeName(), tableQualifiedName);
+                    if (primaryTableInfo!=null){
+                        primaryTableInfo = getById(primaryTableInfo.getEntity().getGuid(),false);
+                        foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(primaryTableInfo.getEntity()));
+                        List<AtlasEntity> primaryColumns = primaryTableInfo.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)).collect(Collectors.toList());
+                        List<AtlasObjectId> columnObjectIds = new ArrayList<>();
+                        primaryColumns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(primary_column_name)).findFirst().ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
+
+                        foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, columnObjectIds);
+                        primaryTableInfo.addReferredEntity(foreignEntity);
+                        ((List<AtlasObjectId>)primaryTableInfo.getEntity().getAttribute(ATTRIBUTE_FOREIGN_KEYS)).add(getObjectId(foreignEntity));
+                    }
+                    tableMap.put(foreignEntity.getGuid(),primaryTableInfo);
+
                     foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
                     List<AtlasObjectId> columnObjectIds = new ArrayList<>();
                     String column_name = resultSet.getString("column_name");
@@ -265,12 +340,64 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
 
                     ret.add(foreignEntity);
                 }else {
+                    primaryTableInfo = tableMap.get(foreignEntity.getGuid());
+                    if (primaryTableInfo!=null){
+                        List<AtlasEntity> primaryColumns = primaryTableInfo.getReferredEntities().values().stream().filter(entity-> entity.getStatus()==AtlasEntity.Status.ACTIVE&&entity.getTypeName().equalsIgnoreCase(RDBMS_COLUMN)).collect(Collectors.toList());
+                        List<AtlasObjectId> columnObjectIds = (List<AtlasObjectId>)foreignEntity.getAttribute(ATTRIBUTE_KEY_COLUMNS);
+                        primaryColumns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(primary_column_name)).findFirst().ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
+                    }
                     List<AtlasObjectId> columnObjectIds = (List<AtlasObjectId>)foreignEntity.getAttribute(ATTRIBUTE_KEY_COLUMNS);
                     String column_name = resultSet.getString("column_name");
                     columns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(column_name)).findFirst().ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
                 }
 
             }
+
+            for (String guid: tableMap.keySet()){
+                AtlasEntity.AtlasEntityWithExtInfo primaryTableInfo = tableMap.get(guid);
+                if (primaryTableInfo!=null){
+                    AtlasEntity foreignEntity = primaryTableInfo.getReferredEntity(guid);
+                    AtlasObjectId tableObjectIds = (AtlasObjectId)foreignEntity.getAttribute(ATTRIBUTE_TABLE);
+                    foreignEntity.setAttribute(ATTRIBUTE_TABLE, null);
+                    List<AtlasObjectId> columnObjectIds = (List<AtlasObjectId>)foreignEntity.getAttribute(ATTRIBUTE_KEY_COLUMNS);
+                    foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, new ArrayList<AtlasObjectId>());
+                    createOrUpdateEntity(primaryTableInfo);
+                    foreignEntity.setAttribute(ATTRIBUTE_TABLE, tableObjectIds);
+                    foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, columnObjectIds);
+                }
+            }
+
+            PreparedStatement foreignPrepare = connection.prepareStatement(foreignQuery);
+            foreignPrepare.setString(1,tableName.getName());
+            foreignPrepare.setString(2,databaseName);
+            ResultSet foreignResultSet = foreignPrepare.executeQuery();
+            while(foreignResultSet.next()){
+                String name = foreignResultSet.getString("foreign_key_name");
+                String foreignTableName = foreignResultSet.getString("table_name");
+                String foreignDbName = foreignResultSet.getString("table_schem");
+                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0],foreignDbName,foreignTableName);
+                String foreignQualifiedName = getColumnQualifiedName(tableQualifiedName,name);
+                AtlasEntity foreignEntity = map.get(foreignQualifiedName);
+                if (foreignEntity==null){
+                    AtlasEntity.AtlasEntityWithExtInfo info = findEntity(RDBMS_FOREIGN_KEY, foreignQualifiedName);
+                    if (info!=null){
+                        info = getById(info.getEntity().getGuid(),true);
+                        foreignEntity = info.getEntity();
+                        foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_TABLE, getObjectId(table));
+                        List<AtlasObjectId> columnObjectIds = new ArrayList<>();
+                        String primaryColumn = foreignResultSet.getString("r_column_name");
+                        columns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(primaryColumn)).findFirst().ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
+                        foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, columnObjectIds);
+                        ret.add(foreignEntity);
+                        map.put(foreignQualifiedName,foreignEntity);
+                    }
+                }else{
+                    List<AtlasObjectId> columnObjectIds = (List<AtlasObjectId>)foreignEntity.getAttribute(ATTRIBUTE_REFERENCES_COLUMNS);
+                    String primaryColumn = foreignResultSet.getString("r_column_name");
+                    columns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(primaryColumn)).findFirst().ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
+                }
+            }
+
         }catch (SQLException e){
             LOG.info("获取表"+table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString()+"外键失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -286,6 +413,16 @@ public class OracleMetaDataProvider extends MetaDataProvider implements IMetaDat
      * @return
      */
     private List<AtlasObjectId> getKeyColumns(ForeignKey foreignKey, List<AtlasEntity> columns) {
+        List<AtlasObjectId> columnObjectIds = new ArrayList<>();
+        for (ForeignKeyColumnReference columnReference : foreignKey.getColumnReferences()) {
+            String columnName = columnReference.getForeignKeyColumn().getName();
+            Optional<AtlasEntity> first = columns.stream().filter(columnEntity -> columnEntity.getAttribute(ATTRIBUTE_NAME).equals(columnName)).findFirst();
+            first.ifPresent(atlasEntity -> columnObjectIds.add(getObjectId(atlasEntity)));
+        }
+        return columnObjectIds;
+    }
+
+    private List<AtlasObjectId> getPrimaryKeyColumns(ForeignKey foreignKey, List<AtlasEntity> columns) {
         List<AtlasObjectId> columnObjectIds = new ArrayList<>();
         for (ForeignKeyColumnReference columnReference : foreignKey.getColumnReferences()) {
             String columnName = columnReference.getPrimaryKeyColumn().getName();

@@ -103,4 +103,8 @@ public interface RuleDAO {
     @Select("select name from category where guid=#{categoryId}")
     public String getCategoryName(@Param("categoryId") String guid);
 
+    @Select({" select name " ,
+             " from data_quality_rule where delete=false and id=#{id}"})
+    public String getNameById(@Param("id") String id);
+
 }

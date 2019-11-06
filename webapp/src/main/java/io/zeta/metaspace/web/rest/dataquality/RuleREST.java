@@ -21,13 +21,17 @@ import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
+import io.zeta.metaspace.model.datastandard.DataStandAndRule;
+import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.service.dataquality.RuleService;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.web.util.Servlets;
@@ -49,6 +53,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 
 /**
@@ -67,6 +72,9 @@ public class RuleREST {
 
     @Autowired
     private RuleService ruleService;
+    @Autowired
+    private DataStandardService dataStandardService;
+
 
     @Autowired
     private DataManageService dataManageService;
@@ -275,6 +283,49 @@ public class RuleREST {
     @Path("/ruleTemplate")
     public List<RuleTemplate> disableRule() throws AtlasBaseException {
         return ruleService.getAllRuleTemplateList();
+    }
+
+    /**
+     * 更新依赖标准
+     * @param dataStandAndTable
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/dataStandard")
+    @OperateType(UPDATE)
+    public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable) throws AtlasBaseException {
+        String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId());
+        if(null == ruleName) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "质量规则不存在");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleName);
+        try {
+            dataStandardService.assignRuleToStandard(dataStandAndTable,ruleName);
+            return true;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 获取规则依赖标准
+     * @param ruleId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/dataStandard/{ruleId}")
+    public List<DataStandardHead> getDataStandard(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
+        try {
+            return dataStandardService.getDataStandardByRule(ruleId);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
 }
