@@ -44,6 +44,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -373,7 +374,14 @@ public class DataShareService {
                 List<AddRelationTable> tableList = tablePageResult.getLists();
                 tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             }
-            String userId = AdminUtils.getUserData().getUserId();
+            User userInfo = AdminUtils.getUserData();
+            String userId = userInfo.getUserId();
+            String roleId = userInfo.getRoleId();
+            boolean enableEditManager = false;
+            if(SystemRole.ADMIN.getCode().equals(roleId) || SystemRole.MANAGE.getCode().equals(roleId)) {
+                enableEditManager = true;
+            }
+
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
@@ -383,6 +391,7 @@ public class DataShareService {
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId);
             for(APIInfoHeader header : list) {
+                header.setEnableEditManager(enableEditManager);
                 if(permissionTableList.contains(header.getTableGuid())) {
                     header.setEnableClone(true);
                 } else {
