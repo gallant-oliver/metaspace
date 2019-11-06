@@ -1013,6 +1013,10 @@ public class DataManageService {
         return categoryDao.getCategoryNameById(guid);
     }
 
+    public String getCategoryNameByRelationId(String guid) {
+        return categoryDao.getCategoryNameByRelationId(guid);
+    }
+
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
         try {
             Table info = tableDAO.getDbAndTableName(tableGuid);

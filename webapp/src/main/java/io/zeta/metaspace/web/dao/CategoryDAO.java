@@ -186,4 +186,7 @@ public interface CategoryDAO {
     @Select("select name from category where guid=#{guid}")
     public String getCategoryNameById(String guid);
 
+    @Select("select category.name from category join table_relation on table_relation.categoryguid=category.guid where relationshipguid=#{guid}")
+    public String getCategoryNameByRelationId(String guid);
+
 }
