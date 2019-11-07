@@ -83,8 +83,17 @@ public abstract class MetaDataProvider {
     protected SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private boolean isSource;
+    private boolean isThread = false;
 
-    public void set(AtlasEntityStore entitiesStore,DataSourceService  dataSourceService,AtlasTypeRegistry atlasTypeRegistry,AtlasGraph graph){
+    public boolean isThread() {
+        return isThread;
+    }
+
+    public void setThread(boolean thread) {
+        isThread = thread;
+    }
+
+    public void set(AtlasEntityStore entitiesStore, DataSourceService  dataSourceService, AtlasTypeRegistry atlasTypeRegistry, AtlasGraph graph){
         this.entitiesStore=entitiesStore;
         this.dataSourceService=dataSourceService;
         this.atlasEntityStore=entitiesStore;
@@ -127,7 +136,13 @@ public abstract class MetaDataProvider {
         SchemaCrawlerOptions options = optionsBuilder.toOptions();
         catalog=null;
         try(Connection connection = getConnection()) {
+            if (isThread){
+                LOG.error("终止元数据同步");
+                throw new InterruptedException("终止元数据同步");
+            }
             catalog = SchemaCrawlerUtility.getCatalog(connection, options);
+        }catch (InterruptedException e){
+            throw e;
         }catch (Exception e){
             LOG.error("import metadata error", e);
         }
@@ -353,7 +368,12 @@ public abstract class MetaDataProvider {
         startTime.set(System.currentTimeMillis());
         endTime.set(0);
         metaDataContext = new MetaDataContext();
+        Thread.sleep(3000);
         init(tableSchema);
+        if (isThread){
+            LOG.error("终止元数据同步,数据源：");
+            throw new InterruptedException("终止元数据同步,数据源："+dataSourceInfo.getSourceName());
+        }
         totalTables.set(tableNames.size());
         String instanceId = tableSchema.getInstance();
 
@@ -486,6 +506,10 @@ public abstract class MetaDataProvider {
                 }
 
                 for (Table tableName : tableNames) {
+                    if (isThread){
+                        LOG.error("终止元数据同步,数据源：");
+                        throw new InterruptedException("终止元数据同步,数据源："+dataSourceInfo.getSourceName());
+                    }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("导入{}表的元数据", tableName.getFullName());
                     }
@@ -494,7 +518,9 @@ public abstract class MetaDataProvider {
                     tablesImported += imported;
                     updatedTables.incrementAndGet();
                 }
-            } catch (Exception e) {
+            } catch (InterruptedException e){
+                throw e;
+            }catch (Exception e) {
                 LOG.error("导入表元数据错误", e);
             } finally {
                 if (tablesImported == tableNames.size()) {

@@ -28,6 +28,33 @@ public class DataSourceHead {
     private boolean permission;
     @JsonIgnore
     private int totalSize;
+    private String manager;
+    private boolean editManager;
+
+    public boolean isEditManager() {
+        return editManager;
+    }
+
+    public void setEditManager(boolean editManager) {
+        this.editManager = editManager;
+    }
+
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
+    }
+    private boolean synchronize;
+
+    public boolean isSynchronize() {
+        return synchronize;
+    }
+
+    public void setSynchronize(boolean synchronize) {
+        this.synchronize = synchronize;
+    }
 
     public boolean isRely() {
         return rely;

@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.metadata.MetaDataProvider;
 import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
@@ -1373,8 +1374,10 @@ public class MetaDataService {
         try {
             metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity, tableSchema);
             metaDataProvider.importDatabases(tableSchema);
-        } catch (HiveException e) {
-            errorMap.put(tableSchema.getInstance(), "同步元数据出错，无法连接到hive");
+        } catch (InterruptedException e){
+            errorMap.put(tableSchema.getInstance(),e.getMessage());
+        }catch (HiveException e) {
+            errorMap.put(tableSchema.getInstance(),"同步元数据出错，无法连接到hive");
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
             errorMap.put(tableSchema.getInstance(), String.format("同步元数据出错，%s", e.getMessage()));
@@ -1382,6 +1385,26 @@ public class MetaDataService {
         }
         if (null != metaDataProvider) {
             metaDataProvider.getEndTime().set(System.currentTimeMillis());
+        }
+        if (null != metaDataProvider) {
+            metaDataProvider.getEndTime().set(System.currentTimeMillis());
+        }
+        if (metaDataProvider instanceof MetaDataProvider){
+            ((MetaDataProvider) metaDataProvider).setThread(false);
+        }
+    }
+    public void stopSource(String sourceId) throws AtlasBaseException {
+        if (metaDataProviderMap.containsKey(sourceId)&&metaDataProviderMap.get(sourceId)!=null){
+            IMetaDataProvider metaDataProvider = metaDataProviderMap.get(sourceId);
+            if (metaDataProvider.getEndTime().get()!=0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
+            }
+            if (!(metaDataProvider instanceof MetaDataProvider)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
+            }
+            ((MetaDataProvider) metaDataProvider).setThread(true);
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
         }
     }
 
@@ -1435,14 +1458,14 @@ public class MetaDataService {
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
-        if (hiveMetaStoreBridgeUtils == null) {
-            errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
-            LOG.error(errorMap.get(sourceId));
-            progress.setError(errorMap.get(sourceId));
-            return progress;
-        }
         switch (databaseTypeEntity) {
             case HIVE:
+                if (hiveMetaStoreBridgeUtils == null) {
+                    errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
+                    LOG.error(errorMap.get(sourceId));
+                    progress.setError(errorMap.get(sourceId));
+                    return progress;
+                }
                 progress = getProgress(hiveMetaStoreBridgeUtils, sourceId);
                 break;
             case MYSQL:
@@ -1450,7 +1473,7 @@ public class MetaDataService {
                 progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
                 break;
             case POSTGRESQL:
-                progress.setError(String.format("not support database type %s, hive is support", databaseType));
+                progress.setError(String.format("不支持的数据源类型 %s", databaseType));
                 break;
         }
         return progress;

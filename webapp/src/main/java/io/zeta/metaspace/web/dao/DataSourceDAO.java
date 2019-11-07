@@ -30,14 +30,15 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 
+import java.sql.Timestamp;
 import java.util.List;
 
 
 
 public interface DataSourceDAO {
     //添加数据源
-    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id)" +
-            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId})")
+    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager)" +
+            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{updateUserId})")
     public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody);
 
     //更新数据源
@@ -106,7 +107,8 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager " +
+            "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
             "where dsa.authorize_user_id=#{userId}" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
@@ -137,6 +139,41 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
+    //搜索数据源
+
+    @Select("<script>" +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager " +
+            "from data_source ds, users us " +
+            "where ds.update_user_id=us.userid" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateUserName!=null'>" +
+            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='parameters.sortby!=null'>" +
+            "order by ds.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            "${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            "limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset ${parameters.offset}" +
+            "</if>" +
+            "</script>")
+    public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
 
 
     @Select("select count(*) from data_source ")
@@ -166,9 +203,9 @@ public interface DataSourceDAO {
             "from data_source where source_id=#{sourceId};")
     public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
 
-    //判断是否是创建用户
-    @Select("select count(1) from data_source where source_id=#{sourceId} and create_user_id=#{userId}")
-    public int isCreateUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+    //判断是否是管理者
+    @Select("select count(1) from data_source where source_id=#{sourceId} and manager=#{userId}")
+    public int isManagerUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
 
 
@@ -233,4 +270,22 @@ public interface DataSourceDAO {
             "join data_source_authorize a on s.source_id=a.source_id " +
             "where a.authorize_user_id = #{userId})")
     public List<String> getUpdateUserName(@Param("userId") String userId);
+
+    //更新数据源
+    @Update("update data_source set " +
+            "manager=#{managerUserId}," +
+            "update_user_id=#{userId}," +
+            "update_time=#{updateTime}" +
+            "where source_id=#{sourceId}")
+    public int updateManager(@Param("userId") String userId,@Param("managerUserId") String managerUserId,@Param("sourceId") String sourceId,@Param("updateTime") Timestamp updateTime);
+
+    //获取可以成为数据源管理者的用户
+    @Select("select count(*)over() totalSize,u.userid,u.username userName,u.account " +
+            "from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "where p.moduleid='14' and r.status=1 and u.valid=true ")
+    public List<UserIdAndName> getManager();
+
+    //查询数据源名字
+    @Select("select manager from data_source where source_id=#{sourceId}")
+    public String getManagerBySourceId(@Param("sourceId") String sourceId);
 }
