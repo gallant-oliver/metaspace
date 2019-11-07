@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -51,6 +52,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,7 @@ public class DataSourceREST {
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     private Map<String,AtomicBoolean> importings = new LRUMap(30);
+    private Map<String,Thread> threadMap = new LRUMap(30);
     @Autowired
     private MetaDataService metadataService;
 
@@ -262,7 +265,15 @@ public class DataSourceREST {
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
                                                         @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
         try {
-            return dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName);
+             PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName);
+             pageResult.getLists().stream().forEach(dataSourceHead -> {
+                 if (importings.containsKey(dataSourceHead.getSourceId())&&importings.get(dataSourceHead.getSourceId()).get()==true){
+                     dataSourceHead.setSynchronize(true);
+                 }else{
+                     dataSourceHead.setSynchronize(false);
+                 }
+             });
+             return pageResult;
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败"+e.getMessage());
@@ -411,6 +422,22 @@ public class DataSourceREST {
         return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
     }
 
+    @POST
+    @Path("/stop/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopSource(@PathParam("sourceId")String sourceId) throws AtlasBaseException {
+        try {
+            metadataService.stopSource(sourceId);
+            LOG.info("采集数据源正在停止，请稍候");
+
+        }catch (Exception e){
+            LOG.warn("停止失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"停止失败："+e.getMessage());
+        }
+    }
+
+
     @GET
     @Path("/import/progress/{databaseType}/{sourceId}")
     public Response importProgress(@PathParam("databaseType") String databaseType,@PathParam("sourceId") String sourceId) throws Exception {
@@ -430,4 +457,34 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
         }
     }
+
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/manager/{sourceId}/{userId}")
+    public boolean updateManager(@PathParam("userId") String userId,@PathParam("sourceId") String sourceId) throws Exception {
+        try {
+            dataSourceService.updateManager(sourceId,userId);
+            Response.status(200).entity("success").build();
+            return true;
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改失败:"+e.getMessage());
+        }
+    }
+
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/manager")
+    public List<UserIdAndName> getManager() throws Exception {
+        try {
+            return dataSourceService.getManager();
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+
 }

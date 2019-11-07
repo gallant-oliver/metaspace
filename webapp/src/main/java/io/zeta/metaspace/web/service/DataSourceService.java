@@ -18,40 +18,31 @@ import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME;
-import static io.zeta.metaspace.web.metadata.BaseFields.RMDB_INSTANCE;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
-import io.zeta.metaspace.model.dataSource.DataSource;
 import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceCheckMessage;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
-import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
-import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.commons.configuration.Configuration;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -59,8 +50,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.AutoPopulatingList;
-import org.springframework.util.ObjectUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -69,12 +58,8 @@ import java.sql.SQLException;
 import java.sql.*;
 import java.sql.Timestamp;
 import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import java.util.ArrayList;
@@ -88,6 +73,10 @@ public class DataSourceService {
     private DataSourceDAO dataSourceDAO;
     @Inject
     protected AtlasGraph graph;
+    @Autowired
+    private RoleDAO roleDAO;
+    @Autowired
+    private UserDAO userDAO;
 
     @Autowired
     private DataSourceDAO datasourceDAO;
@@ -140,7 +129,7 @@ public class DataSourceService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
             String userId = AdminUtils.getUserData().getUserId();
-            if (noCreateUserId(dataSourceBody.getSourceId(),userId)){
+            if (!isManagerUserId(dataSourceBody.getSourceId(),userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
             }
             if(getRely(dataSourceBody.getSourceId())){
@@ -171,7 +160,7 @@ public class DataSourceService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不存在");
             }
             String userId = AdminUtils.getUserData().getUserId();
-            if (noCreateUserId(dataSourceBody.getSourceId(),userId)){
+            if (!isManagerUserId(dataSourceBody.getSourceId(),userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
             }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
@@ -213,7 +202,7 @@ public class DataSourceService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             for (String sourceId:sourceIds){
-                if (!(dataSourceDAO.isSourceId(sourceId)==0) && noCreateUserId(sourceId,userId)){
+                if (!(dataSourceDAO.isSourceId(sourceId)==0) && !isManagerUserId(sourceId,userId)){
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在无权限删除的数据源");
                 }
                 if(getRely(sourceId)){
@@ -356,12 +345,23 @@ public class DataSourceService {
                 dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
             String userId = AdminUtils.getUserData().getUserId();
 
-            List<DataSourceHead> list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            List<DataSourceHead> list = null;
+            if (SystemRole.ADMIN.getCode().equals(roleId)){
+                list = dataSourceDAO.searchAllDataSources(parameters,dataSourceSearch);
+            }else{
+                list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
+            }
             for (DataSourceHead head:list) {
+                if (head.getManager()!=null) {
+                    String manager = userDAO.getUserName(head.getManager());
+                    head.setManager(manager);
+                }
+                head.setEditManager(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId));
                 String sourceId = head.getSourceId();
                 boolean rely = getRely(sourceId);
                 head.setRely(rely);
-                boolean permission = !noCreateUserId(sourceId,userId);
+                boolean permission = isManagerUserId(sourceId,userId);
                 head.setPermission(permission);
             }
             pageResult.setCurrentSize(list.size());
@@ -407,7 +407,7 @@ public class DataSourceService {
     public DataSourceAuthorizeUser getAuthorizeUser(String sourceId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            if (noCreateUserId(sourceId,userId)){
+            if (!isManagerUserId(sourceId,userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
             }
             DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
@@ -435,7 +435,7 @@ public class DataSourceService {
     public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId,String query) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            if (noCreateUserId(sourceId,userId)){
+            if (!isManagerUserId(sourceId,userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
             }
             if(Objects.nonNull(query))
@@ -462,8 +462,12 @@ public class DataSourceService {
      * @param userId
      * @return
      */
-    public boolean noCreateUserId(String sourceId,String userId){
-        return dataSourceDAO.isCreateUser(sourceId,userId)==0;
+    public boolean isManagerUserId(String sourceId,String userId){
+        String roleId = roleDAO.getRoleIdByUserId(userId);
+        if (SystemRole.ADMIN.getCode().equals(roleId)||"3".equals(roleId)){
+            return true;
+        }
+        return dataSourceDAO.isManagerUser(sourceId,userId)!=0;
     }
 
     public boolean isAuthorizeUser(String sourceId) throws AtlasBaseException {
@@ -489,7 +493,7 @@ public class DataSourceService {
 
             String sourceId = dataSourceAuthorizeUserId.getSourceId();
             String userId = AdminUtils.getUserData().getUserId();
-            if (noCreateUserId(sourceId,userId)){
+            if (!isManagerUserId(sourceId,userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
             }
 
@@ -654,7 +658,7 @@ public class DataSourceService {
                         dataSourceCheckInfo.setErrorMessage("更新数据源失败，数据源存在依赖");
                         errorDataSourceCount++;
                         errorDataSourceList.add(sourceName);
-                    }else if (noCreateUserId(sourceId,userId)){
+                    }else if (!isManagerUserId(sourceId,userId)){
                         dataSourceCheckInfo.setErrorMessage("更新数据源失败，没有更新该数据源的权限");
                         errorDataSourceCount++;
                         errorDataSourceList.add(sourceName);
@@ -845,6 +849,46 @@ public class DataSourceService {
             String userId = AdminUtils.getUserData().getUserId();
             return dataSourceDAO.getUpdateUserName(userId);
         } catch (AtlasBaseException e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+    @Transactional
+    public void updateManager(String sourceId,String managerUserId) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            if (!(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId))){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非平台管理员和管理员无法更改数据源管理者");
+            }
+            if (StringUtils.isEmpty(roleDAO.getRoleIdByUserId(managerUserId))){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无角色或删除用户无法成为管理者");
+            }
+
+            Timestamp updateTime = new Timestamp(System.currentTimeMillis());
+            String oldManagerId = dataSourceDAO.getManagerBySourceId(sourceId);
+            dataSourceDAO.updateManager(userId,managerUserId,sourceId,updateTime);
+            if (!StringUtils.isEmpty(oldManagerId)){
+                List<String> oldManagerIds = new ArrayList<>();
+                oldManagerIds.add(oldManagerId);
+                dataSourceDAO.deleteAuthorize(sourceId,oldManagerIds);
+            }
+            dataSourceDAO.addAuthorize(sourceId,managerUserId);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    public List<UserIdAndName> getManager() throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            String roleId = roleDAO.getRoleIdByUserId(userId);
+            if (!(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId))){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非平台管理员和管理员无法更改数据源管理者");
+            }
+            return dataSourceDAO.getManager();
+        } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
