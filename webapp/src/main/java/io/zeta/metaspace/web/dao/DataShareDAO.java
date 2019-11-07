@@ -32,11 +32,11 @@ import java.util.Map;
 public interface DataShareDAO {
 
     @Insert({" <script>",
-             " insert into apiInfo(guid,name,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,",
-             " version,description,protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager",
+             " insert into apiInfo(guid,name,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,version,description,",
+             " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager,desensitize",
              " )values(",
              " #{guid},#{name},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount},#{manager})",
+             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount},#{manager},#{desensitize})",
              " </script>"})
     public int insertAPIInfo(APIInfo info);
 
