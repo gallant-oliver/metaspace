@@ -17,18 +17,22 @@
 package io.zeta.metaspace.web.rest;
 
 import com.alibaba.druid.sql.SQLUtils;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.web.service.TableService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.Table;
 import io.zeta.metaspace.model.table.TableForm;
 import io.zeta.metaspace.model.table.TableSql;
-import io.zeta.metaspace.repository.table.TableService;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import org.apache.atlas.web.util.Servlets;
 import io.zeta.metaspace.web.util.TableSqlUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -37,7 +41,13 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.util.Map;
+import java.util.Objects;
 
 @Path("table")
 @Singleton
@@ -46,10 +56,12 @@ public class TableREST {
 
     private static final Logger LOG = LoggerFactory.getLogger(TableREST.class);
 
-    @Inject
+    @Autowired
     private TableService tableService;
     @Inject
     private MetaspaceGremlinService metaspaceGremlinService;
+
+    private static final int MAX_EXCEL_FILE_SIZE = 1024*1024;
 
     @POST
     @Path("/create/form")
@@ -102,6 +114,35 @@ public class TableREST {
             formatedSql = formatedSql.replace("STORE", "STORED");
         }
         return Response.status(200).entity(formatedSql).build();
+    }
+
+    @POST
+    @Path("/sql/import")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map importSql(@FormDataParam("file") InputStream fileInputStream,
+                         @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+        File file = null;
+        try {
+            String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            if(!name.substring(name.length() - 4).equals(".sql")) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
+            }
+            file = new File(name);
+            FileUtils.copyInputStreamToFile(fileInputStream, file);
+            if(file.length() > MAX_EXCEL_FILE_SIZE) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过1M");
+            }
+            return tableService.importSql(file);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+        } finally {
+            if(Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
     }
 
 }

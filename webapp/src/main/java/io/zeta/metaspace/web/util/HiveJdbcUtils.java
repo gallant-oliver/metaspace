@@ -92,6 +92,27 @@ public class HiveJdbcUtils {
         return getConnection(db, user);
     }
 
+    public static void execute(List<String> sqlList) throws Exception {
+        Connection conn = null;
+        try {
+            conn = getSystemConnection("");
+            Statement stmt = conn.createStatement();
+            for(int i=0; i<sqlList.size(); i++) {
+                stmt.execute(sqlList.get(i));
+            }
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            if(conn != null) {
+                try {
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     public static void execute(String sql) throws AtlasBaseException {
         String user = AdminUtils.getUserName();
         try (Connection conn = getConnection("", user)) {
