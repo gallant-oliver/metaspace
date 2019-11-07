@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -1058,10 +1059,15 @@ public class DataShareService {
             List<Map> values = gson.fromJson(valueObject, List.class);
             Set<String> fields = new HashSet<>();
             List<FilterColumn> filterFileds = new ArrayList<>();
+            Boolean desensitize = info.getDesensitize()==null?false:info.getDesensitize();
+            List<String> sensitiveColumn = new ArrayList<>();
             for (Map map : values) {
                 String columnName = map.get("columnName").toString();
                 Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
-
+                Boolean sensitive = Boolean.parseBoolean(map.get("sensitive").toString());
+                if (sensitive) {
+                    sensitiveColumn.add(columnName);
+                }
                 fields.add(columnName);
                 if (filter) {
                     Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
@@ -1108,7 +1114,9 @@ public class DataShareService {
             Future<Map> futureResultMap = pool.submit(task);
             Map resultMap = futureResultMap.get();
             List<LinkedHashMap<String,Object>> queryDataList = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
-
+            if(desensitize) {
+                processSensitiveData(sensitiveColumn, queryDataList);
+            }
             Long count = Long.parseLong(resultMap.get("queryCount").toString());
 
             if(acceptHeader.contains("xml")) {
@@ -1135,6 +1143,30 @@ public class DataShareService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
+        }
+    }
+
+    public void processSensitiveData(List<String>  sensitiveColumnList, List<LinkedHashMap<String,Object>> dataList) {
+        for(LinkedHashMap<String,Object> data : dataList) {
+            for(String key : data.keySet()) {
+                if(sensitiveColumnList.contains(key)) {
+                    String value = data.get(key).toString();
+                    int length = value.length();
+                    int replaceLen = length/3;
+                    StringJoiner joiner = new StringJoiner("");
+                    String tmp = "";
+                    if(replaceLen != 0) {
+                        tmp = value.substring(0, length-replaceLen);
+                    } else {
+                        replaceLen = length;
+                    }
+                    for(int i=0; i<replaceLen; i++) {
+                        joiner.add("*");
+                    }
+                    value = tmp + joiner.toString();
+                    data.put(key, value);
+                }
+            }
         }
     }
 

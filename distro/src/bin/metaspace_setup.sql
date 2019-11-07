@@ -127,7 +127,8 @@ CREATE TABLE "public"."apiinfo" (
   "star" bool DEFAULT NULL,
   "publish" bool DEFAULT NULL,
   "used_count" int8,
-  "manager" varchar(255) COLLATE "pg_catalog"."default"
+  "manager" varchar(255) COLLATE "pg_catalog"."default",
+  "desensitize" bool DEFAULT NULL
 )
 ;
 

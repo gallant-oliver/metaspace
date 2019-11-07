@@ -51,6 +51,7 @@ public class APIInfo {
     private String tableDisplayName;
     private String manager;
     private Integer usedCount;
+    private Boolean desensitize;
 
     public String getGuid() {
         return guid;
@@ -268,6 +269,14 @@ public class APIInfo {
         this.usedCount = usedCount;
     }
 
+    public Boolean getDesensitize() {
+        return desensitize;
+    }
+
+    public void setDesensitize(Boolean desensitize) {
+        this.desensitize = desensitize;
+    }
+
     public static class Field {
         private String columnName;
         private Boolean filter;
@@ -275,6 +284,7 @@ public class APIInfo {
         private String defaultValue;
         private Boolean useDefaultValue;
         private String type;
+        private Boolean sensitive;
 
         public String getColumnName() {
             return columnName;
@@ -324,6 +334,13 @@ public class APIInfo {
             this.type = type;
         }
 
+        public Boolean getSensitive() {
+            return sensitive;
+        }
+
+        public void setSensitive(Boolean sensitive) {
+            this.sensitive = sensitive;
+        }
     }
 
     public static class FieldWithDisplay extends Field {
