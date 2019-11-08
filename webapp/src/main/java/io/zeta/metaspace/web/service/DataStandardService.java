@@ -348,14 +348,10 @@ public class DataStandardService {
     public List<CategoryPrivilege> getCategory(Integer categoryType) throws AtlasBaseException {
         List<CategoryPrivilege> result = dataManageService.getAll(categoryType);
         for (CategoryPrivilege category : result) {
-            String categoryGuid = category.getGuid();
-            String childPattern = "^Standard-([1-9])+-l$";
-            String parentPattern = "^Standard-([1-9])+$";
+            String parentGuid = category.getParentCategoryGuid();
             CategoryPrivilege.Privilege privilege = null;
-            if(Pattern.matches(childPattern, categoryGuid)) {
+            if(parentGuid == null) {
                 privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false,false);
-            } else if(Pattern.matches(parentPattern, categoryGuid)) {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, true, true, false,false);
             } else {
                 privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             }
