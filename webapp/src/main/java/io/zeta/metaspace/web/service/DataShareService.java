@@ -899,7 +899,7 @@ public class DataShareService {
      * @return
      * @throws AtlasBaseException
      */
-    public List<LinkedHashMap> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
+    public List<LinkedHashMap<String,Object>> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
         try {
             String tableGuid = parameter.getTableGuid();
             String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
@@ -925,8 +925,10 @@ public class DataShareService {
             APITask task = new APITask(randomName, sql, dbName, true);
             Future<Map> futureResultMap = pool.submit(task);
             Map resultMap = futureResultMap.get();
-            List<LinkedHashMap> result = (List<LinkedHashMap>)resultMap.get("queryResult");
-
+            List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
+            if(parameter.getDesensitize()!=null && parameter.getDesensitize()) {
+                processSensitiveData(parameter.getSensitiveFields(), result);
+            }
             return result;
         } catch (AtlasBaseException e) {
             throw e;

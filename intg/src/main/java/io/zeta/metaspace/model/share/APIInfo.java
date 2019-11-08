@@ -361,6 +361,7 @@ public class APIInfo {
             this.setDefaultValue(field.getDefaultValue());
             this.setUseDefaultValue(field.getUseDefaultValue());
             this.setColumnName(field.getColumnName());
+            this.setSensitive(field.getSensitive());
         }
     }
 }
