@@ -30,6 +30,8 @@ public class QueryParameter {
     private long maxRowNumber;
     private List<Parameter> parameter;
     private List<String> queryFields;
+    private List<String> sensitiveFields;
+    private Boolean desensitize;
     private Long limit;
     private Long offset;
 
@@ -87,6 +89,22 @@ public class QueryParameter {
 
     public void setQueryFields(List<String> queryFields) {
         this.queryFields = queryFields;
+    }
+
+    public List<String> getSensitiveFields() {
+        return sensitiveFields;
+    }
+
+    public void setSensitiveFields(List<String> sensitiveFields) {
+        this.sensitiveFields = sensitiveFields;
+    }
+
+    public Boolean getDesensitize() {
+        return desensitize;
+    }
+
+    public void setDesensitize(Boolean desensitize) {
+        this.desensitize = desensitize;
     }
 
     public static class Parameter {
