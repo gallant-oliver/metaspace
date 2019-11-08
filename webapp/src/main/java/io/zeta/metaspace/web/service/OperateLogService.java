@@ -51,7 +51,6 @@ public class OperateLogService {
         if (CollectionUtils.isNotEmpty(list)) {
             total = list.get(0).getTotal();
         }
-        //pageResult.setOffset(operateLogRequest.getOffset());
         pageResult.setTotalSize(total);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
@@ -60,9 +59,6 @@ public class OperateLogService {
 
     public void insert(OperateLog operateLog) {
         operateLog.setId(UUIDUtils.uuid());
-        int nextNumber = operateLogDAO.nextNumber();
-        String number = String.format("%08d", nextNumber);
-        operateLog.setNumber(number);
         operateLogDAO.insert(operateLog);
     }
 
