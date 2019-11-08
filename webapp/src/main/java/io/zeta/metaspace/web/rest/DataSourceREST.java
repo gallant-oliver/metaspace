@@ -89,8 +89,7 @@ public class DataSourceREST {
     @Autowired
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
-    private Map<String,AtomicBoolean> importings = new LRUMap(30);
-    private Map<String,Thread> threadMap = new LRUMap(30);
+    private Map<String,AtomicBoolean> importings = new HashMap<>();
     @Autowired
     private MetaDataService metadataService;
 
@@ -415,6 +414,7 @@ public class DataSourceREST {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
                 importing.set(false);
                 metadataService.refreshRDBMSCache();
+                importings.remove(tableSchema.getInstance());
             });
         } else {
             return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();

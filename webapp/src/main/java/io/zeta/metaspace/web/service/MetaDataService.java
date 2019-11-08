@@ -129,8 +129,8 @@ public class MetaDataService {
 
     @Autowired
     private OracleMetaDataProvider oracleMetaDataProvider;
-    private Map<String, IMetaDataProvider> metaDataProviderMap = new LRUMap(50);
-    private Map<String, String> errorMap = new LRUMap(50);
+    private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
+    private Map<String, String> errorMap = new HashMap<>();
 
     @Autowired
     private ColumnDAO columnDAO;
@@ -1386,9 +1386,6 @@ public class MetaDataService {
         if (null != metaDataProvider) {
             metaDataProvider.getEndTime().set(System.currentTimeMillis());
         }
-        if (null != metaDataProvider) {
-            metaDataProvider.getEndTime().set(System.currentTimeMillis());
-        }
         if (metaDataProvider instanceof MetaDataProvider){
             ((MetaDataProvider) metaDataProvider).setThread(false);
         }
@@ -1470,6 +1467,14 @@ public class MetaDataService {
                 break;
             case MYSQL:
             case ORACLE:
+                if (!metaDataProviderMap.containsKey(sourceId)||metaDataProviderMap.get(sourceId)==null){
+                    if (metaDataProviderMap.get(sourceId) == null) {
+                        errorMap.put(sourceId, String.format("该数据源未开始采集元数据"));
+                        LOG.error(errorMap.get(sourceId));
+                        progress.setError(errorMap.get(sourceId));
+                        return progress;
+                    }
+                }
                 progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
                 break;
             case POSTGRESQL:
@@ -1481,9 +1486,6 @@ public class MetaDataService {
 
     private Progress getProgress(IMetaDataProvider metaDataProvider, String sourceId) throws AtlasBaseException {
         Progress progress;
-        if (metaDataProvider == null) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未开始采集元数据或元数据已采集完毕");
-        }
         AtomicInteger totalTables = metaDataProvider.getTotalTables();
         AtomicInteger updatedTables = metaDataProvider.getUpdatedTables();
         AtomicLong startTime = metaDataProvider.getStartTime();
