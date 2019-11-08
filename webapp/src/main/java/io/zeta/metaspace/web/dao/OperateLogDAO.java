@@ -51,9 +51,6 @@ public interface OperateLogDAO {
              " </script>"})
     List<OperateLog> search(@Param("request") OperateLogRequest request);
 
-    @Insert("insert into operate_log values(#{id},#{number},#{userid},#{type},#{module},#{content},#{result},#{ip},#{createtime})")
+    @Insert("insert into operate_log values(#{id},(select to_char((select COALESCE(max(cast(number as integer)) + 1, 1) from operate_log),'00000000')),#{userid},#{type},#{module},#{content},#{result},#{ip},#{createtime})")
     int insert(OperateLog operateLog);
-
-    @Select("select COALESCE(max(cast(number as integer)) + 1, 1) from operate_log")
-    int nextNumber();
 }
