@@ -1729,15 +1729,16 @@ public class MetaDataService {
             cellStyle.setBorderLeft(CellStyle.BORDER_THIN);//左边框
             cellStyle.setBorderTop(CellStyle.BORDER_THIN);//上边框
             cellStyle.setBorderRight(CellStyle.BORDER_THIN);//右边框*/
-            for (Table table : tableList) {
-                createMetadataTableSheet(workbook, table, headerStyle, cellStyle);
-                createMetadataColumnSheet(workbook, table, headerStyle, cellStyle);
+            for (int i=0; i<tableList.size(); i++) {
+                Table table = tableList.get(i);
+                createMetadataTableSheet(workbook, i+1, table, headerStyle, cellStyle);
+                createMetadataColumnSheet(workbook, i+1, table, headerStyle, cellStyle);
             }
         }
         return workbook;
     }
 
-    public String processSpecialCharacter(String sheetName) {
+    /*public String processSpecialCharacter(String sheetName) {
         return sheetName.replace(":", "_")
                 .replace("\\", "_")
                 .replace("/", "_")
@@ -1745,13 +1746,13 @@ public class MetaDataService {
                 .replace("*", "_")
                 .replace("[", "_")
                 .replace("]", "_");
-    }
+    }*/
 
-    public void createMetadataTableSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
+    public void createMetadataTableSheet(Workbook workbook, int index, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetNamePrefix = dbName + "." + tableName;
+        /*String sheetNamePrefix = dbName + "." + tableName;
         sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
         String sheetName = sheetNamePrefix + "-表信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
@@ -1760,8 +1761,20 @@ public class MetaDataService {
             sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
             sheetName = sheetNamePrefix + "-表信息";
             hasSheet = workbook.getSheet(sheetName);
-        }
+        }*/
+        String sheetName = "表" + index + "-表信息";
         Sheet sheet = workbook.createSheet(sheetName);
+
+        CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
+        sheet.addMergedRegion(tableAndDbNameRangeAddress);
+        Row tableAndDbNameRow = sheet.createRow(rowNumber++);
+        Cell tableAndDbNameRowCell = tableAndDbNameRow.createCell(0);
+        tableAndDbNameRowCell.setCellValue(dbName + "." + tableName + "表信息");
+        tableAndDbNameRowCell.setCellStyle(headerStyle);
+        RegionUtil.setBorderLeft(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderBottom(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderTop(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
 
         CellRangeAddress basicInfoRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(basicInfoRangeAddress);
@@ -2039,12 +2052,12 @@ public class MetaDataService {
         sheet.autoSizeColumn(1, true);
     }
 
-    public void createMetadataColumnSheet(Workbook workbook, Table table, CellStyle headerStyle, CellStyle cellStyle) {
+    public void createMetadataColumnSheet(Workbook workbook, int index, Table table, CellStyle headerStyle, CellStyle cellStyle) {
 
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        String sheetNamePrefix = dbName + "." + tableName;
+        /*String sheetNamePrefix = dbName + "." + tableName;
         sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
         String sheetName = sheetNamePrefix + "-字段信息";
         Sheet hasSheet = workbook.getSheet(sheetName);
@@ -2053,13 +2066,25 @@ public class MetaDataService {
             sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
             sheetName = sheetNamePrefix + "-字段信息";
             hasSheet = workbook.getSheet(sheetName);
-        }
-
+        }*/
+        String sheetName = "表" + index + "-字段信息";
         Sheet sheet = workbook.createSheet(sheetName);
 
         List<Column> columnList = table.getColumns();
         List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
         List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey() == true).collect(Collectors.toList());
+
+
+        CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
+        sheet.addMergedRegion(tableAndDbNameRangeAddress);
+        Row tableAndDbNameRow = sheet.createRow(rowNumber++);
+        Cell tableAndDbNameRowCell = tableAndDbNameRow.createCell(0);
+        tableAndDbNameRowCell.setCellValue(dbName + "." + tableName + "字段信息");
+        tableAndDbNameRowCell.setCellStyle(headerStyle);
+        RegionUtil.setBorderLeft(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderBottom(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
+        RegionUtil.setBorderTop(BorderStyle.THIN.getCode(), tableAndDbNameRangeAddress, sheet);
 
         CellRangeAddress normalColumnRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
         sheet.addMergedRegion(normalColumnRangeAddress);
