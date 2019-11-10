@@ -375,8 +375,8 @@ public class DataShareService {
                 List<AddRelationTable> tableList = tablePageResult.getLists();
                 tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             }
-            User userInfo = AdminUtils.getUserData();
-            String userId = userInfo.getUserId();
+            String userId = AdminUtils.getUserData().getUserId();
+            User userInfo = userDAO.getUserInfo(userId);
             String roleId = userInfo.getRoleId();
             boolean enableEditManager = false;
             if(SystemRole.ADMIN.getCode().equals(roleId) || SystemRole.MANAGE.getCode().equals(roleId)) {
@@ -1413,14 +1413,6 @@ public class DataShareService {
     public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
         try {
             shareDAO.updateManager(apiGuid, userId);
-            List<String> apiList = new ArrayList<>();
-            apiList.add(apiGuid);
-            List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
-            List<String> apiOwnerList = new ArrayList<>();
-            apiOwnerList.add(userId);
-            dataManageService.sendToMobius(apiList, tableOwners, apiOwnerList);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
