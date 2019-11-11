@@ -21,7 +21,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.*;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.ha.HAConfiguration;
 import org.apache.atlas.kafka.AtlasKafkaMessage;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
@@ -34,7 +33,6 @@ import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV
 import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityPartialUpdateRequestV2;
 import org.apache.atlas.notification.NotificationInterface.NotificationType;
-import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityCreateRequest;
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityDeleteRequest;
@@ -52,11 +50,11 @@ import org.apache.atlas.web.filters.AuditFilter;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -106,10 +104,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
     private Configuration         applicationProperties;
-    private AtlasClientV2 atlasClientV2;
-    private String restAddress;
+    private AtlasClientV2         atlasClientV2;
+    private String[]              restAddresses;
     @VisibleForTesting
-    final int consumerRetryInterval;
+    final int                     consumerRetryInterval;
 
     @VisibleForTesting
     List<HookConsumer> consumers;
@@ -131,11 +129,11 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
         consumerDisabled = applicationProperties.getBoolean(CONSUMER_DISABLED, false);
-        restAddress = applicationProperties.getString(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
-        if (StringUtils.isEmpty(restAddress)) {
-            restAddress = AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS;
+        restAddresses = applicationProperties.getStringArray(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
+        if (ArrayUtils.isEmpty(restAddresses)) {
+            restAddresses = new String[] {AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
         }
-        atlasClientV2 = new AtlasClientV2(restAddress);
+        atlasClientV2 = new AtlasClientV2(restAddresses);
     }
 
     @Override
@@ -178,11 +176,8 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             consumers.add(hookConsumer);
             executors.submit(hookConsumer);
         }
-        if (StringUtils.isEmpty(restAddress)) {
-            restAddress = AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS;
-        }
         try {
-            atlasClientV2 = new AtlasClientV2(restAddress);
+            atlasClientV2 = new AtlasClientV2(restAddresses);
         } catch (AtlasException e) {
             LOG.error("实例化atlasClientV2失败", e);
         }
