@@ -104,7 +104,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
     private Configuration         applicationProperties;
-    private AtlasClientV2         atlasClientV2;
+    private AtlasClientV2         atlasClientV2 = null;
     private String[]              restAddresses;
     @VisibleForTesting
     final int                     consumerRetryInterval;
@@ -133,7 +133,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         if (ArrayUtils.isEmpty(restAddresses)) {
             restAddresses = new String[] {AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
         }
-        atlasClientV2 = new AtlasClientV2(restAddresses);
     }
 
     @Override
@@ -175,11 +174,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
             consumers.add(hookConsumer);
             executors.submit(hookConsumer);
-        }
-        try {
-            atlasClientV2 = new AtlasClientV2(restAddresses);
-        } catch (AtlasException e) {
-            LOG.error("实例化atlasClientV2失败", e);
         }
     }
 
@@ -585,7 +579,14 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         }
         @VisibleForTesting
         public void refreshCache() throws AtlasServiceException {
-            atlasClientV2.refreshCache();
+            try {
+                if (null == atlasClientV2) {
+                    atlasClientV2 = new AtlasClientV2(restAddresses);
+                }
+                atlasClientV2.refreshCache();
+            } catch (AtlasException e) {
+                LOG.error("刷新缓存失败，原因:", e.getMessage());
+            }
         }
 
         private void recordFailedMessages() {
