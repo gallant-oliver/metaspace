@@ -84,17 +84,27 @@ public class TableREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table sqlCreate(TableSql sql) throws Exception {
-        String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
-        String database = split[0];
-        String tableName = split[1];
-        if (HiveJdbcUtils.tableExists(database, tableName)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
+        try {
+            String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
+            if(split.length < 2) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库名和表名不能为空");
+            }
+            String database = split[0];
+            String tableName = split[1];
+            if (HiveJdbcUtils.tableExists(database, tableName)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
+            }
+            HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
+            HiveJdbcUtils.execute(sql.getSql());
+            String tableId = metaspaceGremlinService.getGuidByDBAndTableName(database, tableName);
+            Table ret = new Table(tableId);
+            return ret;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }catch (Exception e) {
+            LOG.error("创建离线表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建离线表失败");
         }
-        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
-        HiveJdbcUtils.execute(sql.getSql());
-        String tableId = metaspaceGremlinService.getGuidByDBAndTableName(database, tableName);
-        Table ret = new Table(tableId);
-        return ret;
     }
 
     /**
