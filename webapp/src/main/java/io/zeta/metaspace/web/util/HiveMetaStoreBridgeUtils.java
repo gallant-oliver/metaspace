@@ -20,7 +20,6 @@ package io.zeta.metaspace.web.util;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.sun.jersey.api.client.ClientResponse;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
@@ -35,6 +34,7 @@ import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
@@ -93,7 +93,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
     private final String                  clusterName;
     private Hive hiveMetaStoreClient = null;
-    private AtlasClientV2           atlasClientV2 = null;
     private Configuration atlasConf        = null;
     private final boolean convertHdfsPathToLowerCase;
     private final AtlasGraph graph;
@@ -160,7 +159,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
             databaseToImport = tableSchema.getDatabase();
             tableToImport = tableSchema.getTable();
         }
-        initAtlasClientV2();
         initHiveMetaStoreClient();
         if (StringUtils.isEmpty(databaseToImport)) {
             databaseNames = hiveMetaStoreClient.getAllDatabases();
@@ -225,20 +223,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 
-    private void initAtlasClientV2() {
-        if (null == atlasClientV2) {
-            String[] atlasEndpoint = atlasConf.getStringArray(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
-
-            if (atlasEndpoint == null || atlasEndpoint.length == 0) {
-                atlasEndpoint = new String[]{AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS};
-            }
-            try {
-                atlasClientV2 = new AtlasClientV2(atlasEndpoint);
-            } catch (AtlasException e) {
-                LOG.error("init atlasClientV2 error,", e);
-            }
-        }
-    }
     private void initHiveMetaStoreClient() {
         if (null == hiveMetaStoreClient) {
             HiveConf hiveConf = new HiveConf();
@@ -426,17 +410,17 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         }
 
         AtlasEntityWithExtInfo  ret             = null;
-        EntityMutationResponse  response        = atlasClientV2.createEntity(entity);
+        EntityMutationResponse  response        = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
         List<AtlasEntityHeader> createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
 
         if (CollectionUtils.isNotEmpty(createdEntities)) {
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
-                    ret = atlasClientV2.getEntityByGuid(createdEntity.getGuid());
+                    ret = atlasEntityStore.getById(createdEntity.getGuid());
 
                     LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
-                    AtlasEntityWithExtInfo newEntity = atlasClientV2.getEntityByGuid(createdEntity.getGuid());
+                    AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
 
                     ret.addReferredEntity(newEntity.getEntity());
 
@@ -468,14 +452,14 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         }
 
         AtlasEntitiesWithExtInfo ret = null;
-        EntityMutationResponse   response        = atlasClientV2.createEntities(entities);
+        EntityMutationResponse response = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
         List<AtlasEntityHeader>  createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
 
         if (CollectionUtils.isNotEmpty(createdEntities)) {
             ret = new AtlasEntitiesWithExtInfo();
 
             for (AtlasEntityHeader createdEntity : createdEntities) {
-                AtlasEntityWithExtInfo entity = atlasClientV2.getEntityByGuid(createdEntity.getGuid());
+                AtlasEntityWithExtInfo entity = atlasEntityStore.getById(createdEntity.getGuid());
 
                 ret.addEntity(entity.getEntity());
 
@@ -494,11 +478,11 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         return ret;
     }
 
-    private void updateInstance(AtlasEntityWithExtInfo entity) throws AtlasServiceException {
+    private void updateInstance(AtlasEntityWithExtInfo entity) throws AtlasBaseException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("updating {} entity: {}", entity.getEntity().getTypeName(), entity);
         }
-        atlasClientV2.updateEntity(entity);
+        atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
     }
 
     /**
@@ -606,11 +590,11 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     private AtlasEntity toStroageDescEntity(StorageDescriptor storageDesc, String tableQualifiedName, String sdQualifiedName, AtlasEntity tableEntity ) throws AtlasHookException {
         AtlasEntity ret = new AtlasEntity(HiveDataTypes.HIVE_STORAGEDESC.getName());
         //保持Guid一致，如果不一致，更新元数据时会当成存在变动
-        HashMap sd = (HashMap)tableEntity.getAttribute("sd");
+        AtlasObjectId sd = (AtlasObjectId) tableEntity.getAttribute("sd");
         if (null != sd) {
-            Object guid = sd.get("guid");
+            String guid = sd.getGuid();
             if (guid != null) {
-                ret.setGuid(guid.toString());
+                ret.setGuid(guid);
             }
         }
         ret.setAttribute(ATTRIBUTE_TABLE, BaseHiveEvent.getObjectId(tableEntity));
@@ -670,12 +654,12 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
             AtlasEntity column = new AtlasEntity(HiveDataTypes.HIVE_COLUMN.getName());
             ArrayList columns = (ArrayList) table.getAttributes().get(attributeName);
             if (CollectionUtils.isNotEmpty(columns)) {
-                HashMap columnMap = (HashMap) columns.get(columnPosition);
-                if (MapUtils.isNotEmpty(columnMap)) {
+                AtlasObjectId columnMap = (AtlasObjectId) columns.get(columnPosition);
+                if (null != columnMap) {
                     //保持Guid一致
-                    Object guid = columnMap.get("guid");
+                    String guid = columnMap.getGuid();
                     if (guid != null) {
-                        column.setGuid(guid.toString());
+                        column.setGuid(guid);
                     }
                 }
             }
@@ -766,21 +750,9 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         return findEntity(typeName, qualifiedName);
     }
 
-    private AtlasEntityWithExtInfo findEntity(final String typeName, final String qualifiedName) throws AtlasServiceException {
-        AtlasEntityWithExtInfo ret = null;
-
-        try {
-            ret = atlasClientV2.getEntityByAttribute(typeName, Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
-        } catch (AtlasServiceException e) {
-            if(e.getStatus() == ClientResponse.Status.NOT_FOUND) {
-                return null;
-            }
-
-            throw e;
-        }
-
+    private AtlasEntityWithExtInfo findEntity(final String typeName, final String qualifiedName) throws AtlasBaseException {
+        AtlasEntityWithExtInfo ret = atlasEntityStore.getByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(typeName), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
         clearRelationshipAttributes(ret);
-
         return ret;
     }
 
