@@ -1390,18 +1390,28 @@ public class MetaDataService {
             ((MetaDataProvider) metaDataProvider).setThread(false);
         }
     }
-    public void stopSource(String sourceId) throws AtlasBaseException {
-        if (metaDataProviderMap.containsKey(sourceId)&&metaDataProviderMap.get(sourceId)!=null){
-            IMetaDataProvider metaDataProvider = metaDataProviderMap.get(sourceId);
-            if (metaDataProvider.getEndTime().get()!=0){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
+    public void stopSource(String sourceId,Thread thread) throws AtlasBaseException {
+        try {
+            if (metaDataProviderMap.get(sourceId)==null){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未采集数据");
+            }else{
+                IMetaDataProvider metaDataProvider = metaDataProviderMap.get(sourceId);
+                if (metaDataProvider.getEndTime().get()!=0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
+                }
+                if (metaDataProvider.getTotalTables().get()!=0){
+                    if (!(metaDataProvider instanceof MetaDataProvider)){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
+                    }
+                    ((MetaDataProvider) metaDataProvider).setThread(true);
+                }else{
+                    metaDataProvider.getEndTime().set(System.currentTimeMillis());
+                    errorMap.put(sourceId,"终止采集元数据");
+                    thread.stop();
+                }
             }
-            if (!(metaDataProvider instanceof MetaDataProvider)){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
-            }
-            ((MetaDataProvider) metaDataProvider).setThread(true);
-        }else{
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "停止失败:"+e.getMessage());
         }
     }
 
@@ -1411,7 +1421,7 @@ public class MetaDataService {
             case HIVE:
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
-                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())||metaDataProviderMap.get(tableSchema.getInstance())==null) {
                     MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
                     mysqlMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
                     metaDataProvider = mysqlMetaDataProvider;
@@ -1420,7 +1430,7 @@ public class MetaDataService {
                 }
                 break;
             case ORACLE:
-                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())) {
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())||metaDataProviderMap.get(tableSchema.getInstance())==null) {
                     OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
                     oracleMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
                     metaDataProvider = oracleMetaDataProvider;

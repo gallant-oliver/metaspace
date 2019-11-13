@@ -136,15 +136,10 @@ public abstract class MetaDataProvider {
         SchemaCrawlerOptions options = optionsBuilder.toOptions();
         catalog=null;
         try(Connection connection = getConnection()) {
-            if (isThread){
-                LOG.error("终止元数据同步");
-                throw new InterruptedException("终止元数据同步");
-            }
             catalog = SchemaCrawlerUtility.getCatalog(connection, options);
-        }catch (InterruptedException e){
-            throw e;
         }catch (Exception e){
             LOG.error("import metadata error", e);
+            throw e;
         }
         databaseNames = catalog.getSchemas();
         tableNames = catalog.getTables();
@@ -368,12 +363,7 @@ public abstract class MetaDataProvider {
         startTime.set(System.currentTimeMillis());
         endTime.set(0);
         metaDataContext = new MetaDataContext();
-        Thread.sleep(3000);
         init(tableSchema);
-        if (isThread){
-            LOG.error("终止元数据同步,数据源：");
-            throw new InterruptedException("终止元数据同步,数据源："+dataSourceInfo.getSourceName());
-        }
         totalTables.set(tableNames.size());
         String instanceId = tableSchema.getInstance();
 

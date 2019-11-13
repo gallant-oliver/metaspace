@@ -90,6 +90,7 @@ public class DataSourceREST {
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     private Map<String,AtomicBoolean> importings = new HashMap<>();
+    private Map<String,Thread> threadMap = new HashMap<>();
     @Autowired
     private MetaDataService metadataService;
 
@@ -410,12 +411,18 @@ public class DataSourceREST {
             importings.put(sourceId,importing);
         }
         if (!importing.getAndSet(true)) {
-            CompletableFuture.runAsync(() -> {
-                metadataService.synchronizeMetaData(databaseType, tableSchema);
-                importing.set(false);
-                metadataService.refreshRDBMSCache();
-                importings.remove(tableSchema.getInstance());
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    metadataService.synchronizeMetaData(databaseType, tableSchema);
+                    importing.set(false);
+                    metadataService.refreshRDBMSCache();
+                    importings.remove(tableSchema.getInstance());
+                    threadMap.remove(tableSchema.getInstance());
+                }
             });
+            threadMap.put(sourceId,thread);
+            thread.start();
         } else {
             return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
         }
@@ -426,11 +433,17 @@ public class DataSourceREST {
     @Path("/stop/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void stopSource(@PathParam("sourceId")String sourceId) throws AtlasBaseException {
+    public boolean stopSource(@PathParam("sourceId")String sourceId) throws AtlasBaseException {
         try {
-            metadataService.stopSource(sourceId);
-            LOG.info("采集数据源正在停止，请稍候");
-
+            if (threadMap.get(sourceId)!=null){
+                metadataService.stopSource(sourceId,threadMap.get(sourceId));
+                importings.remove(sourceId);
+                threadMap.remove(sourceId);
+                LOG.info("采集数据源正在停止，请稍候");
+                return true;
+            }else{
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源未采集");
+            }
         }catch (Exception e){
             LOG.warn("停止失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"停止失败："+e.getMessage());
