@@ -347,7 +347,7 @@ public class DataSourceService {
 
             String roleId = roleDAO.getRoleIdByUserId(userId);
             List<DataSourceHead> list = null;
-            if (SystemRole.ADMIN.getCode().equals(roleId)){
+            if (SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId)){
                 list = dataSourceDAO.searchAllDataSources(parameters,dataSourceSearch);
             }else{
                 list = dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
@@ -473,6 +473,10 @@ public class DataSourceService {
     public boolean isAuthorizeUser(String sourceId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
+            String roleId = userDAO.getRoleIdByUserId(userId);
+            if (SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId)){
+                return true;
+            }
             return dataSourceDAO.isAuthorizeUser(sourceId,userId)!=0;
         }catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -873,7 +877,10 @@ public class DataSourceService {
                 oldManagerIds.add(oldManagerId);
                 dataSourceDAO.deleteAuthorize(sourceId,oldManagerIds);
             }
-            dataSourceDAO.addAuthorize(sourceId,managerUserId);
+            if (dataSourceDAO.isAuthorizeUser(sourceId,managerUserId)==0){
+                dataSourceDAO.addAuthorize(sourceId,managerUserId);
+            }
+
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
