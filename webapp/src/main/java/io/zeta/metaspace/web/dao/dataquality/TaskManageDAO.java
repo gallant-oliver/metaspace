@@ -309,7 +309,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id, name, 'TID-'||number as taskId, level, description, enable, creator, create_time as createTime,cron_expression as cronExpression from data_quality_task where id=#{id}")
+    @Select("select id, name, 'TID-'||number as taskId, level, description, enable, users.username as creator, data_quality_task.create_time as createTime,cron_expression as cronExpression from data_quality_task join users on users.userid=data_quality_task.creator where id=#{id}")
     public DataQualityBasicInfo getTaskBasicInfo(@Param("id")String id);
 
     /**
