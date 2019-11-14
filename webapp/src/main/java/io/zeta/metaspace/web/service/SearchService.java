@@ -21,6 +21,8 @@ import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import oracle.jdbc.OracleBfile;
+import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -41,7 +43,10 @@ import org.springframework.transaction.annotation.Transactional;
 import schemacrawler.tools.databaseconnector.DatabaseConnectionSource;
 import schemacrawler.tools.databaseconnector.SingleUseUserCredentials;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -359,7 +364,35 @@ public class SearchService {
             while (resultSet.next()) {
                 Map<String, String> map = new HashMap<>();
                 for (String column : columns) {
-                    String s = resultSet.getObject(column) == null ? "NULL" : resultSet.getString(column);
+                    String s = null;
+                    Object object = resultSet.getObject(column) == null ? "NULL" : resultSet.getObject(column);
+                    if (object instanceof Clob) {
+                        try {
+                            Clob clob = (Clob)object;
+                            StringBuffer buffer = new StringBuffer();
+                            clob.getCharacterStream();
+                            BufferedReader br = new BufferedReader(clob.getCharacterStream());
+                            clob.getCharacterStream();
+                            String line = br.readLine();
+                            while (line != null) {
+                                buffer.append(line);
+                                line = br.readLine();
+                            }
+                            s = buffer.toString();
+                        }catch (Exception e){
+                            LOG.error(e.getMessage());
+                            s = object.toString();
+                        }
+
+                    }else if(object instanceof Blob){
+                        s = "BLOB数据不支持预览";
+                    }else if(object instanceof OracleBfile){
+                        s = "BFile数据不支持预览";
+                    }else if(object instanceof Datum){
+                        s = ((Datum)object).stringValue(conn);
+                    }else{
+                        s = object.toString();
+                    }
                     map.put(column, s);
                 }
                 resultList.add(map);
