@@ -3,16 +3,14 @@ variables:
   MAVEN_OPTS: "-Djava.awt.headless=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN"
   MAVEN_CLI_OPTS: "--batch-mode --errors --show-version"
   DEPLOY_USER: "metaspace"
-  DEVELOP_SERVER_ID_1: "10.201.50.209"
-  TEST_SERVER_ID_1: "10.202.61.175"
-  DEVELOP_HOME: "/home/metaspace/metaspace"
-  TEST_HOME: "/usr/hdp/1.3.0.1-91/metaspace"
-  DEPLOY_PATH: "/home/metaspace/metaspace/server/webapp"
-  TEST_DEPLOY_PATH: "/usr/hdp/1.3.0.1-91/metaspace/server/webapp"
+  DEVELOP_SERVER_ID_1: "10.200.64.162"
+  DEVELOP_SERVER_ID_2: "10.200.64.151"
+  TEST_SERVER_ID_1: "10.200.64.125"
+  TEST_SERVER_ID_2: "10.200.64.95"
+  DEPLOY_HOME: "/home/metaspace/metaspace"
+  DEPLOY_PATH: "$DEPLOY_HOME/server/webapp"
+  BACKUP_DIR: "$DEPLOY_HOME/server/webapp/backup"
 
-before_script:
-  - git submodule sync
-  - git submodule update --remote
 # 定义 stages
 stages:
   - test
@@ -26,13 +24,9 @@ test:
     - java
   stage: test
   script:
-    - "mvn $MAVEN_CLI_OPTS clean test -Dskip.npm"
-  cache:
-    key: "test"
-    paths:
-      - webapp/src/main/dashboard/node/
+    - "mvn $MAVEN_CLI_OPTS clean test"
 
-      #部署开发环境
+#部署开发环境
 dev_deploy:
   tags:
     - java
@@ -40,14 +34,17 @@ dev_deploy:
   script:
     - "mvn $MAVEN_CLI_OPTS package -DskipTests"
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEVELOP_HOME/bin/metaspace_stop.py && rm -rf $DEVELOP_HOME/server/webapp/metaspace_bak && mv $DEVELOP_HOME/server/webapp/metaspace{,_bak} && $DEVELOP_HOME/bin/metaspace_start.py\""
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cp $DEVELOP_HOME/server/webapp/metaspace_bak/config.js $DEVELOP_HOME/server/webapp/metaspace/\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -az * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
-  cache:
-    key: "dev_deploy"
+  artifacts:
+    name: metaspace_dev
+    expire_in: 1 week
     paths:
-      - webapp/src/main/dashboard/node/
-      - webapp/src/main/dashboard/node_modules/
+      - webapp/target/atlas-webapp-*.war
 
 #部署测试环境
 test_deploy:
@@ -56,14 +53,15 @@ test_deploy:
   stage: test_deploy
   script:
     - "mvn $MAVEN_CLI_OPTS package -DskipTests"
-    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$TEST_DEPLOY_PATH/metaspace.war"
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$TEST_HOME/bin/metaspace_stop.py && rm -rf $TEST_HOME/server/webapp/metaspace_bak && mv $TEST_HOME/server/webapp/metaspace{,_bak} && $TEST_HOME/bin/metaspace_start.py\""
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cp $TEST_HOME/server/webapp/metaspace_bak/config.js $TEST_HOME/server/webapp/metaspace/\""
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -az * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
-  cache:
-    key: "test_deploy"
+  artifacts:
+    name: metaspace_test
+    expire_in: 1 week
     paths:
-      - webapp/src/main/dashboard/node/
-      - webapp/src/main/dashboard/node_modules/
-
-
+      - webapp/target/atlas-webapp-*.war

@@ -1,5 +1,0 @@
-[submodule "metaspace-ui"]
-	path = webapp/src/main/dashboard
-	url = ../metaspace-ui.git
-	branch = develop
-	ignore = dirty
