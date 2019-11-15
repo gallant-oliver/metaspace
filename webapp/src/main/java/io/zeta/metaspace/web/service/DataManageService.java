@@ -904,7 +904,7 @@ public class DataManageService {
                 String name = entity.getAttribute("name").toString();
                 String type = entity.getAttribute("type").toString();
                 String status = entity.getStatus().name();
-                String updateTime = entity.getUpdateTime().toString();
+                String updateTime = DateUtils.date2String(entity.getUpdateTime());
                 Column column = new Column();
                 column.setTableId(tableGuid);
                 column.setColumnId(guid);
