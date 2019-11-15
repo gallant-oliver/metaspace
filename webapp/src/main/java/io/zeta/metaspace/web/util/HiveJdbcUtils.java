@@ -119,9 +119,9 @@ public class HiveJdbcUtils {
             conn.createStatement().execute(sql);
         } catch (Exception e) {
             String stackTrace = ExceptionUtils.getStackTrace(e);
-            if (stackTrace.contains("Permission denied: user=hive, access=WRITE"))
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败," + user + "没有权限在此路径新建离线表");
-                else
+            if (stackTrace.contains("Permission denied: user=" + user + ", access=WRITE"))
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败," + user + "用户没有权限在此路径新建离线表");
+            else
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,请检查表单信息和hive服务");
         }
     }
