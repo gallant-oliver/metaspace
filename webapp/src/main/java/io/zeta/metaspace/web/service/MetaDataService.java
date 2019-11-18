@@ -1687,12 +1687,8 @@ public class MetaDataService {
             List<String> tableGuidList = new ArrayList<>();
             if (null != dbGuidList) {
                 for (String dbGuid : dbGuidList) {
-                    PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, 0, -1);
-                    tablePageResult.getLists().stream().forEach(table -> {
-                        if ("ACTIVE".equals(table.getStatus())) {
-                            tableGuidList.add(table.getTableId());
-                        }
-                    });
+                    PageResult<Table> tablePageResult = searchService.getTableByDB(dbGuid, true, 0, -1);
+                    tablePageResult.getLists().stream().forEach(table -> tableGuidList.add(table.getTableId()));
                 }
             }
             for (String tableGuid : tableGuidList) {
