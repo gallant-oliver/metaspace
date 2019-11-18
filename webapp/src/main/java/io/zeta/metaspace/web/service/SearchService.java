@@ -79,12 +79,12 @@ public class SearchService {
     @Autowired
     MetadataSubscribeDAO subscribeDAO;
 
-    @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
-    public PageResult<Database> getDatabasePageResult(Parameters parameters) throws AtlasBaseException {
+    @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #active + #parameters.limit + #parameters.offset")
+    public PageResult<Database> getDatabasePageResult(Boolean active, Parameters parameters) throws AtlasBaseException {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
         String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getDatabaseByQuery(queryDb, false, offset, limit);
+        return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
     }
 
     public PageResult<Database> getActiveDatabase(Parameters parameters) throws AtlasBaseException {
@@ -95,20 +95,20 @@ public class SearchService {
     }
 
     @Cacheable(value = "RDBMSDataSourceSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset + #sourceType")
-    public PageResult<RDBMSDataSource> getDataSourcePageResult(Parameters parameters,String sourceType) throws AtlasBaseException {
+    public PageResult<RDBMSDataSource> getDataSourcePageResult(Parameters parameters,String sourceType,Boolean active) throws AtlasBaseException {
         long limit = parameters.getLimit();
         long offset = parameters.getOffset();
         String querySource = parameters.getQuery();
-        return metaspaceEntityService.getRDBMSDataSourceByQuery(querySource,offset, limit,sourceType);
+        return metaspaceEntityService.getRDBMSDataSourceByQuery(querySource,offset, limit,sourceType,active);
     }
     @Cacheable(value = "RDBMSDBBySourceCache", key = "#sourceId + #offset + #limit")
-    public PageResult<RDBMSDatabase> getRDBMSDBBySource(String sourceId, long offset, long limit) throws AtlasBaseException {
-        return metaspaceEntityService.getRDBMSDBBySource(sourceId, offset, limit);
+    public PageResult<RDBMSDatabase> getRDBMSDBBySource(String sourceId, long offset, long limit,Boolean active) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSDBBySource(sourceId, offset, limit,active);
     }
 
     @Cacheable(value = "RDBMSTableByDBCache", key = "#databaseId + #offset + #limit")
-    public PageResult<RDBMSTable> getRDBMSTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
-        PageResult<RDBMSTable> pageResult = metaspaceEntityService.getRDBMSTableByDB(databaseId, offset, limit);
+    public PageResult<RDBMSTable> getRDBMSTableByDB(String databaseId, long offset, long limit,Boolean active) throws AtlasBaseException {
+        PageResult<RDBMSTable> pageResult = metaspaceEntityService.getRDBMSTableByDB(databaseId, offset, limit,active);
         List<RDBMSTable> tableList = pageResult.getLists();
         String userId = AdminUtils.getUserData().getUserId();
         tableList.forEach(table -> {
@@ -118,9 +118,9 @@ public class SearchService {
         return pageResult;
     }
 
-    @Cacheable(value = "TableByDBCache", key = "#databaseId + #offset + #limit")
-    public PageResult<Table> getTableByDB(String databaseId, long offset, long limit) throws AtlasBaseException {
-        PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, offset, limit);
+    @Cacheable(value = "TableByDBCache", key = "#databaseId + #active + #offset + #limit")
+    public PageResult<Table> getTableByDB(String databaseId, Boolean active, long offset, long limit) throws AtlasBaseException {
+        PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, active ,offset, limit);
         List<Table> tableList = pageResult.getLists();
         String userId = AdminUtils.getUserData().getUserId();
         tableList.forEach(table -> {
@@ -189,18 +189,18 @@ public class SearchService {
     }
 
     @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
-    public PageResult<Table> getTablePageResultV2(Parameters parameters) throws AtlasBaseException {
-        return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+    public PageResult<Table> getTablePageResultV2(Boolean active, Parameters parameters) throws AtlasBaseException {
+        return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(),active, parameters.getOffset(), parameters.getLimit());
     }
 
     @Cacheable(value = "RDBMSDBPageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
-    public PageResult<RDBMSDatabase> getRDBMSDBPageResultV2(Parameters parameters,String sourceType) throws AtlasBaseException {
-        return metaspaceEntityService.getRDBMSDBNameAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType);
+    public PageResult<RDBMSDatabase> getRDBMSDBPageResultV2(Parameters parameters,String sourceType,Boolean active) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSDBNameAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType,active);
     }
 
     @Cacheable(value = "RDBMSTablePageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
-    public PageResult<RDBMSTable> getRDBMSTablePageResultV2(Parameters parameters,String sourceType) throws AtlasBaseException {
-        return metaspaceEntityService.getRDBMSTableNameAndDBAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType);
+    public PageResult<RDBMSTable> getRDBMSTablePageResultV2(Parameters parameters,String sourceType,Boolean active) throws AtlasBaseException {
+        return metaspaceEntityService.getRDBMSTableNameAndDBAndSourceNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),sourceType,active);
     }
 
     @Cacheable(value = "RDBMSColumnPageCache", key = "#parameters.query + #sourceType + #parameters.limit + #parameters.offset")
@@ -209,9 +209,9 @@ public class SearchService {
     }
 
 
-    @Cacheable(value = "columnPageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
-    public PageResult<Column> getColumnPageResultV2(Parameters parameters) throws AtlasBaseException {
-        return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+    @Cacheable(value = "columnPageCache", key = "#parameters.query + #active + #parameters.limit + #parameters.offset")
+    public PageResult<Column> getColumnPageResultV2(Boolean active, Parameters parameters) throws AtlasBaseException {
+        return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
     }
 
     public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException, AtlasException {

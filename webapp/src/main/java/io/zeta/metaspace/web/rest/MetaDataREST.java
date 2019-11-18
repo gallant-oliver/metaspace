@@ -23,7 +23,6 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
-import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -39,11 +38,9 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,9 +57,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.List;
@@ -85,24 +80,17 @@ public class MetaDataREST {
     private static final String DEFAULT_DEPTH = "-1";
     private AtomicBoolean importing = new AtomicBoolean(false);
 
-
     @Autowired
     private DataManageService dataManageService;
-
     @Autowired
     private TableDAO tableDAO;
-
     @Autowired
     private DataStandardService dataStandardService;
-
     private final MetaDataService metadataService;
-
     @Autowired
     private BusinessService businessService;
-
     @Context
     private HttpServletResponse httpServletResponse;
-
     @Autowired
     private UsersService usersService;
 
@@ -120,13 +108,13 @@ public class MetaDataREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + parameters + " )");
             }
-            PageResult<Database> pageResult = searchService.getDatabasePageResult(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResult(active, parameters);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -142,13 +130,13 @@ public class MetaDataREST {
     @Path("/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<Table> getTableByDB(@QueryParam("active")@DefaultValue("true")Boolean active, @PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + databaseId + "," + limit + "," + offset + " )");
             }
-            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, offset, limit);
+            PageResult<Table> pageResult = searchService.getTableByDB(databaseId, active,  offset, limit);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -164,13 +152,13 @@ public class MetaDataREST {
     @Path("/search/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByQuery(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Table> getTableByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableByQuery(" + parameters + " )");
             }
-            PageResult<Table> pageResult = searchService.getTablePageResultV2(parameters);
+            PageResult<Table> pageResult = searchService.getTablePageResultV2(active, parameters);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -186,13 +174,13 @@ public class MetaDataREST {
     @Path("/search/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Column> getColumnByQuery(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Column> getColumnByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnByQuery(" + parameters + " )");
             }
-            PageResult<Column> pageResult = searchService.getColumnPageResultV2(parameters);
+            PageResult<Column> pageResult = searchService.getColumnPageResultV2(active ,parameters);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -701,13 +689,13 @@ public class MetaDataREST {
     @Path("/search/rdbms/datasource/{sourceType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RDBMSDataSource> getDataSourceByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+    public PageResult<RDBMSDataSource> getDataSourceByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDataSourceByQuery(" + parameters + " )");
             }
-            PageResult<RDBMSDataSource> pageResult = searchService.getDataSourcePageResult(parameters,sourceType);
+            PageResult<RDBMSDataSource> pageResult = searchService.getDataSourcePageResult(parameters,sourceType,active);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -723,13 +711,13 @@ public class MetaDataREST {
     @Path("/rdbms/databases/{sourceId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RDBMSDatabase> getRDBMSDBBySource(@PathParam("sourceId") String sourceId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<RDBMSDatabase> getRDBMSDBBySource(@QueryParam("active")@DefaultValue("true")Boolean active,@PathParam("sourceId") String sourceId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSDBBySource(" + sourceId + "," + limit + "," + offset + " )");
             }
-            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBBySource(sourceId, offset, limit);
+            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBBySource(sourceId, offset, limit,active);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -745,13 +733,13 @@ public class MetaDataREST {
     @Path("/rdbms/tables/{databaseId}/{offset}/{limit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RDBMSTable> getRDBMSTableByDB(@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
+    public PageResult<RDBMSTable> getRDBMSTableByDB(@QueryParam("active")@DefaultValue("true")Boolean active,@PathParam("databaseId") String databaseId, @PathParam("offset") long offset, @PathParam("limit") long limit) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSTableByDB(" + databaseId + "," + limit + "," + offset + " )");
             }
-            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTableByDB(databaseId, offset, limit);
+            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTableByDB(databaseId, offset, limit,active);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -767,13 +755,13 @@ public class MetaDataREST {
     @Path("/search/rdbms/db/{sourceType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RDBMSDatabase> getRDBMSDBByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+    public PageResult<RDBMSDatabase> getRDBMSDBByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSDBByQuery(" + parameters + " )");
             }
-            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBPageResultV2(parameters,sourceType);
+            PageResult<RDBMSDatabase> pageResult = searchService.getRDBMSDBPageResultV2(parameters,sourceType,active);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -789,13 +777,13 @@ public class MetaDataREST {
     @Path("/search/rdbms/table/{sourceType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RDBMSTable> getRDBMSTableByQuery(Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
+    public PageResult<RDBMSTable> getRDBMSTableByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters,@PathParam("sourceType") String sourceType) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRDBMSTableByQuery(" + parameters + " )");
             }
-            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTablePageResultV2(parameters,sourceType);
+            PageResult<RDBMSTable> pageResult = searchService.getRDBMSTablePageResultV2(parameters,sourceType,active);
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);

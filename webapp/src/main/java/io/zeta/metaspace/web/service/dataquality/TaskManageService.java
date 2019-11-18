@@ -118,7 +118,7 @@ public class TaskManageService {
 
     public PageResult getTableList(String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
-            PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, parameters.getOffset(), parameters.getLimit());
+            PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, false, parameters.getOffset(), parameters.getLimit());
 
             List<Table> tableList = pageResult.getLists();
             String dbName = null;

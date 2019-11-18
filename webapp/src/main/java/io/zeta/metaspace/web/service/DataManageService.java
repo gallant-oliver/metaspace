@@ -939,7 +939,7 @@ public class DataManageService {
 
     @Transactional
     public void supplementTable() throws AtlasBaseException {
-        PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", 0, -1);
+        PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1);
         List<Table> lists = tableNameAndDbNameByQuery.getLists();
         for (Table list : lists) {
             String tableId = list.getTableId();
