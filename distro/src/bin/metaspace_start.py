@@ -18,6 +18,7 @@
 import os
 import sys
 import traceback
+import glob
 
 import metaspace_config as mc
 
@@ -37,6 +38,10 @@ def main():
     mc.executeEnvSh(confdir)
     logdir = mc.dirMustExist(mc.logDir(atlas_home))
     mc.dirMustExist(mc.dataDir(atlas_home))
+
+    remove_files(logdir, '*.out', False)
+    remove_files(logdir, '*.err', False)
+
     if mc.isCygwin():
         # Pathnames that are passed to JVM must be converted to Windows format.
         jvm_atlas_home = mc.convertCygwinPath(atlas_home)
@@ -161,6 +166,16 @@ def start_atlas_server(atlas_classpath, atlas_pid_file, jvm_logdir, jvm_opts_lis
     args.extend(sys.argv[1:])
     process = mc.java("org.apache.atlas.Atlas", args, atlas_classpath, jvm_opts_list, jvm_logdir)
     mc.writePid(atlas_pid_file, process)
+
+def files(curr_dir = '.', ext = '*.out'):
+    for i in glob.glob(os.path.join(curr_dir, ext)):
+        yield i
+
+def remove_files(rootdir, ext, show = False):
+    for i in files(rootdir, ext):
+        if show:
+            print i
+        os.remove(i)
 
 if __name__ == '__main__':
     try:
