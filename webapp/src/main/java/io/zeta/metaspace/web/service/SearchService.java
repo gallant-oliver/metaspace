@@ -188,7 +188,7 @@ public class SearchService {
         }
     }
 
-    @Cacheable(value = "tablePageCache", key = "#parameters.query + #parameters.limit + #parameters.offset")
+    @Cacheable(value = "tablePageCache", key = "#active + #parameters.query + #parameters.limit + #parameters.offset")
     public PageResult<Table> getTablePageResultV2(Boolean active, Parameters parameters) throws AtlasBaseException {
         return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(),active, parameters.getOffset(), parameters.getLimit());
     }
