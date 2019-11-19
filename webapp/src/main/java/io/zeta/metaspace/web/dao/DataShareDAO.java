@@ -186,13 +186,13 @@ public interface DataShareDAO {
     public Object getDataOwnerByApiGuid(@Param("guid")String apiGuid);
 
     @Select({"<script>",
-             "select guid from apiInfo where tableGuid in",
+             "select apiInfo.guid,users.account as manager from apiInfo join users on users.userid=apiInfo.manager where tableGuid in",
              " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
              " #{tableGuid}",
              " </foreach>",
              " and publish=true",
              " </script>"})
-    public List<String> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
+    public List<APIInfoHeader> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
 
     @Select("select status from tableInfo where tableGuid = (select tableGuid from apiInfo where guid=#{apiGuid})")
     public String getTableStatusByAPIGuid(@Param("apiGuid")String apiGuid);

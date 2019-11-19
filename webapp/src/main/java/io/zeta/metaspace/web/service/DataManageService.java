@@ -43,6 +43,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIDataOwner;
+import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
@@ -648,11 +649,10 @@ public class DataManageService {
         try {
             List<String> tableList = tableOwner.getTables();
             //api
-            List<String> apiList = shareDAO.getAPIByRelatedTable(tableList);
+            List<APIInfoHeader> apiList = shareDAO.getAPIByRelatedTable(tableList);
             List<TableOwner.Owner> tableOwners = tableOwner.getOwners();
-            List<String> apiOwnerList = new ArrayList<>();
             if(Objects.nonNull(apiList) && apiList.size()>0) {
-                sendToMobius(apiList, tableOwners, apiOwnerList);
+                sendToMobius(apiList, tableOwners);
             }
             //删除旧关系
             categoryDao.deleteDataOwner(tableOwner.getTables());
@@ -683,11 +683,9 @@ public class DataManageService {
         }
     }
 
-    public void sendToMobius(List<String> apiList, List<TableOwner.Owner> tableOwners, List<String> apiOwner) throws AtlasException, AtlasBaseException {
-        APIDataOwner dataOwner = new APIDataOwner();
+    public void sendToMobius(List<APIInfoHeader> apiList, List<TableOwner.Owner> tableOwners) throws AtlasException, AtlasBaseException {
         Configuration configuration = ApplicationProperties.get();
         String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/reviews/user";
-        dataOwner.setApi_id_list(apiList);
         //organization
         List<APIDataOwner.Organization> organizations = new ArrayList<>();
         for (TableOwner.Owner owner : tableOwners) {
@@ -696,35 +694,47 @@ public class DataManageService {
             organization.setOrganization_type(owner.getType());
             organizations.add(organization);
         }
-        //owner
-        dataOwner.setOrganization_list(organizations);
-        dataOwner.setApi_owner(apiOwner);
-        Gson gson = new Gson();
-        String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
-        //向云平台发请求
 
-        int retryCount = 0;
-        String error_id = null;
-        String error_reason = null;
-        while(retryCount < 3) {
-            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
-            LOG.info(res);
-            if(StringUtils.isNotEmpty(res)) {
-                Map response = gson.fromJson(res, Map.class);
-                error_id = String.valueOf(response.get("error-id"));
-                error_reason = String.valueOf(response.get("reason"));
-                if ("0.0".equals(error_id)) {
-                    break;
+        Gson gson = new Gson();
+        //向云平台发请求
+        for(int i=0, len=apiList.size(); i<len; i++) {
+            String apiGuid = apiList.get(i).getGuid();
+            String manager = apiList.get(i).getManager();
+            List<String> apiGuidList = new ArrayList<>();
+            List<String> ownerList = new ArrayList<>();
+            ownerList.add(manager);
+            apiGuidList.add(apiGuid);
+            APIDataOwner dataOwner = new APIDataOwner();
+            dataOwner.setApi_id_list(apiGuidList);
+            dataOwner.setOrganization_list(organizations);
+            dataOwner.setApi_owner(ownerList);
+            String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
+
+            int retryCount = 0;
+            String error_id = null;
+            String error_reason = null;
+            while(retryCount < 3) {
+                String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+                LOG.info(res);
+                if(StringUtils.isNotEmpty(res)) {
+                    Map response = gson.fromJson(res, Map.class);
+                    error_id = String.valueOf(response.get("error-id"));
+                    error_reason = String.valueOf(response.get("reason"));
+                    if ("0.0".equals(error_id)) {
+                        break;
+                    } else {
+                        retryCount++;
+                    }
                 } else {
                     retryCount++;
                 }
-            } else {
-                retryCount++;
+            }
+            if(!"0.0".equals(error_id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
             }
         }
-        if(!"0.0".equals(error_id)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
-        }
+
+
     }
 
     public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {

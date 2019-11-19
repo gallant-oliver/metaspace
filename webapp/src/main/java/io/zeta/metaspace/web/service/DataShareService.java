@@ -1412,6 +1412,14 @@ public class DataShareService {
 
     public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
         try {
+            List<APIInfoHeader> apiList = new ArrayList<>();
+            APIInfoHeader infoHeader = new APIInfoHeader();
+            infoHeader.setGuid(apiGuid);
+            User userInfo = userDAO.getUserInfo(userId);
+            infoHeader.setManager(userInfo.getAccount());
+            apiList.add(infoHeader);
+            List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
+            dataManageService.sendToMobius(apiList, tableOwners);
             shareDAO.updateManager(apiGuid, userId);
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
