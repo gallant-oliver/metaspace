@@ -1946,3 +1946,66 @@ CREATE TABLE "public"."data_standard2data_quality_rule" (
 -- ----------------------------
 ALTER TABLE "public"."data_standard2data_quality_rule" ADD CONSTRAINT "data_standard2data_quality_rule_pkey" PRIMARY KEY ("number", "ruleid");
 
+
+-- ----------------------------
+-- Table structure for table_metadata_history
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."table_metadata_history";
+CREATE TABLE "public"."table_metadata_history" (
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "database_name" varchar(255) COLLATE "pg_catalog"."default",
+  "table_type" varchar(255) COLLATE "pg_catalog"."default",
+  "partition_table" bool,
+  "table_format" varchar(255) COLLATE "pg_catalog"."default",
+  "store_location" varchar(255) COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "version" int8 NOT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table table_metadata_history
+-- ----------------------------
+ALTER TABLE "public"."table_metadata_history" ADD CONSTRAINT "table_metadata_history_pkey" PRIMARY KEY ("guid", "version");
+
+
+-- ----------------------------
+-- Table structure for column_metadata_history
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."column_metadata_history";
+CREATE TABLE "public"."column_metadata_history" (
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "type" varchar(255) COLLATE "pg_catalog"."default",
+  "table_guid" varchar COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "version" int8 NOT NULL,
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "partition_field" bool,
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6) NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."column_metadata_history"."guid" IS '字段guid';
+COMMENT ON COLUMN "public"."column_metadata_history"."name" IS '字段名称';
+COMMENT ON COLUMN "public"."column_metadata_history"."type" IS '类型';
+COMMENT ON COLUMN "public"."column_metadata_history"."table_guid" IS '所属表guid';
+COMMENT ON COLUMN "public"."column_metadata_history"."description" IS '描述';
+COMMENT ON COLUMN "public"."column_metadata_history"."version" IS '版本';
+COMMENT ON COLUMN "public"."column_metadata_history"."status" IS '状态';
+COMMENT ON COLUMN "public"."column_metadata_history"."partition_field" IS '是否为分区字段';
+
+-- ----------------------------
+-- Primary Key structure for table column_metadata_history
+-- ----------------------------
+ALTER TABLE "public"."column_metadata_history" ADD CONSTRAINT "column_metadata_history_pkey" PRIMARY KEY ("guid", "version");
+
+
