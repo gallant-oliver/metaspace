@@ -381,7 +381,7 @@ public class TechnicalREST {
                 dataManageService.updateOrganization();
                 updating.set(false);
             } else {
-                return Response.status(400).entity("正在更新组织架构！").build();
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "正在更新组织架构！");
             }
             return Response.status(200).entity("更新成功！").build();
         } catch (AtlasBaseException e) {
