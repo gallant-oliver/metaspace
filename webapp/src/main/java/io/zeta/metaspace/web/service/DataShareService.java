@@ -590,6 +590,8 @@ public class DataShareService {
             String api_desc = info.getDescription();
             String api_version = info.getVersion();
             List<String> owners = new ArrayList<>();
+            User user = userDAO.getUserInfo(info.getManager());
+            owners.add(user.getAccount());
             List<APIContent.APIDetail.Organization> organizations = getOrganization(tableGuid);
             String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
             String create_time = info.getGenerateTime();
@@ -1412,14 +1414,17 @@ public class DataShareService {
 
     public void updateManager(String apiGuid, String userId) throws AtlasBaseException {
         try {
-            List<APIInfoHeader> apiList = new ArrayList<>();
-            APIInfoHeader infoHeader = new APIInfoHeader();
-            infoHeader.setGuid(apiGuid);
-            User userInfo = userDAO.getUserInfo(userId);
-            infoHeader.setManager(userInfo.getAccount());
-            apiList.add(infoHeader);
-            List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
-            dataManageService.sendToMobius(apiList, tableOwners);
+            APIInfo info = shareDAO.getAPIInfoByGuid(apiGuid);
+            if(true == info.getPublish()) {
+                List<APIInfoHeader> apiList = new ArrayList<>();
+                APIInfoHeader infoHeader = new APIInfoHeader();
+                infoHeader.setGuid(apiGuid);
+                User userInfo = userDAO.getUserInfo(userId);
+                infoHeader.setManager(userInfo.getAccount());
+                apiList.add(infoHeader);
+                List<TableOwner.Owner> tableOwners = shareDAO.getOwnerList(apiGuid);
+                dataManageService.sendToMobius(apiList, tableOwners);
+            }
             shareDAO.updateManager(apiGuid, userId);
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
