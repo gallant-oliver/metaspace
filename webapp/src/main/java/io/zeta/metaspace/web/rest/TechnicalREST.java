@@ -32,6 +32,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -46,6 +47,7 @@ public class TechnicalREST {
     @Autowired
     SearchService searchService;
     private static int CATEGORY_TYPE = 0;
+    private AtomicBoolean updating = new AtomicBoolean(false);
 
     @Autowired
     private DataManageService dataManageService;
@@ -372,13 +374,16 @@ public class TechnicalREST {
     @Path("/organization")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void updateOrganization() throws Exception {
+    public Response updateOrganization() throws Exception {
         AtlasPerfTracer perf = null;
         try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.updateOrganization()");
+            if (!updating.getAndSet(true)) {
+                dataManageService.updateOrganization();
+                updating.set(false);
+            } else {
+                return Response.status(400).entity("正在更新组织架构！").build();
             }
-            dataManageService.updateOrganization();
+            return Response.status(200).entity("更新成功！").build();
         } catch (AtlasBaseException e) {
             throw e;
         } finally {
