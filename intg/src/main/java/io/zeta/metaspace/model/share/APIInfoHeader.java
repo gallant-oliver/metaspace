@@ -44,6 +44,7 @@ public class APIInfoHeader {
     private Boolean enableEditManager;
     private String manager;
     private Integer usedCount;
+    private Boolean managerDeleted;
     @JsonIgnore
     private int total;
 
@@ -197,5 +198,13 @@ public class APIInfoHeader {
 
     public void setUsedCount(Integer usedCount) {
         this.usedCount = usedCount;
+    }
+
+    public Boolean getManagerDeleted() {
+        return managerDeleted;
+    }
+
+    public void setManagerDeleted(Boolean managerDeleted) {
+        this.managerDeleted = managerDeleted;
     }
 }
