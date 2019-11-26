@@ -62,6 +62,9 @@ public class PrivilegeService {
             if(nameCount > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同权限方案名");
             }
+            if(privilege.getModules()==null || privilege.getModules().size()==0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "授权内容不能为空");
+            }
             String privilegeId = "m" + UUID.randomUUID().toString();
             privilege.setPrivilegeId(privilegeId);
             //createTime
@@ -91,10 +94,9 @@ public class PrivilegeService {
                 }
             }
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("添加权限模板失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加权限模板失败");
         }
     }
