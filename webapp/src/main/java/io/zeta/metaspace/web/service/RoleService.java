@@ -86,8 +86,10 @@ public class RoleService {
             }
             roleDAO.addRoles(role);
             return "success";
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
