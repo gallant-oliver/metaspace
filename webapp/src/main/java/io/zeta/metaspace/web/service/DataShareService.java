@@ -404,8 +404,13 @@ public class DataShareService {
                 String updater = userDAO.getUserName(header.getUpdater());
                 header.setUpdater(updater);
                 //manager
-                String manger = userDAO.getUserName(header.getManager());
-                header.setManager(manger);
+                User manager = userDAO.getUserInfo(header.getManager());
+                if(manager != null) {
+                    header.setManager(manager.getUsername());
+                    header.setManagerDeleted(manager.getValid() ? false : true);
+                } else {
+                    header.setManagerDeleted(false);
+                }
                 if(starAPIList.contains(header.getGuid())) {
                     header.setStar(true);
                 } else {
