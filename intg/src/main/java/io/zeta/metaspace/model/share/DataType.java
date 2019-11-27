@@ -90,6 +90,58 @@ public enum DataType {
         return valueOf(columnDataType.getJavaSqlType().getVendorTypeNumber());
     }
 
+    public static DataType convertType(String type) {
+        final DataType typeGroup;
+        switch (type) {
+            case "STRING":
+            case "NCHAR":
+            case "NVARCHAR":
+            case"VARCHAR":
+            case "VARCHAR2":
+            case "NVARCHAR2":
+            case "LONGNVARCHAR":
+            case "LONGVARCHAR":
+                typeGroup = DataType.STRING;
+                break;
+            case "LONG":
+            case "BIGINT":
+                typeGroup = DataType.BIGINT;
+                break;
+            case "NUMBER":
+            case "DOUBLE":
+            case "FLOAT":
+            case "NUMERIC":
+            case "REAL":
+                typeGroup = DataType.DOUBLE;
+                break;
+
+            case "INT":
+            case "INTEGER":
+            case "SMALLINT":
+            case "TINYINT":
+                typeGroup = DataType.INT;
+                break;
+            case "DECIMAL":
+                typeGroup = DataType.DECIMAL;
+                break;
+            case "DATE":
+                typeGroup = DataType.DATE;
+                break;
+            case "TIME":
+                typeGroup = DataType.TIME;
+                break;
+            case "TIMESTAMP":
+            case "TIMESTAMP_WITH_TIMEZONE":
+            case "TIME_WITH_TIMEZONE":
+                typeGroup = DataType.TIMESTAMP;
+                break;
+            default:
+                typeGroup = DataType.UNKNOWN;
+                break;
+        }
+        return typeGroup;
+    }
+
     public static DataType valueOf(int javaSqlType) {
         final DataType typeGroup;
         switch (javaSqlType) {
