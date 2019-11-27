@@ -335,8 +335,7 @@ public class DataShareService {
             } else {
                 info.setStar(false);
             }
-            int userAPICount = shareDAO.countUserAPI(userId, guid);
-            info.setEdit(userAPICount==0?false:true);
+            info.setEdit(getAPIEditPrivilege(userId, info));
             String keeper = userDAO.getUserName(info.getKeeper());
             info.setKeeper(keeper);
             //updater
@@ -353,6 +352,20 @@ public class DataShareService {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取信息失败");
         }
+    }
+
+    public boolean getAPIEditPrivilege(String userId, APIInfo info) {
+        if(info.getPublish()) {
+            return false;
+        }
+        if(userId.equals(info.getManager())) {
+            return true;
+        }
+        User user = userDAO.getUserInfo(userId);
+        if("1".equals(user.getRoleId())) {
+            return true;
+        }
+        return false;
     }
 
     /**

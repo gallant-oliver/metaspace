@@ -183,8 +183,8 @@ public interface DataShareDAO {
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset);
     
 
-    @Select("select count(1) from apiInfo where keeper=#{keeper} and guid=#{guid}")
-    public int countUserAPI(@Param("keeper")String keeper, @Param("guid")String apiGuid);
+    @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
+    public int countUserAPI(@Param("manager")String keeper, @Param("guid")String apiGuid);
 
     @Select("select apiGroup.name from apiGroup,apiInfo where apiInfo.groupGuid=apiGroup.guid and apiInfo.guid=#{guid}")
     public String getGroupByAPIGuid(@Param("guid")String apiGuid);
