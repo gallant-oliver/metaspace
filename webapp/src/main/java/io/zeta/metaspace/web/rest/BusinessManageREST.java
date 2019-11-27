@@ -162,9 +162,9 @@ public class BusinessManageREST {
     @Path("/datashare/test/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<LinkedHashMap<String,Object>> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
         try {
-            List<LinkedHashMap<String,Object>> result = shareService.testAPI(randomName, parameter);
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
             return result;
         } catch (AtlasBaseException e) {
             throw e;

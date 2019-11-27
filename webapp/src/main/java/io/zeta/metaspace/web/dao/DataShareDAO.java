@@ -32,13 +32,13 @@ import java.util.Map;
 public interface DataShareDAO {
 
     @Insert({" <script>",
-             " insert into apiInfo(guid,name,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,version,description,",
+             " insert into apiInfo(guid,name,sourceType,sourceId,schemaName,tableName,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,version,description,",
              " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager",
              " <if test='desensitize != null'>",
              " ,desensitize",
              " </if>",
              " )values(",
-             " #{guid},#{name},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
+             " #{guid},#{name},#{sourceType},#{sourceId},#{schemaName},#{tableName},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
              " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount},#{manager}",
              " <if test='desensitize != null'>",
              " ,#{desensitize}",
@@ -126,23 +126,6 @@ public interface DataShareDAO {
              " </script>"})
     public int updatePublishStatus(@Param("guidList")List<String> guidList, @Param("publish")Boolean publishStatus);
 
-    @Update({" <script>",
-             " select ",
-             " <foreach item='column' index='index' collection='columns' separator=','>" ,
-             " ${column}",
-             " </foreach>",
-             " from ${tableName}",
-             " where ",
-             " <foreach item='kv' index='index' collection='kvList' separator=' and '>" ,
-             " ${kv.columnName}=${kv.value}",
-             " </foreach>",
-             " <if test='limit!= -1'>",
-             " limit #{limit}",
-             " </if>",
-             " offset #{offset}",
-             " </script>"})
-    public List<Object> queryDataByAPI(@Param("tableName")String tableName, @Param("columns")List<String> columns, @Param("kvList")List<QueryParameter.Parameter> kvList, @Param("limit")long limit, @Param("offset")long offset);
-
     @Select("select tableName from tableInfo where tableGuid=#{tableGuid}")
     public String queryTableNameByGuid(@Param("tableGuid")String guid);
 
@@ -150,10 +133,9 @@ public interface DataShareDAO {
     public String querydbNameByGuid(@Param("tableGuid")String guid);
 
     @Select({" <script>",
-             " select apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.maxRowNumber,apiInfo.publish,tableInfo.tableName",
-             " from apiInfo,tableInfo",
-             " where apiInfo.tableGuid=tableInfo.tableGuid",
-             " and path=#{path}",
+             " select guid,name,maxRowNumber,publish,sourceType,sourceId,schemaName,tableGuid,tableName",
+             " from apiInfo",
+             " where path=#{path}",
              " </script>"})
     public APIInfo getAPIInfo(@Param("path")String path);
 

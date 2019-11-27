@@ -26,6 +26,8 @@ import java.util.List;
 public class APIInfo {
     private String guid;
     private String name;
+    private String sourceId;
+    private String schemaName;
     private String tableGuid;
     private String tableName;
     private String dbGuid;
@@ -52,6 +54,7 @@ public class APIInfo {
     private String manager;
     private Integer usedCount;
     private Boolean desensitize;
+    private String sourceType;
 
     public String getGuid() {
         return guid;
@@ -67,6 +70,22 @@ public class APIInfo {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public String getSchemaName() {
+        return schemaName;
+    }
+
+    public void setSchemaName(String schemaName) {
+        this.schemaName = schemaName;
     }
 
     public String getTableGuid() {
@@ -277,6 +296,14 @@ public class APIInfo {
         this.desensitize = desensitize;
     }
 
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
     public static class Field {
         private String columnName;
         private Boolean filter;
@@ -362,6 +389,32 @@ public class APIInfo {
             this.setUseDefaultValue(field.getUseDefaultValue());
             this.setColumnName(field.getColumnName());
             this.setSensitive(field.getSensitive());
+        }
+    }
+
+    public static enum SourceType {
+        HIVE("HIVE") , ORACLE("ORACLE");
+        public String desc;
+        SourceType(String desc) {
+            this.desc = desc;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public void setDesc(String desc) {
+            this.desc = desc;
+        }
+
+        public static SourceType getSourceTypeByDesc(String desc) {
+            SourceType defaultRuleType = SourceType.HIVE;
+            for(SourceType st : SourceType.values()) {
+                if(st.desc.equals(desc.toUpperCase()))
+                    return st;
+
+            }
+            return defaultRuleType;
         }
     }
 }

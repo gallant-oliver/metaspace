@@ -33,10 +33,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.service.DataShareGroupService;
-import io.zeta.metaspace.web.service.DataShareService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -472,19 +469,39 @@ public class DataShareREST {
     }
 
     /**
-     * 测试API
+     * 测试Hive API
      * @param randomName
      * @param parameter
      * @return
      * @throws Exception
      */
     @POST
-    @Path("/test/{randomName}")
+    @Path("/test/hive/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<LinkedHashMap<String,Object>> testAPI(@PathParam("randomName") String randomName, QueryParameter parameter) throws Exception {
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, HiveQueryParameter parameter) throws Exception {
         try {
-            List<LinkedHashMap<String,Object>> result = shareService.testAPI(randomName, parameter);
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
+            return result;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 测试Oracle API
+     * @param randomName
+     * @param parameter
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/test/oracle/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, OracleQueryParameter parameter) throws Exception {
+        try {
+            List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
             return result;
         } catch (AtlasBaseException e) {
             throw e;
@@ -548,6 +565,38 @@ public class DataShareREST {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API请求异常");
         }
+    }
+
+    @POST
+    @Path("/oracle/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getDataSourceList(Parameters parameters) throws AtlasBaseException {
+        return shareService.getOracleDataSourceList(parameters);
+    }
+
+    @POST
+    @Path("/oracle/{sourceId}/schemas")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getSchemaList(@PathParam("sourceId") String sourceId, Parameters parameters) throws AtlasBaseException {
+        return shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters, sourceId);
+    }
+
+    @POST
+    @Path("/oracle/{sourceId}/{schemaName}/tables")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getTableList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, Parameters parameters) throws AtlasBaseException {
+        return shareService.getDataList(DataShareService.SEARCH_TYPE.TABLE, parameters, sourceId, schemaName);
+    }
+
+    @POST
+    @Path("/oracle/{sourceId}/{schemaName}/{tableName}/columns")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getColumnList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, @PathParam("tableName") String tableName, Parameters parameters) throws AtlasBaseException {
+        return shareService.getDataList(DataShareService.SEARCH_TYPE.COLUMN, parameters, sourceId, schemaName, tableName);
     }
 
 }

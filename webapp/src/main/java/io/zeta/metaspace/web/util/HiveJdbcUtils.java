@@ -43,6 +43,10 @@ public class HiveJdbcUtils {
     private static Queue<String> hiveUrlQueue = new LinkedList<>();
 
 
+    private static final String QUERY = "SELECT %s,count(*) over() as count FROM %s";
+    private static final String WHERE = " WHERE ";
+    private static final String LIMIT = " LIMIT %d OFFSET %d ";
+
     static {
         try {
             Class.forName(hivedriverClassName);
@@ -232,5 +236,33 @@ public class HiveJdbcUtils {
             e.printStackTrace();
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
+    }
+
+
+    public static String getQuerySql(String tableName, String queryFields, String filterFields, long limit, long offset) throws AtlasBaseException {
+        try {
+            StringBuilder sqlBuilder = new StringBuilder();
+            String queryStr = String.format(QUERY, queryFields, tableName);
+            sqlBuilder.append(queryStr);
+            if (filterFields != null) {
+                sqlBuilder.append(WHERE);
+                sqlBuilder.append(filterFields);
+            }
+            String sql = buildSql(sqlBuilder.toString(), limit, offset);
+            return sql;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public static String buildSql(String sqlTemplate, long limit, long offset, String... param) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        String querySql = String.format(sqlTemplate, param);
+        sqlBuilder.append(querySql);
+        if(limit == -1) {
+            return sqlBuilder.toString();
+        }
+        sqlBuilder.append(String.format(LIMIT, limit, offset));
+        return sqlBuilder.toString();
     }
 }

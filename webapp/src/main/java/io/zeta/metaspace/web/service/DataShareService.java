@@ -16,7 +16,6 @@
  */
 package io.zeta.metaspace.web.service;
 
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -39,6 +38,7 @@ import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
+import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -46,30 +46,20 @@ import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.share.APIContent;
-import io.zeta.metaspace.model.share.APIInfo;
-import io.zeta.metaspace.model.share.APIInfoHeader;
-import io.zeta.metaspace.model.share.DataType;
-import io.zeta.metaspace.model.share.FilterColumn;
-import io.zeta.metaspace.model.share.JsonQueryResult;
-import io.zeta.metaspace.model.share.QueryInfo;
-import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.model.share.QueryResult;
-import io.zeta.metaspace.model.share.XmlQueryResult;
+import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
-import io.zeta.metaspace.web.util.QualityEngine;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,26 +70,13 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /*
  * @description
@@ -130,6 +107,12 @@ public class DataShareService {
     private UserDAO userDAO;
     @Autowired
     private ColumnDAO columnDAO;
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
+    @Autowired
+    private DataSourceService dataSourceService;
+
+    Map<String, CompletableFuture> taskMap = new HashMap<>();
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
 
@@ -182,11 +165,10 @@ public class DataShareService {
 
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "插入失败");
+            LOG.error("创建API信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建API信息失败");
         }
     }
 
@@ -919,121 +901,212 @@ public class DataShareService {
      * @return
      * @throws AtlasBaseException
      */
-    public List<LinkedHashMap<String,Object>> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
+    public List<LinkedHashMap> testAPI(String randomName, QueryParameter parameter) throws AtlasBaseException {
+        String tableName = null;
+        String dbName = null;
+        APIInfo.SourceType sourceType = null;
         try {
-            String tableGuid = parameter.getTableGuid();
-            String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
-            if("DELETED".equals(tableStatus)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
+            if(parameter instanceof HiveQueryParameter) {
+                sourceType = APIInfo.SourceType.HIVE;
+                String tableGuid = ((HiveQueryParameter) parameter).getTableGuid();
+                String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
+                dbName = shareDAO.querydbNameByGuid(tableGuid);
+                tableName = shareDAO.queryTableNameByGuid(tableGuid);
+                if("DELETED".equals(tableStatus)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
+                }
+            } else if(parameter instanceof OracleQueryParameter) {
+                sourceType = APIInfo.SourceType.ORACLE;
+                dbName = ((OracleQueryParameter) parameter).getSchemaName();
+                tableName = ((OracleQueryParameter) parameter).getTableName();
             }
-            HashMap<String, List> columnMap = new HashMap<>();
-            List<QueryParameter.Parameter> parameters = parameter.getParameter();
-            parameters.stream().forEach(p -> columnMap.put(p.getColumnName(), p.getValue()));
-            Map columnTypeMap = getColumnType(tableGuid, columnMap.keySet());
-            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
-            String dbName = shareDAO.querydbNameByGuid(tableGuid);
+            //limit offset
             Long limit = parameter.getLimit();
             Long offset = parameter.getOffset();
-            if(Objects.isNull(limit) || Objects.isNull(offset)) {
-                throw new AtlasBaseException("limit和offset不允许为空");
+            checkLimitAndOffset(limit, offset, parameter.getMaxRowNumber());
+            List<QueryParameter.Field> queryColumns = parameter.getQueryFields();
+            List<String> queryNameList = queryColumns.stream().map(column -> column.getColumnName()).collect(Collectors.toList());
+            List<LinkedHashMap> result = null;
+            String querySql = getQuerySql(queryNameList, sourceType);
+            String filterSql = getFilterSql(queryColumns, sourceType);
+            CompletableFuture<Map> future = null;
+            if(sourceType == APIInfo.SourceType.ORACLE) {
+                String sourceId = ((OracleQueryParameter) parameter).getSourceId();
+                String sql = OracleJdbcUtils.getQuerySql(dbName, tableName, querySql, filterSql, limit, offset);
+                future  = CompletableFuture.supplyAsync(() -> {
+                    Map resultMap = null;
+                    try {
+                        resultMap = getOracleQueryResult(sourceId, sql, null);
+                    } catch (Exception e) {
+                        LOG.error("查询失败", e);
+                    }
+                    return resultMap;
+                });
+            } else if(sourceType == APIInfo.SourceType.HIVE) {
+                String sql = HiveJdbcUtils.getQuerySql(tableName, querySql, filterSql, limit, offset);
+                String db = dbName;
+                future = CompletableFuture.supplyAsync(() -> {
+                    Map resultMap = null;
+                    try {
+                        resultMap = getHiveQueryResult(db, sql, true);
+                    } catch (Exception e) {
+                        LOG.error("查询失败", e);
+                    }
+                    return resultMap;
+                });
             }
-            List<String> queryColumns = parameter.getQueryFields();
-            long maxRowNumber = parameter.getMaxRowNumber();
-            limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
-            offset = Objects.nonNull(offset)?offset:0;
-            String sql = getQuerySQL(tableName, columnTypeMap, parameters, queryColumns, limit, offset, true);
-            APITask task = new APITask(randomName, sql, dbName, true);
-            Future<Map> futureResultMap = pool.submit(task);
-            Map resultMap = futureResultMap.get();
-            List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
-            if(parameter.getDesensitize()!=null && parameter.getDesensitize()) {
-                processSensitiveData(parameter.getSensitiveFields(), result);
-            }
+            taskMap.put(randomName, future);
+            Map resultMap = future.get();
+            result = (List<LinkedHashMap>)resultMap.get("queryResult");
             return result;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("API接口查询失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API接口查询失败");
         }
     }
 
-    class APITask implements Callable<Map> {
-        private String name;
-        private String querySql;
-        private String dbName;
-        private Boolean test;
-        APITask(String name, String querySql, String dbName, Boolean test) {
-            this.name = name;
-            this.querySql = querySql;
-            this.dbName = dbName;
-            this.test = test;
+    public void checkLimitAndOffset(Long limit, Long offset, Long maxRowNumber) throws AtlasBaseException {
+        if(Objects.isNull(limit) || Objects.isNull(offset)) {
+            throw new AtlasBaseException("limit和offset不允许为空");
         }
-        @Override
-        public Map call() throws Exception {
-            Connection conn = null;
-            try {
-                if (Objects.nonNull(name)) {
-                    Thread.currentThread().setName(name);
-                }
+        limit = Objects.nonNull(limit)?Math.min(limit, maxRowNumber):maxRowNumber;
+        offset = Objects.nonNull(offset)?offset:0;
+        if(offset<0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
+        }
+        if(limit<0 && limit!=-1) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "limit取值异常，需大于等于0或未-1");
+        }
+    }
 
-                Map resultMap = new HashMap();
-                Long count = 0L;
+    public String getQuerySql(List<String> queryColumns, APIInfo.SourceType searchType) {
+        StringJoiner columnJoiner = new StringJoiner(",");
+        if(searchType == APIInfo.SourceType.ORACLE) {
+            queryColumns.stream().forEach(columnName -> columnJoiner.add("\"" + columnName + "\""));
+        } else if(searchType == APIInfo.SourceType.HIVE) {
+            queryColumns.stream().forEach(columnName -> columnJoiner.add(columnName));
+        }
+        return columnJoiner.toString();
+    }
 
-
-                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                    conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+    public String getFilterSql(List<QueryParameter.Field> queryColumns, APIInfo.SourceType sourceType) throws AtlasBaseException {
+        String columnName = null;
+        StringJoiner filterJoiner = new StringJoiner(" and ");
+        List<QueryParameter.Field> filterColumns = queryColumns.stream().filter(column -> column.getFilter()).collect(Collectors.toList());
+        for(QueryParameter.Field field : filterColumns) {
+            StringBuffer filterBuffer = new StringBuffer();
+            StringJoiner valueJoiner = new StringJoiner(",");
+            columnName = field.getColumnName();
+            List<Object> valueList = field.getValueList();
+            String columnType = field.getType();
+            DataType dataType = DataType.convertType(columnType.toUpperCase());
+            checkDataType(dataType, valueList);
+            valueList.forEach(value -> {
+                String str = (DataType.STRING == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\'" + value.toString() + "\'"):(value.toString());
+                valueJoiner.add(str);
+            });
+            if(sourceType == APIInfo.SourceType.ORACLE) {
+                if (valueList.size() > 1) {
+                    filterBuffer.append("\"").append(columnName).append("\"").append(" in ").append("(").append(valueJoiner.toString()).append(")");
                 } else {
-                    conn = HiveJdbcUtils.getSystemConnection(dbName);
+                    filterBuffer.append("\"").append(columnName).append("\"").append("=").append(valueJoiner.toString());
                 }
-                ResultSet resultSet = null;
-                if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                    resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
+            } else if(sourceType == APIInfo.SourceType.HIVE) {
+                if (valueList.size() > 1) {
+                    filterBuffer.append(columnName).append(" in ").append("(").append(valueJoiner.toString()).append(")");
                 } else {
-                    resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
+                    filterBuffer.append(columnName).append("=").append(valueJoiner.toString());
                 }
+            }
+            filterJoiner.add(filterBuffer.toString());
+        }
+        return filterJoiner.toString();
+    }
 
-
-                List<LinkedHashMap> result = new ArrayList<>();
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                while (resultSet.next()) {
-                    LinkedHashMap map = new LinkedHashMap();
-                    for (int i = 1; i <= columnCount; i++) {
-                        String columnName = metaData.getColumnName(i);
-                        Object value = resultSet.getObject(columnName);
-                        if(!test && i==columnCount) {
-                            if(Objects.nonNull(value)) {
-                                count = Long.parseLong(value.toString());
-                            } else {
-                                count = (long)map.size();
-                            }
-                            continue;
-                        }
-                        if(Objects.nonNull(test) && test && Objects.nonNull(value)) {
-                            map.put(columnName, String.valueOf(value));
-                        } else {
-                            map.put(columnName, value);
-                        }
-                    }
-                    result.add(map);
+    public void checkDataType(DataType dataType, List<Object> valueList) throws AtlasBaseException {
+        if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+            valueList.stream().forEach(value -> dataType.valueOf(value).get());
+        if(DataType.BOOLEAN == dataType) {
+            for(Object value : valueList) {
+                if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取值需为bool类型");
                 }
-                resultMap.put("queryResult", result);
-                resultMap.put("queryCount", count);
-                return resultMap;
-            } catch (AtlasBaseException e) {
-                LOG.error(e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                LOG.error(e.getMessage());
-                throw e;
-            } finally {
-                if(Objects.nonNull(conn))
-                    conn.close();
             }
         }
     }
 
+    public Map getOracleQueryResult(String sourceId, String querySql, String countSql) throws AtlasBaseException {
+        Map resultMap = new HashMap();
+        try {
+            Connection conn = getOracleDataSourceConnection(sourceId);
+            ResultSet resultSet = OracleJdbcUtils.query(conn, querySql);
+            List<LinkedHashMap> result = extractResultSetData(resultSet);
+            resultMap.put("queryResult", result);
+            if(countSql != null) {
+                ResultSet countSet = OracleJdbcUtils.query(conn, countSql);
+                while(countSet.next()) {
+                    Long total = countSet.getLong(1);
+                    resultMap.put("queryCount", total);
+                }
+            }
+            return resultMap;
+        } catch (Exception e) {
+            LOG.error("查询失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
+
+    public Map getHiveQueryResult(String dbName, String querySql, Boolean test) throws AtlasBaseException {
+        Map resultMap = new HashMap();
+        Connection conn = null;
+        long count = 0;
+        try {
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+            } else {
+                conn = HiveJdbcUtils.getSystemConnection(dbName);
+            }
+            ResultSet resultSet = null;
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
+            } else {
+                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, querySql);
+            }
+            List<LinkedHashMap> result = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (resultSet.next()) {
+                LinkedHashMap map = new LinkedHashMap();
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnName(i);
+                    Object value = resultSet.getObject(columnName);
+                    if(i != columnCount) {
+                        if(test) {
+                            map.put(columnName, String.valueOf(value));
+                        } else {
+                            map.put(columnName, value);
+                        }
+                    } else if(!test && i==columnCount) {
+                        if(Objects.nonNull(value)) {
+                            count = Long.parseLong(value.toString());
+                        } else {
+                            count = (long)map.size();
+                        }
+                        continue;
+                    }
+                }
+                result.add(map);
+            }
+            resultMap.put("queryResult", result);
+            resultMap.put("queryCount", count);
+            return resultMap;
+        } catch (Exception e) {
+            LOG.error("查询失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+        }
+    }
 
     /**
      * 取消查询线程
@@ -1042,16 +1115,8 @@ public class DataShareService {
      */
     public void cancelAPIThread(String name) throws AtlasBaseException {
         try {
-            ThreadGroup currentGroup = Thread.currentThread().getThreadGroup();
-            int countThreads = currentGroup.activeCount();
-            Thread[] lstThreads = new Thread[countThreads];
-            currentGroup.enumerate(lstThreads);
-            for (int i = 0; i < countThreads; i++) {
-                if (lstThreads[i].getName().equals(name)) {
-                    lstThreads[i].interrupt();
-                    break;
-                }
-            }
+            CompletableFuture<Map> future = taskMap.get(name);
+            future.cancel(true);
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务取消失败");
@@ -1062,10 +1127,11 @@ public class DataShareService {
     public QueryResult queryAPIData(String path, QueryInfo queryInfo, String acceptHeader) throws AtlasBaseException {
         try {
             APIInfo info = shareDAO.getAPIInfo(path);
+            //判断是否查询到API信息
             if(Objects.isNull(info)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "路径错误，未查询到相关API信息");
             }
-            String tableGuid = info.getTableGuid();
+            //判断是否已发布
             Boolean publish = info.getPublish();
             if(Objects.isNull(publish)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API发布情况未知");
@@ -1073,46 +1139,48 @@ public class DataShareService {
             if (Objects.nonNull(publish) && !publish) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未发布");
             }
+            //API请求类型：Hive/Oracle
+            APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
+            //获取dbName和tableName
+            String tableName = null;
+            String dbName = null;
+            if(sourceType == APIInfo.SourceType.HIVE) {
+                String tableGuid = info.getTableGuid();
+                tableName = shareDAO.queryTableNameByGuid(tableGuid);
+                dbName = shareDAO.querydbNameByGuid(tableGuid);
+            } else if(sourceType == APIInfo.SourceType.ORACLE) {
+                tableName = info.getTableName();
+                dbName = info.getSchemaName();
+            }
             //查询数据分享API字段详情
             Object fieldsObject = shareDAO.getAPIFields(path);
             PGobject pGobject = (PGobject) fieldsObject;
             String valueObject = pGobject.getValue();
             Gson gson = new Gson();
-            List<Map> values = gson.fromJson(valueObject, List.class);
-            Set<String> fields = new HashSet<>();
-            List<FilterColumn> filterFileds = new ArrayList<>();
+            List<Map> fieldMap = gson.fromJson(valueObject, List.class);
             Boolean desensitize = info.getDesensitize()==null?false:info.getDesensitize();
-            List<String> sensitiveColumn = new ArrayList<>();
-            for (Map map : values) {
-                String columnName = map.get("columnName").toString();
-                Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
-                Boolean sensitive = Boolean.parseBoolean(map.get("sensitive").toString());
-                if (sensitive) {
-                    sensitiveColumn.add(columnName);
-                }
-                fields.add(columnName);
-                if (filter) {
-                    Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
-                    String defaultValue = Objects.nonNull(map.get("defaultValue"))?map.get("defaultValue").toString():String.valueOf("");
-                    Boolean useDefault = Objects.nonNull(map.get("useDefaultValue"))?Boolean.parseBoolean(map.get("useDefaultValue").toString()):false;
-                    FilterColumn column = new FilterColumn(columnName, defaultValue, fill, useDefault);
-                    filterFileds.add(column);
-                }
-            }
-
             //请求中查询字段
-            List<String> queryFiles = queryInfo.getColumns();
+            List<String> queryColumnList = queryInfo.getColumns();
             //请求中过滤字段
             Map filterColumnMap = queryInfo.getFilters();
-
+            List<QueryParameter.Field> infoFieldList = buildInfoField(fieldMap, filterColumnMap);
+            Set<String> infoColumnSet = new HashSet<>();
+            Set<String> filterColumnSet = new HashSet<>();
+            Set<String> sensitiveColumnSet = new HashSet<>();
+            for (QueryParameter.Field field : infoFieldList) {
+                String columnName = field.getColumnName();
+                infoColumnSet.add(columnName);
+                if(field.getFilter()) {
+                    filterColumnSet.add(columnName);
+                }
+                if(field.getSensitive()) {
+                    sensitiveColumnSet.add(columnName);
+                }
+            }
             //检查请求中查询字段是否包含于详情中字段
-            checkFieldName(fields, queryFiles);
-            //获取字段类型
-            Map columnTypeMap = getColumnType(tableGuid, fields);
+            checkFieldName(infoColumnSet, queryColumnList);
             //校验过滤字段范围
-            checkFilterField(filterFileds, filterColumnMap);
-            //校验过滤字段取值
-            List<QueryParameter.Parameter> kvList = checkFieldValue(filterFileds, filterColumnMap);
+            checkFilterField(filterColumnSet, filterColumnMap);
             //limit
             Long limit = queryInfo.getLimit();
             //offset
@@ -1124,23 +1192,26 @@ public class DataShareService {
             } else {
                 limit = maxRowNumber;
             }
-            String tableName = shareDAO.queryTableNameByGuid(tableGuid);
-            String dbName = shareDAO.querydbNameByGuid(tableGuid);
+            String querySql = getQuerySql(queryColumnList, sourceType);
+            String filterSql = getFilterSql(infoFieldList, sourceType);
+            Map resultMap = null;
             //sql
-            String querySql = getQuerySQL(tableName, columnTypeMap, kvList, queryFiles, limit, offset, false);
-
-            //query任务
-            String queryName = String.valueOf(System.currentTimeMillis());
-            APITask task = new APITask(queryName, querySql, dbName, false);
-
-            Future<Map> futureResultMap = pool.submit(task);
-            Map resultMap = futureResultMap.get();
+            if(sourceType == APIInfo.SourceType.HIVE) {
+                String sql = HiveJdbcUtils.getQuerySql(tableName, querySql, filterSql, limit, offset);
+                String db = dbName;
+                resultMap = getHiveQueryResult(db, sql, false);
+            } else if(sourceType == APIInfo.SourceType.ORACLE){
+                String sourceId = info.getSourceId();
+                String query = OracleJdbcUtils.getQuerySql(dbName, tableName, querySql, filterSql, limit, offset);
+                String count = OracleJdbcUtils.getCountSql(dbName, tableName, filterSql);
+                resultMap = getOracleQueryResult(sourceId, query, count);
+            }
             List<LinkedHashMap<String,Object>> queryDataList = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
             if(desensitize) {
-                processSensitiveData(sensitiveColumn, queryDataList);
+                processSensitiveData(sensitiveColumnSet, queryDataList);
             }
             Long count = Long.parseLong(resultMap.get("queryCount").toString());
-
+            //数据格式转换
             if(acceptHeader.contains("xml")) {
                 XmlQueryResult queryResult = new XmlQueryResult();
                 XmlQueryResult.QueryData queryData = new XmlQueryResult.QueryData();
@@ -1156,22 +1227,18 @@ public class DataShareService {
                 shareDAO.updateUsedCount(path);
                 return queryResult;
             }
-        } catch (ExecutionException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , e.getCause().getMessage());
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST , "查询失败");
         }
     }
 
-    public void processSensitiveData(List<String>  sensitiveColumnList, List<LinkedHashMap<String,Object>> dataList) {
+    public void processSensitiveData(Set<String>  sensitiveColumnSet, List<LinkedHashMap<String,Object>> dataList) {
         for(LinkedHashMap<String,Object> data : dataList) {
             for(String key : data.keySet()) {
-                if(sensitiveColumnList.contains(key)) {
+                if(sensitiveColumnSet.contains(key)) {
                     String value = data.get(key).toString();
                     int length = value.length();
                     int replaceLen = length/3;
@@ -1192,211 +1259,84 @@ public class DataShareService {
         }
     }
 
+    public List<QueryParameter.Field> buildInfoField(List<Map> fieldList, Map<String, Object> filterColumnMap) throws AtlasBaseException {
+        List<QueryParameter.Field> resultFieldList = new ArrayList<>();
+        QueryParameter.Field field = null;
+        List<Object> valueList = null;
+        for (Map map : fieldList) {
+            String columnName = map.get("columnName").toString();
+            Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
+            String type = map.get("type").toString();
+            Boolean sensitive = Boolean.parseBoolean(map.get("sensitive").toString());
+            if(filter) {
+                Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
+                String defaultValue = Objects.nonNull(map.get("defaultValue"))?map.get("defaultValue").toString():String.valueOf("");
+                Boolean useDefault = Objects.nonNull(map.get("useDefaultValue"))?Boolean.parseBoolean(map.get("useDefaultValue").toString()):false;
+                //必传值
+                if(fill) {
+                    if(filterColumnMap.containsKey(columnName)) {
+                        Object value = filterColumnMap.get(columnName);
+                         if(value instanceof List) {
+                            valueList = (List<Object>)value;
+                        } else {
+                            valueList = new ArrayList<>();
+                            valueList.add(value);
+                        }
+                    } else {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败，请在请求参数中给出必传过滤字段:" + columnName);
+                    }
+                } else {
+                    //已传值
+                    if(filterColumnMap.containsKey(columnName)) {
+                        Object value = filterColumnMap.get(columnName);
+                        if(value instanceof List) {
+                            valueList = (List<Object>)value;
+                        } else {
+                            valueList = new ArrayList<>();
+                            valueList.add(value);
+                        }
+                        //未传值
+                    } else {
+                        //使用默认值
+                        if(useDefault) {
+                            valueList = Arrays.asList(defaultValue);
+                        } else {
+                            filter = false;
+                        }
+                    }
+                }
+            }
+            field = new QueryParameter.Field(columnName, type, filter, valueList , sensitive);
+            resultFieldList.add(field);
+        }
+        return resultFieldList;
+    }
+
     /**
      * 查询字段是否在允许范围内
-     * @param fields
+     * @param infoFields
      * @param queryFields
      * @throws AtlasBaseException
      */
-    public void checkFieldName(Set<String> fields, List<String> queryFields) throws AtlasBaseException {
+    public void checkFieldName(Set<String> infoFields, List<String> queryFields) throws AtlasBaseException {
         for(String field : queryFields) {
-            if(!fields.contains(field)) {
+            if(!infoFields.contains(field)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的查询字段:" + field);
             }
         }
     }
 
-    public void checkFilterField(List<FilterColumn> filterFields, Map queryFilterFields) throws AtlasBaseException {
-        List<String> filterFieldList = new ArrayList<>();
-        filterFields.stream().forEach(column -> filterFieldList.add(column.getColumnName()));
-        for(Object field : queryFilterFields.keySet()) {
-            if(!filterFieldList.contains(field.toString())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + field.toString());
-            }
-        }
-    }
-
     /**
-     * 校验查询字段取值
+     * 查询过滤字段是否在创建API信息中
      * @param filterFields
      * @param queryFilterFields
-     * @return
      * @throws AtlasBaseException
      */
-    public List<QueryParameter.Parameter> checkFieldValue(List<FilterColumn> filterFields, Map queryFilterFields) throws AtlasBaseException {
-        List<QueryParameter.Parameter> kvList = new ArrayList<>();
-        for(FilterColumn field : filterFields) {
-            //必传值
-            if(field.getFill()) {
-                //未传值
-                if(!queryFilterFields.containsKey(field.getColumnName())) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败，请在请求参数中给出必传过滤字段:" + field.getColumnName());
-                } else {
-                    QueryParameter.Parameter parameter = new QueryParameter.Parameter();
-                    parameter.setColumnName(field.getColumnName());
-                    String key = field.getColumnName();
-                    Object value = queryFilterFields.get(key);
-                    if(value instanceof String[]) {
-                        String[] values = (String[])value;
-                        parameter.setValue(Arrays.asList(values));
-                    } else if(value instanceof List) {
-                        parameter.setValue((List<Object>) value);
-                    } else {
-                        List<Object> values = new ArrayList<>();
-                        values.add(value);
-                        parameter.setValue(values);
-                    }
-                    kvList.add(parameter);
-                }
-                //非必传
-            } else {
-                QueryParameter.Parameter parameter = new QueryParameter.Parameter();
-                parameter.setColumnName(field.getColumnName());
-
-                //已传值
-                if(queryFilterFields.containsKey(field.getColumnName())) {
-                    String key = field.getColumnName();
-                    Object value = queryFilterFields.get(key);
-                    if(value instanceof String[]) {
-                        String[] values = (String[])value;
-                        parameter.setValue(Arrays.asList(values));
-                    } else if(value instanceof List) {
-                        parameter.setValue((List<Object>) value);
-                    } else {
-                        List<Object> values = new ArrayList<>();
-                        values.add(value);
-                        parameter.setValue(values);
-                    }
-                //未传值
-                } else {
-                    Boolean use = field.getUseDefaultValue();
-                    //使用默认值
-                    if(use) {
-                        parameter.setValue(Arrays.asList(field.getValue()));
-                    }
-                }
-                if(Objects.nonNull(parameter.getValue()))
-                    kvList.add(parameter);
+    public void checkFilterField(Set<String> filterFields, Map queryFilterFields) throws AtlasBaseException {
+        for(Object field : queryFilterFields.keySet()) {
+            if(!filterFields.contains(field.toString())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无效的过滤查询字段:" + field.toString());
             }
-        }
-        return kvList;
-    }
-
-
-    public Map<String, String> getColumnType(String tableGuid, Set<String> columSet) throws AtlasBaseException {
-        Map<String, String> columnTypeMap = new HashMap();
-        List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns();
-        Map<String, String> columnMap = new HashMap<>();
-        columnList.forEach(column -> columnMap.put(column.getColumnName(), column.getType()));
-        for (String columnName : columSet) {
-            if (columnMap.containsKey(columnName)) {
-                String type = columnMap.get(columnName);
-                if(type.contains("char")) {
-                    type = "string";
-                } else if(type.contains("smallint")) {
-                    type = "int";
-                } else if(type.contains("tinyint")) {
-                    type = "int";
-                } else if(type.contains("decimal")) {
-                    type = "decimal";
-                }
-                columnTypeMap.put(columnName, type);
-            } else {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未知的查询字段");
-            }
-        }
-        return columnTypeMap;
-    }
-
-    /**
-     * 拼接查询SQL
-     * @param tableName
-     * @param columnTypeMap
-     * @param kvList
-     * @param limit
-     * @param offset
-     * @return
-     */
-    public String getQuerySQL(String tableName, Map<String, String> columnTypeMap, List<QueryParameter.Parameter> kvList, List<String> queryColumns, Long limit, Long offset, boolean test) throws AtlasBaseException {
-        String columnName = null;
-        try {
-            if(offset<0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
-            }
-            if(limit<0 && limit!=-1) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "limit取值异常，需大于等于0或未-1");
-            }
-            if(Objects.isNull(queryColumns) || queryColumns.size()==0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段columns不能为空");
-            }
-            String orderColumnName = queryColumns.get(0);
-            StringBuffer querySql = new StringBuffer();
-            querySql.append("select ");
-            StringJoiner columnJoiner = new StringJoiner(",");
-            queryColumns.stream().forEach(column -> columnJoiner.add(column));
-            querySql.append(columnJoiner.toString());
-            if(!test) {
-                querySql.append(",count(*) over() ");
-            }
-            querySql.append(" from ");
-            querySql.append(tableName);
-            //过滤条件
-            if (Objects.nonNull(kvList) && kvList.size() > 0) {
-                querySql.append(" where ");
-                //countSql.append(" where ");
-                StringJoiner filterJoiner = new StringJoiner(" and ");
-                for (QueryParameter.Parameter kv : kvList) {
-                    StringBuffer valueBuffer = new StringBuffer();
-                    StringJoiner valueJoiner = new StringJoiner(",");
-                    columnName = kv.getColumnName();
-                    String type = columnTypeMap.get(columnName);
-                    DataType dataType = DataType.parseOf(type);
-
-                    List<Object> valueList = kv.getValue();
-                    //验证设置取值是否正确
-                    if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
-                        valueList.stream().forEach(value -> dataType.valueOf(value).get());
-                    if(DataType.BOOLEAN == dataType) {
-                        for(Object value : valueList) {
-                            if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
-                                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, kv.getColumnName() + "取值需为bool类型");
-                            }
-                        }
-                    }
-                    kv.getValue().forEach(value -> {
-                        String str = (DataType.STRING == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\"" + value.toString() + "\""):(value.toString());
-                        valueJoiner.add(str);
-                    });
-
-                    if (valueList.size() > 1) {
-                        valueBuffer.append(kv.getColumnName()).append(" in ").append("(").append(valueJoiner.toString()).append(")");
-                    } else {
-                        valueBuffer.append(kv.getColumnName()).append("=").append(valueJoiner.toString());
-                    }
-                    filterJoiner.add(valueBuffer.toString());
-                }
-                querySql.append(filterJoiner.toString());
-            }
-            //limit
-            if (Objects.nonNull(limit) && -1 != limit) {
-                querySql.append(" order by " + orderColumnName);
-                querySql.append(" limit ");
-                querySql.append(limit);
-            }
-            //offset
-            if(Objects.nonNull(offset)) {
-                querySql.append(" offset ");
-                querySql.append(offset);
-            }
-            LOG.info("querySQL：" + querySql.toString());
-            LOG.info("countSQL：" + querySql.toString());
-            return querySql.toString();
-        } catch (NumberFormatException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, columnName + "取值与类型不匹配");
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL查询语句异常");
         }
     }
 
@@ -1449,4 +1389,127 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
         }
     }
+
+    public Connection getOracleDataSourceConnection(String sourceId) throws AtlasBaseException {
+        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
+        String password;
+        if (dataSourceConnection.getPassword()==null){
+            if (dataSourceConnection.getAesPassword()!=null) {
+                password = AESUtils.AESDecode(dataSourceConnection.getAesPassword());
+                dataSourceConnection.setPassword(password);
+            }else{
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");
+            }
+        }
+        dataSourceConnection.setUrl();
+        dataSourceConnection.setDriver();
+
+        try {
+            Class.forName(dataSourceConnection.getDriver());
+            Properties properties = new Properties();
+            if (dataSourceConnection.getUserName() != null) {
+                properties.put("user", dataSourceConnection.getUserName());
+            }
+            if (dataSourceConnection.getPassword() != null) {
+                properties.put("password", dataSourceConnection.getPassword());
+            }
+            if (StringUtils.isNotEmpty(dataSourceConnection.getJdbcParameter())) {
+                for (String str : dataSourceConnection.getJdbcParameter().split("&")) {
+                    String[] strings = str.split("=");
+                    if (strings.length == 2) {
+                        properties.put(strings[0], strings[1]);
+                    }
+                }
+            }
+            Connection conn = DriverManager.getConnection(dataSourceConnection.getUrl(), properties);
+            return conn;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取Oracle连接失败");
+        }
+    }
+
+    public PageResult getOracleDataSourceList(Parameters parameters) throws AtlasBaseException {
+        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null);
+    }
+
+    public PageResult getDataList(SEARCH_TYPE searchType, Parameters parameters, String sourceId, String... ids) throws AtlasBaseException {
+        PageResult pageResult = new PageResult();
+        ResultSet dataSet = null;
+        ResultSet countSet = null;
+        List<LinkedHashMap> result = null;
+        try {
+            Connection conn = getOracleDataSourceConnection(sourceId);
+            switch (searchType) {
+                case SCHEMA: {
+                    dataSet = OracleJdbcUtils.getSchemaList(conn, parameters.getLimit(), parameters.getOffset());
+                    countSet = OracleJdbcUtils.getSchemaCount(conn);
+                    break;
+                }
+                case TABLE: {
+                    String schemaName = ids[0];
+                    dataSet = OracleJdbcUtils.getTableList(conn, schemaName, parameters.getLimit(), parameters.getOffset());
+                    countSet = OracleJdbcUtils.getTableCount(conn, schemaName);
+                    break;
+                }
+                case COLUMN: {
+                    String schemaName = ids[0];
+                    String tableName = ids[1];
+                    dataSet = OracleJdbcUtils.getColumnList(conn, schemaName, tableName, parameters.getLimit(), parameters.getOffset());
+                    countSet = OracleJdbcUtils.getColumnCount(conn, schemaName, tableName);
+                    break;
+                }
+            }
+            result = extractResultSetData(dataSet);
+            long totalSize = extractSizeData(countSet);
+            pageResult.setLists(result);
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(result.size());
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
+    public List<LinkedHashMap> extractResultSetData(ResultSet resultSet) throws AtlasBaseException {
+        List<LinkedHashMap> result = new ArrayList<>();
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (resultSet.next()) {
+                LinkedHashMap map = new LinkedHashMap();
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnName(i);
+                    Object value = resultSet.getObject(columnName);
+                    map.put(columnName, value);
+                }
+                result.add(map);
+            }
+            return result;
+        } catch (Exception e) {
+            LOG.error("解析查询结果失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "解析查询结果失败");
+        }
+    }
+
+    public Long extractSizeData(ResultSet resultSet) throws AtlasBaseException {
+        long totalSize = 0;
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            while (resultSet.next()) {
+                String columnName = metaData.getColumnName(1);
+                Object value = resultSet.getObject(columnName);
+                totalSize = Long.parseLong(value.toString());
+            }
+            return totalSize;
+        } catch (Exception e) {
+            LOG.error("解析查询结果失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "解析查询结果失败");
+        }
+    }
+
+    public enum SEARCH_TYPE {
+        SCHEMA, TABLE, COLUMN
+    }
 }
+
+

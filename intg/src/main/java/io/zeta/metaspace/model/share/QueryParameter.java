@@ -16,7 +16,6 @@
  */
 package io.zeta.metaspace.model.share;
 
-import java.util.HashMap;
 import java.util.List;
 
 /*
@@ -25,31 +24,11 @@ import java.util.List;
  * @date 2019/3/27 19:33
  */
 public class QueryParameter {
-    private String tableGuid;
-    private String dbGuid;
     private long maxRowNumber;
-    private List<Parameter> parameter;
-    private List<String> queryFields;
-    private List<String> sensitiveFields;
+    private List<Field> queryFields;
     private Boolean desensitize;
     private Long limit;
     private Long offset;
-
-    public String getTableGuid() {
-        return tableGuid;
-    }
-
-    public void setTableGuid(String tableGuid) {
-        this.tableGuid = tableGuid;
-    }
-
-    public String getDbGuid() {
-        return dbGuid;
-    }
-
-    public void setDbGuid(String dbGuid) {
-        this.dbGuid = dbGuid;
-    }
 
     public long getMaxRowNumber() {
         return maxRowNumber;
@@ -57,6 +36,14 @@ public class QueryParameter {
 
     public void setMaxRowNumber(long maxRowNumber) {
         this.maxRowNumber = maxRowNumber;
+    }
+
+    public Boolean getDesensitize() {
+        return desensitize;
+    }
+
+    public void setDesensitize(Boolean desensitize) {
+        this.desensitize = desensitize;
     }
 
     public Long getLimit() {
@@ -75,41 +62,30 @@ public class QueryParameter {
         this.offset = offset;
     }
 
-    public List<Parameter> getParameter() {
-        return parameter;
-    }
-
-    public void setParameter(List<Parameter> parameter) {
-        this.parameter = parameter;
-    }
-
-    public List<String> getQueryFields() {
+    public List<Field> getQueryFields() {
         return queryFields;
     }
 
-    public void setQueryFields(List<String> queryFields) {
+    public void setQueryFields(List<Field> queryFields) {
         this.queryFields = queryFields;
     }
 
-    public List<String> getSensitiveFields() {
-        return sensitiveFields;
-    }
-
-    public void setSensitiveFields(List<String> sensitiveFields) {
-        this.sensitiveFields = sensitiveFields;
-    }
-
-    public Boolean getDesensitize() {
-        return desensitize;
-    }
-
-    public void setDesensitize(Boolean desensitize) {
-        this.desensitize = desensitize;
-    }
-
-    public static class Parameter {
+    public static class Field {
         private String columnName;
-        private List<Object> value;
+        private String type;
+        private Boolean filter;
+        private List<Object> valueList;
+        private Boolean sensitive;
+
+        public  Field() { }
+
+        public Field(String columnName, String type, Boolean filter, List<Object> valueList, Boolean sensitive) {
+            this.columnName = columnName;
+            this.type = type;
+            this.filter = filter;
+            this.valueList = valueList;
+            this.sensitive = sensitive;
+        }
 
         public String getColumnName() {
             return columnName;
@@ -119,12 +95,36 @@ public class QueryParameter {
             this.columnName = columnName;
         }
 
-        public List<Object> getValue() {
-            return value;
+        public String getType() {
+            return type;
         }
 
-        public void setValue(List<Object> value) {
-            this.value = value;
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public Boolean getFilter() {
+            return filter;
+        }
+
+        public void setFilter(Boolean filter) {
+            this.filter = filter;
+        }
+
+        public List<Object> getValueList() {
+            return valueList;
+        }
+
+        public void setValueList(List<Object> valueList) {
+            this.valueList = valueList;
+        }
+
+        public Boolean getSensitive() {
+            return sensitive;
+        }
+
+        public void setSensitive(Boolean sensitive) {
+            this.sensitive = sensitive;
         }
     }
 }
