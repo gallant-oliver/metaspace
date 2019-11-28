@@ -116,7 +116,35 @@ public class DataSourceREST {
 
 
             dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
-            dataSourceService.setNewDataSource(dataSourceBody);
+            dataSourceService.setNewDataSource(dataSourceBody,false);
+            return true;
+        }catch (Exception e){
+            LOG.warn("添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加失败"+e.getMessage());
+        }
+    }
+
+    /**
+     * 添加api数据源
+     * @param dataSourceBody
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/api")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public boolean setNewApiDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+        try {
+            dataSourceBody.setSourceId(UUID.randomUUID().toString());
+            if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
+
+
+            dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+            dataSourceService.setNewDataSource(dataSourceBody,true);
             return true;
         }catch (Exception e){
             LOG.warn("添加失败");
@@ -265,7 +293,7 @@ public class DataSourceREST {
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
                                                         @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
         try {
-             PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName);
+             PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,false);
              pageResult.getLists().stream().forEach(dataSourceHead -> {
                  if (importings.containsKey(dataSourceHead.getSourceId())&&importings.get(dataSourceHead.getSourceId()).get()==true){
                      dataSourceHead.setSynchronize(true);
@@ -274,6 +302,37 @@ public class DataSourceREST {
                  }
              });
              return pageResult;
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败"+e.getMessage());
+        }
+
+    }
+
+    /**
+     * 查询api数据源
+     * @param limit
+     * @param offset
+     * @param sortby
+     * @param order
+     * @param sourceName
+     * @param sourceType
+     * @param createTime
+     * @param updateTime
+     * @param updateUserName
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/api")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DataSourceHead> searchApiDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortby") String sortby,@QueryParam("order") String order,
+                                                        @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
+                                                        @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
+        try {
+            PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true);
+            return pageResult;
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败"+e.getMessage());
@@ -353,8 +412,7 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DataSourceAuthorizeUser getAuthorizeUserId(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
         try {
-
-            return dataSourceService.getAuthorizeUser(sourceId);
+            return dataSourceService.getAuthorizeUser(sourceId,false);
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
@@ -367,7 +425,7 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DataSourceAuthorizeUser getNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
         try {
-            return dataSourceService.getNoAuthorizeUser(sourceId,query);
+            return dataSourceService.getNoAuthorizeUser(sourceId,query,false);
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
@@ -380,6 +438,48 @@ public class DataSourceREST {
     public Response dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
         try {
             dataSourceService.dataSourceAuthorize(dataSourceAuthorizeUserId);
+            return Response.status(200).entity("success").build();
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源授权失败:"+e.getMessage());
+
+        }
+    }
+
+
+    @GET
+    @Path("/api/authorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getApiAuthorizeUserId(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+        try {
+
+            return dataSourceService.getAuthorizeUser(sourceId,true);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/api/noAuthorize/{sourceId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public DataSourceAuthorizeUser getApiNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
+        try {
+            return dataSourceService.getNoAuthorizeUser(sourceId,query,true);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/api/authorize")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Response dataSourceApiAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
+        try {
+            dataSourceService.dataSourceApiAuthorize(dataSourceAuthorizeUserId);
             return Response.status(200).entity("success").build();
         }catch (Exception e){
             LOG.error(e.getMessage());
@@ -464,7 +564,20 @@ public class DataSourceREST {
     @Path("/updateUser")
     public List<String> getUpdateUserName() throws Exception {
         try {
-            return dataSourceService.getUpdateUserName();
+            return dataSourceService.getUpdateUserName(false);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/api/updateUser")
+    public List<String> getApiUpdateUserName() throws Exception {
+        try {
+            return dataSourceService.getUpdateUserName(true);
         }catch (Exception e){
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
@@ -498,6 +611,20 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
         }
     }
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/oracle/schemas/{limit}/{offset}")
+    public PageResult getSchema(@PathParam("limit") int limit,@PathParam("offset") int offset,DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+        try {
+            return dataSourceService.getSchema(limit,offset,dataSourceConnection);
+        }catch (Exception e){
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:"+e.getMessage());
+        }
+    }
+
 
 
 }

@@ -23,20 +23,32 @@ public class DataSourceInfo {
     private String password;
     private String database;
     private String jdbcParameter;
+    private String oracleDb;
+    private String manager;
+    private String managerId;
 
+    public String getManagerId() {
+        return managerId;
+    }
 
-    public DataSourceInfo(){}
+    public void setManagerId(String managerId) {
+        this.managerId = managerId;
+    }
 
-    public DataSourceInfo(String sourceName, String sourceType, String description, String ip, String port, String userName, String password, String database, String jdbcParameter) {
-        this.sourceName = sourceName;
-        this.sourceType = sourceType;
-        this.description = description;
-        this.ip = ip;
-        this.port = port;
-        this.userName = userName;
-        this.password = password;
-        this.database = database;
-        this.jdbcParameter = jdbcParameter;
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
+    }
+
+    public String getOracleDb() {
+        return oracleDb;
+    }
+
+    public void setOracleDb(String oracleDb) {
+        this.oracleDb = oracleDb;
     }
 
     public String getSourceName() {
