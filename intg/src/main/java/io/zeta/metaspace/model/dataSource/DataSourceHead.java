@@ -30,6 +30,24 @@ public class DataSourceHead {
     private int totalSize;
     private String manager;
     private boolean editManager;
+    private boolean isSchema;
+    private String oracleDb;
+
+    public String getOracleDb() {
+        return oracleDb;
+    }
+
+    public void setOracleDb(String oracleDb) {
+        this.oracleDb = oracleDb;
+    }
+
+    public boolean isSchema() {
+        return isSchema;
+    }
+
+    public void setSchema(boolean schema) {
+        isSchema = schema;
+    }
 
     public boolean isEditManager() {
         return editManager;
@@ -46,7 +64,7 @@ public class DataSourceHead {
     public void setManager(String manager) {
         this.manager = manager;
     }
-    private boolean synchronize;
+    private boolean synchronize=false;
 
     public boolean isSynchronize() {
         return synchronize;

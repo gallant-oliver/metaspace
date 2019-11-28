@@ -1121,11 +1121,11 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('4','通过层','3','5',0,1,1);
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('5','应用层','4',NULL,0,1,1);
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,'1');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,'1');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,'1');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('4','通过层','3','5',0,1,'1');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('5','应用层','4',NULL,0,1,'1');
 
 INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-1', '基础类数据标准','基础类数据标准',null,null,'Standard-2',1,3);
 INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-2', '指标类数据标准','指标类数据标准',null,'Standard-1',null,1,3);
@@ -1841,6 +1841,9 @@ CREATE TABLE "public"."data_source" (
   "password" varchar(255) COLLATE "pg_catalog"."default",
   "database" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "jdbc_parameter" varchar COLLATE "pg_catalog"."default",
+  "manager" varchar COLLATE "pg_catalog"."default",
+  "oracle_db" varchar COLLATE "pg_catalog"."default",
+  "isapi" bool,
   "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
@@ -1858,6 +1861,8 @@ COMMENT ON COLUMN "public"."data_source"."password" IS '数据库用户密码';
 COMMENT ON COLUMN "public"."data_source"."database" IS '数据库名';
 COMMENT ON COLUMN "public"."data_source"."jdbc_parameter" IS 'jdbc连接参数';
 COMMENT ON COLUMN "public"."data_source"."create_user_id" IS '数据源创建人id';
+COMMENT ON COLUMN "public"."data_source"."oracle_db" IS 'oracle数据库';
+COMMENT ON COLUMN "public"."data_source"."isapi" IS '是否是api数据源';
 
 -- ----------------------------
 -- Primary Key structure for table data_source
@@ -1946,6 +1951,22 @@ CREATE TABLE "public"."data_standard2data_quality_rule" (
 -- ----------------------------
 ALTER TABLE "public"."data_standard2data_quality_rule" ADD CONSTRAINT "data_standard2data_quality_rule_pkey" PRIMARY KEY ("number", "ruleid");
 
+<<<<<<< HEAD
+-- ----------------------------
+-- Table structure for data_source_api_authorize
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."data_source_api_authorize";
+CREATE TABLE "public"."data_source_api_authorize" (
+  "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table data_source_api_authorize
+-- ----------------------------
+ALTER TABLE "public"."data_source_api_authorize" ADD CONSTRAINT "data_source_api_authorize_pkey" PRIMARY KEY ("source_id", "authorize_user_id");
+
 
 -- ----------------------------
 -- Table structure for table_metadata_history
@@ -1969,7 +1990,7 @@ CREATE TABLE "public"."table_metadata_history" (
 )
 ;
 
--- ----------------------------
+
 -- Primary Key structure for table table_metadata_history
 -- ----------------------------
 ALTER TABLE "public"."table_metadata_history" ADD CONSTRAINT "table_metadata_history_pkey" PRIMARY KEY ("guid", "version");
@@ -2007,5 +2028,4 @@ COMMENT ON COLUMN "public"."column_metadata_history"."partition_field" IS '是�
 -- Primary Key structure for table column_metadata_history
 -- ----------------------------
 ALTER TABLE "public"."column_metadata_history" ADD CONSTRAINT "column_metadata_history_pkey" PRIMARY KEY ("guid", "version");
-
 

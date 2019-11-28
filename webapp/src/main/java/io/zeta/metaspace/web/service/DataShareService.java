@@ -1429,7 +1429,7 @@ public class DataShareService {
     }
 
     public PageResult getOracleDataSourceList(Parameters parameters) throws AtlasBaseException {
-        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null);
+        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null,true);
     }
 
     public PageResult getDataList(SEARCH_TYPE searchType, Parameters parameters, String sourceId, String... ids) throws AtlasBaseException {

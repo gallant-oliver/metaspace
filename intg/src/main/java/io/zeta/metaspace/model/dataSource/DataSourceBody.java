@@ -31,6 +31,25 @@ public class DataSourceBody {
     private boolean rely;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
+    private String oracleDb;
+    private String manager;
+
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
+    }
+
+    public String getOracleDb() {
+        return oracleDb;
+    }
+
+    public void setOracleDb(String oracleDb) {
+        this.oracleDb = oracleDb;
+    }
+
     public DataSourceBody(){}
 
     public boolean isRely() {

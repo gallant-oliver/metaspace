@@ -37,9 +37,9 @@ import java.util.List;
 
 public interface DataSourceDAO {
     //添加数据源
-    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager)" +
-            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{updateUserId})")
-    public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody);
+    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager,oracle_db,isapi)" +
+            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{dataSourceBody.manager},#{dataSourceBody.oracleDb},#{isapi})")
+    public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody,@Param("isapi") boolean isapi);
 
     //更新数据源
     @Update("<script>" +
@@ -56,7 +56,9 @@ public interface DataSourceDAO {
             "</if>" +
             "jdbc_parameter=#{dataSourceBody.jdbcParameter}," +
             "update_user_id=#{updateUserId}," +
-            "update_time=#{dataSourceBody.updateTime}" +
+            "update_time=#{dataSourceBody.updateTime}, " +
+            " oracle_db=#{dataSourceBody.oracleDb}," +
+            " manager=#{dataSourceBody.manager}" +
             "where source_id=#{dataSourceBody.sourceId}" +
             "</script>")
     public int updateNoRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
@@ -66,7 +68,8 @@ public interface DataSourceDAO {
             "source_name=#{dataSourceBody.sourceName}," +
             "description=#{dataSourceBody.description}," +
             "update_user_id=#{updateUserId}," +
-            "update_time=#{dataSourceBody.updateTime}" +
+            "update_time=#{dataSourceBody.updateTime}," +
+            " manager=#{dataSourceBody.manager} " +
             "where source_id=#{dataSourceBody.sourceId}")
     public int updateRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
 
@@ -100,16 +103,25 @@ public interface DataSourceDAO {
              "</script>"})
     public int deleteAuthorizeBySourceId(@Param("sourceIds") List<String> sourceIds);
 
+    //删除Api授权人
+    @Delete({"<script>",
+             "delete from data_source_api_authorize where source_id in ",
+             "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+             "#{sourceId}",
+             "</foreach>",
+             "</script>"})
+    public int deleteApiAuthorizeBySourceIds(@Param("sourceIds") List<String> sourceIds);
+
     //获取数据源详情
-    @Select("select source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter " +
+    @Select("select source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb,manager managerId " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
-            "where dsa.authorize_user_id=#{userId}" +
+            "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -139,12 +151,47 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
-    //搜索数据源
 
+    //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "from data_source ds join users us on ds.update_user_id=us.userid join data_source_api_authorize dsa on dsa.source_id=ds.source_id " +
+            "where dsa.authorize_user_id=#{userId} and isapi=true" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateUserName!=null'>" +
+            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='parameters.sortby!=null'>" +
+            "order by ds.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            "${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            "limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset ${parameters.offset}" +
+            "</if>" +
+            "</script>")
+    public List<DataSourceHead> searchApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
+
+    //搜索数据源
+    @Select("<script>" +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
             "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid" +
+            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -174,6 +221,41 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+
+    //搜索api数据源
+    @Select("<script>" +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "from data_source ds, users us " +
+            "where ds.update_user_id=us.userid and ds.isapi=true" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateUserName!=null'>" +
+            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "</if>" +
+            "<if test='parameters.sortby!=null'>" +
+            "order by ds.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            "${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            "limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset ${parameters.offset}" +
+            "</if>" +
+            "</script>")
+    public List<DataSourceHead> searchApiAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
 
 
     @Select("select count(*) from data_source ")
@@ -219,6 +301,11 @@ public interface DataSourceDAO {
             "where source_id=#{sourceId} and authorize_user_id=#{userId}")
     public int isAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
+    //判断用户是否是数据源已授权人
+    @Select("select count(1) from data_source_api_authorize " +
+            "where source_id=#{sourceId} and authorize_user_id=#{userId}")
+    public int isApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+
     //获取数据源未授权人
     @Select("<script>" +
             "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
@@ -243,7 +330,43 @@ public interface DataSourceDAO {
             "#{sourceId},#{userId}",
             "</foreach>",
             "</script>"})
-    public int addAuthorizes(@Param("sourceId") String updateUserId,@Param("authorizeUserIds") List<String> authorizeUserIds);
+    public int addAuthorizes(@Param("sourceId") String sourceId,@Param("authorizeUserIds") List<String> authorizeUserIds);
+
+    //获取数据源已授权人
+    @Select("select count(*)over() totalSize,users.userid,users.userName,users.account from users join data_source_api_authorize on data_source_api_authorize.authorize_user_id=users.userid " +
+            "where source_id=#{sourceId} and users.userid!=#{userId} and users.valid=true")
+    public List<UserIdAndName> getApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
+
+
+    //获取数据源未授权人
+    @Select("<script>" +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "where p.moduleid='14' and r.status=1 and u.valid=true " +
+            "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId}) " +
+            "<if test='query!=null'>" +
+            "and username like '%${query}%' ESCAPE '/'" +
+            "</if>" +
+            "</script>")
+    public List<UserIdAndName> getApiNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
+
+    //新增授权人
+    @Insert("insert into data_source_api_authorize(source_id,authorize_user_id)" +
+            "values(#{sourceId},#{authorizeUserId})")
+    public int addApiAuthorize(@Param("sourceId") String updateUserId,@Param("authorizeUserId") String authorizeUserId);
+
+    //新增授权人
+    @Insert({"<script>",
+             "insert into data_source_api_authorize(source_id,authorize_user_id)" ,
+             "values",
+             "<foreach collection='authorizeUserIds' item='userId' index='index' separator='),(' open='(' close=')'>" ,
+             "#{sourceId},#{userId}",
+             "</foreach>",
+             "</script>"})
+    public int addApiAuthorizes(@Param("sourceId") String sourceId,@Param("authorizeUserIds") List<String> authorizeUserIds);
+
+    //根据数据源删除授权
+    @Delete({"delete from data_source_api_authorize where source_id=#{sourceId}"})
+    public int deleteApiAuthorizeBySourceId(@Param("sourceId") String sourceId);
 
 
 
@@ -255,6 +378,15 @@ public interface DataSourceDAO {
              "</foreach>",
              "</script>"})
     public int deleteAuthorize(@Param("sourceId") String sourceId,@Param("noAuthorizeUserIds") List<String> noAuthorizeUserIds);
+
+    //删除授权人
+    @Delete({"<script>",
+             "delete from data_source_api_authorize where source_id=#{sourceId} and authorize_user_id in ",
+             "<foreach collection='noAuthorizeUserIds' item='userId' index='index' separator=',' open='(' close=')'>" ,
+             "#{userId}",
+             "</foreach>",
+             "</script>"})
+    public int deleteApiAuthorize(@Param("sourceId") String sourceId,@Param("noAuthorizeUserIds") List<String> noAuthorizeUserIds);
 
     //获取数据源已授权人id
     @Select("select authorize_user_id from data_source_authorize " +
@@ -271,6 +403,20 @@ public interface DataSourceDAO {
             "where a.authorize_user_id = #{userId})")
     public List<String> getUpdateUserName(@Param("userId") String userId);
 
+    @Select("select username from users where userid in " +
+            "(select distinct s.update_user_id from data_source s " +
+            "join data_source_api_authorize a on s.source_id=a.source_id " +
+            "where a.authorize_user_id = #{userId})")
+    public List<String> getApiUpdateUserName(@Param("userId") String userId);
+
+    @Select("select username from users where userid in " +
+            "(select distinct s.update_user_id from data_source s where s.isapi=false or s.isapi is null)")
+    public List<String> getAllUpdateUserName();
+
+    @Select("select username from users where userid in " +
+            "(select distinct s.update_user_id from data_source s where s.isapi=true)")
+    public List<String> getApiAllUpdateUserName();
+
     //更新数据源
     @Update("update data_source set " +
             "manager=#{managerUserId}," +
@@ -285,7 +431,15 @@ public interface DataSourceDAO {
             "where p.moduleid='14' and r.status=1 and u.valid=true ")
     public List<UserIdAndName> getManager();
 
-    //查询数据源名字
+    //查询数据源管理者
     @Select("select manager from data_source where source_id=#{sourceId}")
     public String getManagerBySourceId(@Param("sourceId") String sourceId);
+
+    //查询数据源是否是api数据源
+    @Select("select isapi from data_source where source_id=#{sourceId}")
+    public String getIsApi(@Param("sourceId") String sourceId);
+
+    //查询api数据源是否依赖
+    @Select("select count(*) from apiinfo where sourceId=#{sourceId}")
+    public int getAPIRely(@Param("sourceId") String sourceId);
 }
