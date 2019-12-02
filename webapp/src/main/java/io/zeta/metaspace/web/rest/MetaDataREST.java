@@ -449,14 +449,14 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}")
     public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
-        String roleId = "";
+        List<String> roleIds = null;
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            roleId = usersService.getRoleIdByUserId(userId);
+            roleIds = usersService.getRoleIdByUserId(userId);
         } catch (AtlasBaseException e) {
             LOG.error("获取当前用户的roleId出错", e);
         }
-        if (org.apache.commons.lang.StringUtils.isEmpty(roleId) || !roleId.equals("1")) {
+        if (roleIds==null || roleIds.size()==0 || !roleIds.contains("1")) {
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "增量同步元数据");
         }
         if (!importing.getAndSet(true)) {

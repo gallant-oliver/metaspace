@@ -308,7 +308,7 @@ public interface DataSourceDAO {
 
     //获取数据源未授权人
     @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
             "where p.moduleid='14' and r.status=1 and u.valid=true " +
             "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
             "<if test='query!=null'>" +
@@ -340,7 +340,7 @@ public interface DataSourceDAO {
 
     //获取数据源未授权人
     @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
             "where p.moduleid='14' and r.status=1 and u.valid=true " +
             "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId}) " +
             "<if test='query!=null'>" +
@@ -427,7 +427,7 @@ public interface DataSourceDAO {
 
     //获取可以成为数据源管理者的用户
     @Select("select count(*)over() totalSize,u.userid,u.username userName,u.account " +
-            "from privilege2module p join role r on p.privilegeid=r.privilegeid join users u on r.roleid=u.roleid " +
+            "from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
             "where p.moduleid='14' and r.status=1 and u.valid=true ")
     public List<UserIdAndName> getManager();
 

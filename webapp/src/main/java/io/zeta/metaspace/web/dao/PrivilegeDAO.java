@@ -113,7 +113,7 @@ public interface PrivilegeDAO {
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId=#{privilegeId})")
     public List<Module> getRelatedModuleWithPrivilege(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(*) from privilege2module where privilegeId = (select privilegeId from role where roleId = (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true) and moduleId=#{moduleId}")
+    @Select("select count(*) from privilege2module where privilegeId in (select privilegeId from role where roleId in (select user2role.roleId from users join user2role on user2role.userid=users.userid where users.userId=#{userId} and users.valid=true) and role.valid=true) and moduleId=#{moduleId}")
     public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
 
     @Select({" <script>",
@@ -124,5 +124,8 @@ public interface PrivilegeDAO {
              " offset #{offset}",
              " </script>"})
     public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);
+
+    @Select("select moduleid from module where modulename=#{moduleName}")
+    public String getModluleIdByModuleName(@Param("moduleName")String moduleName);
 
 }

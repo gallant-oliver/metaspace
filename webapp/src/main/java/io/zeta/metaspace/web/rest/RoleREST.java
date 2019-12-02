@@ -209,7 +209,7 @@ public class RoleREST {
         try {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",移除用户:[" + Joiner.on("、").join(users)+"]");
-            return roleService.removeUser(users);
+            return roleService.removeUser(roleId,users);
         }
         catch(AtlasBaseException e){
             throw e;

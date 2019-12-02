@@ -211,8 +211,8 @@ public class BusinessService {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if(roles.stream().allMatch(role -> role.getStatus() == 0))
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String userId = user.getUserId();
             boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_OPERATE.getCode()) == 0 ? false:true;
@@ -230,8 +230,8 @@ public class BusinessService {
     public TechnologyInfo getRelatedTableList(String businessId) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if(roles.stream().allMatch(role -> role.getStatus() == 0))
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
             String userId = user.getUserId();
 
@@ -318,17 +318,28 @@ public class BusinessService {
     public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if(roles.stream().allMatch(role -> role.getStatus() == 0))
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            String roleId = role.getRoleId();
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String businessName = parameters.getQuery();
             businessName = (businessName == null ? "":businessName);
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader> businessInfoList = null;
-            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+            List<String> categoryIds = new ArrayList<>();
+            for (Role role:roles){
+                if (role.getStatus() == 0){
+                    continue;
+                }
+                String roleId = role.getRoleId();
+                List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+                for (String categoryId  : category){
+                    if (!categoryIds.contains(categoryId)){
+                        categoryIds.add(categoryId);
+                    }
+                }
+            }
             if(Objects.isNull(categoryIds) || categoryIds.size()==0) {
                 return  pageResult;
             }
@@ -370,10 +381,9 @@ public class BusinessService {
     public PageResult<BusinessInfoHeader> getBusinessListByCondition(BusinessQueryParameter parameter) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if(role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if(roles.stream().allMatch(role -> role.getStatus() == 0))
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            String roleId = role.getRoleId();
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String status = parameter.getStatus();
             String ticketNumber = parameter.getTicketNumber();
@@ -386,7 +396,19 @@ public class BusinessService {
             int limit = parameter.getLimit();
             int offset = parameter.getOffset();
             Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
-            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+            List<String> categoryIds = new ArrayList<>();
+            for (Role role:roles){
+                if (role.getStatus() == 0){
+                    continue;
+                }
+                String roleId = role.getRoleId();
+                List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+                for (String categoryId  : category){
+                    if (!categoryIds.contains(categoryId)){
+                        categoryIds.add(categoryId);
+                    }
+                }
+            }
             if(Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
                 if(Objects.nonNull(businessName))
                     businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");

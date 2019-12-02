@@ -191,9 +191,9 @@ public class DataShareService {
         try {
             User userInfo = AdminUtils.getUserData();
             String userId = userInfo.getUserId();
-            String roleId = userInfo.getRoleId();
+            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && "1".equals(roleId)) {
+            if(!manage && (roleIds!=null&&roleIds.contains(SystemRole.ADMIN.getCode()))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
             return shareDAO.deleteAPIInfo(guid);
@@ -215,9 +215,9 @@ public class DataShareService {
         try {
             User userInfo = AdminUtils.getUserData();
             String userId = userInfo.getUserId();
-            String roleId = userInfo.getRoleId();
+            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && "1".equals(roleId)) {
+            if(!manage && (roleIds!=null&&roleIds.contains(SystemRole.ADMIN.getCode()))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
 
@@ -344,7 +344,7 @@ public class DataShareService {
             return true;
         }
         User user = userDAO.getUserInfo(userId);
-        if("1".equals(user.getRoleId())) {
+        if(user.getRoles()!=null && user.getRoles().contains("1")) {
             return true;
         }
         return false;
@@ -371,10 +371,9 @@ public class DataShareService {
                 tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             }
             String userId = AdminUtils.getUserData().getUserId();
-            User userInfo = userDAO.getUserInfo(userId);
-            String roleId = userInfo.getRoleId();
+            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
             boolean enableEditManager = false;
-            if(SystemRole.ADMIN.getCode().equals(roleId) || SystemRole.MANAGE.getCode().equals(roleId)) {
+            if(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))) {
                 enableEditManager = true;
             }
 

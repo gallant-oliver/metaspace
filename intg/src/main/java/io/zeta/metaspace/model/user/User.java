@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class User implements Serializable {
     private String userId;
     private String username;
     private String account;
-    private String roleId;
-    private String roleName;
+    private List<UserInfo.Role> roles;
     private int status;
     @JsonIgnore
     private int total;
@@ -37,12 +37,12 @@ public class User implements Serializable {
         this.status = status;
     }
 
-    public String getRoleName() {
-        return roleName;
+    public List<UserInfo.Role> getRoles() {
+        return roles;
     }
 
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
+    public void setRoles(List<UserInfo.Role> roles) {
+        this.roles = roles;
     }
 
     public String getUserId() {
@@ -67,14 +67,6 @@ public class User implements Serializable {
 
     public void setAccount(String account) {
         this.account = account;
-    }
-
-    public String getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(String roleId) {
-        this.roleId = roleId;
     }
 
     public Timestamp getCreateTime() {

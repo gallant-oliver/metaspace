@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Item {
     private List<Module> modules;
-    private Role role;
+    private List<Role> roles;
 
     public List<Module> getModules() {
         return modules;
@@ -17,11 +17,11 @@ public class Item {
         this.modules = modules;
     }
 
-    public Role getRole() {
-        return role;
+    public List<Role> getRoles() {
+        return roles;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
     }
 }

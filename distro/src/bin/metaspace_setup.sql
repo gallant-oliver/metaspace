@@ -766,14 +766,12 @@ DROP TABLE IF EXISTS "public"."users";
 CREATE TABLE "public"."users" (
   "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
 COMMENT ON COLUMN "public"."users"."username" IS '用户名';
 COMMENT ON COLUMN "public"."users"."account" IS '用户账号';
-COMMENT ON COLUMN "public"."users"."roleid" IS '用户角色id';
 
 -- ----------------------------
 -- Primary Key structure for table apigroup
@@ -1951,7 +1949,21 @@ CREATE TABLE "public"."data_standard2data_quality_rule" (
 -- ----------------------------
 ALTER TABLE "public"."data_standard2data_quality_rule" ADD CONSTRAINT "data_standard2data_quality_rule_pkey" PRIMARY KEY ("number", "ruleid");
 
-<<<<<<< HEAD
+-- ----------------------------
+-- Table structure for user2role
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user2role";
+CREATE TABLE "public"."user2role" (
+  "userid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "roleid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table user2role
+-- ----------------------------
+ALTER TABLE "public"."user2role" ADD CONSTRAINT "user2role_pkey" PRIMARY KEY ("userid", "roleid");
+
 -- ----------------------------
 -- Table structure for data_source_api_authorize
 -- ----------------------------
@@ -1962,11 +1974,9 @@ CREATE TABLE "public"."data_source_api_authorize" (
 )
 ;
 
--- ----------------------------
 -- Primary Key structure for table data_source_api_authorize
 -- ----------------------------
 ALTER TABLE "public"."data_source_api_authorize" ADD CONSTRAINT "data_source_api_authorize_pkey" PRIMARY KEY ("source_id", "authorize_user_id");
-
 
 -- ----------------------------
 -- Table structure for table_metadata_history
@@ -2028,4 +2038,3 @@ COMMENT ON COLUMN "public"."column_metadata_history"."partition_field" IS '是�
 -- Primary Key structure for table column_metadata_history
 -- ----------------------------
 ALTER TABLE "public"."column_metadata_history" ADD CONSTRAINT "column_metadata_history_pkey" PRIMARY KEY ("guid", "version");
-

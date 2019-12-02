@@ -28,11 +28,13 @@ import io.zeta.metaspace.model.dataSource.DataSourceCheckMessage;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
@@ -94,6 +96,8 @@ public class DataSourceService {
     private MysqlMetaDataProvider mysqlMetaDataProvider;
     @Autowired
     private AtlasTypeRegistry atlasTypeRegistry;
+    @Autowired
+    private PrivilegeDAO privilegeDAO;
 
 
     private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -417,9 +421,9 @@ public class DataSourceService {
                 dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
             String userId = AdminUtils.getUserData().getUserId();
 
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            List<DataSourceHead> list = null;
-            if (SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId)){
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            List<DataSourceHead> list = new ArrayList<>();
+            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
                 list = isApi?dataSourceDAO.searchApiAllDataSources(parameters,dataSourceSearch):dataSourceDAO.searchAllDataSources(parameters,dataSourceSearch);
             }else{
                 list = isApi?dataSourceDAO.searchApiDataSources(parameters,dataSourceSearch,userId):dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
@@ -429,7 +433,7 @@ public class DataSourceService {
                     String manager = userDAO.getUserName(head.getManager());
                     head.setManager(manager);
                 }
-                head.setEditManager(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId));
+                head.setEditManager(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode())));
                 String sourceId = head.getSourceId();
                 boolean rely;
                 if (isApi){
@@ -548,8 +552,8 @@ public class DataSourceService {
      * @return
      */
     public boolean isManagerUserId(String sourceId,String userId){
-        String roleId = roleDAO.getRoleIdByUserId(userId);
-        if (SystemRole.ADMIN.getCode().equals(roleId)||"3".equals(roleId)){
+        List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+        if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
             return true;
         }
         return dataSourceDAO.isManagerUser(sourceId,userId)!=0;
@@ -558,8 +562,8 @@ public class DataSourceService {
     public boolean isAuthorizeUser(String sourceId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = userDAO.getRoleIdByUserId(userId);
-            if (SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId)){
+            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
+            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
                 return true;
             }
             return dataSourceDAO.isAuthorizeUser(sourceId,userId)!=0;
@@ -979,8 +983,8 @@ public class DataSourceService {
     public List<String> getUpdateUserName(boolean isApi) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId)){
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
                 return dataSourceDAO.getAllUpdateUserName();
             }
             return isApi?dataSourceDAO.getApiUpdateUserName(userId):dataSourceDAO.getUpdateUserName(userId);
@@ -993,11 +997,12 @@ public class DataSourceService {
     public void updateManager(String sourceId,String managerUserId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (!(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId))){
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            List<String> managerRoleIds = roleDAO.getRoleIdByUserId(managerUserId);
+            if (!(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode())))){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非平台管理员和管理员无法更改数据源管理者");
             }
-            if (StringUtils.isEmpty(roleDAO.getRoleIdByUserId(managerUserId))){
+            if (managerRoleIds==null||managerRoleIds.size()==0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无角色或删除用户无法成为管理者");
             }
 
@@ -1032,8 +1037,8 @@ public class DataSourceService {
     public List<UserIdAndName> getManager() throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (!(SystemRole.ADMIN.getCode().equals(roleId)||SystemRole.MANAGE.getCode().equals(roleId))){
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            if (!(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode())))){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非平台管理员和管理员无法更改数据源管理者");
             }
             return dataSourceDAO.getManager();

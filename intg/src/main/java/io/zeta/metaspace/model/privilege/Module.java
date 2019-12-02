@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.privilege;
 
+import io.zeta.metaspace.model.user.UserInfo;
+
 /*
  * @description
  * @author sunhaoning
@@ -49,4 +51,14 @@ public class Module {
     public void setType(int type) {
         this.type = type;
     }
+
+    public Module() {
+    }
+
+    public Module(UserInfo.Module module) {
+        this.moduleId = module.getModuleId();
+        this.moduleName = module.getModuleName();
+        this.type = module.getType();
+    }
+
 }
