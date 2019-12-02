@@ -10,8 +10,17 @@ public class MetaspaceConfig {
     private static String[] hiveUrlArr;
     private static String hbaseConf;
     private static String impalaUrl;
-
+    private static String hiveJobQueueName;
+    private static String impalaResourcePool;
     private static String hiveConfig;
+
+    public static String getHiveJobQueueName() {
+        return hiveJobQueueName;
+    }
+
+    public static String getImpalaResourcePool() {
+        return impalaResourcePool;
+    }
 
     public static String getHiveConfig() {
         return hiveConfig;
@@ -33,6 +42,8 @@ public class MetaspaceConfig {
     static {
         try {
             conf = ApplicationProperties.get();
+            impalaResourcePool = conf.getString("metaspace.impala.resource.pool");
+            hiveJobQueueName = conf.getString("metaspace.hive.queue");
             hiveUrlArr = conf.getStringArray("metaspace.hive.url");
             hbaseConf = conf.getString("metaspace.hbase.conf");
             impalaUrl = conf.getString("metaspace.impala.url");

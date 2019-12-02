@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Properties;
 
 /*
  * @description
@@ -39,11 +40,13 @@ public class ImpalaJdbcUtils {
     private static String driverClassName = "com.cloudera.impala.jdbc41.Driver";
     private static String impalaUrl = "";
     private static String krbStr = "";
+    private static String impalaResourcePool = "metaspace";
 
     static {
         try {
             Class.forName(driverClassName);
             impalaUrl = MetaspaceConfig.getImpalaConf();
+            impalaResourcePool = MetaspaceConfig.getImpalaResourcePool()==null?"metaspace":MetaspaceConfig.getImpalaResourcePool();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -54,13 +57,15 @@ public class ImpalaJdbcUtils {
         Connection connection = null;
         String user = AdminUtils.getUserName();
         String jdbcUrl;
+        Properties properties = new Properties();
+        properties.setProperty("REQUEST_POOL",impalaResourcePool);
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
+            connection = DriverManager.getConnection(jdbcUrl,properties);
         } else {
             jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
+            connection = DriverManager.getConnection(jdbcUrl,properties);
         }
         return connection;
     }
@@ -72,14 +77,16 @@ public class ImpalaJdbcUtils {
     public static Connection getSystemConnection(String db) throws SQLException {
         String user = "hive";
         String jdbcUrl;
+        Properties properties = new Properties();
+        properties.setProperty("REQUEST_POOL",impalaResourcePool);
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;
             LOG.info("Impala Jdbc:" + jdbcUrl);
-            connection = DriverManager.getConnection(jdbcUrl);
+            connection = DriverManager.getConnection(jdbcUrl,properties);
         } else {
             jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
-            connection = DriverManager.getConnection(jdbcUrl);
+            connection = DriverManager.getConnection(jdbcUrl,properties);
         }
         return connection;
     }

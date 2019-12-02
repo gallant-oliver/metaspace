@@ -40,6 +40,7 @@ public class HiveJdbcUtils {
     private static String[] hiveUrlArr ;
     private static String hivePrincipal = "";
     private static String hiveUrlPrefix = "jdbc:hive2://";
+    private static String hiveJobQueuName;
     private static Queue<String> hiveUrlQueue = new LinkedList<>();
 
 
@@ -54,6 +55,7 @@ public class HiveJdbcUtils {
             if(hiveUrlArr != null && hiveUrlArr.length > 0) {
                 hiveUrlQueue.addAll(Arrays.asList(hiveUrlArr));
             }
+            hiveJobQueuName = MetaspaceConfig.getHiveJobQueueName()==null?"metaspce":MetaspaceConfig.getHiveJobQueueName();
             hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -73,7 +75,10 @@ public class HiveJdbcUtils {
                         jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
                     }
                     LOG.info("hive jdbc url:" + jdbcUrl);
-                    connection = DriverManager.getConnection(jdbcUrl);
+                    Properties properties = new Properties();
+                    properties.setProperty("hiveconf:tez.queue.name",hiveJobQueuName);
+                    properties.setProperty("hiveconf:mapreduce.job.queuename",hiveJobQueuName);
+                    connection = DriverManager.getConnection(jdbcUrl,properties);
                     return connection;
                 } catch (Exception e) {
                     String badUrl = hiveUrlQueue.remove();
