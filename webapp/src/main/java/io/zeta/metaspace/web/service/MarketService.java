@@ -75,6 +75,8 @@ public class MarketService {
     UserDAO userDao;
     @Autowired
     ColumnDAO columnDAO;
+    @Autowired
+    DataShareService shareService;
 
 
     /**
@@ -247,69 +249,9 @@ public class MarketService {
      */
     public APIInfo getAPIInfo(String guid) throws AtlasBaseException {
         try {
-            APIInfo info = shareDao.getAPIInfoByGuid(guid);
-            String tableGuid = info.getTableGuid();
-            String tableDisplayName = columnDAO.getTableDisplayInfoByGuid(tableGuid);
-            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
-                info.setTableDisplayName(info.getTableName());
-            } else {
-                info.setTableDisplayName(tableDisplayName);
-            }
-            if(Objects.isNull(info)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
-            }
-            String version = info.getVersion();
-            String path = info.getPath();
-            StringJoiner pathJoiner = new StringJoiner("/");
-            pathJoiner.add("api").add(version).add("share").add(path);
-            info.setPath("/" + pathJoiner.toString());
-            List<APIInfo.Field> fields = getQueryFileds(guid);
-            //owner.name
-            List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(info.getTableGuid());
-            List<String> dataOwnerName = new ArrayList<>();
-            if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
-                dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
-            }
-            info.setDataOwner(dataOwnerName);
-
-            List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
-            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
-            Map<String, String> columnName2DisplayMap = new HashMap();
-            columnList.forEach(column -> {
-                String columnName = column.getColumnName();
-                String columnDisplay = column.getDisplayName();
-                if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
-                    columnName2DisplayMap.put(columnName, columnName);
-                } else {
-                    columnName2DisplayMap.put(columnName, columnDisplay);
-                }
-            });
-            for(APIInfo.Field field : fields) {
-                APIInfo.FieldWithDisplay fieldWithDisplay = new APIInfo.FieldWithDisplay();
-                fieldWithDisplay.setFieldInfo(field);
-                String displayName = columnName2DisplayMap.get(field.getColumnName());
-                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
-                    fieldWithDisplay.setDisplayName(field.getColumnName());
-                } else {
-                    fieldWithDisplay.setDisplayName(displayName);
-                }
-                fieldsWithDisplay.add(fieldWithDisplay);
-            }
-
-            info.setFields(fieldsWithDisplay);
-
+            APIInfo info = shareService.getAPIInfo(guid);
             info.setStar(false);
             info.setEdit(false);
-            //keeper
-            String keeperGuid = info.getKeeper();
-            User keeperUser = userDao.getUser(keeperGuid);
-            String keeper = keeperUser.getUsername();
-            info.setKeeper(keeper);
-            //updater
-            String updaterGuid = info.getUpdater();
-            User updaterUser = userDao.getUser(updaterGuid);
-            String updater = updaterUser.getUsername();
-            info.setUpdater(updater);
             return info;
         } catch (AtlasBaseException e) {
             LOG.error(e.getMessage());
@@ -317,21 +259,6 @@ public class MarketService {
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取信息失败");
-        }
-    }
-
-    public List<APIInfo.Field> getQueryFileds(String guid) throws AtlasBaseException {
-        try {
-            Gson gson = new Gson();
-            Object fields = shareDao.getQueryFiledsByGuid(guid);
-            PGobject pGobject = (PGobject)fields;
-            String value = pGobject.getValue();
-            Type type = new  TypeToken<List<APIInfo.Field>>(){}.getType();
-            List<APIInfo.Field> values = gson.fromJson(value, type);
-            return values;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 }
