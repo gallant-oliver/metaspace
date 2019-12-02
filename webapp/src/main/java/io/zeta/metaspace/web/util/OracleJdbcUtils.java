@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.util;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,8 @@ import java.sql.Statement;
 
 public class OracleJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(OracleJdbcUtils.class);
-    private static final String SCHEMA_NAME = "SELECT USERNAME AS \"schemaName\" FROM DBA_USERS WHERE 1=1";
+    private static final String SCHEMA_NAME = "SELECT USERNAME AS \"schemaName\" FROM DBA_USERS";
+    private static final String SQL_FILL = " 1=1 ";
     private static final String SCHEMA_COUNT = "SELECT COUNT(*) FROM DBA_USERS";
     private static final String TABLE_NAME = "SELECT TABLE_NAME AS \"tableName\" FROM ALL_TABLES WHERE OWNER='%s'";
     private static final String TABLE_COUNT = "SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER='%s'";
@@ -27,7 +29,9 @@ public class OracleJdbcUtils {
 
     public static ResultSet getSchemaList(Connection conn, long limit, long offset) throws AtlasBaseException {
         try {
-            String sql = buildQuerySql(SCHEMA_NAME, limit, offset);
+            StringBuilder sb = new StringBuilder();
+            sb.append(SCHEMA_NAME).append(WHERE).append(SQL_FILL);
+            String sql = buildQuerySql(sb.toString(), limit, offset);
             return query(conn, sql);
         } catch (AtlasBaseException e) {
             throw e;
@@ -83,9 +87,11 @@ public class OracleJdbcUtils {
             String dbAndTableName = "\"" + dbName + "\"" + "." + "\"" + tableName + "\"";
             String queryStr = String.format(QUERY, queryFields, dbAndTableName);
             sqlBuilder.append(queryStr);
-            if (filterFields != null) {
-                sqlBuilder.append(WHERE);
+            sqlBuilder.append(WHERE);
+            if (StringUtils.isNotEmpty(filterFields)) {
                 sqlBuilder.append(filterFields);
+            } else {
+                sqlBuilder.append(SQL_FILL);
             }
             String sql = buildQuerySql(sqlBuilder.toString(), limit, offset);
             return sql;

@@ -19,6 +19,7 @@ import io.zeta.metaspace.KerberosConfig;
 import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.TableMetadata;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileChecksum;
@@ -46,6 +47,7 @@ public class HiveJdbcUtils {
 
     private static final String QUERY = "SELECT %s,count(*) over() as count FROM %s";
     private static final String WHERE = " WHERE ";
+    private static final String ORDER = " ORDER BY 1 ";
     private static final String LIMIT = " LIMIT %d OFFSET %d ";
 
     static {
@@ -249,7 +251,7 @@ public class HiveJdbcUtils {
             StringBuilder sqlBuilder = new StringBuilder();
             String queryStr = String.format(QUERY, queryFields, tableName);
             sqlBuilder.append(queryStr);
-            if (filterFields != null) {
+            if (StringUtils.isNotEmpty(filterFields)) {
                 sqlBuilder.append(WHERE);
                 sqlBuilder.append(filterFields);
             }
@@ -267,6 +269,7 @@ public class HiveJdbcUtils {
         if(limit == -1) {
             return sqlBuilder.toString();
         }
+        sqlBuilder.append(ORDER);
         sqlBuilder.append(String.format(LIMIT, limit, offset));
         return sqlBuilder.toString();
     }

@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -60,14 +61,24 @@ public interface DataShareDAO {
              " </script>"})
     public int updateAPIInfo(APIInfo info);
 
-    @Select("select apiInfo.*,tableInfo.tableName,tableInfo.dbName,apiGroup.name as groupName from apiInfo,tableInfo,apiGroup where apiInfo.guid=#{guid} and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid")
+    @Select({" <script>",
+            " select apiInfo.*,apiGroup.name as groupName from apiInfo",
+            " join apiGroup on apiInfo.groupGuid = apiGroup.guid",
+            " where apiInfo.guid=#{guid}",
+            " </script>"})
     public APIInfo getAPIInfoByGuid(@Param("guid")String guid);
 
     @Select({" <script>",
+            " select tableName,dbName as databaseName,display_name as displayName from tableInfo ",
+            " where tableGuid=#{guid}",
+            " </script>"})
+    public Table getTableByGuid(@Param("guid")String guid);
+
+    @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
-             " tableInfo.tableName,apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
-             " from apiInfo,tableInfo,apiGroup where",
-             " apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
+             " apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
+             " from apiInfo,apiGroup where",
+             " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",

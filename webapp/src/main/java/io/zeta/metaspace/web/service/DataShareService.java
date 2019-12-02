@@ -39,10 +39,7 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.DataOwnerHeader;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.SystemRole;
@@ -262,13 +259,38 @@ public class DataShareService {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             APIInfo info = shareDAO.getAPIInfoByGuid(guid);
-            String tableGuid = info.getTableGuid();
-            String tableDisplayName = columnDAO.getTableDisplayInfoByGuid(tableGuid);
-            if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+            APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
+            Map<String, String> columnName2DisplayMap = new HashMap();
+            if(sourceType == APIInfo.SourceType.ORACLE) {
                 info.setTableDisplayName(info.getTableName());
+            } else if(sourceType == APIInfo.SourceType.HIVE) {
+                String tableGuid = info.getTableGuid();
+                Table table = shareDAO.getTableByGuid(tableGuid);
+                info.setTableName(table.getTableName());
+                info.setDbName(table.getDatabaseName());
+                info.setTableDisplayName(StringUtils.isNotEmpty(table.getDisplayName()) ? table.getDisplayName() : table.getTableName());
+                String tableDisplayName = columnDAO.getTableDisplayInfoByGuid(tableGuid);
+                if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+                    info.setTableDisplayName(info.getTableName());
+                } else {
+                    info.setTableDisplayName(tableDisplayName);
+                }
+
+                List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
+                columnList.forEach(column -> {
+                    String columnName = column.getColumnName();
+                    String columnDisplay = column.getDisplayName();
+                    if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
+                        columnName2DisplayMap.put(columnName, columnName);
+                    } else {
+                        columnName2DisplayMap.put(columnName, columnDisplay);
+                    }
+                });
+
             } else {
-                info.setTableDisplayName(tableDisplayName);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源类型异常");
             }
+
             if(Objects.isNull(info)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到API信息");
             }
@@ -285,31 +307,18 @@ public class DataShareService {
                 dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
             }
             info.setDataOwner(dataOwnerName);
-
             List<APIInfo.Field> fieldsWithDisplay = new ArrayList<>();
-            List<Column> columnList = columnDAO.getColumnNameWithDisplayList(info.getTableGuid());
-            Map<String, String> columnName2DisplayMap = new HashMap();
-            columnList.forEach(column -> {
-                String columnName = column.getColumnName();
-                String columnDisplay = column.getDisplayName();
-                if(Objects.isNull(columnDisplay) || "".equals(columnDisplay.trim())) {
-                    columnName2DisplayMap.put(columnName, columnName);
-                } else {
-                    columnName2DisplayMap.put(columnName, columnDisplay);
-                }
-            });
             for(APIInfo.Field field : fields) {
                 APIInfo.FieldWithDisplay fieldWithDisplay = new APIInfo.FieldWithDisplay();
                 fieldWithDisplay.setFieldInfo(field);
-                String displayName = columnName2DisplayMap.get(field.getColumnName());
-                if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
-                    fieldWithDisplay.setDisplayName(field.getColumnName());
-                } else {
-                    fieldWithDisplay.setDisplayName(displayName);
+                String displayName = field.getColumnName();
+                if(sourceType == APIInfo.SourceType.HIVE) {
+                    String name = columnName2DisplayMap.get(field.getColumnName());
+                    displayName = StringUtils.isEmpty(name) ? displayName : name;
                 }
+                fieldWithDisplay.setDisplayName(displayName);
                 fieldsWithDisplay.add(fieldWithDisplay);
             }
-
             info.setFields(fieldsWithDisplay);
             int count = shareDAO.getStarCount(userId, guid);
             if(count > 0) {
@@ -584,6 +593,14 @@ public class DataShareService {
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
             APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
+            APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
+            if(sourceType == APIInfo.SourceType.HIVE) {
+                String tableGuid = info.getTableGuid();
+                Table table = shareDAO.getTableByGuid(tableGuid);
+                info.setTableName(table.getTableName());
+                info.setDbName(table.getDatabaseName());
+                info.setTableDisplayName(StringUtils.isNotEmpty(table.getDisplayName()) ? table.getDisplayName() : table.getTableName());
+            }
             String tableGuid = info.getTableGuid();
             String api_name = info.getName();
             String api_desc = info.getDescription();
@@ -1039,7 +1056,7 @@ public class DataShareService {
     public Map getOracleQueryResult(String sourceId, String querySql, String countSql) throws AtlasBaseException {
         Map resultMap = new HashMap();
         try {
-            Connection conn = getOracleDataSourceConnection(sourceId);
+            Connection conn = dataSourceService.getConnection(sourceId);
             ResultSet resultSet = OracleJdbcUtils.query(conn, querySql);
             List<LinkedHashMap> result = extractResultSetData(resultSet);
             resultMap.put("queryResult", result);
@@ -1389,44 +1406,6 @@ public class DataShareService {
         }
     }
 
-    public Connection getOracleDataSourceConnection(String sourceId) throws AtlasBaseException {
-        DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
-        String password;
-        if (dataSourceConnection.getPassword()==null){
-            if (dataSourceConnection.getAesPassword()!=null) {
-                password = AESUtils.AESDecode(dataSourceConnection.getAesPassword());
-                dataSourceConnection.setPassword(password);
-            }else{
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");
-            }
-        }
-        dataSourceConnection.setUrl();
-        dataSourceConnection.setDriver();
-
-        try {
-            Class.forName(dataSourceConnection.getDriver());
-            Properties properties = new Properties();
-            if (dataSourceConnection.getUserName() != null) {
-                properties.put("user", dataSourceConnection.getUserName());
-            }
-            if (dataSourceConnection.getPassword() != null) {
-                properties.put("password", dataSourceConnection.getPassword());
-            }
-            if (StringUtils.isNotEmpty(dataSourceConnection.getJdbcParameter())) {
-                for (String str : dataSourceConnection.getJdbcParameter().split("&")) {
-                    String[] strings = str.split("=");
-                    if (strings.length == 2) {
-                        properties.put(strings[0], strings[1]);
-                    }
-                }
-            }
-            Connection conn = DriverManager.getConnection(dataSourceConnection.getUrl(), properties);
-            return conn;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取Oracle连接失败");
-        }
-    }
-
     public PageResult getOracleDataSourceList(Parameters parameters) throws AtlasBaseException {
         return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null,true);
     }
@@ -1437,7 +1416,7 @@ public class DataShareService {
         ResultSet countSet = null;
         List<LinkedHashMap> result = null;
         try {
-            Connection conn = getOracleDataSourceConnection(sourceId);
+            Connection conn = dataSourceService.getConnection(sourceId);
             switch (searchType) {
                 case SCHEMA: {
                     dataSet = OracleJdbcUtils.getSchemaList(conn, parameters.getLimit(), parameters.getOffset());
