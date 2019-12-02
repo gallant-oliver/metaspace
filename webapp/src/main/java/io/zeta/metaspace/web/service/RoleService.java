@@ -598,6 +598,7 @@ public class RoleService {
                 if (privilegeinfo.isEdit()){
                     privilegeinfo.setEditSafe(true);
                 }
+                privilegeinfo.setEdit(false);
             }
             //技术目录一级目录不允许删关联
             if (categorytype == 0 && category.getLevel() == 1) {
