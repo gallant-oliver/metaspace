@@ -27,10 +27,10 @@ public interface RoleDAO {
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select({"<script>",
-            " select count(*)over() total,userid,username,account,users.roleid,rolename",
-            " from users,role",
-            " where role.roleid=users.roleid",
-            " and users.roleid=#{roleId}",
+             " select count(*)over() total,users.userid,users.username,users.account ",
+             " from users,role,user2role",
+             " where role.roleid=user2role.roleid and users.userid=user2role.userid",
+             " and user2role.roleid=#{roleId}",
             " and users.valid=true and role.valid=true",
             " <if test=\"query != null and query!=''\">",
             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
@@ -57,8 +57,8 @@ public interface RoleDAO {
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",
-            " select count(*)over() total,role.*,privilegename,(select count(1)",
-            " from users where users.roleid=role.roleid and users.valid=true) members",
+             " select count(*)over() total,role.*,privilegename,(select count(1) " +
+             " from users join user2role on users.userid=user2role.userid where user2role.roleid=role.roleid and users.valid=true) members",
             " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
             " and role.valid=true",
             " <if test='contain == false'>",
@@ -86,13 +86,49 @@ public interface RoleDAO {
     public long getRolesCount(@Param("query") String query, @Param("contain") boolean contain);
 
     //添加成员&更换一批人的角色
-    @Update({"<script>update users set roleid=#{roleId},valid=#{valid},update_time=#{updateTime} where userid in",
-            "<foreach item='item' index='index' collection='userIds'",
+    @Update({"<script>update users set valid=#{valid},update_time=#{updateTime} where userid in",
+             "<foreach item='item' index='index' collection='userIds'",
             "open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
             "</script>"})
-    public int updateUsers(@Param("roleId") String roleId, @Param("userIds") List<String> userIds, @Param("valid") Boolean valid, @Param("updateTime") Timestamp updateTime);
+    public int updateUsers( @Param("userIds") List<String> userIds, @Param("valid") Boolean valid, @Param("updateTime") Timestamp updateTime);
+
+    @Insert({"<script>insert into user2role values ",
+             "<foreach item='item' index='index' collection='userIds'",
+             "open='(' separator='),(' close=')'>",
+             "#{item},#{roleId}",
+             "</foreach>",
+             "</script>"})
+    public int addUsers2Role(@Param("roleId") String roleId, @Param("userIds") List<String> userIds);
+
+    @Delete("delete from user2role where roleid=#{roleId}")
+    public int deleteUser2Role(@Param("roleId")String roleId);
+
+    @Delete("delete from user2role where roleid=#{roleId} and userid=#{userId}")
+    public int deleteUser2RoleByUser(@Param("userId")String userId,@Param("roleId")String roleId);
+
+    @Delete({"<script> " +
+             "delete from user2role where userid in " +
+             "<foreach item='item' index='index' collection='userIds'",
+             "open='(' separator=',' close=')'>",
+             "#{item}",
+             "</foreach>" +
+             "</script>"})
+    public int deleteUser2RoleByUsers(@Param("userIds")List<String> userIds);
+
+    @Select("select count(roleid) from user2role where userid=#{userId}")
+    public int getCountByUser(@Param("userId")String userId);
+
+    @Select("select count(*) from user2role where userid=#{userId} and roleid=#{roleId}")
+    public int getCountByUserAndRole(@Param("userId")String userId,@Param("roleId")String roleId);
+
+    @Select("<script> select distinct(userid) from user2role join users on user2role.userid=users.userid where users.valid=true" +
+            " <if test='roleId != null'>" +
+            " and user2role.roleid=#{roleId}" +
+            " </if>" +
+            "</script>")
+    public List<String> getUserIdsByRoleId(@Param("roleId")String roleId);
 
     //添加成员&更换一个角色的成员的角色
     @Update("update users set roleid=#{roleId},valid=#{valid},update_time=#{updateTime} where userid in (select userid from users where roleid=#{oldRoleId} and users.valid=true)")
@@ -118,8 +154,8 @@ public interface RoleDAO {
     public int addRole2category(@Param("roleId") String roleId, @Param("categoryId") String categoryId, @Param("operation") int operation);
 
     //根据userid查roleid
-    @Select("select roleid from users where userid=#{userId} and valid=true")
-    public String getRoleIdByUserId(String userId);
+    @Select("select r.roleid from users u join user2role r on r.userid=u.userid where u.userid=#{userId} and u.valid=true")
+    public List<String> getRoleIdByUserId(String userId);
 
     //递归找子节点
     @Select("<script>WITH RECURSIVE categoryTree AS " +
@@ -223,8 +259,8 @@ public interface RoleDAO {
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
 
 
-    @Select("select role.* from users,role where users.roleid=role.roleid and userId=#{userId} and role.valid=true and users.valid=true")
-    public Role getRoleByUsersId(String userId);
+    @Select("select role.* from user2role,role,users where user2role.roleid=role.roleid and users.userid=user2role.userid and user2role.userId=#{userId} and role.valid=true and users.valid=true")
+    public List<Role> getRoleByUsersId(String userId);
 
     @Select("select * from role where roleid=#{roleId} and valid=true")
     public Role getRoleByRoleId(String roleId);

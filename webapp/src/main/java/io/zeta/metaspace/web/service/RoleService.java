@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -119,9 +120,22 @@ public class RoleService {
         //roleDAO.deleteRole(roleId);
         //删除更新状态
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        List<User> users = roleDAO.getUsers(roleId,null,0,-1);
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsersByRoleId(SystemRole.GUEST.getCode(),true, roleId, timestamp);
+        roleDAO.updateUsers(users.stream().map(user1 -> user1.getUserId()).collect(Collectors.toList()), true, timestamp);
+        List<String> updateUserIds = new ArrayList<>();
+        for (User updateUser:users ){
+            if (roleDAO.getCountByUserAndRole(updateUser.getUserId(),SystemRole.GUEST.getCode())==0){
+                updateUserIds.add(updateUser.getUserId());
+            }
+        }
+        roleDAO.deleteUser2Role(roleId);
+        if (updateUserIds!=null){
+            roleDAO.addUsers2Role(SystemRole.GUEST.getCode(), updateUserIds);
+            roleDAO.updateUsers(updateUserIds,true,timestamp);
+        }
+
         return "success";
     }
 
@@ -138,6 +152,10 @@ public class RoleService {
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
+            for (User user : users){
+                List<UserInfo.Role> roles =  userDAO.getRolesByUser(user.getUserId());
+                user.setRoles(roles);
+            }
             //}
             //long usersTotalSize = roleDAO.getUsersCount(roleId, query);
             long usersTotalSize = 0;
@@ -210,16 +228,23 @@ public class RoleService {
         }
     }
 
+    @Transactional
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
+        List<String> updateUsers = new ArrayList<>();
         for (String user : users) {
-            String role = usersService.getRoleIdByUserId(user);
-            if (role.equals("1")) {
+            List<String> roles = usersService.getRoleIdByUserId(user);
+            if (roles.contains(SystemRole.ADMIN.getCode())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+            }
+            if (!roles.contains(roleId)&&!updateUsers.contains(user)){
+                updateUsers.add(user);
             }
         }
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        if (users.size() > 0)
-            roleDAO.updateUsers(roleId, users, true, timestamp);
+        if (updateUsers.size() > 0) {
+            roleDAO.addUsers2Role(roleId, updateUsers);
+            roleDAO.updateUsers(updateUsers, true, timestamp);
+        }
         return "success";
     }
 
@@ -227,48 +252,53 @@ public class RoleService {
     public void addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
         for(UserWithRole userWithRole: userWithRoleList) {
             List<String> roleIds = userWithRole.getRoleId();
-            if(Objects.nonNull(roleIds) && roleIds.size() > 1) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
-            } else if(Objects.nonNull(roleIds) && roleIds.size() == 0) {
+            if(Objects.isNull(roleIds) || roleIds.size() == 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
             }
-            String roleId = roleIds.get(0);
-            Role role = roleDAO.getRoleByRoleId(roleId);
-            if(Objects.isNull(role) || !role.isValid()) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
-            }
-            if("1".equals(roleId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改用户角色为平台管理员");
-            }
-            int status = role.getStatus();
-            if(0 == status) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
-            }
-            List<String> users = userWithRole.getUserIds();
-            List<String> userIds = new ArrayList<>();
-            for (String userId : users) {
-                if (Objects.isNull(userId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户Id不能为空");
+            for (String roleId:roleIds){
+                Role role = roleDAO.getRoleByRoleId(roleId);
+                if(Objects.isNull(role) || !role.isValid()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
                 }
-                User userInfo = userDAO.getUserInfo(userId);
-                if (Objects.isNull(userInfo)) {
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    User user = new User();
-                    user.setUserId(userId);
-                    user.setRoleId(roleId);
-                    user.setValid(true);
-                    user.setCreateTime(timestamp);
-                    user.setUpdateTime(timestamp);
-                    userDAO.addUser(user);
-                } else if ("1".equals(userInfo.getRoleId())) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, userId + "为平台管理员，不允许修改平台管理员用户");
-                } else {
-                    userIds.add(userId);
+                if("1".equals(roleId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改用户角色为平台管理员");
                 }
-            }
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            if (userIds.size() > 0) {
-                roleDAO.updateUsers(roleId, userIds, true, timestamp);
+                int status = role.getStatus();
+                if(0 == status) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
+                }
+                List<String> users = userWithRole.getUserIds();
+                List<String> userIds = new ArrayList<>();
+                List<User> role2User = roleDAO.getUsers(roleId,null,0,-1);
+                for (String userId : users) {
+                    if (Objects.isNull(userId)) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户Id不能为空");
+                    }
+                    if (role2User.stream().anyMatch(user->user.getUserId().equals(userId))){
+                        continue;
+                    }
+                    User userInfo = userDAO.getUserInfo(userId);
+                    List<String> userRoleIds = userDAO.getRoleIdByUserId(userId);
+                    if (Objects.isNull(userInfo)) {
+                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                        User user = new User();
+                        user.setUserId(userId);
+                        user.setValid(true);
+                        user.setCreateTime(timestamp);
+                        user.setUpdateTime(timestamp);
+                        userDAO.addUser(user);
+                        userIds.add(userId);
+                    } else if (userRoleIds!=null && userRoleIds.contains(SystemRole.ADMIN.getCode())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, userId + "为平台管理员，不允许修改平台管理员用户");
+                    } else {
+                        userIds.add(userId);
+                    }
+                }
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                if (userIds.size() > 0) {
+                    roleDAO.addUsers2Role(roleId, userIds);
+                    roleDAO.updateUsers(userIds, true, timestamp);
+                }
             }
             //更新用户信息
             updateUserInfo();
@@ -276,16 +306,24 @@ public class RoleService {
     }
 
 
-    public String removeUser(List<String> users) throws AtlasBaseException {
+    @Transactional
+    public String removeUser(String roleId,List<String> users) throws AtlasBaseException {
+        List<String> deleteUsers = new ArrayList<>();
+        if (SystemRole.ADMIN.getCode().equals(roleId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+        }
         for (String user : users) {
-            String role = usersService.getRoleIdByUserId(user);
-            if (role.equals("1")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+            roleDAO.deleteUser2RoleByUser(user,roleId);
+            if (roleDAO.getCountByUser(user)==0){
+                deleteUsers.add(user);
             }
         }
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        if (users.size() > 0)
-            roleDAO.updateUsers(SystemRole.GUEST.getCode(), users, false, timestamp);
+        if (deleteUsers.size() > 0) {
+            roleDAO.deleteUser2RoleByUsers(deleteUsers);
+            addUsers(SystemRole.GUEST.getCode(),deleteUsers);
+            roleDAO.updateUsers(deleteUsers, false, timestamp);
+        }
         return "success";
     }
 
@@ -293,32 +331,36 @@ public class RoleService {
     public void removeUserRole(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
         for(UserWithRole userWithRole: userWithRoleList) {
             List<String> roleIds = userWithRole.getRoleId();
-            if (Objects.nonNull(roleIds) && roleIds.size() > 1) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "仅支持对用户赋予一个角色");
-            } else if (Objects.nonNull(roleIds) && roleIds.size() == 0) {
+            if (Objects.nonNull(roleIds) && roleIds.size() == 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户角色不能为空");
             }
-            String roleId = roleIds.get(0);
+            List<String> deleteUsers = new ArrayList<>();
+            for (String roleId:roleIds){
+                Role role = roleDAO.getRoleByRoleId(roleId);
+                if(Objects.isNull(role) || !role.isValid()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
+                }
+                int status = role.getStatus();
+                if(0 == status) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
+                }
 
-            Role role = roleDAO.getRoleByRoleId(roleId);
-            if(Objects.isNull(role) || !role.isValid()) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已删除");
-            }
-            int status = role.getStatus();
-            if(0 == status) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无法完成当前操作，用户角色 " + roleId +" 已被禁用");
-            }
-
-            List<String> users = userWithRole.getUserIds();
-            for (String userId : users) {
-                String realRoleId = usersService.getRoleIdByUserId(userId);
-                if (("1").equals(realRoleId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                List<String> users = userWithRole.getUserIds();
+                for (String userId : users) {
+                    List<String> realRoleId = usersService.getRoleIdByUserId(userId);
+                    if (realRoleId.contains(SystemRole.ADMIN.getCode())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许修改平台管理员用户");
+                    }
+                    roleDAO.deleteUser2RoleByUser(userId,roleId);
+                    if (roleDAO.getCountByUser(userId)==0&&!deleteUsers.contains(userId)){
+                        deleteUsers.add(userId);
+                    }
                 }
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            if (users.size() > 0) {
-                roleDAO.updateUsers(null, users, false, timestamp);
+            if (deleteUsers.size() > 0) {
+                addUsers(SystemRole.GUEST.getCode(),deleteUsers);
+                roleDAO.updateUsers(deleteUsers, false, timestamp);
             }
         }
     }
@@ -327,21 +369,22 @@ public class RoleService {
     public RoleModulesCategories getPrivileges(String roleId) throws AtlasBaseException {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
         User user = AdminUtils.getUserData();
-        Role role = roleDAO.getRoleByUsersId(user.getUserId());
-        if (role.getStatus() == 0)
+        List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
+        if(roles.stream().allMatch(role -> role.getStatus() == 0)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+        }
         String userId = user.getUserId();
-        String userRoleId = roleDAO.getRoleIdByUserId(userId);
+        List<String> userRoleIds = roleDAO.getRoleIdByUserId(userId);
 
         PrivilegeInfo privilege = roleDAO.getPrivilegeByRoleId(roleId);
         List<Module> modules = privilegeDAO.getRelatedModuleWithPrivilege(privilege.getPrivilegeId());
         privilege.setModules(modules);
 
         roleModulesCategories.setPrivilege(privilege);
-        List<RoleModulesCategories.Category> bcategorys = getCategorys(roleId, userRoleId, 1);
+        List<RoleModulesCategories.Category> bcategorys = getCategorys(roleId, userRoleIds, 1);
 
         roleModulesCategories.setBusinessCategories(bcategorys);
-        List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleId, 0);
+        List<RoleModulesCategories.Category> tcategorys = getCategorys(roleId, userRoleIds, 0);
         roleModulesCategories.setTechnicalCategories(tcategorys);
         Role roleByRoleId = roleDAO.getRoleByRoleId(roleId);
         roleModulesCategories.setEdit(roleByRoleId.getEdit());
@@ -349,11 +392,25 @@ public class RoleService {
     }
 
     @Transactional
-    public List<RoleModulesCategories.Category> getCategorys(String roleId, String userRoleId, int categorytype) {
+    public List<RoleModulesCategories.Category> getCategorys(String roleId, List<String> userRoleIds, int categorytype) {
         //用户有权限的Category
         //上级不打勾，不展示，去重;同级，下级不打勾，展示
-
-        Map<String, RoleModulesCategories.Category> userCategorys = getUserStringCategoryMap(userRoleId, categorytype);
+        Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
+        if (userRoleIds.contains(SystemRole.ADMIN.getCode())){
+            userCategorys = getUserStringCategoryMap(SystemRole.ADMIN.getCode(), categorytype);
+        }else {
+            for (String userRoleId:userRoleIds){
+                Map<String, RoleModulesCategories.Category> roleCategorys = getUserStringCategoryMap(userRoleId, categorytype);
+                for (Map.Entry<String, RoleModulesCategories.Category> stringCategoryEntry : roleCategorys.entrySet()) {
+                    String key = stringCategoryEntry.getKey();
+                    RoleModulesCategories.Category value = stringCategoryEntry.getValue();
+                    if (userCategorys.containsKey(key)) {
+                        value.setShow(userCategorys.get(key).isShow() || value.isShow());
+                    }
+                    userCategorys.put(key,value);
+                }
+            }
+        }
 
         //角色有权限的Category
         //上级不打勾，不展示，去重;同级，下级打勾，不展示
@@ -487,12 +544,14 @@ public class RoleService {
         PageResult<User> userList = usersService.getUserListFilterAdmin(parameters);
         List<User> lists = userList.getLists();
         for (User user : lists) {
-            if (user.getRoleId().equals(roleId)) user.setStatus(1);
+            List<UserInfo.Role> roles =  userDAO.getRolesByUser(user.getUserId());
+            user.setRoles(roles);
+            if (roles.stream().anyMatch(role -> role.getRoleId().equals(roleId))) user.setStatus(1);
         }
         return userList;
     }
 
-    public Role getRoleIdBYUserId(String userId) {
+    public List<Role> getRoleIdBYUserId(String userId) {
         return roleDAO.getRoleByUsersId(userId);
     }
 

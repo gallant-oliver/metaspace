@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
@@ -245,8 +246,8 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                if ("1".equals(role.getRoleId())) {
+                List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
+                if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
                     table.setEdit(true);
                 } else {
                     List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
@@ -1554,8 +1555,8 @@ public class MetaDataService {
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (!"1".equals(roleId)) {
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            if (roleIds==null||!roleIds.contains("1")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
@@ -1613,8 +1614,8 @@ public class MetaDataService {
     public EntityMutationResponse hardDeleteRDBMSByGuid(String guid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (!"1".equals(roleId)) {
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            if (roleIds==null||!roleIds.contains("1")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
@@ -1638,8 +1639,8 @@ public class MetaDataService {
     public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(String guid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            String roleId = roleDAO.getRoleIdByUserId(userId);
-            if (!"1".equals(roleId)) {
+            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
+            if (roleIds!=null&&!roleIds.contains("1")) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
             }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);

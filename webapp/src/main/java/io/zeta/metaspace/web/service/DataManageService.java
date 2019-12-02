@@ -79,6 +79,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import io.zeta.metaspace.model.role.SystemRole;
 
 @Service
 public class DataManageService {
@@ -121,11 +122,31 @@ public class DataManageService {
     public List<CategoryPrivilege> getAll(int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if (role.getStatus() == 0)
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            String roleId = role.getRoleId();
-            List<CategoryPrivilege> valueList = roleService.getUserCategory(roleId, type);
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            List<CategoryPrivilege> valueList = null;
+            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
+                valueList = roleService.getUserCategory(SystemRole.ADMIN.getCode(), type);
+            }else{
+                Map<String,CategoryPrivilege> valueMap = new HashMap<>();
+                if (roles.stream().allMatch(role -> role.getStatus()==0)){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+                }
+                for (Role role:roles){
+                    if (role.getStatus() == 0){
+                        continue;
+                    }
+                    String roleId = role.getRoleId();
+                    for (CategoryPrivilege categoryPrivilege:roleService.getUserCategory(roleId, type)){
+                        if (valueMap.containsKey(categoryPrivilege.getGuid())&&valueMap.get(categoryPrivilege.getGuid())!=null){
+                            valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
+                        }else{
+                            valueMap.put(categoryPrivilege.getGuid(),categoryPrivilege);
+                        }
+                    }
+                }
+                valueList = new ArrayList<>(valueMap.values());
+            }
+
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error(e.getMessage());
@@ -173,8 +194,8 @@ public class DataManageService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在首个目录，请刷新后重新操作");
                 }
                 User user = AdminUtils.getUserData();
-                Role role = roleDao.getRoleByUsersId(user.getUserId());
-                if (!"1".equals(role.getRoleId())) {
+                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+                if (!roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
                     throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
                 }
                 //qualifiedName
@@ -334,9 +355,10 @@ public class DataManageService {
                 categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
             }
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if (role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if (roles.stream().allMatch(role -> role.getStatus()==0)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            }
             roleDao.deleteRole2categoryByUserId(guid);
             return categoryDao.delete(guid);
         } catch (SQLException e) {
@@ -529,13 +551,29 @@ public class DataManageService {
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if (role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if (roles.stream().allMatch(role -> role.getStatus()==0)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            String roleId = role.getRoleId();
+            }
+            List<String> categoryIds = new ArrayList<>();
+            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
+                categoryIds = CategoryRelationUtils.getPermissionCategoryList(SystemRole.ADMIN.getCode(), type);
+            }else{
+                for (Role role:roles){
+                    if (role.getStatus() == 0){
+                        continue;
+                    }
+                    String roleId = role.getRoleId();
+                    List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
+                    for (String categoryId  : category){
+                        if (!categoryIds.contains(categoryId)){
+                            categoryIds.add(categoryId);
+                        }
+                    }
+                }
+            }
             String tableName = query.getFilterTableName();
             String tag = query.getTag();
-            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
@@ -578,13 +616,30 @@ public class DataManageService {
     public PageResult<RelationEntityV2> getRelationsByTableNameFilter(RelationQuery query, int type) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
-            Role role = roleDao.getRoleByUsersId(user.getUserId());
-            if (role.getStatus() == 0)
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if (roles.stream().allMatch(role -> role.getStatus()==0)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            String roleId = role.getRoleId();
+            }
+            List<String> categoryIds = new ArrayList<>();
+            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
+                categoryIds = CategoryRelationUtils.getPermissionCategoryList(SystemRole.ADMIN.getCode(), type);
+            }else{
+                for (Role role:roles){
+                    if (role.getStatus() == 0){
+                        continue;
+                    }
+                    String roleId = role.getRoleId();
+                    List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
+                    for (String categoryId  : category){
+                        if (!categoryIds.contains(categoryId)){
+                            categoryIds.add(categoryId);
+                        }
+                    }
+                }
+            }
+
             String tableName = query.getFilterTableName();
             String tag = query.getTag();
-            List<String> categoryIds = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();

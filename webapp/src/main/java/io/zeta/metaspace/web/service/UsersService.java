@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.Item;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersService {
@@ -47,8 +49,8 @@ public class UsersService {
     }
 
     public boolean isRole(String userId){
-        String roleId = userDAO.getRoleIdByUserId(userId);
-        return StringUtils.isNULL(roleId);
+        List<String> roleId = userDAO.getRoleIdByUserId(userId);
+        return roleId==null||roleId.size()==0;
     }
 
 
@@ -61,11 +63,15 @@ public class UsersService {
             user.setUserId(userId);
             user.setAccount(account);
             user.setUsername(displayName);
+            List<UserInfo.Role> roles = new ArrayList<>();
+            UserInfo.Role role = new UserInfo.Role();
+            roles.add(role);
             if (user.getUsername().equals("msadmin")) {
-                user.setRoleId(SystemRole.ADMIN.getCode());
+                role.setRoleId(SystemRole.ADMIN.getCode());
             } else {
-                user.setRoleId(SystemRole.GUEST.getCode());
+                role.setRoleId(SystemRole.ADMIN.getCode());
             }
+            user.setRoles(roles);
             userDAO.addUser(user);
         } /*else {
             User user = userDAO.getUser(userId);
@@ -91,59 +97,98 @@ public class UsersService {
             user.setAccount(userTmp.getAccount());
             info.setUser(user);
             //role
-            Role roleTmp = userDAO.getRoleByUserId(userId);
-            UserInfo.Role role = new UserInfo.Role();
-            role.setRoleId(roleTmp.getRoleId());
-            role.setRoleName(roleTmp.getRoleName());
-            info.setRole(role);
-            String roleId = role.getRoleId();
-            //module
-            List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
-            info.setModules(moduleList);
-            //technicalCategory
-            List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
-            List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
-            for (CategoryEntityV2 entity : technicalCategoryList) {
-                String guid = entity.getGuid();
-                String name = entity.getName();
-                String pathStr = categoryDAO.queryPathByGuid(guid);
-                String path = pathStr.substring(1, pathStr.length() - 1);
-                path = path.replace(",", ".").replace("\"", "");
-                String level2Category = null;
-                String[] pathArr = path.split("\\.");
-                int level = pathArr.length;
-                if (level >= 2) {
-                    level2Category = pathArr[1];
-                }
-                UserInfo.TechnicalCategory category = new UserInfo.TechnicalCategory(guid, name, level, level2Category);
-                userTechCategoryList.add(category);
+            List<Role> roleTmps = userDAO.getRoleByUserId(userId);
+            List<UserInfo.Role> roles = new ArrayList<>();
+            for (Role roleTmp:roleTmps){
+                UserInfo.Role role = new UserInfo.Role();
+                role.setRoleId(roleTmp.getRoleId());
+                role.setRoleName(roleTmp.getRoleName());
+                roles.add(role);
             }
-
-            info.setTechnicalCategory(userTechCategoryList);
-            //businessCategory
-            List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
+            info.setRoles(roles);
+            List<String> technicalChildCategorys = new ArrayList<>();
+            List<String> businessChildCategorys = new ArrayList<>();
             List<UserInfo.BusinessCategory> userBusiCategoryList = new ArrayList<>();
-            for (CategoryEntityV2 entity : businessCategoryList) {
-                String guid = entity.getGuid();
-                String name = entity.getName();
-                String pathStr = categoryDAO.queryPathByGuid(guid);
-                String path = pathStr.substring(1, pathStr.length() - 1);
-                path = path.replace(",", ".").replace("\"", "");
-                String level2Category = null;
-                String[] pathArr = path.split("\\.");
-                int level = pathArr.length;
-                if (level >= 2) {
-                    level2Category = pathArr[1];
+            List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
+            List<UserInfo.Module> modules = new ArrayList<>();
+            for (UserInfo.Role role:roles){
+                String roleId = role.getRoleId();
+                //module
+                List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
+                for (UserInfo.Module module:moduleList){
+                    if (!modules.stream().anyMatch(userModule -> userModule.getModuleId()==module.getModuleId())){
+                        modules.add(module);
+                    }
                 }
-                UserInfo.BusinessCategory category = new UserInfo.BusinessCategory(guid, name, level, level2Category);
-                userBusiCategoryList.add(category);
+                //technicalCategory
+                List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
+                for (CategoryEntityV2 entity : technicalCategoryList) {
+                    if (userTechCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
+                        continue;
+                    }
+                    if (technicalChildCategorys.contains(entity.getGuid())){
+                        continue;
+                    }
+                    addUserCategory(userTechCategoryList,entity,0);
+                }
+                if (technicalCategoryList!=null&&technicalCategoryList.size()!=0){
+                    List<RoleModulesCategories.Category> techChildCategorys = roleDAO.getChildCategorys(technicalCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 0);
+                    for (RoleModulesCategories.Category category:techChildCategorys){
+                        if (!technicalChildCategorys.contains(category.getGuid())){
+                            technicalChildCategorys.add(category.getGuid());
+                        }
+                    }
+                }
+                //businessCategory
+                List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
+                for (CategoryEntityV2 entity : businessCategoryList) {
+                    if (userBusiCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
+                        continue;
+                    }
+                    if (businessChildCategorys.contains(entity.getGuid())){
+                        continue;
+                    }
+                    addUserCategory(userBusiCategoryList,entity,1);
+                }
+                if (businessCategoryList!=null&&businessCategoryList.size()!=0){
+                    List<RoleModulesCategories.Category> busiChildCategorys = roleDAO.getChildCategorys(businessCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 1);
+                    for (RoleModulesCategories.Category category:busiChildCategorys){
+                        if (!businessChildCategorys.contains(category.getGuid())){
+                            businessChildCategorys.add(category.getGuid());
+                        }
+                    }
+                }
             }
+            userTechCategoryList = userTechCategoryList.stream().filter(category->!technicalChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
+            userBusiCategoryList = userBusiCategoryList.stream().filter(category->!businessChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
+            info.setModules(modules);
+            info.setTechnicalCategory(userTechCategoryList);
             info.setBusinessCategory(userBusiCategoryList);
-
             return info;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
+        }
+    }
+
+    public void addUserCategory(List list,CategoryEntityV2 entity,int categoryType){
+        String guid = entity.getGuid();
+        String name = entity.getName();
+        String pathStr = categoryDAO.queryPathByGuid(guid);
+        String path = pathStr.substring(1, pathStr.length() - 1);
+        path = path.replace(",", ".").replace("\"", "");
+        String level2Category = null;
+        String[] pathArr = path.split("\\.");
+        int level = pathArr.length;
+        if (level >= 2) {
+            level2Category = pathArr[1];
+        }
+        if (categoryType==0){
+            UserInfo.TechnicalCategory category = new UserInfo.TechnicalCategory(guid, name, level, level2Category);
+            list.add(category);
+        }else if (categoryType==1){
+            UserInfo.BusinessCategory category = new UserInfo.BusinessCategory(guid, name, level, level2Category);
+            list.add(category);
         }
     }
 
@@ -158,6 +203,9 @@ public class UsersService {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserList(query, limit, offset);
+            for (User user:userList){
+                user.setRoles(userDAO.getRolesByUser(user.getUserId()));
+            }
             userPageResult.setLists(userList);
             //long userCount = userDAO.getUsersCount(query);
             long userTotalSize = 0;
@@ -185,14 +233,23 @@ public class UsersService {
     public Item getUserItems() throws AtlasBaseException {
         Item item = new Item();
         String userId = AdminUtils.getUserData().getUserId();
-        Role roleByUserId = userDAO.getRoleByUserId(userId);
-        if (roleByUserId.getStatus() == 0) {
+        List<Role> roleByUserIds = userDAO.getRoleByUserId(userId);
+        if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
             item.setModules(new ArrayList<>());
-            item.setRole(roleByUserId);
+            item.setRoles(roleByUserIds);
             return item;
         }
         List<Module> modules = userDAO.getModuleByUserId(userId);
-        item.setRole(roleByUserId);
+        for (Role role:roleByUserIds){
+            String roleId = role.getRoleId();
+            List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
+            for (UserInfo.Module module:moduleList){
+                if (!modules.stream().anyMatch(userModule -> userModule.getModuleId()==module.getModuleId())){
+                    modules.add(new Module(module));
+                }
+            }
+        }
+        item.setRoles(roleByUserIds);
         item.setModules(modules);
         return item;
     }
@@ -201,11 +258,11 @@ public class UsersService {
         return userDAO.getModuleByUserId(userId);
     }
 
-    public String getRoleIdByUserId(String userId) {
+    public List<String> getRoleIdByUserId(String userId) {
         return roleDAO.getRoleIdByUserId(userId);
     }
 
-    public Role getRoleByUserId(String userId) {
+    public List<Role> getRoleByUserId(String userId) {
         return userDAO.getRoleByUserId(userId);
     }
 

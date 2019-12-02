@@ -263,5 +263,24 @@ public class CategoryPrivilege {
             this.deleteRelation = deleteRelation;
             this.addOwner = addOwner;
         }
+        public void mergePrivilege(Privilege  privilege){
+            if (this.hide&&privilege.hide){
+                this.ash=false;
+            }else if (this.hide||privilege.hide){
+                this.ash = this.ash||privilege.ash;
+            }else{
+                this.ash = this.ash&&privilege.ash;
+            }
+            this.hide = this.hide&&privilege.hide;
+            this.addSibling=this.addSibling||privilege.addSibling;
+            this.addChildren=this.addChildren||privilege.addChildren;
+            this.delete=this.delete||privilege.delete;
+            this.edit=this.edit||privilege.edit;
+            this.editSafe=this.editSafe||privilege.editSafe;
+            this.createRelation=this.createRelation||privilege.createRelation;
+            this.deleteRelation=this.deleteRelation||privilege.deleteRelation;
+            this.addOwner=this.addOwner||privilege.addOwner;
+
+        }
     }
 }

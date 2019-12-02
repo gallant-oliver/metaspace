@@ -12,14 +12,14 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 public interface UserDAO {
-    @Select("select roleid from users where userid=#{userId} and valid=true")
-    public String getRoleIdByUserId(String userId);
+    @Select("select user2role.roleid from users join user2role on users.userid=user2role.userid where users.userid=#{userId} and users.valid=true")
+    public List<String> getRoleIdByUserId(String userId);
 
 
     @Select("select count(1) from users where userid=#{userid} and valid=true")
     public Integer ifUserExists(String userid);
 
-    @Insert("insert into users(userid,username,account,roleid,create_time,update_time,valid) values(#{user.userId},#{user.username},#{user.account},#{user.roleId},#{user.createTime},#{user.updateTime},#{user.valid})")
+    @Insert("insert into users(userid,username,account,create_time,update_time,valid) values(#{user.userId},#{user.username},#{user.account},#{user.createTime},#{user.updateTime},#{user.valid})")
     public int addUser(@Param("user") User user);
 
     @Select("select * from users where userId=#{userId} and valid=true")
@@ -31,8 +31,9 @@ public interface UserDAO {
     @Select("select * from users where userId=#{userId}")
     public User getUserInfo(@Param("userId") String userId);
 
-    @Select("select * from role where roleId in (select roleId from users where userId=#{userId} and users.valid=true) and role.valid=true")
-    public Role getRoleByUserId(@Param("userId") String userId);
+    @Select("select * from role where roleId in (select user2role.roleId from users join user2role on users.userid=user2role.userid" +
+            " where users.userId=#{userId} and users.valid=true) and role.valid=true")
+    public List<Role> getRoleByUserId(@Param("userId") String userId);
 
     @Select("select * from category where guid in (select categoryId from role2category where roleId=#{roleId}) and categoryType=0")
     public List<CategoryEntityV2> getTechnicalCategoryByRoleId(@Param("roleId") String roleId);
@@ -44,7 +45,7 @@ public interface UserDAO {
     public List<UserInfo.Module> getModuleByRoleId(@Param("roleId") String roleId);
 
     @Select({" <script>",
-             " select count(*)over() total,users.*,role.roleName from users join role on users.roleId = role.roleId",
+             " select count(*)over() total,users.* from users ",
              " where users.valid=true",
              " <if test=\"query != null and query!=''\">",
              " and  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
@@ -67,7 +68,12 @@ public interface UserDAO {
              " </script>"})
     public List<User> getUserList(@Param("query") String query, @Param("limit") int limit, @Param("offset") int offset);
 
-    @Select("<script> select users.*,role.rolename from users join role on (users.roleId = role.roleId) where  username like '%${username}%' ESCAPE '/' and role.roleid!='1' and users.valid=true <if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
+    @Select("select role.roleid,role.roleName from user2role join role on user2role.roleid=role.roleid where user2role.userid=#{userId}")
+    public List<UserInfo.Role> getRolesByUser(@Param("userId")String userId);
+
+    @Select("<script> select userid,username,account,create_time createTime,update_time updateTime,valid from users " +
+            "where  username like '%${username}%' ESCAPE '/' and users.valid=true and userid not in (select user2role.userid from user2role where user2role.roleid='1') " +
+            "<if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
     public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
 
@@ -88,7 +94,9 @@ public interface UserDAO {
             " and tableguid=#{tableGuid}</script>")
     public Integer ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
 
-    @Select("select module.moduleid,modulename,type from users,role,privilege,privilege2module,module where users.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid and privilege2module.moduleid=module.moduleid and users.valid=true and userid=#{userId}")
+    @Select("select module.moduleid,modulename,type from users,user2role,role,privilege,privilege2module,module " +
+            "where user2role.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid " +
+            "and privilege2module.moduleid=module.moduleid and users.valid=true and user2role.userid=users.userid and users.userid=#{userId}")
     public List<Module> getModuleByUserId(String userId);
 
     @Select("select account from users join metadata_subscribe on metadata_subscribe.user_id=users.userid where table_guid=#{tableGuid}")

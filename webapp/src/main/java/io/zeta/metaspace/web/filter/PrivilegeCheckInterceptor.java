@@ -93,13 +93,13 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             String urlStr = "/" + prefix + pathStr;
             String requestMethod = request.getMethod();
 
-            Role roleByUserId = usersService.getRoleByUserId(userId);
-            if (roleByUserId.getStatus() == 0) {
+            List<Role> roleByUserIds = usersService.getRoleByUserId(userId);
+            if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
                 throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
             }
 
             if ("privilegecheck".equals(prefix.toLowerCase().trim())) {
-                if (roleByUserId.getStatus() == 0) {
+                if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
                     throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
                 }
                 String privilegeType = "";
@@ -110,9 +110,9 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     switch (privilegeType) {
                         case "table":
                             //到这里再查库
-                            String roleIdByUserId = usersService.getRoleIdByUserId(userId);
+                            List<String> roleIdByUserId = usersService.getRoleIdByUserId(userId);
                             //超级管理员直接过
-                            if (roleIdByUserId.equals(SystemRole.ADMIN.getCode())) {
+                            if (roleIdByUserId.contains(SystemRole.ADMIN.getCode())) {
                                 return invocation.proceed();
                             }
                             Map<String, RoleModulesCategories.Category> userCatagory = getUserCatagory(userId);
@@ -181,7 +181,21 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
     private Map<String, RoleModulesCategories.Category> getUserCatagory(String userId) {
         //技术目录
-        Map<String, RoleModulesCategories.Category> userStringCategoryMap = roleService.getUserStringCategoryMap(roleService.getRoleIdBYUserId(userId).getRoleId(), 0);
+        Map<String, RoleModulesCategories.Category> userStringCategoryMap = new HashMap<>();
+        for (Role role:roleService.getRoleIdBYUserId(userId)){
+            if (role.getStatus() == 0){
+                continue;
+            }
+            Map<String, RoleModulesCategories.Category> categoryMap = roleService.getUserStringCategoryMap(role.getRoleId(), 0);
+            for (String categoryId:categoryMap.keySet()) {
+                if (userStringCategoryMap.containsKey(categoryId)&&userStringCategoryMap.get(categoryId)!=null){
+                    RoleModulesCategories.Category category = userStringCategoryMap.get(categoryId);
+                    category.setShow(category.isShow()||categoryMap.get(categoryId).isShow());
+                }else{
+                    userStringCategoryMap.put(categoryId, categoryMap.get(categoryId));
+                }
+            }
+        }
         return userStringCategoryMap;
     }
 }

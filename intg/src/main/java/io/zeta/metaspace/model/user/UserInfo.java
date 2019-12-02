@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class UserInfo {
     private User user;
-    private Role role;
+    private List<Role> roles;
     private List<Module> modules;
     private List<TechnicalCategory> technicalCategory;
     private List<BusinessCategory> businessCategory;
@@ -40,12 +40,12 @@ public class UserInfo {
         this.user = user;
     }
 
-    public Role getRole() {
-        return role;
+    public List<Role> getRoles() {
+        return roles;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
     }
 
     public List<Module> getModules() {
