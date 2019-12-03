@@ -478,8 +478,6 @@ public class DataShareService {
 
     public int publishAPI(List<String> guidList) throws AtlasBaseException {
         try {
-            checkTableStatus(guidList);
-            checkApiPermission(guidList);
             Configuration configuration = ApplicationProperties.get();
             APIContent content = generateAPIContent(guidList);
             Gson gson = new Gson();
@@ -517,30 +515,21 @@ public class DataShareService {
         }
     }
 
-    public void checkTableStatus(List<String> guidList) throws AtlasBaseException {
-        for(String apiGuid: guidList){
-            String status = shareDAO.getTableStatusByAPIGuid(apiGuid);
-            if("DELETED".equals(status.trim())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
-            }
+    public void checkTableStatus(String apiGuid) throws AtlasBaseException {
+        String status = shareDAO.getTableStatusByAPIGuid(apiGuid);
+        if("DELETED".equals(status.trim())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
         }
     }
 
-    public void checkApiPermission(List<String> guidList) throws AtlasBaseException {
+    public void checkApiPermission(String apiGuid) throws AtlasBaseException {
         List<String> tableIds = searchService.getUserTableIds();
         if (Objects.isNull(tableIds) || tableIds.size() == 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限:"+guidList);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前表");
         }
         List<String> apiIds = shareDAO.getAPIIdsByRelatedTable(tableIds);
-        List<String> noApiIds = new ArrayList<>();
-        for (String guid:guidList
-        ) {
-            if (!apiIds.contains(guid)){
-                noApiIds.add(guid);
-            }
-        }
-        if (noApiIds.size()!=0){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限:"+noApiIds);
+        if (apiIds.contains(apiGuid)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前表");
         }
     }
 
@@ -550,13 +539,15 @@ public class DataShareService {
         return response;
     }
 
-    public int unpublishAPI(List<String> apiGuid) throws AtlasBaseException {
+    public int unpublishAPI(List<String> apiGuidList) throws AtlasBaseException {
         try {
-            checkApiPermission(apiGuid);
+            for(String apiGuid : apiGuidList) {
+                checkApiPermission(apiGuid);
+            }
             Configuration configuration = ApplicationProperties.get();
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
             Map param = new HashMap();
-            param.put("api_id_list", apiGuid);
+            param.put("api_id_list", apiGuidList);
             Gson gson = new Gson();
             String jsonStr = gson.toJson(param, Map.class);
 
@@ -580,7 +571,7 @@ public class DataShareService {
             if(!"0.0".equals(error_id)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
             }
-            return shareDAO.updatePublishStatus(apiGuid, false);
+            return shareDAO.updatePublishStatus(apiGuidList, false);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -596,6 +587,8 @@ public class DataShareService {
             APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
             if(sourceType == APIInfo.SourceType.HIVE) {
+                checkTableStatus(api_id);
+                checkApiPermission(api_id);
                 String tableGuid = info.getTableGuid();
                 Table table = shareDAO.getTableByGuid(tableGuid);
                 info.setTableName(table.getTableName());
