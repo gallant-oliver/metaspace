@@ -405,6 +405,9 @@ public class DataSourceService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "排序类型错误");
                 }
             }
+            if(sortby==null){
+                sortby="source_name";
+            }
 
             parameters.setSortby(sortby);
             parameters.setOrder(order);
@@ -499,8 +502,9 @@ public class DataSourceService {
             if (!isManagerUserId(sourceId,userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有授权该数据源的权限");
             }
+            String manager = dataSourceDAO.getManagerBySourceId(sourceId);
             DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
-            List<UserIdAndName> authorizeUsers = isApi?dataSourceDAO.getApiAuthorizeUser(sourceId,userId):dataSourceDAO.getAuthorizeUser(sourceId,userId);
+            List<UserIdAndName> authorizeUsers = isApi?dataSourceDAO.getApiAuthorizeUser(sourceId,manager):dataSourceDAO.getAuthorizeUser(sourceId,manager);
             dataSourceAuthorizeUser.setUsers(authorizeUsers);
             int totalSize = 0;
             if (authorizeUsers.size()!=0){
