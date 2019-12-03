@@ -525,11 +525,11 @@ public class DataShareService {
     public void checkApiPermission(String apiGuid) throws AtlasBaseException {
         List<String> tableIds = searchService.getUserTableIds();
         if (Objects.isNull(tableIds) || tableIds.size() == 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前表");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前API关联表");
         }
         List<String> apiIds = shareDAO.getAPIIdsByRelatedTable(tableIds);
-        if (apiIds.contains(apiGuid)){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前表");
+        if (!apiIds.contains(apiGuid)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前API关联表");
         }
     }
 
