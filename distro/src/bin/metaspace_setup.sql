@@ -128,7 +128,12 @@ CREATE TABLE "public"."apiinfo" (
   "publish" bool DEFAULT NULL,
   "used_count" int8,
   "manager" varchar(255) COLLATE "pg_catalog"."default",
-  "desensitize" bool DEFAULT NULL
+  "desensitize" bool DEFAULT FALSE ,
+  "sourcetype" varchar(255) COLLATE "pg_catalog"."default",
+  "schemaname" varchar(255) COLLATE "pg_catalog"."default",
+  "tablename" varchar(255) COLLATE "pg_catalog"."default",
+  "dbname" varchar(255) COLLATE "pg_catalog"."default",
+  "sourceid" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 
