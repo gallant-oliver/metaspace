@@ -159,7 +159,8 @@ public class DataShareService {
             }
             //使用次数初始化为0
             info.setUsedCount(0);
-
+            //脱敏开关
+            info.setDesensitize(info.getDesensitize()==null?false:info.getDesensitize());
             return shareDAO.insertAPIInfo(info);
         } catch (AtlasBaseException e) {
             throw e;
@@ -1044,12 +1045,14 @@ public class DataShareService {
     public void checkDataType(DataType dataType, List<Object> valueList) throws AtlasBaseException {
         if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
             valueList.stream().forEach(value -> dataType.valueOf(value).get());
-        if(DataType.BOOLEAN == dataType) {
+        else if(DataType.BOOLEAN == dataType) {
             for(Object value : valueList) {
                 if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取值需为bool类型");
                 }
             }
+        } else if(DataType.UNKNOWN == dataType) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持的数据类型");
         }
     }
 
@@ -1189,7 +1192,7 @@ public class DataShareService {
                 if(field.getFilter()) {
                     filterColumnSet.add(columnName);
                 }
-                if(field.getSensitive()) {
+                if(field.getSensitive()!=null && field.getSensitive()) {
                     sensitiveColumnSet.add(columnName);
                 }
             }
@@ -1283,7 +1286,7 @@ public class DataShareService {
             String columnName = map.get("columnName").toString();
             Boolean filter = Boolean.parseBoolean(map.get("filter").toString());
             String type = map.get("type").toString();
-            Boolean sensitive = Boolean.parseBoolean(map.get("sensitive").toString());
+            Boolean sensitive = Boolean.parseBoolean(map.get("sensitive")==null?Boolean.FALSE.toString():map.get("sensitive").toString());
             if(filter) {
                 Boolean fill = Boolean.parseBoolean(map.get("fill").toString());
                 String defaultValue = Objects.nonNull(map.get("defaultValue"))?map.get("defaultValue").toString():String.valueOf("");
