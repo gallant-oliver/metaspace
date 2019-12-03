@@ -1044,12 +1044,14 @@ public class DataShareService {
     public void checkDataType(DataType dataType, List<Object> valueList) throws AtlasBaseException {
         if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
             valueList.stream().forEach(value -> dataType.valueOf(value).get());
-        if(DataType.BOOLEAN == dataType) {
+        else if(DataType.BOOLEAN == dataType) {
             for(Object value : valueList) {
                 if(!value.equals(true) && !value.equals(false) && !value.equals("true") && !value.equals("false") && !value.equals("0") && !value.equals("1")) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取值需为bool类型");
                 }
             }
+        } else if(DataType.UNKNOWN == dataType) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持的数据类型");
         }
     }
 

@@ -94,13 +94,16 @@ public enum DataType {
         final DataType typeGroup;
         switch (type) {
             case "STRING":
+            case "CHAR":
             case "NCHAR":
             case "NVARCHAR":
-            case"VARCHAR":
+            case "VARCHAR":
             case "VARCHAR2":
             case "NVARCHAR2":
             case "LONGNVARCHAR":
             case "LONGVARCHAR":
+            case "ROWID":
+            case "NROWID":
                 typeGroup = DataType.STRING;
                 break;
             case "LONG":
