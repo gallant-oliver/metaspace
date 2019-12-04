@@ -308,9 +308,11 @@ public interface DataSourceDAO {
 
     //获取数据源未授权人
     @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
-            "where p.moduleid='14' and r.status=1 and u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId}) " +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
+            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
+            " join users u on u.userid=us.userid " +
+            " where u.valid=true " +
+            "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
             "<if test='query!=null'>" +
             "and username like '%${query}%' ESCAPE '/'" +
             "</if>" +
@@ -338,11 +340,12 @@ public interface DataSourceDAO {
     public List<UserIdAndName> getApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
 
-    //获取数据源未授权人
     @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
-            "where p.moduleid='14' and r.status=1 and u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId}) " +
+            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
+            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
+            " join users u on u.userid=us.userid " +
+            "where u.valid=true " +
+            "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
             "<if test='query!=null'>" +
             "and username like '%${query}%' ESCAPE '/'" +
             "</if>" +
