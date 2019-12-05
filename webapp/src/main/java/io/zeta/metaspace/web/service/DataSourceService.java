@@ -113,6 +113,9 @@ public class DataSourceService {
     @Transactional
     public int setNewDataSource(DataSourceBody dataSourceBody,boolean isApi) throws AtlasBaseException {
         try {
+            if (!dataSourceBody.getIp().matches("(((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2}))(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}")){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"ip格式错误");
+            }
             String userId = AdminUtils.getUserData().getUserId();
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
             String sourceType=dataSourceBody.getSourceType();
@@ -145,6 +148,9 @@ public class DataSourceService {
      */
     public int updateNoRelyDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException, SQLException {
         try {
+            if (!dataSourceBody.getIp().matches("(((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2}))(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}")){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"ip格式错误");
+            }
             if (dataSourceDAO.isSourceId(dataSourceBody.getSourceId())==0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
