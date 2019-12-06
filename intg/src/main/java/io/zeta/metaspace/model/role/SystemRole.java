@@ -1,7 +1,7 @@
 package io.zeta.metaspace.model.role;
 
 public enum SystemRole {
-    ADMIN("1","平台管理员"),GUEST("2","访客"),MANAGE("3","管理"),BUSINESSE("4","业务"),TECHNIQUE("5","技术"), BUSINESSE_CATEGORY("6","业务目录管理员"),TECHNIQUE_CATEGORY("7","技术目录管理员"),;
+    ADMIN("1","平台管理员"),MANAGE("3","管理"),BUSINESSE("4","业务"),TECHNIQUE("5","技术"), BUSINESSE_CATEGORY("6","业务目录管理员"),TECHNIQUE_CATEGORY("7","技术目录管理员"),;
     private String code;
     private String desc;
     public String getCode() {
@@ -28,7 +28,7 @@ public enum SystemRole {
         return getSystemRoleByCode(code).desc;
     }
     public SystemRole getSystemRoleByCode(String code){
-        SystemRole systemRole=SystemRole.GUEST;
+        SystemRole systemRole=null;
         for (SystemRole role : SystemRole.values()) {
             if(role.code.equals(code))
                 systemRole=role;

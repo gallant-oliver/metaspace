@@ -123,19 +123,20 @@ public class RoleService {
         List<User> users = roleDAO.getUsers(roleId,null,0,-1);
         roleDAO.updateValidStatus(roleId, false, userId, DateUtils.getNow());
         roleDAO.deleteRole2category(roleId);
-        roleDAO.updateUsers(users.stream().map(user1 -> user1.getUserId()).collect(Collectors.toList()), true, timestamp);
         List<String> updateUserIds = new ArrayList<>();
+        List<String> deleteUserIds = new ArrayList<>();
         for (User updateUser:users ){
-            if (roleDAO.getCountByUserAndRole(updateUser.getUserId(),SystemRole.GUEST.getCode())==0){
-                updateUserIds.add(updateUser.getUserId());
+            if (roleDAO.getCountByUser(updateUser.getUserId())==0&&!deleteUserIds.contains(updateUser.getUserId())){
+                deleteUserIds.add(updateUser.getUserId());
+                continue;
             }
+            updateUserIds.add(updateUser.getUserId());
         }
         roleDAO.deleteUser2Role(roleId);
-        if (updateUserIds!=null){
-            roleDAO.addUsers2Role(SystemRole.GUEST.getCode(), updateUserIds);
+        if (updateUserIds.size()!=0)
             roleDAO.updateUsers(updateUserIds,true,timestamp);
-        }
-
+        if (deleteUserIds.size()!=0)
+            roleDAO.updateUsers(deleteUserIds,false,timestamp);
         return "success";
     }
 
@@ -321,7 +322,6 @@ public class RoleService {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         if (deleteUsers.size() > 0) {
             roleDAO.deleteUser2RoleByUsers(deleteUsers);
-            addUsers(SystemRole.GUEST.getCode(),deleteUsers);
             roleDAO.updateUsers(deleteUsers, false, timestamp);
         }
         return "success";
@@ -359,7 +359,6 @@ public class RoleService {
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if (deleteUsers.size() > 0) {
-                addUsers(SystemRole.GUEST.getCode(),deleteUsers);
                 roleDAO.updateUsers(deleteUsers, false, timestamp);
             }
         }
