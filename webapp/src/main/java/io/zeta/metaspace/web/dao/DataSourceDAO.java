@@ -57,8 +57,7 @@ public interface DataSourceDAO {
             "jdbc_parameter=#{dataSourceBody.jdbcParameter}," +
             "update_user_id=#{updateUserId}," +
             "update_time=#{dataSourceBody.updateTime}, " +
-            " oracle_db=#{dataSourceBody.oracleDb}," +
-            " manager=#{dataSourceBody.manager}" +
+            " oracle_db=#{dataSourceBody.oracleDb} " +
             "where source_id=#{dataSourceBody.sourceId}" +
             "</script>")
     public int updateNoRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
@@ -68,8 +67,7 @@ public interface DataSourceDAO {
             "source_name=#{dataSourceBody.sourceName}," +
             "description=#{dataSourceBody.description}," +
             "update_user_id=#{updateUserId}," +
-            "update_time=#{dataSourceBody.updateTime}," +
-            " manager=#{dataSourceBody.manager} " +
+            "update_time=#{dataSourceBody.updateTime} " +
             "where source_id=#{dataSourceBody.sourceId}")
     public int updateRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
 
