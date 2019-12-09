@@ -28,7 +28,7 @@ public class KerberosReloginListener extends ContextLoaderListener {
         if(KerberosConfig.isKerberosEnable()) {
             KerberosRefreshTimer kerberosRefreshTimer = new KerberosRefreshTimer();
             Timer timer = new Timer();
-            timer.schedule(kerberosRefreshTimer, 60 * 1000, 60 * 1000);
+            timer.schedule(kerberosRefreshTimer, 60 * 60 * 1000, 60 * 60* 1000);
         }
         super.contextInitialized(servletContextEvent);
     }
