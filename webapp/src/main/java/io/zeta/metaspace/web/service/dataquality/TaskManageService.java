@@ -661,12 +661,18 @@ public class TaskManageService {
                 if(0 == record.getObjectType()) {
                     String objectId = record.getObjectId();
                     Table table = taskManageDAO.getDbAndTableName(objectId);
+                    if(table == null) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表信息，当前表已被删除!");
+                    }
                     record.setDbName(table.getDatabaseName());
                     record.setTableName(table.getTableName());
                     record.setObjectName(table.getTableName());
                 } else if(1 == record.getObjectType()) {
                     String objectId = record.getObjectId();
                     Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+                    if(column == null) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到字段信息，当前字段已被删除!");
+                    }
                     record.setDbName(column.getDatabaseName());
                     record.setTableName(column.getTableName());
                     record.setObjectName(column.getColumnName());
@@ -675,6 +681,8 @@ public class TaskManageService {
                 record.setFiling(filing);
             }
             return list;
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }
