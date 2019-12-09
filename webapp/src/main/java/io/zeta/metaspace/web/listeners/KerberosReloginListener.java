@@ -14,7 +14,7 @@ package io.zeta.metaspace.web.listeners;
 
 import org.apache.atlas.web.listeners.LoginProcessor;
 import io.zeta.metaspace.KerberosConfig;
-import io.zeta.metaspace.web.timer.KerberosReloginTimer;
+import io.zeta.metaspace.web.timer.KerberosRefreshTimer;
 import org.springframework.web.context.ContextLoaderListener;
 
 import javax.servlet.ServletContextEvent;
@@ -26,9 +26,9 @@ public class KerberosReloginListener extends ContextLoaderListener {
         LoginProcessor loginProcessor = new LoginProcessor();
         loginProcessor.login();
         if(KerberosConfig.isKerberosEnable()) {
-            KerberosReloginTimer kerberosReloginTimer = new KerberosReloginTimer();
+            KerberosRefreshTimer kerberosRefreshTimer = new KerberosRefreshTimer();
             Timer timer = new Timer();
-            timer.schedule(kerberosReloginTimer, 60 * 60 * 1000, 60 * 60 * 1000);
+            timer.schedule(kerberosRefreshTimer, 60 * 1000, 60 * 1000);
         }
         super.contextInitialized(servletContextEvent);
     }
