@@ -208,6 +208,9 @@ public class WarningGroupService {
                             table = taskManageDAO.getDbAndTableName(objectId);
                             idToTable.put(objectId, table);
                         }
+                        if(table == null) {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表信息，当前表已被删除!");
+                        }
                         String dbName = table.getDatabaseName();
                         String tableName = table.getTableName();
                         subTaskRuleWarning.setDbName(dbName);
