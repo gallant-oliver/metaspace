@@ -263,6 +263,7 @@ public class DataShareService {
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
             Map<String, String> columnName2DisplayMap = new HashMap();
             if(sourceType == APIInfo.SourceType.ORACLE) {
+                info.setSourceName(dataSourceDAO.getSourceNameForSourceId(info.getSourceId()));
                 info.setTableDisplayName(info.getTableName());
             } else if(sourceType == APIInfo.SourceType.HIVE) {
                 String tableGuid = info.getTableGuid();
