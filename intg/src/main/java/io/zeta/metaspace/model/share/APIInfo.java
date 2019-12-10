@@ -27,6 +27,7 @@ public class APIInfo {
     private String guid;
     private String name;
     private String sourceId;
+    private String sourceName;
     private String schemaName;
     private String tableGuid;
     private String tableName;
@@ -78,6 +79,14 @@ public class APIInfo {
 
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
     }
 
     public String getSchemaName() {
