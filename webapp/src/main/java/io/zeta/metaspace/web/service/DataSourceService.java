@@ -630,7 +630,7 @@ public class DataSourceService {
 
             List<String> authorizeUserIds = dataSourceAuthorizeUserId.getAuthorizeUserIds();
             dataSourceDAO.deleteApiAuthorizeBySourceId(sourceId);
-            if(authorizeUserIds!=null&&authorizeUserIds.size()==0){
+            if(authorizeUserIds!=null&&authorizeUserIds.size()!=0){
                 dataSourceDAO.addApiAuthorizes(sourceId,authorizeUserIds);
             }
             if (datasourceDAO.isApiAuthorizeUser(sourceId,userId)==0){
