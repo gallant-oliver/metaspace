@@ -24,6 +24,8 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.log4j.Logger;
 
 
@@ -43,11 +45,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class OKHttpClient {
 
-    private static Logger logger = Logger.getLogger(OKHttpClient.class);
+    private static Logger LOG = Logger.getLogger(OKHttpClient.class);
     private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
     static {
-        client = new OkHttpClient();
+        client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
+                .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
         client.setConnectTimeout(1, TimeUnit.SECONDS);
     }
 
@@ -55,7 +58,7 @@ public class OKHttpClient {
      * get请求
      * @return
      */
-    public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap) {
+    public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap) throws AtlasBaseException {
         try {
             HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
 
@@ -66,7 +69,6 @@ public class OKHttpClient {
                 }
             }
             String queryUrl = urlBuilder.build().toString();
-
             Request.Builder builder = new Request.Builder()
                     .url(queryUrl);
 
@@ -79,28 +81,28 @@ public class OKHttpClient {
             Request request = builder.build();
             Call call = client.newCall(request);
             Response response = call.execute();
-
             /**请求发送成功，并得到响应**/
             if (response.isSuccessful()) {
                 /**读取服务器返回过来的json字符串数据**/
                 return response.body().string();
+            } else {
+                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            LOG.error("请求失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
         }
-
-        return null;
     }
 
-    public static String doPost(String url, String json) {
+    public static String doPost(String url, String json) throws AtlasBaseException {
         try {
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
             String ticket = AdminUtils.getSSOTicket();
             Request request = new Request.Builder()
-                                .url(url)
-                                .addHeader(TICKET_KEY, ticket)
-                                .post(body)
-                                .build();
+                    .url(url)
+                    .addHeader(TICKET_KEY, ticket)
+                    .post(body)
+                    .build();
             Call call = client.newCall(request);
             Response response = call.execute();
 
@@ -111,12 +113,12 @@ public class OKHttpClient {
                 throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
             }
         } catch(Exception e) {
-            e.printStackTrace();
-            return null;
+            LOG.error("请求失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
         }
     }
 
-    public static String doPut(String url, String json) {
+    public static String doPut(String url, String json) throws AtlasBaseException {
         try {
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
             String ticket = AdminUtils.getSSOTicket();
@@ -135,8 +137,8 @@ public class OKHttpClient {
                 throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
             }
         } catch(Exception e) {
-            e.printStackTrace();
-            return null;
+            LOG.error("请求失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
         }
     }
 
@@ -144,7 +146,7 @@ public class OKHttpClient {
      * delete
      * @return
      */
-    public static String doDelete(String url, Map<String,String> map) {
+    public static String doDelete(String url, Map<String,String> map) throws AtlasBaseException {
         try {
             Request.Builder builder = new Request.Builder()
                     .url(url);
@@ -158,19 +160,18 @@ public class OKHttpClient {
             Request request = builder.delete().build();
             Call call = client.newCall(request);
             Response response = call.execute();
-
-
             /**请求发送成功，并得到响应**/
             if (response.isSuccessful()) {
                 /**读取服务器返回过来的json字符串数据**/
                 String strResult = response.body().string();
                 return strResult;
+            } else {
+                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            LOG.error("请求失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
         }
-
-        return null;
     }
 
     public static String getResponseStr(InputStream in) throws IOException {
