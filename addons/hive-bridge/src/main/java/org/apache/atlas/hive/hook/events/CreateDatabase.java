@@ -25,12 +25,16 @@ import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.events.CreateDatabaseEvent;
 import org.apache.hadoop.hive.ql.hooks.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+
+import static org.apache.atlas.hive.bridge.HiveMetaStoreBridge.getDatabaseName;
+import static org.apache.hadoop.hive.ql.hooks.Entity.Type.DATABASE;
 
 public class CreateDatabase extends BaseHiveEvent {
     private static final Logger LOG = LoggerFactory.getLogger(CreateDatabase.class);
@@ -42,7 +46,7 @@ public class CreateDatabase extends BaseHiveEvent {
     @Override
     public List<HookNotification> getNotificationMessages() throws Exception {
         List<HookNotification>   ret      = null;
-        AtlasEntitiesWithExtInfo entities = getEntities();
+        AtlasEntitiesWithExtInfo entities = context.isMetastoreHook() ? getHiveMetastoreEntities() : getHiveEntities();
 
         if (entities != null && CollectionUtils.isNotEmpty(entities.getEntities())) {
             ret = Collections.singletonList(new EntityCreateRequestV2(getUserName(), entities));
@@ -51,21 +55,44 @@ public class CreateDatabase extends BaseHiveEvent {
         return ret;
     }
 
-    public AtlasEntitiesWithExtInfo getEntities() throws Exception {
+    public AtlasEntitiesWithExtInfo getHiveMetastoreEntities() throws Exception {
+        AtlasEntitiesWithExtInfo ret     = new AtlasEntitiesWithExtInfo();
+        CreateDatabaseEvent      dbEvent = (CreateDatabaseEvent) context.getMetastoreEvent();
+        Database                 db      = dbEvent.getDatabase();
+
+        if (db != null) {
+            AtlasEntity dbEntity = toDbEntity(db);
+
+            ret.addEntity(dbEntity);
+        } else {
+            LOG.error("CreateDatabase.getEntities(): failed to retrieve db");
+        }
+
+        addProcessedEntities(ret);
+
+        return ret;
+    }
+
+    public AtlasEntitiesWithExtInfo getHiveEntities() throws Exception {
         AtlasEntitiesWithExtInfo ret = new AtlasEntitiesWithExtInfo();
 
-        for (Entity entity : getHiveContext().getOutputs()) {
-            if (entity.getType() == Entity.Type.DATABASE) {
+        for (Entity entity : getOutputs()) {
+            if (entity.getType() == DATABASE) {
                 Database db = entity.getDatabase();
 
                 if (db != null) {
-                    db = getHive().getDatabase(db.getName());
+                    db = getHive().getDatabase(getDatabaseName(db));
                 }
 
                 if (db != null) {
-                    AtlasEntity dbEntity = toDbEntity(db);
+                    AtlasEntity dbEntity    = toDbEntity(db);
+                    AtlasEntity dbDDLEntity = createHiveDDLEntity(dbEntity);
 
                     ret.addEntity(dbEntity);
+
+                    if (dbDDLEntity != null) {
+                        ret.addEntity(dbDDLEntity);
+                    }
                 } else {
                     LOG.error("CreateDatabase.getEntities(): failed to retrieve db");
                 }

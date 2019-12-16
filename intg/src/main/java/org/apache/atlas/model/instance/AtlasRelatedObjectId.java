@@ -57,6 +57,12 @@ public class AtlasRelatedObjectId extends AtlasObjectId implements Serializable 
 
     public AtlasRelatedObjectId() { }
 
+    public AtlasRelatedObjectId(AtlasObjectId objId, String relationshipType) {
+        this(objId);
+
+        setRelationshipType(relationshipType);
+    }
+
     public AtlasRelatedObjectId(String guid, String typeName, AtlasEntity.Status entityStatus, String relationshipGuid,
                                 AtlasRelationship.Status relationshipStatus, AtlasStruct relationshipAttributes) {
         super(guid, typeName);
