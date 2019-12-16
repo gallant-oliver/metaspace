@@ -1,7 +1,5 @@
 package io.zeta.metaspace.web.service;
 
-import com.gridsum.gdp.library.commons.utils.StringUtils;
-
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.Item;
@@ -15,6 +13,7 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import kafka.security.auth.Alter;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -54,35 +53,31 @@ public class UsersService {
     }
 
 
-    public void addUser(Map data) {
-        String userId = data.get("AccountGuid").toString();
-        String account = data.get("LoginEmail").toString();
-        String displayName = data.get("DisplayName").toString();
-        if (userDAO.ifUserExists(userId) == 0) {
-            User user = new User();
-            user.setUserId(userId);
-            user.setAccount(account);
-            user.setUsername(displayName);
-            List<UserInfo.Role> roles = new ArrayList<>();
-            UserInfo.Role role = new UserInfo.Role();
-            roles.add(role);
-            if (user.getUsername().equals("msadmin")) {
-                role.setRoleId(SystemRole.ADMIN.getCode());
-            } else {
-                role.setRoleId(SystemRole.ADMIN.getCode());
+    public void addUser(Map data) throws AtlasBaseException {
+        try {
+            String userId = data.get("AccountGuid").toString();
+            String account = data.get("LoginEmail").toString();
+            String displayName = data.get("DisplayName").toString();
+            if (userDAO.ifUserExists(userId) == 0) {
+                User user = new User();
+                user.setUserId(userId);
+                user.setAccount(account);
+                user.setUsername(displayName);
+                List<UserInfo.Role> roles = new ArrayList<>();
+                UserInfo.Role role = new UserInfo.Role();
+                roles.add(role);
+                if (user.getUsername().equals("msadmin")) {
+                    role.setRoleId(SystemRole.ADMIN.getCode());
+                } else {
+                    role.setRoleId(SystemRole.ADMIN.getCode());
+                }
+                user.setRoles(roles);
+                userDAO.addUser(user);
             }
-            user.setRoles(roles);
-            userDAO.addUser(user);
-        } /*else {
-            User user = userDAO.getUser(userId);
-            if(!account.equals(user.getAccount()) || !displayName.equals(user.getUsername())) {
-                User userInfo = new User();
-                userInfo.setUserId(userId);
-                userInfo.setAccount(account);
-                userInfo.setUsername(displayName);
-                userDAO.updateUserInfo(userInfo);
-            }
-        }*/
+        } catch (Exception e) {
+            LOG.error("添加用户失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加用户失败");
+        }
     }
 
     @Transactional
@@ -166,7 +161,7 @@ public class UsersService {
             info.setBusinessCategory(userBusiCategoryList);
             return info;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取用户信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
         }
     }
@@ -217,7 +212,7 @@ public class UsersService {
             userPageResult.setTotalSize(userTotalSize);
             return userPageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取用户列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }
@@ -231,27 +226,32 @@ public class UsersService {
     }
 
     public Item getUserItems() throws AtlasBaseException {
-        Item item = new Item();
-        String userId = AdminUtils.getUserData().getUserId();
-        List<Role> roleByUserIds = userDAO.getRoleByUserId(userId);
-        if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
-            item.setModules(new ArrayList<>());
-            item.setRoles(roleByUserIds);
-            return item;
-        }
-        List<Module> modules = userDAO.getModuleByUserId(userId);
-        for (Role role:roleByUserIds){
-            String roleId = role.getRoleId();
-            List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
-            for (UserInfo.Module module:moduleList){
-                if (!modules.stream().anyMatch(userModule -> userModule.getModuleId()==module.getModuleId())){
-                    modules.add(new Module(module));
+        try {
+            Item item = new Item();
+            String userId = AdminUtils.getUserData().getUserId();
+            List<Role> roleByUserIds = userDAO.getRoleByUserId(userId);
+            if (roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
+                item.setModules(new ArrayList<>());
+                item.setRoles(roleByUserIds);
+                return item;
+            }
+            List<Module> modules = userDAO.getModuleByUserId(userId);
+            for (Role role : roleByUserIds) {
+                String roleId = role.getRoleId();
+                List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
+                for (UserInfo.Module module : moduleList) {
+                    if (!modules.stream().anyMatch(userModule -> userModule.getModuleId() == module.getModuleId())) {
+                        modules.add(new Module(module));
+                    }
                 }
             }
+            item.setRoles(roleByUserIds);
+            item.setModules(modules);
+            return item;
+        } catch (Exception e) {
+            LOG.error("获取失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户功能模块失败");
         }
-        item.setRoles(roleByUserIds);
-        item.setModules(modules);
-        return item;
     }
 
     public List<Module> getModules(String userId) {

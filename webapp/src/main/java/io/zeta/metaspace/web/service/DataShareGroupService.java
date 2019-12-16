@@ -64,8 +64,8 @@ public class DataShareGroupService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("添加API分组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加API分组失败");
         }
     }
 
@@ -82,8 +82,8 @@ public class DataShareGroupService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("删除API分组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除API分组失败");
         }
     }
 
@@ -106,8 +106,8 @@ public class DataShareGroupService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("更新API分组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新API分组失败");
         }
     }
 
@@ -115,8 +115,8 @@ public class DataShareGroupService {
         try {
             return groupDAO.getGroupList();
         }  catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取API分组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取API分组失败");
         }
     }
 
@@ -124,8 +124,8 @@ public class DataShareGroupService {
         try {
             return groupDAO.getGroupNameById(guid);
         }  catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取API分组信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取API分组信息失败");
         }
     }
 }

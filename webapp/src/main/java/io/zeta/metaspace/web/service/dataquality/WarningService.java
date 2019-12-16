@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.dataquality2.WarningStatusEnum;
 import io.zeta.metaspace.web.dao.dataquality.WarningDAO;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,16 +46,21 @@ public class WarningService {
 
 
     public List<Warning> list(WarningStatusEnum warningStatusEnum) throws AtlasBaseException {
-        List<Warning> warningList = warningDAO.taskWaringLog(warningStatusEnum.getCode()).stream()
-                .map(warning -> {
-                    String taskExecuteId = warning.getTaskExecuteId();
-                    List<Map<String, Object>> taskRuleWarningLogs = warningDAO.taskRuleWarningLog(taskExecuteId);
-                    warning.setWarningReceivers(warningReceivers(taskRuleWarningLogs));
-                    Timestamp createTime = (Timestamp) taskRuleWarningLogs.get(0).get("create_time");
-                    warning.setLastWarningTime(createTime);
-                    return warning;
-                }).collect(Collectors.toList());
-        return warningList;
+        try {
+            List<Warning> warningList = warningDAO.taskWaringLog(warningStatusEnum.getCode()).stream()
+                    .map(warning -> {
+                        String taskExecuteId = warning.getTaskExecuteId();
+                        List<Map<String, Object>> taskRuleWarningLogs = warningDAO.taskRuleWarningLog(taskExecuteId);
+                        warning.setWarningReceivers(warningReceivers(taskRuleWarningLogs));
+                        Timestamp createTime = (Timestamp) taskRuleWarningLogs.get(0).get("create_time");
+                        warning.setLastWarningTime(createTime);
+                        return warning;
+                    }).collect(Collectors.toList());
+            return warningList;
+        } catch (Exception e) {
+            LOG.error("获取告警列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警列表失败");
+        }
     }
 
     private String warningReceivers(List<Map<String, Object>> taskRuleWarningLogs) {

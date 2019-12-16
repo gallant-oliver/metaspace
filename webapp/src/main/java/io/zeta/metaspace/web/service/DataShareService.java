@@ -38,7 +38,6 @@ import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
-import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
@@ -197,8 +196,8 @@ public class DataShareService {
             return shareDAO.deleteAPIInfo(guid);
 
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+            LOG.error("删除API失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除API失败");
         }
     }
 
@@ -242,11 +241,10 @@ public class DataShareService {
             info.setUpdateTime(currentTimeFormat);
             return shareDAO.updateAPIInfo(info);
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
+            LOG.error("修改API信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改API信息失败");
         }
     }
 
@@ -339,11 +337,10 @@ public class DataShareService {
             info.setManager(manger);
             return info;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取信息失败");
+            LOG.error("获取API信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取API信息失败");
         }
     }
 
@@ -437,8 +434,8 @@ public class DataShareService {
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取API列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取API列表失败");
         }
     }
 
@@ -452,7 +449,7 @@ public class DataShareService {
             List<APIInfo.Field> values = gson.fromJson(value, type);
             return values;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取数据失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
@@ -462,7 +459,7 @@ public class DataShareService {
             String userId = AdminUtils.getUserData().getUserId();
             return shareDAO.insertAPIStar(userId, apiGuid);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新收藏状态失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
         }
     }
@@ -472,7 +469,7 @@ public class DataShareService {
             String userId = AdminUtils.getUserData().getUserId();
             return shareDAO.deleteAPIStar(userId, apiGuid);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新收藏状态失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新收藏状态失败");
         }
     }
@@ -511,7 +508,7 @@ public class DataShareService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新发布状态失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
     }
@@ -576,7 +573,7 @@ public class DataShareService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新发布状态失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
     }
@@ -901,7 +898,8 @@ public class DataShareService {
             }
             return content;
         } catch (NumberFormatException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.error("创建swagger内容失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建swagger内容失败");
         }
     }
 
@@ -1131,7 +1129,7 @@ public class DataShareService {
             CompletableFuture<Map> future = taskMap.get(name);
             future.cancel(true);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("任务取消失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务取消失败");
         }
     }

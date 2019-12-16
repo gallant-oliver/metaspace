@@ -14,7 +14,6 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandAndRule;
@@ -54,6 +53,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -75,7 +75,7 @@ public class DataStandardService {
         if(!dataStandard.getNumber().matches(regexp)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
         }
-        dataStandard.setId(UUIDUtils.alphaUUID());
+        dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setCreateTime(DateUtils.currentTimestamp());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
@@ -89,7 +89,7 @@ public class DataStandardService {
         int endIndex = 0;
         List<DataStandard> subList = null;
         for (DataStandard dataStandard : dataList) {
-            dataStandard.setId(UUIDUtils.alphaUUID());
+            dataStandard.setId(UUID.randomUUID().toString());
             dataStandard.setCreateTime(DateUtils.currentTimestamp());
             dataStandard.setUpdateTime(DateUtils.currentTimestamp());
             dataStandard.setOperator(AdminUtils.getUserData().getUserId());
@@ -148,7 +148,7 @@ public class DataStandardService {
      */
     public int update(DataStandard dataStandard) throws AtlasBaseException {
         DataStandard old = getById(dataStandard.getId());
-        dataStandard.setId(UUIDUtils.uuid());
+        dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setNumber(old.getNumber());
         dataStandard.setCreateTime(old.getCreateTime());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());

@@ -105,13 +105,13 @@ public class DataQualityService {
                 qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
             }
         }  catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            LOG.error("添加模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板失败");
         }
     }
 
@@ -131,11 +131,11 @@ public class DataQualityService {
             quartzManager.removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
 
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("删除模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除模板失败");
         }
     }
 
@@ -168,11 +168,11 @@ public class DataQualityService {
             template.setTableRulesNum(tableRuleNum);
             template.setColumnRulesNum(columnRuleNum);
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error( "数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("添加规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加规则失败");
         }
     }
 
@@ -187,11 +187,11 @@ public class DataQualityService {
                 qualityDao.deleteThresholdByRuleId(ruleId);
             }
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error( "数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("删除规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除规则失败");
         }
     }
 
@@ -203,11 +203,11 @@ public class DataQualityService {
             addRulesByTemlpateId(template);
             qualityDao.updateTemplate(template);
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error( "数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("更新模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新模板失败");
         }
     }
 
@@ -225,11 +225,11 @@ public class DataQualityService {
                 template.setRules(userRules);
             return template;
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("查询异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
 
@@ -264,10 +264,9 @@ public class DataQualityService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的模板状态");
             }
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("启动模板失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
         }
     }
@@ -287,11 +286,8 @@ public class DataQualityService {
             //设置模板状态为【已启用】
             qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
             qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
-            /*if (Objects.nonNull(cron) && StringUtils.isNotEmpty(cron)) {
-                qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
-                qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
-            }*/
         } catch (Exception e) {
+            LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
     }
@@ -310,7 +306,7 @@ public class DataQualityService {
             //设置模板状态为【暂停】
             qualityDao.updateTemplateStatus(TemplateStatus.SUSPENDING.code, templateId);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("关闭模板失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
@@ -386,7 +382,7 @@ public class DataQualityService {
             File zipFile = getZipFile(files);
             return zipFile;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("导出Excel失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }
@@ -447,39 +443,39 @@ public class DataQualityService {
         return new ArrayList<>();
     }
 
-    public int updateAlertStatus(String reportId, int status)  {
+    public int updateAlertStatus(String reportId, int status) throws AtlasBaseException {
         try {
             return qualityDao.updateAlertStatus(reportId, status);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("更新模板状态失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新模板状态失败");
         }
     }
 
-    public Float getFinishedPercent(String templateId) {
+    public Float getFinishedPercent(String templateId) throws AtlasBaseException {
         try {
             return qualityDao.getFinishedPercent(templateId);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("获取完成度失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取完成度失败");
         }
     }
 
-    public Integer getTemplateStatus(String templateId) {
+    public Integer getTemplateStatus(String templateId) throws AtlasBaseException {
         try {
             return qualityDao.getTemplateStatus(templateId);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("获取模板状态失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模板状态失败");
         }
     }
 
-    public Template getTemplate(String templateId) {
+    public Template getTemplate(String templateId) throws AtlasBaseException {
         try {
             return qualityDao.getTemplate(templateId);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("获取模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模板失败");
         }
     }
 
@@ -488,14 +484,6 @@ public class DataQualityService {
         return templateResults;
     }
 
-    /*public Map getReports(String templateId, int offset, int limit) throws SQLException {
-        Map<String, Object> map = new HashMap<>();
-        List<ReportResult> reports = qualityDao.getReports(templateId, offset, limit);
-        long count = qualityDao.getCount(templateId);
-        map.put("reports",reports);
-        map.put("total",count);
-        return map;
-    }*/
     public PageResult<ReportResult> getReports(String tableGuid, String templateId, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult<ReportResult> pageResult = new PageResult<>();
@@ -524,59 +512,76 @@ public class DataQualityService {
             map.put("total", count);*/
             return pageResult;
         } catch (Exception e) {
-            LOG.info(e.toString());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.info("获取报告失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告失败");
         }
     }
 
     public Report getReport(String reportId) throws SQLException, AtlasBaseException {
-        List<Report> reports = qualityDao.getReport(reportId);
-        if(reports.size()==0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该报表不存在");
-        Report report = reports.get(0);
-        List<Report.ReportRule> reportRule = qualityDao.getReportRule(reportId);
-        for (Report.ReportRule rule : reportRule) {
-            String ruleResultId = rule.getRuleId();
-            List<Double> reportThresholdValue = qualityDao.getReportThresholdValue(ruleResultId);
-            rule.setRuleCheckThreshold(reportThresholdValue);
-        }
-        report.setRules(reportRule);
+        try {
+            List<Report> reports = qualityDao.getReport(reportId);
+            if (reports.size() == 0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该报表不存在");
+            Report report = reports.get(0);
+            List<Report.ReportRule> reportRule = qualityDao.getReportRule(reportId);
+            for (Report.ReportRule rule : reportRule) {
+                String ruleResultId = rule.getRuleId();
+                List<Double> reportThresholdValue = qualityDao.getReportThresholdValue(ruleResultId);
+                rule.setRuleCheckThreshold(reportThresholdValue);
+            }
+            report.setRules(reportRule);
 
-        return report;
+            return report;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.info("获取报告失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告失败");
+        }
     }
 
     public TableColumnRules getRules(String tableId, int buildType) throws SQLException, AtlasBaseException {
-        TableColumnRules tableColumnRules = new TableColumnRules();
-        List<TableColumnRules.ColumnsRule> columnsRules = new ArrayList<>();
-        List<TableColumnRules.SystemRule> tableSystemRules = qualityDao.getTableSystemRules(RuleType.TABLE.code, buildType);
-        addCheckRules(tableSystemRules);
-        ColumnQuery columnQuery = new ColumnQuery();
-        columnQuery.setGuid(tableId);
-        List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
-        Table tableInfoById = metadataService.getTableInfoById(tableId);
-        tableColumnRules.setSource(tableInfoById.getDatabaseName()+"."+tableInfoById.getTableName());
-        for (Column column : columns) {
-            TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
-            String columnName = column.getColumnName();
-            String type = column.getType();
-            columnsRule.setRuleColumnName(columnName);
-            columnsRule.setRuleColumnType(type);
-            DataType datatype = getDatatype(type);
-            List<TableColumnRules.SystemRule> columnSystemRules = qualityDao.getColumnSystemRules(RuleType.COLUMN.code, datatype.getCode(), buildType);
-            addCheckRules(columnSystemRules);
-            columnsRule.setColumnRules(columnSystemRules);
-            columnsRules.add(columnsRule);
-        }
-        tableColumnRules.setTableRules(tableSystemRules);
-        tableColumnRules.setColumnsRules(columnsRules);
+        try {
+            TableColumnRules tableColumnRules = new TableColumnRules();
+            List<TableColumnRules.ColumnsRule> columnsRules = new ArrayList<>();
+            List<TableColumnRules.SystemRule> tableSystemRules = qualityDao.getTableSystemRules(RuleType.TABLE.code, buildType);
+            addCheckRules(tableSystemRules);
+            ColumnQuery columnQuery = new ColumnQuery();
+            columnQuery.setGuid(tableId);
+            List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
+            Table tableInfoById = metadataService.getTableInfoById(tableId);
+            tableColumnRules.setSource(tableInfoById.getDatabaseName() + "." + tableInfoById.getTableName());
+            for (Column column : columns) {
+                TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();
+                String columnName = column.getColumnName();
+                String type = column.getType();
+                columnsRule.setRuleColumnName(columnName);
+                columnsRule.setRuleColumnType(type);
+                DataType datatype = getDatatype(type);
+                List<TableColumnRules.SystemRule> columnSystemRules = qualityDao.getColumnSystemRules(RuleType.COLUMN.code, datatype.getCode(), buildType);
+                addCheckRules(columnSystemRules);
+                columnsRule.setColumnRules(columnSystemRules);
+                columnsRules.add(columnsRule);
+            }
+            tableColumnRules.setTableRules(tableSystemRules);
+            tableColumnRules.setColumnsRules(columnsRules);
 
-        return tableColumnRules;
+            return tableColumnRules;
+        } catch (Exception e) {
+            LOG.info("获取规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则失败");
+        }
     }
 
-    private void addCheckRules(List<TableColumnRules.SystemRule> tableSystemRules) throws SQLException {
-        for (TableColumnRules.SystemRule tableSystemRule : tableSystemRules) {
-            int ruleId = tableSystemRule.getRuleId();
-            List<Integer> checktypes = qualityDao.getChecktypes(ruleId);
-            tableSystemRule.setRuleAllowCheckType(checktypes);
+    private void addCheckRules(List<TableColumnRules.SystemRule> tableSystemRules) throws AtlasBaseException {
+        try {
+            for (TableColumnRules.SystemRule tableSystemRule : tableSystemRules) {
+                int ruleId = tableSystemRule.getRuleId();
+                List<Integer> checktypes = qualityDao.getChecktypes(ruleId);
+                tableSystemRule.setRuleAllowCheckType(checktypes);
+            }
+        } catch (Exception e) {
+            LOG.info("添加校验规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加校验规则失败");
         }
     }
 
@@ -614,7 +619,8 @@ public class DataQualityService {
             }
             return error;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误失败");
+            LOG.error("获取错误信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取错误信息失败");
         }
     }
 }

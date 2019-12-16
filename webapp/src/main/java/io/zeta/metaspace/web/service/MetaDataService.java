@@ -1528,7 +1528,7 @@ public class MetaDataService {
             List<DataOwnerHeader> owners = tableDAO.getDataOwnerList(guid);
             return owners;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取数据失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
@@ -1538,7 +1538,7 @@ public class MetaDataService {
             List<String> ownerIdList = tableDAO.getDataOwnerIdList(guid);
             return ownerIdList;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -1705,7 +1705,7 @@ public class MetaDataService {
             output.close();
             return file;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("导出Excel失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }

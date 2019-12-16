@@ -175,11 +175,10 @@ public class BusinessService {
             int relationFlag = businessDao.addRelation(entity);
             return insertFlag & relationFlag;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("添加业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加业务对象失败");
         }
     }
 
@@ -202,8 +201,8 @@ public class BusinessService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改失败");
+            LOG.error("修改业务对象信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改业务对象信息失败");
         }
     }
 
@@ -222,8 +221,8 @@ public class BusinessService {
             info.setDepartmentName(departmentName);
             return info;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取业务对象信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象信息失败");
         }
     }
 
@@ -270,8 +269,8 @@ public class BusinessService {
             info.setBusinessId(businessId);
             return info;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
         }
     }
 
@@ -307,11 +306,10 @@ public class BusinessService {
             pageResult.setLists(list);
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("获取业务对象列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象列表失败");
         }
     }
 
@@ -370,11 +368,10 @@ public class BusinessService {
             pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
           throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("搜索业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索业务对象失败");
         }
     }
 
@@ -437,11 +434,10 @@ public class BusinessService {
             }
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("搜索业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索业务对象失败");
         }
     }
 
@@ -476,8 +472,8 @@ public class BusinessService {
             }
 
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
+            LOG.error("更新技术信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新技术信息失败");
         }
     }
 
@@ -488,8 +484,8 @@ public class BusinessService {
             businessDao.deleteRelationByBusinessId(businessId);
             businessDao.deleteRelationById(businessId);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库异常");
+            LOG.error("删除业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除业务对象失败");
         }
     }
 
@@ -503,8 +499,8 @@ public class BusinessService {
             }
             return columnPrivilegeDAO.addColumnPrivilege(privilege);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("添加权限字段失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加权限字段失败");
         }
     }
 
@@ -512,8 +508,8 @@ public class BusinessService {
         try {
             return columnPrivilegeDAO.deleteColumnPrivilege(guid);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+            LOG.error("删除权限字段失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除权限字段失败");
         }
     }
 
@@ -521,7 +517,7 @@ public class BusinessService {
         try {
             return columnPrivilegeDAO.updateColumnPrivilege(privilege);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
         }
     }
@@ -530,8 +526,8 @@ public class BusinessService {
         try {
             return columnPrivilegeDAO.getColumnPrivilegeList();
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+            LOG.error("更新权限字段失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新权限字段失败");
         }
     }
 
@@ -544,8 +540,8 @@ public class BusinessService {
             List<String> values = gson.fromJson(value, List.class);
             return values;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败失败");
+            LOG.error("获取权限字段取值失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限字段取值失败");
         }
     }
 
@@ -560,7 +556,8 @@ public class BusinessService {
                 return columnPrivilegeDAO.addColumnPrivilegeRelation(relation);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("添加权限字段关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加权限字段关联失败");
         }
     }
 
@@ -603,20 +600,25 @@ public class BusinessService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+            LOG.error("获取关联API失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联API失败");
         }
     }
 
     @Transactional
-    public void updateBusinessTrustTable() {
-        List<String> nonTrustBusinessList = businessDao.getNonTrustBusiness();
-        for(String businessId : nonTrustBusinessList) {
-            List<TechnologyInfo.Table> tableList = businessDao.queryTablesByBusinessId(businessId);
-            if(Objects.nonNull(tableList) && tableList.size()>0) {
-                String tableGuid = tableList.get(0).getTableGuid();
-                businessDao.setBusinessTrustTable(businessId, tableGuid);
+    public void updateBusinessTrustTable() throws AtlasBaseException {
+        try {
+            List<String> nonTrustBusinessList = businessDao.getNonTrustBusiness();
+            for (String businessId : nonTrustBusinessList) {
+                List<TechnologyInfo.Table> tableList = businessDao.queryTablesByBusinessId(businessId);
+                if (Objects.nonNull(tableList) && tableList.size() > 0) {
+                    String tableGuid = tableList.get(0).getTableGuid();
+                    businessDao.setBusinessTrustTable(businessId, tableGuid);
+                }
             }
+        } catch (Exception e) {
+            LOG.error("更新唯一信任数据失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新唯一信任数据失败");
         }
     }
 
@@ -648,7 +650,8 @@ public class BusinessService {
             pageResult.setTotalSize(count);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取业务对象关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象关联表失败");
         }
     }
 
@@ -693,7 +696,8 @@ public class BusinessService {
             pageResult.setTotalSize(totalCount);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取表字段列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表字段列表失败");
         }
     }
 
@@ -723,8 +727,11 @@ public class BusinessService {
                 }
                 columnDAO.addColumnDisplayInfo(columns);
             }
-        }catch (AtlasBaseException e) {
+        } catch (AtlasBaseException e) {
             throw e;
+        } catch (Exception e) {
+            LOG.error("编辑字段别名失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑字段别名失败");
         }
     }
 
@@ -765,7 +772,8 @@ public class BusinessService {
             }
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("编辑字段别名失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑字段别名失败");
         }
     }
 
@@ -776,8 +784,9 @@ public class BusinessService {
             String userId = AdminUtils.getUserData().getUserId();
             String time = DateUtils.getNow();
             columnDAO.updateTableDisplay(tableGuid, displayText, userId, time);
-        }catch (AtlasBaseException e) {
-            throw e;
+        } catch (AtlasBaseException e) {
+            LOG.error("编辑表别名失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑表别名失败");
         }
     }
 
@@ -1049,7 +1058,8 @@ public class BusinessService {
             }
             return resultList;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转换失败");
         }
     }
 
@@ -1109,27 +1119,32 @@ public class BusinessService {
 
             return file;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("导出Excel失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
     }
 
     public Table getTableInfoById(String guid) throws AtlasBaseException {
-        Table table = metaDataService.getTableInfoById(guid);
-        String tableName = table.getTableName();
-        String tableDisplayName = table.getDisplayName();
-        if(Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
-            table.setDisplayName(tableName);
-        }
-        List<Column> columnList = table.getColumns();
-        columnList.forEach(column -> {
-            String columnName = column.getColumnName();
-            String displayName = column.getDisplayName();
-            if(Objects.isNull(displayName) || "".equals(displayName.trim())) {
-                column.setDisplayName(columnName);
+        try {
+            Table table = metaDataService.getTableInfoById(guid);
+            String tableName = table.getTableName();
+            String tableDisplayName = table.getDisplayName();
+            if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
+                table.setDisplayName(tableName);
             }
-        });
-        return table;
+            List<Column> columnList = table.getColumns();
+            columnList.forEach(column -> {
+                String columnName = column.getColumnName();
+                String displayName = column.getDisplayName();
+                if (Objects.isNull(displayName) || "".equals(displayName.trim())) {
+                    column.setDisplayName(columnName);
+                }
+            });
+            return table;
+        } catch (Exception e) {
+            LOG.error("获取表信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表信息失败");
+        }
     }
 
 }

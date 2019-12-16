@@ -149,10 +149,9 @@ public class DataManageService {
 
             return valueList;
         } catch (MyBatisSystemException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         }
     }
@@ -305,11 +304,10 @@ public class DataManageService {
             returnEntity.setPrivilege(privilege);
             return returnEntity;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("创建业务目录失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建业务目录失败");
         }
     }
 
@@ -362,14 +360,13 @@ public class DataManageService {
             roleDao.deleteRole2categoryByUserId(guid);
             return categoryDao.delete(guid);
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "操作异常");
+            LOG.error("删除目录失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除目录失败");
         }
     }
 
@@ -408,8 +405,11 @@ public class DataManageService {
             categoryDao.updateCategoryInfo(entity);
             return "success";
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (Exception e) {
+            LOG.error("更新目录失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新目录失败");
         }
     }
 
@@ -436,8 +436,10 @@ public class DataManageService {
                 }
             }
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
+        } catch (Exception e) {
+            LOG.error("添加关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         }
     }
 
@@ -448,7 +450,7 @@ public class DataManageService {
             relationEntity.setRelationshipGuid(relationshiGuid);
             return relationDao.add(relationEntity);
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
     }
@@ -477,8 +479,8 @@ public class DataManageService {
                 }
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联出错");
+            LOG.error("取消关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联失败");
         }
     }
 
@@ -515,8 +517,10 @@ public class DataManageService {
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
+        } catch (Exception e) {
+            LOG.error("获取关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
         }
     }
     /**
@@ -544,8 +548,10 @@ public class DataManageService {
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
+        } catch (Exception e) {
+            LOG.error("获取关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
         }
     }
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type) throws AtlasBaseException {
@@ -606,11 +612,10 @@ public class DataManageService {
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("搜索关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索关联表失败");
         }
     }
     public PageResult<RelationEntityV2> getRelationsByTableNameFilter(RelationQuery query, int type) throws AtlasBaseException {
@@ -659,11 +664,10 @@ public class DataManageService {
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw e;
+            LOG.error("获取关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
         }
     }
     public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
@@ -694,7 +698,7 @@ public class DataManageService {
         try {
             return categoryDao.getAllDepartments(type);
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取数据失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
@@ -730,11 +734,10 @@ public class DataManageService {
             }
             return categoryDao.addDataOwner(table2OwnerList);
         } catch (AtlasBaseException e) {
-            LOG.error(e.toString());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.toString());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
+            LOG.error("添加组织架构失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加组织架构失败");
         }
     }
 
@@ -818,6 +821,7 @@ public class DataManageService {
             pageResult.setTotalSize(totalSize);
             return pageResult;
         } catch (Exception e) {
+            LOG.error("查询失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
@@ -849,6 +853,7 @@ public class DataManageService {
             pageResult.setTotalSize(totalSize);
             return pageResult;
         } catch (Exception e) {
+            LOG.error("查询失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
@@ -892,7 +897,8 @@ public class DataManageService {
             }
             return data;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取组织架构失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取组织架构失败");
         }
     }
 
@@ -919,7 +925,8 @@ public class DataManageService {
                 organizationDAO.addOrganizations(insertList);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新失败");
+            LOG.error("更新组织架构失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新组织架构失败");
         }
     }
 
@@ -938,51 +945,55 @@ public class DataManageService {
     }
 
     @Transactional
-    public void addEntity(List<AtlasEntity> entities) {
-        //添加到tableinfo
-        for (AtlasEntity entity : entities) {
-            String typeName = entity.getTypeName();
-            if (("hive_table").equals(typeName)) {
-                if(entity.getAttribute("temporary")==null||entity.getAttribute("temporary").toString().equals("false")){
-                    String guid = entity.getGuid();
-                    String name = getEntityAttribute(entity, "name");
-                    if (tableDAO.ifTableExists(guid) == 0) {
-                        TableInfo tableInfo = new TableInfo();
-                        tableInfo.setTableGuid(guid);
-                        tableInfo.setTableName(name);
-                        Object createTime = entity.getAttribute("createTime");
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        String formatDateStr = sdf.format(createTime);
-                        tableInfo.setCreateTime(formatDateStr);
-                        tableInfo.setStatus(entity.getStatus().name());
-                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                        tableInfo.setDatabaseGuid(relatedDB.getGuid());
-                        tableInfo.setDbName(relatedDB.getDisplayText());
-                        tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
-                        tableDAO.addTable(tableInfo);
+    public void addEntity(List<AtlasEntity> entities) throws AtlasBaseException {
+        try {
+            //添加到tableinfo
+            for (AtlasEntity entity : entities) {
+                String typeName = entity.getTypeName();
+                if (("hive_table").equals(typeName)) {
+                    if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
+                        String guid = entity.getGuid();
+                        String name = getEntityAttribute(entity, "name");
+                        if (tableDAO.ifTableExists(guid) == 0) {
+                            TableInfo tableInfo = new TableInfo();
+                            tableInfo.setTableGuid(guid);
+                            tableInfo.setTableName(name);
+                            Object createTime = entity.getAttribute("createTime");
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            String formatDateStr = sdf.format(createTime);
+                            tableInfo.setCreateTime(formatDateStr);
+                            tableInfo.setStatus(entity.getStatus().name());
+                            AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                            tableInfo.setDatabaseGuid(relatedDB.getGuid());
+                            tableInfo.setDbName(relatedDB.getDisplayText());
+                            tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+                            tableDAO.addTable(tableInfo);
+                        }
                     }
+                } else if (("hive_column").equals(typeName)) {
+                    AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
+                    String tableGuid = table.getGuid();
+                    String guid = entity.getGuid();
+                    String name = entity.getAttribute("name").toString();
+                    String type = entity.getAttribute("type").toString();
+                    String status = entity.getStatus().name();
+                    String updateTime = DateUtils.date2String(entity.getUpdateTime());
+                    Column column = new Column();
+                    column.setTableId(tableGuid);
+                    column.setColumnId(guid);
+                    column.setColumnName(name);
+                    column.setType(type);
+                    column.setStatus(status);
+                    column.setDisplayNameUpdateTime(updateTime);
+                    List<Column> columnList = new ArrayList<>();
+                    columnList.add(column);
+                    columnDAO.addColumnDisplayInfo(columnList);
                 }
-            } else if(("hive_column").equals(typeName)) {
-                AtlasRelatedObjectId table = (AtlasRelatedObjectId)entity.getRelationshipAttribute("table");
-                String tableGuid = table.getGuid();
-                String guid = entity.getGuid();
-                String name = entity.getAttribute("name").toString();
-                String type = entity.getAttribute("type").toString();
-                String status = entity.getStatus().name();
-                String updateTime = DateUtils.date2String(entity.getUpdateTime());
-                Column column = new Column();
-                column.setTableId(tableGuid);
-                column.setColumnId(guid);
-                column.setColumnName(name);
-                column.setType(type);
-                column.setStatus(status);
-                column.setDisplayNameUpdateTime(updateTime);
-                List<Column> columnList = new ArrayList<>();
-                columnList.add(column);
-                columnDAO.addColumnDisplayInfo(columnList);
             }
+            addFullRelation();
+        } catch (Exception e) {
+            LOG.error("添加entity失败", e);
         }
-        addFullRelation();
     }
 
     @Transactional
@@ -1004,23 +1015,28 @@ public class DataManageService {
 
     @Transactional
     public void supplementTable() throws AtlasBaseException {
-        PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1);
-        List<Table> lists = tableNameAndDbNameByQuery.getLists();
-        for (Table list : lists) {
-            String tableId = list.getTableId();
-            if (tableDAO.ifTableExists(tableId) == 0) {
-                TableInfo tableInfo = new TableInfo();
-                tableInfo.setTableGuid(tableId);
-                tableInfo.setTableName(list.getTableName());
-                tableInfo.setCreateTime(list.getCreateTime());
-                tableInfo.setStatus(list.getStatus());
-                tableInfo.setDatabaseGuid(list.getDatabaseId());
-                tableInfo.setDbName(list.getDatabaseName());
-                tableInfo.setDatabaseStatus(list.getDatabaseStatus());
-                tableDAO.addTable(tableInfo);
+        try {
+            PageResult<Table> tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1);
+            List<Table> lists = tableNameAndDbNameByQuery.getLists();
+            for (Table list : lists) {
+                String tableId = list.getTableId();
+                if (tableDAO.ifTableExists(tableId) == 0) {
+                    TableInfo tableInfo = new TableInfo();
+                    tableInfo.setTableGuid(tableId);
+                    tableInfo.setTableName(list.getTableName());
+                    tableInfo.setCreateTime(list.getCreateTime());
+                    tableInfo.setStatus(list.getStatus());
+                    tableInfo.setDatabaseGuid(list.getDatabaseId());
+                    tableInfo.setDbName(list.getDatabaseName());
+                    tableInfo.setDatabaseStatus(list.getDatabaseStatus());
+                    tableDAO.addTable(tableInfo);
+                }
             }
+            addFullRelation();
+        } catch (Exception e) {
+            LOG.error("补充元数据失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "补充元数据失败");
         }
-        addFullRelation();
     }
 
     @Transactional
@@ -1095,6 +1111,9 @@ public class DataManageService {
             sendMail(emails, subject, sendMessage);
         } catch (AtlasBaseException e) {
             throw e;
+        } catch (Exception e) {
+            LOG.error("发送邮件失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发送邮件失败");
         }
     }
 
