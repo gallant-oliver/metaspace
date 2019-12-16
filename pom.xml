@@ -197,7 +197,7 @@
         <woodstox-core.version>5.0.3</woodstox-core.version>
         <!-- Storm dependencies -->
 
-        <quartz.version>2.2.1</quartz.version>
+        <quartz.version>2.3.0</quartz.version>
 
         <PermGen>64m</PermGen>
         <MaxPermGen>512m</MaxPermGen>
