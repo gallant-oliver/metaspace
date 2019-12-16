@@ -32,28 +32,23 @@
 
 
         <context:property-placeholder location="file:#{systemProperties['atlas.conf']}/atlas-application.properties"/>
-        <!--2 配置C3P0数据源 -->
-        <bean id="datasource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <!--2 配置hikari数据源 -->
+        <bean id="datasource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
                 <!--驱动类名 -->
-                <property name="driverClass" value="${metaspace.database.driverClassName}" />
+                <property name="driverClassName" value="${metaspace.database.driverClassName}" />
                 <!-- url -->
                 <property name="jdbcUrl" value="${metaspace.database.url}" />
                 <!-- 用户名 -->
-                <property name="user" value="${metaspace.database.username}" />
+                <property name="username" value="${metaspace.database.username}" />
                 <!-- 密码 -->
                 <property name="password" value="${metaspace.database.password}" />
-                <!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数  -->
-                <property name="acquireIncrement" value="${metaspace.database.acquireIncrement}" />
-                <!-- 初始连接池大小 -->
-                <property name="initialPoolSize" value="${metaspace.database.initialPoolSize}" />
                 <!-- 连接池中连接最小个数 -->
-                <property name="minPoolSize" value="${metaspace.database.minPoolSize}" />
+                <property name="minimumIdle" value="${metaspace.database.minPoolSize}" />
                 <!-- 连接池中连接最大个数 -->
-                <property name="maxPoolSize" value="${metaspace.database.maxPoolSize}" />
+                <property name="maximumPoolSize" value="${metaspace.database.maxPoolSize}" />
                 <!--连接的最大空闲时间,秒-->
-                <property name="maxIdleTime" value="${metaspace.database.maxIdleTime}" />
-                <property name="checkoutTimeout" value="${metaspace.database.checkoutTimeout}" />
-                <property name="acquireRetryAttempts" value="${metaspace.database.acquireRetryAttempts}" />
+                <property name="idleTimeout" value="${metaspace.database.maxIdleTime}" />
+                <property name="connectionTimeout" value="${metaspace.database.checkoutTimeout}" />
         </bean>
 
         <!--3 会话工厂bean sqlSessionFactoryBean -->
