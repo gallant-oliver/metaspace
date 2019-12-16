@@ -33,6 +33,15 @@ public class DataSourceBody {
     private Timestamp updateTime;
     private String oracleDb;
     private String manager;
+    private String serviceType;
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
 
     public String getManager() {
         return manager;

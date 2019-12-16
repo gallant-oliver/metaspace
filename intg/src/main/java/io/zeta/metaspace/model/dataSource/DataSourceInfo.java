@@ -26,6 +26,15 @@ public class DataSourceInfo {
     private String oracleDb;
     private String manager;
     private String managerId;
+    private String serviceType;
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
 
     public String getManagerId() {
         return managerId;

@@ -37,8 +37,8 @@ import java.util.List;
 
 public interface DataSourceDAO {
     //添加数据源
-    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager,oracle_db,isapi)" +
-            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{dataSourceBody.manager},#{dataSourceBody.oracleDb},#{isapi})")
+    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager,oracle_db,isapi,servicetype)" +
+            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{dataSourceBody.manager},#{dataSourceBody.oracleDb},#{isapi},#{dataSourceBody.serviceType})")
     public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody,@Param("isapi") boolean isapi);
 
     //更新数据源
@@ -57,7 +57,8 @@ public interface DataSourceDAO {
             "jdbc_parameter=#{dataSourceBody.jdbcParameter}," +
             "update_user_id=#{updateUserId}," +
             "update_time=#{dataSourceBody.updateTime}, " +
-            " oracle_db=#{dataSourceBody.oracleDb} " +
+            " oracle_db=#{dataSourceBody.oracleDb}," +
+            " servicetype=#{dataSourceBody.serviceType} " +
             "where source_id=#{dataSourceBody.sourceId}" +
             "</script>")
     public int updateNoRely(@Param("updateUserId") String updateUserId,@Param("dataSourceBody") DataSourceBody dataSourceBody);
@@ -111,13 +112,13 @@ public interface DataSourceDAO {
     public int deleteApiAuthorizeBySourceIds(@Param("sourceIds") List<String> sourceIds);
 
     //获取数据源详情
-    @Select("select source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb,manager managerId " +
+    @Select("select source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb,manager managerId,servicetype " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
             "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -152,7 +153,7 @@ public interface DataSourceDAO {
 
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_api_authorize dsa on dsa.source_id=ds.source_id " +
             "where dsa.authorize_user_id=#{userId} and isapi=true" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -187,7 +188,7 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -222,7 +223,7 @@ public interface DataSourceDAO {
 
     //搜索api数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and ds.isapi=true" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -279,7 +280,7 @@ public interface DataSourceDAO {
 
 
     //获取测试连接参数
-    @Select("select source_type sourceType,ip,port,username userName,password as AESPassword,database,jdbc_parameter jdbcParameter " +
+    @Select("select source_type sourceType,ip,port,username userName,password as AESPassword,database,jdbc_parameter jdbcParameter,servicetype " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
 
