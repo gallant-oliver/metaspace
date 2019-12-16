@@ -414,8 +414,8 @@ public class AtlasTypeUtil {
         return new AtlasRelatedObjectId(getAtlasObjectId(entity));
     }
 
-    public static AtlasRelatedObjectId toAtlasRelatedObjectId(AtlasEntity entity, AtlasTypeRegistry typeRegistry) {
-        return new AtlasRelatedObjectId(getAtlasObjectId(entity, typeRegistry));
+    public static AtlasRelatedObjectId toAtlasRelatedObjectId(AtlasEntity entity, String relationshipType){
+        return new AtlasRelatedObjectId(getAtlasObjectId(entity), relationshipType);
     }
 
     public static AtlasObjectId getAtlasObjectId(AtlasEntity entity) {
@@ -679,5 +679,35 @@ public class AtlasTypeUtil {
                 sb.append(typeDef.getName());
             }
         }
+    }
+
+    public static List<AtlasRelatedObjectId> getAtlasRelatedObjectIds(List<AtlasEntity> entities, String relationshipType) {
+        final List<AtlasRelatedObjectId> ret;
+        if (CollectionUtils.isNotEmpty(entities)) {
+            ret = new ArrayList<>(entities.size());
+            for (AtlasEntity entity : entities) {
+                ret.add(getAtlasRelatedObjectId(entity, relationshipType));
+            }
+        } else {
+            ret = Collections.emptyList();
+        }
+        return ret;
+    }
+
+    public static AtlasRelatedObjectId getAtlasRelatedObjectId(AtlasEntity entity, String relationshipType) {
+        return getAtlasRelatedObjectId(getObjectId(entity), relationshipType);
+    }
+
+    public static AtlasRelatedObjectId getAtlasRelatedObjectId(AtlasObjectId objectId, String relationShipType) {
+        AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId(objectId, relationShipType);
+        return atlasRelatedObjectId;
+    }
+
+    public static final String ATTRIBUTE_QUALIFIED_NAME = "qualifiedName";
+    public static AtlasObjectId getObjectId(AtlasEntity entity) {
+        String qualifiedName = (String) entity.getAttribute(ATTRIBUTE_QUALIFIED_NAME);
+        AtlasObjectId ret = new AtlasObjectId(entity.getGuid(), entity.getTypeName(), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
+
+        return ret;
     }
 }

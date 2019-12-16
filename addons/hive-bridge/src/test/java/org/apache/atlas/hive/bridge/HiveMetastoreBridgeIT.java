@@ -76,7 +76,7 @@ public class HiveMetastoreBridgeIT extends HiveITBase {
         String tableName = tableName();
         String pFile     = createTestDFSPath("parentPath");
 
-        runCommand(driverWithoutContext, String.format("create EXTERNAL table %s(id string) location '%s'", tableName, pFile));
+        runCommandWithDelay(driverWithoutContext, String.format("create EXTERNAL table %s(id string) location '%s'", tableName, pFile), 3000);
 
         String dbId = assertDatabaseIsRegistered(DEFAULT_DB);
 
@@ -97,7 +97,7 @@ public class HiveMetastoreBridgeIT extends HiveITBase {
     //TODO enable this test
     //@Test
     public void testCreateTableHiveProcessNameAttribute() throws Exception {
-    	//test if \n is trimmed from name attribute of the process entity
+        //test if \n is trimmed from name attribute of the process entity
         String tableName = tableName();
         String processNameQuery = String.format("create table %s (id string)", tableName);
         //add \n at the beginning of the query

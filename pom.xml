@@ -259,6 +259,9 @@
         <module>addons/hbase-bridge-shim</module>
         <module>addons/hbase-bridge</module>
         <module>addons/kafka-bridge</module>
+        <module>addons/impala-hook-api</module>
+        <module>addons/impala-bridge-shim</module>
+        <module>addons/impala-bridge</module>
 
         <module>distro</module>
     </modules>

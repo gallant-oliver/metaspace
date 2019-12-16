@@ -20,6 +20,7 @@ package org.apache.atlas.hive.bridge;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.sun.jersey.api.client.ClientResponse;
+import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasServiceException;
@@ -83,26 +84,29 @@ public class HiveMetaStoreBridge {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridge.class);
 
     public static final String CONF_PREFIX                     = "atlas.hook.hive.";
-    public static final String HIVE_CLUSTER_NAME               = "atlas.cluster.name";
+    public static final String CLUSTER_NAME_KEY                = "atlas.cluster.name";
+    public static final String HIVE_METADATA_NAMESPACE         = "atlas.metadata.namespace";
     public static final String HDFS_PATH_CONVERT_TO_LOWER_CASE = CONF_PREFIX + "hdfs_path.convert_to_lowercase";
     public static final String DEFAULT_CLUSTER_NAME            = "primary";
     public static final String TEMP_TABLE_PREFIX               = "_temp-";
     public static final String ATLAS_ENDPOINT                  = "atlas.rest.address";
     public static final String SEP                             = ":".intern();
     public static final String HDFS_PATH                       = "hdfs_path";
+    public static final String DEFAULT_METASTORE_CATALOG       = "hive";
 
     private static final int    EXIT_CODE_SUCCESS = 0;
     private static final int    EXIT_CODE_FAILED  = 1;
     private static final String DEFAULT_ATLAS_URL = "http://localhost:21000/";
 
-    private final String                  clusterName;
-    private final Hive                    hiveClient;
-    private final AtlasClientV2           atlasClientV2;
-    private final boolean                 convertHdfsPathToLowerCase;
+    private final String        metadataNamespace;
+    private final Hive          hiveClient;
+    private final AtlasClientV2 atlasClientV2;
+    private final boolean       convertHdfsPathToLowerCase;
 
 
     public static void main(String[] args) {
         int exitCode = EXIT_CODE_FAILED;
+        AtlasClientV2 atlasClientV2 = null;
 
         try {
             Options options = new Options();
@@ -123,7 +127,6 @@ public class HiveMetaStoreBridge {
                 atlasEndpoint = new String[] { DEFAULT_ATLAS_URL };
             }
 
-            final AtlasClientV2 atlasClientV2;
 
             if (!AuthenticationUtil.isKerberosAuthenticationEnabled()) {
                 String[] basicAuthUsernamePassword = AuthenticationUtil.getBasicAuthenticationInput();
@@ -175,7 +178,6 @@ public class HiveMetaStoreBridge {
         } catch(Exception e) {
             LOG.error("Import failed", e);
         }
-
         System.exit(exitCode);
     }
 
@@ -205,7 +207,10 @@ public class HiveMetaStoreBridge {
      * @param hiveConf {@link HiveConf} for Hive component in the cluster
      */
     public HiveMetaStoreBridge(Configuration atlasProperties, HiveConf hiveConf, AtlasClientV2 atlasClientV2) throws Exception {
-        this(atlasProperties.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME), Hive.get(hiveConf), atlasClientV2, atlasProperties.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true));
+        this.metadataNamespace          = getMetadataNamespace(atlasProperties);
+        this.hiveClient                 = Hive.get(hiveConf);
+        this.atlasClientV2              = atlasClientV2;
+        this.convertHdfsPathToLowerCase = atlasProperties.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, false);
     }
 
     /**
@@ -216,19 +221,27 @@ public class HiveMetaStoreBridge {
         this(atlasProperties, hiveConf, null);
     }
 
-    HiveMetaStoreBridge(String clusterName, Hive hiveClient, AtlasClientV2 atlasClientV2) {
-        this(clusterName, hiveClient, atlasClientV2, true);
+    HiveMetaStoreBridge(String metadataNamespace, Hive hiveClient, AtlasClientV2 atlasClientV2) {
+        this(metadataNamespace, hiveClient, atlasClientV2, true);
     }
 
-    HiveMetaStoreBridge(String clusterName, Hive hiveClient, AtlasClientV2 atlasClientV2, boolean convertHdfsPathToLowerCase) {
-        this.clusterName                = clusterName;
+    HiveMetaStoreBridge(String metadataNamespace, Hive hiveClient, AtlasClientV2 atlasClientV2, boolean convertHdfsPathToLowerCase) {
+        this.metadataNamespace          = metadataNamespace;
         this.hiveClient                 = hiveClient;
         this.atlasClientV2              = atlasClientV2;
         this.convertHdfsPathToLowerCase = convertHdfsPathToLowerCase;
     }
 
-    public String getClusterName() {
-        return clusterName;
+    public String getMetadataNamespace(Configuration config) {
+        return config.getString(HIVE_METADATA_NAMESPACE, getClusterName(config));
+    }
+
+    private String getClusterName(Configuration config) {
+        return config.getString(CLUSTER_NAME_KEY, DEFAULT_CLUSTER_NAME);
+    }
+
+    public String getMetadataNamespace() {
+        return metadataNamespace;
     }
 
     public Hive getHiveClient() {
@@ -333,7 +346,7 @@ public class HiveMetaStoreBridge {
             AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
             if (table.getTableType() == TableType.EXTERNAL_TABLE) {
-                String                 processQualifiedName = getTableProcessQualifiedName(clusterName, table);
+                String                 processQualifiedName = getTableProcessQualifiedName(metadataNamespace, table);
                 AtlasEntityWithExtInfo processEntity        = findProcessEntity(processQualifiedName);
 
                 if (processEntity == null) {
@@ -346,9 +359,9 @@ public class HiveMetaStoreBridge {
 
                     processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, processQualifiedName);
                     processInst.setAttribute(ATTRIBUTE_NAME, query);
-                    processInst.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
-                    processInst.setAttribute(ATTRIBUTE_INPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(pathInst)));
-                    processInst.setAttribute(ATTRIBUTE_OUTPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(tableInst)));
+                    processInst.setAttribute(ATTRIBUTE_CLUSTER_NAME, metadataNamespace);
+                    processInst.setRelationshipAttribute(ATTRIBUTE_INPUTS, Collections.singletonList(AtlasTypeUtil.getAtlasRelatedObjectId(pathInst, RELATIONSHIP_DATASET_PROCESS_INPUTS)));
+                    processInst.setRelationshipAttribute(ATTRIBUTE_OUTPUTS, Collections.singletonList(AtlasTypeUtil.getAtlasRelatedObjectId(tableInst, RELATIONSHIP_PROCESS_DATASET_OUTPUTS)));
                     processInst.setAttribute(ATTRIBUTE_USER_NAME, table.getOwner());
                     processInst.setAttribute(ATTRIBUTE_START_TIME, now);
                     processInst.setAttribute(ATTRIBUTE_END_TIME, now);
@@ -392,7 +405,7 @@ public class HiveMetaStoreBridge {
         Database               db  = hiveClient.getDatabase(databaseName);
 
         if (db != null) {
-            ret = findDatabase(clusterName, databaseName);
+            ret = findDatabase(metadataNamespace, databaseName);
 
             if (ret == null) {
                 ret = registerInstance(new AtlasEntityWithExtInfo(toDbEntity(db)));
@@ -536,14 +549,14 @@ public class HiveMetaStoreBridge {
             dbEntity = new AtlasEntity(HiveDataTypes.HIVE_DB.getName());
         }
 
-        String dbName = hiveDB.getName().toLowerCase();
+        String dbName = getDatabaseName(hiveDB);
 
-        dbEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(clusterName, dbName));
+        dbEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(metadataNamespace, dbName));
         dbEntity.setAttribute(ATTRIBUTE_NAME, dbName);
         dbEntity.setAttribute(ATTRIBUTE_DESCRIPTION, hiveDB.getDescription());
         dbEntity.setAttribute(ATTRIBUTE_OWNER, hiveDB.getOwnerName());
 
-        dbEntity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
+        dbEntity.setAttribute(ATTRIBUTE_CLUSTER_NAME, metadataNamespace);
         dbEntity.setAttribute(ATTRIBUTE_LOCATION, HdfsNameServiceResolver.getPathWithNameServiceID(hiveDB.getLocationUri()));
         dbEntity.setAttribute(ATTRIBUTE_PARAMETERS, hiveDB.getParameters());
 
@@ -553,6 +566,18 @@ public class HiveMetaStoreBridge {
 
         return dbEntity;
     }
+
+    public static String getDatabaseName(Database hiveDB) {
+        String dbName      = hiveDB.getName().toLowerCase();
+        /*String catalogName = hiveDB.getCatalogName() != null ? hiveDB.getCatalogName().toLowerCase() : null;
+
+        if (StringUtils.isNotEmpty(catalogName) && !StringUtils.equals(catalogName, DEFAULT_METASTORE_CATALOG)) {
+            dbName = catalogName + SEP + dbName;
+        }*/
+
+        return dbName;
+    }
+
     /**
      * Create a new table instance in Atlas
      * @param  database AtlasEntity for Hive  {@link AtlasEntity} to which this table belongs
@@ -570,11 +595,11 @@ public class HiveMetaStoreBridge {
         }
 
         AtlasEntity tableEntity        = table.getEntity();
-        String      tableQualifiedName = getTableQualifiedName(clusterName, hiveTable);
+        String      tableQualifiedName = getTableQualifiedName(metadataNamespace, hiveTable);
         long        createTime         = BaseHiveEvent.getTableCreateTime(hiveTable);
         long        lastAccessTime     = hiveTable.getLastAccessTime() > 0 ? hiveTable.getLastAccessTime() : createTime;
 
-        tableEntity.setAttribute(ATTRIBUTE_DB, BaseHiveEvent.getObjectId(database));
+        tableEntity.setRelationshipAttribute(ATTRIBUTE_DB, AtlasTypeUtil.getAtlasRelatedObjectId(database, RELATIONSHIP_HIVE_TABLE_DB));
         tableEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
         tableEntity.setAttribute(ATTRIBUTE_NAME, hiveTable.getTableName().toLowerCase());
         tableEntity.setAttribute(ATTRIBUTE_OWNER, hiveTable.getOwner());
@@ -595,13 +620,13 @@ public class HiveMetaStoreBridge {
             tableEntity.setAttribute(ATTRIBUTE_VIEW_EXPANDED_TEXT, hiveTable.getViewExpandedText());
         }
 
-        AtlasEntity       sdEntity = toStroageDescEntity(hiveTable.getSd(), tableQualifiedName, getStorageDescQFName(tableQualifiedName), BaseHiveEvent.getObjectId(tableEntity));
-        List<AtlasEntity> partKeys = toColumns(hiveTable.getPartitionKeys(), tableEntity);
-        List<AtlasEntity> columns  = toColumns(hiveTable.getCols(), tableEntity);
+        AtlasEntity       sdEntity = toStorageDescEntity(hiveTable.getSd(), tableQualifiedName, getStorageDescQFName(tableQualifiedName), AtlasTypeUtil.getObjectId(tableEntity));
+        List<AtlasEntity> partKeys = toColumns(hiveTable.getPartitionKeys(), tableEntity, RELATIONSHIP_HIVE_TABLE_PART_KEYS);
+        List<AtlasEntity> columns  = toColumns(hiveTable.getCols(), tableEntity, RELATIONSHIP_HIVE_TABLE_COLUMNS);
 
-        tableEntity.setAttribute(ATTRIBUTE_STORAGEDESC, BaseHiveEvent.getObjectId(sdEntity));
-        tableEntity.setAttribute(ATTRIBUTE_PARTITION_KEYS, BaseHiveEvent.getObjectIds(partKeys));
-        tableEntity.setAttribute(ATTRIBUTE_COLUMNS, BaseHiveEvent.getObjectIds(columns));
+        tableEntity.setRelationshipAttribute(ATTRIBUTE_STORAGEDESC, AtlasTypeUtil.getAtlasRelatedObjectId(sdEntity, RELATIONSHIP_HIVE_TABLE_STORAGE_DESC));
+        tableEntity.setRelationshipAttribute(ATTRIBUTE_PARTITION_KEYS, AtlasTypeUtil.getAtlasRelatedObjectIds(partKeys, RELATIONSHIP_HIVE_TABLE_PART_KEYS));
+        tableEntity.setRelationshipAttribute(ATTRIBUTE_COLUMNS, AtlasTypeUtil.getAtlasRelatedObjectIds(columns, RELATIONSHIP_HIVE_TABLE_COLUMNS));
 
         table.addReferredEntity(database);
         table.addReferredEntity(sdEntity);
@@ -623,10 +648,10 @@ public class HiveMetaStoreBridge {
         return table;
     }
 
-    private AtlasEntity toStroageDescEntity(StorageDescriptor storageDesc, String tableQualifiedName, String sdQualifiedName, AtlasObjectId tableId ) throws AtlasHookException {
+    private AtlasEntity toStorageDescEntity(StorageDescriptor storageDesc, String tableQualifiedName, String sdQualifiedName, AtlasObjectId tableId ) throws AtlasHookException {
         AtlasEntity ret = new AtlasEntity(HiveDataTypes.HIVE_STORAGEDESC.getName());
 
-        ret.setAttribute(ATTRIBUTE_TABLE, tableId);
+        ret.setRelationshipAttribute(ATTRIBUTE_TABLE, AtlasTypeUtil.getAtlasRelatedObjectId(tableId, RELATIONSHIP_HIVE_TABLE_STORAGE_DESC));
         ret.setAttribute(ATTRIBUTE_QUALIFIED_NAME, sdQualifiedName);
         ret.setAttribute(ATTRIBUTE_PARAMETERS, storageDesc.getParameters());
         ret.setAttribute(ATTRIBUTE_LOCATION, HdfsNameServiceResolver.getPathWithNameServiceID(storageDesc.getLocation()));
@@ -673,7 +698,7 @@ public class HiveMetaStoreBridge {
         return ret;
     }
 
-    private List<AtlasEntity> toColumns(List<FieldSchema> schemaList, AtlasEntity table) throws AtlasHookException {
+    private List<AtlasEntity> toColumns(List<FieldSchema> schemaList, AtlasEntity table, String relationshipType) throws AtlasHookException {
         List<AtlasEntity> ret = new ArrayList<>();
 
         int columnPosition = 0;
@@ -682,7 +707,7 @@ public class HiveMetaStoreBridge {
 
             AtlasEntity column = new AtlasEntity(HiveDataTypes.HIVE_COLUMN.getName());
 
-            column.setAttribute(ATTRIBUTE_TABLE, BaseHiveEvent.getObjectId(table));
+            column.setRelationshipAttribute(ATTRIBUTE_TABLE, AtlasTypeUtil.getAtlasRelatedObjectId(table, relationshipType));
             column.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), fs.getName()));
             column.setAttribute(ATTRIBUTE_NAME, fs.getName());
             column.setAttribute(ATTRIBUTE_OWNER, table.getAttribute(ATTRIBUTE_OWNER));
@@ -700,8 +725,8 @@ public class HiveMetaStoreBridge {
         String      nameServiceID = HdfsNameServiceResolver.getNameServiceIDForPath(pathUri);
         Path        path          = new Path(pathUri);
 
-        ret.setAttribute(ATTRIBUTE_NAME, Path.getPathWithoutSchemeAndAuthority(path).toString().toLowerCase());
-        ret.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
+        ret.setAttribute(ATTRIBUTE_NAME, Path.getPathWithoutSchemeAndAuthority(path).toString());
+        ret.setAttribute(ATTRIBUTE_CLUSTER_NAME, metadataNamespace);
 
         if (StringUtils.isNotEmpty(nameServiceID)) {
             // Name service resolution is successful, now get updated HDFS path where the host port info is replaced by resolved name service
@@ -713,7 +738,7 @@ public class HiveMetaStoreBridge {
         } else {
             ret.setAttribute(ATTRIBUTE_PATH, pathUri);
 
-            // Only append clusterName for the HDFS path
+            // Only append metadataNamespace for the HDFS path
             if (pathUri.startsWith(HdfsNameServiceResolver.HDFS_SCHEME)) {
                 ret.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getHdfsPathQualifiedName(pathUri));
             } else {
@@ -727,18 +752,18 @@ public class HiveMetaStoreBridge {
     /**
      * Gets the atlas entity for the database
      * @param databaseName  database Name
-     * @param clusterName    cluster name
+     * @param metadataNamespace    cluster name
      * @return AtlasEntity for database if exists, else null
      * @throws Exception
      */
-    private AtlasEntityWithExtInfo findDatabase(String clusterName, String databaseName) throws Exception {
+    private AtlasEntityWithExtInfo findDatabase(String metadataNamespace, String databaseName) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Searching Atlas for database {}", databaseName);
         }
 
         String typeName = HiveDataTypes.HIVE_DB.getName();
 
-        return findEntity(typeName, getDBQualifiedName(clusterName, databaseName));
+        return findEntity(typeName, getDBQualifiedName(metadataNamespace, databaseName));
     }
 
     /**
@@ -754,7 +779,7 @@ public class HiveMetaStoreBridge {
         }
 
         String typeName         = HiveDataTypes.HIVE_TABLE.getName();
-        String tblQualifiedName = getTableQualifiedName(getClusterName(), hiveTable.getDbName(), hiveTable.getTableName());
+        String tblQualifiedName = getTableQualifiedName(getMetadataNamespace(), hiveTable.getDbName(), hiveTable.getTableName());
 
         return findEntity(typeName, tblQualifiedName);
     }
@@ -818,37 +843,37 @@ public class HiveMetaStoreBridge {
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
-     * @param clusterName Name of the cluster to which the Hive component belongs
+     * @param metadataNamespace Metadata namespace of the cluster to which the Hive component belongs
      * @param table hive table for which the qualified name is needed
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
-    private static String getTableQualifiedName(String clusterName, Table table) {
-        return getTableQualifiedName(clusterName, table.getDbName(), table.getTableName(), table.isTemporary());
+    private static String getTableQualifiedName(String metadataNamespace, Table table) {
+        return getTableQualifiedName(metadataNamespace, table.getDbName(), table.getTableName(), table.isTemporary());
     }
 
     private String getHdfsPathQualifiedName(String hdfsPath) {
-        return String.format("%s@%s", hdfsPath, clusterName);
+        return String.format("%s@%s", hdfsPath, metadataNamespace);
     }
 
     /**
      * Construct the qualified name used to uniquely identify a Database instance in Atlas.
-     * @param clusterName Name of the cluster to which the Hive component belongs
+     * @param metadataNamespace Name of the cluster to which the Hive component belongs
      * @param dbName Name of the Hive database
      * @return Unique qualified name to identify the Database instance in Atlas.
      */
-    public static String getDBQualifiedName(String clusterName, String dbName) {
-        return String.format("%s@%s", dbName.toLowerCase(), clusterName);
+    public static String getDBQualifiedName(String metadataNamespace, String dbName) {
+        return String.format("%s@%s", dbName.toLowerCase(), metadataNamespace);
     }
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
-     * @param clusterName Name of the cluster to which the Hive component belongs
+     * @param metadataNamespace Name of the cluster to which the Hive component belongs
      * @param dbName Name of the Hive database to which the Table belongs
      * @param tableName Name of the Hive table
      * @param isTemporaryTable is this a temporary table
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
-    public static String getTableQualifiedName(String clusterName, String dbName, String tableName, boolean isTemporaryTable) {
+    public static String getTableQualifiedName(String metadataNamespace, String dbName, String tableName, boolean isTemporaryTable) {
         String tableTempName = tableName;
 
         if (isTemporaryTable) {
@@ -859,11 +884,11 @@ public class HiveMetaStoreBridge {
             }
         }
 
-        return String.format("%s.%s@%s", dbName.toLowerCase(), tableTempName.toLowerCase(), clusterName);
+        return String.format("%s.%s@%s", dbName.toLowerCase(), tableTempName.toLowerCase(), metadataNamespace);
     }
 
-    public static String getTableProcessQualifiedName(String clusterName, Table table) {
-        String tableQualifiedName = getTableQualifiedName(clusterName, table);
+    public static String getTableProcessQualifiedName(String metadataNamespace, Table table) {
+        String tableQualifiedName = getTableQualifiedName(metadataNamespace, table);
         long   createdTime        = getTableCreatedTime(table);
 
         return tableQualifiedName + SEP + createdTime;
@@ -872,24 +897,24 @@ public class HiveMetaStoreBridge {
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
-     * @param clusterName Name of the cluster to which the Hive component belongs
+     * @param metadataNamespace Metadata namespace of the cluster to which the Hive component belongs
      * @param dbName Name of the Hive database to which the Table belongs
      * @param tableName Name of the Hive table
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
-    public static String getTableQualifiedName(String clusterName, String dbName, String tableName) {
-        return getTableQualifiedName(clusterName, dbName, tableName, false);
+    public static String getTableQualifiedName(String metadataNamespace, String dbName, String tableName) {
+        return getTableQualifiedName(metadataNamespace, dbName, tableName, false);
     }
     public static String getStorageDescQFName(String tableQualifiedName) {
         return tableQualifiedName + "_storage";
     }
 
     public static String getColumnQualifiedName(final String tableQualifiedName, final String colName) {
-        final String[] parts       = tableQualifiedName.split("@");
-        final String   tableName   = parts[0];
-        final String   clusterName = parts[1];
+        final String[] parts             = tableQualifiedName.split("@");
+        final String   tableName         = parts[0];
+        final String   metadataNamespace = parts[1];
 
-        return String.format("%s.%s@%s", tableName, colName.toLowerCase(), clusterName);
+        return String.format("%s.%s@%s", tableName, colName.toLowerCase(), metadataNamespace);
     }
 
     public static long getTableCreatedTime(Table table) {

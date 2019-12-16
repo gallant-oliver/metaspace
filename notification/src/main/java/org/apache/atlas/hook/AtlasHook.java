@@ -33,7 +33,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
@@ -59,10 +58,14 @@ public abstract class AtlasHook {
     public static final String ATLAS_NOTIFICATION_FAILED_MESSAGES_FILENAME_KEY    = "atlas.notification.failed.messages.filename";
     public static final String ATLAS_NOTIFICATION_LOG_FAILED_MESSAGES_ENABLED_KEY = "atlas.notification.log.failed.messages";
     public static final String ATLAS_HOOK_FAILED_MESSAGES_LOG_DEFAULT_NAME        = "atlas_hook_failed_messages.log";
+    public static final String CONF_METADATA_NAMESPACE                            = "atlas.metadata.namespace";
+    public static final String CLUSTER_NAME_KEY                                   = "atlas.cluster.name";
+    public static final String DEFAULT_CLUSTER_NAME                               = "primary";
 
     protected static Configuration         atlasProperties;
     protected static NotificationInterface notificationInterface;
 
+    private static final String               metadataNamespace;
     private static final int                  SHUTDOWN_HOOK_WAIT_TIME_MS = 3000;
     private static final boolean              logFailedMessages;
     private static final FailedMessagesLogger failedMessagesLogger;
@@ -95,6 +98,7 @@ public abstract class AtlasHook {
             }
         }
 
+        metadataNamespace         = getMetadataNamespace(atlasProperties);
         notificationMaxRetries    = atlasProperties.getInt(ATLAS_NOTIFICATION_MAX_RETRIES, 3);
         notificationRetryInterval = atlasProperties.getInt(ATLAS_NOTIFICATION_RETRY_INTERVAL, 1000);
         notificationInterface     = NotificationProvider.get();
@@ -118,8 +122,8 @@ public abstract class AtlasHook {
             int  queueSize       = atlasProperties.getInt(ATLAS_NOTIFICATION_ASYNCHRONOUS_QUEUE_SIZE, 10000);
 
             executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTimeMs, TimeUnit.MILLISECONDS,
-                                              new LinkedBlockingDeque<>(queueSize),
-                                              new ThreadFactoryBuilder().setNameFormat("Atlas Notifier %d").setDaemon(true).build());
+                    new LinkedBlockingDeque<>(queueSize),
+                    new ThreadFactoryBuilder().setNameFormat("Atlas Notifier %d").setDaemon(true).build());
 
             ShutdownHookManager.get().addShutdownHook(new Thread() {
                 @Override
@@ -172,9 +176,8 @@ public abstract class AtlasHook {
             return;
         }
 
-        final int    maxAttempts         = maxRetries < 1 ? 1 : maxRetries;
-        final String message             = messages.toString();
-        Exception    notificationFailure = null;
+        final int maxAttempts         = maxRetries < 1 ? 1 : maxRetries;
+        Exception notificationFailure = null;
 
         for (int numAttempt = 1; numAttempt <= maxAttempts; numAttempt++) {
             if (numAttempt > 1) { // retry attempt
@@ -214,14 +217,16 @@ public abstract class AtlasHook {
             }
         }
 
-        if (shouldLogFailedMessages && notificationFailure instanceof NotificationException) {
-            final List<String> failedMessages = ((NotificationException) notificationFailure).getFailedMessages();
+        if (notificationFailure != null) {
+            if (shouldLogFailedMessages && notificationFailure instanceof NotificationException) {
+                final List<String> failedMessages = ((NotificationException) notificationFailure).getFailedMessages();
 
-            for (String msg : failedMessages) {
-                logger.log(msg);
+                for (String msg : failedMessages) {
+                    logger.log(msg);
+                }
             }
 
-            LOG.error("Giving up after {} failed attempts to send notification to Atlas: {}", maxAttempts, message, notificationFailure);
+            LOG.error("Giving up after {} failed attempts to send notification to Atlas: {}", maxAttempts, messages.toString(), notificationFailure);
         }
     }
 
@@ -305,4 +310,15 @@ public abstract class AtlasHook {
         return ret;
     }
 
+    private static String getMetadataNamespace(Configuration config) {
+        return config.getString(CONF_METADATA_NAMESPACE, getClusterName(config));
+    }
+
+    private static String getClusterName(Configuration config) {
+        return config.getString(CLUSTER_NAME_KEY, DEFAULT_CLUSTER_NAME);
+    }
+
+    public String getMetadataNamespace() {
+        return metadataNamespace;
+    }
 }
