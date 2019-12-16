@@ -176,7 +176,7 @@ public class AdminResource {
     @GET
     @Path("version")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response getVersion() {
+    public Response getVersion()throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> AdminResource.getVersion()");
         }
