@@ -32,6 +32,15 @@ public class DataSourceHead {
     private boolean editManager;
     private boolean isSchema;
     private String oracleDb;
+    private String serviceType;
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
 
     public String getOracleDb() {
         return oracleDb;

@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.dataSource;
 
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.StringUtils;
 
 public class DataSourceConnection {
@@ -26,6 +28,15 @@ public class DataSourceConnection {
     private String driver;
     private String url;
     private String aesPassword;
+    private String serviceType;
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
+    }
 
     public String getAesPassword() {
         return aesPassword;
@@ -115,11 +126,17 @@ public class DataSourceConnection {
         return url;
     }
 
-    public void setUrl() {
+    public void setUrl() throws AtlasBaseException {
         if (sourceType.toUpperCase().equals("MYSQL")){
             url = "jdbc:mysql://" + ip + ":" + port + "/" + database;
         }else if (sourceType.toUpperCase().equals("ORACLE")){
-            url = "jdbc:oracle:thin:@" + ip + ":" + port + ":"+database;
+            if ("SID".equalsIgnoreCase(serviceType)){
+                url = "jdbc:oracle:thin:@" + ip + ":" + port + ":"+database;
+            }else if ("service_name".equalsIgnoreCase(serviceType)){
+                url = "jdbc:oracle:thin:@//"+ ip + ":" + port + "/"+database;
+            }else{
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "连接类型错误");
+            }
         }else if (sourceType.toUpperCase().equals("SQL SERVER")){
             url = "jdbc:sqlserver://" + ip + ":" + port + ";DatabaseName="+database;
         }else if (sourceType.toUpperCase().equals("HIVE")){
