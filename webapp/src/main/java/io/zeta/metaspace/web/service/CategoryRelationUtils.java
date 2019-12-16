@@ -54,23 +54,28 @@ public class CategoryRelationUtils {
         utils = this;
     }
 
-    public static List<String> getPermissionCategoryList(String roleId, int categoryType) {
-        Map<String, RoleModulesCategories.Category> userCategorys = null;
-        List<String> categoryIds = new ArrayList<>();
-        if(SystemRole.ADMIN.getCode().equals(roleId)) {
-            categoryIds = utils.categoryDAO.getAllCategory(categoryType);
+    public static List<String> getPermissionCategoryList(String roleId, int categoryType) throws AtlasBaseException {
+        try {
+            Map<String, RoleModulesCategories.Category> userCategorys = null;
+            List<String> categoryIds = new ArrayList<>();
+            if (SystemRole.ADMIN.getCode().equals(roleId)) {
+                categoryIds = utils.categoryDAO.getAllCategory(categoryType);
 
-        } else {
-            userCategorys = utils.roleService.getUserStringCategoryMap(roleId, categoryType);
-            Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
-            List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
-            for(RoleModulesCategories.Category category : valueList) {
-                if(category.isShow()) {
-                    categoryIds.add(category.getGuid());
+            } else {
+                userCategorys = utils.roleService.getUserStringCategoryMap(roleId, categoryType);
+                Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+                List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+                for (RoleModulesCategories.Category category : valueList) {
+                    if (category.isShow()) {
+                        categoryIds.add(category.getGuid());
+                    }
                 }
             }
+            return categoryIds;
+        } catch (Exception e) {
+            LOG.error("导出Excel失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
         }
-        return categoryIds;
     }
 
     public static String getPath(String categoryId) throws AtlasBaseException {
@@ -80,7 +85,7 @@ public class CategoryRelationUtils {
             path = path.replace(",", "/").replace("\"", "");
             return path;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询路径失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
         }
     }
@@ -90,7 +95,7 @@ public class CategoryRelationUtils {
             String pathStr = utils.categoryDAO.queryPathIdsByGuid(categoryId);
             return pathStr.substring(1, pathStr.length()-1).replace("\"","").split(",");
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询路径失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询路径失败");
         }
     }

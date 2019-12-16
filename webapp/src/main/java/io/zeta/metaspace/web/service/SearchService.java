@@ -196,7 +196,7 @@ public class SearchService {
             pageResult.setCurrentSize(tableList.size());
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -919,7 +919,7 @@ public class SearchService {
             }
             return roleDAO.getTableIds(categoryIds);
         }catch (Exception e){
-            LOG.error(e.getMessage());
+            LOG.error("获取用户管理的所有表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }

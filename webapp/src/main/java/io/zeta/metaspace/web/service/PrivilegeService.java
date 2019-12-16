@@ -105,7 +105,7 @@ public class PrivilegeService {
         try {
             return privilegeDAO.getAllModule();
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取权限模块失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限模块失败");
         }
     }
@@ -135,10 +135,9 @@ public class PrivilegeService {
             privilegeDAO.updateRolePrivilege(guetPrivigeId, roleIds);
 
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("删除模板失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除模板失败");
         }
     }
@@ -181,10 +180,9 @@ public class PrivilegeService {
                 privilegeDAO.addModule2Privilege(privilegeId, moduleIds);
 
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("更新权限模板失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新权限模板失败");
         }
     }
@@ -215,7 +213,7 @@ public class PrivilegeService {
             rolePageResult.setTotalSize(privilegetotalSize);
             return rolePageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取权限列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限列表失败");
         }
     }
@@ -233,7 +231,7 @@ public class PrivilegeService {
                 privilege.setModules(moduleList);
             return privilege;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取权限模板详情失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取权限模板详情失败");
         }
     }
@@ -255,7 +253,7 @@ public class PrivilegeService {
             pageResult.setTotalSize(totalSize);
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取角色列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取角色列表失败");
         }
     }

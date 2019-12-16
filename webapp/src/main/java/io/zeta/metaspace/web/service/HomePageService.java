@@ -149,6 +149,7 @@ public class HomePageService {
             timeDBTB.setSourceLogicDBTotal(logicDBTotal);
             return timeDBTB;
         } catch (Exception e) {
+            LOG.error("获取统计信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取统计信息失败");
         }
     }
@@ -292,7 +293,7 @@ public class HomePageService {
             pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
@@ -319,7 +320,7 @@ public class HomePageService {
             dataDistributionList.add(blankData);
             return dataDistributionList;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
@@ -344,7 +345,7 @@ public class HomePageService {
             pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }
@@ -369,7 +370,7 @@ public class HomePageService {
             pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
     }

@@ -91,11 +91,11 @@ public class MarketService {
             Set<CategoryEntityV2> valueList = categoryDao.getAll(type);
             return valueList;
         } catch (MyBatisSystemException e) {
-            LOG.error(e.getMessage());
+            LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (SQLException e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("数据库服务异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据库服务异常");
         }
     }
 
@@ -133,10 +133,9 @@ public class MarketService {
             pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -175,7 +174,7 @@ public class MarketService {
             info.setBusinessId(businessId);
             return info;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -189,7 +188,7 @@ public class MarketService {
             info.setDepartmentName(departmentName);
             return info;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取失败");
         }
     }
@@ -236,7 +235,7 @@ public class MarketService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("查询失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
@@ -254,10 +253,9 @@ public class MarketService {
             info.setEdit(false);
             return info;
         } catch (AtlasBaseException e) {
-            LOG.error(e.getMessage());
             throw e;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("获取信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取信息失败");
         }
     }

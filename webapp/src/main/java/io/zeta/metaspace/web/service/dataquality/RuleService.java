@@ -12,8 +12,6 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
@@ -25,7 +23,6 @@ import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -36,10 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,12 +52,17 @@ public class RuleService {
     private DataManageService dataManageService;
 
     public int insert(Rule rule) throws AtlasBaseException {
-        rule.setId(UUIDUtils.alphaUUID());
-        rule.setCreateTime(DateUtils.currentTimestamp());
-        rule.setUpdateTime(DateUtils.currentTimestamp());
-        rule.setCreator(AdminUtils.getUserData().getUserId());
-        rule.setDelete(false);
-        return ruleDAO.insert(rule);
+        try {
+            rule.setId(UUID.randomUUID().toString());
+            rule.setCreateTime(DateUtils.currentTimestamp());
+            rule.setUpdateTime(DateUtils.currentTimestamp());
+            rule.setCreator(AdminUtils.getUserData().getUserId());
+            rule.setDelete(false);
+            return ruleDAO.insert(rule);
+        } catch (Exception e) {
+            LOG.error("添加规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加规则失败");
+        }
     }
 
     public Rule getById(String id) throws AtlasBaseException {
@@ -76,7 +75,8 @@ public class RuleService {
             rule.setPath(path);
             return rule;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加规则失败");
         }
     }
 
@@ -86,22 +86,32 @@ public class RuleService {
 
     @Transactional
     public void deleteById(String number) throws AtlasBaseException {
-        Boolean enableStatus = ruleDAO.getEnableStatusById(number);
-        if(true==enableStatus) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
+        try {
+            Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+            if (true == enableStatus) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
+            }
+            dataStandardDAO.deleteByRuleId(number);
+            ruleDAO.deleteById(number);
+        } catch (Exception e) {
+            LOG.error("删除规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除规则失败");
         }
-        dataStandardDAO.deleteByRuleId(number);
-        ruleDAO.deleteById(number);
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
-        for (String number : numberList) {
-            Boolean enableStatus = ruleDAO.getEnableStatusById(number);
-            if(true==enableStatus) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在已被启用规则，不允许删除");
+        try {
+            for (String number : numberList) {
+                Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+                if (true == enableStatus) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在已被启用规则，不允许删除");
+                }
             }
+            ruleDAO.deleteByIdList(numberList);
+        } catch (Exception e) {
+            LOG.error("删除规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除规则失败");
         }
-        ruleDAO.deleteByIdList(numberList);
     }
 
     public int update(Rule rule) throws AtlasBaseException {
@@ -111,74 +121,90 @@ public class RuleService {
             BeansUtil.copyPropertiesIgnoreNull(rule, old);
             return ruleDAO.update(old);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("更新规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新规则失败");
         }
     }
 
     public PageResult<Rule> queryPageByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
-        List<Rule> list = queryByCatetoryId(categoryId, params);
-        PageResult<Rule> pageResult = new PageResult<>();
-        //long sum = ruleDAO.countByByCatetoryId(categoryId);
-        long sum = 0;
-        if (list.size()!=0){
-            sum = list.get(0).getTotal();
+        try {
+            List<Rule> list = queryByCatetoryId(categoryId, params);
+            PageResult<Rule> pageResult = new PageResult<>();
+            //long sum = ruleDAO.countByByCatetoryId(categoryId);
+            long sum = 0;
+            if (list.size() != 0) {
+                sum = list.get(0).getTotal();
+            }
+            //pageResult.setOffset(params.getOffset());
+            pageResult.setTotalSize(sum);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("获取规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则失败");
         }
-        //pageResult.setOffset(params.getOffset());
-        pageResult.setTotalSize(sum);
-        pageResult.setCurrentSize(list.size());
-        pageResult.setLists(list);
-        return pageResult;
     }
 
     private List<Rule> queryByCatetoryId(String categoryId, Parameters params) throws AtlasBaseException {
-        String path = CategoryRelationUtils.getPath(categoryId);
-        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
-        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
-            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
-        });
-        List<Rule> list = ruleDAO.queryByCatetoryId(categoryId, params)
-                .stream()
-                .map(rule -> {
-                    rule.setPath(path);
-                    String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
-                    rule.setRuleTypeName(ruleTypeName);
-                    return rule;
-                }).collect(Collectors.toList());
-        return list;
-    }
-
-    public PageResult<Rule> search(Parameters params) {
-        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
-        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
-            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
-        });
-        List<Rule> list = ruleDAO.search(params)
-                .stream()
-                .map(rule -> {
-                    String path = null;
-                    try {
-                        path = CategoryRelationUtils.getPath(rule.getCategoryId());
+        try {
+            String path = CategoryRelationUtils.getPath(categoryId);
+            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
+                ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
+            });
+            List<Rule> list = ruleDAO.queryByCatetoryId(categoryId, params)
+                    .stream()
+                    .map(rule -> {
                         rule.setPath(path);
                         String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
                         rule.setRuleTypeName(ruleTypeName);
-                    } catch (AtlasBaseException e) {
-                        LOG.error(e.getMessage(), e);
-                    }
-                    rule.setPath(path);
-                    return rule;
-                }).collect(Collectors.toList());
-
-        PageResult<Rule> pageResult = new PageResult<>();
-        //long sum = ruleDAO.countBySearch(params.getQuery());
-        long sum = 0;
-        if (list.size()!=0){
-            sum = list.get(0).getTotal();
+                        return rule;
+                    }).collect(Collectors.toList());
+            return list;
+        } catch (Exception e) {
+            LOG.error("获取规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则失败");
         }
-        //pageResult.setOffset(params.getOffset());
-        pageResult.setTotalSize(sum);
-        pageResult.setCurrentSize(list.size());
-        pageResult.setLists(list);
-        return pageResult;
+    }
+
+    public PageResult<Rule> search(Parameters params) throws AtlasBaseException {
+        try {
+            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
+                ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
+            });
+            List<Rule> list = ruleDAO.search(params)
+                    .stream()
+                    .map(rule -> {
+                        String path = null;
+                        try {
+                            path = CategoryRelationUtils.getPath(rule.getCategoryId());
+                            rule.setPath(path);
+                            String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
+                            rule.setRuleTypeName(ruleTypeName);
+                        } catch (AtlasBaseException e) {
+                            LOG.error(e.getMessage(), e);
+                        }
+                        rule.setPath(path);
+                        return rule;
+                    }).collect(Collectors.toList());
+
+            PageResult<Rule> pageResult = new PageResult<>();
+            //long sum = ruleDAO.countBySearch(params.getQuery());
+            long sum = 0;
+            if (list.size() != 0) {
+                sum = list.get(0).getTotal();
+            }
+            //pageResult.setOffset(params.getOffset());
+            pageResult.setTotalSize(sum);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("搜索异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索异常");
+        }
     }
 
     public List<CategoryPrivilege> getAll(Integer categoryType) throws AtlasBaseException {
@@ -190,7 +216,8 @@ public class RuleService {
             }
             return resultList;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取目录失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取目录失败");
         }
     }
 
@@ -204,7 +231,8 @@ public class RuleService {
             }
             return ruleDAO.updateRuleStatus(id, enable);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("更新规则状态失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新规则状态失败");
         }
     }
 
@@ -212,7 +240,8 @@ public class RuleService {
         try {
             return ruleDAO.getAllRuleTemplateList();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取规则模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则模板失败");
         }
     }
 
@@ -224,7 +253,8 @@ public class RuleService {
             }
             dataManageService.deleteCategory(categoryGuid);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.error("删除目录失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
         }
     }
 

@@ -59,7 +59,8 @@ public class RuleTemplateService {
             }
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取规则模板失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则模板失败");
         }
     }
 
@@ -78,18 +79,24 @@ public class RuleTemplateService {
             pageResult.setTotalSize(totalCount);
             return pageResult;
         } catch (Exception e) {
+            LOG.error("搜索失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
-    public void updateRuleType(List<RuleTemplate> lists) {
-        Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
-        RuleTemplateType.all().stream().forEach(ruleTemplateType-> {
-            ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
-        });
-        for (RuleTemplate ruleTemplate : lists) {
-            String ruleTypeName = ruleTemplateCategoryMap.get(ruleTemplate.getRuleType());
-            ruleTemplate.setRuleTypeName(ruleTypeName);
+    public void updateRuleType(List<RuleTemplate> lists) throws AtlasBaseException {
+        try {
+            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
+                ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
+            });
+            for (RuleTemplate ruleTemplate : lists) {
+                String ruleTypeName = ruleTemplateCategoryMap.get(ruleTemplate.getRuleType());
+                ruleTemplate.setRuleTypeName(ruleTypeName);
+            }
+        } catch (Exception e) {
+            LOG.error("搜索失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 

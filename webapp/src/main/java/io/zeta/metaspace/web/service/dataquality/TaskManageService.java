@@ -111,8 +111,8 @@ public class TaskManageService {
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
-            LOG.info(e.toString());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取任务列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务列表失败");
         }
     }
 
@@ -131,7 +131,8 @@ public class TaskManageService {
             }
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表失败");
         }
     }
 
@@ -146,7 +147,8 @@ public class TaskManageService {
             }
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取字段列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取字段列表失败");
         }
     }
 
@@ -160,7 +162,8 @@ public class TaskManageService {
                 taskManageDAO.deleteWarningGroupUsed(taskIdList);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("删除任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除任务失败");
         }
     }
 
@@ -192,7 +195,8 @@ public class TaskManageService {
             }
             return null;
         }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取规则列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则列表失败");
         }
     }
 
@@ -200,7 +204,8 @@ public class TaskManageService {
         try {
             return taskManageDAO.getWarningGroupList(groupId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取告警组列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
 
@@ -208,7 +213,8 @@ public class TaskManageService {
         try {
             return taskManageDAO.getAllWarningGroup();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取告警组列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
 
@@ -270,7 +276,8 @@ public class TaskManageService {
             taskManageDAO.updateTaskFinishedPercent(guid, 0F);
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("添加任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
     }
 
@@ -302,8 +309,11 @@ public class TaskManageService {
                 addDataQualitySubTaskObject(taskId, guid, currentTime, objectIdList);
                 taskManageDAO.addDataQualitySubTask(dataQualitySubTask);
             }
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("添加子任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务失败");
         }
     }
 
@@ -332,7 +342,8 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskObject(dataQualitySubTaskObject);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("添加子任务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务对象失败");
         }
     }
 
@@ -396,7 +407,8 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskRule(subTaskRule);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("添加子任务规则失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务规则失败");
         }
     }
 
@@ -408,7 +420,8 @@ public class TaskManageService {
             taskInfo.setUpdater(userId);
             taskManageDAO.updateTaskInfo(taskInfo);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("更新任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新任务失败");
         }
 
     }
@@ -451,7 +464,8 @@ public class TaskManageService {
 
             return info;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取任务信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
     }
 
@@ -474,7 +488,8 @@ public class TaskManageService {
             }
             return basicInfo;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.error("获取任务信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
 
     }
@@ -492,7 +507,8 @@ public class TaskManageService {
             //设置任务状态为【启用】
             taskManageDAO.updateTaskEnableStatus(taskId, true);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("开启任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
         }
     }
 
@@ -502,7 +518,8 @@ public class TaskManageService {
             String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
             quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("开启任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
         }
     }
 
@@ -514,7 +531,7 @@ public class TaskManageService {
             //设置模板状态为【暂停】
             taskManageDAO.updateTaskEnableStatus(taskId, false);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("关闭模板失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
@@ -541,6 +558,7 @@ public class TaskManageService {
             taskManageDAO.updateTaskQrtzName(taskId, jobName);
 
         } catch (Exception e) {
+            LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
     }
@@ -565,7 +583,8 @@ public class TaskManageService {
 
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取任务规则列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务规则列表失败");
         }
     }
 
@@ -576,7 +595,8 @@ public class TaskManageService {
             taskExecutionInfo.setExecutionRecordList(executionRecordList);
             return taskExecutionInfo;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取报告详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告详情失败");
         }
     }
 
@@ -650,7 +670,8 @@ public class TaskManageService {
             resultData.setSuggestion(suggestion);
             return resultData;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取报告详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告详情失败");
         }
     }
 
@@ -684,7 +705,8 @@ public class TaskManageService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取报告规则详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告规则详情失败");
         }
     }
 
@@ -699,7 +721,8 @@ public class TaskManageService {
             return pageResult;
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取任务列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务列表失败");
         }
     }
 
@@ -711,7 +734,8 @@ public class TaskManageService {
             return logInfo;
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取报告详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告详情失败");
         }
     }
 

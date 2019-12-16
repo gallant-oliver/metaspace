@@ -12,8 +12,6 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import io.zeta.metaspace.model.dataquality2.ErrorInfo;
 import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
@@ -41,6 +39,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,17 +55,27 @@ public class WarningGroupService {
     private TaskManageDAO taskManageDAO;
 
     public int insert(WarningGroup warningGroup) throws AtlasBaseException {
-        warningGroup.setId(UUIDUtils.alphaUUID());
-        warningGroup.setCreateTime(DateUtils.currentTimestamp());
-        warningGroup.setUpdateTime(DateUtils.currentTimestamp());
-        warningGroup.setCreator(AdminUtils.getUserData().getUserId());
-        warningGroup.setDelete(false);
-        return warningGroupDAO.insert(warningGroup);
+        try {
+            warningGroup.setId(UUID.randomUUID().toString());
+            warningGroup.setCreateTime(DateUtils.currentTimestamp());
+            warningGroup.setUpdateTime(DateUtils.currentTimestamp());
+            warningGroup.setCreator(AdminUtils.getUserData().getUserId());
+            warningGroup.setDelete(false);
+            return warningGroupDAO.insert(warningGroup);
+        } catch (Exception e) {
+            LOG.error("添加告警组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加告警组失败");
+        }
     }
 
     public WarningGroup getById(String id) throws AtlasBaseException {
-        WarningGroup warningGroup = warningGroupDAO.getById(id);
-        return warningGroup;
+        try {
+            WarningGroup warningGroup = warningGroupDAO.getById(id);
+            return warningGroup;
+        } catch (Exception e) {
+            LOG.error("获取告警组详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组详情失败");
+        }
     }
 
     public WarningGroup getByName(String name) throws AtlasBaseException {
@@ -78,20 +87,30 @@ public class WarningGroupService {
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
-        for (String guid : numberList) {
-            Integer count = warningGroupDAO.countWarningGroupUserd(guid);
-            if(null!=count && count > 0) {
-                throw new AtlasBaseException("当前告警组正在被使用，不允许删除");
+        try {
+            for (String guid : numberList) {
+                Integer count = warningGroupDAO.countWarningGroupUserd(guid);
+                if (null != count && count > 0) {
+                    throw new AtlasBaseException("当前告警组正在被使用，不允许删除");
+                }
             }
+            warningGroupDAO.deleteByIdList(numberList);
+        } catch (Exception e) {
+            LOG.error("删除告警组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除告警组失败");
         }
-        warningGroupDAO.deleteByIdList(numberList);
     }
 
     public int update(WarningGroup warningGroup) throws AtlasBaseException {
-        warningGroup.setUpdateTime(DateUtils.currentTimestamp());
-        WarningGroup old = getById(warningGroup.getId());
-        BeansUtil.copyPropertiesIgnoreNull(warningGroup, old);
-        return warningGroupDAO.update(old);
+        try {
+            warningGroup.setUpdateTime(DateUtils.currentTimestamp());
+            WarningGroup old = getById(warningGroup.getId());
+            BeansUtil.copyPropertiesIgnoreNull(warningGroup, old);
+            return warningGroupDAO.update(old);
+        } catch (Exception e) {
+            LOG.error("更新告警组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新告警组失败");
+        }
     }
 
     public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
@@ -109,7 +128,8 @@ public class WarningGroupService {
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            LOG.error("搜索告警组失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索告警组失败");
         }
     }
 
@@ -129,7 +149,8 @@ public class WarningGroupService {
             pageResult.setLists(list);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取告警组列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
 
@@ -152,7 +173,8 @@ public class WarningGroupService {
             pageResult.setCurrentSize(warningList.size());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取告警列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警列表失败");
         }
     }
 
@@ -174,7 +196,8 @@ public class WarningGroupService {
             pageResult.setCurrentSize(warningList.size());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取异常列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取异常列表失败");
         }
     }
 
@@ -183,7 +206,8 @@ public class WarningGroupService {
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
             //warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList, currentTime, userId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("关闭失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
         }
     }
 
@@ -249,7 +273,8 @@ public class WarningGroupService {
 
             return info;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
+            LOG.error("获取告警信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警信息失败");
         }
     }
 
@@ -257,7 +282,8 @@ public class WarningGroupService {
         try {
             return warningGroupDAO.getErrorInfo(executionRuleId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            LOG.error("获取异常信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取异常信息ssss失败");
         }
     }
 

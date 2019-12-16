@@ -113,8 +113,9 @@ public class QuartJob implements Job {
                 //设置模板状态为【已启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
             }
+
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("任务执行失败", e);
             qualityDao.updateFinishedPercent(templateId, 0F);
             return;
         }
