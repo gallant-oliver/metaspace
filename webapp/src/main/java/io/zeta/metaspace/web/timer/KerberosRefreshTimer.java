@@ -17,7 +17,7 @@ public class KerberosRefreshTimer extends TimerTask {
             try {
                 LOG.info("对username=" + UserGroupInformation.getLoginUser().getUserName()+"进行续约");
                 if (UserGroupInformation.isLoginKeytabBased()) {
-                    UserGroupInformation.getLoginUser().reloginFromKeytab();
+                    UserGroupInformation.getLoginUser().checkTGTAndReloginFromKeytab();
                 } else if (UserGroupInformation.isLoginTicketBased()) {
                     UserGroupInformation.getLoginUser().reloginFromTicketCache();
                 }
