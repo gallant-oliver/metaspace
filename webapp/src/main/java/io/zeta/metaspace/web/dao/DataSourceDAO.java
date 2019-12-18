@@ -118,7 +118,7 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
             "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -128,10 +128,10 @@ public interface DataSourceDAO {
             "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
@@ -153,7 +153,7 @@ public interface DataSourceDAO {
 
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_api_authorize dsa on dsa.source_id=ds.source_id " +
             "where dsa.authorize_user_id=#{userId} and isapi=true" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -163,10 +163,10 @@ public interface DataSourceDAO {
             "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
@@ -188,7 +188,7 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and (isapi=false or isapi is null) " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -198,10 +198,10 @@ public interface DataSourceDAO {
             "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
@@ -223,7 +223,7 @@ public interface DataSourceDAO {
 
     //搜索api数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,to_char(ds.create_time,'yyyy-MM-dd HH:mm:ss') createTime,to_char(ds.update_time,'yyyy-MM-dd HH:mm:ss') updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and ds.isapi=true" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
@@ -233,10 +233,10 @@ public interface DataSourceDAO {
             "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd HH-mm-ss') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
@@ -429,8 +429,8 @@ public interface DataSourceDAO {
 
     //获取可以成为数据源管理者的用户
     @Select("select count(*)over() totalSize,u.userid,u.username userName,u.account " +
-            "from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid join users u on u.userid=user2role.userid " +
-            "where p.moduleid='14' and r.status=1 and u.valid=true ")
+            "from (select distinct user2role.userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) ro join users u on u.userid=ro.userid " +
+            "where u.valid=true ")
     public List<UserIdAndName> getManager();
 
     //查询数据源管理者

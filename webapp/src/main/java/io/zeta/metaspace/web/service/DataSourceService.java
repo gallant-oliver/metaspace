@@ -907,7 +907,7 @@ public class DataSourceService {
             String userId = AdminUtils.getUserData().getUserId();
             List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
             if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
-                return dataSourceDAO.getAllUpdateUserName();
+                return isApi?dataSourceDAO.getApiAllUpdateUserName():dataSourceDAO.getAllUpdateUserName();
             }
             return isApi?dataSourceDAO.getApiUpdateUserName(userId):dataSourceDAO.getUpdateUserName(userId);
         } catch (AtlasBaseException e) {
