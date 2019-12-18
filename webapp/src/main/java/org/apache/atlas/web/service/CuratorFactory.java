@@ -28,8 +28,11 @@ import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.ACLProvider;
+import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.zookeeper.data.ACL;
@@ -62,8 +65,21 @@ public class CuratorFactory {
     public static final String IP_SCHEME = "ip";
     public static final String SETUP_LOCK = "/setup_lock";
 
-    private final Configuration configuration;
-    private CuratorFramework curatorFramework;
+    private final Configuration           configuration;
+    private       CuratorFramework        curatorFramework;
+    private final ConnectionStateListener connectionStateListener = new ConnectionStateListener() {
+        @Override
+        public void stateChanged(CuratorFramework client, ConnectionState newState) {
+            handleStateChange(newState);
+        }
+    };
+    private final UnhandledErrorListener  unhandledErrorListener  = new UnhandledErrorListener() {
+
+        @Override
+        public void unhandledError(String message, Throwable e) {
+            LOG.error("Unhandled error in LeaderElectionService: " + message, e);
+        }
+    };
 
     /**
      * Initializes the {@link CuratorFramework} that is used for all interaction with Zookeeper.
@@ -85,6 +101,8 @@ public class CuratorFactory {
         CuratorFrameworkFactory.Builder builder = getBuilder(zookeeperProperties);
         enhanceBuilderWithSecurityParameters(zookeeperProperties, builder);
         curatorFramework = builder.build();
+        curatorFramework.getUnhandledErrorListenable().addListener(unhandledErrorListener);
+        curatorFramework.getConnectionStateListenable().addListener(connectionStateListener);
         curatorFramework.start();
     }
 
@@ -170,6 +188,8 @@ public class CuratorFactory {
      * After this call, no further calls to any curator objects should be done.
      */
     public void close() {
+        curatorFramework.getUnhandledErrorListenable().removeListener(unhandledErrorListener);
+        curatorFramework.getConnectionStateListenable().removeListener(connectionStateListener);
         curatorFramework.close();
     }
 
@@ -198,5 +218,23 @@ public class CuratorFactory {
 
     public InterProcessMutex lockInstance(String zkRoot) {
         return new InterProcessMutex(curatorFramework, zkRoot+ SETUP_LOCK);
+    }
+
+    protected void handleStateChange(ConnectionState newState) {
+        switch (newState) {
+            case CONNECTED:
+                LOG.info("Connected to ZooKeeper quorum. Leader election can start.");
+                break;
+            case SUSPENDED:
+                LOG.warn("Connection to ZooKeeper suspended. The contender no longer participates in the leader election.");
+                break;
+            case RECONNECTED:
+                LOG.info("Connection to ZooKeeper was reconnected. Leader election can be restarted.");
+                break;
+            case LOST:
+                // Maybe we have to throw an exception here to terminate the JobManager
+                LOG.warn("Connection to ZooKeeper lost. The contender no longer participates in the leader election.");
+                break;
+        }
     }
 }

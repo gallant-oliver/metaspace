@@ -57,6 +57,7 @@ import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -94,6 +95,7 @@ import static org.apache.atlas.repository.audit.EntityAuditListener.getV2AuditPr
 @Singleton
 @Component
 @ConditionalOnAtlasProperty(property = "atlas.EntityAuditRepository.impl", isDefault = true)
+@Order(0)
 public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditRepository {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseBasedAuditRepository.class);
 
@@ -106,8 +108,8 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     public static final byte[] COLUMN_DEFINITION  = Bytes.toBytes("f");
     public static final byte[] COLUMN_TYPE        = Bytes.toBytes("t");
 
-    private TableName tableName;
-    private Connection connection;
+    private       TableName              tableName;
+    private       Connection             connection;
     private final AtlasInstanceConverter instanceConverter;
 
     @Inject
@@ -117,6 +119,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
 
     /**
      * Add events to the event repository
+     *
      * @param events events to be added
      * @throws AtlasException
      */
@@ -129,7 +132,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
         Table table = null;
 
         try {
-            table          = connection.getTable(tableName);
+            table = connection.getTable(tableName);
             List<Put> puts = new ArrayList<>(events.size());
 
             for (int index = 0; index < events.size(); index++) {
@@ -170,7 +173,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
         Table table = null;
 
         try {
-            table          = connection.getTable(tableName);
+            table = connection.getTable(tableName);
             List<Put> puts = new ArrayList<>(events.size());
 
             for (int index = 0; index < events.size(); index++) {
@@ -212,7 +215,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
             LOG.debug("Listing events for entity id {}, starting timestamp {}, #records {}", entityId, startKey, n);
         }
 
-        Table         table   = null;
+        Table table = null;
         ResultScanner scanner = null;
 
         try {
@@ -225,10 +228,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
              * Stop row is set to the entity id to avoid going past the current entity while scanning
              * small is set to true to optimise RPC calls as the scanner is created per request
              */
-            Scan scan = new Scan().setReversed(true).setFilter(new PageFilter(n))
-                                  .setStopRow(Bytes.toBytes(entityId))
-                                  .setCaching(n)
-                                  .setSmall(true);
+            Scan scan = new Scan().setReversed(true).setFilter(new PageFilter(n)).setStopRow(Bytes.toBytes(entityId)).setCaching(n).setSmall(true);
 
             if (StringUtils.isEmpty(startKey)) {
                 //Set start row to entity id + max long value
@@ -287,7 +287,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
 
         if (getAuditType(result) != ENTITY_AUDIT_V2) {
             Referenceable referenceable = AtlasType.fromV1Json(ret, Referenceable.class);
-            AtlasEntity   entity        = toAtlasEntity(referenceable);
+            AtlasEntity entity = toAtlasEntity(referenceable);
 
             ret = AtlasType.toJson(entity);
         }
@@ -309,14 +309,14 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     }
 
     private EntityAuditType getAuditType(Result result) {
-        String          typeString = getResultString(result, COLUMN_TYPE);
-        EntityAuditType ret        = (typeString != null) ? EntityAuditType.valueOf(typeString) : ENTITY_AUDIT_V1;
+        String typeString = getResultString(result, COLUMN_TYPE);
+        EntityAuditType ret = (typeString != null) ? EntityAuditType.valueOf(typeString) : ENTITY_AUDIT_V1;
 
         return ret;
     }
 
-    private String  getV2Details(Result result) throws AtlasBaseException {
-        String ret                 = null;
+    private String getV2Details(Result result) throws AtlasBaseException {
+        String ret = null;
         String v1DetailsWithPrefix = getResultString(result, COLUMN_DETAIL);
 
         if (StringUtils.isNotEmpty(v1DetailsWithPrefix)) {
@@ -326,13 +326,13 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
                 // for terms audit v1 and v2 structure is same
                 ret = v1DetailsWithPrefix;
             } else {
-                String            v1AuditPrefix = EntityAuditListener.getV1AuditPrefix(v1AuditAction);
-                String[]          split         = v1DetailsWithPrefix.split(v1AuditPrefix);
+                String v1AuditPrefix = EntityAuditListener.getV1AuditPrefix(v1AuditAction);
+                String[] split = v1DetailsWithPrefix.split(v1AuditPrefix);
 
                 if (ArrayUtils.isNotEmpty(split) && split.length == 2) {
-                    String        v1AuditDetails = split[1];
-                    Referenceable referenceable  = AtlasType.fromV1Json(v1AuditDetails, Referenceable.class);
-                    String        v2Json         = (referenceable != null) ? toV2Json(referenceable, v1AuditAction) : v1AuditDetails;
+                    String v1AuditDetails = split[1];
+                    Referenceable referenceable = AtlasType.fromV1Json(v1AuditDetails, Referenceable.class);
+                    String v2Json = (referenceable != null) ? toV2Json(referenceable, v1AuditAction) : v1AuditDetails;
 
                     if (v2Json != null) {
                         ret = getV2AuditPrefix(v1AuditAction) + v2Json;
@@ -363,7 +363,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     }
 
     private AtlasEntity toAtlasEntity(Referenceable referenceable) throws AtlasBaseException {
-        AtlasEntity              ret                 = null;
+        AtlasEntity ret = null;
         AtlasEntitiesWithExtInfo entitiesWithExtInfo = instanceConverter.toAtlasEntity(referenceable);
 
         if (entitiesWithExtInfo != null && CollectionUtils.isNotEmpty(entitiesWithExtInfo.getEntities())) {
@@ -381,14 +381,14 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
 
     /**
      * List events for the given entity id in decreasing order of timestamp, from the given startKey. Returns n results
+     *
      * @param entityId entity id
      * @param startKey key for the first event to be returned, used for pagination
-     * @param n number of events to be returned
+     * @param n        number of events to be returned
      * @return list of events
      * @throws AtlasException
      */
-    public List<EntityAuditEvent> listEventsV1(String entityId, String startKey, short n)
-            throws AtlasException {
+    public List<EntityAuditEvent> listEventsV1(String entityId, String startKey, short n) throws AtlasException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Listing events for entity id {}, starting timestamp {}, #records {}", entityId, startKey, n);
         }
@@ -405,10 +405,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
              * Stop row is set to the entity id to avoid going past the current entity while scanning
              * small is set to true to optimise RPC calls as the scanner is created per request
              */
-            Scan scan = new Scan().setReversed(true).setFilter(new PageFilter(n))
-                                  .setStopRow(Bytes.toBytes(entityId))
-                                  .setCaching(n)
-                                  .setSmall(true);
+            Scan scan = new Scan().setReversed(true).setFilter(new PageFilter(n)).setStopRow(Bytes.toBytes(entityId)).setCaching(n).setSmall(true);
             if (StringUtils.isEmpty(startKey)) {
                 //Set start row to entity id + max long value
                 byte[] entityBytes = getKey(entityId, Long.MAX_VALUE, Integer.MAX_VALUE);
@@ -456,7 +453,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
 
     private String getResultString(Result result, byte[] columnName) {
         byte[] rawValue = result.getValue(COLUMN_FAMILY, columnName);
-        if ( rawValue != null) {
+        if (rawValue != null) {
             return Bytes.toString(rawValue);
         }
         return null;
@@ -475,7 +472,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     }
 
     private EntityAuditEventV2 fromKeyV2(byte[] keyBytes) {
-        String             key   = Bytes.toString(keyBytes);
+        String key = Bytes.toString(keyBytes);
         EntityAuditEventV2 event = new EntityAuditEventV2();
 
         if (StringUtils.isNotEmpty(key)) {
@@ -500,13 +497,13 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
 
     /**
      * Converts atlas' application properties to hadoop conf
+     *
+     * @param atlasConf
      * @return
      * @throws AtlasException
-     * @param atlasConf
      */
     public static org.apache.hadoop.conf.Configuration getHBaseConfiguration(Configuration atlasConf) throws AtlasException {
-        Configuration subsetAtlasConf =
-                ApplicationProperties.getSubsetConfiguration(atlasConf, CONFIG_PREFIX);
+        Configuration subsetAtlasConf = ApplicationProperties.getSubsetConfiguration(atlasConf, CONFIG_PREFIX);
         org.apache.hadoop.conf.Configuration hbaseConf = HBaseConfiguration.create();
         Iterator<String> keys = subsetAtlasConf.getKeys();
         while (keys.hasNext()) {
@@ -548,8 +545,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     }
 
     @VisibleForTesting
-    void startInternal(Configuration atlasConf,
-                                 org.apache.hadoop.conf.Configuration hbaseConf) throws AtlasException {
+    void startInternal(Configuration atlasConf, org.apache.hadoop.conf.Configuration hbaseConf) throws AtlasException {
 
         String tableNameStr = atlasConf.getString(CONFIG_TABLE_NAME, DEFAULT_TABLE_NAME);
         tableName = TableName.valueOf(tableNameStr);
