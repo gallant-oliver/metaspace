@@ -51,7 +51,7 @@ import java.util.Set;
  */
 
 @Component
-@Order(1)
+//等其他Service都开始被调用本类再被调用
 public class ActiveInstanceElectorService implements Service, LeaderLatchListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ActiveInstanceElectorService.class);
