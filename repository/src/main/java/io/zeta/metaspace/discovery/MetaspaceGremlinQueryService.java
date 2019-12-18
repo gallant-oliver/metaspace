@@ -474,24 +474,29 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<Table> getTableNameAndDbNameByQuery(String queryTable, Boolean active, int offset, int limit) throws AtlasBaseException {
         PageResult<Table> tablePageResult = new PageResult<>();
         ArrayList<Table> tables = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_DB_BY_QUERY))
-            :((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY));
-        String query = gremlinQueryProvider.getQuery(gremlinQuery);
-        String tableQuery = String.format(query, queryTable, offset, offset + limit);
-        List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
-        for (Map<String, AtlasVertex> tableDB : tableDBs) {
-            AtlasVertex tableVertex = tableDB.get("table");
-            AtlasVertex dbVertex = tableDB.get("db");
-            Table table = getTableByVertex(tableVertex, dbVertex);
-            tables.add(table);
+        try {
+            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_DB_BY_QUERY))
+                    : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY));
+            String query = gremlinQueryProvider.getQuery(gremlinQuery);
+            String tableQuery = String.format(query, queryTable, offset, offset + limit);
+            List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
+            for (Map<String, AtlasVertex> tableDB : tableDBs) {
+                AtlasVertex tableVertex = tableDB.get("table");
+                AtlasVertex dbVertex = tableDB.get("db");
+                Table table = getTableByVertex(tableVertex, dbVertex);
+                tables.add(table);
+            }
+            tablePageResult.setLists(tables);
+            tablePageResult.setCurrentSize(tables.size());
+            //tablePageResult.setOffset(offset);
+            String countQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_COUNT_BY_QUEERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
+            List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
+            tablePageResult.setTotalSize(counts.get(0));
+            return tablePageResult;
+        } catch (Exception e) {
+            LOG.error("查询失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
-        tablePageResult.setLists(tables);
-        tablePageResult.setCurrentSize(tables.size());
-        //tablePageResult.setOffset(offset);
-        String countQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_COUNT_BY_QUEERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
-        List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
-        tablePageResult.setTotalSize(counts.get(0));
-        return tablePageResult;
     }
 
     public PageResult<RDBMSDatabase> getRDBMSDBNameAndSourceNameByQuery(String queryTable, int offset, int limit,String sourceType,Boolean active) throws AtlasBaseException {
