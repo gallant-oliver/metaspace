@@ -27,10 +27,10 @@ public interface RoleDAO {
     public int updateValidStatus(@Param("roleId") String roleId, @Param("valid") boolean valid, @Param("updater") String updater, @Param("updateTime") String updateTime);
 
     @Select({"<script>",
-             " select count(*)over() total,users.userid,users.username,users.account ",
-             " from users,role,user2role",
-             " where role.roleid=user2role.roleid and users.userid=user2role.userid",
-             " and user2role.roleid=#{roleId}",
+            " select count(*)over() total,users.userid,users.username,users.account ",
+            " from users,role,user2role",
+            " where role.roleid=user2role.roleid and users.userid=user2role.userid",
+            " and user2role.roleid=#{roleId}",
             " and users.valid=true and role.valid=true",
             " <if test=\"query != null and query!=''\">",
             " and (username like '%'||#{query}||'%' ESCAPE '/' or account like '%'||#{query}||'%' ESCAPE '/')",
@@ -57,8 +57,8 @@ public interface RoleDAO {
     public long getUsersCount(@Param("roleId") String roleId, @Param("query") String query);
 
     @Select({"<script>",
-             " select count(*)over() total,role.*,privilegename,(select count(1) " +
-             " from users join user2role on users.userid=user2role.userid where user2role.roleid=role.roleid and users.valid=true) members",
+            " select count(*)over() total,role.*,privilegename,(select count(1) " +
+                    " from users join user2role on users.userid=user2role.userid where user2role.roleid=role.roleid and users.valid=true) members",
             " from role,privilege where role.privilegeid=privilege.privilegeid and rolename like '%'||#{query}||'%' ESCAPE '/'",
             " and role.valid=true",
             " <if test='contain == false'>",
@@ -87,7 +87,7 @@ public interface RoleDAO {
 
     //添加成员&更换一批人的角色
     @Update({"<script>update users set valid=#{valid},update_time=#{updateTime} where userid in",
-             "<foreach item='item' index='index' collection='userIds'",
+            "<foreach item='item' index='index' collection='userIds'",
             "open='(' separator=',' close=')'>",
             "#{item}",
             "</foreach>",
@@ -95,11 +95,11 @@ public interface RoleDAO {
     public int updateUsers( @Param("userIds") List<String> userIds, @Param("valid") Boolean valid, @Param("updateTime") Timestamp updateTime);
 
     @Insert({"<script>insert into user2role values ",
-             "<foreach item='item' index='index' collection='userIds'",
-             "open='(' separator='),(' close=')'>",
-             "#{item},#{roleId}",
-             "</foreach>",
-             "</script>"})
+            "<foreach item='item' index='index' collection='userIds'",
+            "open='(' separator='),(' close=')'>",
+            "#{item},#{roleId}",
+            "</foreach>",
+            "</script>"})
     public int addUsers2Role(@Param("roleId") String roleId, @Param("userIds") List<String> userIds);
 
     @Delete("delete from user2role where roleid=#{roleId}")
@@ -109,12 +109,12 @@ public interface RoleDAO {
     public int deleteUser2RoleByUser(@Param("userId")String userId,@Param("roleId")String roleId);
 
     @Delete({"<script> " +
-             "delete from user2role where userid in " +
-             "<foreach item='item' index='index' collection='userIds'",
-             "open='(' separator=',' close=')'>",
-             "#{item}",
-             "</foreach>" +
-             "</script>"})
+            "delete from user2role where userid in " +
+            "<foreach item='item' index='index' collection='userIds'",
+            "open='(' separator=',' close=')'>",
+            "#{item}",
+            "</foreach>" +
+                    "</script>"})
     public int deleteUser2RoleByUsers(@Param("userIds")List<String> userIds);
 
     @Select("select count(roleid) from user2role where userid=#{userId}")
