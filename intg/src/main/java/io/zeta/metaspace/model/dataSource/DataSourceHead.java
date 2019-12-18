@@ -14,6 +14,7 @@
 package io.zeta.metaspace.model.dataSource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 public class DataSourceHead {
 
@@ -21,7 +22,9 @@ public class DataSourceHead {
     private String sourceName;
     private String sourceType;
     private String description;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private String createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private String updateTime;
     private String updateUserName;
     private boolean rely;
