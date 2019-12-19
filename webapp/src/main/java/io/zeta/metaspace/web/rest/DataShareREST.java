@@ -63,8 +63,6 @@ public class DataShareREST {
     private DataShareService shareService;
     @Autowired
     private SearchService searchService;
-    @Autowired
-    private MetaDataService metaDataService;
     @Context
     private HttpServletRequest httpServletRequest;
 
@@ -88,6 +86,15 @@ public class DataShareREST {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
+        return Response.status(200).entity("success").build();
+    }
+
+    @POST
+    @Path("/check/datatype")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response checkDataType(List<QueryParameter.Field> fields) throws AtlasBaseException {
+        shareService.checkDataType(fields);
         return Response.status(200).entity("success").build();
     }
 
