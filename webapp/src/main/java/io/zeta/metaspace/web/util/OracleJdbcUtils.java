@@ -13,24 +13,29 @@ import java.sql.Statement;
 
 public class OracleJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(OracleJdbcUtils.class);
-    private static final String SCHEMA_NAME = "SELECT USERNAME AS \"schemaName\" FROM DBA_USERS";
+    private static final String SCHEMA_NAME = "SELECT ROWNUM AS rn,USERNAME AS \"schemaName\" FROM DBA_USERS";
     private static final String SQL_FILL = " 1=1 ";
     private static final String SCHEMA_COUNT = "SELECT COUNT(*) FROM DBA_USERS";
-    private static final String TABLE_NAME = "SELECT TABLE_NAME AS \"tableName\" FROM ALL_TABLES WHERE OWNER='%s'";
+    private static final String TABLE_NAME = "SELECT ROWNUM AS rn,TABLE_NAME AS \"tableName\" FROM ALL_TABLES WHERE OWNER='%s'";
     private static final String TABLE_COUNT = "SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER='%s'";
-    private static final String COLUMN_NAME = "SELECT COLUMN_NAME AS \"columnName\",DATA_TYPE AS \"type\" FROM ALL_TAB_COLS WHERE OWNER='%s' AND TABLE_NAME='%s'";
+    private static final String COLUMN_NAME = "SELECT ROWNUM AS rn,COLUMN_NAME AS \"columnName\",DATA_TYPE AS \"type\" FROM ALL_TAB_COLS WHERE OWNER='%s' AND TABLE_NAME='%s'";
     private static final String COLUMN_COUNT = "SELECT COUNT(*) FROM ALL_TAB_COLS WHERE OWNER='%s' AND TABLE_NAME='%s'";
     private static final String QUERY = "SELECT %s FROM %s";
+    private static final String PAGE_QUERY = "SELECT * FROM (%s) table_alias";
     private static final String COUNT = " COUNT(*) ";
     private static final String WHERE = " WHERE ";
-    private static final String ROWNUM_LIMIT = " AND ROWNUM<=%d ";
-    private static final String MINUS = " MINUS ";
+    private static final String ROWNUM = " ROWNUM AS rn ";
+    private static final String ROWNUM_LIMIT_RIGHT = " AND ROWNUM<=%d ";
+    private static final String ROWNUM_LIMIT_LEFT = "  WHERE table_alias.rn >=%d ";
 
 
     public static ResultSet getSchemaList(Connection conn, long limit, long offset) throws AtlasBaseException {
         try {
             StringBuilder sb = new StringBuilder();
             sb.append(SCHEMA_NAME).append(WHERE).append(SQL_FILL);
+            if(limit != -1) {
+                sb.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
+            }
             String sql = buildQuerySql(sb.toString(), limit, offset);
             return query(conn, sql);
         } catch (AtlasBaseException e) {
@@ -47,7 +52,12 @@ public class OracleJdbcUtils {
 
     public static ResultSet getTableList(Connection conn, String ownerName, long limit, long offset) throws AtlasBaseException {
         try {
-            String sql  = buildQuerySql(TABLE_NAME, limit, offset, ownerName);
+            StringBuilder sb = new StringBuilder();
+            sb.append(TABLE_NAME);
+            if(limit != -1) {
+                sb.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
+            }
+            String sql  = buildQuerySql(sb.toString(), limit, offset, ownerName);
             return query(conn, sql);
         } catch (AtlasBaseException e) {
             throw e;
@@ -64,8 +74,13 @@ public class OracleJdbcUtils {
 
     public static ResultSet getColumnList(Connection conn, String ownerName, String tableName, long limit, long offset) throws AtlasBaseException {
         try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(COLUMN_NAME);
+            if(limit != -1) {
+                sb.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
+            }
             tableName = tableName.replace("'","''");
-            String sql = buildQuerySql(COLUMN_NAME, limit, offset, ownerName, tableName);
+            String sql = buildQuerySql(sb.toString(), limit, offset, ownerName, tableName);
             return query(conn, sql);
         } catch (AtlasBaseException e) {
             throw e;
@@ -85,13 +100,16 @@ public class OracleJdbcUtils {
         try {
             StringBuilder sqlBuilder = new StringBuilder();
             String dbAndTableName = "\"" + dbName + "\"" + "." + "\"" + tableName + "\"";
-            String queryStr = String.format(QUERY, queryFields, dbAndTableName);
+            String queryStr = String.format(QUERY, ROWNUM + "," + queryFields, dbAndTableName);
             sqlBuilder.append(queryStr);
             sqlBuilder.append(WHERE);
             if (StringUtils.isNotEmpty(filterFields)) {
                 sqlBuilder.append(filterFields);
             } else {
                 sqlBuilder.append(SQL_FILL);
+            }
+            if(limit != -1) {
+                sqlBuilder.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
             }
             String sql = buildQuerySql(sqlBuilder.toString(), limit, offset);
             return sql;
@@ -114,19 +132,15 @@ public class OracleJdbcUtils {
 
     public static String buildQuerySql(String sqlTemplate, long limit, long offset, String... param) {
         StringBuilder sqlBuilder = new StringBuilder();
+
         String querySql = String.format(sqlTemplate, param);
-        sqlBuilder.append(querySql);
+        sqlBuilder.append(String.format(PAGE_QUERY,querySql));
         if(limit == -1) {
             return sqlBuilder.toString();
         }
-        sqlBuilder.append(String.format(ROWNUM_LIMIT, offset + limit));
-        sqlBuilder.append(MINUS);
-        sqlBuilder.append(querySql);
-        sqlBuilder.append(String.format(ROWNUM_LIMIT, offset));
+        sqlBuilder.append(String.format(ROWNUM_LIMIT_LEFT, offset));
         return sqlBuilder.toString();
     }
-
-
 
     public static ResultSet query(Connection conn, String sql) throws AtlasBaseException {
         try {

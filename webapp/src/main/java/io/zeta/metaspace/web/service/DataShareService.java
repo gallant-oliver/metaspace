@@ -50,6 +50,8 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.*;
+import oracle.jdbc.OracleBfile;
+import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -62,13 +64,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -540,8 +540,14 @@ public class DataShareService {
     public int unpublishAPI(List<String> apiGuidList) throws AtlasBaseException {
         try {
             for(String apiGuid : apiGuidList) {
-                checkApiPermission(apiGuid);
+                APIInfo info = shareDAO.getAPIInfoByGuid(apiGuid);
+                APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
+                if(sourceType == APIInfo.SourceType.HIVE) {
+                    checkTableStatus(apiGuid);
+                    checkApiPermission(apiGuid);
+                }
             }
+
             Configuration configuration = ApplicationProperties.get();
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
             Map param = new HashMap();
@@ -648,28 +654,28 @@ public class DataShareService {
     public static String getLocalURL() throws AtlasException {
         InetAddress addr = null;
         Configuration configuration = null;
-            try {
-                configuration = ApplicationProperties.get();
-                addr = InetAddress.getLocalHost();
-            } catch (UnknownHostException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (AtlasException e) {
-                throw e;
+        try {
+            configuration = ApplicationProperties.get();
+            addr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (AtlasException e) {
+            throw e;
+        }
+        byte[] ipAddr = addr.getAddress();
+        String ipAddrStr = "";
+        for (int i = 0; i < ipAddr.length; i++) {
+            if (i > 0) {
+                ipAddrStr += ".";
             }
-            byte[] ipAddr = addr.getAddress();
-            String ipAddrStr = "";
-            for (int i = 0; i < ipAddr.length; i++) {
-                if (i > 0) {
-                    ipAddrStr += ".";
-                }
-                ipAddrStr += ipAddr[i] & 0xFF;
-            }
-            String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
-            String[] hostArr = hostStr.split(":");
-            String port = hostArr[hostArr.length - 1];
-            ipAddrStr += ":" + port;
-            return ipAddrStr;
+            ipAddrStr += ipAddr[i] & 0xFF;
+        }
+        String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
+        String[] hostArr = hostStr.split(":");
+        String port = hostArr[hostArr.length - 1];
+        ipAddrStr += ":" + port;
+        return ipAddrStr;
     }
 
     public String generateSwaggerContent(APIInfo info) throws Exception {
@@ -976,6 +982,15 @@ public class DataShareService {
         }
     }
 
+    public void checkDataType(List<QueryParameter.Field> fields) throws AtlasBaseException {
+        for (QueryParameter.Field field : fields) {
+            if("BLOB".equals(field.getType()) || "BFILE".equals(field.getType())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持展示的数据类型：" + field.getColumnName() + ":" + field.getType());
+            }
+        }
+
+    }
+
     public void checkLimitAndOffset(Long limit, Long offset, Long maxRowNumber) throws AtlasBaseException {
         if(Objects.isNull(limit) || Objects.isNull(offset)) {
             throw new AtlasBaseException("limit和offset不允许为空");
@@ -1053,7 +1068,7 @@ public class DataShareService {
         try {
             Connection conn = dataSourceService.getConnection(sourceId);
             ResultSet resultSet = OracleJdbcUtils.query(conn, querySql);
-            List<LinkedHashMap> result = extractResultSetData(resultSet);
+            List<LinkedHashMap> result = extractResultSetData(resultSet, conn);
             resultMap.put("queryResult", result);
             if(countSql != null) {
                 ResultSet countSet = OracleJdbcUtils.query(conn, countSql);
@@ -1287,7 +1302,7 @@ public class DataShareService {
                 if(fill) {
                     if(filterColumnMap.containsKey(columnName)) {
                         Object value = filterColumnMap.get(columnName);
-                         if(value instanceof List) {
+                        if(value instanceof List) {
                             valueList = (List<Object>)value;
                         } else {
                             valueList = new ArrayList<>();
@@ -1410,8 +1425,9 @@ public class DataShareService {
         ResultSet dataSet = null;
         ResultSet countSet = null;
         List<LinkedHashMap> result = null;
+        Connection conn = null;
         try {
-            Connection conn = dataSourceService.getConnection(sourceId);
+            conn = dataSourceService.getConnection(sourceId);
             switch (searchType) {
                 case SCHEMA: {
                     dataSet = OracleJdbcUtils.getSchemaList(conn, parameters.getLimit(), parameters.getOffset());
@@ -1432,7 +1448,7 @@ public class DataShareService {
                     break;
                 }
             }
-            result = extractResultSetData(dataSet);
+            result = extractResultSetData(dataSet, conn);
             long totalSize = extractSizeData(countSet);
             pageResult.setLists(result);
             pageResult.setTotalSize(totalSize);
@@ -1443,16 +1459,40 @@ public class DataShareService {
         }
     }
 
-    public List<LinkedHashMap> extractResultSetData(ResultSet resultSet) throws AtlasBaseException {
+    public List<LinkedHashMap> extractResultSetData(ResultSet resultSet, Connection connection) throws AtlasBaseException {
         List<LinkedHashMap> result = new ArrayList<>();
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
             while (resultSet.next()) {
                 LinkedHashMap map = new LinkedHashMap();
-                for (int i = 1; i <= columnCount; i++) {
+                for (int i = 2; i <= columnCount; i++) {
                     String columnName = metaData.getColumnName(i);
                     Object value = resultSet.getObject(columnName);
+                    if (value instanceof Clob) {
+                        try {
+                            Clob clob = (Clob) value;
+                            StringBuffer buffer = new StringBuffer();
+                            clob.getCharacterStream();
+                            BufferedReader br = new BufferedReader(clob.getCharacterStream());
+                            clob.getCharacterStream();
+                            String line = br.readLine();
+                            while (line != null) {
+                                buffer.append(line);
+                                line = br.readLine();
+                            }
+                            value = buffer.toString();
+                        } catch (Exception e) {
+                            LOG.error("处理查询结果失败", e);
+                        }
+                    } else if(value instanceof Timestamp) {
+                        Timestamp timValue = (Timestamp)value;
+                        value = timValue.toString();
+                    } else if(value instanceof Blob || value instanceof OracleBfile) {
+                        value = "不支持展示的数据类型";
+                    } else if(value instanceof Datum) {
+                        value = ((Datum)value).stringValue(connection);
+                    }
                     map.put(columnName, value);
                 }
                 result.add(map);
