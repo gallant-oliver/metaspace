@@ -4,6 +4,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 
 public class MetaspaceConfig {
     private static Configuration conf;
@@ -13,6 +14,7 @@ public class MetaspaceConfig {
     private static String hiveJobQueueName;
     private static String impalaResourcePool;
     private static String hiveConfig;
+    private static String metaspaceUrl;
 
     public static String getHiveJobQueueName() {
         return hiveJobQueueName;
@@ -36,7 +38,11 @@ public class MetaspaceConfig {
     }
 
     public static String getImpalaConf() {
-            return impalaUrl;
+        return impalaUrl;
+    }
+
+    public static String getMetaspaceUrl() {
+        return metaspaceUrl;
     }
 
     static {
@@ -48,19 +54,24 @@ public class MetaspaceConfig {
             hbaseConf = conf.getString("metaspace.hbase.conf");
             impalaUrl = conf.getString("metaspace.impala.url");
             hiveConfig = conf.getString("metaspace.hive.conf");
+            metaspaceUrl = conf.getString("metaspace.request.address");
             if (hiveUrlArr == null || hiveUrlArr.length==0) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.url未正确配置");
             }
-            if (hbaseConf == null || hbaseConf.equals("")) {
+            if (StringUtils.isEmpty(hbaseConf)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hbase.conf未正确配置");
             }
 
-            if (impalaUrl == null || impalaUrl.equals("")) {
+            if (StringUtils.isEmpty(impalaUrl)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.impala.url未正确配置");
             }
 
-            if (hiveConfig == null || hiveConfig.equals("")) {
+            if (StringUtils.isEmpty(hiveConfig)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.conf未正确配置");
+            }
+
+            if (StringUtils.isEmpty(metaspaceUrl)) {
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.request.address未正确配置");
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

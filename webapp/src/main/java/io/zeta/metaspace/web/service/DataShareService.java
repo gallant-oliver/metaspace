@@ -38,6 +38,7 @@ import io.swagger.models.properties.ObjectProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
@@ -54,7 +55,6 @@ import oracle.jdbc.OracleBfile;
 import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -66,8 +66,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.lang.reflect.Type;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -85,10 +83,7 @@ public class DataShareService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataShareService.class);
 
-    public static final String ATLAS_REST_ADDRESS = "atlas.rest.address";
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
-    public static final String METASPACE_HA_ENABLE = "atlas.server.ha.enabled";
-    public static final String METASPACE_HA_ADDRESS = "metaspace.ha.rest.address";
     private static String engine;
 
     @Autowired
@@ -611,7 +606,7 @@ public class DataShareService {
             String create_time = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url = getAccessURL() + "/api/metaspace";
+            String upstream_url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace";
             String swagger_content = generateSwaggerContent(info);
             APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
             contentList.add(detail);
@@ -641,52 +636,29 @@ public class DataShareService {
         return pathStr;
     }
 
-    public static String getAccessURL() throws Exception {
-        Configuration configuration = ApplicationProperties.get();
-        Boolean haEnable = configuration.getBoolean(METASPACE_HA_ENABLE, false);
-        if(haEnable) {
-            return configuration.getString(METASPACE_HA_ADDRESS, getLocalURL());
-        } else {
-            return getLocalURL();
-        }
+    public static String getMetaspaceHost() {
+        String url = MetaspaceConfig.getMetaspaceUrl();
+        return url.substring(url.indexOf("://") + 3, url.length());
     }
 
-    public static String getLocalURL() throws AtlasException {
-        InetAddress addr = null;
-        Configuration configuration = null;
-        try {
-            configuration = ApplicationProperties.get();
-            addr = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (AtlasException e) {
-            throw e;
+    public static Scheme getRequestMode() {
+        String url = MetaspaceConfig.getMetaspaceUrl();
+        String prefix = url.substring(0, url.indexOf("://"));
+        if("https".equals(prefix)) {
+            return Scheme.HTTPS;
         }
-        byte[] ipAddr = addr.getAddress();
-        String ipAddrStr = "";
-        for (int i = 0; i < ipAddr.length; i++) {
-            if (i > 0) {
-                ipAddrStr += ".";
-            }
-            ipAddrStr += ipAddr[i] & 0xFF;
-        }
-        String hostStr = configuration.getString(ATLAS_REST_ADDRESS);
-        String[] hostArr = hostStr.split(":");
-        String port = hostArr[hostArr.length - 1];
-        ipAddrStr += ":" + port;
-        return ipAddrStr;
+        return Scheme.HTTP;
     }
 
     public String generateSwaggerContent(APIInfo info) throws Exception {
         try {
-            String ip = getAccessURL();
+            String host = getMetaspaceHost();
             Swagger swagger = new Swagger();
-            swagger.setHost(ip);
+            swagger.setHost(host);
             //basePath
             swagger.setBasePath("/api/metaspace");
             //scheme
-            swagger.setSchemes(Collections.singletonList(Scheme.HTTP));
+            swagger.setSchemes(Collections.singletonList(getRequestMode()));
             //path
             String pathStr = getURL(info);
             Map pathMap = new HashMap();
@@ -983,10 +955,15 @@ public class DataShareService {
     }
 
     public void checkDataType(List<QueryParameter.Field> fields) throws AtlasBaseException {
+        StringJoiner joiner = new StringJoiner(",");
         for (QueryParameter.Field field : fields) {
-            if("BLOB".equals(field.getType()) || "BFILE".equals(field.getType())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持展示的数据类型：" + field.getColumnName() + ":" + field.getType());
+            String type = field.getType().toUpperCase();
+            if("BLOB".equals(type) || "BFILE".equals(type) || "BINARY".equals(type)) {
+                joiner.add(field.getColumnName() + ":" + field.getType());
             }
+        }
+        if(!joiner.toString().isEmpty()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持展示的数据字段及类型：" + "[" + joiner.toString() + "]");
         }
 
     }
