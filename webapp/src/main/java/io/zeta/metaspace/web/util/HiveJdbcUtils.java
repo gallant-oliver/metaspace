@@ -45,7 +45,7 @@ public class HiveJdbcUtils {
     private static Queue<String> hiveUrlQueue = new LinkedList<>();
 
 
-    private static final String QUERY = "SELECT %s,count(*) over() as count FROM %s";
+    private static final String QUERY = "SELECT %s,count(*) over() as count FROM `%s`";
     private static final String WHERE = " WHERE ";
     private static final String ORDER = " ORDER BY 1 ";
     private static final String LIMIT = " LIMIT %d OFFSET %d ";
