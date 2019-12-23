@@ -43,6 +43,6 @@ mv ${depdir}/solr-* ${solr_home}
 ${solr_home}/bin/solr start -c -z localhost:${zookeeper_port} -p ${solr_port} >/dev/null 2>&1
 
 # 创建metaspace所需collection
-${solr_home}/bin/solr create -p ${solr_port} -c vertex_index -d ${solr_port} -shards 1 -replicationFactor 1
-${solr_home}/bin/solr create -p ${solr_port} -c edge_index -d ${solr_port} -shards 1 -replicationFactor 1
+${solr_home}/bin/solr create -p ${solr_port} -c vertex_index -d ${solr_conf} -shards 1 -replicationFactor 1
+${solr_home}/bin/solr create -p ${solr_port} -c edge_index -d ${solr_conf} -shards 1 -replicationFactor 1
 ${solr_home}/bin/solr create -p ${solr_port} -c fulltext_index -d ${solr_conf} -shards 1 -replicationFactor 1
