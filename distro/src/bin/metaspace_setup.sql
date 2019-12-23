@@ -771,7 +771,10 @@ DROP TABLE IF EXISTS "public"."users";
 CREATE TABLE "public"."users" (
   "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "valid" bool
 )
 ;
 COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
