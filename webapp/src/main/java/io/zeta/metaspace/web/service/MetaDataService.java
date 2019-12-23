@@ -751,11 +751,61 @@ public class MetaDataService {
     }
 
     public void extractPartitionInfo(AtlasEntity entity, Table table) {
-        if (entity.hasAttribute("partitionKeys") && Objects.nonNull(entity.getAttribute("partitionKeys"))) {
-            table.setPartitionTable(true);
+        if (entity.hasAttribute("partitionKeys") && entity.getAttribute("partitionKeys") != null) {
+            List<AtlasObjectId> partitionKeys = toAtlasObjectIdList(entity.getAttribute("partitionKeys"));
+            if(partitionKeys.isEmpty())
+                table.setPartitionTable(false);
+            else
+                table.setPartitionTable(true);
         } else {
             table.setPartitionTable(false);
         }
+    }
+
+    protected List<AtlasObjectId> toAtlasObjectIdList(Object obj) {
+        final List<AtlasObjectId> ret;
+
+        if (obj instanceof Collection) {
+            Collection coll = (Collection) obj;
+
+            ret = new ArrayList<>(coll.size());
+
+            for (Object item : coll) {
+                AtlasObjectId objId = toAtlasObjectId(item);
+
+                if (objId != null) {
+                    ret.add(objId);
+                }
+            }
+        } else {
+            AtlasObjectId objId = toAtlasObjectId(obj);
+
+            if (objId != null) {
+                ret = new ArrayList<>(1);
+
+                ret.add(objId);
+            } else {
+                ret = null;
+            }
+        }
+
+        return ret;
+    }
+
+    protected AtlasObjectId toAtlasObjectId(Object obj) {
+        final AtlasObjectId ret;
+
+        if (obj instanceof AtlasObjectId) {
+            ret = (AtlasObjectId) obj;
+        } else if (obj instanceof Map) {
+            ret = new AtlasObjectId((Map) obj);
+        } else if (obj != null) {
+            ret = new AtlasObjectId(obj.toString()); // guid
+        } else {
+            ret = null;
+        }
+
+        return ret;
     }
 
     public void extractVirtualTable(AtlasEntity entity, Table table) {
