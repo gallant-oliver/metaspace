@@ -987,7 +987,7 @@ public class DataShareService {
         if(searchType == APIInfo.SourceType.ORACLE) {
             queryColumns.stream().forEach(columnName -> columnJoiner.add("\"" + columnName + "\""));
         } else if(searchType == APIInfo.SourceType.HIVE) {
-            queryColumns.stream().forEach(columnName -> columnJoiner.add(columnName));
+            queryColumns.stream().forEach(columnName -> columnJoiner.add("`" + columnName + "`"));
         }
         return columnJoiner.toString();
     }
@@ -1016,9 +1016,9 @@ public class DataShareService {
                 }
             } else if(sourceType == APIInfo.SourceType.HIVE) {
                 if (valueList.size() > 1) {
-                    filterBuffer.append(columnName).append(" in ").append("(").append(valueJoiner.toString()).append(")");
+                    filterBuffer.append("`" + columnName + "`").append(" in ").append("(").append(valueJoiner.toString()).append(")");
                 } else {
-                    filterBuffer.append(columnName).append("=").append(valueJoiner.toString());
+                    filterBuffer.append("`" + columnName + "`").append("=").append(valueJoiner.toString());
                 }
             }
             filterJoiner.add(filterBuffer.toString());

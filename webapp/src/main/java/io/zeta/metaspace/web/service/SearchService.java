@@ -240,7 +240,7 @@ public class SearchService {
         Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
-        String sql = "select * from " + name + " limit " + guidCount.getCount();
+        String sql = "select * from `" + name + "` limit " + guidCount.getCount();
 
         Configuration conf = ApplicationProperties.get();
         String user = AdminUtils.getUserName();
