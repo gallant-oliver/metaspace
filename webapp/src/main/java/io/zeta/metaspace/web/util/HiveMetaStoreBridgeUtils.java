@@ -750,9 +750,14 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         return findEntity(typeName, qualifiedName);
     }
 
-    private AtlasEntityWithExtInfo findEntity(final String typeName, final String qualifiedName) throws AtlasBaseException {
-        AtlasEntityWithExtInfo ret = atlasEntityStore.getByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(typeName), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
-        clearRelationshipAttributes(ret);
+    private AtlasEntityWithExtInfo findEntity(final String typeName, final String qualifiedName){
+        AtlasEntityWithExtInfo ret = null;
+        try {
+            ret = atlasEntityStore.getByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(typeName), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
+            clearRelationshipAttributes(ret);
+        } catch (AtlasBaseException e) {
+            LOG.warn("{}是新的元数据，保存元数据", qualifiedName);
+        }
         return ret;
     }
 
