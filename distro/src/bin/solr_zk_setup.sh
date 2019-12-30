@@ -1,21 +1,22 @@
 #!/bin/bash
-
+set -o errexit
 # 参数
-metaspace_home=$1
-zookeeper_port=$2
-solr_port=$3
+bin=`dirname $0`
+metaspace_home=`cd $bin;pwd`/..
+zookeeper_port=2188
+solr_port=8988
 
 # 依赖项安装目录
-depdir=/home/metaspace/metaspace_depend
+depdir=$metaspace_home
 solr_conf=${metaspace_home}/conf/solr
-mkdir -p ${depdir}
 
 # zookeeper安装目录
 zookeeper_home=${depdir}/zookeeper
 zookeeper_conf_dir=${zookeeper_home}/conf
 
 # 解压zookeeper
-tar xvf zookeeper-*.tar.gz -C ${depdir} >/dev/null 2>&1
+tar xf ${metaspace_home}/zookeeper-*.tar.gz -C ${depdir}
+mv ${metaspace_home}/zookeeper-*.tar.gz ${metaspace_home}/../
 mv ${depdir}/zookeeper-* ${depdir}/zookeeper
 
 # 修改配置文件
@@ -36,7 +37,8 @@ fi
 solr_home=${depdir}/solr
 
 # 解压solr
-tar xvf solr-*.tgz -C ${depdir} >/dev/null 2>&1
+tar xf ${metaspace_home}/solr-*.tgz -C ${depdir}
+mv ${metaspace_home}/solr-*.tgz ${metaspace_home}/../
 mv ${depdir}/solr-* ${solr_home}
 
 # 启动solr
@@ -46,3 +48,4 @@ ${solr_home}/bin/solr start -c -z localhost:${zookeeper_port} -p ${solr_port} >/
 ${solr_home}/bin/solr create -p ${solr_port} -c vertex_index -d ${solr_conf} -shards 1 -replicationFactor 1
 ${solr_home}/bin/solr create -p ${solr_port} -c edge_index -d ${solr_conf} -shards 1 -replicationFactor 1
 ${solr_home}/bin/solr create -p ${solr_port} -c fulltext_index -d ${solr_conf} -shards 1 -replicationFactor 1
+echo "zookeeper and solr started"

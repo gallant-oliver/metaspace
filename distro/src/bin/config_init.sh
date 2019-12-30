@@ -1,13 +1,25 @@
 #!/bin/bash
-
+set -o errexit
+bin=`dirname $0`
+conf_dir=`cd $bin/../conf;pwd`
+cd $conf_dir
 # 参数
 metaspace_config_template=metaspace-necessary-application.template
 metaspace_config=atlas-application.properties
+quartz_config=quartz.properties
+jaas=atlas_jaas.conf
 while read line
 do
+  if((${#line}<=0));then
+      continue
+  fi
+  if [[ "$line" =~ ^#.* ]];then
+                continue
+  fi
 	IFS='=' arr=($line)
 	key=${arr[0]}
 	value=${arr[1]}
+
 	#hive配置文件
 	if [ "$key" = "hive_conf_dir" ];then
 		sed -i "s#metaspace.hive.conf=.*#metaspace.hive.conf=${value}#g" ${metaspace_config}
@@ -44,6 +56,7 @@ do
 	#数据库url
 	elif [ "$key" = "database_url" ];then
 		sed -i "s#metaspace.database.url=.*#metaspace.database.url=jdbc:postgresql://${value}/metaspace?useUnicode=true\&characterEncoding=UTF8#g" ${metaspace_config}
+		sed -i "s#^org.quartz.dataSource.msDS.URL.*#org.quartz.dataSource.msDS.URL=jdbc:postgresql://${value}/metaspace?useUnicode=true\&characterEncoding=UTF8#g" ${quartz_config}
 	#zookeeper urls
 	elif [ "$key" = "basic_zookeeper_urls" ];then
 		sed -i "s#atlas.graph.storage.hostname=.*#atlas.graph.storage.hostname=${value}#g" ${metaspace_config}
@@ -61,11 +74,13 @@ do
 		sed -i "s#atlas.authentication.principal=.*#atlas.authentication.principal=${value}#g" ${metaspace_config}
 		sed -i "s#atlas.jaas.KafkaClient.option.principal=.*#atlas.jaas.KafkaClient.option.principal=${value}#g" ${metaspace_config}
 		sed -i "s#atlas.authentication.principal=.*#atlas.authentication.principal=${value}#g" ${metaspace_config}
+		sed -i "s#   principal=.*#   principal=\"${value}\";#g" $jaas
 	#keyTab文件路径
 	elif [ "$key" = "keytab_dir" ];then
 		sed -i "s#metaspace.kerberos.keytab=.*#metaspace.kerberos.keytab=${value}#g" ${metaspace_config}
 		sed -i "s#atlas.jaas.KafkaClient.option.keyTab=.*#atlas.jaas.KafkaClient.option.keyTab=${value}#g" ${metaspace_config}
 		sed -i "s#atlas.authentication.keytab=.*#atlas.authentication.keytab=${value}#g" ${metaspace_config}
+		sed -i "s#   keyTab=.*#   keyTab=\"${value}\"#g" $jaas
 	#redis
 	elif [ "$key" = "redis_url" ];then
 		IFS=':' arr=($value)
@@ -77,23 +92,10 @@ do
 	#云平台接口url
 	elif [ "$key" = "mobius_url" ];then
 		sed -i "s#metaspace.mobius.url=.*#metaspace.mobius.url=http://${value}/v3/bigdata/gateway#g" ${metaspace_config}
-	#metaspace HA
-	elif [ "$key" = "metaspace_ha" ];then
-		if [ ${#value}>0 ];then
-			sed -i "s#atlas.server.ha.enabled=.*#atlas.server.ha.enabled=${value}#g" ${metaspace_config}
-		fi
-	#metaspace urls
-	elif [ "$key" = "metaspace_urls" ];then
-
-		IFS=',' arr=($value)
-		len=${#arr[*]}
-		sed -i "s#atlas.server.address.id1=.*#atlas.server.address.id1=${arr[0]}#g" ${metaspace_config}
-		if [ "$len" = 2 ];then
-			sed -i "s#atlas.rest.address=.*#atlas.rest.address=http://${arr[0]},http://${arr[1]}#g" ${metaspace_config}
-			sed -i "s#atlas.server.address.id2=.*#atlas.server.address.id2=${arr[1]}#g" ${metaspace_config}
-		else
-			sed -i "s#atlas.rest.address=.*#atlas.rest.address=http://${arr[0]}#g" ${metaspace_config}
-		fi
+	#metaspace url
+	elif [ "$key" = "metaspace_url" ];then
+		sed -i "s#atlas.rest.address=.*#atlas.rest.address=http://${value}#g" ${metaspace_config}
+		sed -i "s#metaspace.request.address=.*#metaspace.request.address=http://${value}#g" ${metaspace_config}
 	elif [ "$key" = "current_host" ];then
 		sed -i "s#atlas.server.bind.address=.*#atlas.server.bind.address=${value}#g" ${metaspace_config}
 	#安全中心接口url
@@ -104,9 +106,20 @@ do
 			sed -i "s#metaspace.secureplus.enable=.*#metaspace.secureplus.enable=true#g" ${metaspace_config}
 			sed -i "s#metaspace.secureplus.privilegeREST=.*#metaspace.secureplus.privilegeREST=http://${value}/service/privilege/hivetable#g" ${metaspace_config}
 		fi
-	elif [[ "$key" == "#note:"* ]];then
-                continue
+	#数据库配置
+	elif [ "$key" = "database" ]; then
+    sed -i "#^metaspace.database.url#s#metaspace#${value}#g" ${metaspace_config}
+	  sed -i "#^org.quartz.dataSource.msDS.URL#s#metaspace#${value}#g" $quartz_config
+	elif [ "$key" = "username" ]; then
+	  sed -i "s#metaspace.database.username=.*#metaspace.database.username=${value}#g" ${metaspace_config}
+	  sed -i "s#^org.quartz.dataSource.msDS.user.*#org.quartz.dataSource.msDS.user=${value}#g" $quartz_config
+	elif [ "$key" = "password" ]; then
+	  sed -i "s#metaspace.database.password=.*#metaspace.database.password=${value}#g" $metaspace_config
+	  sed -i "s#^org.quartz.dataSource.msDS.password.*#org.quartz.dataSource.msDS.password=${value}#g" $quartz_config
+	elif [ "$key" = "realm" ]; then
+	  sed -i "/^metaspace.impala.kerberos.jdbc/s/PANEL.COM/${value}/g" $metaspace_config
 	else
-		echo "unknown configuration:"$key
+		echo "unknown configuration:${key}"
 	fi
 done<$metaspace_config_template
+rm -f 0

@@ -191,6 +191,9 @@ public class MetaspaceScheduler {
                 Integer fieldNum = ((ArrayList) columns).size();
                 tableStat.setFieldNum(fieldNum);
             }
+            if (null == entity.getAttribute("qualifiedName")) {
+                return tableStatList;
+            }
             //表名
             String qualifiedName = entity.getAttribute("qualifiedName").toString();
             String displayName = entity.getAttribute("name").toString();
