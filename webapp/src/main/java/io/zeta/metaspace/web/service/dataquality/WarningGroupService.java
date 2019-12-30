@@ -95,6 +95,8 @@ public class WarningGroupService {
                 }
             }
             warningGroupDAO.deleteByIdList(numberList);
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("删除告警组失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除告警组失败");
