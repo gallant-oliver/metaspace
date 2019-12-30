@@ -66,3 +66,10 @@ export MANAGE_EMBEDDED_CASSANDRA=${cassandra.embedded}
 
 # indicates whether or not a local instance of Elasticsearch should be started for Atlas
 export MANAGE_LOCAL_ELASTICSEARCH=${elasticsearch.managed}
+
+export ATLAS_HOME=/home/metaspace/metaspace
+export ATLAS_LOG_DIR=${ATLAS_HOME}/logs
+export ATLAS_OPTS="-Dzookeeper.sasl.client=false -Djavax.security.auth.useSubjectCredsOnly=false -Djava.security.auth.login.config=${ATLAS_HOME}/conf/atlas_jaas.conf"
+export HBASE_CONF_DIR=/etc/hbase/conf
+export ATLAS_SERVER_OPTS="-server -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+PrintTenuringDistribution -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$ATLAS_LOG_DIR/atlas_server.hprof -Xloggc:$ATLAS_LOG_DIR/gc-worker.log -verbose:gc -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=1m -XX:+PrintGCDetails -XX:+PrintHeapAtGC -XX:+PrintGCTimeStamps"
+export ATLAS_SERVER_HEAP="-Xms2048m -Xmx2048m -XX:MaxNewSize=600m -XX:MetaspaceSize=100m -XX:MaxMetaspaceSize=512m"
