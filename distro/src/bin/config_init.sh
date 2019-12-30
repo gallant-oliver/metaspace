@@ -1,13 +1,16 @@
 #!/bin/bash
 set -o errexit
 bin=`dirname $0`
-conf_dir=`cd $bin/../conf;pwd`
+home=`cd $bin/..;pwd`
+conf_dir=`cd $home/conf;pwd`
 cd $conf_dir
 # 参数
 metaspace_config_template=metaspace-necessary-application.template
 metaspace_config=atlas-application.properties
 quartz_config=quartz.properties
 jaas=atlas_jaas.conf
+atlas_env=atlas-env.sh
+sed -i "s#export ATLAS_HOME=.*#export ATLAS_HOME=${home}#g" $atlas_env
 while read line
 do
   if((${#line}<=0));then
@@ -29,6 +32,7 @@ do
 	#hbase配置文件
 	elif [ "$key" = "hbase_conf_dir" ];then
 		sed -i "s#metaspace.hbase.conf=.*#metaspace.hbase.conf=${value}#g" ${metaspace_config}
+		sed -i "s#export HBASE_CONF_DIR=.*#export HBASE_CONF_DIR=${value}#g" $atlas_env
 	#hive URL
 	elif [ "$key" = "hive_urls" ];then
 		sed -i "s#metaspace.hive.url=.*#metaspace.hive.url=${value}#g" ${metaspace_config}
