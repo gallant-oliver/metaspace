@@ -22,7 +22,7 @@
   <parent>
     <artifactId>apache-atlas</artifactId>
     <groupId>org.apache.atlas</groupId>
-    <version>1.6.2</version>
+    <version>1.6.3</version>
   </parent>
   <artifactId>impala-bridge</artifactId>
   <description>Apache Atlas Impala Bridge Module</description>
