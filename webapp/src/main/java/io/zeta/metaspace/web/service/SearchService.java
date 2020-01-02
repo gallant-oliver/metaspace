@@ -88,13 +88,6 @@ public class SearchService {
         return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
     }
 
-    public PageResult<Database> getActiveDatabase(Parameters parameters) throws AtlasBaseException {
-        long limit = parameters.getLimit();
-        long offset = parameters.getOffset();
-        String queryDb = parameters.getQuery();
-        return metaspaceEntityService.getDatabaseByQuery(queryDb, true, offset, limit);
-    }
-
     @Cacheable(value = "RDBMSDataSourceSearchCache", key = "#parameters.query + #parameters.limit + #parameters.offset + #sourceType + #active")
     public PageResult<RDBMSDataSource> getDataSourcePageResult(Parameters parameters,String sourceType,Boolean active) throws AtlasBaseException {
         long limit = parameters.getLimit();
