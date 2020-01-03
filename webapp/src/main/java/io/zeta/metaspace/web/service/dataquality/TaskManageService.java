@@ -118,7 +118,7 @@ public class TaskManageService {
 
     public PageResult getTableList(String databaseId, Parameters parameters) throws AtlasBaseException {
         try {
-            PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, false, parameters.getOffset(), parameters.getLimit());
+            PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, true, parameters.getOffset(), parameters.getLimit());
 
             List<Table> tableList = pageResult.getLists();
             String dbName = null;
@@ -169,31 +169,18 @@ public class TaskManageService {
 
     public List<RuleHeader> getValidRuleList(String groupId, int objType, List<String> objIdList) throws AtlasBaseException {
         try {
-            List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId);
-            if(Objects.isNull(objIdList) || objIdList.isEmpty()) {
+            List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId, objType);
+            if(objIdList==null || objIdList.isEmpty() || ruleList==null) {
                 return ruleList;
             }
-            if(Objects.nonNull(ruleList)) {
-                if(ObjectType.TABLE == ObjectType.of(objType)) {
-                    return ruleList.stream().filter(rule -> 0==rule.getScope()).collect(Collectors.toList());
-                } else {
-                    List<String> columnTypeList = taskManageDAO.getColumnTypeList(objIdList);
-                    boolean allNumericValue = true;
-                    for (String columnType : columnTypeList) {
-                        allNumericValue = HiveNumericType.isNumericType(columnType);
-                        if(!allNumericValue) {
-                            break;
-                        }
-                    }
-                    if(allNumericValue) {
-                        return ruleList.stream().filter(rule -> 1==rule.getScope()).collect(Collectors.toList());
-                    } else {
-                        List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId();
-                        return ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getRuleTemplateId())).collect(Collectors.toList());
-                    }
-                }
+            if(ObjectType.COLUMN == ObjectType.of(objType)) {
+                List<String> columnTypeList = taskManageDAO.getColumnTypeList(objIdList);
+                boolean allNumericValue = columnTypeList.stream().allMatch(columnType -> HiveNumericType.isNumericType(columnType));
+                List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId();
+                return allNumericValue == true ? ruleList
+                        :ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getRuleTemplateId())).collect(Collectors.toList());
             }
-            return null;
+            return ruleList;
         }  catch (Exception e) {
             LOG.error("获取规则列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取规则列表失败");

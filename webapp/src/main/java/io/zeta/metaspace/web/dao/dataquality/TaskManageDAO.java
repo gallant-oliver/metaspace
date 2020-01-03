@@ -167,8 +167,11 @@ public interface TaskManageDAO {
              " and data_quality_rule.rule_template_id=data_quality_rule_template.id",
              " and data_quality_rule.delete=false",
              " and data_quality_rule.enable=true",
+             " <if test='scope!=null'>",
+             " and data_quality_rule.scope=#{scope}",
+             " </if>",
              " </script>"})
-    public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId);
+    public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId, @Param("scope")Integer scope);
 
     /**
      * 获取字段列表

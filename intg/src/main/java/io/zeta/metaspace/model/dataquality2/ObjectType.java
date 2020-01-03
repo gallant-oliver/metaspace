@@ -20,13 +20,13 @@ public enum ObjectType {
 
     TABLE(0, "table"), COLUMN(1, "column");
     String name;
-    Integer code;
-    ObjectType(Integer code, String name) {
+    int code;
+    ObjectType(int code, String name) {
         this.code = code;
         this.name = name;
     }
 
-    public static ObjectType of(Integer code) {
+    public static ObjectType of(int code) {
         switch (code){
             case 0:
                 return TABLE;

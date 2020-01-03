@@ -177,7 +177,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getDatabaseList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getDatabasePageResult(false, parameters);
+        return searchService.getDatabasePageResult(true, parameters);
     }
 
     /**
@@ -221,7 +221,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult searchTableList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getTablePageResultV2(false, parameters);
+        return searchService.getTablePageResultV2(true, parameters);
     }
 
     /**
@@ -235,7 +235,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult searchColumnList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getColumnPageResultV2(false, parameters);
+        return searchService.getColumnPageResultV2(true, parameters);
     }
 
     /**
