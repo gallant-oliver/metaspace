@@ -88,7 +88,7 @@ public interface RuleDAO {
              " </script>"})
     public long countBySearch(@Param("query") String query);
 
-    @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id}")
+    @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id} and delete=false")
     public int getRuleUsedCount(@Param("id") String guid);
 
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
