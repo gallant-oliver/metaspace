@@ -299,7 +299,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         for (Pattern p : patterns) {
             if (p.matcher(name).matches()) {
                 ret = true;
-
+                LOG.info("{} match pattern {}", name, p.pattern());
                 break;
             }
         }

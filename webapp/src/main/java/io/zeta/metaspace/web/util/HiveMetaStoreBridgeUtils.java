@@ -64,6 +64,7 @@ import java.util.Date;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
 
@@ -99,7 +100,9 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     private final MetaspaceGremlinQueryProvider gremlinQueryProvider;
     private final EntityGraphRetriever entityRetriever;
     private final AtlasTypeRegistry atlasTypeRegistry;
-    private final AtlasEntityStore atlasEntityStore;
+    private final AtlasEntityStore     atlasEntityStore;
+    private static final List<Pattern> hiveTablesToIgnore = new ArrayList<>();
+    public static final String HOOK_HIVE_TABLE_IGNORE_PATTERN = CONF_PREFIX + "hive_table.ignore.pattern";;
 
     public AtomicInteger getTotalTables() {
         return totalTables;
@@ -131,6 +134,19 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         this.entityRetriever = new EntityGraphRetriever(typeRegistry);
         this.atlasTypeRegistry = typeRegistry;
         this.atlasEntityStore = atlasEntityStore;
+        String[] patternHiveTablesToIgnore = atlasConf.getStringArray(HOOK_HIVE_TABLE_IGNORE_PATTERN);
+        if (patternHiveTablesToIgnore != null) {
+            for (String pattern : patternHiveTablesToIgnore) {
+                try {
+                    hiveTablesToIgnore.add(Pattern.compile(pattern));
+
+                    LOG.info("{}={}", HOOK_HIVE_TABLE_IGNORE_PATTERN, pattern);
+                } catch (Throwable t) {
+                    LOG.warn("failed to compile pattern {}", pattern, t);
+                    LOG.warn("Ignoring invalid pattern in configuration {}: {}", HOOK_HIVE_TABLE_IGNORE_PATTERN, pattern);
+                }
+            }
+        }
     }
 
 
@@ -296,12 +312,16 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
     public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError) throws Exception {
         try {
-            Table                  table       = hiveMetaStoreClient.getTable(databaseName, tableName);
+            Table table = hiveMetaStoreClient.getTable(databaseName, tableName);
+            String tableQualifiedName = getTableProcessQualifiedName(clusterName, table);
+            if (isMatch(tableQualifiedName)) {
+                LOG.info("ignoring table {}", tableQualifiedName);
+                return 1;
+            }
             AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
             if (table.getTableType() == TableType.EXTERNAL_TABLE) {
-                String                 processQualifiedName = getTableProcessQualifiedName(clusterName, table);
-                AtlasEntityWithExtInfo processEntity        = findProcessEntity(processQualifiedName);
+                AtlasEntityWithExtInfo processEntity        = findProcessEntity(tableQualifiedName);
 
                 if (processEntity == null) {
                     String      tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
@@ -311,7 +331,7 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
                     AtlasEntity processInst   = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
                     long        now           = System.currentTimeMillis();
 
-                    processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, processQualifiedName);
+                    processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
                     processInst.setAttribute(ATTRIBUTE_NAME, query);
                     processInst.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
                     processInst.setAttribute(ATTRIBUTE_INPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(pathInst)));
@@ -332,7 +352,7 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
                     registerInstances(createTableProcess);
                 } else {
-                    LOG.info("Process {} is already registered", processQualifiedName);
+                    LOG.info("Process {} is already registered", tableQualifiedName);
                 }
             }
 
@@ -346,6 +366,10 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
             return 0;
         }
+    }
+
+    private boolean isMatch(String tableQualifiedName) {
+        return hiveTablesToIgnore.stream().anyMatch(pattern -> pattern.matcher(tableQualifiedName).matches());
     }
 
     /**
