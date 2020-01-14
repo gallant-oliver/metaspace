@@ -781,6 +781,9 @@ COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
 COMMENT ON COLUMN "public"."users"."username" IS '用户名';
 COMMENT ON COLUMN "public"."users"."account" IS '用户账号';
 
+INSERT INTO "public"."users"("userid","username","account","create_time","update_time","valid") VALUES ('1', 'admin', 'admin', current_timestamp, current_timestamp, 't');
+
+
 -- ----------------------------
 -- Primary Key structure for table apigroup
 -- ----------------------------
@@ -1978,6 +1981,8 @@ CREATE TABLE "public"."user2role" (
 -- Primary Key structure for table user2role
 -- ----------------------------
 ALTER TABLE "public"."user2role" ADD CONSTRAINT "user2role_pkey" PRIMARY KEY ("userid", "roleid");
+
+INSERT INTO "public"."user2role"("userid","roleid") VALUES ('1', '1');
 
 -- ----------------------------
 -- Table structure for data_source_api_authorize
