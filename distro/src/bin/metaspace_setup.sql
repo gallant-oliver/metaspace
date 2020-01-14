@@ -1127,6 +1127,10 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
+INSERT INTO "public"."users"("userid","username","account","create_time","update_time","valid") VALUES ('1', 'admin', 'admin', current_timestamp, current_timestamp, 't');
+INSERT INTO "public"."user2role"("userid","roleid") VALUES ('1', '1');
+
+
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,'1');
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,'1');
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,'1');
@@ -1204,6 +1208,10 @@ INSERT INTO "public"."privilege2module" VALUES ('3', 7);
 INSERT INTO "public"."privilege2module" VALUES ('3', 8);
 INSERT INTO "public"."privilege2module" VALUES ('3', 9);
 INSERT INTO "public"."privilege2module" VALUES ('3', 10);
+INSERT INTO "public"."privilege2module" VALUES ('3', 11);
+INSERT INTO "public"."privilege2module" VALUES ('3', 12);
+INSERT INTO "public"."privilege2module" VALUES ('3', 13);
+INSERT INTO "public"."privilege2module" VALUES ('3', 14);
 INSERT INTO "public"."privilege2module" VALUES ('4', 2);
 INSERT INTO "public"."privilege2module" VALUES ('4', 4);
 INSERT INTO "public"."privilege2module" VALUES ('4', 9);
@@ -1220,7 +1228,7 @@ INSERT INTO "public"."privilege2module" VALUES ('7', 1);
 INSERT INTO "public"."privilege2module" VALUES ('7', 8);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
-INSERT INTO "public"."privilege2module" VALUES ('3', 13);
+
 INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL);
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
