@@ -77,7 +77,7 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
             case FULL_ACTIVE_TABLE_DB:
                 return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid').dedup().order().by('__timestamp').as('table').outE().inV().has('__typeName','hive_db').has('__state','ACTIVE').as('db').select('table','db').toList()";
             case TABLE_COUNT_BY_QUEERY:
-                return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__guid').dedup().as('table').outE().inV().has('__typeName','hive_db').as('db').count().toList();";
+                return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__guid').dedup().count().toList();";
             case ACTIVE_TABLE_COUNT_BY_QUEERY:
                 return "g.V().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid').dedup().outE().inV().has('__typeName','hive_db').has('__state','ACTIVE').count().toList();";
             case COLUMN_TABLE_DB_BY_QUERY:
