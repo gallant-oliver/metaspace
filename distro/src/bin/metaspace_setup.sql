@@ -1130,10 +1130,6 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
-INSERT INTO "public"."users"("userid","username","account","create_time","update_time","valid") VALUES ('1', 'admin', 'admin', current_timestamp, current_timestamp, 't');
-INSERT INTO "public"."user2role"("userid","roleid") VALUES ('1', '1');
-
-
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,'1');
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,'1');
 INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,'1');
