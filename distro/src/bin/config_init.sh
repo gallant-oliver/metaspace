@@ -39,6 +39,9 @@ do
 	#hive principal
 	elif [ "$key" = "hive_principal" ];then
 		sed -i "s#metaspace.hive.principal=.*#metaspace.hive.principal=${value}#g" ${metaspace_config}
+	#impala principal
+	elif [ "$key" = "impala_principal" ];then
+		sed -i "s#metaspace.impala.principal=.*#metaspace.impala.principal=${value}#g" ${metaspace_config}
 	#impala url
 	elif [ "$key" = "impala_url" ];then
 		IFS=':' arr=($value)
@@ -59,8 +62,8 @@ do
 		sed -i "s#sso.user.info.url=.*#sso.user.info.url=http://${value}/portal/api/v5/getAccountByID#g" ${metaspace_config}
 	#数据库url
 	elif [ "$key" = "database_url" ];then
-		sed -i "s#metaspace.database.url=.*#metaspace.database.url=jdbc:postgresql://${value}/metaspace?useUnicode=true\&characterEncoding=UTF8#g" ${metaspace_config}
-		sed -i "s#^org.quartz.dataSource.msDS.URL.*#org.quartz.dataSource.msDS.URL=jdbc:postgresql://${value}/metaspace?useUnicode=true\&characterEncoding=UTF8#g" ${quartz_config}
+		sed -i "s#metaspace.database.url=.*#metaspace.database.url=jdbc:postgresql://${value}/msdb?useUnicode=true\&characterEncoding=UTF8#g" ${metaspace_config}
+		sed -i "s#^org.quartz.dataSource.msDS.URL.*#org.quartz.dataSource.msDS.URL=jdbc:postgresql://${value}/msdb?useUnicode=true\&characterEncoding=UTF8#g" ${quartz_config}
 	#zookeeper urls
 	elif [ "$key" = "basic_zookeeper_urls" ];then
 		sed -i "s#atlas.graph.storage.hostname=.*#atlas.graph.storage.hostname=${value}#g" ${metaspace_config}
@@ -112,8 +115,8 @@ do
 		fi
 	#数据库配置
 	elif [ "$key" = "database" ]; then
-    sed -i "#^metaspace.database.url#s#metaspace#${value}#g" ${metaspace_config}
-	  sed -i "#^org.quartz.dataSource.msDS.URL#s#metaspace#${value}#g" $quartz_config
+    sed -i "/^metaspace.database.url/s/msdb/${value}/g" ${metaspace_config}
+	  sed -i "/^org.quartz.dataSource.msDS.URL/s/msdb/${value}/g" $quartz_config
 	elif [ "$key" = "username" ]; then
 	  sed -i "s#metaspace.database.username=.*#metaspace.database.username=${value}#g" ${metaspace_config}
 	  sed -i "s#^org.quartz.dataSource.msDS.user.*#org.quartz.dataSource.msDS.user=${value}#g" $quartz_config

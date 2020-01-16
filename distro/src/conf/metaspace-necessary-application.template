@@ -8,6 +8,8 @@ hbase_conf_dir=/etc/hbase/conf
 hive_urls=panel-sp-2:10000
 #note:hive权限校验principal
 hive_principal=hive/panel-sp-1@PANEL.COM
+#note:impala principal
+impala_principal=impala/panel-sp-1@PANEL.COM
 #note:impala jdbc url
 impala_url=panel-sp-1:21050
 #note:sso地址
