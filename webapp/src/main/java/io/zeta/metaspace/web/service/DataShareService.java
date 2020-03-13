@@ -1005,14 +1005,28 @@ public class DataShareService {
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataType(dataType, valueList);
             valueList.forEach(value -> {
-                String str = (DataType.STRING == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\'" + value.toString() + "\'"):(value.toString());
+                String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP== dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString()))?("\'" + value.toString() + "\'"):(value.toString());
                 valueJoiner.add(str);
             });
             if(sourceType == APIInfo.SourceType.ORACLE) {
-                if (valueList.size() > 1) {
-                    filterBuffer.append("\"").append(columnName).append("\"").append(" in ").append("(").append(valueJoiner.toString()).append(")");
+                if(DataType.CLOB == dataType) {
+                    String clobTypeQueryTemplate = "dbms_lob.instr(\"%s\",%s,1,1)<>0";
+                    if(valueList.size() > 1) {
+                        StringJoiner clobQueryJoiner = new StringJoiner(" or ");
+                        for (Object value : valueList) {
+                            clobQueryJoiner.add(String.format(clobTypeQueryTemplate, columnName, value));
+                        }
+                        filterBuffer.append("(").append(clobQueryJoiner.toString()).append(")");
+                    } else {
+                        filterBuffer.append(String.format(clobTypeQueryTemplate, columnName, valueJoiner.toString()));
+                    }
+
                 } else {
-                    filterBuffer.append("\"").append(columnName).append("\"").append("=").append(valueJoiner.toString());
+                    if (valueList.size() > 1) {
+                        filterBuffer.append("\"").append(columnName).append("\"").append(" in ").append("(").append(valueJoiner.toString()).append(")");
+                    } else {
+                        filterBuffer.append("\"").append(columnName).append("\"").append("=").append(valueJoiner.toString());
+                    }
                 }
             } else if(sourceType == APIInfo.SourceType.HIVE) {
                 if (valueList.size() > 1) {
@@ -1027,7 +1041,7 @@ public class DataShareService {
     }
 
     public void checkDataType(DataType dataType, List<Object> valueList) throws AtlasBaseException {
-        if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType)
+        if(DataType.TIMESTAMP != dataType && DataType.DATE != dataType &&DataType.TIME!= dataType && DataType.CLOB!=dataType)
             valueList.stream().forEach(value -> dataType.valueOf(value).get());
         else if(DataType.BOOLEAN == dataType) {
             for(Object value : valueList) {

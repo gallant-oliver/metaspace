@@ -57,6 +57,9 @@ public enum DataType {
     DATE("date", "日期"),
     @XmlEnumValue("TIME")
     TIME("time", "时间"),
+    @XmlEnumValue("CLOB")
+    CLOB("clob", "大数据字段类型"),
+
     @XmlEnumValue("UNKNOWN")
     UNKNOWN("unknown", "未知");
 
@@ -105,6 +108,9 @@ public enum DataType {
             case "ROWID":
             case "NROWID":
                 typeGroup = DataType.STRING;
+                break;
+            case "CLOB":
+                typeGroup = DataType.CLOB;
                 break;
             case "LONG":
             case "BIGINT":
