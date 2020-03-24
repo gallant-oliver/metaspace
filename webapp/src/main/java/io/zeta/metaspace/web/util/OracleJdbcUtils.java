@@ -145,6 +145,7 @@ public class OracleJdbcUtils {
     public static ResultSet query(Connection conn, String sql) throws AtlasBaseException {
         try {
             Statement statement = conn.createStatement();
+            LOG.info("oracle select sql: {}", sql);
             ResultSet resultSet = query(statement, sql);
             return resultSet;
         } catch (SQLException e) {
