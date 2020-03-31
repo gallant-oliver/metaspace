@@ -86,9 +86,9 @@ public class MarketService {
      * @return
      * @throws AtlasBaseException
      */
-    public Set<CategoryEntityV2> getAll(int type) throws AtlasBaseException {
+    public Set<CategoryEntityV2> getAll(int type,String tenantId) throws AtlasBaseException {
         try {
-            Set<CategoryEntityV2> valueList = categoryDao.getAll(type);
+            Set<CategoryEntityV2> valueList = categoryDao.getAll(type,tenantId);
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
@@ -100,7 +100,7 @@ public class MarketService {
     }
 
 
-    public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             String businessName = parameters.getQuery();
@@ -110,7 +110,7 @@ public class MarketService {
             List<BusinessInfoHeader> businessInfoList = null;
             if(Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
-            businessInfoList = businessDao.queryBusinessByNameWithoutPrivilege(businessName, limit, offset);
+            businessInfoList = businessDao.queryBusinessByNameWithoutPrivilege(businessName, limit, offset,tenantId);
 
             for(BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
@@ -194,7 +194,7 @@ public class MarketService {
     }
 
 
-    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(String businessGuid, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             TechnologyInfo technologyInfo = getRelatedTableList(businessGuid);
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
@@ -210,7 +210,7 @@ public class MarketService {
 
             int apiCount = 0;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
-                APIList = shareDao.getTableRelatedAPI(tableList, limit, offset);
+                APIList = shareDao.getTableRelatedAPI(tableList, limit, offset,tenantId);
                 for (APIInfoHeader api : APIList) {
                     String displayName = api.getTableDisplayName();
                     if(Objects.isNull(displayName) || "".equals(displayName)) {

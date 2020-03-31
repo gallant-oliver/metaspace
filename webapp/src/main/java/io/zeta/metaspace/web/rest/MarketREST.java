@@ -46,6 +46,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -87,13 +88,13 @@ public class MarketREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public Set<CategoryEntityV2> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MarketREST.getCategories()");
             }
-            return marketService.getAll(CATEGORY_TYPE);
+            return marketService.getAll(CATEGORY_TYPE,tenantId);
         }  finally {
             AtlasPerfTracer.log(perf);
         }
@@ -110,9 +111,9 @@ public class MarketREST {
     @Path("/category/relations/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByCategoryId(categoryId, parameters);
+            return businessService.getBusinessListByCategoryId(categoryId, parameters,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -130,9 +131,9 @@ public class MarketREST {
     @Path("/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return marketService.getBusinessListByName(parameters);
+            return marketService.getBusinessListByName(parameters,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -167,9 +168,9 @@ public class MarketREST {
     @Path("/{businessId}/datashare")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return marketService.getBusinessTableRelatedAPI(businessId, parameters);
+            return marketService.getBusinessTableRelatedAPI(businessId, parameters,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -204,8 +205,8 @@ public class MarketREST {
     @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableInfoById(guid);
+    public Table getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return metadataService.getTableInfoById(guid,tenantId);
     }
 
     @GET

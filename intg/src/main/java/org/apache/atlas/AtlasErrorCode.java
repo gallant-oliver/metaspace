@@ -215,7 +215,8 @@ public enum AtlasErrorCode {
     ENTITY_NOTIFICATION_FAILED(500, "METASPACE-500-00-014", " 获取实体通知失败:{0}:{1}"),
     CONF_LOAD_ERROE(500, "METASPACE-506-00-001", " 服务器配置错误: {0}"),
     SSO_CHECK_ERROE(500,"METASPACE-401-00-001","SSO异常,请重新登录"),
-    SSO_USER_ERROE(500,"METASPACE-401-00-002","SSO异常,用户名为空");
+    SSO_USER_ERROE(500,"METASPACE-401-00-002","SSO异常,用户名为空"),
+    TENANT_ERROE(500,"METASPACE-401-00-002","租户异常，租户id为空");
 
 
 

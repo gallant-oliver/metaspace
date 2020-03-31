@@ -16,6 +16,7 @@ import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.TenantService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -62,8 +63,8 @@ public class TechnicalREST {
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId);
+    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId,tenantId);
         return pageResult;
     }
     /**
@@ -75,8 +76,8 @@ public class TechnicalREST {
     @Path("/search/database/table/{databaseGuid}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid,@PathParam("categoryId") String categotyId ) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid,categotyId);
+    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid,@PathParam("categoryId") String categotyId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid,categotyId,tenantId);
         return pageResult;
     }
     /**
@@ -88,8 +89,8 @@ public class TechnicalREST {
     @Path("/search/table/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId);
+    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId,tenantId);
         return pageResult;
     }
 
@@ -104,13 +105,13 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            return dataManageService.getAll(CATEGORY_TYPE);
+            return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CATEGORY_TYPE) : dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -128,14 +129,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
-            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE);
+            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE,tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -153,7 +154,7 @@ public class TechnicalREST {
     @DELETE
     @Path("/category/{categoryGuid}")
     @OperateType(DELETE)
-    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
@@ -162,7 +163,7 @@ public class TechnicalREST {
             }
             CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
-            dataManageService.deleteCategory(categoryGuid);
+            dataManageService.deleteCategory(categoryGuid,tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -183,14 +184,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public String updateCategory(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public String updateCategory(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
-            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE);
+            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE,tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -240,14 +241,14 @@ public class TechnicalREST {
     @Path("/category/relations/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery);
+            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery,tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -301,13 +302,13 @@ public class TechnicalREST {
     @Path("/table/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -319,13 +320,13 @@ public class TechnicalREST {
     @Path("/owner/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Response addOwners(TableOwner tableOwner) throws AtlasBaseException {
+    public Response addOwners(TableOwner tableOwner,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.addOwners()");
             }
-            dataManageService.addTableOwner(tableOwner);
+            dataManageService.addTableOwner(tableOwner,tenantId);
         } catch (Exception e) {
             throw e;
         } finally {

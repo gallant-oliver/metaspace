@@ -48,6 +48,22 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
+             " and tableinfo.dbname in " ,
+             " <foreach item='item' index='index' collection='databases'" ,
+             " open='(' separator=',' close=')'>" ,
+             " #{item}" ,
+             " </foreach>" ,
+             " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+
+    @Select({"<script>",
             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' order by tableinfo.tablename",
             " <if test='limit!= -1'>",
@@ -56,6 +72,22 @@ public interface RelationDAO {
             " offset #{offset}",
             " </script>"})
     public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select({"<script>",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
+             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' ",
+             " and tableinfo.dbname in " ,
+             " <foreach item='item' index='index' collection='databases'" ,
+             " open='(' separator=',' close=')'>" ,
+             " #{item}" ,
+             " </foreach>" ,
+             " order by tableinfo.tablename",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
@@ -87,6 +119,36 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryByTableName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
+             " select *,count(*)over() total from table_relation",
+             " join tableInfo on",
+             " table_relation.tableGuid=tableInfo.tableGuid",
+             " where",
+             " categoryGuid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+             " #{categoryGuid}",
+             " </foreach>",
+             " and tableinfo.dbname in " ,
+             " <foreach item='item' index='index' collection='databases'" ,
+             " open='(' separator=',' close=')'>" ,
+             " #{item}" ,
+             " </foreach>" ,
+             " <if test=\"tableName != null and tableName!=''\">",
+             " and",
+             " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+             " </if>",
+             " <if test=\"tagName != null and tagName!=''\">",
+             " and",
+             " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+             " </if>",
+             " order by tableinfo.tablename ",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+
+    @Select({"<script>",
             " select count(*)over() total,* from table_relation",
             " join tableInfo on",
             " table_relation.tableGuid=tableInfo.tableGuid",
@@ -112,6 +174,36 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryByTableNameFilter(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select({"<script>",
+             " select count(*)over() total,* from table_relation",
+             " join tableInfo on",
+             " table_relation.tableGuid=tableInfo.tableGuid",
+             " where",
+             " categoryGuid in",
+             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+             " #{categoryGuid}",
+             " </foreach>",
+             " and tableinfo.dbname in " ,
+             " <foreach item='item' index='index' collection='databases'" ,
+             " open='(' separator=',' close=')'>" ,
+             " #{item}" ,
+             " </foreach>" ,
+             " <if test=\"tableName != null and tableName!=''\">",
+             " and",
+             " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+             " </if>",
+             " <if test=\"tagName != null and tagName!=''\">",
+             " and",
+             " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+             " </if>",
+             " and status !='DELETED' ",
+             " order by tableinfo.tablename ",
+             " <if test='limit!= -1'>",
+             " limit #{limit}",
+             " </if>",
+             " offset #{offset}",
+             " </script>"})
+    public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);

@@ -16,7 +16,9 @@
  */
 package io.zeta.metaspace.model.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.security.RoleResource;
 
 import java.util.List;
 
@@ -127,6 +129,35 @@ public class UserInfo {
         private int moduleId;
         private String moduleName;
         private int type;
+        @JsonIgnore
+        private int groupId;
+        @JsonIgnore
+        private String groupName;
+        private String show;
+
+        public int getGroupId() {
+            return groupId;
+        }
+
+        public void setGroupId(int groupId) {
+            this.groupId = groupId;
+        }
+
+        public String getGroupName() {
+            return groupName;
+        }
+
+        public void setGroupName(String groupName) {
+            this.groupName = groupName;
+        }
+
+        public String getShow() {
+            return show;
+        }
+
+        public void setShow(String show) {
+            this.show = show;
+        }
 
         public int getModuleId() {
             return moduleId;

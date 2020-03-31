@@ -54,14 +54,14 @@ public class WarningGroupService {
     @Autowired
     private TaskManageDAO taskManageDAO;
 
-    public int insert(WarningGroup warningGroup) throws AtlasBaseException {
+    public int insert(WarningGroup warningGroup,String tenantId) throws AtlasBaseException {
         try {
             warningGroup.setId(UUID.randomUUID().toString());
             warningGroup.setCreateTime(DateUtils.currentTimestamp());
             warningGroup.setUpdateTime(DateUtils.currentTimestamp());
             warningGroup.setCreator(AdminUtils.getUserData().getUserId());
             warningGroup.setDelete(false);
-            return warningGroupDAO.insert(warningGroup);
+            return warningGroupDAO.insert(warningGroup,tenantId);
         } catch (Exception e) {
             LOG.error("添加告警组失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加告警组失败");
@@ -78,8 +78,8 @@ public class WarningGroupService {
         }
     }
 
-    public WarningGroup getByName(String name) throws AtlasBaseException {
-        return warningGroupDAO.getByName(name);
+    public WarningGroup getByName(String name,String id,String tenantId) throws AtlasBaseException {
+        return warningGroupDAO.getByName(name,id,tenantId);
     }
 
     public void deleteById(String number) throws AtlasBaseException {
@@ -115,9 +115,9 @@ public class WarningGroupService {
         }
     }
 
-    public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
+    public PageResult<WarningGroup> search(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.search(parameters);
+            List<WarningGroup> list = warningGroupDAO.search(parameters,tenantId);
             PageResult<WarningGroup> pageResult = new PageResult<>();
             //long totalSize = warningGroupDAO.countBySearch(parameters.getQuery());
             long totalSize = 0;
@@ -135,18 +135,21 @@ public class WarningGroupService {
         }
     }
 
-    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters);
+            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters,tenantId);
             for (WarningGroup group : list) {
                 String numberStr = group.getContacts();
                 String[] numberArr = numberStr.split(",");
                 group.setNumberCount(numberArr.length);
             }
             PageResult<WarningGroup> pageResult = new PageResult<>();
-            long sum = warningGroupDAO.countWarningGroup(parameters);
+            long totalSize =0;
+            if (list.size()!=0){
+                totalSize = list.get(0).getTotal();
+            }
             //pageResult.setOffset(parameters.getOffset());
-            pageResult.setTotalSize(sum);
+            pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
             return pageResult;
@@ -157,10 +160,10 @@ public class WarningGroupService {
     }
 
 
-    public PageResult<TaskWarningHeader> getWarningList(Integer warningType, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TaskWarningHeader> getWarningList(Integer warningType, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult<TaskWarningHeader> pageResult = new PageResult<>();
-            List<TaskWarningHeader> warningList = warningGroupDAO.getWarningList(warningType, parameters);
+            List<TaskWarningHeader> warningList = warningGroupDAO.getWarningList(warningType, parameters,tenantId);
             for (TaskWarningHeader warning : warningList) {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warning.getTaskId(), 0);
                 warning.setWarningGroupList(groupHeaderList);
@@ -180,10 +183,10 @@ public class WarningGroupService {
         }
     }
 
-    public PageResult<TaskErrorHeader> getErrorWarningList(Integer errorType, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TaskErrorHeader> getErrorWarningList(Integer errorType, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult<TaskErrorHeader> pageResult = new PageResult<>();
-            List<TaskErrorHeader> warningList = warningGroupDAO.getErrorWarningList(errorType, parameters);
+            List<TaskErrorHeader> warningList = warningGroupDAO.getErrorWarningList(errorType, parameters,tenantId);
             for (TaskErrorHeader error : warningList) {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
                 error.setWarningGroupList(groupHeaderList);

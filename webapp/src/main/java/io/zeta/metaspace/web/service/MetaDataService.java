@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -25,6 +26,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.metadata.MetaDataProvider;
@@ -146,8 +148,12 @@ public class MetaDataService {
     private AtlasGraph graph;
     @Autowired
     private SearchService searchService;
+    @Autowired
+    private UserGroupDAO userGroupDAO;
+    @Autowired
+    private TenantService tenantService;
 
-    public Table getTableInfoById(String guid) throws AtlasBaseException {
+    public Table getTableInfoById(String guid,String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
@@ -161,7 +167,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            Table table = extractTableInfo(entity, guid);
+            Table table = extractTableInfo(entity, guid,tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -188,7 +194,7 @@ public class MetaDataService {
         }
     }
 
-    public Table extractTableInfo(AtlasEntity entity, String guid) throws AtlasBaseException {
+    public Table extractTableInfo(AtlasEntity entity, String guid,String tenantId) throws AtlasBaseException {
         Table table = new Table();
         table.setTableId(guid);
         if (entity.getTypeName().contains("table")) {
@@ -245,23 +251,40 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-            try {
-                List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
-                    table.setEdit(true);
-                } else {
-                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+            //判断独立部署和多租户
+            if (TenantService.defaultTenant.equals(tenantId)){
+                try {
+                    List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
+                    if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
+                        table.setEdit(true);
+                    } else {
+                        List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+                        for (Module module : modules) {
+                            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                                if (table.getTablePermission().isWRITE()) {
+                                    table.setEdit(true);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
+                }
+            }else {
+                try {
+                    List<Module> modules = tenantService.getModule(tenantId);
                     for (Module module : modules) {
-                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+                        if (module.getModuleId() == ModuleEnum.TECHNICALEDIT.getId()) {
                             if (table.getTablePermission().isWRITE()) {
                                 table.setEdit(true);
                                 break;
                             }
                         }
                     }
+                } catch (Exception e) {
+                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
             }
 
             //1.4新增
@@ -306,9 +329,9 @@ public class MetaDataService {
                 //表关联信息
                 List<String> relations = getRelationList(guid);
                 table.setRelations(relations);
-//                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
+                //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
-//                table.setCatalogAdmin(adminByTableguid);
+                //                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
                 if (relations.size() == 1)
                     table.setRelationTime(tableDAO.getDateByTableguid(guid));
@@ -403,97 +426,97 @@ public class MetaDataService {
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
             //权限,可能从secureplus获取，获取不到就不展示
-//            try {
-//                TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(), table.getTableName(), table.getColumns());
-//                table.setTablePermission(permission);
-//            } catch (Exception e) {
-//                LOG.error("获取权限失败,错误信息:" + e.getMessage(), e);
-//            }
+            //            try {
+            //                TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(), table.getTableName(), table.getColumns());
+            //                table.setTablePermission(permission);
+            //            } catch (Exception e) {
+            //                LOG.error("获取权限失败,错误信息:" + e.getMessage(), e);
+            //            }
             //tag，从postgresql获取，获取不到不展示
-//            try {
-//                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
-//                table.setTags(tags);
-//            } catch (Exception e) {
-//                LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
-//            }
+            //            try {
+            //                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
+            //                table.setTags(tags);
+            //            } catch (Exception e) {
+            //                LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
+            //            }
             //获取权限判断是否能编辑,默认不能
-//            table.setEdit(false);
-//            try {
-//                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-//                if("1".equals(role.getRoleId())) {
-//                    table.setEdit(true);
-//                } else {
-//                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-//                    for (Module module : modules) {
-//                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-//                            if (table.getTablePermission().isWRITE()) {
-//                                table.setEdit(true);
-//                                break;
-//                            }
-//                        }
-//                    }
-//                }
-//            } catch (Exception e) {
-//                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
-//            }
+            //            table.setEdit(false);
+            //            try {
+            //                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
+            //                if("1".equals(role.getRoleId())) {
+            //                    table.setEdit(true);
+            //                } else {
+            //                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
+            //                    for (Module module : modules) {
+            //                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
+            //                            if (table.getTablePermission().isWRITE()) {
+            //                                table.setEdit(true);
+            //                                break;
+            //                            }
+            //                        }
+            //                    }
+            //                }
+            //            } catch (Exception e) {
+            //                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
+            //            }
 
             //1.4新增
-//            try {
-//                //owner.name
-//                List<DataOwnerHeader> owners = getDataOwner(guid);
-//                table.setDataOwner(owners);
-//                //更新时间
-//                //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
-//                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
-//            } catch (Exception e) {
-//                LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
-//            }
-//            try {
-//                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
-//                //所属系统
-//                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
-//                //所属数据库
-//                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
-//                //源系统管理员
-//                table.setSystemAdmin(tableInfo.getSystemAdmin());
-//                //数仓管理员
-//                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
-//                //数仓描述
-//                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
-//                //目录管理员
-//                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
-//                //创建时间
-//                Object createTime = entity.getAttribute("createTime");
-//                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//                String formatDateStr = sdf.format(createTime);
-//                table.setCreateTime(formatDateStr);
-//            } catch (Exception e) {
-//                LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
-//            }
-//            try {
-//
-//            } catch (Exception e) {
-//                LOG.error("获取数仓维度失败,错误信息:" + e.getMessage(), e);
-//            }
-//            try {
-//                //表关联信息
-//                List<String> relations = getRelationList(guid);
-//                table.setRelations(relations);
-//                //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
-//                //目录管理员
-//                //                table.setCatalogAdmin(adminByTableguid);
-//                //关联时间
-//                if(relations.size()==1)
-//                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
-//            } catch (Exception e) {
-//                LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
-//            }
-//            try {
-//                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid);
-//                table.setBusinessObjects(businessObjectByTableguid);
-//            } catch (Exception e) {
-//                LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
-//            }
+            //            try {
+            //                //owner.name
+            //                List<DataOwnerHeader> owners = getDataOwner(guid);
+            //                table.setDataOwner(owners);
+            //                //更新时间
+            //                //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
+            //                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
+            //            } catch (Exception e) {
+            //                LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
+            //            }
+            //            try {
+            //                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
+            //                //所属系统
+            //                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
+            //                //所属数据库
+            //                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
+            //                //源系统管理员
+            //                table.setSystemAdmin(tableInfo.getSystemAdmin());
+            //                //数仓管理员
+            //                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
+            //                //数仓描述
+            //                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
+            //                //目录管理员
+            //                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
+            //                //创建时间
+            //                Object createTime = entity.getAttribute("createTime");
+            //                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            //                String formatDateStr = sdf.format(createTime);
+            //                table.setCreateTime(formatDateStr);
+            //            } catch (Exception e) {
+            //                LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
+            //            }
+            //            try {
+            //
+            //            } catch (Exception e) {
+            //                LOG.error("获取数仓维度失败,错误信息:" + e.getMessage(), e);
+            //            }
+            //            try {
+            //                //表关联信息
+            //                List<String> relations = getRelationList(guid);
+            //                table.setRelations(relations);
+            //                //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
+            //                //目录管理员
+            //                //                table.setCatalogAdmin(adminByTableguid);
+            //                //关联时间
+            //                if(relations.size()==1)
+            //                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
+            //            } catch (Exception e) {
+            //                LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
+            //            }
+            //            try {
+            //                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid);
+            //                table.setBusinessObjects(businessObjectByTableguid);
+            //            } catch (Exception e) {
+            //                LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
+            //            }
         }
         return table;
     }
@@ -1604,11 +1627,6 @@ public class MetaDataService {
     @Transactional
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            if (roleIds==null||!roleIds.contains("1")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
-            }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
@@ -1663,11 +1681,6 @@ public class MetaDataService {
     @Transactional
     public EntityMutationResponse hardDeleteRDBMSByGuid(String guid) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            if (roleIds==null||!roleIds.contains("1")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
-            }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
@@ -1688,11 +1701,6 @@ public class MetaDataService {
     @Transactional
     public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(String guid) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            if (roleIds!=null&&!roleIds.contains("1")) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限使用该接口");
-            }
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
             AtlasEntity entity = info.getEntity();
             AtlasEntity.Status status = entity.getStatus();
@@ -1732,7 +1740,7 @@ public class MetaDataService {
     }
 
 
-    public File exportExcel(List<String> dbGuidList) throws AtlasBaseException {
+    public File exportExcel(List<String> dbGuidList,String tenantId) throws AtlasBaseException {
         try {
             List<Table> tableList = new ArrayList<>();
             List<String> tableGuidList = new ArrayList<>();
@@ -1743,7 +1751,7 @@ public class MetaDataService {
                 }
             }
             for (String tableGuid : tableGuidList) {
-                Table table = getTableInfoById(tableGuid);
+                Table table = getTableInfoById(tableGuid,tenantId);
                 tableList.add(table);
             }
             Workbook workbook = createMetaDataExcelFile(tableList, "xlsx");
@@ -2305,9 +2313,9 @@ public class MetaDataService {
         }
     }
 
-    public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters) {
+    public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters,String tenantId) {
         PageResult pageResult = new PageResult();
-        List<MetaDataRelatedAPI> influenceAPIList = tableDAO.getTableInfluenceWithAPI(tableGuid, parameters.getLimit(), parameters.getOffset());
+        List<MetaDataRelatedAPI> influenceAPIList = tableDAO.getTableInfluenceWithAPI(tableGuid, parameters.getLimit(), parameters.getOffset(),tenantId);
         influenceAPIList.forEach(api -> {
             String version = api.getVersion();
             String path = api.getPath();
@@ -2360,7 +2368,7 @@ public class MetaDataService {
         CheckingInfo checkingInfo = new CheckingInfo();
         checkingInfo.setTableGuid(tableGuid);
         try {
-            Table tableInfo = getTableInfoById(tableGuid);
+            Table tableInfo = getTableInfoById(tableGuid,null);
             String tableName = tableInfo.getTableName();
             String namingConvention = "";
             boolean containChinese = isContainChinese(tableName);

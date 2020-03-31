@@ -153,6 +153,6 @@ public class LoginProcessor {
         } catch (IOException e) {
             // ignore - false is default setting
         }
-        return isHadoopCluster;
+        return false;
     }
 }

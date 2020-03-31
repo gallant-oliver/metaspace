@@ -38,8 +38,8 @@ public class OperateLogService {
     @Autowired
     private OperateLogDAO operateLogDAO;
 
-    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest) {
-        List<OperateLog> list = operateLogDAO.search(operateLogRequest)
+    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest,String tenantId) {
+        List<OperateLog> list = operateLogDAO.search(operateLogRequest,tenantId)
                 .stream().map(operateLog -> {
                     operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
                     operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
@@ -57,9 +57,9 @@ public class OperateLogService {
         return pageResult;
     }
 
-    public void insert(OperateLog operateLog) {
+    public void insert(OperateLog operateLog,String tenantId) {
         operateLog.setId(UUIDUtils.uuid());
-        operateLogDAO.insert(operateLog);
+        operateLogDAO.insert(operateLog,tenantId);
     }
 
     public List<OperateEnum> typeList() {

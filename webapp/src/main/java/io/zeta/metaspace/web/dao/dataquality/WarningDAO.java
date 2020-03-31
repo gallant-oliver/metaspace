@@ -13,9 +13,9 @@ public interface WarningDAO {
     /**
      * 任务告警记录
      */
-    @Select({" select b.id as taskExecuteId,b.warning_status as warningStatus,a.name as taskName,b.yellow_warning_count as yellowWarningCount,b.red_warning_count as redWarningCount,a.\"level\" as taskLevel,",
-             " from data_quality_task a inner join data_quality_task_execute b on a.id=b.task_id and a.delete=false and b.warning_status=#{warningStatus} order by b.create_time"})
-    public List<Warning> taskWaringLog(@Param("warningStatus") Integer warningStatus);
+    @Select({" select b.id as taskExecuteId,b.warning_status as warningStatus,a.name as taskName,b.red_warning_count as redWarningCount,a.\"level\" as taskLevel ",
+             " from data_quality_task a inner join data_quality_task_execute b on a.id=b.task_id where a.delete=false and b.warning_status=#{warningStatus} and a.tenantid=#{tenantId} order by b.execute_time"})
+    public List<Warning> taskWaringLog(@Param("warningStatus") Integer warningStatus,@Param("tenantId") String tenantId);
 
 
     /**

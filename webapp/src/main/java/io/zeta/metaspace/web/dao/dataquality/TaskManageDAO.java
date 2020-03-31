@@ -68,7 +68,7 @@ public interface TaskManageDAO {
              " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
              " from data_quality_task join users on users.userid=data_quality_task.creator",
              " where ",
-             " delete=false",
+             " delete=false and data_quality_task.tenantId=#{tenantId}",
              " and (data_quality_task.name like '%${params.query}%' ESCAPE '/' or 'TID-'||data_quality_task.number like '%${params.query}%' ESCAPE '/')",
              " <if test='my==0'>",
              " and data_quality_task.creator=#{creator}",
@@ -81,7 +81,7 @@ public interface TaskManageDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params);
+    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId);
 
     /**
      * 任务总数
@@ -171,7 +171,7 @@ public interface TaskManageDAO {
              " and data_quality_rule.scope=#{scope}",
              " </if>",
              " </script>"})
-    public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId, @Param("scope")Integer scope);
+    public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId, @Param("scope")Integer scope,@Param("tenantId") String tenantId);
 
     /**
      * 获取字段列表
@@ -198,20 +198,20 @@ public interface TaskManageDAO {
      * @param categoryId
      * @return
      */
-    @Select("select id,name from warning_group where category_id=#{categoryId} and delete=false")
-    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId);
+    @Select("select id,name from warning_group where category_id=#{categoryId} and delete=false and tenantid=#{tenantId}")
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(@Param("categoryId")String categoryId,@Param("tenantId")String tenantId);
 
-    @Select("select id,name from warning_group where delete=false")
-    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup();
+    @Select("select id,name from warning_group where delete=false and tenantid=#{tenantId}")
+    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup(@Param("tenantId")String tenantId);
 
     /**
      * 添加数据质量任务
      * @param task
      * @return
      */
-    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count) ",
-             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount})"})
-    public int addDataQualityTask(@Param("task")DataQualityTask task);
+    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId) ",
+             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId})"})
+    public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
     /**
      * 记录任务告警组

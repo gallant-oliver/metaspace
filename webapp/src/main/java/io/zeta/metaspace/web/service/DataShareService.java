@@ -40,11 +40,14 @@ import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Yaml;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.security.SecuritySearch;
+import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -102,6 +105,8 @@ public class DataShareService {
     private DataSourceDAO dataSourceDAO;
     @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    private TenantService tenantService;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -116,9 +121,9 @@ public class DataShareService {
         }
     }
 
-    public int insertAPIInfo(APIInfo info) throws AtlasBaseException {
+    public int insertAPIInfo(APIInfo info,String tenantId) throws AtlasBaseException {
         try {
-            boolean same = querySameName(info.getName());
+            boolean same = querySameName(info.getName(),tenantId);
             if(same) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
             }
@@ -155,7 +160,7 @@ public class DataShareService {
             info.setUsedCount(0);
             //脱敏开关
             info.setDesensitize(info.getDesensitize()==null?false:info.getDesensitize());
-            return shareDAO.insertAPIInfo(info);
+            return shareDAO.insertAPIInfo(info,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -169,8 +174,8 @@ public class DataShareService {
      * @param name
      * @return
      */
-    public boolean querySameName(String name) {
-        return shareDAO.querySameName(name)==0?false:true;
+    public boolean querySameName(String name,String tenantId) {
+        return shareDAO.querySameName(name,tenantId)==0?false:true;
     }
 
     /**
@@ -183,9 +188,8 @@ public class DataShareService {
         try {
             User userInfo = AdminUtils.getUserData();
             String userId = userInfo.getUserId();
-            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && (roleIds!=null&&roleIds.contains(SystemRole.ADMIN.getCode()))) {
+            if(!manage) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
             return shareDAO.deleteAPIInfo(guid);
@@ -203,19 +207,19 @@ public class DataShareService {
      * @return
      * @throws AtlasBaseException
      */
-    public int updateAPIInfo(String guid, APIInfo info) throws AtlasBaseException {
+    public int updateAPIInfo(String guid, APIInfo info,String tenantId) throws AtlasBaseException {
         try {
             User userInfo = AdminUtils.getUserData();
             String userId = userInfo.getUserId();
-            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
+            List<String> userGroups = userDAO.getUserGroupIdByUser(userId,tenantId);
             Boolean manage = shareDAO.countManager(guid, userId)==0?false:true;
-            if(!manage && (roleIds!=null&&roleIds.contains(SystemRole.ADMIN.getCode()))) {
+            if(!manage) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无权限删除此API");
             }
 
             String apiName = info.getName();
             APIInfo currentAPI = shareDAO.getAPIInfoByGuid(guid);
-            int count = shareDAO.querySameName(apiName);
+            int count = shareDAO.querySameName(apiName,tenantId);
             if(Objects.isNull(currentAPI)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到当前API信息");
             }
@@ -361,24 +365,20 @@ public class DataShareService {
      * @return
      * @throws AtlasBaseException
      */
-    public PageResult<APIInfoHeader> getAPIList(String guid, Integer my, String publish, Parameters parameters) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getAPIList(String guid, Integer my, String publish, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             Parameters tablePara = new Parameters();
             tablePara.setLimit(-1);
             tablePara.setOffset(0);
             tablePara.setQuery("");
-            PageResult<AddRelationTable> tablePageResult = searchService.getPermissionTablePageResultV2(tablePara);
+            PageResult<AddRelationTable> tablePageResult = searchService.getPermissionTablePageResultV2(tablePara,tenantId);
             List<String> permissionTableList = new ArrayList<>();
             if(Objects.nonNull(tablePageResult)) {
                 List<AddRelationTable> tableList = tablePageResult.getLists();
                 tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             }
             String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
             boolean enableEditManager = false;
-            if(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))) {
-                enableEditManager = true;
-            }
 
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
@@ -386,8 +386,8 @@ public class DataShareService {
             String query = parameters.getQuery();
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset);
-            List<String> starAPIList = shareDAO.getUserStarAPI(userId);
+            List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset,tenantId);
+            List<String> starAPIList = shareDAO.getUserStarAPI(userId,tenantId);
             for(APIInfoHeader header : list) {
                 header.setEnableEditManager(enableEditManager);
                 if(permissionTableList.contains(header.getTableGuid())) {
@@ -469,10 +469,10 @@ public class DataShareService {
         }
     }
 
-    public int publishAPI(List<String> guidList) throws AtlasBaseException {
+    public int publishAPI(List<String> guidList,String tenantId) throws AtlasBaseException {
         try {
             Configuration configuration = ApplicationProperties.get();
-            APIContent content = generateAPIContent(guidList);
+            APIContent content = generateAPIContent(guidList,tenantId);
             Gson gson = new Gson();
             String jsonStr = gson.toJson(content, APIContent.class);
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
@@ -515,12 +515,12 @@ public class DataShareService {
         }
     }
 
-    public void checkApiPermission(String apiGuid) throws AtlasBaseException {
-        List<String> tableIds = searchService.getUserTableIds();
+    public void checkApiPermission(String apiGuid,String tenantId) throws AtlasBaseException {
+        List<String> tableIds = searchService.getUserTableIds(tenantId);
         if (Objects.isNull(tableIds) || tableIds.size() == 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前API关联表");
         }
-        List<String> apiIds = shareDAO.getAPIIdsByRelatedTable(tableIds);
+        List<String> apiIds = shareDAO.getAPIIdsByRelatedTable(tableIds,tenantId);
         if (!apiIds.contains(apiGuid)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限操作当前API关联表");
         }
@@ -532,14 +532,14 @@ public class DataShareService {
         return response;
     }
 
-    public int unpublishAPI(List<String> apiGuidList) throws AtlasBaseException {
+    public int unpublishAPI(List<String> apiGuidList,String tenantId) throws AtlasBaseException {
         try {
             for(String apiGuid : apiGuidList) {
                 APIInfo info = shareDAO.getAPIInfoByGuid(apiGuid);
                 APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
                 if(sourceType == APIInfo.SourceType.HIVE) {
                     checkTableStatus(apiGuid);
-                    checkApiPermission(apiGuid);
+                    checkApiPermission(apiGuid,tenantId);
                 }
             }
 
@@ -579,7 +579,7 @@ public class DataShareService {
         }
     }
 
-    public APIContent generateAPIContent(List<String> guidList) throws Exception {
+    public APIContent generateAPIContent(List<String> guidList,String tenantId) throws Exception {
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
         for(String api_id : guidList) {
@@ -587,7 +587,7 @@ public class DataShareService {
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
             if(sourceType == APIInfo.SourceType.HIVE) {
                 checkTableStatus(api_id);
-                checkApiPermission(api_id);
+                checkApiPermission(api_id,tenantId);
                 String tableGuid = info.getTableGuid();
                 Table table = shareDAO.getTableByGuid(tableGuid);
                 info.setTableName(table.getTableName());
@@ -1358,7 +1358,7 @@ public class DataShareService {
     }
 
     public List<Column> getTableColumnList(String tableGuid) throws AtlasBaseException {
-        List<Column> columnList = metaDataService.getTableInfoById(tableGuid).getColumns().stream().filter(column -> "ACTIVE".equals(column.getStatus())).collect(Collectors.toList());
+        List<Column> columnList = metaDataService.getTableInfoById(tableGuid,null).getColumns().stream().filter(column -> "ACTIVE".equals(column.getStatus())).collect(Collectors.toList());
         columnList.forEach(column -> {
             String columnName = column.getColumnName();
             String displayName = column.getDisplayName();
@@ -1369,15 +1369,29 @@ public class DataShareService {
         return columnList;
     }
 
-    public PageResult getUserList(Parameters parameters) throws AtlasBaseException {
+    public PageResult getUserList(Parameters parameters,String tenantId) throws AtlasBaseException {
         PageResult pageResult = new PageResult();
+        long userTotalSize = 0;
+        List<User> userList = new ArrayList<>();
         try {
-            List<User> userList = userDAO.getUserList(null, parameters.getLimit(), parameters.getOffset());
-            pageResult.setLists(userList);
-            long userTotalSize = 0;
-            if (userList.size()!=0){
-                userTotalSize = userList.get(0).getTotal();
+            //判断独立部署和多租户
+            if (TenantService.defaultTenant.equals(tenantId)){
+                userList = userDAO.getUserList(null, parameters.getLimit(), parameters.getOffset());
+
+                if (userList.size()!=0){
+                    userTotalSize = userList.get(0).getTotal();
+                }
+            }else{
+                SecuritySearch securitySearch = new SecuritySearch();
+                securitySearch.setTenantId(tenantId);
+                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(parameters.getOffset(), parameters.getLimit(), securitySearch);
+                userTotalSize=userAndModules.getTotalSize();
+                for (UserAndModule userAndModule:userAndModules.getLists()){
+                    User user = userDAO.getUserByName(userAndModule.getUserName(),userAndModule.getEmail());
+                    userList.add(user);
+                }
             }
+            pageResult.setLists(userList);
             pageResult.setCurrentSize(userList.size());
             pageResult.setTotalSize(userTotalSize);
             return pageResult;
@@ -1407,8 +1421,8 @@ public class DataShareService {
         }
     }
 
-    public PageResult getOracleDataSourceList(Parameters parameters) throws AtlasBaseException {
-        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null,true);
+    public PageResult getOracleDataSourceList(Parameters parameters,String tenantId) throws AtlasBaseException {
+        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null,true,tenantId);
     }
 
     public PageResult getDataList(SEARCH_TYPE searchType, Parameters parameters, String sourceId, String... ids) throws AtlasBaseException {

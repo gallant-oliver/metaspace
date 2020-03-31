@@ -50,9 +50,9 @@ public class HomePageREST {
     @Path("/table/rank")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<TableUseInfo> getTableUsedInfo(Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableUseInfo> getTableUsedInfo(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return homePageService.getTableRelatedInfo(parameters);
+            return homePageService.getTableRelatedInfo(parameters,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -70,9 +70,9 @@ public class HomePageREST {
     @Path("/business/supplement")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<DataDistribution> getDataDistribution() throws AtlasBaseException {
+    public List<DataDistribution> getDataDistribution(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return homePageService.getDataDistribution();
+            return homePageService.getDataDistribution(tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -88,9 +88,9 @@ public class HomePageREST {
     @GET
     @Path("/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TimeDBTB getTimeDbTb() throws AtlasBaseException {
+    public TimeDBTB getTimeDbTb(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         synchronized (HomePageREST.class) {
-            return homePageService.getTimeDbTb();
+            return homePageService.getTimeDbTb(tenantId);
         }
     }
 
@@ -102,8 +102,8 @@ public class HomePageREST {
     @GET
     @Path("/database/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getDBTotals() throws AtlasBaseException {
-        return homePageService.getDBTotals();
+    public BrokenLine getDBTotals(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return homePageService.getDBTotals(tenantId);
     }
 
     /**
@@ -114,8 +114,8 @@ public class HomePageREST {
     @GET
     @Path("/table/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getTBTotals() throws AtlasBaseException {
-        return homePageService.getTBTotals();
+    public BrokenLine getTBTotals(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return homePageService.getTBTotals(tenantId);
     }
 
     /**
@@ -126,8 +126,8 @@ public class HomePageREST {
     @GET
     @Path("/business/total")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BrokenLine getBusinessTotals() throws AtlasBaseException {
-        return homePageService.getBusinessTotals();
+    public BrokenLine getBusinessTotals(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return homePageService.getBusinessTotals(tenantId);
     }
 
     /**
@@ -152,9 +152,9 @@ public class HomePageREST {
     @Path("/source/system")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters) throws AtlasBaseException {
+    public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return homePageService.getCategoryRelatedDB(parameters);
+            return homePageService.getCategoryRelatedDB(parameters,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -174,9 +174,9 @@ public class HomePageREST {
     @Path("/source/system/{systemId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(@PathParam("systemId") String categoryGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(@PathParam("systemId") String categoryGuid, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return homePageService.getChildCategoryRelatedDB(categoryGuid, parameters);
+            return homePageService.getChildCategoryRelatedDB(categoryGuid, parameters,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

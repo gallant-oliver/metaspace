@@ -29,8 +29,8 @@ public class PrivilegeCheckREST {
     @Path("/metadata/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metaDataService.getTableInfoById(guid);
+    public Table getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return metaDataService.getTableInfoById(guid,tenantId);
     }
 
     /**

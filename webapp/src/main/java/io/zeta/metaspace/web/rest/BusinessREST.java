@@ -48,6 +48,7 @@ import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.TenantService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -79,6 +80,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -125,10 +127,10 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business) throws AtlasBaseException {
+    public Response addBusiness(@PathParam("categoryId") String categoryId, BusinessInfo business,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), business.getName());
-            businessService.addBusiness(categoryId, business);
+            businessService.addBusiness(categoryId, business,tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
             throw e;
@@ -147,10 +149,10 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business) throws AtlasBaseException {
+    public Response updateBusiness(@PathParam("businessId") String businessId, BusinessInfo business,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), business.getName());
-            businessService.updateBusiness(businessId, business);
+            businessService.updateBusiness(businessId, business,tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
             throw e;
@@ -161,9 +163,9 @@ public class BusinessREST {
     @Path("/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByName(parameters);
+            return businessService.getBusinessListByName(parameters,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -180,9 +182,9 @@ public class BusinessREST {
     @Path("/category/relations/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getBusinessListByCategoryId(categoryId, parameters);
+            return businessService.getBusinessListByCategoryId(categoryId, parameters,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         }
@@ -198,9 +200,9 @@ public class BusinessREST {
     @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
+    public BusinessInfo getBusiness(@PathParam("businessId") String businessId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getBusinessInfo(businessId);
+            return businessService.getBusinessInfo(businessId,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -216,9 +218,9 @@ public class BusinessREST {
     @Path("/{businessId}/technical")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TechnologyInfo getBusinessRelatedTables(@PathParam("businessId") String businessId) throws AtlasBaseException {
+    public TechnologyInfo getBusinessRelatedTables(@PathParam("businessId") String businessId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getRelatedTableList(businessId);
+            return businessService.getRelatedTableList(businessId,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -228,9 +230,9 @@ public class BusinessREST {
     @Path("/{businessId}/datashare")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId,Parameters parameters) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getBusinessTableRelatedAPI(@PathParam("businessId") String businessId,Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return businessService.getBusinessTableRelatedAPI(businessId, parameters);
+            return businessService.getBusinessTableRelatedAPI(businessId, parameters,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -311,13 +313,13 @@ public class BusinessREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return dataManageService.getAll(CATEGORY_TYPE);
+            return TenantService.defaultTenant.equals(tenantId)?dataManageService.getAll(CATEGORY_TYPE):dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
         }  finally {
             AtlasPerfTracer.log(perf);
         }
@@ -335,14 +337,14 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId")String tenantId) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), categoryInfo.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.createMetadataCategory()");
             }
-            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE);
+            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE,tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -358,14 +360,14 @@ public class BusinessREST {
      */
     @DELETE
     @Path("/categories/{categoryGuid}")
-    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
             }
-            dataManageService.deleteCategory(categoryGuid);
+            dataManageService.deleteCategory(categoryGuid,tenantId);
         }  catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -384,14 +386,14 @@ public class BusinessREST {
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public String updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.CategoryEntity()");
             }
             categoryInfo.setGuid(categoryGuid);
-            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE);
+            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE,tenantId);
         }  catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -411,8 +413,8 @@ public class BusinessREST {
     @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid) throws AtlasBaseException {
-        return businessService.getTableInfoById(guid);
+    public Table getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return businessService.getTableInfoById(guid,tenantId);
     }
 
 
@@ -425,9 +427,9 @@ public class BusinessREST {
     @Path("/technical/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getAllCategory() throws AtlasBaseException {
+    public List<CategoryPrivilege> getAllCategory(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataManageService.getAll(TECHNICAL_CATEGORY_TYPE);
+            return TenantService.defaultTenant.equals(tenantId) ?dataManageService.getAll(TECHNICAL_CATEGORY_TYPE):dataManageService.getAllByUserGroup(TECHNICAL_CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
             throw e;
         }
@@ -443,13 +445,13 @@ public class BusinessREST {
     @Path("/technical/table/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE);
+            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
             throw e;
         } finally {
@@ -466,14 +468,14 @@ public class BusinessREST {
     @Path("/technical/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getCategoryRelation(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getCategoryRelation(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelation(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery);
+            return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery,tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -486,8 +488,8 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public Response deleteBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
-        BusinessInfo businessInfo = businessService.getBusinessInfo(businessId);
+    public Response deleteBusiness(@PathParam("businessId") String businessId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        BusinessInfo businessInfo = businessService.getBusinessInfo(businessId,tenantId);
         HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), businessInfo.getName());
         try {
             businessService.deleteBusiness(businessId);
@@ -600,7 +602,7 @@ public class BusinessREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public ColumnCheckMessage checkColumnName(@PathParam("guid") String tableGuid, @FormDataParam("file") InputStream fileInputStream,
-                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws AtlasBaseException {
+                                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws AtlasBaseException {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");

@@ -77,7 +77,7 @@
     </init-param>
     <init-param>
       <param-name>cors.supportedHeaders</param-name>
-      <param-value>Accept, Origin, X-Requested-With, Content-Type, Last-Modified,X-SSO-FullticketId</param-value>
+      <param-value>Accept, Origin, X-Requested-With, Content-Type, Last-Modified,X-SSO-FullticketId,tenantId</param-value>
     </init-param>
     <init-param>
       <param-name>cors.maxAge</param-name>

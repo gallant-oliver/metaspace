@@ -2,16 +2,20 @@ package io.zeta.metaspace.model.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class User implements Serializable {
     private String userId;
     private String username;
     private String account;
     private List<UserInfo.Role> roles;
+    private List<UserGroupIdAndName> userGroups;
     private int status;
     @JsonIgnore
     private int total;
@@ -20,6 +24,14 @@ public class User implements Serializable {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     private Boolean valid;
+
+    public List<UserGroupIdAndName> getUserGroups() {
+        return userGroups;
+    }
+
+    public void setUserGroups(List<UserGroupIdAndName> userGroups) {
+        this.userGroups = userGroups;
+    }
 
     public int getTotal() {
         return total;

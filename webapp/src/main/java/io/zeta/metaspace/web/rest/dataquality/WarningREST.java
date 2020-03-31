@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,8 +54,8 @@ public class WarningREST {
     @Path("/todo")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Warning> todo() throws AtlasBaseException {
-        return warningService.list(WarningStatusEnum.TODO);
+    public List<Warning> todo(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return warningService.list(WarningStatusEnum.TODO,tenantId);
     }
 
     /**
@@ -65,8 +66,8 @@ public class WarningREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public List<Warning> done() throws AtlasBaseException {
-        return warningService.list(WarningStatusEnum.DONE);
+    public List<Warning> done(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return warningService.list(WarningStatusEnum.DONE,tenantId);
     }
 
     /**

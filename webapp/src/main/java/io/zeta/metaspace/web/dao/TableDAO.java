@@ -80,11 +80,12 @@ public interface TableDAO {
     public Table getDbAndTableName(@Param("guid")String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from apiInfo join users on users.userid=apiInfo.keeper where tableGuid=#{tableGuid}",
+            " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from apiInfo join users on users.userid=apiInfo.keeper ",
+            "where tableGuid=#{tableGuid} and apiInfo.tenantid=#{tenantId}",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<MetaDataRelatedAPI> getTableInfluenceWithAPI(@Param("tableGuid")String tableGuid, @Param("limit") int limit, @Param("offset") int offset);
+    public List<MetaDataRelatedAPI> getTableInfluenceWithAPI(@Param("tableGuid")String tableGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 }

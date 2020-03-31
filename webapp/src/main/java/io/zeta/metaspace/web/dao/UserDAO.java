@@ -2,18 +2,27 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.role.Role;
+import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface UserDAO {
     @Select("select user2role.roleid from users join user2role on users.userid=user2role.userid where users.userid=#{userId} and users.valid=true")
     public List<String> getRoleIdByUserId(String userId);
+
+    @Select("select user_group_relation.group_id from users join user_group_relation on users.userid=user_group_relation.user_id  join user_group on user_group.id=user_group_relation.group_id " +
+            " where users.userid=#{userId} and users.valid=true and user_group.tenant=#{tenantId}")
+    public List<String> getUserGroupIdByUser(@Param("userId") String userId,@Param("tenantId")String tenantId);
 
 
     @Select("select count(1) from users where userid=#{userid} and valid=true")
@@ -102,4 +111,46 @@ public interface UserDAO {
     @Select("select account from users join metadata_subscribe on metadata_subscribe.user_id=users.userid where table_guid=#{tableGuid}")
     public List<String> getUsersEmail(@Param("tableGuid")String tableGuid);
 
+    @Select("select id from user_group where id in (select group_id from user_group_relation " +
+            " where user_id=#{userId}) and tenant=#{tenantId}")
+    public List<String> getUserGroupIdByUserId(@Param("userId") String userId,@Param("tenantId")String tenantId);
+    @Select("select id,name from user_group where id in (select group_id from user_group_relation " +
+            " where user_id=#{userId}) and tenant=#{tenantId}")
+    public List<UserGroupIdAndName> getUserGroupNameByUserId(@Param("userId") String userId, @Param("tenantId")String tenantId);
+
+    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=0")
+    public List<CategoryEntityV2> getTechnicalCategoryByUserGroup(@Param("groupId") String groupId);
+
+    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=1")
+    public List<CategoryEntityV2> getBusinessCategoryByUserGroup(@Param("groupId") String roleId);
+
+    @Select("select *,create_time as createTime,update_time as updateTime from users where username=#{userName} and account=#{account} and valid=true")
+    public User getUserByName(@Param("userName") String userName,@Param("account")String account);
+
+    @Delete("delete from user_group_relation where user_id=#{userId}")
+    public void deleteGroupByUser(@Param("userId") String userId);
+
+    @Insert({"<script>insert into user_group_relation (group_id,user_id) values ",
+             "<foreach item='item' index='index' collection='groupIds'",
+             "open='(' separator='),(' close=')'>",
+             "#{item},#{userId}",
+             "</foreach>",
+             "</script>"})
+    public void addGroupByUser(@Param("userId") String userId, @Param("groupIds") List<String> groupIds);
+
+    @Select("select userid from users where username=#{name}")
+    public String getUserIdByName(@Param("name")String name);
+
+    @Select("select * from users")
+    public List<User> getAllUser();
+    @Update("update users set " +
+            " username=#{userAndModule.userName}," +
+            " account=#{userAndModule.email}, " +
+            " update_time=#{updateTime}," +
+            " valid=true " +
+            " where userid=#{userAndModule.accountGuid}")
+    public Integer updateUser(@Param("userAndModule") UserAndModule userAndModule, @Param("updateTime") Timestamp updateTime);
+
+    @Insert("insert into users(userid,username,account,create_time,update_time,valid) values(#{userAndModule.accountGuid},#{userAndModule.userName},#{userAndModule.email},#{updateTime},#{updateTime},true)")
+    public int insertUser(@Param("userAndModule") UserAndModule userAndModule, @Param("updateTime") Timestamp updateTime);
 }

@@ -22,6 +22,7 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -79,9 +80,9 @@ public class AdminREST {
     @GET
     @Path("item")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Item getUserItems() throws AtlasBaseException {
+    public Item getUserItems(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return  usersService.getUserItems();
+            return  usersService.getUserItems(tenantId);
         }catch (Exception e){
             LOG.warn("获取用户菜单失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户菜单失败");

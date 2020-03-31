@@ -17,18 +17,24 @@
 package io.zeta.metaspace.web.filter;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.UserInfo;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.ApiModuleDAO;
 import io.zeta.metaspace.web.service.OperateLogService;
+import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.RoleService;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -66,7 +72,13 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     @Autowired
     ApiModuleDAO apiModuleDAO;
     @Autowired
+    UserGroupDAO userGroupDAO;
+    @Autowired
     private OperateLogService operateLogService;
+    @Autowired
+    private UserGroupService userGroupService;
+    @Autowired
+    private TenantService tenantService;
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -92,16 +104,20 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             String pathStr = Objects.nonNull(path)?path.value():"";
             String urlStr = "/" + prefix + pathStr;
             String requestMethod = request.getMethod();
-
-            List<Role> roleByUserIds = usersService.getRoleByUserId(userId);
-            if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
+            String tenantId=request.getHeader("tenantId");
+            if (tenantId==null||tenantId.length()==0){
+                tenantId=request.getParameter("tenantId");
             }
-
+            if((urlStr.equals("/tenant") && "GET".equals(requestMethod)) || //判断是否是获取租户
+               (urlStr.equals("/admin/version") && "GET".equals(requestMethod)) || //判断是否是获取版本
+               prefix.equals("api") //判断是否是数据分享获取数据
+            ){
+                return invocation.proceed();
+            }
+            if (tenantId==null||tenantId.length()==0){
+                throw new AtlasBaseException(AtlasErrorCode.TENANT_ERROE);
+            }
             if ("privilegecheck".equals(prefix.toLowerCase().trim())) {
-                if(roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
-                    throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户的角色已被禁用");
-                }
                 String privilegeType = "";
                 String privilegeGuid = "";
                 try {
@@ -110,13 +126,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     switch (privilegeType) {
                         case "table":
                             //到这里再查库
-                            List<String> roleIdByUserId = usersService.getRoleIdByUserId(userId);
-                            //超级管理员直接过
-                            if (roleIdByUserId.contains(SystemRole.ADMIN.getCode())) {
-                                return invocation.proceed();
-                            }
-                            Map<String, RoleModulesCategories.Category> userCatagory = getUserCatagory(userId);
-                            Collection<RoleModulesCategories.Category> categories = userCatagory.values();
+                            Map<String, RoleModulesCategories.Category> userCategory = TenantService.defaultTenant.equals(tenantId) ? getUserCategory(userId) : getUserCategory(userId,tenantId);
+                            Collection<RoleModulesCategories.Category> categories = userCategory.values();
                             ArrayList<String> categoryGuids = new ArrayList<>();
                             for (RoleModulesCategories.Category category : categories) {
                                 if (category.isShow())
@@ -138,10 +149,23 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有该表的权限");
                 }
             } else {
-                UserInfo userInfo = usersService.getUserInfoById(userId);
-                List<UserInfo.Module> modules = userInfo.getModules();
-                List<Integer> moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
+                List<Integer> moduleIds;
+                //判断独立部署和多租户
+                if (TenantService.defaultTenant.equals(tenantId)){
+                    UserInfo userInfo = usersService.getUserInfoById(userId);
+                    List<UserInfo.Module> modules = userInfo.getModules();
+                    moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
+                }else {
+                    List<Module> modules = tenantService.getModule(tenantId);
+                    moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
+                    if (prefix.equals("dataquality")){
+                        Path annotation = method.getDeclaringClass().getAnnotation(Path.class);
+                        prefix = annotation==null?prefix : annotation.value();
+                        urlStr = prefix + pathStr;
+                    }
+                }
                 Integer moduleId = null;
+
                 List<String> prefixCheckPathList = apiModuleDAO.getPrefixCheckPath();
                 String checkUrl = prefixCheckPathList.contains(prefix) ? prefix : urlStr;
                 requestMethod = prefixCheckPathList.contains(prefix) ? "OPTION" : requestMethod;
@@ -153,7 +177,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     return invocation.proceed();
                 } else {
                     String ip = HttpRequestContext.get().getIp();
-                    auditLog(prefix, ip, userId);
+                    auditLog(ModuleEnum.getModuleName(moduleId), ip, userId, tenantId);
 
                     throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有当前调用接口的权限");
                 }
@@ -167,7 +191,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
      * @param ip
      * @param userId
      */
-    private void auditLog(String module, String ip, String userId) {
+    private void auditLog(String module, String ip, String userId,String tenantId) {
         OperateLog operateLog = new OperateLog();
         operateLog.setModule(module.toLowerCase());
         operateLog.setResult(OperateResultEnum.UNAUTHORIZED.getEn());
@@ -176,10 +200,11 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
         operateLog.setCreatetime(DateUtils.currentTimestamp());
         operateLog.setIp(ip);
         operateLog.setUserid(userId);
-        operateLogService.insert(operateLog);
+        operateLogService.insert(operateLog,tenantId);
     }
 
-    private Map<String, RoleModulesCategories.Category> getUserCatagory(String userId) {
+    //独立部署
+    private Map<String, RoleModulesCategories.Category> getUserCategory(String userId) {
         //技术目录
         Map<String, RoleModulesCategories.Category> userStringCategoryMap = new HashMap<>();
         for (Role role:roleService.getRoleIdBYUserId(userId)){
@@ -187,6 +212,23 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 continue;
             }
             Map<String, RoleModulesCategories.Category> categoryMap = roleService.getUserStringCategoryMap(role.getRoleId(), 0);
+            for (String categoryId:categoryMap.keySet()) {
+                if (userStringCategoryMap.containsKey(categoryId)&&userStringCategoryMap.get(categoryId)!=null){
+                    RoleModulesCategories.Category category = userStringCategoryMap.get(categoryId);
+                    category.setShow(category.isShow()||categoryMap.get(categoryId).isShow());
+                }else{
+                    userStringCategoryMap.put(categoryId, categoryMap.get(categoryId));
+                }
+            }
+        }
+        return userStringCategoryMap;
+    }
+    //多租户
+    private Map<String, RoleModulesCategories.Category> getUserCategory(String userId,String tenantId) {
+        //技术目录
+        Map<String, RoleModulesCategories.Category> userStringCategoryMap = new HashMap<>();
+        for (UserGroup userGroup:userGroupDAO.getuserGroupByUsersId(userId,tenantId)){
+            Map<String, RoleModulesCategories.Category> categoryMap = userGroupService.getUserStringCategoryMap(userGroup.getId(), 0,tenantId);
             for (String categoryId:categoryMap.keySet()) {
                 if (userStringCategoryMap.containsKey(categoryId)&&userStringCategoryMap.get(categoryId)!=null){
                     RoleModulesCategories.Category category = userStringCategoryMap.get(categoryId);
