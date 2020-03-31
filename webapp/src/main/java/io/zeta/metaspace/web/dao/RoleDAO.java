@@ -161,7 +161,7 @@ public interface RoleDAO {
     @Select("<script>WITH RECURSIVE categoryTree AS " +
             "(" +
             "    SELECT * from category" +
-            "    where parentCategoryGuid in" +
+            "    where (tenantid='all' or tenantid=#{tenantId}) and parentCategoryGuid in" +
             "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -170,15 +170,16 @@ public interface RoleDAO {
             "    UNION " +
             "    SELECT category.* from categoryTree" +
             "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            "    where (category.tenantid='all' or category.tenantid=#{tenantId})" +
             ")" +
             "SELECT * FROM categoryTree</script>")
-    public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType);
+    public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
     //递归找子节点加自己
     @Select("<script>WITH RECURSIVE categoryTree AS " +
             "(" +
             "    SELECT * from category" +
-            "    where parentCategoryGuid in " +
+            "    where (tenantid='all' or tenantid=#{tenantId}) and parentCategoryGuid in " +
             "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -186,7 +187,8 @@ public interface RoleDAO {
             "    and categoryType=#{categoryType}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.guid = category.parentCategoryGuid" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid " +
+            "    where (category.tenantid='all' or category.tenantid=#{tenantId})" +
             ")" +
             "SELECT * FROM categoryTree" +
             " UNION " +
@@ -196,12 +198,12 @@ public interface RoleDAO {
             "    #{item}" +
             "    </foreach>" +
             "</script>")
-    public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType);
+    public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
     //递归找父节点,结果集不包含自己了
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
-            "    SELECT * from category where " +
+            "    SELECT * from category where (tenantid='all' or tenantid=#{tenantId}) and" +
             "    guid in " +
             "    <foreach item='item' index='index' collection='guid'" +
             "    open='(' separator=',' close=')'>" +
@@ -210,7 +212,8 @@ public interface RoleDAO {
             "    and categoryType=#{categoryType}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid " +
+            "    where (category.tenantid='all' or category.tenantid=#{tenantId})" +
             ")" +
             "SELECT * from categoryTree where guid not in" +
             "    <foreach item='item' index='index' collection='guid'" +
@@ -218,10 +221,10 @@ public interface RoleDAO {
             "    #{item}" +
             "    </foreach>" +
             "</script>")
-    public List<RoleModulesCategories.Category> getParentCategorys(@Param("guid") List<String> guid, @Param("categoryType") int categoryType);
+    public List<RoleModulesCategories.Category> getParentCategorys(@Param("guid") List<String> guid, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
     //找出合集外的目录
-    @Select("<script>SELECT * from category where " +
+    @Select("<script>SELECT * from category where (tenantid='all' or tenantid=#{tenantId}) and " +
             "    <if test='categories!=null and categories.size()>0'>" +
             "     guid not in" +
             "    <foreach item='item' index='index' collection='categories'" +
@@ -232,10 +235,10 @@ public interface RoleDAO {
             "    </if>" +
             "    categoryType = #{categoryType}" +
             "</script>")
-    public List<RoleModulesCategories.Category> getOtherCategorys(@Param("categories") List<RoleModulesCategories.Category> categories, @Param("categoryType") int categoryType);
+    public List<RoleModulesCategories.Category> getOtherCategorys(@Param("categories") List<RoleModulesCategories.Category> categories, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
     //找出合集外的目录2
-    @Select("<script>SELECT * from category where " +
+    @Select("<script>SELECT * from category where (tenantid='all' or tenantid=#{tenantId}) and " +
             "    <if test='categories!=null and categories.size()>0'>" +
             "     guid not in" +
             "    <foreach item='item' index='index' collection='categories'" +
@@ -246,17 +249,17 @@ public interface RoleDAO {
             "    </if>" +
             "    categoryType = #{categoryType}" +
             "</script>")
-    public List<RoleModulesCategories.Category> getOtherCategorys2(@Param("categories") List<CategoryPrivilege> categories, @Param("categoryType") int categoryType);
+    public List<RoleModulesCategories.Category> getOtherCategorys2(@Param("categories") List<CategoryPrivilege> categories, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
     //获取授权范围id
-    @Select("select categoryid guid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
-    public List<String> getCategorysByTypeIds(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
+    @Select("select categoryid guid from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType} and (category.tenantid='all' or category.tenantid=#{tenantId})")
+    public List<String> getCategorysByTypeIds(@Param("roleId") String roleId, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
     //查找权限节点
-    @Select("select * from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType}")
-    public List<RoleModulesCategories.Category> getCategorysByType(@Param("roleId") String roleId, @Param("categoryType") int categoryType);
+    @Select("select * from role2category,category where role2category.categoryid=category.guid and roleid=#{roleId} and categorytype=#{categoryType} and (category.tenantid='all' or category.tenantid=#{tenantId})")
+    public List<RoleModulesCategories.Category> getCategorysByType(@Param("roleId") String roleId, @Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
-    @Select("select * from category where categoryType=#{categoryType}")
-    public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType);
+    @Select("select * from category where categoryType=#{categoryType} and (tenantid='all' or tenantid=#{tenantId})")
+    public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
 
     @Select("select role.* from user2role,role,users where user2role.roleid=role.roleid and users.userid=user2role.userid and user2role.userId=#{userId} and role.valid=true and users.valid=true")
@@ -306,8 +309,8 @@ public interface RoleDAO {
             "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'</script>")
     public long getTableCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
-    @Select("select guid from category where categorytype=#{categoryType} and level = 1")
-    public List<String> getTopCategoryGuid(int categoryType);
+    @Select("select guid from category where categorytype=#{categoryType} and level = 1 and (tenantid='all' or tenantid=#{tenantId})")
+    public List<String> getTopCategoryGuid(int categoryType,@Param("tenantId")String tenantId);
 
     @Update("update role set description=#{description},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
     public int editRole(Role role);

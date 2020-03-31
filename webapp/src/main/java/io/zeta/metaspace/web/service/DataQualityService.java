@@ -87,19 +87,19 @@ public class DataQualityService {
     private MetaDataService metadataService;
 
     @Transactional
-    public void addTemplate(Template template) throws AtlasBaseException {
+    public void addTemplate(Template template,String tenantId) throws AtlasBaseException {
         try {
+            String templateId = UUID.randomUUID().toString();
             String templateName = template.getTemplateName();
-            int sameNameCount = qualityDao.countTemplateName(templateName);
+            int sameNameCount = qualityDao.countTemplateName(templateName,templateId,tenantId);
             if(sameNameCount > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板名称重复");
             } else {
-                String templateId = UUID.randomUUID().toString();
                 template.setTemplateId(templateId);
                 addRulesByTemlpateId(template);
                 template.setGenerateTime(System.currentTimeMillis());
                 //template
-                qualityDao.insertTemplate(template);
+                qualityDao.insertTemplate(template,tenantId);
                 qualityDao.updateFinishedPercent(templateId, 0F);
                 //设置模板状态为【未启用】
                 qualityDao.updateTemplateStatus(TemplateStatus.NOT_RUNNING.code, templateId);
@@ -479,12 +479,12 @@ public class DataQualityService {
         }
     }
 
-    public List<TemplateResult> getTemplates(String tableId) throws SQLException {
-        List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId);
+    public List<TemplateResult> getTemplates(String tableId,String tenantId) throws SQLException {
+        List<TemplateResult> templateResults = qualityDao.getTemplateResults(tableId,tenantId);
         return templateResults;
     }
 
-    public PageResult<ReportResult> getReports(String tableGuid, String templateId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<ReportResult> getReports(String tableGuid, String templateId, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult<ReportResult> pageResult = new PageResult<>();
             Integer offset = parameters.getOffset();
@@ -492,7 +492,7 @@ public class DataQualityService {
             List<ReportResult> reports = null;
             long total = 0;
             if ("-1".equals(templateId)) {
-                reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit);
+                reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit,tenantId);
                 //total = qualityDao.getCountByTableGuid(tableGuid);
                 if (reports.size()!=0){
                     total = reports.get(0).getTotal();
@@ -548,7 +548,7 @@ public class DataQualityService {
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(tableId);
             List<Column> columns = metadataService.getColumnInfoById(columnQuery, true);
-            Table tableInfoById = metadataService.getTableInfoById(tableId);
+            Table tableInfoById = metadataService.getTableInfoById(tableId,null);
             tableColumnRules.setSource(tableInfoById.getDatabaseName() + "." + tableInfoById.getTableName());
             for (Column column : columns) {
                 TableColumnRules.ColumnsRule columnsRule = new TableColumnRules.ColumnsRule();

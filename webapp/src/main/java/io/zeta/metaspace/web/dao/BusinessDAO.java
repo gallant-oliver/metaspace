@@ -38,12 +38,12 @@ import java.util.List;
 public interface BusinessDAO {
 
     //添加业务信息
-    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId)" +
-            "values(#{departmentId},#{businessId},#{name},#{module},#{description},#{owner},#{manager},#{maintainer},#{dataAssets},#{submitter},#{submissionTime},#{businessOperator},#{businessLastUpdate},#{ticketNumber},#{level2CategoryId})")
-    public int insertBusinessInfo(BusinessInfo info);
+    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid)" +
+            "values(#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId})")
+    public int insertBusinessInfo(@Param("info") BusinessInfo info,@Param("tenantId")String tenantId);
 
-    @Select("select count(1) from businessInfo where name=#{name}")
-    public int sameNameCount(@Param("name")String businessName);
+    @Select("select count(1) from businessInfo where name=#{name} and tenantid=#{tenantId}")
+    public int sameNameCount(@Param("name")String businessName,@Param("tenantId")String tenantId);
 
     //更新业务信息
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
@@ -88,7 +88,7 @@ public interface BusinessDAO {
              " business_relation.businessId=businessInfo.businessId",
              " where",
              " businessInfo.name like '%${businessName}%' ESCAPE '/'",
-             " and",
+             " and businessInfo.tenantid=#{tenantId} and ",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
@@ -100,7 +100,7 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     //@Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
-    public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset);
+    public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
 
     @Select({"<script>",
@@ -108,13 +108,13 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " businessInfo.name like '%${businessName}%' ESCAPE '/' and businessInfo.tenantid=#{tenantId} ",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<BusinessInfoHeader> queryBusinessByNameWithoutPrivilege(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset);
+    public List<BusinessInfoHeader> queryBusinessByNameWithoutPrivilege(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
 
     //根据业务信息名称查询列表总数
@@ -134,7 +134,7 @@ public interface BusinessDAO {
     @Select({"<script>",
              " select count(*)over() total,businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
              " join business_relation on businessInfo.businessId = business_relation.businessId",
-             " where categoryGuid in(",
+             " where businessInfo.tenantid=#{tenantId} and categoryGuid in(",
              " select guid from category where guid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
@@ -150,7 +150,7 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber, @Param("businessName")String businessName,
-                                                       @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset);
+                                                       @Param("level2CategoryId") String level2CategoryId,@Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
 
 
 
@@ -160,14 +160,14 @@ public interface BusinessDAO {
              " join business_relation",
              " on",
              " businessInfo.businessId = business_relation.businessId",
-             " and",
+             " where businessInfo.tenantid=#{tenantId} and ",
              " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset);
+    public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
 
 
     //更新技术信息操作者及更新时间
@@ -199,8 +199,8 @@ public interface BusinessDAO {
     @Delete("delete from business_relation where businessId=#{businessId}")
     public int deleteRelationById(@Param("businessId")String businessId);
 
-    @Select("select businessId from businessInfo where trustTable is null or trustTable=''")
-    public List<String> getNonTrustBusiness();
+    @Select("select businessId from businessInfo where (trustTable is null or trustTable='') and tenantid=#{tenantId}")
+    public List<String> getNonTrustBusiness(@Param("tenantId")String tenantId);
 
     @Delete("delete from business2Table where tableGuid=#{tableGuid}")
     public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);

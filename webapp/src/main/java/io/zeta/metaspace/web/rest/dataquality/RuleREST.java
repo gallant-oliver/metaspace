@@ -47,6 +47,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -91,22 +92,26 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public void insert(Rule rule) throws AtlasBaseException {
+    public void insert(Rule rule, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
-        List<Rule> oldList = ruleService.getByCode(rule.getCode());
+        List<Rule> oldList = ruleService.getByCode(rule.getCode(),tenantId);
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("规则编号已存在");
         }
-        ruleService.insert(rule);
+        List<Rule> oldListByName = ruleService.getByName(rule.getName(),tenantId);
+        if (!oldListByName.isEmpty()) {
+            throw new AtlasBaseException("规则名字已存在");
+        }
+        ruleService.insert(rule,tenantId);
     }
 
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public void update(Rule rule) throws AtlasBaseException {
+    public void update(Rule rule,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
-        ruleService.update(rule);
+        ruleService.update(rule,tenantId);
     }
 
     @DELETE
@@ -148,8 +153,8 @@ public class RuleREST {
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Rule> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
-        return ruleService.queryPageByCatetoryId(categoryId, parameters);
+    public PageResult<Rule> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return ruleService.queryPageByCatetoryId(categoryId, parameters,tenantId);
     }
 
     /**
@@ -177,8 +182,8 @@ public class RuleREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Rule> search(Parameters parameters) throws AtlasBaseException {
-        return ruleService.search(parameters);
+    public PageResult<Rule> search(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleService.search(parameters,tenantId);
     }
 
 
@@ -193,8 +198,8 @@ public class RuleREST {
     @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
-        return ruleService.getAll(categoryType);
+    public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleService.getAll(categoryType,tenantId);
     }
 
     /**
@@ -209,9 +214,9 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
     @OperateType(INSERT)
-    public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege insert(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryInfo.getName());
-        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType());
+        return dataManageService.createCategory(categoryInfo, categoryInfo.getCategoryType(),tenantId);
     }
 
     /**
@@ -224,10 +229,10 @@ public class RuleREST {
     @DELETE
     @Path("/category/{categoryGuid}")
     @OperateType(DELETE)
-    public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+    public void delete(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         String categoryName = ruleService.getCategoryName(categoryGuid);
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), null==categoryName?categoryName:categoryGuid);
-        ruleService.deleteCategory(categoryGuid);
+        ruleService.deleteCategory(categoryGuid,tenantId);
     }
 
     /**
@@ -242,9 +247,9 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/category")
     @OperateType(UPDATE)
-    public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public void update(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), categoryInfo.getName());
-        dataManageService.updateCategory(categoryInfo, CATEGORY_RULE);
+        dataManageService.updateCategory(categoryInfo, CATEGORY_RULE,tenantId);
     }
 
     @PUT
@@ -320,9 +325,9 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard/{ruleId}")
-    public List<DataStandardHead> getDataStandard(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
+    public List<DataStandardHead> getDataStandard(@PathParam("ruleId") String ruleId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataStandardService.getDataStandardByRule(ruleId);
+            return dataStandardService.getDataStandardByRule(ruleId,tenantId);
         } catch (Exception e) {
             throw e;
         }

@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import org.apache.atlas.AtlasErrorCode;
@@ -45,6 +46,7 @@ import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -85,13 +87,13 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     @Valid
-    public void insert(WarningGroup warningGroup) throws AtlasBaseException {
+    public void insert(WarningGroup warningGroup, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
-        WarningGroup old = warningGroupService.getByName(warningGroup.getName());
+        WarningGroup old = warningGroupService.getByName(warningGroup.getName(),null,tenantId);
         if (old != null) {
             throw new AtlasBaseException("告警组名已存在");
         }
-        warningGroupService.insert(warningGroup);
+        warningGroupService.insert(warningGroup,tenantId);
     }
 
     /**
@@ -104,7 +106,11 @@ public class WarningGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     @Valid
-    public void update(WarningGroup warningGroup) throws AtlasBaseException {
+    public void update(WarningGroup warningGroup,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        WarningGroup old = warningGroupService.getByName(warningGroup.getName(),warningGroup.getId(),tenantId);
+        if (old != null) {
+            throw new AtlasBaseException("告警组名已存在");
+        }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         warningGroupService.update(warningGroup);
     }
@@ -152,8 +158,8 @@ public class WarningGroupREST {
     @Path("/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.getWarningGroupList(parameters);
+    public PageResult<WarningGroup> getWarningGroupList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return warningGroupService.getWarningGroupList(parameters,tenantId);
     }
 
     /**
@@ -166,8 +172,8 @@ public class WarningGroupREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<WarningGroup> search(Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.search(parameters);
+    public PageResult<WarningGroup> search(Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.search(parameters,tenantId);
     }
 
     /**
@@ -179,8 +185,8 @@ public class WarningGroupREST {
     @Path("/warning/{warningType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList(@PathParam("warningType")Integer warningType, Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.getWarningList(warningType, parameters);
+    public PageResult getWarningList(@PathParam("warningType")Integer warningType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getWarningList(warningType, parameters,tenantId);
     }
 
     /**
@@ -193,8 +199,8 @@ public class WarningGroupREST {
     @Path("/error/{errorType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getErrorWarningList(@PathParam("errorType")Integer errorType, Parameters parameters) throws AtlasBaseException {
-        return warningGroupService.getErrorWarningList(errorType, parameters);
+    public PageResult getErrorWarningList(@PathParam("errorType")Integer errorType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getErrorWarningList(errorType, parameters,tenantId);
     }
 
     /**
@@ -257,9 +263,9 @@ public class WarningGroupREST {
     @Path("/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<User> UserList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<User> UserList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return usersService.getUserList(parameters);
+            return TenantService.defaultTenant.equals(tenantId)?usersService.getUserList(parameters) : usersService.getUserListV2(tenantId, parameters);
         } catch (Exception e) {
             throw e;
         }

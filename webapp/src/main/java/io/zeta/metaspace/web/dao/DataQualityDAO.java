@@ -47,9 +47,9 @@ public interface DataQualityDAO {
      * @return
      * @throws SQLException
      */
-    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source,generateTime)" +
-            "values(#{templateId},#{tableId},#{buildType},#{periodCron},#{templateName},#{tableRulesNum},#{columnRulesNum},#{source},#{generateTime})")
-    public int insertTemplate(Template template) throws SQLException;
+    @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source,generateTime,tenantid)" +
+            "values(#{template.templateId},#{template.tableId},#{template.buildType},#{template.periodCron},#{template.templateName},#{template.tableRulesNum},#{template.columnRulesNum},#{template.source},#{template.generateTime},#{tenantId})")
+    public int insertTemplate(@Param("template") Template template,@Param("tenantId") String tenantId) throws SQLException;
 
     /**
      * 添加模板规则
@@ -71,8 +71,8 @@ public interface DataQualityDAO {
     @Insert("update template set startTime=#{startTime} where templateId=#{templateId}")
     public int updateTemplateStartTime(@Param("templateId") String templateId, @Param("startTime") String startTime);
 
-    @Select("select count(*) from template where templateName=#{templateName}")
-    public int countTemplateName(@Param("templateName") String templateName);
+    @Select("select count(*) from template where templateName=#{templateName} and tenantId=#{tenantId} and templateId!=#{templateId}")
+    public int countTemplateName(@Param("templateName") String templateName,@Param("templateId") String templateId,@Param("tenantId")String tenantId);
 
     /**
      * 保存模板规则对应阈值
@@ -332,9 +332,9 @@ public interface DataQualityDAO {
             "from\n" +
             "(select templateid,buildtype,periodcron,templatename,templatestatus,starttime,tablerulesnum,columnrulesnum,generatetime " +
             "from template \n" +
-            "where tableid = #{tableId} order by generatetime desc) as temp left join report \n" +
+            "where tableid = #{tableId} and tenantid=#{tenantId} order by generatetime desc) as temp left join report \n" +
             "on report.templateid=temp.templateid) temp2re where maxtime=reportproducedate or reportproducedate is null order by generatetime desc")
-    public List<TemplateResult> getTemplateResults(String tableId) throws SQLException;
+    public List<TemplateResult> getTemplateResults(@Param("tableId") String tableId,@Param("tenantId") String tenantId) throws SQLException;
     @Select("select reportid,reportname,source,templatename,periodcron,buildtype,reportproducedate,redalerts,orangealerts from report where reportid = #{reportId}")
     public List<Report> getReport(String reportId) throws SQLException;
     @Select("select ruletype,rulename,ruleinfo,rulecolumnname,rulecolumntype,rulechecktype,rulecheckexpression,rulecheckthresholdunit,reportrulevalue,reportrulestatus,ruleid,generateTime from report_userrule where reportid = #{reportId} order by generateTime")
@@ -356,13 +356,13 @@ public interface DataQualityDAO {
 
     @Select({"<script>",
              " select count(*)over() total,reportid,reportname,orangealerts,redalerts,reportproducedate from report,template",
-             " where template.tableId=#{tableId} and report.templateid = template.templateId order by reportproducedate desc",
+             " where template.tableId=#{tableId} and report.templateid = template.templateId and tenantid=#{tenantId}order by reportproducedate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<ReportResult> getReportsByTableGuid(@Param("tableId") String tableId,@Param("offset") int offset,@Param("limit") int limit) throws SQLException;
+    public List<ReportResult> getReportsByTableGuid(@Param("tableId") String tableId,@Param("offset") int offset,@Param("limit") int limit,@Param("tenantId")String tenantId) throws SQLException;
 
 
     @Select("select systemrule.ruleid,rulename,ruleinfo,ruletype,rulecheckthresholdunit from systemrule,rule2datatype,rule2buildtype where systemrule.ruleid=rule2datatype.ruleid  and systemrule.ruleid=rule2buildtype.ruleid and buildtype=#{buildType} and datatype=#{dataType} and ruletype=#{ruleType} order by ruleid")

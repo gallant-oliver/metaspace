@@ -43,13 +43,13 @@ public class DataShareGroupService {
     @Autowired
     DataShareGroupDAO groupDAO;
 
-    public int insertGroup(APIGroup group) throws AtlasBaseException {
+    public int insertGroup(APIGroup group,String tenantId) throws AtlasBaseException {
         try {
             String user = AdminUtils.getUserData().getUserId();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
-            int count = groupDAO.countGroupName(group.getName());
+            int count = groupDAO.countGroupName(group.getName(),tenantId);
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字分组");
             }
@@ -60,7 +60,7 @@ public class DataShareGroupService {
             group.setGenerateTime(time);
             group.setUpdater(user);
             group.setUpdateTime(time);
-            return groupDAO.insertGroup(group);
+            return groupDAO.insertGroup(group,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -87,7 +87,7 @@ public class DataShareGroupService {
         }
     }
 
-    public int updateGroup(String guid, APIGroup group) throws AtlasBaseException {
+    public int updateGroup(String guid, APIGroup group,String tenantId) throws AtlasBaseException {
         try {
             group.setGuid(guid);
             String user = AdminUtils.getUserData().getUserId();
@@ -97,7 +97,7 @@ public class DataShareGroupService {
             group.setUpdater(user);
             group.setUpdateTime(time);
             String currentName = groupDAO.getGroupNameById(group.getGuid());
-            int count = groupDAO.countGroupName(group.getName());
+            int count = groupDAO.countGroupName(group.getName(),tenantId);
             if(count > 0 && !currentName.equals(group.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字分组");
             }
@@ -111,9 +111,9 @@ public class DataShareGroupService {
         }
     }
 
-    public List<APIGroup> getGroupList() throws AtlasBaseException {
+    public List<APIGroup> getGroupList(String tenantId) throws AtlasBaseException {
         try {
-            return groupDAO.getGroupList();
+            return groupDAO.getGroupList(tenantId);
         }  catch (Exception e) {
             LOG.error("获取API分组失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取API分组失败");

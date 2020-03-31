@@ -16,9 +16,9 @@ import java.util.List;
 
 public interface WarningGroupDAO {
 
-    @Insert({" insert into warning_group(id,name,type,contacts,description,create_time,update_time,creator,delete) ",
-             " values(#{id},#{name},#{type},#{contacts},#{description},#{createTime},#{updateTime},#{creator},#{delete})"})
-    public int insert(WarningGroup warningGroup);
+    @Insert({" insert into warning_group(id,name,type,contacts,description,create_time,update_time,creator,delete,tenantId) ",
+             " values(#{warningGroup.id},#{warningGroup.name},#{warningGroup.type},#{warningGroup.contacts},#{warningGroup.description},#{warningGroup.createTime},#{warningGroup.updateTime},#{warningGroup.creator},#{warningGroup.delete},#{tenantId})"})
+    public int insert(@Param("warningGroup") WarningGroup warningGroup,@Param("tenantId")String tenantId);
 
     @Insert(" update warning_group set name=#{name},type=#{type},contacts=#{contacts},description=#{description},update_time=#{updateTime} where id=#{id}")
     public int update(WarningGroup warningGroup);
@@ -27,9 +27,14 @@ public interface WarningGroupDAO {
              " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and a.id=#{id}"})
     public WarningGroup getById(@Param("id") String id);
 
-    @Select({" select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
-             " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} "})
-    public WarningGroup getByName(@Param("name") String name);
+    @Select({" <script>",
+             " select id,name,type,contacts,description,create_time as createTime,update_time as updateTime,delete ",
+             " from warning_group where delete=false and name=#{name} and tenantid=#{tenantId}",
+             " <if test='id != null'>",
+             " and id!=#{id}",
+             " </if>",
+             " </script>"})
+    public WarningGroup getByName(@Param("name") String name,@Param("id") String id,@Param("tenantId")String tenantId);
 
     @Select("update warning_group set delete=true where id=#{id}")
     public void deleteById(@Param("id") String id);
@@ -48,7 +53,7 @@ public interface WarningGroupDAO {
 
     @Select({"<script>",
              " select count(*)over() total,a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
-             " from warning_group a inner join users b on a.creator=b.userid where a.delete=false ",
+             " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and tenantid=#{tenantId} ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (a.name like '%${params.query}%' ESCAPE '/' ) ",
              " </if>",
@@ -59,13 +64,13 @@ public interface WarningGroupDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<WarningGroup> search(@Param("params") Parameters params);
+    public List<WarningGroup> search(@Param("params") Parameters params,@Param("tenantId")String tenantId);
 
 
 
     @Select({"<script>",
-             " select id,name,description,warning_group.create_time as createTime,contacts,users.username as creator,type",
-             " from warning_group join users on users.userid=creator where delete=false",
+             " select count(*)over() total,id,name,description,warning_group.create_time as createTime,contacts,users.username as creator,type",
+             " from warning_group join users on users.userid=creator where delete=false and tenantid=#{tenantId} ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and name like '%${params.query}%' ESCAPE '/'",
              " </if>",
@@ -76,22 +81,12 @@ public interface WarningGroupDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<WarningGroup> getWarningGroup(@Param("params") Parameters params);
-
-    @Select({"<script>",
-             " select count(*) from",
-             " warning_group where delete=false",
-             " <if test=\"params.query != null and params.query!=''\">",
-             " and (a.name like '%${params.query}%' ESCAPE '/')",
-             " </if>",
-             " </script>"})
-    public long countWarningGroup(@Param("params") Parameters params);
-
+    public List<WarningGroup> getWarningGroup(@Param("params") Parameters params,@Param("tenantId")String tenantId);
 
     @Select({" <script>",
              " select count(*)over() total,data_quality_task.id as taskId, data_quality_task_execute.id as executionId, data_quality_task.name as taskName,data_quality_task_execute.number,warning_status as warningStatus,orange_warning_count as orangeWarningCount,",
              " red_warning_count as redWarningCount,execute_time as executionTime from data_quality_task_execute join data_quality_task on data_quality_task_execute.task_id=data_quality_task.id",
-             " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
+             " where data_quality_task.tenantId=#{tenantId} and (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
              " <if test='warningType==1'>",
              " and warning_status=1",
              " </if>",
@@ -109,12 +104,12 @@ public interface WarningGroupDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskWarningHeader> getWarningList(@Param("warningType")Integer warningType, @Param("params") Parameters params);
+    public List<TaskWarningHeader> getWarningList(@Param("warningType")Integer warningType, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 
     @Select({" <script>",
              " select count(*)over() total,data_quality_task.id as taskId,data_quality_task_execute.id as executionId,data_quality_task.name as taskName,data_quality_task_execute.number,error_status as errorStatus,",
              " error_msg as errorMsg,execute_time as executionTime from data_quality_task_execute join data_quality_task on data_quality_task_execute.task_id=data_quality_task.id",
-             " where (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
+             " where data_quality_task.tenantId=#{tenantId} and (data_quality_task.name like '%${params.query}%' ESCAPE '/' or data_quality_task_execute.number like '%${params.query}%' ESCAPE '/')",
              " <if test='errorType==1'>",
              " and error_status=1",
              " </if>",
@@ -132,7 +127,7 @@ public interface WarningGroupDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskErrorHeader> getErrorWarningList(@Param("errorType")Integer errorType, @Param("params") Parameters params);
+    public List<TaskErrorHeader> getErrorWarningList(@Param("errorType")Integer errorType, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 
 
     @Select("select id,name from warning_group where id in (select warning_group_id from data_quality_task2warning_group where task_id=#{taskId} and warning_type=#{warningType})")

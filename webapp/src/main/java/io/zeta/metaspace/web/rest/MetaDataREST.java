@@ -26,7 +26,9 @@ import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.*;
@@ -93,6 +95,8 @@ public class MetaDataREST {
     private HttpServletResponse httpServletResponse;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private UserGroupDAO userGroupDAO;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -108,13 +112,13 @@ public class MetaDataREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getDatabaseByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(@QueryParam("active")@DefaultValue("true")Boolean active,Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseByQuery(" + parameters + " )");
             }
-            PageResult<Database> pageResult = searchService.getDatabasePageResult(active, parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResult(active, parameters,tenantId,AdminUtils.getUserData().getAccount());
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -152,13 +156,13 @@ public class MetaDataREST {
     @Path("/search/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Table> getTableByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters) throws AtlasBaseException {
+    public PageResult<Table> getTableByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableByQuery(" + parameters + " )");
             }
-            PageResult<Table> pageResult = searchService.getTablePageResultV2(active, parameters);
+            PageResult<Table> pageResult = searchService.getTablePageResultV2(active, parameters,tenantId,AdminUtils.getUserData().getAccount());
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -174,13 +178,13 @@ public class MetaDataREST {
     @Path("/search/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Column> getColumnByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters) throws AtlasBaseException {
+    public PageResult<Column> getColumnByQuery(@QueryParam("active")@DefaultValue("true")Boolean active, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnByQuery(" + parameters + " )");
             }
-            PageResult<Column> pageResult = searchService.getColumnPageResultV2(active ,parameters);
+            PageResult<Column> pageResult = searchService.getColumnPageResultV2(active ,parameters,tenantId,AdminUtils.getUserData().getAccount());
             return pageResult;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -365,9 +369,9 @@ public class MetaDataREST {
     @Path("/tag")
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public String addTag(Tag tag) throws AtlasBaseException {
+    public String addTag(Tag tag,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            String s = tableTagService.addTag(tag.getTagName());
+            String s = tableTagService.addTag(tag.getTagName(),tenantId);
             return s;
         } catch (AtlasBaseException e) {
             throw e;
@@ -381,9 +385,9 @@ public class MetaDataREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tag> getTags(Parameters parameters) throws AtlasBaseException {
+    public List<Tag> getTags(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            List<Tag> tags = tableTagService.getTags(parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
+            List<Tag> tags = tableTagService.getTags(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),tenantId);
             return tags;
         } catch (Exception e) {
             PERF_LOG.error(e.getMessage(), e);
@@ -433,9 +437,9 @@ public class MetaDataREST {
 
     @Path("/supplementTable")
     @GET
-    public String supplementTable() throws AtlasBaseException {
+    public String supplementTable(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            dataManageService.supplementTable();
+            dataManageService.supplementTable(tenantId);
             return "success";
         } catch (Exception e) {
             PERF_LOG.error(e.getMessage(), e);
@@ -449,16 +453,6 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}")
     public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, TableSchema tableSchema) throws Exception {
-        List<String> roleIds = null;
-        try {
-            String userId = AdminUtils.getUserData().getUserId();
-            roleIds = usersService.getRoleIdByUserId(userId);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取当前用户的roleId出错", e);
-        }
-        if (roleIds==null || roleIds.size()==0 || !roleIds.contains("1")) {
-            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "增量同步元数据");
-        }
         if (!importing.getAndSet(true)) {
             CompletableFuture.runAsync(() -> {
                 metadataService.synchronizeMetaData(databaseType, tableSchema);
@@ -482,9 +476,9 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/business/trust")
-    public Response updateTrustTable() throws AtlasBaseException {
+    public Response updateTrustTable(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            businessService.updateBusinessTrustTable();
+            businessService.updateBusinessTrustTable(tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
             throw e;
@@ -577,11 +571,11 @@ public class MetaDataREST {
     @GET
     @Path("/export/{downloadId}")
     @Valid
-    public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@HeaderParam("tenantId")String tenantId) throws Exception {
         File xlsxFile = null;
         try {
             List<String> metadataGuidList = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-            xlsxFile = metadataService.exportExcel(metadataGuidList);
+            xlsxFile = metadataService.exportExcel(metadataGuidList,tenantId);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
@@ -986,9 +980,9 @@ public class MetaDataREST {
     @Path("/influence/api/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getTableInfluenceWithAPI( @PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult getTableInfluenceWithAPI( @PathParam("tableGuid") String tableGuid, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return metadataService.getTableInfluenceWithAPI(tableGuid, parameters);
+            return metadataService.getTableInfluenceWithAPI(tableGuid, parameters,tenantId);
         }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
@@ -1028,9 +1022,9 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard/{tableGuid}")
-    public List<DataStandardHead> getDataStandard(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+    public List<DataStandardHead> getDataStandard(@PathParam("tableGuid") String tableGuid,String tenantId) throws AtlasBaseException {
         try {
-           return dataStandardService.getDataStandardByTable(tableGuid);
+           return dataStandardService.getDataStandardByTable(tableGuid,tenantId);
         } catch (Exception e) {
             throw e;
         }

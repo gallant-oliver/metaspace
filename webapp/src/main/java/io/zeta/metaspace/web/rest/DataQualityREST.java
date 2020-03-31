@@ -77,10 +77,10 @@ public class DataQualityREST {
     @Path("/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response addTemplate(Template template) throws AtlasBaseException {
+    public Response addTemplate(Template template,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), template.getTemplateName());
         try {
-            dataQualityService.addTemplate(template);
+            dataQualityService.addTemplate(template,tenantId);
             return Response.status(200).entity("success").build();
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -217,9 +217,9 @@ public class DataQualityREST {
     @Path("/templates/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId) throws AtlasBaseException {
+    public List<TemplateResult> getTemplates(@PathParam("tableId") String tableId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataQualityService.getTemplates(tableId);
+            return dataQualityService.getTemplates(tableId,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模板统计信息列表失败");
         }
@@ -247,9 +247,9 @@ public class DataQualityREST {
     @Path("/reports/{tableGuid}/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getReports(@PathParam("tableGuid") String tableGuid, @PathParam("templateId") String templateId, Parameters parameters) throws AtlasBaseException {
+    public PageResult getReports(@PathParam("tableGuid") String tableGuid, @PathParam("templateId") String templateId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult pageResult = dataQualityService.getReports(tableGuid, templateId, parameters);
+            PageResult pageResult = dataQualityService.getReports(tableGuid, templateId, parameters,tenantId);
             return pageResult;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模块报表失败");

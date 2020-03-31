@@ -12,9 +12,9 @@ import java.util.List;
 
 public interface RuleDAO {
 
-    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete,check_threshold_unit,scope) " +
-            " values(#{id},#{ruleTemplateId},#{name},#{code},#{categoryId},#{enable},#{description},#{checkType},#{checkExpressionType},#{checkThresholdMinValue},#{checkThresholdMaxValue},#{creator},#{createTime},#{updateTime},#{delete},#{unit},#{scope})")
-    public int insert(Rule rule);
+    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete,check_threshold_unit,scope,tenantId) " +
+            " values(#{rule.id},#{rule.ruleTemplateId},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.enable},#{rule.description},#{rule.checkType},#{rule.checkExpressionType},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.unit},#{rule.scope},#{tenantId})")
+    public int insert(@Param("rule") Rule rule,@Param("tenantId")String tenantId);
 
     @Select("select unit from data_quality_rule_template where id=#{ruleTemplateId}")
     public String getRuleTemplateUnit(@Param("ruleTemplateId")String ruleTemplateId);
@@ -29,8 +29,20 @@ public interface RuleDAO {
     public Rule getById(@Param("id") String id);
 
     @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} "})
-    public List<Rule> getByCode(@Param("code") String code);
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
+    public List<Rule> getByCode(@Param("code") String code,@Param("tenantId") String tenantId);
+
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    public List<Rule> getByCodeV2(@Param("id") String id,@Param("code") String code,@Param("tenantId") String tenantId);
+
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
+    public List<Rule> getByName(@Param("name") String name,@Param("tenantId") String tenantId);
+
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    public List<Rule> getByNameV2(@Param("id") String id,@Param("name") String name,@Param("tenantId") String tenantId);
 
     @Select("select enable from data_quality_rule where id=#{id}")
     public Boolean getEnableStatusById(@Param("id") String id);
@@ -50,25 +62,19 @@ public interface RuleDAO {
     @Select({"<script>",
              "select count(*)over() total,c.*, data_quality_rule_template.rule_type as ruleType from",
              " (select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId}) c",
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId} and a.tenantId=#{tenantId}) c",
              " join data_quality_rule_template on c.ruleTemplateId=data_quality_rule_template.id",
              " order by createTime desc",
              " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<Rule> queryByCatetoryId(@Param("categoryId") String categoryId, @Param("params") Parameters params);
-
-
-    @Select({"<script>",
-             " select count(1) from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId} ",
-             " </script>"})
-    public long countByByCatetoryId(@Param("categoryId") String categoryId);
+    public List<Rule> queryByCatetoryId(@Param("categoryId") String categoryId, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
              " select count(*)over() total,c.*, data_quality_rule_template.rule_type as ruleType from",
              " (select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false",
+             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.tenantId=#{tenantId}",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (name like '%${params.query}%' ESCAPE '/' or code like '%${params.query}%' ESCAPE '/' ) ",
              " </if>",
@@ -78,15 +84,7 @@ public interface RuleDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<Rule> search(@Param("params") Parameters params);
-
-    @Select({"<script>",
-             " select count(1) from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false ",
-             " <if test=\"query != null and query!=''\">",
-             " and (name like '%${query}%' ESCAPE '/' or code like '%${query}%' ESCAPE '/' ) ",
-             " </if>",
-             " </script>"})
-    public long countBySearch(@Param("query") String query);
+    public List<Rule> search(@Param("params") Parameters params,@Param("tenantId")String tenantId);
 
     @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id} and delete=false")
     public int getRuleUsedCount(@Param("id") String guid);

@@ -34,19 +34,19 @@ public interface DataShareDAO {
 
     @Insert({" <script>",
              " insert into apiInfo(guid,name,sourceType,sourceId,schemaName,tableName,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,version,description,",
-             " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager",
-             " <if test='desensitize != null'>",
+             " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager,tenantid",
+             " <if test='info.desensitize != null'>",
              " ,desensitize",
              " </if>",
              " )values(",
-             " #{guid},#{name},#{sourceType},#{sourceId},#{schemaName},#{tableName},#{tableGuid},#{dbGuid},#{groupGuid},#{keeper},#{maxRowNumber},#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{version},#{description},#{protocol},#{requestMode},#{returnType},#{path},#{generateTime},#{updater},#{updateTime},#{publish},#{star},#{usedCount},#{manager}",
-             " <if test='desensitize != null'>",
-             " ,#{desensitize}",
+             " #{info.guid},#{info.name},#{info.sourceType},#{info.sourceId},#{info.schemaName},#{info.tableName},#{info.tableGuid},#{info.dbGuid},#{info.groupGuid},#{info.keeper},#{info.maxRowNumber},#{info.fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
+             " #{info.version},#{info.description},#{info.protocol},#{info.requestMode},#{info.returnType},#{info.path},#{info.generateTime},#{info.updater},#{info.updateTime},#{info.publish},#{info.star},#{info.usedCount},#{info.manager},#{tenantId}",
+             " <if test='info.desensitize != null'>",
+             " ,#{info.desensitize}",
              " </if>",
              " )",
              " </script>"})
-    public int insertAPIInfo(APIInfo info);
+    public int insertAPIInfo(@Param("info") APIInfo info,@Param("tenantId")String tenantId);
 
     @Select("select count(1) from apiInfo where path=#{path}")
     public int samePathCount(@Param("path")String path);
@@ -77,7 +77,7 @@ public interface DataShareDAO {
     @Select({" <script>",
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
-             " from apiInfo,apiGroup where",
+             " from apiInfo,apiGroup where apiInfo.tenantid=#{tenantId} and ",
              " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
@@ -95,7 +95,7 @@ public interface DataShareDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query, @Param("limit")int limit, @Param("offset")int offset);
+    public List<APIInfoHeader> getAPIList(@Param("groupGuid")String guid, @Param("my")Integer my, @Param("publish")String publish, @Param("keeper")String keeper, @Param("query")String query, @Param("limit")int limit, @Param("offset")int offset,@Param("tenantId")String tenantId);
 
 
 
@@ -105,8 +105,8 @@ public interface DataShareDAO {
     @Select("select dataOwner from tableInfo where tableGuid=#{guid}")
     public Object getDataOwnerByGuid(@Param("guid")String guid);
 
-    @Select("select count(1) from apiInfo where name=#{name}")
-    public int querySameName(@Param("name")String name);
+    @Select("select count(1) from apiInfo where name=#{name} and tenantid=#{tenantId}")
+    public int querySameName(@Param("name")String name,@Param("tenantId")String tenantId);
 
     @Delete("delete from apiInfo where guid=#{guid}")
     public int deleteAPIInfo(@Param("guid")String guid);
@@ -123,8 +123,8 @@ public interface DataShareDAO {
     @Insert("delete from user2apistar where apiGuid=#{apiGuid} and userId=#{userId}")
     public int deleteAPIStar(@Param("userId")String userId, @Param("apiGuid")String apiGuid);
 
-    @Select("select apiGuid from user2apistar where userId=#{userId}")
-    public List<String> getUserStarAPI(@Param("userId")String userId);
+    @Select("select user2apistar.apiGuid from user2apistar join apiinfo on apiinfo.guid=user2apistar.apiGuid where user2apistar.userId=#{userId} and apiinfo.tenantid=#{tenantId}")
+    public List<String> getUserStarAPI(@Param("userId")String userId,@Param("tenantId")String tenantId);
 
     @Select("select count(1) from user2apistar where apiGuid=#{apiGuid} and userId=#{userId}")
     public int getStarCount(@Param("userId")String userId, @Param("apiGuid")String apiGuid);
@@ -164,7 +164,7 @@ public interface DataShareDAO {
              " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
              " #{tableGuid}",
              " </foreach>",
-             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid",
+             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.tenantid=#{tenantId} ",
              " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
@@ -173,7 +173,7 @@ public interface DataShareDAO {
              " offset #{offset}",
              " </if>",
              " </script>"})
-    public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset);
+    public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
     
 
     @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
@@ -190,9 +190,9 @@ public interface DataShareDAO {
              " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
              " #{tableGuid}",
              " </foreach>",
-             " and publish=true",
+             " and publish=true and tenantid=#{tenantId}",
              " </script>"})
-    public List<APIInfoHeader> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList);
+    public List<APIInfoHeader> getAPIByRelatedTable(@Param("tableGuidList")List<String> tableList,@Param("tenantId")String tenantId);
 
     @Select("select status from tableInfo where tableGuid = (select tableGuid from apiInfo where guid=#{apiGuid})")
     public String getTableStatusByAPIGuid(@Param("apiGuid")String apiGuid);
@@ -201,12 +201,12 @@ public interface DataShareDAO {
     public String getTableStatusByGuid(@Param("tableGuid")String tableGuid);
 
     @Select({"<script>",
-             "select guid from apiInfo where tableGuid in",
+             "select guid from apiInfo where tenantid=#{tenantId} and tableGuid in",
              " <foreach item='tableGuid' index='index' collection='tableGuidList' separator=',' open='(' close=')'>",
              " #{tableGuid}",
              " </foreach>",
              " </script>"})
-    public List<String> getAPIIdsByRelatedTable(@Param("tableGuidList")List<String> tableList);
+    public List<String> getAPIIdsByRelatedTable(@Param("tableGuidList")List<String> tableList,@Param("tenantId")String tenantId);
 
     @Update("update apiInfo set manager=#{userId} where guid=#{apiGuid}")
     public int updateManager(@Param("apiGuid")String apiGuid, @Param("userId")String userId);

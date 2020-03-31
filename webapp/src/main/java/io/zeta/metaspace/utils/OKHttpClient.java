@@ -17,6 +17,7 @@
 package io.zeta.metaspace.utils;
 
 import com.squareup.okhttp.Call;
+import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
@@ -24,7 +25,9 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.log4j.Logger;
 
@@ -33,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -48,10 +52,17 @@ public class OKHttpClient {
     private static Logger LOG = Logger.getLogger(OKHttpClient.class);
     private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
+    private static int size;
     static {
         client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
                 .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
-        client.setConnectTimeout(1, TimeUnit.SECONDS);
+        client.setConnectTimeout(5, TimeUnit.SECONDS);
+        client.setReadTimeout(30, TimeUnit.SECONDS);
+        try {
+            size = ApplicationProperties.get().getInt("okhttp.retries", 3);
+        } catch (AtlasException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -79,15 +90,7 @@ public class OKHttpClient {
                 }
             }
             Request request = builder.build();
-            Call call = client.newCall(request);
-            Response response = call.execute();
-            /**请求发送成功，并得到响应**/
-            if (response.isSuccessful()) {
-                /**读取服务器返回过来的json字符串数据**/
-                return response.body().string();
-            } else {
-                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
-            }
+            return getResponse(request);
         } catch (Exception e) {
             LOG.error("请求失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
@@ -103,19 +106,52 @@ public class OKHttpClient {
                     .addHeader(TICKET_KEY, ticket)
                     .post(body)
                     .build();
-            Call call = client.newCall(request);
-            Response response = call.execute();
-
-            if (response.isSuccessful()) {
-                InputStream in = response.body().byteStream();
-                return getResponseStr(in);
-            } else {
-                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
-            }
+            return getResponse(request);
         } catch(Exception e) {
             LOG.error("请求失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
         }
+    }
+
+    public static String doPost(String url, Map<String, Object> headerMap,Map<String,Object> queryParamMap, String json) throws AtlasBaseException {
+        try {
+            //requestBody
+            String queryUrl = buildUrl(url, queryParamMap);
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+            Headers headers = buildHeaders(headerMap);
+            //request
+            Request request = new Request.Builder()
+                    .url(queryUrl)
+                    .headers(headers)
+                    .post(body)
+                    .build();
+            return getResponse(request);
+        }catch (AtlasBaseException e){
+            throw e;
+        }catch(Exception e) {
+            LOG.error("请求失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+        }
+    }
+
+    public static Headers buildHeaders(Map<String, Object> headerMap) {
+        Headers.Builder headerBuilder = new Headers.Builder();
+        Iterator<Map.Entry<String, Object>> headerIterator = headerMap.entrySet().iterator();
+        headerIterator.forEachRemaining(header -> {
+            headerBuilder.add(header.getKey(), String.valueOf(header.getValue()));
+        });
+        return headerBuilder.build();
+    }
+
+    public static String buildUrl(String url, Map<String,Object> queryParamMap) {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
+        if(Objects.nonNull(queryParamMap)) {
+            Set<Map.Entry<String, Object>> queryParamEntries = queryParamMap.entrySet();
+            for (Map.Entry<String, Object> entry : queryParamEntries) {
+                urlBuilder.addQueryParameter(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+        return urlBuilder.build().toString();
     }
 
     public static String doPut(String url, String json) throws AtlasBaseException {
@@ -127,15 +163,7 @@ public class OKHttpClient {
                     .addHeader(TICKET_KEY, ticket)
                     .put(body)
                     .build();
-            Call call = client.newCall(request);
-            Response response = call.execute();
-
-            if (response.isSuccessful()) {
-                InputStream in = response.body().byteStream();
-                return getResponseStr(in);
-            } else {
-                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
-            }
+            return getResponse(request);
         } catch(Exception e) {
             LOG.error("请求失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
@@ -158,16 +186,7 @@ public class OKHttpClient {
                 }
             }
             Request request = builder.delete().build();
-            Call call = client.newCall(request);
-            Response response = call.execute();
-            /**请求发送成功，并得到响应**/
-            if (response.isSuccessful()) {
-                /**读取服务器返回过来的json字符串数据**/
-                String strResult = response.body().string();
-                return strResult;
-            } else {
-                throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
-            }
+            return getResponse(request);
         } catch (Exception e) {
             LOG.error("请求失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
@@ -185,6 +204,42 @@ public class OKHttpClient {
             return URLDecoder.decode(baos.toString(), "UTF-8");
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    public static String getResponse(Request request) throws AtlasBaseException {
+
+        int count=1;
+        OkHttpClient client = OKHttpClient.client;
+        while(true){
+            try {
+                Call call = client.newCall(request);
+                Response response = call.execute();
+                if (response.isSuccessful()) {
+                    InputStream in = response.body().byteStream();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = 0;
+                    while ((len = in.read(buffer)) != -1) {
+                        baos.write(buffer, 0, len);
+                    }
+                    return URLDecoder.decode(baos.toString(), "UTF-8");
+                } else {
+                    throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
+                }
+            } catch (Exception e) {
+                if (count<size){
+                    LOG.error("第"+count +"次请求失败：", e);
+                    client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
+                            .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
+                    client.setConnectTimeout(5+count, TimeUnit.SECONDS);
+                    client.setReadTimeout(30+count*10, TimeUnit.SECONDS);
+                    count++;
+                    continue;
+                }
+                LOG.error("请求失败", e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+            }
         }
     }
 }

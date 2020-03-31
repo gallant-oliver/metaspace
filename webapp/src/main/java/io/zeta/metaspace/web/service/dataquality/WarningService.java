@@ -45,9 +45,9 @@ public class WarningService {
     private WarningGroupDAO warningGroupDAO;
 
 
-    public List<Warning> list(WarningStatusEnum warningStatusEnum) throws AtlasBaseException {
+    public List<Warning> list(WarningStatusEnum warningStatusEnum,String tenantId) throws AtlasBaseException {
         try {
-            List<Warning> warningList = warningDAO.taskWaringLog(warningStatusEnum.getCode()).stream()
+            List<Warning> warningList = warningDAO.taskWaringLog(warningStatusEnum.getCode(),tenantId).stream()
                     .map(warning -> {
                         String taskExecuteId = warning.getTaskExecuteId();
                         List<Map<String, Object>> taskRuleWarningLogs = warningDAO.taskRuleWarningLog(taskExecuteId);

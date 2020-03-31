@@ -19,9 +19,9 @@ import javax.ws.rs.DELETE;
 
 public interface DataStandardDAO {
 
-    @Insert("insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete)" +
-            "values(#{id},#{number},#{content},#{description},#{createTime},#{updateTime},#{operator},#{version},#{categoryId},#{delete})")
-    public int insert(DataStandard dataStandard);
+    @Insert("insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete,tenantid)" +
+            "values(#{dataStandard.id},#{dataStandard.number},#{dataStandard.content},#{dataStandard.description},#{dataStandard.createTime},#{dataStandard.updateTime},#{dataStandard.operator},#{dataStandard.version},#{dataStandard.categoryId},#{dataStandard.delete},#{tenantId})")
+    public int insert(@Param("dataStandard") DataStandard dataStandard,@Param("tenantId")String tenantId);
 
     @Insert("insert into data_standard(id,number,content,description,createtime,updatetime,operator,categoryid,delete,version)" +
             "values(#{id},#{number},#{content},#{description},#{createTime},#{updateTime},#{operator},#{categoryId},#{delete},(select max(version) from data_standard where number=#{number} GROUP BY number)+1)")
@@ -74,7 +74,7 @@ public interface DataStandardDAO {
 
     @Select({"<script>",
              " select count(1)over() total,b.id,b.number,b.content,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid,b.delete from ",
-             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} and tenantid=#{tenantId} group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false and b.categoryid=#{categoryId} ",
@@ -87,21 +87,21 @@ public interface DataStandardDAO {
              " </if>",
              " </if>",
              " </script>"})
-    public List<DataStandard> queryByCatetoryId(@Param("categoryId") String categoryId, @Param("params") Parameters params);
+    public List<DataStandard> queryByCatetoryId(@Param("categoryId") String categoryId, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 
 
     @Select({"<script>",
              " select count(1) from ",
-             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} and tenantid=#{tenantId} group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " inner join users c on b.operator=c.userid ",
              " where b.delete=false and b.categoryid=#{categoryId} ",
              " </script>"})
-    public long countByByCatetoryId(@Param("categoryId") String categoryId);
+    public long countByByCatetoryId(@Param("categoryId") String categoryId,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
              " select count(1)over() total,b.id,b.number,b.content,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid,b.delete from ",
-             " (select number,max(version) as version from data_standard where delete=false ",
+             " (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} ",
              " <if test=\"params.query != null and params.query!=''\">",
              " and (number like '%${params.query}%' ESCAPE '/' or content like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/') ",
              " </if>",
@@ -125,16 +125,16 @@ public interface DataStandardDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<DataStandard> search(@Param("params") DataStandardQuery params);
+    public List<DataStandard> search(@Param("params") DataStandardQuery params,@Param("tenantId")String tenantId);
 
 
     @Insert({"<script>",
-             "insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete) values ",
+             "insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete,tenantid) values ",
              " <foreach collection='dataList' item='data' index='index' separator=','>",
-             " ( #{data.id},#{data.number},#{data.content},#{data.description},#{data.createTime},#{data.updateTime},#{data.operator},#{data.version},#{data.categoryId},#{data.delete} )",
+             " ( #{data.id},#{data.number},#{data.content},#{data.description},#{data.createTime},#{data.updateTime},#{data.operator},#{data.version},#{data.categoryId},#{data.delete},#{tenantId} )",
              " </foreach>",
              " </script>"})
-    int batchInsert(@Param("dataList") List<DataStandard> dataList);
+    int batchInsert(@Param("dataList") List<DataStandard> dataList,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
              " select count(*)over() total,d.id,d.number,d.content,d.description,d.createtime,d.updatetime,u.username as operator,d.version,d.categoryid ",
@@ -213,27 +213,27 @@ public interface DataStandardDAO {
 
     @Select({"<script>",
              " select b.id,b.number,b.content,b.description,b.categoryid from ",
-             " (select d.number,max(d.version) as version from data_standard d join data_standard2table t on d.number=t.number where d.delete=false and t.tableguid=#{tableGuid} group by d.number) as a ",
+             " (select d.number,max(d.version) as version from data_standard d join data_standard2table t on d.number=t.number where d.delete=false and t.tableguid=#{tableGuid} and d.tenantid=#{tenantId} group by d.number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " where b.delete=false ",
              " </script>"})
-    public List<DataStandardHead> getDataStandardByTableGuid(@Param("tableGuid") String tableGuid);
+    public List<DataStandardHead> getDataStandardByTableGuid(@Param("tableGuid") String tableGuid,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
              " select b.id,b.number,b.content,b.description,b.categoryid from ",
-             " (select d.number,max(d.version) as version from data_standard d join data_standard2data_quality_rule t on d.number=t.number where d.delete=false and t.ruleid=#{ruleId} group by d.number) as a ",
+             " (select d.number,max(d.version) as version from data_standard d join data_standard2data_quality_rule t on d.number=t.number where d.delete=false and t.ruleid=#{ruleId} and d.tenantid=#{tenantId} group by d.number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " where b.delete=false ",
              " </script>"})
-    public List<DataStandardHead> getDataStandardByRuleId(@Param("ruleId") String ruleId);
+    public List<DataStandardHead> getDataStandardByRuleId(@Param("ruleId") String ruleId,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
              " select b.id,b.number,b.content,b.description,b.categoryid from ",
-             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} group by number) as a ",
+             " (select number,max(version) as version from data_standard where delete=false and categoryid=#{categoryId} and tenantid=#{tenantId} group by number) as a ",
              " inner join data_standard b on a.number=b.number and a.version=b.version ",
              " where b.delete=false and b.categoryid=#{categoryId} ",
              " </script>"})
-    public List<DataStandardHead> getStandardByCategoyrId(@Param("categoryId") String categoryId);
+    public List<DataStandardHead> getStandardByCategoyrId(@Param("categoryId") String categoryId,@Param("tenantId") String tenantId);
 
 
 }

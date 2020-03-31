@@ -91,10 +91,6 @@ public class SSOFilter implements Filter {
                 WebApplicationContext requiredWebApplicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
                 UsersService usersService = (UsersService) requiredWebApplicationContext.getBean("getUserService");
                 String userId = data.get("AccountGuid").toString();
-                if (usersService.isRole(userId)){
-                    loginSkip(403, httpServletResponse, "无角色用户无权限", loginData);
-                    return;
-                }
 
 
             } catch (Exception e) {

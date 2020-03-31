@@ -21,10 +21,10 @@ public class TableTagService {
     private static final Logger LOG = LoggerFactory.getLogger(TableTagService.class);
 @Autowired
     TableTagDAO tableTagDAO;
-    public String addTag(String tagName) throws AtlasBaseException {
-        if(tableTagDAO.ifTagExists(tagName)==0) {
+    public String addTag(String tagName,String tenantId) throws AtlasBaseException {
+        if(tableTagDAO.ifTagExists(tagName,tenantId)==0) {
             String tagId = UUID.randomUUID().toString();
-            tableTagDAO.addTag(tagId, tagName);
+            tableTagDAO.addTag(tagId, tagName,tenantId);
             return tagId;
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该标签已存在");
@@ -34,14 +34,14 @@ public class TableTagService {
      tableTagDAO.deleteTag(tagId);
     }
 
-    public List<Tag> getTags(String query,long offset,long limit) {
+    public List<Tag> getTags(String query,long offset,long limit,String tenantId) {
         List<Tag> tags=null;
         if(Objects.nonNull(query))
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         if(limit==-1)
-            tags = tableTagDAO.getTag(query, offset);
+            tags = tableTagDAO.getTag(query, offset,tenantId);
             else
-            tags = tableTagDAO.getTags(query, offset, limit);
+            tags = tableTagDAO.getTags(query, offset, limit,tenantId);
         return tags;
     }
     @Transactional

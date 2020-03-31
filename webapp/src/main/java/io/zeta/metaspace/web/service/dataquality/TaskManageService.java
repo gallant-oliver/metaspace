@@ -95,10 +95,10 @@ public class TaskManageService {
     @Autowired
     BusinessService businessService;
 
-    public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters);
+            List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters,tenantId);
 
             //long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             long totalSize = 0;
@@ -167,9 +167,9 @@ public class TaskManageService {
         }
     }
 
-    public List<RuleHeader> getValidRuleList(String groupId, int objType, List<String> objIdList) throws AtlasBaseException {
+    public List<RuleHeader> getValidRuleList(String groupId, int objType, List<String> objIdList,String tenantId) throws AtlasBaseException {
         try {
-            List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId, objType);
+            List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId, objType,tenantId);
             if(objIdList==null || objIdList.isEmpty() || ruleList==null) {
                 return ruleList;
             }
@@ -187,31 +187,31 @@ public class TaskManageService {
         }
     }
 
-    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(String groupId) throws AtlasBaseException {
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroupList(String groupId,String tenantId) throws AtlasBaseException {
         try {
-            return taskManageDAO.getWarningGroupList(groupId);
+            return taskManageDAO.getWarningGroupList(groupId,tenantId);
         } catch (Exception e) {
             LOG.error("获取告警组列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
 
-    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup() throws AtlasBaseException {
+    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup(String tenantId) throws AtlasBaseException {
         try {
-            return taskManageDAO.getAllWarningGroup();
+            return taskManageDAO.getAllWarningGroup(tenantId);
         } catch (Exception e) {
             LOG.error("获取告警组列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
 
-    public void addTask(TaskInfo taskInfo) throws AtlasBaseException {
+    public void addTask(TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
         Timestamp currentTime = DateUtils.currentTimestamp();
-        addDataQualityTask(currentTime, taskInfo);
+        addDataQualityTask(currentTime, taskInfo,tenantId);
     }
 
     @Transactional
-    public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo) throws AtlasBaseException {
+    public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
         try {
             DataQualityTask dataQualityTask = new DataQualityTask();
             //id
@@ -257,7 +257,7 @@ public class TaskManageService {
             taskManageDAO.addTaskWarningGroup(guid, WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
             taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
 
-            taskManageDAO.addDataQualityTask(dataQualityTask);
+            taskManageDAO.addDataQualityTask(dataQualityTask,tenantId);
 
             taskManageDAO.updateTaskStatus(guid, 0);
             taskManageDAO.updateTaskFinishedPercent(guid, 0F);

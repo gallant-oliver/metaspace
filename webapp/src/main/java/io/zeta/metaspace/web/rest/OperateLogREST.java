@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -55,8 +56,8 @@ public class OperateLogREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest) throws AtlasBaseException {
-        return operateLogService.search(operateLogRequest);
+    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return operateLogService.search(operateLogRequest,tenantId);
     }
 
 

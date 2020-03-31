@@ -25,7 +25,7 @@ public interface OperateLogDAO {
     @Select({"<script>",
              " select a.id,a.number,a.userid,b.username,a.type,a.module,a.content,a.result,a.ip,a.createtime," +
                      " count(*) over() as total",
-             " from operate_log a inner join users b on a.userid=b.userid where 1=1 ",
+             " from operate_log a inner join users b on a.userid=b.userid where tenantid=#{tenantId}",
              " <if test=\"request.query.type != null and request.query.type!=''\"> ",
              " and a.type=#{request.query.type} ",
              " </if> ",
@@ -45,12 +45,12 @@ public interface OperateLogDAO {
              " and a.module=#{request.query.module}",
              " </if>",
              " order by a.createtime desc ",
-             " <if test='request.limit != null and request.offset != null'>",
+             " <if test='request.limit != -1'>",
              " limit #{request.limit} offset #{request.offset} ",
              " </if>",
              " </script>"})
-    List<OperateLog> search(@Param("request") OperateLogRequest request);
+    List<OperateLog> search(@Param("request") OperateLogRequest request,@Param("tenantId")String tenantId);
 
-    @Insert("insert into operate_log values(#{id},(select to_char((select COALESCE(max(cast(number as integer)) + 1, 1) from operate_log),'00000000')),#{userid},#{type},#{module},#{content},#{result},#{ip},#{createtime})")
-    int insert(OperateLog operateLog);
+    @Insert("insert into operate_log values(#{operateLog.id},(select to_char((select COALESCE(max(cast(number as integer)) + 1, 1) from operate_log),'00000000')),#{operateLog.userid},#{operateLog.type},#{operateLog.module},#{operateLog.content},#{operateLog.result},#{operateLog.ip},#{operateLog.createtime},#{tenantId})")
+    int insert(@Param("operateLog") OperateLog operateLog,@Param("tenantId")String tenantId);
 }

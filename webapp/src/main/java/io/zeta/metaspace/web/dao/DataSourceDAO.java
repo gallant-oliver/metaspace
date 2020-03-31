@@ -37,9 +37,9 @@ import java.util.List;
 
 public interface DataSourceDAO {
     //添加数据源
-    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager,oracle_db,isapi,servicetype)" +
-            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{dataSourceBody.manager},#{dataSourceBody.oracleDb},#{isapi},#{dataSourceBody.serviceType})")
-    public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody,@Param("isapi") boolean isapi);
+    @Insert("insert into data_source(source_id,source_name,source_type,description,create_time,update_time,update_user_id,ip,port,username,password,database,jdbc_parameter,create_user_id,manager,oracle_db,isapi,servicetype,tenantid)" +
+            "values(#{dataSourceBody.sourceId},#{dataSourceBody.sourceName},#{dataSourceBody.sourceType},#{dataSourceBody.description},#{dataSourceBody.updateTime},#{dataSourceBody.updateTime},#{updateUserId},#{dataSourceBody.ip},#{dataSourceBody.port},#{dataSourceBody.userName},#{dataSourceBody.password},#{dataSourceBody.database},#{dataSourceBody.jdbcParameter},#{updateUserId},#{dataSourceBody.manager},#{dataSourceBody.oracleDb},#{isapi},#{dataSourceBody.serviceType},#{tenantId})")
+    public int add( @Param("updateUserId") String updateUserId, @Param("dataSourceBody") DataSourceBody dataSourceBody,@Param("isapi") boolean isapi,@Param("tenantId")String tenantId);
 
     //更新数据源
     @Update("<script>" +
@@ -77,8 +77,8 @@ public interface DataSourceDAO {
     public int isSourceId(@Param("sourceId") String sourceId);
 
     //数据源名称是否存在
-    @Select("select count(1) from data_source where source_name=#{sourceName} and source_id!=#{sourceId}")
-    public int isSourceName(@Param("sourceName") String sourceName,@Param("sourceId") String sourceId);
+    @Select("select count(1) from data_source where source_name=#{sourceName} and source_id!=#{sourceId} and tenantid=#{tenantId}")
+    public int isSourceName(@Param("sourceName") String sourceName,@Param("sourceId") String sourceId,@Param("tenantId")String tenantId);
 
     //查询数据源名字
     @Select("select source_name from data_source where source_id=#{sourceId}")
@@ -120,7 +120,7 @@ public interface DataSourceDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
-            "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) " +
+            "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) and tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -149,13 +149,13 @@ public interface DataSourceDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
+    public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     //搜索Api权限数据源
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds join users us on ds.update_user_id=us.userid join data_source_api_authorize dsa on dsa.source_id=ds.source_id " +
-            "where dsa.authorize_user_id=#{userId} and isapi=true" +
+            "where dsa.authorize_user_id=#{userId} and isapi=true and tenantid=#{tenantId}" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -184,13 +184,13 @@ public interface DataSourceDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId);
+    public List<DataSourceHead> searchApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     //搜索数据源
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) " +
+            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) and tenantid=#{tenantId}" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -219,13 +219,13 @@ public interface DataSourceDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+    public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("tenantId")String tenantId);
 
     //搜索api数据源
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid and ds.isapi=true" +
+            "where ds.update_user_id=us.userid and ds.isapi=true and tenantid=#{tenantId}" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -254,11 +254,11 @@ public interface DataSourceDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchApiAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
+    public List<DataSourceHead> searchApiAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("tenantId")String tenantId);
 
 
-    @Select("select count(*) from data_source ")
-    public int exportDataSource();
+    @Select("select count(*) from data_source where tenantid=#{tenantId} ")
+    public int exportDataSource(@Param("tenantId") String tenantId);
 
     @Select("<script>" +
             "select source_name as sourceName, source_type as sourceType, description as description, ip as ip, port as port, username as username, password as password, database as database, jdbc_parameter as jdbcParameter from data_source" +
@@ -270,13 +270,13 @@ public interface DataSourceDAO {
     public List<DataSourceBody> getDataSource(@Param("sourceIds") List<String> sourceIds);
 
 
-    @Select("select source_name from data_source ")
-    public List<String> getDataSourceList();
+    @Select("select source_name from data_source where tenantid=#{tenantId}")
+    public List<String> getDataSourceList(@Param("tenantId") String tenantId);
 
     @Update({" <script>",
-            " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter},update_time=#{dataSource.updateTime},update_user_id=#{userId} where source_name=#{dataSource.sourceName}",
+            " update data_source set source_type=#{dataSource.sourceType},description=#{dataSource.description},ip=#{dataSource.ip},port=#{dataSource.port},username=#{dataSource.userName},password=#{dataSource.password},database=#{dataSource.database},jdbc_parameter=#{dataSource.jdbcParameter},update_time=#{dataSource.updateTime},update_user_id=#{userId} where source_name=#{dataSource.sourceName} and tenantid=#{tenantId}",
             " </script>"})
-    public int updateDataSource(@Param("userId")String userId,@Param("dataSource")DataSourceBody dataSource);
+    public int updateDataSource(@Param("userId")String userId,@Param("dataSource")DataSourceBody dataSource,@Param("tenantId")String tenantId);
 
 
     //获取测试连接参数
@@ -397,27 +397,27 @@ public interface DataSourceDAO {
 
     //根据数据源名字获取数据源id
     @Select("select source_id from data_source where source_name=#{sourceName}")
-    public String getSourceIdBySourceName(@Param("sourceName") String sourceName);
+    public String getSourceIdBySourceName(@Param("sourceName") String sourceName,@Param("tenantId")String tenantId);
 
     @Select("select username from users where userid in " +
             "(select distinct s.update_user_id from data_source s " +
             "join data_source_authorize a on s.source_id=a.source_id " +
-            "where a.authorize_user_id = #{userId})")
-    public List<String> getUpdateUserName(@Param("userId") String userId);
+            "where a.authorize_user_id = #{userId} and s.tenantid=#{tenantId})")
+    public List<String> getUpdateUserName(@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     @Select("select username from users where userid in " +
             "(select distinct s.update_user_id from data_source s " +
             "join data_source_api_authorize a on s.source_id=a.source_id " +
-            "where a.authorize_user_id = #{userId})")
-    public List<String> getApiUpdateUserName(@Param("userId") String userId);
+            "where a.authorize_user_id = #{userId} and s.tenantid=#{tenantId})")
+    public List<String> getApiUpdateUserName(@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     @Select("select username from users where userid in " +
-            "(select distinct s.update_user_id from data_source s where s.isapi=false or s.isapi is null)")
-    public List<String> getAllUpdateUserName();
+            "(select distinct s.update_user_id from data_source s where s.isapi=false or s.isapi is null) and s.tenantid=#{tenantId}")
+    public List<String> getAllUpdateUserName(@Param("tenantId")String tenantId);
 
     @Select("select username from users where userid in " +
-            "(select distinct s.update_user_id from data_source s where s.isapi=true)")
-    public List<String> getApiAllUpdateUserName();
+            "(select distinct s.update_user_id from data_source s where s.isapi=true) and s.tenantid=#{tenantId}")
+    public List<String> getApiAllUpdateUserName(@Param("tenantId")String tenantId);
 
     //更新数据源
     @Update("update data_source set " +

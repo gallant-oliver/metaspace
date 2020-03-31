@@ -445,7 +445,7 @@ public class RoleService {
 
     @Transactional
     public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
-        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype);
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype,TenantService.defaultTenant);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             otherCategory.setShow(false);
             otherCategory.setHide(true);
@@ -459,14 +459,14 @@ public class RoleService {
     public Map<String, RoleModulesCategories.Category> getRoleStringCategoryMap(String roleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
-            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype,TenantService.defaultTenant);
             setMap(categorys, allCategorys, 1, false);
         } else {
-            List<String> businessCategories = roleDAO.getCategorysByTypeIds(roleId, categorytype);
+            List<String> businessCategories = roleDAO.getCategorysByTypeIds(roleId, categorytype,TenantService.defaultTenant);
             if (businessCategories.size() > 0) {
-                List<RoleModulesCategories.Category> childCategorys = roleDAO.getChildCategorys(businessCategories, categorytype);
-                List<RoleModulesCategories.Category> parentCategorys = roleDAO.getParentCategorys(businessCategories, categorytype);
-                List<RoleModulesCategories.Category> privilegeCategorys = roleDAO.getCategorysByType(roleId, categorytype);
+                List<RoleModulesCategories.Category> childCategorys = roleDAO.getChildCategorys(businessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> parentCategorys = roleDAO.getParentCategorys(businessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> privilegeCategorys = roleDAO.getCategorysByType(roleId, categorytype,TenantService.defaultTenant);
                 //得到角色的带权限的目录树
                 setMap(categorys, childCategorys, 1, false);
                 setMap(categorys, parentCategorys, 0, false);
@@ -490,14 +490,14 @@ public class RoleService {
     public Map<String, RoleModulesCategories.Category> getUserStringCategoryMap(String userRoleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
-            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype, TenantService.defaultTenant);
             setMap(userCategorys, allCategorys, 0, true);
         } else {
-            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
+            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype,TenantService.defaultTenant);
             if (userBusinessCategories.size() > 0) {
-                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
+                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype,TenantService.defaultTenant);
                 //得到用户的带权限的目录树
                 setMap(userCategorys, userChildCategorys, 0, true);
                 setMap(userCategorys, userParentCategorys, 0, false);
@@ -568,15 +568,15 @@ public class RoleService {
     public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode()) || 4 == categorytype) {
-            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype);
+            List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype,TenantService.defaultTenant);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         } else {
-            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype);
+            List<String> userBusinessCategories = roleDAO.getCategorysByTypeIds(userRoleId, categorytype,TenantService.defaultTenant);
             if (userBusinessCategories.size() > 0) {
-                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype);
-                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype);
+                List<RoleModulesCategories.Category> userChildCategorys = roleDAO.getChildCategorys(userBusinessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> userParentCategorys = roleDAO.getParentCategorys(userBusinessCategories, categorytype,TenantService.defaultTenant);
+                List<RoleModulesCategories.Category> userPrivilegeCategorys = roleDAO.getCategorysByType(userRoleId, categorytype,TenantService.defaultTenant);
                 //按角色方案
                 List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(userRoleId);
                 List<Integer> modules = new ArrayList<>();
@@ -669,7 +669,7 @@ public class RoleService {
 
     @Transactional
     public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList) {
-        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype);
+        List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype,TenantService.defaultTenant);
         ArrayList<CategoryPrivilege> others = new ArrayList<>();
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);

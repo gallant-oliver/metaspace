@@ -47,8 +47,10 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -99,8 +102,8 @@ public class TaskManageREST {
     @Path("/{my}/tasks")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<TaskHeader> getTaskList(@PathParam("my") Integer my, Parameters parameters) throws AtlasBaseException {
-        return taskManageService.getTaskList(my, parameters);
+    public PageResult<TaskHeader> getTaskList(@PathParam("my") Integer my, Parameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskList(my, parameters,tenantId);
     }
 
     /**
@@ -176,8 +179,8 @@ public class TaskManageREST {
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getDatabaseList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getDatabasePageResult(true, parameters);
+    public PageResult getDatabaseList(Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return searchService.getDatabasePageResult(true, parameters, tenantId, AdminUtils.getUserData().getAccount());
     }
 
     /**
@@ -220,8 +223,8 @@ public class TaskManageREST {
     @Path("/search/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult searchTableList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getTablePageResultV2(true, parameters);
+    public PageResult searchTableList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return searchService.getTablePageResultV2(true, parameters,tenantId,AdminUtils.getUserData().getAccount());
     }
 
     /**
@@ -234,8 +237,8 @@ public class TaskManageREST {
     @Path("/search/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult searchColumnList(Parameters parameters) throws AtlasBaseException {
-        return searchService.getColumnPageResultV2(true, parameters);
+    public PageResult searchColumnList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return searchService.getColumnPageResultV2(true, parameters,tenantId,AdminUtils.getUserData().getAccount());
     }
 
     /**
@@ -247,8 +250,8 @@ public class TaskManageREST {
     @Path("/rule/groups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getAll() throws AtlasBaseException {
-        return dataManageService.getAll(CategoryType);
+    public List<CategoryPrivilege> getAll(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CategoryType): dataManageService.getAllByUserGroup(CategoryType, tenantId);
     }
 
     /**
@@ -263,8 +266,8 @@ public class TaskManageREST {
     @Path("/{groupId}/{objType}/rules")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")Integer objType, List<String> objIdList) throws AtlasBaseException {
-        return taskManageService.getValidRuleList(groupId, objType, objIdList);
+    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")Integer objType, List<String> objIdList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getValidRuleList(groupId, objType, objIdList,tenantId);
     }
 
     /**
@@ -277,16 +280,16 @@ public class TaskManageREST {
     @Path("/{groupId}/warningGroup")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroup(@PathParam("groupId")String groupId) throws AtlasBaseException {
-        return taskManageService.getWarningGroupList(groupId);
+    public List<TaskWarningHeader.WarningGroupHeader> getWarningGroup(@PathParam("groupId")String groupId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getWarningGroupList(groupId,tenantId);
     }
 
     @GET
     @Path("/warningGroup")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroupList() throws AtlasBaseException {
-        return taskManageService.getAllWarningGroup();
+    public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroupList(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getAllWarningGroup(tenantId);
     }
 
     /**
@@ -299,9 +302,9 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public void addTask(TaskInfo taskInfo) throws AtlasBaseException {
+    public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
-        taskManageService.addTask(taskInfo);
+        taskManageService.addTask(taskInfo,tenantId);
     }
 
     @GET

@@ -37,38 +37,41 @@ import java.util.Map;
  * @date 2019/3/4 9:57
  */
 public interface HomePageDAO {
-    @Select("select count(1) from businessinfo where technicalstatus=1 and businessstatus=1")
-    public long getAddedBusinessCount();
+    @Select("select count(1) from businessinfo where technicalstatus=1 and businessstatus=1 and tenantid=#{tenantId}")
+    public long getAddedBusinessCount(@Param("tenantId")String tenantId);
 
-    @Select("select count(1) from businessinfo where technicalstatus!=1 or businessstatus!=1")
-    public long getNoAddedBusinessCount();
+    @Select("select count(1) from businessinfo where tenantid=#{tenantId} and technicalstatus!=1 or businessstatus!=1 ")
+    public long getNoAddedBusinessCount(@Param("tenantId")String tenantId);
 
-    @Select("select count(1) from businessinfo")
-    public long getBusinessCount();
+    @Select("select count(1) from businessinfo where tenantid=#{tenantId}")
+    public long getBusinessCount(@Param("tenantId")String tenantId);
 
     @Select({" <script>",
             " select tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name as displayName, count(*) as times from business2Table",
-            " join tableInfo on business2table.tableGuid=tableInfo.tableGuid group by tableInfo.tableGuid,tableInfo.tableName",
+            " join tableInfo on business2table.tableGuid=tableInfo.tableGuid join businessinfo on businessinfo.businessid=business2Table.businessid " +
+            " where businessinfo.tenantid=#{tenantId}" +
+            " group by tableInfo.tableGuid,tableInfo.tableName",
             " order by times desc",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<TableUseInfo> getTableRelatedInfo(@Param("limit") int limit, @Param("offset") int offset);
+    public List<TableUseInfo> getTableRelatedInfo(@Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
-    @Select("select count(DISTINCT businessId) as totalBusiness,count(distinct tableGuid) as totalTable from business2table")
-    public Map<String, Long> getTotalInfo();
+    @Select("select count(DISTINCT businessinfo.businessId) as totalBusiness,count(distinct tableGuid) as totalTable from business2table join businessinfo on businessinfo.businessid=business2Table.businessid " +
+            "where businessinfo.tenantid=#{tenantId}")
+    public Map<String, Long> getTotalInfo(@Param("tenantId")String tenantId);
 
-    @Select("select count(*) from businessInfo where technicalStatus=#{technicalStatus}")
-    public long getTechnicalStatusNumber(@Param("technicalStatus") int type);
+    @Select("select count(*) from businessInfo where technicalStatus=#{technicalStatus} and tenantid=#{tenantId}")
+    public long getTechnicalStatusNumber(@Param("technicalStatus") int type,@Param("tenantId")String tenantId);
 
 
-    @Insert("insert into statistical(statisticalid,date,statistical,statisticaltypeid) values(#{id},#{date},#{statistical},#{type})")
-    public int addStatistical(@Param("id") String id, @Param("date") long date, @Param("statistical") long statistical, @Param("type") int type);
+    @Insert("insert into statistical(statisticalid,date,statistical,statisticaltypeid,tenantid) values(#{id},#{date},#{statistical},#{type},#{tenantId})")
+    public int addStatistical(@Param("id") String id, @Param("date") long date, @Param("statistical") long statistical, @Param("type") int type,@Param("tenantId") String tenantId);
 
-    @Select("select date,statistical from statistical where date<=#{endDate} and date>=#{startDate} and statisticaltypeid=#{type} order by date desc")
-    public List<DateStatistical> getStatisticalByDateType(@Param("startDate") long startDate, @Param("endDate") long endDate, @Param("type") int type);
+    @Select("select date,statistical from statistical where date<=#{endDate} and date>=#{startDate} and statisticaltypeid=#{type} and tenantid=#{tenantId} order by date desc")
+    public List<DateStatistical> getStatisticalByDateType(@Param("startDate") long startDate, @Param("endDate") long endDate, @Param("type") int type,@Param("tenantId")String tenantId);
 
 
     @Select("select statistical from statistical where date=#{date} and statisticaltypeid=#{type}")
@@ -78,32 +81,32 @@ public interface HomePageDAO {
     @Select({" <script>",
             " select D.guid,D.level2name as name,D.level3count as logicDBTotal,COALESCE(E.level4count,0) as entityDBTotal from",
             " (select guid,level2name,count(level3name) as level3count from",
-            " (select A.guid as guid,A.name as level2name,B.name as level3name from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid}) C GROUP BY C.level2name,C.guid) D",
+            " (select A.guid as guid,A.name as level2name,B.name as level3name from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and (A.tenantid=#{tenantId} or A.tenantid='all')) C GROUP BY C.level2name,C.guid) D",
             " left JOIN",
             " (select grandParentGuid,count(*) as level4count from category JOIN ",
-            " (select  B.guid as parentGuid, A.guid as grandParentGuid from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid}) C ON parentCategoryGuid = C.parentGuid GROUP BY grandParentGuid) E on D.guid = E.grandParentGuid",
+            " (select  B.guid as parentGuid, A.guid as grandParentGuid from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and (A.tenantid=#{tenantId} or A.tenantid='all')) C ON parentCategoryGuid = C.parentGuid GROUP BY grandParentGuid) E on D.guid = E.grandParentGuid",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<CategoryDBInfo> getCategoryRelatedDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset);
+    public List<CategoryDBInfo> getCategoryRelatedDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
-    @Select("select count(*) from category where parentCategoryGuid=#{guid}")
-    public long getCountCategory(@Param("guid") String guid);
+    @Select("select count(*) from category where parentCategoryGuid=#{guid} and (tenantid=#{tenantId} or tenantid='all')")
+    public long getCountCategory(@Param("guid") String guid,@Param("tenantId")String tenantId);
 
     @Select({" <script>",
-            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid}) A on B.parentCategoryGuid=A.guid GROUP BY A.guid,A.name",
+            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid} and (tenantid=#{tenantId} or tenantid='all')) A on B.parentCategoryGuid=A.guid GROUP BY A.guid,A.name",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<CategoryDBInfo> getChildSystemDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset);
+    public List<CategoryDBInfo> getChildSystemDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset,@Param("tenantId") String tenantId);
 
-    @Select("select count(1) from category where parentcategoryguid=#{parentGuid}")
-    public long getSubSystemTotal(String parentGuid);
+    @Select("select count(1) from category where parentcategoryguid=#{parentGuid} and tenantid=#{tenantId}")
+    public long getSubSystemTotal(@Param("parentGuid") String parentGuid,@Param("tenantId")String tenantId);
 
-    @Delete("delete  from statistical where date=#{date} ")
-    public int deleteStatistical(long date);
+    @Delete("delete  from statistical where date=#{date} and tenantid=#{tenantId}")
+    public int deleteStatistical(@Param("date") long date,@Param("tenantId")String tenantId);
 }

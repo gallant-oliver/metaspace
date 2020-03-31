@@ -63,6 +63,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -101,17 +102,17 @@ public class DataSourceREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean setNewDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean setNewDataSource(DataSourceBody dataSourceBody,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
 
         dataSourceBody.setSourceId(UUID.randomUUID().toString());
-        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
+        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
 
         dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
-        dataSourceService.setNewDataSource(dataSourceBody,false);
+        dataSourceService.setNewDataSource(dataSourceBody,false,tenantId);
         return true;
     }
 
@@ -125,16 +126,16 @@ public class DataSourceREST {
     @Path("/api")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean setNewApiDataSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean setNewApiDataSource(DataSourceBody dataSourceBody,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         dataSourceBody.setSourceId(UUID.randomUUID().toString());
-        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
+        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
 
         dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
-        dataSourceService.setNewDataSource(dataSourceBody,true);
+        dataSourceService.setNewDataSource(dataSourceBody,true,tenantId);
         return true;
     }
 
@@ -148,9 +149,9 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public boolean updateDateSource(DataSourceBody dataSourceBody) throws AtlasBaseException {
+    public boolean updateDateSource(DataSourceBody dataSourceBody,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
 
-        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId())!=0){
+        if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
         }
 
@@ -249,8 +250,8 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<DataSourceHead> searchDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortby") String sortby,@QueryParam("order") String order,
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
-                                                        @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
-        PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,false);
+                                                        @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,false,tenantId);
         pageResult.getLists().stream().forEach(dataSourceHead -> {
             if (importings.containsKey(dataSourceHead.getSourceId())&&importings.get(dataSourceHead.getSourceId()).get()==true){
                 dataSourceHead.setSynchronize(true);
@@ -282,8 +283,8 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<DataSourceHead> searchApiDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortby") String sortby,@QueryParam("order") String order,
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
-                                                        @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName) throws AtlasBaseException {
-        PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true);
+                                                        @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true,tenantId);
         return pageResult;
 
     }
@@ -298,9 +299,9 @@ public class DataSourceREST {
     @Path("/export")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downloadExcelTemplate(List<String> sourceIds) throws AtlasBaseException, IOException, SQLException {
+    public void downloadExcelTemplate(List<String> sourceIds,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException, IOException, SQLException {
         try {
-            File xlsxFile = dataSourceService.exportExcel(sourceIds);
+            File xlsxFile = dataSourceService.exportExcel(sourceIds,tenantId);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
             //String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
@@ -329,7 +330,7 @@ public class DataSourceREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DataSourceCheckMessage checkColumnNam(@FormDataParam("file") InputStream fileInputStream,
-                                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws AtlasBaseException {
+                                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
@@ -342,7 +343,7 @@ public class DataSourceREST {
             if(file.length() > MAX_EXCEL_FILE_SIZE) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
             }
-            return dataSourceService.importDataSource(file);
+            return dataSourceService.importDataSource(file,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -366,8 +367,8 @@ public class DataSourceREST {
     @Path("/noAuthorize/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataSourceAuthorizeUser getNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
-        return dataSourceService.getNoAuthorizeUser(sourceId,query,false);
+    public DataSourceAuthorizeUser getNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataSourceService.getNoAuthorizeUser(sourceId,query,false,tenantId);
     }
 
     @POST
@@ -391,8 +392,8 @@ public class DataSourceREST {
     @Path("/api/noAuthorize/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataSourceAuthorizeUser getApiNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query) throws AtlasBaseException {
-        return dataSourceService.getNoAuthorizeUser(sourceId,query,true);
+    public DataSourceAuthorizeUser getApiNoAuthorizeUserId(@PathParam("sourceId") String sourceId,@QueryParam("query") String query,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataSourceService.getNoAuthorizeUser(sourceId,query,true,tenantId);
     }
 
     @POST
@@ -467,16 +468,16 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/updateUser")
-    public List<String> getUpdateUserName() throws Exception {
-        return dataSourceService.getUpdateUserName(false);
+    public List<String> getUpdateUserName(@HeaderParam("tenantId")String tenantId) throws Exception {
+        return dataSourceService.getUpdateUserName(false,tenantId);
     }
 
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/api/updateUser")
-    public List<String> getApiUpdateUserName() throws Exception {
-        return dataSourceService.getUpdateUserName(true);
+    public List<String> getApiUpdateUserName(@HeaderParam("tenantId")String tenantId) throws Exception {
+        return dataSourceService.getUpdateUserName(true,tenantId);
     }
 
     @PUT
@@ -493,8 +494,8 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/manager")
-    public List<UserIdAndName> getManager() throws Exception {
-        return dataSourceService.getManager();
+    public List<UserIdAndName> getManager(@HeaderParam("tenantId")String tenantId) throws Exception {
+        return dataSourceService.getManager(tenantId);
     }
 
     @POST

@@ -77,10 +77,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response insertAPIInfo(APIInfo info) throws AtlasBaseException {
+    public Response insertAPIInfo(APIInfo info,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), info.getName());
         try {
-            shareService.insertAPIInfo(info);
+            shareService.insertAPIInfo(info,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -108,10 +108,10 @@ public class DataShareREST {
     @Path("/same")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean querySameName(APIInfo info) throws AtlasBaseException {
+    public boolean querySameName(APIInfo info,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             String name = info.getName();
-            return shareService.querySameName(name);
+            return shareService.querySameName(name,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
@@ -155,10 +155,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updateAPIInfo(@PathParam("apiGuid") String guid, APIInfo info) throws AtlasBaseException {
+    public Response updateAPIInfo(@PathParam("apiGuid") String guid, APIInfo info,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), info.getName());
         try {
-            shareService.updateAPIInfo(guid, info);
+            shareService.updateAPIInfo(guid, info,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -197,9 +197,9 @@ public class DataShareREST {
     @Path("/{groupGuid}/{my}/{publish}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish, Parameters parameters) throws AtlasBaseException {
+    public PageResult<APIInfoHeader> getAPIList(@PathParam("groupGuid")String guid, @PathParam("my")Integer my, @PathParam("publish")String publish, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return shareService.getAPIList(guid, my, publish, parameters);
+            return shareService.getAPIList(guid, my, publish, parameters,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
@@ -217,10 +217,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response insertGroup(APIGroup group) throws AtlasBaseException {
+    public Response insertGroup(APIGroup group,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), group.getName());
         try {
-            groupService.insertGroup(group);
+            groupService.insertGroup(group,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -265,10 +265,10 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response updateGroup(@PathParam("groupId") String guid, APIGroup group) throws AtlasBaseException {
+    public Response updateGroup(@PathParam("groupId") String guid, APIGroup group,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), group.getName());
         try {
-            groupService.updateGroup(guid, group);
+            groupService.updateGroup(guid, group,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -286,9 +286,9 @@ public class DataShareREST {
     @Path("/groups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<APIGroup> updateGroup() throws AtlasBaseException {
+    public List<APIGroup> updateGroup(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return groupService.getGroupList();
+            return groupService.getGroupList(tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -306,9 +306,9 @@ public class DataShareREST {
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getDatabaseByQuery(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -325,9 +325,9 @@ public class DataShareREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getDatabaseAndTableByQuery(Parameters parameters) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseAndTableByQuery(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -346,9 +346,9 @@ public class DataShareREST {
     @Path("/tables/{databaseId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<TableInfo> getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters);
+            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters,tenantId);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -422,7 +422,7 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response publish(List<String> apiGuidList) throws AtlasBaseException {
+    public Response publish(List<String> apiGuidList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
 
             List<String> apiNameList = new ArrayList<>();
@@ -436,7 +436,7 @@ public class DataShareREST {
             }
             HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量发布API:[" + Joiner.on("、").join(apiNameList) + "]");
 
-            shareService.publishAPI(apiGuidList);
+            shareService.publishAPI(apiGuidList,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -456,7 +456,7 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response unPublish(List<String> apiGuidList) throws AtlasBaseException {
+    public Response unPublish(List<String> apiGuidList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             List<String> apiNameList = new ArrayList<>();
             for (String apiGuid : apiGuidList) {
@@ -468,7 +468,7 @@ public class DataShareREST {
                 }
             }
             HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量撤销发布API:[" + Joiner.on("、").join(apiNameList) + "]");
-            shareService.unpublishAPI(apiGuidList);
+            shareService.unpublishAPI(apiGuidList,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         }
@@ -531,11 +531,11 @@ public class DataShareREST {
     @Path("/swagger/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public APIContent getSwagger(@PathParam("guid") String guid) throws Exception {
+    public APIContent getSwagger(@PathParam("guid") String guid,@HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             List<String> list = new ArrayList<>();
             list.add(guid);
-            APIContent content = shareService.generateAPIContent(list);
+            APIContent content = shareService.generateAPIContent(list,tenantId);
             return content;
         } catch (AtlasBaseException e) {
             throw e;
@@ -548,9 +548,9 @@ public class DataShareREST {
     @Path("/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getUserList(Parameters parameters) throws Exception {
+    public PageResult getUserList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws Exception {
         try {
-            return shareService.getUserList(parameters);
+            return shareService.getUserList(parameters,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -578,8 +578,8 @@ public class DataShareREST {
     @Path("/oracle/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getDataSourceList(Parameters parameters) throws AtlasBaseException {
-        return shareService.getOracleDataSourceList(parameters);
+    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return shareService.getOracleDataSourceList(parameters,tenantId);
     }
 
     @POST

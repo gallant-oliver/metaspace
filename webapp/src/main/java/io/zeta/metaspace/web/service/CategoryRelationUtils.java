@@ -46,20 +46,21 @@ public class CategoryRelationUtils {
     CategoryDAO categoryDAO;
     @Autowired
     RoleService roleService;
-
+    @Autowired
+    UserGroupService userGroupService;
     private static CategoryRelationUtils utils;
 
     @PostConstruct
     public void init() {
         utils = this;
     }
-
+    //独立部署
     public static List<String> getPermissionCategoryList(String roleId, int categoryType) throws AtlasBaseException {
         try {
             Map<String, RoleModulesCategories.Category> userCategorys = null;
             List<String> categoryIds = new ArrayList<>();
             if (SystemRole.ADMIN.getCode().equals(roleId)) {
-                categoryIds = utils.categoryDAO.getAllCategory(categoryType);
+                categoryIds = utils.categoryDAO.getAllCategory(categoryType,TenantService.defaultTenant);
 
             } else {
                 userCategorys = utils.roleService.getUserStringCategoryMap(roleId, categoryType);
@@ -69,6 +70,26 @@ public class CategoryRelationUtils {
                     if (category.isShow()) {
                         categoryIds.add(category.getGuid());
                     }
+                }
+            }
+            return categoryIds;
+        } catch (Exception e) {
+            LOG.error("导出Excel失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
+        }
+    }
+
+    //多租户
+    public static List<String> getPermissionCategoryListV2(String userGroupId, int categoryType,String tenantId) throws AtlasBaseException {
+        try {
+            Map<String, RoleModulesCategories.Category> userCategorys = null;
+            List<String> categoryIds = new ArrayList<>();
+            userCategorys = utils.userGroupService.getUserStringCategoryMap(userGroupId, categoryType,tenantId);
+            Collection<RoleModulesCategories.Category> valueCollection = userCategorys.values();
+            List<RoleModulesCategories.Category> valueList = new ArrayList<>(valueCollection);
+            for (RoleModulesCategories.Category category : valueList) {
+                if (category.isShow()) {
+                    categoryIds.add(category.getGuid());
                 }
             }
             return categoryIds;

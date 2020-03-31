@@ -95,13 +95,13 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     @Valid
-    public void insert(DataStandard dataStandard) throws AtlasBaseException {
+    public void insert(DataStandard dataStandard,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("标准编号已存在");
         }
-        dataStandardService.insert(dataStandard);
+        dataStandardService.insert(dataStandard,tenantId);
     }
 
     @PUT
@@ -136,8 +136,8 @@ public class DataStandardREST {
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters) throws AtlasBaseException {
-        return dataStandardService.queryPageByCatetoryId(categoryId, parameters);
+    public PageResult<DataStandard> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataStandardService.queryPageByCatetoryId(categoryId, parameters,tenantId);
     }
 
     @DELETE
@@ -155,8 +155,8 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(DataStandardQuery parameters) throws AtlasBaseException {
-        return dataStandardService.search(parameters);
+    public PageResult<DataStandard> search(DataStandardQuery parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataStandardService.search(parameters,tenantId);
     }
 
     @POST
@@ -217,8 +217,8 @@ public class DataStandardREST {
     @GET
     @Path("/export/category/{categoryId}")
     @Valid
-    public void exportCategoryId(@PathParam("categoryId") String categoryId) throws Exception {
-        File exportExcel = dataStandardService.exportExcel(categoryId);
+    public void exportCategoryId(@PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws Exception {
+        File exportExcel = dataStandardService.exportExcel(categoryId,tenantId);
         try {
             String filePath = exportExcel.getAbsolutePath();
             String fileName = filename(filePath);
@@ -238,7 +238,7 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     public Response importDataStandard(@PathParam("categoryId") String categoryId,
                                        @FormDataParam("file") InputStream fileInputStream,
-                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,@HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
@@ -252,7 +252,7 @@ public class DataStandardREST {
             if(file.length() > MAX_EXCEL_FILE_SIZE) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
             }
-            dataStandardService.importDataStandard(categoryId, file);
+            dataStandardService.importDataStandard(categoryId, file,tenantId);
             return Response.ok().build();
         } catch (AtlasBaseException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
@@ -275,8 +275,8 @@ public class DataStandardREST {
     @Path("/category/{categoryType}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType) throws AtlasBaseException {
-        return dataStandardService.getCategory(categoryType);
+    public List<CategoryPrivilege> getAll(@PathParam("categoryType") Integer categoryType,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataStandardService.getCategory(categoryType,tenantId);
     }
 
     /**
@@ -291,9 +291,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public CategoryPrivilege insert(CategoryInfoV2 categoryInfo) throws Exception {
+    public CategoryPrivilege insert(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws Exception {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        return dataStandardService.addCategory(categoryInfo);
+        return dataStandardService.addCategory(categoryInfo,tenantId);
     }
 
     /**
@@ -309,10 +309,10 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Valid
     @OperateType(DELETE)
-    public void delete(@PathParam("categoryGuid") String categoryGuid) throws Exception {
+    public void delete(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), category.getName());
-        dataStandardService.deleteCategory(categoryGuid);
+        dataStandardService.deleteCategory(categoryGuid,tenantId);
     }
 
     /**
@@ -327,9 +327,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public void update(CategoryInfoV2 categoryInfo) throws AtlasBaseException {
+    public void update(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), categoryInfo.getName());
-        dataStandardService.updateCategory(categoryInfo);
+        dataStandardService.updateCategory(categoryInfo,tenantId);
     }
 
     /**
@@ -377,9 +377,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public List<CategoryAndDataStandard> getCategoryAndStandard() throws AtlasBaseException {
+    public List<CategoryAndDataStandard> getCategoryAndStandard(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataStandardService.getCategoryAndStandard();
+            return dataStandardService.getCategoryAndStandard(tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取所有目录和数据标准失败："+e.getMessage());
         }

@@ -32,11 +32,11 @@ import java.util.List;
  */
 public interface DataShareGroupDAO {
 
-    @Insert("insert into apiGroup(guid,name,parentGuid,description,generator,generateTime,updater,updateTime)values(#{guid},#{name},#{parentGuid},#{description},#{generator},#{generateTime},#{updater},#{updateTime})")
-    public int insertGroup(APIGroup group);
+    @Insert("insert into apiGroup(guid,name,parentGuid,description,generator,generateTime,updater,updateTime,tenantid)values(#{group.guid},#{group.name},#{group.parentGuid},#{group.description},#{group.generator},#{group.generateTime},#{group.updater},#{group.updateTime},#{tenantId})")
+    public int insertGroup(@Param("group") APIGroup group,@Param("tenantId") String tenantId);
 
-    @Select("select count(1) from apiGroup where name=#{name}")
-    public int countGroupName(@Param("name")String name);
+    @Select("select count(1) from apiGroup where name=#{name} and tenantid=#{tenantId}")
+    public int countGroupName(@Param("name")String name,@Param("tenantId")String tenantId);
 
     @Delete("delete from apiGroup where guid=#{guid}")
     public int deleteGroup(@Param("guid") String guid);
@@ -50,6 +50,6 @@ public interface DataShareGroupDAO {
     @Update("update apiGroup set name=#{name},description=#{description},updater=#{updater},updateTime=#{updateTime} where guid=#{guid}")
     public int updateGroup(APIGroup group);
 
-    @Select("select * from apiGroup order by generateTime desc")
-    public List<APIGroup> getGroupList();
+    @Select("select * from apiGroup where tenantid=#{tenantId} or tenantid='all' order by generateTime desc")
+    public List<APIGroup> getGroupList(@Param("tenantId")String tenantId);
 }

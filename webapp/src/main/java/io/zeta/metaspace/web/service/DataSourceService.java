@@ -27,13 +27,17 @@ import io.zeta.metaspace.model.dataSource.DataSourceCheckMessage;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.security.SecuritySearch;
+import io.zeta.metaspace.model.security.UserAndModule;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.util.AESUtils;
@@ -87,6 +91,8 @@ public class DataSourceService {
 
     @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    private TenantService tenantService;
 
     @Autowired
     private MysqlMetaDataProvider mysqlMetaDataProvider;
@@ -94,6 +100,8 @@ public class DataSourceService {
     private AtlasTypeRegistry atlasTypeRegistry;
     @Autowired
     private PrivilegeDAO privilegeDAO;
+    @Autowired
+    private UserGroupDAO userGroupDAO;
 
 
     private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
@@ -107,7 +115,7 @@ public class DataSourceService {
      * @throws AtlasBaseException
      */
     @Transactional
-    public int setNewDataSource(DataSourceBody dataSourceBody,boolean isApi) throws AtlasBaseException {
+    public int setNewDataSource(DataSourceBody dataSourceBody,boolean isApi,String tenantId) throws AtlasBaseException {
         if (!dataSourceBody.getIp().matches("(((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2}))(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}")){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"ip格式错误");
         }
@@ -125,7 +133,7 @@ public class DataSourceService {
                 dataSourceDAO.addAuthorize(dataSourceBody.getSourceId(),userId);
             }
             dataSourceBody.setManager(userId);
-            return dataSourceDAO.add(userId,dataSourceBody,isApi);
+            return dataSourceDAO.add(userId,dataSourceBody,isApi,tenantId);
         }catch (Exception e) {
             LOG.error("数据源添加失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源添加失败：\n"+e.getMessage());
@@ -346,7 +354,7 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName,boolean isApi) throws AtlasBaseException {
+    public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName,boolean isApi,String tenantId) throws AtlasBaseException {
         try {
             DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
             PageResult<DataSourceHead> pageResult = new PageResult<>();
@@ -372,7 +380,7 @@ public class DataSourceService {
 
             parameters.setSortby(sortby);
             parameters.setOrder(order);
-
+            String abc = "abc";
             if (Objects.nonNull(dataSourceSearch.getSourceName()))
                 dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
             if (Objects.nonNull(dataSourceSearch.getSourceType()))
@@ -385,19 +393,14 @@ public class DataSourceService {
                 dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
             String userId = AdminUtils.getUserData().getUserId();
 
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            List<DataSourceHead> list = new ArrayList<>();
-            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
-                list = isApi?dataSourceDAO.searchApiAllDataSources(parameters,dataSourceSearch):dataSourceDAO.searchAllDataSources(parameters,dataSourceSearch);
-            }else{
-                list = isApi?dataSourceDAO.searchApiDataSources(parameters,dataSourceSearch,userId):dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId);
-            }
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId,tenantId);
+            List<DataSourceHead> list = isApi?dataSourceDAO.searchApiDataSources(parameters,dataSourceSearch,userId,tenantId):dataSourceDAO.searchDataSources(parameters,dataSourceSearch,userId,tenantId);
+
             for (DataSourceHead head:list) {
                 if (head.getManager()!=null) {
                     String manager = userDAO.getUserName(head.getManager());
                     head.setManager(manager);
                 }
-                head.setEditManager(roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode())));
                 String sourceId = head.getSourceId();
                 boolean rely;
                 if (isApi){
@@ -440,9 +443,9 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public int isSourceName(String sourceName,String sourceId) throws AtlasBaseException {
+    public int isSourceName(String sourceName,String sourceId,String tenantId) throws AtlasBaseException {
         try {
-            return dataSourceDAO.isSourceName(sourceName,sourceId);
+            return dataSourceDAO.isSourceName(sourceName,sourceId,tenantId);
         }catch (Exception e){
             LOG.error("SQL异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "SQL异常");
@@ -481,19 +484,23 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId,String query,boolean isApi) throws AtlasBaseException {
+    public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId,String query,boolean isApi,String tenantId) throws AtlasBaseException {
         try {
             if(Objects.nonNull(query))
                 query.replaceAll("%", "/%").replaceAll("_", "/_");
-
+            String manager = dataSourceDAO.getManagerBySourceId(sourceId);
             DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
-            List<UserIdAndName> noAuthorizeUsers = isApi?dataSourceDAO.getApiNoAuthorizeUser(sourceId,query):dataSourceDAO.getNoAuthorizeUser(sourceId,query);
-            dataSourceAuthorizeUser.setUsers(noAuthorizeUsers);
-            int totalSize = 0;
-            if (noAuthorizeUsers.size()!=0){
-                totalSize = noAuthorizeUsers.get(0).getTotalSize();
+            List<UserIdAndName> authorizeUsers = isApi?dataSourceDAO.getApiAuthorizeUser(sourceId,manager):dataSourceDAO.getAuthorizeUser(sourceId,manager);
+            List<UserIdAndName> noAuthorizeUsers = new ArrayList<>();
+            List<UserIdAndName> allUsers = getManager(tenantId);
+            for (UserIdAndName userIdAndName:allUsers){
+                if (authorizeUsers.stream().anyMatch(user -> user.getUserId().equals(userIdAndName.getUserId()))||manager.equals(userIdAndName.getUserId())){
+                    continue;
+                }
+                noAuthorizeUsers.add(userIdAndName);
             }
-            dataSourceAuthorizeUser.setTotalSize(totalSize);
+            dataSourceAuthorizeUser.setUsers(noAuthorizeUsers);
+            dataSourceAuthorizeUser.setTotalSize(noAuthorizeUsers.size());
             return dataSourceAuthorizeUser;
         }catch (Exception e){
             LOG.error("获取未授权用户失败", e);
@@ -508,20 +515,12 @@ public class DataSourceService {
      * @return
      */
     public boolean isManagerUserId(String sourceId,String userId){
-        List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-        if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
-            return true;
-        }
         return dataSourceDAO.isManagerUser(sourceId,userId)!=0;
     }
 
     public boolean isAuthorizeUser(String sourceId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = userDAO.getRoleIdByUserId(userId);
-            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
-                return true;
-            }
             return dataSourceDAO.isAuthorizeUser(sourceId,userId)!=0;
         }catch (AtlasBaseException e) {
             LOG.error("获取用户id失败", e);
@@ -638,9 +637,9 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public File exportExcel(List<String> sourceIds) throws AtlasBaseException {
+    public File exportExcel(List<String> sourceIds,String tenantId) throws AtlasBaseException {
         try {
-            boolean existOnPg = dataSourceDAO.exportDataSource() > 0 ? true : false;
+            boolean existOnPg = dataSourceDAO.exportDataSource(tenantId) > 0 ? true : false;
             List<DataSourceBody> datasourceList = null;
             if (!existOnPg) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无数据源");
@@ -689,7 +688,7 @@ public class DataSourceService {
     /**
      * 导入数据源
      */
-    public DataSourceCheckMessage checkDataSourceName(List<String> dataSourceList, List<DataSourceBody> dataSourceWithDisplayList) throws AtlasBaseException {
+    public DataSourceCheckMessage checkDataSourceName(List<String> dataSourceList, List<DataSourceBody> dataSourceWithDisplayList,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             DataSourceCheckMessage dataSourceCheckMessage = new DataSourceCheckMessage();
@@ -716,10 +715,10 @@ public class DataSourceService {
                     dataSourceCheckInfo.setErrorMessage("插入新数据源");
 
                     dataSource.setSourceId(UUID.randomUUID().toString());
-                    setNewDataSource(dataSource,false);
+                    setNewDataSource(dataSource,false,tenantId);
 
                 } else {
-                    String sourceId = dataSourceDAO.getSourceIdBySourceName(sourceName);
+                    String sourceId = dataSourceDAO.getSourceIdBySourceName(sourceName,tenantId);
                     if (getRely(sourceId)){
                         dataSourceCheckInfo.setErrorMessage("更新数据源失败，数据源存在依赖");
                         errorDataSourceCount++;
@@ -731,7 +730,7 @@ public class DataSourceService {
                     }else{
                         dataSourceCheckInfo.setErrorMessage("更新数据源");
                         dataSource.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-                        dataSourceDAO.updateDataSource(userId,dataSource);
+                        dataSourceDAO.updateDataSource(userId,dataSource,tenantId);
                     }
                 }
                 recordDataSourceList.add(sourceName);
@@ -767,13 +766,13 @@ public class DataSourceService {
     }
 
     @Transactional
-    public DataSourceCheckMessage importDataSource(File file) throws AtlasBaseException {
+    public DataSourceCheckMessage importDataSource(File file,String tenantId) throws AtlasBaseException {
         try {
             //提取excel数据
             List<DataSourceBody> dataSourceMap = convertExceltoMap(file);
-            List<String> dataSourceList= dataSourceDAO.getDataSourceList();
+            List<String> dataSourceList= dataSourceDAO.getDataSourceList(tenantId);
 
-            return checkDataSourceName(dataSourceList, dataSourceMap);
+            return checkDataSourceName(dataSourceList, dataSourceMap,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -902,14 +901,11 @@ public class DataSourceService {
         }
     }
 
-    public List<String> getUpdateUserName(boolean isApi) throws AtlasBaseException {
+    public List<String> getUpdateUserName(boolean isApi,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            if (roleIds!=null&&(roleIds.contains(SystemRole.ADMIN.getCode())||roleIds.contains(SystemRole.MANAGE.getCode()))){
-                return isApi?dataSourceDAO.getApiAllUpdateUserName():dataSourceDAO.getAllUpdateUserName();
-            }
-            return isApi?dataSourceDAO.getApiUpdateUserName(userId):dataSourceDAO.getUpdateUserName(userId);
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId,tenantId);
+            return isApi?dataSourceDAO.getApiUpdateUserName(userId,tenantId):dataSourceDAO.getUpdateUserName(userId,tenantId);
         } catch (AtlasBaseException e) {
             LOG.error("获取更新者失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取更新者失败\n"+e.getMessage());
@@ -920,12 +916,8 @@ public class DataSourceService {
         try {
 
             String userId = AdminUtils.getUserData().getUserId();
-            List<String> managerRoleIds = roleDAO.getRoleIdByUserId(managerUserId);
             if(!isManagerUserId(sourceId,userId)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非平台管理员，管理员和管理者无法更改数据源管理者");
-            }
-            if (managerRoleIds==null||managerRoleIds.size()==0){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无角色或删除用户无法成为管理者");
             }
 
             Timestamp updateTime = new Timestamp(System.currentTimeMillis());
@@ -960,11 +952,27 @@ public class DataSourceService {
         }
     }
 
-    public List<UserIdAndName> getManager() throws AtlasBaseException {
+    public List<UserIdAndName> getManager(String tenantId) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
-            List<String> roleIds = roleDAO.getRoleIdByUserId(userId);
-            return dataSourceDAO.getManager();
+            if (TenantService.defaultTenant.equals(tenantId)){
+                return dataSourceDAO.getManager();
+            }else{
+                SecuritySearch securitySearch = new SecuritySearch();
+                securitySearch.setTenantId(tenantId);
+                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0,-1,securitySearch);
+                List<UserIdAndName> users = new ArrayList<>();
+                for (UserAndModule userAndModule:userAndModules.getLists()){
+                    if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASOURCE.getAlias().equalsIgnoreCase(module.getRoleName()))){
+                        continue;
+                    }
+                    UserIdAndName user = new UserIdAndName();
+                    user.setUserName(userAndModule.getUserName());
+                    user.setAccount(userAndModule.getEmail());
+                    user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+                    users.add(user);
+                }
+                return users;
+            }
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:" + e.getMessage());
