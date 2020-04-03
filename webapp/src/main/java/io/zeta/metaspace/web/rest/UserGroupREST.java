@@ -25,6 +25,9 @@ import io.zeta.metaspace.model.usergroup.UserGroupCategories;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.model.dataSource.SourceAndPrivilege;
+import io.zeta.metaspace.model.dataSource.DataSourceIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -289,7 +292,7 @@ public class UserGroupREST {
     }
 
     /**
-     * 十五.修改用户组管理信息
+     * 修改用户组管理信息
      */
 
     @PUT
@@ -305,7 +308,101 @@ public class UserGroupREST {
             LOG.error("修改用户组管理信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"修改用户组管理信息失败");
         }
+    }
 
+    @GET
+    @Path("/{id}/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getProjectListAndSearch(
+            @PathParam("id") String groupId,
+            @DefaultValue("0") @QueryParam("offset") int offset,
+            @DefaultValue("10") @QueryParam("limit") int limit,
+            @QueryParam("search") String search) throws AtlasBaseException {
 
+        try {
+            PageResult<SourceAndPrivilege> pageResult = userGroupService.getSourceBySearch(groupId, offset, limit, search);
+            return ReturnUtil.success(pageResult);
+        }catch (Exception e) {
+            LOG.error("用户组项目列表及搜索失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组项目列表及搜索失败");
+        }
+    }
+
+    @GET
+    @Path("/{id}/add/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getUserGroupAddProjectsSearch(
+            @HeaderParam("tenantId") String tenantId,
+            @PathParam("id") String groupId,
+            @DefaultValue("0") @QueryParam("offset") int offset,
+            @DefaultValue("10") @QueryParam("limit") int limit,
+            @QueryParam("search") String search) throws AtlasBaseException {
+
+        try {
+            PageResult<DataSourceIdAndName> pageResult = userGroupService.getNoSourceBySearch(tenantId, groupId, offset, limit, search);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            LOG.error("获取用户组添加项目列表及搜索失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取用户组添加项目列表及搜索失败: ");
+        }
+    }
+
+    @POST
+    @Path("/{id}/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result addDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
+        try {
+            userGroupService.addDataSourceByGroupId(groupId, privileges);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            LOG.error("用户组添加项目失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加项目失败");
+        }
+    }
+
+    @PUT
+    @Path("/{id}/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result updateDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
+
+        try {
+            userGroupService.updateDataSourceByGroupId(groupId, privileges);
+            return ReturnUtil.success();
+        }catch (Exception e) {
+            LOG.error("用户组修改项目权限失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组修改项目权限失败");
+        }
+    }
+
+    @DELETE
+    @Path("/{userGroupId}/datasource/delete")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result deleteDataSourceByGroupId(@PathParam("userGroupId") String groupId, List<String> sourceIds) throws AtlasBaseException {
+        try {
+            userGroupService.deleteDataSourceByGroupId(groupId, sourceIds);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            LOG.error("用户组移除项目失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组移除项目失败");
+        }
+    }
+
+    @GET
+    @Path("/privileges")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourcePrivileges() throws AtlasBaseException {
+        try {
+            List<Map<String, String>> pageResult = userGroupService.getDataSourcePrivileges();
+            return ReturnUtil.success(pageResult);
+        }catch (Exception e) {
+            LOG.error("获取项目权限列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取项目权限列表失败");
+        }
     }
 }

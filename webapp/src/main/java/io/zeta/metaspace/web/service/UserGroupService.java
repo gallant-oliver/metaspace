@@ -14,6 +14,8 @@
 package io.zeta.metaspace.web.service;
 
 
+import io.zeta.metaspace.model.dataSource.DataSourceIdAndName;
+import io.zeta.metaspace.model.dataSource.SourceAndPrivilege;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -25,6 +27,8 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
+import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
+import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
@@ -33,6 +37,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,14 +62,14 @@ public class UserGroupService {
     UserGroupDAO userGroupDAO;
     @Autowired
     TenantService tenantService;
-    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String search) {
+    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
 
-        if (search != null) {
-            search = search.replaceAll("%", "/%").replaceAll("_", "/_");
+        if (query != null) {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
-        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, search);
+        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query);
 
 
         if (lists == null || lists.size() == 0) {
@@ -75,6 +80,8 @@ public class UserGroupService {
         for (UserGroupListAndSearchResult searchResult : lists) {
             String userName = userGroupDAO.getUserNameById(searchResult.getCreator());
             searchResult.setCreator(userName);
+            String authorize = userGroupDAO.getUserNameById(searchResult.getAuthorize());
+            searchResult.setAuthorize(authorize);
         }
 
 
@@ -387,10 +394,10 @@ public class UserGroupService {
         resultList.addAll(otherCategorys);
     }
     @Transactional
-    public void putPrivileges(String userGroupId, UserGroupCategories userGroupCategories) {
+    public void putPrivileges(String userGroupId, UserGroupCategories userGroupCategories) throws AtlasBaseException {
         userGroupDAO.deleteUserGroup2category(userGroupId);
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-        userGroupDAO.updateCategory(userGroupId, currentTime);
+        userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
         List<RoleModulesCategories.Category> businessCategories = userGroupCategories.getBusinessCategories();
         List<RoleModulesCategories.Category> technicalCategories = userGroupCategories.getTechnicalCategories();
         if (businessCategories != null) {
@@ -425,7 +432,7 @@ public class UserGroupService {
         for (Module module : modulesByUser) {
             modules.add(module.getModuleId());
         }
-        if (3 == categorytype||4 == categorytype||modules.contains(ModuleEnum.AUTHORIZATION.getId())) {
+        if (3 == categorytype||4 == categorytype) {
             List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorys(categorytype,tenantId);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
@@ -498,6 +505,14 @@ public class UserGroupService {
         return userCategorys;
     }
 
+    public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId){
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorys(categorytype,tenantId);
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true,false);
+        addPrivilege(userCategorys, allCategorys, privilege, categorytype);
+        return userCategorys;
+    }
+
     private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys, CategoryPrivilege.Privilege privilege, int categorytype) {
         String[] systemCategoryGuids = {"1", "2", "3", "4", "5"};
         List<String> lists = Arrays.asList(systemCategoryGuids);
@@ -527,10 +542,79 @@ public class UserGroupService {
         ArrayList<CategoryPrivilege> others = new ArrayList<>();
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true, false, false, false, false, false, false, false, false,false);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true, true, false, false, false, false, false, false, false,false);
             categoryPrivilege.setPrivilege(privilege);
             others.add(categoryPrivilege);
         }
         resultList.addAll(others);
+    }
+
+    public PageResult<SourceAndPrivilege> getSourceBySearch(String groupId, int offset, int limit, String search) {
+        PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
+
+        if (search != null) {
+            search = search.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
+        List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, search);
+        if (lists == null || lists.size() == 0) {
+            return commonResult;
+        }
+
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        commonResult.setTotalSize(lists.get(0).getTotalSize());
+        return commonResult;
+    }
+
+    public PageResult<DataSourceIdAndName> getNoSourceBySearch(String tenantId, String groupId, int offset, int limit, String search) {
+        PageResult<DataSourceIdAndName> commonResult = new PageResult<>();
+
+        if (search != null) {
+            search = search.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
+        List<DataSourceIdAndName> lists = null;
+        lists = userGroupDAO.getNoSourceBySearch(tenantId, groupId, offset, limit, search);
+        if (lists == null || lists.size() == 0) {
+            return commonResult;
+        }
+
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        commonResult.setTotalSize(lists.get(0).getTotalSize());
+        return commonResult;
+    }
+
+    public void addDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
+        if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
+            return;
+        }
+        userGroupDAO.addDataSourceByGroupId(groupId, privileges.getSourceIds(),privileges.getPrivilegeCode());
+    }
+
+    public void updateDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
+        if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
+            return;
+        }
+        userGroupDAO.updateDataSourceByGroupId(groupId,privileges);
+    }
+
+    public void deleteDataSourceByGroupId(String groupId, List<String> sourceIds) {
+        if (sourceIds == null||sourceIds.size()==0) {
+            return;
+        }
+        userGroupDAO.deleteDataSourceByGroupId(groupId, sourceIds);
+    }
+
+    public List<Map<String, String>> getDataSourcePrivileges() {
+        List<Map<String, String>> dataSourcePrivileges = new ArrayList<>();
+        Map<String,String> read = new HashMap<>();
+        read.put("privilegeName", UserPrivilegeDataSource.READ.getPrivilegeName());
+        read.put("privilegeCode",UserPrivilegeDataSource.READ.getPrivilege());
+        dataSourcePrivileges.add(read);
+        Map<String,String> write = new HashMap<>();
+        write.put("privilegeName", UserPrivilegeDataSource.WRITE.getPrivilegeName());
+        write.put("privilegeCode",UserPrivilegeDataSource.WRITE.getPrivilege());
+        dataSourcePrivileges.add(write);
+        return dataSourcePrivileges;
     }
 }

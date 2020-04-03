@@ -17,13 +17,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author lixiang03
- * @Data 2020/3/19 11:52
+ * @Data 2020/3/31 11:58
  */
-public class UserGroupIdAndName {
+public class UserGroupAndPrivilege {
     @JsonIgnore
     private long totalSize;
     private String id;
     private String name;
+    private String privilegeCode;
+    private String description;
+
+    public long getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(long totalSize) {
+        this.totalSize = totalSize;
+    }
 
     public String getId() {
         return id;
@@ -41,11 +51,19 @@ public class UserGroupIdAndName {
         this.name = name;
     }
 
-    public long getTotalSize() {
-        return totalSize;
+    public String getPrivilegeCode() {
+        return privilegeCode;
     }
 
-    public void setTotalSize(long totalSize) {
-        this.totalSize = totalSize;
+    public void setPrivilegeCode(String privilegeCode) {
+        this.privilegeCode = privilegeCode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

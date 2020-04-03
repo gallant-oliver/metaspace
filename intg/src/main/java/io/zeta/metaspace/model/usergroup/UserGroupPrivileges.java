@@ -13,39 +13,38 @@
 
 package io.zeta.metaspace.model.usergroup;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 /**
  * @author lixiang03
- * @Data 2020/3/19 11:52
+ * @Data 2020/3/31 15:25
  */
-public class UserGroupIdAndName {
-    @JsonIgnore
-    private long totalSize;
-    private String id;
-    private String name;
+public class UserGroupPrivileges {
+    private String userGroupId;
+    private String privilegeCode;
+    private List<String> sourceIds;
 
-    public String getId() {
-        return id;
+    public String getUserGroupId() {
+        return userGroupId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUserGroupId(String userGroupId) {
+        this.userGroupId = userGroupId;
     }
 
-    public String getName() {
-        return name;
+    public String getPrivilegeCode() {
+        return privilegeCode;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPrivilegeCode(String privilegeCode) {
+        this.privilegeCode = privilegeCode;
     }
 
-    public long getTotalSize() {
-        return totalSize;
+    public List<String> getSourceIds() {
+        return sourceIds;
     }
 
-    public void setTotalSize(long totalSize) {
-        this.totalSize = totalSize;
+    public void setSourceIds(List<String> sourceIds) {
+        this.sourceIds = sourceIds;
     }
 }

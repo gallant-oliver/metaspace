@@ -18,11 +18,13 @@ import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
+import io.zeta.metaspace.model.dataSource.DataSourcePrivileges;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.TableHeader;
+import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -118,9 +120,12 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
-            "from data_source ds join users us on ds.update_user_id=us.userid join data_source_authorize dsa on dsa.source_id=ds.source_id " +
-            "where dsa.authorize_user_id=#{userId} and (isapi=false or isapi is null) and tenantid=#{tenantId} " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            " from data_source ds left join ( " +
+            "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
+            "  where ug.user_id=#{userId} " +
+            ") da on da.source_id=ds.source_id " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) and ds.tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -153,9 +158,12 @@ public interface DataSourceDAO {
 
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
-            "from data_source ds join users us on ds.update_user_id=us.userid join data_source_api_authorize dsa on dsa.source_id=ds.source_id " +
-            "where dsa.authorize_user_id=#{userId} and isapi=true and tenantid=#{tenantId}" +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            " from data_source ds left join ( " +
+            "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
+            "  where ug.user_id=#{userId} " +
+            ") da on da.source_id=ds.source_id " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true and ds.tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -190,7 +198,7 @@ public interface DataSourceDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) and tenantid=#{tenantId}" +
+            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) and tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -225,7 +233,7 @@ public interface DataSourceDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
             "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid and ds.isapi=true and tenantid=#{tenantId}" +
+            "where ds.update_user_id=us.userid and ds.isapi=true and tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
             "</if>" +
@@ -444,4 +452,80 @@ public interface DataSourceDAO {
     //查询api数据源是否依赖
     @Select("select count(*) from apiinfo where sourceId=#{sourceId}")
     public int getAPIRely(@Param("sourceId") String sourceId);
+
+    @Select("select p.privilege_code from datasource_group_relation p join user_group_relation u on p.group_id=u.group_id " +
+            "where p.source_id=#{sourceId} and u.user_id=#{userId}")
+    public List<String> getUserPrivilegesDataSource(@Param("userId")String userId,@Param("sourceId") String sourceId);
+
+    @Select("<script> " +
+            "select count(*)over() totalSize,u.id,u.name from user_group u left join " +
+            "( select group_id from datasource_group_relation where source_id=#{sourceId} ) p on u.id=p.group_id where p.group_id is null and u.tenant=#{tenantId} and u.valid=true " +
+            "<if test='parameters.query!=null'>" +
+            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            " limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            " offset ${parameters.offset} " +
+            "</if> " +
+            " </script>")
+    public List<UserGroupIdAndName> getNoUserGroupByDataSource(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId, @Param("parameters") Parameters parameters);
+
+    @Select("<script> " +
+            "select count(*)over() totalSize,u.id,u.name,u.description,p.privilege_code privilegeCode from user_group u join " +
+            " datasource_group_relation p on u.id=p.group_id where p.source_id=#{sourceId} and u.tenant=#{tenantId} " +
+            "<if test='parameters.query!=null'>" +
+            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            " limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            " offset ${parameters.offset} " +
+            "</if> " +
+            " </script>")
+    public List<UserGroupAndPrivilege> getUserGroupByDataSource(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId, @Param("parameters") Parameters parameters);
+
+    @Delete({"<script> " +
+             "delete from datasource_group_relation where source_id=#{sourceId} and group_id in ",
+             "<foreach collection='userGroups' item='userGroup' index='index' separator=',' open='(' close=')'>" ,
+             "#{userGroup}",
+             "</foreach>",
+             " </script>"})
+    public Integer deleteUserGroupsByDataSource(@Param("sourceId")String sourceId,@Param("userGroups") List<String> userGroups);
+
+    @Update({"<script> " +
+             "update datasource_group_relation set " ,
+             "privilege_code=#{privileges.privilegeCode} " ,
+             "where source_id=#{sourceId} and group_id in ",
+             "<foreach collection='privileges.userGroups' item='userGroup' index='index' separator=',' open='(' close=')'>" ,
+             "#{userGroup}",
+             "</foreach>",
+             " </script>"})
+    public Integer updateUserGroupsByDataSource(@Param("sourceId")String sourceId,@Param("privileges") DataSourcePrivileges privileges);
+
+    @Select({"<script>select count(*) from datasource_group_relation where source_id=#{sourceId} and group_id in ",
+             "<foreach collection='userGroups' item='userGroup' index='index' separator=',' open='(' close=')'>" ,
+             "#{userGroup}",
+             "</foreach>",
+             "</script>"})
+    public int isUserGroup(@Param("sourceId") String sourceId,@Param("userGroups")List<String> userGroup);
+
+    @Insert({"<script>insert into datasource_group_relation(source_id,group_id,privilege_code) values ",
+             "<foreach item='item' index='index' collection='groupIds'",
+             "open='(' separator='),(' close=')'>",
+             "#{sourceId},#{item},#{privilege}",
+             "</foreach>",
+             "</script>"})
+    public Integer addUserGrooup2DataSource(@Param("sourceId")String sourceId,@Param("groupIds") List<String> groupIds,@Param("privilege") String privilege);
+
+    //删除授权
+    @Delete({"<script>",
+             "delete from datasource_group_relation where source_id in ",
+             "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+             "#{sourceId}",
+             "</foreach>",
+             "</script>"})
+    public int deleteRelationBySourceId(@Param("sourceIds") List<String> sourceIds);
 }
