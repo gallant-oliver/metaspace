@@ -173,6 +173,10 @@ public class DataManageService {
             List<Module> modules = tenantService.getModule(tenantId);
             if (type!=1&&type!=0){
                 valueList = userGroupService.getUserCategory(null, type,modules,tenantId);
+            }else if ((userGroups==null||userGroups.size()==0)//无用户组
+                      &&modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())//目录管理权限
+            ){
+                valueList = userGroupService.getAdminCategory(type,tenantId);
             }else{
                 Map<String,CategoryPrivilege> valueMap = new HashMap<>();
                 if (userGroups==null||userGroups.size()==0){
@@ -190,7 +194,11 @@ public class DataManageService {
                 }
                 valueList = new ArrayList<>(valueMap.values());
             }
-
+            if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())){
+                for (CategoryPrivilege categoryPrivilege:valueList){
+                    categoryPrivilege.getPrivilege().adminPrivilege();
+                }
+            }
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);

@@ -14,10 +14,15 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.dataSource.DataSourceIdAndName;
+import io.zeta.metaspace.model.dataSource.SourceAndPrivilege;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.usergroup.UserGroup;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
@@ -41,7 +46,7 @@ public interface UserGroupDAO {
 
     //实现用户组列表及搜索
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id,u.name,u.description,case when m.member is NULL then '0' else m.member end member,u.creator,u.createtime,u.updatetime " +
+            "select count(*) over() totalSize,u.id,u.name,u.description,case when m.member is NULL then '0' else m.member end member,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime " +
             " from user_group u left join " +
             " (select g.id id,count(*) member " +
             " from user_group  g " +
@@ -293,8 +298,8 @@ public interface UserGroupDAO {
     public List<String> getUserIdByUserGroup(String group_id);
 
     //更新用户组
-    @Update("update user_group set updatetime=#{updateTime} where id=#{groupId}")
-    public int updateCategory(@Param("groupId") String groupId, @Param("updateTime") Timestamp updateTime);
+    @Update("update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id=#{groupId}")
+    public int updateCategory(@Param("groupId") String groupId, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1 adn (tenantid=#{tenantId} or tenantid='all')")
     public List<String> getTopCategoryGuid(int categoryType,@Param("tenantId") String tenantId);
@@ -380,4 +385,79 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "</script>")
     public List<String> getTableIds(@Param("guids") List<String> guids,@Param("databases")List<String> databases);
+
+    @Select("<script> " +
+            "select count(*)over() totalSize,u.id,u.name from user_group u where u.tenant=#{tenantId} and u.valid=true" +
+            "<if test='parameters.query!=null'>" +
+            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            " limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            " offset ${parameters.offset} " +
+            "</if> " +
+            " </script>")
+    public List<UserGroupIdAndName> getUserGroup(@Param("tenantId")String tenantId, @Param("parameters") Parameters parameters);
+
+    @Select("<script>" +
+            "select count(*)over() totalSize,d.source_id sourceId,d.source_name sourceName,g.privilege_code privilegeCode,d.source_type sourceType " +
+            " from data_source d " +
+            " join datasource_group_relation g " +
+            " on d.source_id=g.source_id " +
+            " where g.group_id = #{groupId} " +
+            "<if test='search!=null'>" +
+            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<SourceAndPrivilege> getSourceBySearch(@Param("groupId") String groupId, @Param("offset") int offset, @Param("limit") int limit, @Param("search") String search);
+
+    @Select("<script>" +
+            " select count(*) over() totalSize,d.source_id sourceId,d.source_name sourceName from data_source d " +
+            " where d.source_id not in ( " +
+            " select r.source_id from datasource_group_relation r  where r.group_id=#{groupId} ) " +
+            " and d.tenantid= #{tenantId} " +
+            "<if test='search!=null'>" +
+            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<DataSourceIdAndName> getNoSourceBySearch(@Param("tenantId") String tenantId, @Param("groupId") String groupId, @Param("offset") int offset, @Param("limit") int limit, @Param("search") String search);
+
+    @Insert({"<script>insert into datasource_group_relation (source_id,group_id,privilege_code) values ",
+             "<foreach item='item' index='index' collection='sourceIds'",
+             "open='(' separator='),(' close=')'>",
+             "#{item},#{groupId},#{privilege}",
+             "</foreach>",
+             "</script>"})
+    public void addDataSourceByGroupId(@Param("groupId") String groupId, @Param("sourceIds") List<String> sourceIds,@Param("privilege") String privilege);
+
+    @Update({"<script> " +
+             "update datasource_group_relation set " ,
+             "privilege_code=#{privileges.privilegeCode} " ,
+             "where group_id=#{groupId} and source_id in ",
+             "<foreach collection='privileges.sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+             "#{sourceId}",
+             "</foreach>",
+             " </script>"})
+    public Integer updateDataSourceByGroupId(@Param("groupId")String groupId,@Param("privileges") UserGroupPrivileges privileges);
+
+    @Delete({"<script>",
+             "delete from datasource_group_relation where group_id=#{groupId} and source_id in ",
+             "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>",
+             "#{sourceId}",
+             "</foreach>",
+             "</script>"})
+    public void deleteDataSourceByGroupId(@Param("groupId") String groupId, @Param("sourceIds") List<String> sourceIds);
 }

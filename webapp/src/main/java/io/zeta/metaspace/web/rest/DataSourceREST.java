@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataSource.*;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
@@ -26,16 +27,20 @@ import io.zeta.metaspace.model.dataSource.DataSourceBody;
 import io.zeta.metaspace.model.dataSource.DataSourceConnection;
 import io.zeta.metaspace.model.dataSource.DataSourceHead;
 import io.zeta.metaspace.model.dataSource.DataSourceInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -62,6 +67,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -411,7 +417,8 @@ public class DataSourceREST {
     public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
         TableSchema  tableSchema = new TableSchema();
         tableSchema.setInstance(sourceId);
-        if (!dataSourceService.isAuthorizeUser(sourceId)) {
+        UserPrivilegeDataSource userPrivilegeDataSource = dataSourceService.getUserPrivilegesDataSource(AdminUtils.getUserData().getUserId(), sourceId);
+        if (userPrivilegeDataSource.getPrivilege().equals("r")) {
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
         }
         AtomicBoolean importing;
@@ -506,6 +513,116 @@ public class DataSourceREST {
         return dataSourceService.getSchema(limit,offset,dataSourceConnection);
     }
 
+    /**
+     * 获取对当前项目无权限的用户组
+     * @param id
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("/unuserGroups")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getNoUserGroupByDataSource(@HeaderParam("tenantId")String tenantId, @QueryParam("datasourceid") String id, @QueryParam("offset")int offset, @QueryParam("limit")@DefaultValue("10") int limit, @QueryParam("search")String search)
+            throws Exception
+    {
+        try {
+            Parameters parameters = new Parameters();
+            parameters.setLimit(limit);
+            parameters.setOffset(offset);
+            parameters.setQuery(search);
+            return ReturnUtil.success(dataSourceService.getNoUserGroupByDataSource(tenantId, parameters, id));
+        }catch (AtlasBaseException e){
+            LOG.error("获取无权限用户组失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取无权限用户组失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取无权限用户组失败："+e.getMessage());
+        }
+    }
 
+    @GET
+    @Path("/userGroup/{id}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getUserGroupByDataSource(@HeaderParam("tenantId")String tenantId,@PathParam("id") String id, @QueryParam("offset")int offset, @QueryParam("limit")@DefaultValue("10") int limit, @QueryParam("search")String search)
+            throws Exception
+    {
+        try {
+            Parameters parameters = new Parameters();
+            parameters.setLimit(limit);
+            parameters.setOffset(offset);
+            parameters.setQuery(search);
+            return ReturnUtil.success(dataSourceService.getUserGroupByDataSource(tenantId,parameters,id));
+        }catch (AtlasBaseException e){
+            LOG.error("获取用户组失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取权限用户组失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取权限用户组失败："+e.getMessage());
+        }
+    }
+
+    @DELETE
+    @Path("userGroups/{id}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result deleteUserGroupByDataSource(@PathParam("id") String id, List<String> userGroups)
+            throws Exception
+    {
+        try {
+            dataSourceService.deleteUserGroupByDataSource(userGroups,id);
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("删除用户组权限失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("删除用户组权限失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除用户组权限失败："+e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("{id}/userGroups")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result updateUserGroupByDataSource(@PathParam("id") String id, DataSourcePrivileges privileges)
+            throws Exception
+    {
+        try {
+            dataSourceService.updateUserGroupByDataSource(privileges,id);
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("更新用户组权限失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("更新用户组权限失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "更新用户组权限失败："+e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("{id}/privileges")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result addUserGroup2DataSource(@PathParam("id") String id, DataSourcePrivileges privileges)
+            throws Exception
+    {
+        LOG.info("新增项目用户组权限，项目id："+id+"用户组和权限"+privileges);
+        try {
+            dataSourceService.addUserGroup2DataSource(id,privileges);
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("新增项目用户组权限失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("新增项目用户组权限失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "新增项目用户组权限失败："+e.getMessage());
+        }
+
+    }
 
 }

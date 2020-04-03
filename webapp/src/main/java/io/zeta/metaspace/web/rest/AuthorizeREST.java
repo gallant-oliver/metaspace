@@ -68,10 +68,10 @@ public class AuthorizeREST {
             @DefaultValue("10") @QueryParam("limit") int limit,
             @DefaultValue("createTime")@QueryParam("sortBy") String sortBy,
             @DefaultValue("desc") @QueryParam("order") String order,
-            @QueryParam("search") String search) throws AtlasBaseException {
+            @QueryParam("query") String query) throws AtlasBaseException {
         try {
             LOG.info("获取用户组列表及搜索时，租户ID为:" + tenantId);
-            PageResult<UserGroupListAndSearchResult> pageResult = userGroupService.getUserGroupListAndSearch(tenantId, offset, limit, sortBy, order, search);
+            PageResult<UserGroupListAndSearchResult> pageResult = userGroupService.getUserGroupListAndSearch(tenantId, offset, limit, sortBy, order, query);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             LOG.error("用户组列表及搜索失败", e);

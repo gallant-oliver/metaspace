@@ -33,6 +33,25 @@ public class UserGroupListAndSearchResult {
     private Timestamp updateTime;
     @JsonIgnore
     private int totalSize;
+    private String authorize;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp authorizeTime;
+
+    public String getAuthorize() {
+        return authorize;
+    }
+
+    public void setAuthorize(String authorize) {
+        this.authorize = authorize;
+    }
+
+    public Timestamp getAuthorizeTime() {
+        return authorizeTime;
+    }
+
+    public void setAuthorizeTime(Timestamp authorizeTime) {
+        this.authorizeTime = authorizeTime;
+    }
 
     public String getId() {
         return id;
