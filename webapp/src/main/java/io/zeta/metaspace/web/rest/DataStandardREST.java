@@ -217,7 +217,7 @@ public class DataStandardREST {
     @GET
     @Path("/export/category/{categoryId}")
     @Valid
-    public void exportCategoryId(@PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public void exportCategoryId(@PathParam("categoryId") String categoryId,@QueryParam("tenantId") String tenantId) throws Exception {
         File exportExcel = dataStandardService.exportExcel(categoryId,tenantId);
         try {
             String filePath = exportExcel.getAbsolutePath();

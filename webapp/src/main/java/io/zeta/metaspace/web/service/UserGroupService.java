@@ -142,6 +142,7 @@ public class UserGroupService {
         userGroupDAO.deleteUserGroupByID(id);
         userGroupDAO.deleteUserGroupRelationByID(id);
         userGroupDAO.deleteCategoryGroupRelationByID(id);
+        userGroupDAO.deleteUserGroupDataSourceRelationByID(id);
     }
 
     /**
@@ -616,5 +617,49 @@ public class UserGroupService {
         write.put("privilegeCode",UserPrivilegeDataSource.WRITE.getPrivilege());
         dataSourcePrivileges.add(write);
         return dataSourcePrivileges;
+    }
+
+    /**
+     * 判断目录是否是用户有权限的目录
+     * @param userId
+     * @param categoryId
+     * @param tenantId
+     * @param type
+     * @return
+     */
+    public boolean isPrivilegeCategory(String userId,String categoryId,String tenantId,int type){
+        //获取用户的权限节点目录
+        List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId, tenantId);
+        List<String> categoryIds = new ArrayList<>();
+        for (UserGroup userGroup:userGroups){
+            List<String> privilegeCategory = userGroupDAO.getCategorysByTypeIds(userGroup.getId(), type, tenantId);
+            categoryIds.addAll(privilegeCategory);
+        }
+        if (categoryIds.size()==0){
+            return false;
+        }
+
+        //如果在权限节点当中，则代表有权限
+        if (categoryIds.contains(categoryId)){
+            return true;
+        }
+
+        //获取当前目录的父目录，如果父目录在权限节点当中，则有权限，否则无权限
+        ArrayList<String> list = new ArrayList<String>() {
+            {
+                add(categoryId);
+            }
+        };
+        List<RoleModulesCategories.Category> parentCategorys = userGroupDAO.getParentCategorys(list, type, tenantId);
+        if (parentCategorys==null||parentCategorys.size()==0){
+            return false;
+        }
+        for (RoleModulesCategories.Category category:parentCategorys){
+            if (categoryIds.contains(category.getGuid())){
+                return true;
+            }
+        }
+
+        return false;
     }
 }
