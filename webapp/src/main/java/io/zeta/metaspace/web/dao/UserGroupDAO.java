@@ -116,6 +116,9 @@ public interface UserGroupDAO {
     @Delete("delete from category_group_relation where category_id=#{id}")
     public void deleteCategoryGroupRelationByCategory(String id);
 
+    @Delete("delete from datasource_group_relation where group_id=#{id}")
+    public void deleteUserGroupDataSourceRelationByID(String id);
+
 
     /**
      * 五.用户组成员列表及搜索
