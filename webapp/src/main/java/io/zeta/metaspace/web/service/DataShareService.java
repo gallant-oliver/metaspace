@@ -378,7 +378,6 @@ public class DataShareService {
                 tableList.stream().forEach(table -> permissionTableList.add(table.getTableId()));
             }
             String userId = AdminUtils.getUserData().getUserId();
-            boolean enableEditManager = false;
 
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
@@ -389,7 +388,7 @@ public class DataShareService {
             List<APIInfoHeader> list = shareDAO.getAPIList(guid, my, publish, userId, query, limit, offset,tenantId);
             List<String> starAPIList = shareDAO.getUserStarAPI(userId,tenantId);
             for(APIInfoHeader header : list) {
-                header.setEnableEditManager(enableEditManager);
+                header.setEnableEditManager(userId.equals(header.getManager()));
                 if(permissionTableList.contains(header.getTableGuid())) {
                     header.setEnableClone(true);
                 } else {
@@ -1369,6 +1368,13 @@ public class DataShareService {
         return columnList;
     }
 
+    /**
+     * 获取管理者列表
+     * @param parameters
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult getUserList(Parameters parameters,String tenantId) throws AtlasBaseException {
         PageResult pageResult = new PageResult();
         long userTotalSize = 0;
@@ -1384,16 +1390,19 @@ public class DataShareService {
             }else{
                 SecuritySearch securitySearch = new SecuritySearch();
                 securitySearch.setTenantId(tenantId);
-                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(parameters.getOffset(), parameters.getLimit(), securitySearch);
-                userTotalSize=userAndModules.getTotalSize();
+                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
                 for (UserAndModule userAndModule:userAndModules.getLists()){
+                    if (userAndModule.getToolRoleResources()==null //不为空
+                        ||!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASHARE.getTenantModule().equalsIgnoreCase(module.getRoleName()))){//含有数据分享模块
+                        continue;
+                    }
                     User user = userDAO.getUserByName(userAndModule.getUserName(),userAndModule.getEmail());
                     userList.add(user);
                 }
             }
             pageResult.setLists(userList);
             pageResult.setCurrentSize(userList.size());
-            pageResult.setTotalSize(userTotalSize);
+            pageResult.setTotalSize(userList.size());
             return pageResult;
         } catch (Exception e) {
             LOG.error("获取用户列表失败", e);

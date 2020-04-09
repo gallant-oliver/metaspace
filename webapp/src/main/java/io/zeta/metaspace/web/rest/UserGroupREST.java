@@ -310,6 +310,15 @@ public class UserGroupREST {
         }
     }
 
+    /**
+     * 获取权限数据源
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -324,11 +333,21 @@ public class UserGroupREST {
             PageResult<SourceAndPrivilege> pageResult = userGroupService.getSourceBySearch(groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
         }catch (Exception e) {
-            LOG.error("用户组项目列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组项目列表及搜索失败");
+            LOG.error("用户组数据源列表及搜索失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组数据源列表及搜索失败");
         }
     }
 
+    /**
+     * 无权限数据源
+     * @param tenantId
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/{id}/add/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -344,11 +363,18 @@ public class UserGroupREST {
             PageResult<DataSourceIdAndName> pageResult = userGroupService.getNoSourceBySearch(tenantId, groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("获取用户组添加项目列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取用户组添加项目列表及搜索失败: ");
+            LOG.error("获取用户组添加数据源列表及搜索失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取用户组添加数据源列表及搜索失败: ");
         }
     }
 
+    /**
+     * 添加数据源
+     * @param groupId
+     * @param privileges
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -358,11 +384,18 @@ public class UserGroupREST {
             userGroupService.addDataSourceByGroupId(groupId, privileges);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组添加项目失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加项目失败");
+            LOG.error("用户组添加数据源失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
         }
     }
 
+    /**
+     * 修改数据源权限
+     * @param groupId
+     * @param privileges
+     * @return
+     * @throws AtlasBaseException
+     */
     @PUT
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -378,6 +411,12 @@ public class UserGroupREST {
         }
     }
 
+    /**删除数据源权限
+     * @param groupId
+     * @param sourceIds
+     * @return
+     * @throws AtlasBaseException
+     */
     @DELETE
     @Path("/{userGroupId}/datasource/delete")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -387,11 +426,16 @@ public class UserGroupREST {
             userGroupService.deleteDataSourceByGroupId(groupId, sourceIds);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组移除项目失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组移除项目失败");
+            LOG.error("用户组移除数据源失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据源失败");
         }
     }
 
+    /**
+     * 权限列表
+     * @return
+     * @throws AtlasBaseException
+     */
     @GET
     @Path("/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -401,8 +445,8 @@ public class UserGroupREST {
             List<Map<String, String>> pageResult = userGroupService.getDataSourcePrivileges();
             return ReturnUtil.success(pageResult);
         }catch (Exception e) {
-            LOG.error("获取项目权限列表失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取项目权限列表失败");
+            LOG.error("获取数据源权限列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取数据源权限列表失败");
         }
     }
 }
