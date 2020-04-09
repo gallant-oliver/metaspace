@@ -471,6 +471,12 @@ public class DataSourceREST {
         return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
+    /**
+     * 获取更新用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -487,6 +493,13 @@ public class DataSourceREST {
         return dataSourceService.getUpdateUserName(true,tenantId);
     }
 
+    /**
+     * 变更管理者
+     * @param userId
+     * @param sourceId
+     * @return
+     * @throws Exception
+     */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -497,6 +510,12 @@ public class DataSourceREST {
         return true;
     }
 
+    /**
+     * 可成为管理者用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -505,6 +524,14 @@ public class DataSourceREST {
         return dataSourceService.getManager(tenantId);
     }
 
+    /**
+     * 获取ORACLE数据源的schema
+     * @param limit
+     * @param offset
+     * @param dataSourceConnection
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -544,6 +571,16 @@ public class DataSourceREST {
         }
     }
 
+    /**
+     * 获取权限用户组列表
+     * @param tenantId
+     * @param id
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws Exception
+     */
     @GET
     @Path("/userGroup/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -566,6 +603,13 @@ public class DataSourceREST {
         }
     }
 
+    /**
+     * 删除用户组权限
+     * @param id
+     * @param userGroups
+     * @return
+     * @throws Exception
+     */
     @DELETE
     @Path("userGroups/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -585,6 +629,13 @@ public class DataSourceREST {
         }
     }
 
+    /**
+     * 更新用户组权限
+     * @param id
+     * @param privileges
+     * @return
+     * @throws Exception
+     */
     @POST
     @Path("{id}/userGroups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -604,6 +655,13 @@ public class DataSourceREST {
         }
     }
 
+    /**
+     * 新增用户组权限
+     * @param id
+     * @param privileges
+     * @return
+     * @throws Exception
+     */
     @PUT
     @Path("{id}/privileges")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

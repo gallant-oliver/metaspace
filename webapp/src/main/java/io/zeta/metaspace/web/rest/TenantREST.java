@@ -47,6 +47,11 @@ public class TenantREST {
     @Autowired
     UsersService usersService;
 
+    /**
+     * 获取租户列表
+     * @return
+     * @throws Exception
+     */
     @GET
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
@@ -64,6 +69,12 @@ public class TenantREST {
         }
     }
 
+    /**
+     * 获取模块列表
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     @GET
     @Path("module")
     @Consumes({MediaType.APPLICATION_JSON})
@@ -84,6 +95,12 @@ public class TenantREST {
 
     }
 
+    /**
+     * 获取资源池
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     @GET
     @Path("/pools")
     @Consumes({MediaType.APPLICATION_JSON})

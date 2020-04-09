@@ -266,7 +266,13 @@ public class UserGroupService {
 
 
 
-
+    /**
+     * 获取用户目录权限
+     * @param userGroupId
+     * @param tenant
+     * @param all
+     * @return
+     */
     @Transactional
     public UserGroupCategories getPrivileges(String userGroupId,String tenant,boolean all) throws AtlasBaseException {
         UserGroupCategories userGroupCategories = new UserGroupCategories();
@@ -341,6 +347,13 @@ public class UserGroupService {
         return resultList;
     }
 
+    /**
+     * 获取用户组权限
+     * @param userGroupId
+     * @param categorytype
+     * @param tenant
+     * @return
+     */
     @Transactional
     public Map<String, RoleModulesCategories.Category> getGroupStringCategoryMap(String userGroupId, int categorytype,String tenant) {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
@@ -357,6 +370,13 @@ public class UserGroupService {
         return categorys;
     }
 
+    /**
+     * 获取用户权限
+     * @param userGroupId
+     * @param categorytype
+     * @param tenant
+     * @return
+     */
     @Transactional
     public Map<String, RoleModulesCategories.Category> getUserStringCategoryMap(String userGroupId, int categorytype,String tenant) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
@@ -394,6 +414,13 @@ public class UserGroupService {
         }
         resultList.addAll(otherCategorys);
     }
+
+    /**
+     * 修改用户组方案及授权范围
+     * @param userGroupId
+     * @param userGroupCategories
+     * @throws AtlasBaseException
+     */
     @Transactional
     public void putPrivileges(String userGroupId, UserGroupCategories userGroupCategories) throws AtlasBaseException {
         userGroupDAO.deleteUserGroup2category(userGroupId);
@@ -550,6 +577,15 @@ public class UserGroupService {
         resultList.addAll(others);
     }
 
+    /**
+     * 获取权限数据源
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult<SourceAndPrivilege> getSourceBySearch(String groupId, int offset, int limit, String search) {
         PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
 
@@ -567,6 +603,16 @@ public class UserGroupService {
         return commonResult;
     }
 
+    /**
+     * 无权限数据源
+     * @param tenantId
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult<DataSourceIdAndName> getNoSourceBySearch(String tenantId, String groupId, int offset, int limit, String search) {
         PageResult<DataSourceIdAndName> commonResult = new PageResult<>();
 
@@ -585,6 +631,13 @@ public class UserGroupService {
         return commonResult;
     }
 
+    /**
+     * 添加数据源
+     * @param groupId
+     * @param privileges
+     * @return
+     * @throws AtlasBaseException
+     */
     public void addDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
         if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
             return;
@@ -592,6 +645,13 @@ public class UserGroupService {
         userGroupDAO.addDataSourceByGroupId(groupId, privileges.getSourceIds(),privileges.getPrivilegeCode());
     }
 
+    /**
+     * 修改数据源权限
+     * @param groupId
+     * @param privileges
+     * @return
+     * @throws AtlasBaseException
+     */
     public void updateDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
         if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
             return;
@@ -599,6 +659,12 @@ public class UserGroupService {
         userGroupDAO.updateDataSourceByGroupId(groupId,privileges);
     }
 
+    /**删除数据源权限
+     * @param groupId
+     * @param sourceIds
+     * @return
+     * @throws AtlasBaseException
+     */
     public void deleteDataSourceByGroupId(String groupId, List<String> sourceIds) {
         if (sourceIds == null||sourceIds.size()==0) {
             return;
@@ -606,6 +672,10 @@ public class UserGroupService {
         userGroupDAO.deleteDataSourceByGroupId(groupId, sourceIds);
     }
 
+    /**
+     * 获取权限列表
+     * @return
+     */
     public List<Map<String, String>> getDataSourcePrivileges() {
         List<Map<String, String>> dataSourcePrivileges = new ArrayList<>();
         Map<String,String> read = new HashMap<>();

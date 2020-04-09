@@ -1022,7 +1022,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard/{tableGuid}")
-    public List<DataStandardHead> getDataStandard(@PathParam("tableGuid") String tableGuid,String tenantId) throws AtlasBaseException {
+    public List<DataStandardHead> getDataStandard(@PathParam("tableGuid") String tableGuid,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
            return dataStandardService.getDataStandardByTable(tableGuid,tenantId);
         } catch (Exception e) {

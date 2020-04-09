@@ -272,7 +272,10 @@ public class DataManageService {
                 returnEntity.setParentCategoryGuid(null);
                 returnEntity.setUpBrotherCategoryGuid(null);
                 returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+                if (type==1){
+                    privilege.setAsh(true);
+                }
                 if(type==0){
                     privilege.setDeleteRelation(false);
                 }
@@ -357,7 +360,7 @@ public class DataManageService {
                     privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
             }
-            if (modules.contains(ModuleEnum.AUTHORIZATION.getId())&&//有目录权限管理模块权限，可以随意建目录
+            if ((type==1||type==0)&&modules.contains(ModuleEnum.AUTHORIZATION.getId())&&//有目录权限管理模块权限，可以随意建目录
                 !userGroupService.isPrivilegeCategory(user.getUserId(),newCategoryGuid,tenantId,type)){//无当前目录权限
                 privilege.setAsh(true);
             }

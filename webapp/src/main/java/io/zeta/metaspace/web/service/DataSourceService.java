@@ -909,6 +909,12 @@ public class DataSourceService {
         }
     }
 
+    /**
+     * 获取更新用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     public List<String> getUpdateUserName(boolean isApi,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -918,6 +924,14 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取更新者失败\n"+e.getMessage());
         }
     }
+
+    /**
+     * 变更管理者
+     * @param userId
+     * @param sourceId
+     * @return
+     * @throws Exception
+     */
     @Transactional
     public void updateManager(String sourceId,String managerUserId) throws AtlasBaseException {
         try {
@@ -960,6 +974,12 @@ public class DataSourceService {
         }
     }
 
+    /**
+     * 可成为管理者用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
     public List<UserIdAndName> getManager(String tenantId) throws AtlasBaseException {
         try {
             if (TenantService.defaultTenant.equals(tenantId)){
@@ -987,6 +1007,14 @@ public class DataSourceService {
         }
     }
 
+    /**
+     * 获取ORACLE数据源的schema
+     * @param limit
+     * @param offset
+     * @param dataSourceConnection
+     * @return
+     * @throws AtlasBaseException
+     */
     public PageResult getSchema(int limit,int offset,DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         PageResult pageResult = new PageResult();
         ResultSet dataSet = null;
@@ -1065,6 +1093,15 @@ public class DataSourceService {
         return UserPrivilegeDataSource.NOPROVILEGE;
     }
 
+    /**
+     * 获取对当前项目无权限的用户组
+     * @param id
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws Exception
+     */
     public PageResult<UserGroupIdAndName> getNoUserGroupByDataSource(String tenantId, Parameters parameters, String sourceId) throws AtlasBaseException {
         //当前用户有权限才能查看，读
         String userId = AdminUtils.getUserData().getUserId();
@@ -1092,6 +1129,16 @@ public class DataSourceService {
         return pageResult;
     }
 
+    /**
+     * 获取权限用户组列表
+     * @param tenantId
+     * @param id
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws Exception
+     */
     public PageResult<UserGroupAndPrivilege> getUserGroupByDataSource(String tenantId, Parameters parameters, String sourceId) throws AtlasBaseException {
         PageResult<UserGroupAndPrivilege> pageResult = new PageResult<>();
         if (parameters.getQuery()!=null){
@@ -1107,6 +1154,13 @@ public class DataSourceService {
         return pageResult;
     }
 
+    /**
+     * 删除用户组权限
+     * @param id
+     * @param userGroups
+     * @return
+     * @throws Exception
+     */
     public void deleteUserGroupByDataSource(List<String> userGroups,String sourceId) throws AtlasBaseException {
         String userId = AdminUtils.getUserData().getUserId();
         //当前用户有权限才能删除，管理者
@@ -1121,6 +1175,13 @@ public class DataSourceService {
         datasourceDAO.deleteUserGroupsByDataSource(sourceId,userGroups);
     }
 
+    /**
+     * 更新用户组权限
+     * @param sourceId
+     * @param privileges
+     * @return
+     * @throws Exception
+     */
     public void updateUserGroupByDataSource(DataSourcePrivileges privileges, String sourceId) throws AtlasBaseException {
         String userId = AdminUtils.getUserData().getUserId();
         UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
@@ -1133,7 +1194,12 @@ public class DataSourceService {
         }
         datasourceDAO.updateUserGroupsByDataSource(sourceId,privileges);
     }
-
+    /**
+     * 新增用户组权限
+     * @param id
+     * @param privileges
+     * @return
+     */
     public void addUserGroup2DataSource(String id, DataSourcePrivileges privileges)
             throws Exception
     {
