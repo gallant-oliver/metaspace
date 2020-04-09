@@ -111,7 +111,7 @@ do
 			sed -i "s#metaspace.secureplus.enable=.*#metaspace.secureplus.enable=false#g" ${metaspace_config}
 		else
 			sed -i "s#metaspace.secureplus.enable=.*#metaspace.secureplus.enable=true#g" ${metaspace_config}
-			sed -i "s#metaspace.secureplus.privilegeREST=.*#metaspace.secureplus.privilegeREST=http://${value}/service/privilege/hivetable#g" ${metaspace_config}
+			sed -i "s#security.center.host=.*#security.center.host=http://${value}#g" ${metaspace_config}
 		fi
 	#数据库配置
 	elif [ "$key" = "database" ]; then
