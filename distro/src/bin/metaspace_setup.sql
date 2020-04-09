@@ -12,7 +12,8 @@ CREATE TABLE "public"."operate_log" (
   "content" varchar COLLATE "pg_catalog"."default",
   "result" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
   "ip" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "createtime" timestamptz(0) NOT NULL
+  "createtime" timestamptz(0) NOT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."operate_log"."number" IS '日志序号';
@@ -43,7 +44,8 @@ CREATE TABLE "public"."data_standard" (
   "operator" varchar COLLATE "pg_catalog"."default",
   "version" int4,
   "categoryid" varchar COLLATE "pg_catalog"."default",
-  "delete" bool
+  "delete" bool,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_standard"."number" IS '标准编号';
@@ -98,7 +100,8 @@ CREATE TABLE "public"."apigroup" (
   "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL,
   "generatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "updater" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
-  "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL
+  "updatetime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" DEFAULT NULL
 )
 ;
 
@@ -133,7 +136,8 @@ CREATE TABLE "public"."apiinfo" (
   "schemaname" varchar(255) COLLATE "pg_catalog"."default",
   "tablename" varchar(255) COLLATE "pg_catalog"."default",
   "dbname" varchar(255) COLLATE "pg_catalog"."default",
-  "sourceid" varchar(255) COLLATE "pg_catalog"."default"
+  "sourceid" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -183,7 +187,8 @@ CREATE TABLE "public"."businessinfo" (
   "ticketnumber" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "submissiontime" varchar COLLATE "pg_catalog"."default" DEFAULT NULL,
   "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -201,7 +206,8 @@ CREATE TABLE "public"."category" (
   "qualifiedname" text COLLATE "pg_catalog"."default" DEFAULT NULL,
   "categorytype" int2 DEFAULT NULL,
   "level" int2 DEFAULT NULL,
-  "safe" varchar(225) COLLATE "pg_catalog"."default"
+  "safe" varchar(225) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -567,7 +573,8 @@ CREATE TABLE "public"."statistical" (
   "statisticalid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "date" int8 DEFAULT NULL,
   "statistical" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "statisticaltypeid" int4 DEFAULT NULL
+  "statisticaltypeid" int4 DEFAULT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -671,7 +678,8 @@ COMMENT ON COLUMN "public"."column_info"."type" IS '字段类型';
 DROP TABLE IF EXISTS "public"."tag";
 CREATE TABLE "public"."tag" (
   "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL,
-  "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -1130,26 +1138,26 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- ----------------------------
 ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fkey" FOREIGN KEY ("sched_name", "job_name", "job_group") REFERENCES "qrtz_job_details" ("sched_name", "job_name", "job_group") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('1','贴源层',NUll,'2',0,1,'1');
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('2','基础层','1','3',0,1,'1');
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('3','规范层','2','4',0,1,'1');
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('4','通过层','3','5',0,1,'1');
-INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe) VALUES('5','应用层','4',NULL,0,1,'1');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES('1','贴源层',NUll,'2',0,1,'1','all');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES('2','基础层','1','3',0,1,'1','all');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES('3','规范层','2','4',0,1,'1','all');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES('4','通过层','3','5',0,1,'1','all');
+INSERT INTO category(guid,name,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES('5','应用层','4',NULL,0,1,'1','all');
 
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-1', '基础类数据标准','基础类数据标准',null,null,'Standard-2',1,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-2', '指标类数据标准','指标类数据标准',null,'Standard-1',null,1,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-3', '参考数据标准','参考数据标准','Standard-1',null,'Standard-4',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-4', '主数据标准','主数据标准','Standard-1','Standard-3','Standard-5',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-5', '逻辑数据模型标准','逻辑数据模型标准','Standard-1','Standard-4','Standard-6',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-6', '物理数据模型标准','物理数据模型标准','Standard-1','Standard-5','Standard-7',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-7', '元数据标准','元数据标准','Standard-1','Standard-6','Standard-8',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-8', '公共代码标准','公共代码标准','Standard-1','Standard-7','Standard-9',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-9', '编码标准','编码标准','Standard-1','Standard-8',null,2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-10', '基础指标标准','基础指标标准','Standard-2',null,'Standard-11',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-11', '计算指标标准','计算指标标准','Standard-2','Standard-10',null,2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-12', '业务元数据标准','业务元数据标准','Standard-7',null,'Standard-13',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-13', '技术元数据标准','技术元数据标准','Standard-7','Standard-12','Standard-14',2,3);
-INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype) VALUES ('Standard-14', '管理元数据标准','业管理元数据标准','Standard-7','Standard-13',null,2,3);
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-1', '基础类数据标准','基础类数据标准',null,null,'Standard-2',1,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-2', '指标类数据标准','指标类数据标准',null,'Standard-1',null,1,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-3', '参考数据标准','参考数据标准','Standard-1',null,'Standard-4',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-4', '主数据标准','主数据标准','Standard-1','Standard-3','Standard-5',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-5', '逻辑数据模型标准','逻辑数据模型标准','Standard-1','Standard-4','Standard-6',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-6', '物理数据模型标准','物理数据模型标准','Standard-1','Standard-5','Standard-7',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-7', '元数据标准','元数据标准','Standard-1','Standard-6','Standard-8',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-8', '公共代码标准','公共代码标准','Standard-1','Standard-7','Standard-9',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-9', '编码标准','编码标准','Standard-1','Standard-8',null,2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-10', '基础指标标准','基础指标标准','Standard-2',null,'Standard-11',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-11', '计算指标标准','计算指标标准','Standard-2','Standard-10',null,2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-12', '业务元数据标准','业务元数据标准','Standard-7',null,'Standard-13',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-13', '技术元数据标准','技术元数据标准','Standard-7','Standard-12','Standard-14',2,3,'all');
+INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,level,categorytype,tenantid) VALUES ('Standard-14', '管理元数据标准','业管理元数据标准','Standard-7','Standard-13',null,2,3,'all');
 
 INSERT INTO "public"."privilege" VALUES ('2', '访客', '访客', NULL, 0, 0);
 INSERT INTO "public"."privilege" VALUES ('1', 'Admin', '平台管理员', NULL, 0, 0);
@@ -1228,8 +1236,8 @@ INSERT INTO "public"."privilege2module" VALUES ('7', 8);
 INSERT INTO "public"."privilege2module" VALUES ('7', 7);
 INSERT INTO "public"."privilege2module" VALUES ('7', 2);
 
-INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO "public"."apigroup" VALUES ('1', '全部分组', NULL, NULL, NULL, NULL, NULL, NULL,'all');
+INSERT INTO "public"."apigroup" VALUES ('0', '未分组', '1', NULL, NULL, NULL, NULL, NULL,'all');
 INSERT INTO "public"."systemrule" VALUES (13, '字段平均值变化', '相比上一周期，字段平均值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (14, '字段汇总值变化', '相比上一周期，字段汇总值变化', 1, '');
 INSERT INTO "public"."systemrule" VALUES (15, '字段最小值变化', '相比上一周期，字段最小值变化', 1, '');
@@ -1469,7 +1477,8 @@ CREATE TABLE "public"."data_quality_rule" (
   "check_threshold_min_value" float8,
   "check_threshold_max_value" float8,
   "scope" int2,
-  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
+  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_rule"."rule_template_id" IS '规则模版id';
@@ -1594,7 +1603,8 @@ CREATE TABLE "public"."data_quality_task" (
   "error_total_count" int8,
   "updater" varchar COLLATE "pg_catalog"."default",
   "current_execution_percent" float4,
-  "current_execution_status" int2
+  "current_execution_status" int2,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task"."name" IS '任务名';
@@ -1742,7 +1752,8 @@ CREATE TABLE "public"."warning_group" (
   "create_time" timestamptz(0),
   "update_time" timestamptz(0),
   "creator" varchar COLLATE "pg_catalog"."default",
-  "delete" bool
+  "delete" bool,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."warning_group"."name" IS '告警组名称';
@@ -1828,7 +1839,11 @@ INSERT INTO "public"."api_module" VALUES ('/businessManage/datashare/{apiGuid}',
 INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}', 'GET', 5, 'f');
 INSERT INTO "public"."api_module" VALUES ('/businessManage/{businessId}/technical', 'GET', 5, 'f');
 INSERT INTO "public"."api_module" VALUES ('/businessManage/table/{guid}', 'GET', 5, 'f');
-INSERT INTO "public"."api_module" VALUES ('dataquality', 'OPTION', 13, 't');
+INSERT INTO "public"."api_module" VALUES ('userGroups', 'OPTION', 16, 't');
+INSERT INTO "public"."api_module" VALUES ('authorization', 'OPTION', 19, 't');
+INSERT INTO "public"."api_module" VALUES ('/dataquality/taskManage', 'OPTION', 23, 't');
+INSERT INTO "public"."api_module" VALUES ('/dataquality/warning', 'OPTION', 22, 't');
+INSERT INTO "public"."api_module" VALUES ('/dataquality/rule', 'OPTION', 21, 't');
 
 -- ----------------------------
 -- Primary Key structure for table api_module
@@ -1856,7 +1871,9 @@ CREATE TABLE "public"."data_source" (
   "manager" varchar COLLATE "pg_catalog"."default",
   "oracle_db" varchar COLLATE "pg_catalog"."default",
   "isapi" bool,
-  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "servicetype" varchar(36) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_source"."source_id" IS '数据源id';
@@ -1881,6 +1898,18 @@ COMMENT ON COLUMN "public"."data_source"."isapi" IS '是否是api数据源';
 -- ----------------------------
 ALTER TABLE "public"."data_source" ADD CONSTRAINT "data_source_pkey1" PRIMARY KEY ("source_id");
 
+DROP TABLE IF EXISTS "public"."datasource_group_relation";
+CREATE TABLE "public"."datasource_group_relation" (
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "privilege_code" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+
+-- ----------------------------
+-- Primary Key structure for table datasource_group_relation
+-- ----------------------------
+ALTER TABLE "public"."datasource_group_relation" ADD CONSTRAINT "datasource_group_relation_pkey" PRIMARY KEY ("source_id", "group_id");
 
 -- ----------------------------
 -- Table structure for data_source_authorize
@@ -2054,3 +2083,55 @@ COMMENT ON COLUMN "public"."column_metadata_history"."partition_field" IS '是�
 -- Primary Key structure for table column_metadata_history
 -- ----------------------------
 ALTER TABLE "public"."column_metadata_history" ADD CONSTRAINT "column_metadata_history_pkey" PRIMARY KEY ("guid", "version");
+
+DROP TABLE IF EXISTS "public"."tenant";
+CREATE TABLE "public"."tenant" (
+  "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+)
+;
+COMMENT ON COLUMN "public"."tenant"."id" IS '租户id';
+COMMENT ON COLUMN "public"."tenant"."name" IS '租户名字';
+
+-- ----------------------------
+-- Primary Key structure for table tenant
+-- ----------------------------
+ALTER TABLE "public"."tenant" ADD CONSTRAINT "tenant_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Table structure for user_group
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user_group";
+CREATE TABLE "public"."user_group" (
+  "id" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant" varchar(255) COLLATE "pg_catalog"."default",
+  "name" varchar(64) COLLATE "pg_catalog"."default",
+  "creator" varchar(40) COLLATE "pg_catalog"."default",
+  "description" varchar(256) COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(6),
+  "updatetime" timestamptz(6),
+  "valid" bool,
+  "authorize_user" varchar(255) COLLATE "pg_catalog"."default",
+  "authorize_time" timestamptz(6)
+)
+;
+
+-- ----------------------------
+-- Table structure for user_group_relation
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user_group_relation";
+CREATE TABLE "public"."user_group_relation" (
+  "group_id" varchar(40) COLLATE "pg_catalog"."default",
+  "user_id" varchar(40) COLLATE "pg_catalog"."default"
+)
+;
+
+-- ----------------------------
+-- Table structure for category_group_relation
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."category_group_relation";
+CREATE TABLE "public"."category_group_relation" (
+  "category_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;

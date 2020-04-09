@@ -26,10 +26,11 @@ public class SecurePlusConfig {
             String enable = conf.getString("metaspace.secureplus.enable");
             SecurePlusEnable = enable != null && enable.equals("true");
             if (SecurePlusEnable) {
-                SecurePlusPrivilegeREST = conf.getString("metaspace.secureplus.privilegeREST");
-                if (SecurePlusPrivilegeREST == null || SecurePlusPrivilegeREST.equals("")) {
-                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.secureplus.privilegeREST未正确配置");
+                String SecurePlusHost = conf.getString("security.center.host");
+                if (SecurePlusHost == null || SecurePlusHost.equals("")) {
+                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "security.center.host未正确配置");
                 }
+                SecurePlusPrivilegeREST=SecurePlusHost+"/service/privilege/hivetable";
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
