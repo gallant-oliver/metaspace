@@ -75,7 +75,7 @@ public class TenantService {
     static {
         try {
             conf = ApplicationProperties.get();
-            isStandalone = conf.getBoolean(METASPACE_STANDALONE);
+            isStandalone = conf.getBoolean(METASPACE_STANDALONE,false);
             SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
         } catch (Exception e) {
             throw new RuntimeException(e);
