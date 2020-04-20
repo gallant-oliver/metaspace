@@ -161,7 +161,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
             }
-            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
+            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid,tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
             dataManageService.deleteCategory(categoryGuid,tenantId);
         } catch (CannotCreateTransactionException e) {
@@ -212,14 +212,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
+    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
-            String categoryName = dataManageService.getCategoryNameById(categoryGuid);
+            String categoryName = dataManageService.getCategoryNameById(categoryGuid,tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryName);
             dataManageService.assignTablesToCategory(categoryGuid, relations);
         } catch (CannotCreateTransactionException e) {
@@ -266,7 +266,7 @@ public class TechnicalREST {
     @DELETE
     @Path("/category/relation")
     @OperateType(DELETE)
-    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
+    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -275,14 +275,14 @@ public class TechnicalREST {
             List<String> categoryNameList = new ArrayList<>();
             for (RelationEntityV2 relationEntity : relationshipList) {
                 String guid = relationEntity.getRelationshipGuid();
-                String categoryName = dataManageService.getCategoryNameByRelationId(guid);
+                String categoryName = dataManageService.getCategoryNameByRelationId(guid,tenantId);
                 if(categoryName != null)
                     categoryNameList.add(categoryName);
             }
             if(categoryNameList!=null && categoryNameList.size()>0) {
                 HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]中的表关联");
             }
-            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList);
+            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList,tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

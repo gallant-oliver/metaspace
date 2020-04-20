@@ -1,5 +1,7 @@
 package io.zeta.metaspace.model.result;
 
+import io.zeta.metaspace.MetaspaceConfig;
+
 import java.security.PublicKey;
 
 /*
@@ -276,12 +278,16 @@ public class CategoryPrivilege {
             this.addOwner=this.addOwner||privilege.addOwner;
 
         }
-        public void adminPrivilege(){
+        public void adminPrivilege(String guid){
             this.hide=false;
             this.addSibling=true;
             this.addChildren=true;
             this.delete=true;
             this.edit=true;
+            if (MetaspaceConfig.systemCategory.contains(guid)) {
+                this.delete=false;
+                this.edit=false;
+            }
         }
     }
 }

@@ -66,13 +66,13 @@ public class RuleService {
         }
     }
 
-    public Rule getById(String id) throws AtlasBaseException {
+    public Rule getById(String id,String tenantId) throws AtlasBaseException {
         try {
             Rule rule = ruleDAO.getById(id);
             if(Objects.isNull(rule)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到规则详情");
             }
-            String path = CategoryRelationUtils.getPath(rule.getCategoryId());
+            String path = CategoryRelationUtils.getPath(rule.getCategoryId(),tenantId);
             rule.setPath(path);
             return rule;
         } catch (Exception e) {
@@ -137,7 +137,7 @@ public class RuleService {
                 throw new AtlasBaseException("规则名字已存在");
             }
             rule.setUpdateTime(DateUtils.currentTimestamp());
-            Rule old = getById(rule.getId());
+            Rule old = getById(rule.getId(),tenantId);
             BeansUtil.copyPropertiesIgnoreNull(rule, old);
             return ruleDAO.update(old);
         } catch (Exception e) {
@@ -168,7 +168,7 @@ public class RuleService {
 
     private List<Rule> queryByCatetoryId(String categoryId, Parameters params,String tenantId) throws AtlasBaseException {
         try {
-            String path = CategoryRelationUtils.getPath(categoryId);
+            String path = CategoryRelationUtils.getPath(categoryId,tenantId);
             Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
                 ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
@@ -200,7 +200,7 @@ public class RuleService {
                     .map(rule -> {
                         String path = null;
                         try {
-                            path = CategoryRelationUtils.getPath(rule.getCategoryId());
+                            path = CategoryRelationUtils.getPath(rule.getCategoryId(),tenantId);
                             rule.setPath(path);
                             String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
                             rule.setRuleTypeName(ruleTypeName);
@@ -232,7 +232,7 @@ public class RuleService {
         try {
             List<CategoryPrivilege> resultList = TenantService.defaultTenant.equals(tenantId) ?dataManageService.getAll(categoryType) : dataManageService.getAllByUserGroup(categoryType, tenantId) ;
             for (CategoryPrivilege res : resultList) {
-                Integer count = ruleDAO.getCategoryObjectCount(res.getGuid());
+                Integer count = ruleDAO.getCategoryObjectCount(res.getGuid(),tenantId);
                 res.setObjectCount(count);
             }
             return resultList;
@@ -268,7 +268,7 @@ public class RuleService {
 
     public void deleteCategory(String categoryGuid,String tenantId) throws AtlasBaseException {
         try {
-            int count = ruleDAO.getCategoryObjectCount(categoryGuid);
+            int count = ruleDAO.getCategoryObjectCount(categoryGuid,tenantId);
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
             }
@@ -279,8 +279,8 @@ public class RuleService {
         }
     }
 
-    public String getCategoryName(String categoryGuid) {
-        return ruleDAO.getCategoryName(categoryGuid);
+    public String getCategoryName(String categoryGuid,String tenantId) {
+        return ruleDAO.getCategoryName(categoryGuid,tenantId);
     }
 
     public String getNameById(String id) {

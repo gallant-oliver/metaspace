@@ -119,10 +119,10 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByIdList(List<String> idList) throws AtlasBaseException {
+    public void deleteByIdList(List<String> idList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         List<String> ruleNameList = new ArrayList<>();
         for (String ruleId : idList) {
-            Rule rule = ruleService.getById(ruleId);
+            Rule rule = ruleService.getById(ruleId,tenantId);
             String ruleName = ruleId;
             if(null != rule) {
                 ruleName = rule.getName();
@@ -138,8 +138,8 @@ public class RuleREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Rule getById(@PathParam("id") String id) throws AtlasBaseException {
-        return ruleService.getById(id);
+    public Rule getById(@PathParam("id") String id,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleService.getById(id,tenantId);
     }
 
     /**
@@ -167,8 +167,8 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteById(@PathParam("id") String id) throws AtlasBaseException {
-        Rule rule = ruleService.getById(id);
+    public void deleteById(@PathParam("id") String id,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        Rule rule = ruleService.getById(id,tenantId);
         String ruleName = id;
         if(null != rule) {
             ruleName = rule.getName();
@@ -230,7 +230,7 @@ public class RuleREST {
     @Path("/category/{categoryGuid}")
     @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
-        String categoryName = ruleService.getCategoryName(categoryGuid);
+        String categoryName = ruleService.getCategoryName(categoryGuid,tenantId);
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), null==categoryName?categoryName:categoryGuid);
         ruleService.deleteCategory(categoryGuid,tenantId);
     }
@@ -257,8 +257,8 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/enable")
     @OperateType(UPDATE)
-    public void enableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
-        Rule rule = ruleService.getById(ruleId);
+    public void enableRule(@PathParam("ruleId") String ruleId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        Rule rule = ruleService.getById(ruleId,tenantId);
         String ruleName = ruleId;
         if(null != rule) {
             ruleName = rule.getName();
@@ -272,8 +272,8 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleId}/disable")
     @OperateType(UPDATE)
-    public void disableRule(@PathParam("ruleId") String ruleId) throws AtlasBaseException {
-        Rule rule = ruleService.getById(ruleId);
+    public void disableRule(@PathParam("ruleId") String ruleId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        Rule rule = ruleService.getById(ruleId,tenantId);
         String ruleName = ruleId;
         if(null != rule) {
             ruleName = rule.getName();

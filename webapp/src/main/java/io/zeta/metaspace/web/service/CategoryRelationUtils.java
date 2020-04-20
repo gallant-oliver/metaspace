@@ -99,9 +99,9 @@ public class CategoryRelationUtils {
         }
     }
 
-    public static String getPath(String categoryId) throws AtlasBaseException {
+    public static String getPath(String categoryId,String tenantId) throws AtlasBaseException {
         try {
-            String pathStr = utils.categoryDAO.queryPathByGuid(categoryId);
+            String pathStr = utils.categoryDAO.queryPathByGuid(categoryId,tenantId);
             String path = pathStr.substring(1, pathStr.length()-1);
             path = path.replace(",", "/").replace("\"", "");
             return path;
@@ -111,9 +111,9 @@ public class CategoryRelationUtils {
         }
     }
 
-    public static String[] getPathIds(String categoryId) throws AtlasBaseException {
+    public static String[] getPathIds(String categoryId,String tenantId) throws AtlasBaseException {
         try {
-            String pathStr = utils.categoryDAO.queryPathIdsByGuid(categoryId);
+            String pathStr = utils.categoryDAO.queryPathIdsByGuid(categoryId,tenantId);
             return pathStr.substring(1, pathStr.length()-1).replace("\"","").split(",");
         } catch (Exception e) {
             LOG.error("查询路径失败", e);

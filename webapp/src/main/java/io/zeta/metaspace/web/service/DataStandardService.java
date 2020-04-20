@@ -107,9 +107,9 @@ public class DataStandardService {
         dataStandardDAO.batchInsert(subList,tenantId);
     }
 
-    public DataStandard getById(String id) throws AtlasBaseException {
+    public DataStandard getById(String id,String tenantId) throws AtlasBaseException {
         DataStandard dataStandard = dataStandardDAO.getById(id);
-        String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+        String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
         dataStandard.setPath(path);
         return dataStandard;
     }
@@ -146,8 +146,8 @@ public class DataStandardService {
     /**
      * 更新也是插入, 版本号+1, 创建时间用最早版本的
      */
-    public int update(DataStandard dataStandard) throws AtlasBaseException {
-        DataStandard old = getById(dataStandard.getId());
+    public int update(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
+        DataStandard old = getById(dataStandard.getId(),tenantId);
         dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setNumber(old.getNumber());
         dataStandard.setCreateTime(old.getCreateTime());
@@ -172,7 +172,7 @@ public class DataStandardService {
     }
 
     public List<DataStandard> queryByCatetoryId(String categoryId, Parameters parameters,String tenantId) throws AtlasBaseException {
-        String path = CategoryRelationUtils.getPath(categoryId);
+        String path = CategoryRelationUtils.getPath(categoryId,tenantId);
         List<DataStandard> list = dataStandardDAO.queryByCatetoryId(categoryId, parameters,tenantId)
                 .stream()
                 .map(dataStandard -> {
@@ -188,7 +188,7 @@ public class DataStandardService {
                 .map(dataStandard -> {
                     String path = null;
                     try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
                     } catch (AtlasBaseException e) {
                         LOG.error(e.getMessage(), e);
                     }
@@ -220,13 +220,13 @@ public class DataStandardService {
         return pageResult;
     }
 
-    public List<DataStandard> queryByIds(List<String> ids) {
+    public List<DataStandard> queryByIds(List<String> ids,String tenantId) {
         List<DataStandard> list = dataStandardDAO.queryByIds(ids)
                 .stream()
                 .map(dataStandard -> {
                     String path = null;
                     try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
                     } catch (AtlasBaseException e) {
                         LOG.error(e.getMessage(), e);
                     }
@@ -237,13 +237,13 @@ public class DataStandardService {
         return list;
     }
 
-    public List<DataStandard> queryByNumberList(List<String> numberList) {
+    public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
         List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList)
                 .stream()
                 .map(dataStandard -> {
                     String path = null;
                     try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId());
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
                     } catch (AtlasBaseException e) {
                         LOG.error(e.getMessage(), e);
                     }
@@ -260,8 +260,8 @@ public class DataStandardService {
         return workbook2file(workbook);
     }
 
-    public File exportExcel(List<String> ids) throws IOException {
-        List<DataStandard> data = queryByIds(ids);
+    public File exportExcel(List<String> ids,String tenantId) throws IOException {
+        List<DataStandard> data = queryByIds(ids,tenantId);
         Workbook workbook = data2workbook(data);
         return workbook2file(workbook);
     }
@@ -295,7 +295,7 @@ public class DataStandardService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空");
         }
         List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
-        List<String> existDataStandard = queryByNumberList(numberList).stream().map(DataStandard::getNumber).collect(Collectors.toList());
+        List<String> existDataStandard = queryByNumberList(numberList,tenantId).stream().map(DataStandard::getNumber).collect(Collectors.toList());
         if (!existDataStandard.isEmpty()) {
             List<String> showList = existDataStandard.subList(0, Math.min(existDataStandard.size(), 5));
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号为: " + Joiner.on("、").join(showList) + "已存在，请修改后上传。");
@@ -434,7 +434,7 @@ public class DataStandardService {
             dataStandards = dataStandards.stream().map(dataStandard -> {
                 String[] pathIds = null;
                 try {
-                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId());
+                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId(),tenantId);
                 } catch (AtlasBaseException e) {
                     LOG.error(e.getMessage(), e);
                 }
@@ -454,7 +454,7 @@ public class DataStandardService {
             dataStandards = dataStandards.stream().map(dataStandard -> {
                 String[] pathIds = null;
                 try {
-                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId());
+                    pathIds = CategoryRelationUtils.getPathIds(dataStandard.getCategoryId(),tenantId);
                 } catch (AtlasBaseException e) {
                     LOG.error(e.getMessage(), e);
                 }
@@ -514,7 +514,7 @@ public class DataStandardService {
                 List<DataStandardHead> dataStandardHeads = dataStandardDAO.getStandardByCategoyrId(categoryAndDataStandard.getGuid(),tenantId);
                 if (dataStandardHeads!=null && dataStandardHeads.size()!=0){
                     try {
-                        String[] pathIds = CategoryRelationUtils.getPathIds(categoryAndDataStandard.getGuid());
+                        String[] pathIds = CategoryRelationUtils.getPathIds(categoryAndDataStandard.getGuid(),tenantId);
                         dataStandardHeads = dataStandardHeads.stream().map(dataStandard -> {
                             dataStandard.setPathIds(pathIds);
                             return dataStandard;

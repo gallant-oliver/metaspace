@@ -149,9 +149,9 @@ public class MarketREST {
     @Path("/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getBusiness(@PathParam("businessId") String businessId) throws AtlasBaseException {
+    public BusinessInfo getBusiness(@PathParam("businessId") String businessId,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return marketService.getBusinessInfo(businessId);
+            return marketService.getBusinessInfo(businessId,tenantId);
         } catch (Exception e) {
             throw e;
         }

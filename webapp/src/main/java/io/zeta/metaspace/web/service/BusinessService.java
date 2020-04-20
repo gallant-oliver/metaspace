@@ -156,7 +156,7 @@ public class BusinessService {
             info.setBusinessLastUpdate(time);
             info.setTicketNumber(String.valueOf(timestamp));
             //level2CategoryId
-            String pathStr = categoryDao.queryGuidPathByGuid(categoryId);
+            String pathStr = categoryDao.queryGuidPathByGuid(categoryId,tenantId);
             String path = pathStr.substring(1, pathStr.length()-1);
             path = path.replace("\"", "");
             String[] pathArr = path.split(",");
@@ -232,7 +232,7 @@ public class BusinessService {
                 info.setEditBusiness(editBusiness);
             }
             String categoryGuid = info.getDepartmentId();
-            String departmentName = categoryDao.queryNameByGuid(categoryGuid);
+            String departmentName = categoryDao.queryNameByGuid(categoryGuid,tenantId);
             info.setDepartmentName(departmentName);
             return info;
         } catch (Exception e) {
@@ -301,7 +301,7 @@ public class BusinessService {
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
             List<BusinessInfoHeader>  list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset,tenantId);
-            String path = CategoryRelationUtils.getPath(categoryId);
+            String path = CategoryRelationUtils.getPath(categoryId,tenantId);
             StringJoiner joiner = null;
             String[] pathArr = path.split("/");
             String level2Category = "";
@@ -382,7 +382,7 @@ public class BusinessService {
             businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset,tenantId);
 
             for(BusinessInfoHeader infoHeader : businessInfoList) {
-                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
+                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(),tenantId);
                 StringJoiner joiner = new StringJoiner(".");
                 //joiner.add(path).add(infoHeader.getName());
                 joiner.add(path);
@@ -467,7 +467,7 @@ public class BusinessService {
                 List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset,tenantId);
                 for (BusinessInfoHeader infoHeader : businessInfoList) {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
-                    String path = CategoryRelationUtils.getPath(categoryId);
+                    String path = CategoryRelationUtils.getPath(categoryId,tenantId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
                     String[] pathArr = path.split("/");
                     if (pathArr.length >= 2)

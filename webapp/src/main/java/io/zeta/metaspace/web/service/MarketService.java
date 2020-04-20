@@ -113,7 +113,7 @@ public class MarketService {
             businessInfoList = businessDao.queryBusinessByNameWithoutPrivilege(businessName, limit, offset,tenantId);
 
             for(BusinessInfoHeader infoHeader : businessInfoList) {
-                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid());
+                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(),tenantId);
                 StringJoiner joiner = new StringJoiner(".");
                 joiner.add(path);
                 infoHeader.setPath(joiner.toString());
@@ -179,12 +179,12 @@ public class MarketService {
         }
     }
 
-    public BusinessInfo getBusinessInfo(String businessId) throws AtlasBaseException {
+    public BusinessInfo getBusinessInfo(String businessId,String tenantId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
             info.setEditBusiness(false);
             String categoryGuid = info.getDepartmentId();
-            String departmentName = categoryDao.queryNameByGuid(categoryGuid);
+            String departmentName = categoryDao.queryNameByGuid(categoryGuid,tenantId);
             info.setDepartmentName(departmentName);
             return info;
         } catch (Exception e) {

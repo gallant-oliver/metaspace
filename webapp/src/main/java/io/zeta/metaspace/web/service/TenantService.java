@@ -30,6 +30,7 @@ import io.zeta.metaspace.web.cache.MetaspaceContext;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -37,6 +38,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -152,6 +154,7 @@ public class TenantService {
      * 获取metaspace的租户
      * @return
      */
+    @Transactional
     public List<Tenant> getTenants() throws AtlasBaseException {
         if (isStandalone){
             List<Tenant> tenants = new ArrayList<>();
@@ -169,12 +172,15 @@ public class TenantService {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_LIST,null,hashMap);
             Gson gson = new Gson();
             List<Tenant> list = gson.fromJson(string, new TypeToken<List<Tenant>>(){}.getType());
+            if (list==null||list.size()==0)
+                return new ArrayList<>();
             List<String> tenantIds = tenantDAO.getAllTenantId();
             List<Tenant> addTenant = list.stream().filter(tenant -> !tenantIds.contains(tenant.getTenantId())).collect(Collectors.toList());
-            if (addTenant!=null&&addTenant.size()!=0)
+            if (addTenant!=null&&addTenant.size()!=0){
                 tenantDAO.addTenants(addTenant);
-            if (list==null||list.size()==0)
-                throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED,"该用户没有此工具的租户");
+                CategoryUtil.initCategorySql(addTenant);
+            }
+
             return list;
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取租户列表失败");

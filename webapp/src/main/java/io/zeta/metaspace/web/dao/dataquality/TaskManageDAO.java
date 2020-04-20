@@ -166,7 +166,8 @@ public interface TaskManageDAO {
              " where data_quality_rule.category_id=#{categoryId}",
              " and data_quality_rule.rule_template_id=data_quality_rule_template.id",
              " and data_quality_rule.delete=false",
-             " and data_quality_rule.enable=true",
+             " and data_quality_rule.enable=true " +
+             " and data_quality_rule.tenantid=#{tenantId} ",
              " <if test='scope!=null'>",
              " and data_quality_rule.scope=#{scope}",
              " </if>",
