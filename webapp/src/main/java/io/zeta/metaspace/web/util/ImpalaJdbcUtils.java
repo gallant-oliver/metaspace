@@ -66,6 +66,8 @@ public class ImpalaJdbcUtils {
         String jdbcUrl;
         Properties properties = new Properties();
         //单引号防止特殊字符
+        if (pool==null||pool.length()==0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源池不能为空");
         pool="'"+pool+"'";
         properties.setProperty("REQUEST_POOL",pool);
         if (KerberosConfig.isKerberosEnable()) {
