@@ -26,6 +26,9 @@ do
 	#hive配置文件
 	if [ "$key" = "hive_conf_dir" ];then
 		sed -i "s#metaspace.hive.conf=.*#metaspace.hive.conf=${value}#g" ${metaspace_config}
+	#hive的bin目录
+	if [ "$key" = "hive_bin_dir" ];then
+		sed -i "s#metaspace.hive.bin=.*#metaspace.hive.bin=${value}#g" ${metaspace_config}
 	#hdfs配置文件
 	elif [ "$key" = "hdfs_conf_dir" ];then
 		sed -i "s#metaspace.hdfs.conf=.*#metaspace.hdfs.conf=${value}#g" ${metaspace_config}
