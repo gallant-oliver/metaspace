@@ -109,9 +109,9 @@ public class DataStandardREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     @Valid
-    public void update(DataStandard dataStandard) throws AtlasBaseException {
+    public void update(DataStandard dataStandard,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
-        dataStandardService.update(dataStandard);
+        dataStandardService.update(dataStandard,tenantId);
     }
 
     @DELETE
@@ -128,8 +128,8 @@ public class DataStandardREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataStandard getById(@PathParam("id") String id) throws AtlasBaseException {
-        return dataStandardService.getById(id);
+    public DataStandard getById(@PathParam("id") String id,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return dataStandardService.getById(id,tenantId);
     }
 
     @POST
@@ -198,9 +198,9 @@ public class DataStandardREST {
     @Path("/export/selected/{downloadId}")
     @Valid
     @OperateType(UPDATE)
-    public void exportSelected(@PathParam("downloadId") String downloadId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@HeaderParam("tenantId") String tenantId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-        File exportExcel = dataStandardService.exportExcel(ids);
+        File exportExcel = dataStandardService.exportExcel(ids,tenantId);
         try {
             String filePath = exportExcel.getAbsolutePath();
             String fileName = filename(filePath);
@@ -310,7 +310,7 @@ public class DataStandardREST {
     @Valid
     @OperateType(DELETE)
     public void delete(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
-        CategoryEntityV2 category = dataManageService.getCategory(categoryGuid);
+        CategoryEntityV2 category = dataManageService.getCategory(categoryGuid,tenantId);
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), category.getName());
         dataStandardService.deleteCategory(categoryGuid,tenantId);
     }

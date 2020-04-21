@@ -327,7 +327,7 @@ public class MetaDataService {
             }
             try {
                 //表关联信息
-                List<String> relations = getRelationList(guid);
+                List<String> relations = getRelationList(guid,tenantId);
                 table.setRelations(relations);
                 //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
@@ -339,7 +339,7 @@ public class MetaDataService {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
             try {
-                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid);
+                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid,tenantId);
                 table.setBusinessObjects(businessObjectByTableguid);
             } catch (Exception e) {
                 LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
@@ -891,10 +891,10 @@ public class MetaDataService {
         return objectId;
     }
 
-    public List<String> getRelationList(String guid) throws AtlasBaseException {
+    public List<String> getRelationList(String guid,String tenantId) throws AtlasBaseException {
         try {
             List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
-            dataManageService.getPath(relationEntities);
+            dataManageService.getPath(relationEntities,tenantId);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)

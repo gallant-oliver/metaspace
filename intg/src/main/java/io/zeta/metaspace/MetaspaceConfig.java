@@ -6,6 +6,9 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MetaspaceConfig {
     private static Configuration conf;
     private static String[] hiveUrlArr;
@@ -15,6 +18,13 @@ public class MetaspaceConfig {
     private static String impalaResourcePool;
     private static String hiveConfig;
     private static String metaspaceUrl;
+    public static List<String> systemCategory = new ArrayList<String>(){{
+        add("1");
+        add("2");
+        add("3");
+        add("4");
+        add("5");
+    }};
     private final static String hiveAdmin="metaspace";
 
     public static String getHiveJobQueueName() {

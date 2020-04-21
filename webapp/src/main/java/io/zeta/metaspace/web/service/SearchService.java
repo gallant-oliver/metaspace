@@ -656,7 +656,7 @@ public class SearchService {
                 for (RoleModulesCategories.Category child : childs) {
                     strings.add(child.getGuid());
                 }
-                return getTablesByDatabaseGuid(parameters, strings,databaseGuid,categoryId);
+                return getTablesByDatabaseGuid(parameters, strings,databaseGuid,categoryId,tenantId);
             }
             strings = getChildAndOwnerCategorysByRoles(roles);
         }else {
@@ -664,7 +664,7 @@ public class SearchService {
             strings = getChildAndOwnerCategorysByRoles(userGroups,tenantId);
         }
         if (strings!=null&&strings.size()!=0){
-            return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId);
+            return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId,tenantId);
         }
 
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
@@ -699,10 +699,10 @@ public class SearchService {
             User user = AdminUtils.getUserData();
             List<String> databases=tenantService.getDatabaseByUser(user.getAccount(),tenantId);
             if (databases!=null&&databases.size()!=0)
-                databaseHeaders = userGroupDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit(),databases);
+                databaseHeaders = userGroupDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit(),databases,tenantId);
             //获取用户有权限的全部表和该目录已加关联的全部表
-            tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1,databases);
-            totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases):0;
+            tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1,databases,tenantId);
+            totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases,tenantId):0;
         }
         ;
         List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
@@ -731,7 +731,7 @@ public class SearchService {
         return databasePageResult;
     }
 
-    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> strings, String databaseGuid, String categoryId) {
+    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> strings, String databaseGuid, String categoryId,String tenantId) {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -744,7 +744,7 @@ public class SearchService {
         List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit());
         List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
         List<AddRelationTable> tables = getTables(tableInfos);
-        supplyPath(tables);
+        supplyPath(tables,tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
@@ -863,12 +863,12 @@ public class SearchService {
             User user = AdminUtils.getUserData();
             List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
             if(databases!=null&&databases.size()!=0)
-                tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit,databases);
+                tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit,databases,tenantId);
         }
 
         List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
         List<AddRelationTable> tables = getTables(tableInfo);
-        supplyPath(tables);
+        supplyPath(tables,tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
@@ -958,7 +958,7 @@ public class SearchService {
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             if (databases!=null&&databases.size()!=0)
-                tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit,databases);
+                tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit,databases,tenantId);
             List<AddRelationTable> tables = getTables(tableInfo);
             tablePageResult.setTotalSize(0);
             if (tableInfo.size()!=0){
@@ -971,10 +971,10 @@ public class SearchService {
         return tablePageResult;
     }
 
-    public void supplyPath(List<AddRelationTable> list) {
+    public void supplyPath(List<AddRelationTable> list,String tenantId) {
         Map<String, String> category2Path = new HashMap();
         for(AddRelationTable table : list) {
-            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableId());
+            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableId(),tenantId);
             if (categoryGuidByTableGuid == null) {
                 table.setPath("");
             } else if (categoryGuidByTableGuid.size() != 1) {
@@ -984,7 +984,7 @@ public class SearchService {
                 if(category2Path.containsKey(categoryGuid)) {
                     table.setPath(category2Path.get(categoryGuid));
                 } else {
-                    String path = categoryDAO.queryPathByGuid(categoryGuid).replace(",", "/").replace("\"", "").replace("{", "").replace("}", "");
+                    String path = categoryDAO.queryPathByGuid(categoryGuid,tenantId).replace(",", "/").replace("\"", "").replace("{", "").replace("}", "");
                     table.setPath(path);
                     category2Path.put(categoryGuid, path);
                 }
@@ -1082,8 +1082,8 @@ public class SearchService {
             User user = AdminUtils.getUserData();
             List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
             if (databases!=null&&databases.size()!=0)
-                dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),databases);
-            totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases):0;
+                dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),databases,tenantId);
+            totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases,tenantId):0;
         }
         List<Database> lists = new ArrayList<>();
         for (DatabaseHeader db : dbName) {
@@ -1120,7 +1120,7 @@ public class SearchService {
                     return new ArrayList<String>();
                 }
                 List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
-                return databases!=null&&databases.size()!=0?userGroupDAO.getTableIds(categoryIds,databases):new ArrayList<>();
+                return databases!=null&&databases.size()!=0?userGroupDAO.getTableIds(categoryIds,databases,tenantId):new ArrayList<>();
             }
         }catch (Exception e){
             LOG.error("获取用户管理的所有表失败", e);

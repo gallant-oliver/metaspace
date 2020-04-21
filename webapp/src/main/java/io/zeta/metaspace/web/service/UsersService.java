@@ -136,7 +136,7 @@ public class UsersService {
                     if (technicalChildCategorys.contains(entity.getGuid())){
                         continue;
                     }
-                    addUserCategory(userTechCategoryList,entity,0);
+                    addUserCategory(userTechCategoryList,entity,0,"default");
                 }
                 if (technicalCategoryList!=null&&technicalCategoryList.size()!=0){
                     List<RoleModulesCategories.Category> techChildCategorys = roleDAO.getChildCategorys(technicalCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 0,TenantService.defaultTenant);
@@ -155,7 +155,7 @@ public class UsersService {
                     if (businessChildCategorys.contains(entity.getGuid())){
                         continue;
                     }
-                    addUserCategory(userBusiCategoryList,entity,1);
+                    addUserCategory(userBusiCategoryList,entity,1,"default");
                 }
                 if (businessCategoryList!=null&&businessCategoryList.size()!=0){
                     List<RoleModulesCategories.Category> busiChildCategorys = roleDAO.getChildCategorys(businessCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 1,TenantService.defaultTenant);
@@ -178,10 +178,10 @@ public class UsersService {
         }
     }
 
-    public void addUserCategory(List list,CategoryEntityV2 entity,int categoryType){
+    public void addUserCategory(List list,CategoryEntityV2 entity,int categoryType,String tenantId){
         String guid = entity.getGuid();
         String name = entity.getName();
-        String pathStr = categoryDAO.queryPathByGuid(guid);
+        String pathStr = categoryDAO.queryPathByGuid(guid,tenantId);
         String path = pathStr.substring(1, pathStr.length() - 1);
         path = path.replace(",", ".").replace("\"", "");
         String level2Category = null;
@@ -324,7 +324,7 @@ public class UsersService {
             List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
             for (String userGroupId:userGroupIds){
                 //technicalCategory
-                List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByUserGroup(userGroupId);
+                List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByUserGroup(userGroupId,tenantId);
                 for (CategoryEntityV2 entity : technicalCategoryList) {
                     if (userTechCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
                         continue;
@@ -332,7 +332,7 @@ public class UsersService {
                     if (technicalChildCategorys.contains(entity.getGuid())){
                         continue;
                     }
-                    addUserCategory(userTechCategoryList,entity,0);
+                    addUserCategory(userTechCategoryList,entity,0,tenantId);
                 }
                 if (technicalCategoryList!=null&&technicalCategoryList.size()!=0){
                     List<RoleModulesCategories.Category> techChildCategorys = userGroupDAO.getChildCategorys(technicalCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 0,tenantId);
@@ -343,7 +343,7 @@ public class UsersService {
                     }
                 }
                 //businessCategory
-                List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByUserGroup(userGroupId);
+                List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByUserGroup(userGroupId,tenantId);
                 for (CategoryEntityV2 entity : businessCategoryList) {
                     if (userBusiCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
                         continue;
@@ -351,7 +351,7 @@ public class UsersService {
                     if (businessChildCategorys.contains(entity.getGuid())){
                         continue;
                     }
-                    addUserCategory(userBusiCategoryList,entity,1);
+                    addUserCategory(userBusiCategoryList,entity,1,tenantId);
                 }
                 if (businessCategoryList!=null&&businessCategoryList.size()!=0){
                     List<RoleModulesCategories.Category> busiChildCategorys = userGroupDAO.getChildCategorys(businessCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 1,tenantId);

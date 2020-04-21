@@ -263,13 +263,13 @@ public interface RelationDAO {
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
             "    SELECT * from category where " +
-            "    guid =#{guid} " +
+            "    guid =#{guid} and tenantid=#{tenantId}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.parentCategoryGuid= category.guid" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid and category.tenantid=#{tenantId}" +
             ")" +
             "SELECT guid from categoryTree where parentcategoryguid is null or parentcategoryguid =''</script>")
-    public String getTopGuidByGuid(@Param("guid") String guid);
+    public String getTopGuidByGuid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 
     @Select("select * from table_relation where relationshipguid=#{guid}")
     public RelationEntityV2 getRelationInfoByGuid(String guid);

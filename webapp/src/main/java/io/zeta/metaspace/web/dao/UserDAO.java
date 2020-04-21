@@ -118,11 +118,11 @@ public interface UserDAO {
             " where user_id=#{userId}) and tenant=#{tenantId}")
     public List<UserGroupIdAndName> getUserGroupNameByUserId(@Param("userId") String userId, @Param("tenantId")String tenantId);
 
-    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=0")
-    public List<CategoryEntityV2> getTechnicalCategoryByUserGroup(@Param("groupId") String groupId);
+    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=0 and tenantid=#{tenantId}")
+    public List<CategoryEntityV2> getTechnicalCategoryByUserGroup(@Param("groupId") String groupId,@Param("tenantId")String tenantId);
 
-    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=1")
-    public List<CategoryEntityV2> getBusinessCategoryByUserGroup(@Param("groupId") String roleId);
+    @Select("select * from category where guid in (select category_id from category_group_relation where group_id=#{groupId}) and categoryType=1 and tenantid=#{tenantId}")
+    public List<CategoryEntityV2> getBusinessCategoryByUserGroup(@Param("groupId") String roleId,@Param("tenantId")String tenantId);
 
     @Select("select *,create_time as createTime,update_time as updateTime from users where username=#{userName} and account=#{account} and valid=true")
     public User getUserByName(@Param("userName") String userName,@Param("account")String account);

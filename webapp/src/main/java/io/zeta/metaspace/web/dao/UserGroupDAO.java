@@ -215,20 +215,20 @@ public interface UserGroupDAO {
     @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true and tenant=#{tenantId}")
     public List<UserGroup> getuserGroupByUsersId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
-    @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
-    @Select("select c.guid from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and (c.tenantid=#{tenantId} or c.tenantid='all')")
+    @Select("select c.guid from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId}")
     public List<String> getCategorysByTypeIds(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
-    @Select("select c.* from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and (c.tenantid=#{tenantId} or c.tenantid='all')")
+    @Select("select c.* from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getCategorysByType(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
     //递归找子节点
     @Select("<script>WITH RECURSIVE categoryTree AS " +
             "(" +
             "    SELECT * from category" +
-            "    where (tenantid=#{tenantId} or tenantid='all') and parentCategoryGuid in" +
+            "    where tenantid=#{tenantId} and parentCategoryGuid in" +
             "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -236,7 +236,7 @@ public interface UserGroupDAO {
             "    and categoryType=#{categoryType}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where (category.tenantid=#{tenantId} or category.tenantid='all')" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId}" +
             ")" +
             "SELECT * FROM categoryTree</script>")
     public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
@@ -244,7 +244,7 @@ public interface UserGroupDAO {
     //递归找父节点,结果集不包含自己了
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
-            "    SELECT * from category where (tenantid=#{tenantId} or tenantid='all') and " +
+            "    SELECT * from category where tenantid=#{tenantId} and " +
             "    guid in " +
             "    <foreach item='item' index='index' collection='guid'" +
             "    open='(' separator=',' close=')'>" +
@@ -253,7 +253,7 @@ public interface UserGroupDAO {
             "    and categoryType=#{categoryType}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.parentCategoryGuid= category.guid where (category.tenantid=#{tenantId} or category.tenantid='all') " +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid where category.tenantid=#{tenantId} " +
             ")" +
             "SELECT * from categoryTree where guid not in" +
             "    <foreach item='item' index='index' collection='guid'" +
@@ -264,7 +264,7 @@ public interface UserGroupDAO {
     public List<RoleModulesCategories.Category> getParentCategorys(@Param("guid") List<String> guid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
     //找出合集外的目录
-    @Select("<script>SELECT * from category where (tenantid=#{tenantId} or tenantid='all') " +
+    @Select("<script>SELECT * from category where tenantid=#{tenantId} " +
             "    <if test='categories!=null and categories.size()>0'>" +
             "    and guid not in" +
             "    <foreach item='item' index='index' collection='categories'" +
@@ -277,7 +277,7 @@ public interface UserGroupDAO {
     public List<RoleModulesCategories.Category> getOtherCategorys(@Param("categories") List<RoleModulesCategories.Category> categories, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
     //找出合集外的目录2
-    @Select("<script>SELECT * from category where (tenantid=#{tenantId} or tenantid='all') " +
+    @Select("<script>SELECT * from category where tenantid=#{tenantId} " +
             "    <if test='categories!=null and categories.size()>0'>" +
             "    and guid not in" +
             "    <foreach item='item' index='index' collection='categories'" +
@@ -304,14 +304,14 @@ public interface UserGroupDAO {
     @Update("update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id=#{groupId}")
     public int updateCategory(@Param("groupId") String groupId, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 
-    @Select("select guid from category where categorytype=#{categoryType} and level = 1 adn (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select guid from category where categorytype=#{categoryType} and level = 1 adn tenantid=#{tenantId}")
     public List<String> getTopCategoryGuid(int categoryType,@Param("tenantId") String tenantId);
 
     //递归找子节点加自己
     @Select("<script>WITH RECURSIVE categoryTree AS " +
             "(" +
             "    SELECT * from category" +
-            "    where (tenantid=#{tenantId} or tenantid='all') and parentCategoryGuid in " +
+            "    where tenantid=#{tenantId} and parentCategoryGuid in " +
             "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -319,11 +319,11 @@ public interface UserGroupDAO {
             "    and categoryType=#{categoryType}" +
             "    UNION " +
             "    SELECT category.* from categoryTree" +
-            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where (category.tenantid=#{tenantId} or category.tenantid='all')" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId}" +
             ")" +
             "SELECT * FROM categoryTree" +
             " UNION " +
-            "SELECT * FROM category where guid in " +
+            "SELECT * FROM category where tenantid=#{tenantId} and guid in " +
             "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -331,7 +331,7 @@ public interface UserGroupDAO {
             "</script>")
     public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
-    @Select("<script>select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.guid in " +
+    @Select("<script>select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -344,10 +344,10 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "    order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
-    public List<DatabaseHeader> getDBInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases);
+    public List<DatabaseHeader> getDBInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
 
-    @Select("<script>select COUNT(DISTINCT tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.guid in " +
+    @Select("<script>select COUNT(DISTINCT tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -359,9 +359,9 @@ public interface UserGroupDAO {
             "    #{item}" +
             "    </foreach>" +
             "</script>")
-    public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query,@Param("databases")List<String> databases);
+    public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
-    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -374,9 +374,9 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "     order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
-    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases);
+    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
-    @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
+    @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -387,7 +387,7 @@ public interface UserGroupDAO {
             "    #{item}" +
             "    </foreach>" +
             "</script>")
-    public List<String> getTableIds(@Param("guids") List<String> guids,@Param("databases")List<String> databases);
+    public List<String> getTableIds(@Param("guids") List<String> guids,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select("<script> " +
             "select count(*)over() totalSize,u.id,u.name from user_group u where u.tenant=#{tenantId} and u.valid=true" +
