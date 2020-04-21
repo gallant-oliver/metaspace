@@ -201,9 +201,9 @@ public class HiveJdbcUtils {
 
     }
 
-    public static long getTableSize(String db, String tableName) throws Exception {
-        try(Connection conn = getSystemConnection(db)) {
-            long totalSize = 0;
+    public static float getTableSize(String db, String tableName,String pool) throws Exception {
+        try(Connection conn = getSystemConnection(db,pool)) {
+            float totalSize = 0;
             String querySQL = "show tblproperties " + tableName;
             ResultSet resultSet = conn.createStatement().executeQuery(querySQL);
             while (resultSet.next()) {

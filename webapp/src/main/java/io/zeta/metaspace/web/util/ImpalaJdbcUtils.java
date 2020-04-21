@@ -134,4 +134,22 @@ public class ImpalaJdbcUtils {
         }
     }
 
+    public static float getTableSize(String db, String tableName,String pool) throws Exception {
+        try(Connection conn = getSystemConnection(db,pool)) {
+            float totalSize = 0;
+            String querySQL = "show table stats " + tableName;
+            ResultSet resultSet = conn.createStatement().executeQuery(querySQL);
+            while (resultSet.next()) {
+                String str = resultSet.getString("size");
+                if (str!=null&&str.length()!=0){
+                    totalSize=ByteFormat.parse(str);
+                    break;
+                }
+            }
+            return totalSize;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
 }

@@ -401,8 +401,8 @@ public class QuartJob implements Job {
     }
 
     //表大小
-    public long tableSize(UserRule rule, boolean record) throws Exception {
-        long totalSize = 0;
+    public float tableSize(UserRule rule, boolean record) throws Exception {
+        float totalSize = 0;
         String templateId = rule.getTemplateId();
         String source = qualityDao.querySourceByTemplateId(templateId);
         String dbName = source.split("\\.")[0];
@@ -429,7 +429,7 @@ public class QuartJob implements Job {
             }*/
 
             //表数据量
-            totalSize = HiveJdbcUtils.getTableSize(dbName, tableName);
+            totalSize = HiveJdbcUtils.getTableSize(dbName, tableName,"metaspace");
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -442,7 +442,7 @@ public class QuartJob implements Job {
 
     //表大小变化
     public Double tableSizeChange(UserRule rule, boolean record) throws Exception {
-        long tableSize = 0;
+        float tableSize = 0;
         double sizeChange = 0;
         try {
             tableSize = tableSize(rule, false);
