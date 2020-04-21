@@ -48,26 +48,26 @@ public interface CategoryDAO {
             "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId})")
     public int add(@Param("category") CategoryEntityV2 category,@Param("tenantId") String tenantId);
 
-    @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
     public int ifExistCategory(@Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
-    @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select * from category where guid=#{guid}")
-    public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid) throws SQLException;
+    @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
+    public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select * from category where categorytype=#{type} and downbrothercategoryguid is null and level=1")
-    public CategoryEntityV2 getQuery(@Param("type") int type) throws SQLException;
+    @Select("select * from category where categorytype=#{type} and downbrothercategoryguid is null and level=1 and tenantid=#{tenantId}")
+    public CategoryEntityV2 getQuery(@Param("type") int type,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select * from category where guid=#{guid}")
-    public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid) throws SQLException;
+    @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
+    public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select name from category where guid=#{guid}")
-    public String queryNameByGuid(@Param("guid") String categoryGuid) throws SQLException;
+    @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
+    public String queryNameByGuid(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
 
     @Select({" <script>",
-             " select count(1) from category where name=#{name} and (tenantid=#{tenantId} or tenantid='all') ",
+             " select count(1) from category where name=#{name} and (tenantid=#{tenantId}) ",
              " <choose>",
              " <when test='parentCategoryGuid != null'>",
              " and parentCategoryGuid=#{parentCategoryGuid}",
@@ -80,76 +80,76 @@ public interface CategoryDAO {
              " </script>"})
     public int querySameNameNum(@Param("name") String categoryName, @Param("parentCategoryGuid")String parentCategoryGuid, @Param("type")int type,@Param("tenantId") String tenantId);
 
-    @Select("select qualifiedName from category where guid=#{guid}")
-    public String queryQualifiedName(@Param("guid")String guid);
+    @Select("select qualifiedName from category where guid=#{guid} and tenantid=#{tenantId}")
+    public String queryQualifiedName(@Param("guid")String guid,@Param("tenantId")String tenantId);
 
-    @Select("select count(*) from category where parentCategoryGuid=#{parentCategoryGuid}")
-    public int queryChildrenNum(@Param("parentCategoryGuid")String guid);
+    @Select("select count(*) from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    public int queryChildrenNum(@Param("parentCategoryGuid")String guid,@Param("tenantId")String tenantId);
 
-    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and (tenantid='all' or tenantid=#{tenantId}) and downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='' ")
+    @Select("select guid from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId} and downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='' ")
     public String queryLastChildCategory(@Param("parentCategoryGuid")String guid,@Param("tenantId")String tenantId);
 
-    @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid}")
-    public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid);
+    @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid,@Param("tenantId")String tenantId);
 
-    @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid}")
-    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid);
+    @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
 
-    @Update("update category set name=#{name},description=#{description},qualifiedName=#{qualifiedName},safe=#{safe} where guid=#{guid}")
-    public int updateCategoryInfo(CategoryEntity category);
+    @Update("update category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName},safe=#{category.safe} where guid=#{category.guid} and tenantid=#{tenantId}")
+    public int updateCategoryInfo(@Param("category")CategoryEntity category,@Param("tenantId")String tenantId);
 
-    @Delete("delete from category where guid=#{guid}")
-    public int delete(@Param("guid")String guid) throws SQLException;
+    @Delete("delete from category where guid=#{guid} and tenantid=#{tenantId}")
+    public int delete(@Param("guid")String guid,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType} and tenantid=#{tenantId}")
     public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType,@Param("tenantId") String tenantId) throws SQLException;
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}" +
             "UNION ALL " +
             "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId}) " +
             "SELECT  PATH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
-    public String queryPathByGuid(@Param("guid")String guid);
+    public String queryPathByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
             "UNION ALL " +
             "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and tenantid=#{tenantId}) " +
             "SELECT  PATH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
-    public String queryPathIdsByGuid(@Param("guid")String guid);
+    public String queryPathIdsByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
             "UNION ALL " +
             "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and tenantid=#{tenantId}) " +
             "SELECT  PATH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
-    public String queryGuidPathByGuid(@Param("guid")String guid);
+    public String queryGuidPathByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
 
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL " +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
             "UNION ALL " +
             "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid) " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and tenantid=#{tenantId}) " +
             "SELECT  DEPTH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
-    public int queryLevelByGuid(@Param("guid")String guid);
+    public int queryLevelByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
 
 
     @Select("WITH RECURSIVE categoryTree AS  " +
-            "(SELECT * from category where parentCategoryGuid=#{parentCategoryGuid} " +
+            "(SELECT * from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId} " +
             "UNION " +
-            "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid) " +
+            "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid and category.tenantid=#{tenantId}) " +
             "SELECT guid FROM categoryTree")
     public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
 
@@ -167,11 +167,11 @@ public interface CategoryDAO {
 //    @Select("select guid from category where categoryType=#{categoryType}")
 //    public List<String> getAllCategory(@Param("categoryType")int categoryType);
 
-    @Select("select guid from category where categoryType=#{categoryType} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select guid from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<String> getAllCategory(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
 
-    @Select("select level from category where guid=#{guid}")
-    public int getCategoryLevel(@Param("guid")String guid);
+    @Select("select level from category where guid=#{guid} and tenantid=#{tenantId}")
+    public int getCategoryLevel(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
     @Update({" <script>",
              " update tableInfo set dataOwner=#{owners,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where tableGuid in",
@@ -197,13 +197,21 @@ public interface CategoryDAO {
              " </script>"})
     public int deleteDataOwner(@Param("tableList")List<String> tableList);
 
-    @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid")
-    public List<String> getCategoryGuidByTableGuid(String guid);
+    @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid and tenantid=#{tenantId}")
+    public List<String> getCategoryGuidByTableGuid(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
-    @Select("select name from category where guid=#{guid}")
-    public String getCategoryNameById(String guid);
+    @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
+    public String getCategoryNameById(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
-    @Select("select category.name from category join table_relation on table_relation.categoryguid=category.guid where relationshipguid=#{guid}")
-    public String getCategoryNameByRelationId(String guid);
+    @Select("select category.name from category join table_relation on table_relation.categoryguid=category.guid where relationshipguid=#{guid} and tenantid=#{tenantId}")
+    public String getCategoryNameByRelationId(@Param("guid")String guid, @Param("tenantId")String tenantId);
+
+    @Insert(" <script>" +
+            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES " +
+            "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
+            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.categoryType},#{category.level},#{category.safe},#{tenantId}"+
+            "</foreach>" +
+            " </script>")
+    public int addAll(@Param("categorys") List<CategoryEntityV2> categorys,@Param("tenantId") String tenantId);
 
 }

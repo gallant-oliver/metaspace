@@ -95,11 +95,11 @@ public interface RuleDAO {
     @Select("select id,name,scope,unit,description,delete,rule_type as ruleType from data_quality_rule_template")
     public List<RuleTemplate> getAllRuleTemplateList();
 
-    @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false")
-    public Integer getCategoryObjectCount(@Param("categoryId") String guid);
+    @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false and tenantid=#{tenantId}")
+    public Integer getCategoryObjectCount(@Param("categoryId") String guid,@Param("tenantId")String tenantId);
 
-    @Select("select name from category where guid=#{categoryId}")
-    public String getCategoryName(@Param("categoryId") String guid);
+    @Select("select name from category where guid=#{categoryId} and tenantid=#{tenantId}")
+    public String getCategoryName(@Param("categoryId") String guid,@Param("tenantId")String tenantId);
 
     @Select({" select name " ,
              " from data_quality_rule where delete=false and id=#{id}"})

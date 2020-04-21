@@ -139,7 +139,7 @@ public interface BusinessDAO {
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
              " #{categoryGuid}",
              " </foreach>",
-             " and categoryType=1)",
+             " and categoryType=1 and tenantid=#{tenantId})",
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",

@@ -58,6 +58,13 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserGroupService {
+    public static List<String> systemCategory = new ArrayList<String>(){{
+        add("1");
+        add("2");
+        add("3");
+        add("4");
+        add("5");
+    }};
     @Autowired
     UserGroupDAO userGroupDAO;
     @Autowired
@@ -278,7 +285,7 @@ public class UserGroupService {
         UserGroupCategories userGroupCategories = new UserGroupCategories();
         User user = AdminUtils.getUserData();
         List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenant);
-        if(userGroups==null||userGroups.size()==0) {
+        if((userGroups==null||userGroups.size()==0)&&all==false) {
             return userGroupCategories;
         }
 
@@ -542,13 +549,11 @@ public class UserGroupService {
     }
 
     private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys, CategoryPrivilege.Privilege privilege, int categorytype) {
-        String[] systemCategoryGuids = {"1", "2", "3", "4", "5"};
-        List<String> lists = Arrays.asList(systemCategoryGuids);
         for (RoleModulesCategories.Category category : allCategorys) {
             CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
             //系统系统目录不允许删除和编辑
-            if (lists.contains(category.getGuid())) {
+            if (systemCategory.contains(category.getGuid())) {
                 privilegeinfo.setDelete(false);
                 if (privilegeinfo.isEdit()){
                     privilegeinfo.setEditSafe(true);

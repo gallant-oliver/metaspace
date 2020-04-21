@@ -196,7 +196,7 @@ public class DataManageService {
             }
             if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())){
                 for (CategoryPrivilege categoryPrivilege:valueList){
-                    categoryPrivilege.getPrivilege().adminPrivilege();
+                    categoryPrivilege.getPrivilege().adminPrivilege(categoryPrivilege.getGuid());
                 }
             }
             return valueList;
@@ -282,16 +282,16 @@ public class DataManageService {
                 returnEntity.setPrivilege(privilege);
                 return returnEntity;
             }
-            if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid))) {
+            if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid,tenantId))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
 
             String newCategoryParentGuid = info.getParentCategoryGuid();
             //获取当前catalog
-            CategoryEntityV2 currentEntity = categoryDao.queryByGuid(currentCategoryGuid);
+            CategoryEntityV2 currentEntity = categoryDao.queryByGuid(currentCategoryGuid,tenantId);
             String parentQualifiedName = null;
             String parentGuid = null;
-            int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid);
+            int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid,tenantId);
             //创建子目录
             if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
                 parentGuid = currentCategoryGuid;
@@ -304,7 +304,7 @@ public class DataManageService {
                 entity.setLevel(currentLevel);
                 if (StringUtils.isNotEmpty(parentGuid)) {
                     entity.setParentCategoryGuid(parentGuid);
-                    CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid);
+                    CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid,tenantId);
                     parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
                 }
             }
@@ -322,7 +322,7 @@ public class DataManageService {
                 String lastChildGuid = categoryDao.queryLastChildCategory(currentCategoryGuid,tenantId);
                 if (StringUtils.isNotEmpty(lastChildGuid)) {
                     entity.setUpBrotherCategoryGuid(lastChildGuid);
-                    categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid);
+                    categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid,tenantId);
                 }
             } else {
                 //同级目录
@@ -331,21 +331,21 @@ public class DataManageService {
                     String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                     if (StringUtils.isNotEmpty(upBrotherGuid)) {
                         entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                        categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid);
+                        categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid,tenantId);
                     }
-                    categoryDao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
+                    categoryDao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid,tenantId);
                 } else if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
                     entity.setUpBrotherCategoryGuid(info.getGuid());
                     String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                     if (StringUtils.isNotEmpty(downBrotherGuid)) {
                         entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                        categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid);
+                        categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid,tenantId);
                     }
-                    categoryDao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid);
+                    categoryDao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid,tenantId);
                 }
             }
             categoryDao.add(entity,tenantId);
-            CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid);
+            CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid,tenantId);
             CategoryPrivilege.Privilege privilege =null;
             if(type==0) {
                 if(modules.contains(ModuleEnum.TECHNICALEDIT.getId())) {
@@ -379,8 +379,8 @@ public class DataManageService {
      * @return
      * @throws SQLException
      */
-    public CategoryEntityV2 getCategory(String guid) throws SQLException {
-        return categoryDao.queryByGuid(guid);
+    public CategoryEntityV2 getCategory(String guid,String tenantId) throws SQLException {
+        return categoryDao.queryByGuid(guid,tenantId);
     }
 
     /**
@@ -393,7 +393,7 @@ public class DataManageService {
     @Transactional
     public int deleteCategory(String guid,String tenantId) throws Exception {
         try {
-            int childrenNum = categoryDao.queryChildrenNum(guid);
+            int childrenNum = categoryDao.queryChildrenNum(guid,tenantId);
             if (childrenNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
             }
@@ -402,17 +402,17 @@ public class DataManageService {
             if (relationNum > 0 || businessRelationNum > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在关联关系");
             }
-            CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid);
+            CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid,tenantId);
             if (Objects.isNull(currentCatalog)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
             }
             String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
             String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
             if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-                categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid);
+                categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
             }
             if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-                categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid);
+                categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
             }
             if (TenantService.defaultTenant.equals(tenantId)){
                 User user = AdminUtils.getUserData();
@@ -424,7 +424,7 @@ public class DataManageService {
             }else{
                 userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
             }
-            return categoryDao.delete(guid);
+            return categoryDao.delete(guid,tenantId);
         } catch (SQLException e) {
             LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -450,11 +450,11 @@ public class DataManageService {
             if (Objects.isNull(name)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
-            CategoryEntityV2 currentEntity = categoryDao.queryByGuid(guid);
+            CategoryEntityV2 currentEntity = categoryDao.queryByGuid(guid,tenantId);
             String parentQualifiedName = null;
             StringBuffer qualifiedName = new StringBuffer();
             if (StringUtils.isNotEmpty(currentEntity.getParentCategoryGuid()))
-                parentQualifiedName = categoryDao.queryQualifiedName(currentEntity.getParentCategoryGuid());
+                parentQualifiedName = categoryDao.queryQualifiedName(currentEntity.getParentCategoryGuid(),tenantId);
             if (StringUtils.isNotEmpty(parentQualifiedName))
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
@@ -468,7 +468,7 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             entity.setSafe(info.getSafe());
-            categoryDao.updateCategoryInfo(entity);
+            categoryDao.updateCategoryInfo(entity,tenantId);
             return "success";
         } catch (SQLException e) {
             LOG.error("数据库服务异常", e);
@@ -525,14 +525,14 @@ public class DataManageService {
 
     //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
     @Transactional
-    public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList) throws AtlasBaseException {
+    public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList,String tenantId) throws AtlasBaseException {
         try {
             if (Objects.nonNull(relationshipList)) {
                 for (RelationEntityV2 relationship : relationshipList) {
                     String relationshipGuid = relationship.getRelationshipGuid();
                     RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
                     relationDao.delete(relationInfo.getRelationshipGuid());
-                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid());
+                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid(),tenantId);
                     //当贴源层没有关联该表时
                     if(relationDao.ifRelationExists(topGuid,relationInfo.getTableGuid())==0){
                         TableRelation tableRelation = new TableRelation();
@@ -584,7 +584,7 @@ public class DataManageService {
             if (relations.size()!=0){
                 totalNum = relations.get(0).getTotal();
             }
-            getPath(relations);
+            getPath(relations,tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
             //pageResult.setOffset(query.getOffset());
@@ -624,7 +624,7 @@ public class DataManageService {
             if (relations.size()!=0){
                 totalNum = relations.get(0).getTotal();
             }
-            getPath(relations);
+            getPath(relations,tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
             //pageResult.setOffset(query.getOffset());
@@ -698,7 +698,7 @@ public class DataManageService {
             });
 
             //path
-            getPath(list);
+            getPath(list,tenantId);
             //dataOwner
             for(RelationEntityV2 entity : list) {
                 String tableGuid = entity.getTableGuid();
@@ -774,7 +774,7 @@ public class DataManageService {
                     list = relationDao.queryByTableNameFilterV2(tableName, tag, categoryIds, limit, offset,databases);
             }
 
-            getPath(list);
+            getPath(list,tenantId);
             long totalNum = 0;
             if (list.size()!=0){
                 totalNum=list.get(0).getTotal();
@@ -790,9 +790,9 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
         }
     }
-    public void getPath(List<RelationEntityV2> list) throws AtlasBaseException {
+    public void getPath(List<RelationEntityV2> list,String tenantId) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
-            String path = CategoryRelationUtils.getPath(entity.getCategoryGuid());
+            String path = CategoryRelationUtils.getPath(entity.getCategoryGuid(),tenantId);
             entity.setPath(path);
         }
     }
@@ -1223,12 +1223,12 @@ public class DataManageService {
         }
     }
 
-    public String getCategoryNameById(String guid) {
-        return categoryDao.getCategoryNameById(guid);
+    public String getCategoryNameById(String guid,String tenantId) {
+        return categoryDao.getCategoryNameById(guid,tenantId);
     }
 
-    public String getCategoryNameByRelationId(String guid) {
-        return categoryDao.getCategoryNameByRelationId(guid);
+    public String getCategoryNameByRelationId(String guid,String tenantId) {
+        return categoryDao.getCategoryNameByRelationId(guid,tenantId);
     }
 
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {

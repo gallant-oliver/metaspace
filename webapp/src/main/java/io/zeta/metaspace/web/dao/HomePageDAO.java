@@ -81,10 +81,10 @@ public interface HomePageDAO {
     @Select({" <script>",
             " select D.guid,D.level2name as name,D.level3count as logicDBTotal,COALESCE(E.level4count,0) as entityDBTotal from",
             " (select guid,level2name,count(level3name) as level3count from",
-            " (select A.guid as guid,A.name as level2name,B.name as level3name from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and (A.tenantid=#{tenantId} or A.tenantid='all')) C GROUP BY C.level2name,C.guid) D",
+            " (select A.guid as guid,A.name as level2name,B.name as level3name from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and A.tenantid=#{tenantId}) C GROUP BY C.level2name,C.guid) D",
             " left JOIN",
             " (select grandParentGuid,count(*) as level4count from category JOIN ",
-            " (select  B.guid as parentGuid, A.guid as grandParentGuid from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and (A.tenantid=#{tenantId} or A.tenantid='all')) C ON parentCategoryGuid = C.parentGuid GROUP BY grandParentGuid) E on D.guid = E.grandParentGuid",
+            " (select  B.guid as parentGuid, A.guid as grandParentGuid from category A left join category B on B.parentCategoryGuid=A.guid where A.parentCategoryGuid=#{guid} and A.tenantid=#{tenantId}) C ON parentCategoryGuid = C.parentGuid GROUP BY grandParentGuid) E on D.guid = E.grandParentGuid",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
@@ -92,11 +92,11 @@ public interface HomePageDAO {
             " </script>"})
     public List<CategoryDBInfo> getCategoryRelatedDBCount(@Param("guid") String guid, @Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
-    @Select("select count(*) from category where parentCategoryGuid=#{guid} and (tenantid=#{tenantId} or tenantid='all')")
+    @Select("select count(*) from category where parentCategoryGuid=#{guid} and tenantid=#{tenantId}")
     public long getCountCategory(@Param("guid") String guid,@Param("tenantId")String tenantId);
 
     @Select({" <script>",
-            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid} and (tenantid=#{tenantId} or tenantid='all')) A on B.parentCategoryGuid=A.guid GROUP BY A.guid,A.name",
+            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid} and tenantid=#{tenantId} A on B.parentCategoryGuid=A.guid and B.tenantid=#{tenantId} GROUP BY A.guid,A.name",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",

@@ -58,6 +58,17 @@ public class CategoryEntityV2 {
         this.parentCategoryGuid = parentCategoryGuid;
         this.categoryType = categoryType;
     }
+    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe) {
+        this.guid = guid;
+        this.name = name;
+        this.description = description;
+        this.upBrotherCategoryGuid = upBrotherCategoryGuid;
+        this.downBrotherCategoryGuid = downBrotherCategoryGuid;
+        this.parentCategoryGuid = parentCategoryGuid;
+        this.categoryType = categoryType;
+        this.level=level;
+        this.safe=safe;
+    }
 
     public String getGuid() {
         return guid;
