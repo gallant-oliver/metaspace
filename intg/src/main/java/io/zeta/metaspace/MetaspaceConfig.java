@@ -25,9 +25,13 @@ public class MetaspaceConfig {
         add("4");
         add("5");
     }};
+    private final static String hiveAdmin="metaspace";
 
     public static String getHiveJobQueueName() {
         return hiveJobQueueName;
+    }
+    public static String getHiveAdmin(){
+        return hiveAdmin;
     }
 
     public static String getImpalaResourcePool() {

@@ -77,6 +77,15 @@ public class ExecutionReportData {
         private Timestamp startTime;
         @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
         private Timestamp endTime;
+        private String pool;
+
+        public String getPool() {
+            return pool;
+        }
+
+        public void setPool(String pool) {
+            this.pool = pool;
+        }
 
         public String getTaskId() {
             return taskId;

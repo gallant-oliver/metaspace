@@ -34,13 +34,13 @@ public interface DataShareDAO {
 
     @Insert({" <script>",
              " insert into apiInfo(guid,name,sourceType,sourceId,schemaName,tableName,tableGuid,dbGuid,groupGuid,keeper,maxRowNumber,fields,version,description,",
-             " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager,tenantid",
+             " protocol,requestMode,returnType,path,generateTime,updater,updateTime,publish,star,used_count,manager,tenantid,pool",
              " <if test='info.desensitize != null'>",
              " ,desensitize",
              " </if>",
              " )values(",
              " #{info.guid},#{info.name},#{info.sourceType},#{info.sourceId},#{info.schemaName},#{info.tableName},#{info.tableGuid},#{info.dbGuid},#{info.groupGuid},#{info.keeper},#{info.maxRowNumber},#{info.fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
-             " #{info.version},#{info.description},#{info.protocol},#{info.requestMode},#{info.returnType},#{info.path},#{info.generateTime},#{info.updater},#{info.updateTime},#{info.publish},#{info.star},#{info.usedCount},#{info.manager},#{tenantId}",
+             " #{info.version},#{info.description},#{info.protocol},#{info.requestMode},#{info.returnType},#{info.path},#{info.generateTime},#{info.updater},#{info.updateTime},#{info.publish},#{info.star},#{info.usedCount},#{info.manager},#{tenantId},#{info.pool}",
              " <if test='info.desensitize != null'>",
              " ,#{info.desensitize}",
              " </if>",
@@ -55,7 +55,7 @@ public interface DataShareDAO {
              " update apiInfo set name=#{name},tableGuid=#{tableGuid},dbGuid=#{dbGuid},groupGuid=#{groupGuid},maxRowNumber=#{maxRowNumber},",
              " fields=#{fields,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},",
              " version=#{version},description=#{description},protocol=#{protocol},requestMode=#{requestMode},returnType=#{returnType},path=#{path},",
-             " updater=#{updater},updateTime=#{updateTime}",
+             " updater=#{updater},updateTime=#{updateTime},pool=#{pool}",
              " where",
              " guid=#{guid}",
              " </script>"})
@@ -144,7 +144,7 @@ public interface DataShareDAO {
     public String querydbNameByGuid(@Param("tableGuid")String guid);
 
     @Select({" <script>",
-             " select guid,name,maxRowNumber,publish,sourceType,sourceId,schemaName,tableGuid,tableName",
+             " select guid,name,maxRowNumber,publish,sourceType,sourceId,schemaName,tableGuid,tableName,pool,manager ",
              " from apiInfo",
              " where path=#{path}",
              " </script>"})

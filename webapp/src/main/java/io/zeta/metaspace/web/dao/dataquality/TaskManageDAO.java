@@ -210,8 +210,8 @@ public interface TaskManageDAO {
      * @param task
      * @return
      */
-    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId) ",
-             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId})"})
+    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId,pool) ",
+             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},#{task.pool})"})
     public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
     /**
@@ -264,7 +264,7 @@ public interface TaskManageDAO {
      * @param taskId
      * @return
      */
-    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression from data_quality_task where id=#{taskId}")
+    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression,pool from data_quality_task where id=#{taskId}")
     public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
 
     /**
@@ -313,7 +313,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id, name, 'TID-'||number as taskId, level, description, enable, users.username as creator, data_quality_task.create_time as createTime,cron_expression as cronExpression from data_quality_task join users on users.userid=data_quality_task.creator where id=#{id}")
+    @Select("select id, name, 'TID-'||number as taskId, level, description, enable, users.username as creator, data_quality_task.create_time as createTime,cron_expression as cronExpression,pool from data_quality_task join users on users.userid=data_quality_task.creator where id=#{id}")
     public DataQualityBasicInfo getTaskBasicInfo(@Param("id")String id);
 
     /**
@@ -629,13 +629,13 @@ public interface TaskManageDAO {
     @Select("select rule_type from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
     public Integer getRuleTypeCodeByRuleId(@Param("ruleId")String id);
 
-    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime from data_quality_task where id=#{taskId}")
+    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
 
     @Select({" <script>",
              " SELECT data_quality_task.id as taskId,data_quality_task.name as taskName,'TID-'||data_quality_task.number as taskNumber,data_quality_task.level,",
              " data_quality_task.start_time as startTime,data_quality_task.end_time as endTime,data_quality_task.cron_expression as cronExpression,",
-             "data_quality_task_execute.id as executionId,data_quality_task_execute.execute_time as executeTime",
+             "data_quality_task_execute.id as executionId,data_quality_task_execute.execute_time as executeTime, data_quality_task.pool as pool",
              " from data_quality_task join data_quality_task_execute on data_quality_task_execute.task_id=data_quality_task.id",
              " where data_quality_task.id=#{taskId} and data_quality_task_execute.id=#{taskExecuteId}",
              " </script>"})
@@ -814,7 +814,7 @@ public interface TaskManageDAO {
      * @param taskInfo
      * @return
      */
-    @Update("update data_quality_task set name=#{taskInfo.name},level=#{taskInfo.level},description=#{taskInfo.description},cron_expression=#{taskInfo.cronExpression},start_time=#{taskInfo.startTime},end_time=#{taskInfo.endTime},update_time=#{taskInfo.updateTime},updater=#{taskInfo.updater} where id=#{taskInfo.id}")
+    @Update("update data_quality_task set name=#{taskInfo.name},level=#{taskInfo.level},description=#{taskInfo.description},cron_expression=#{taskInfo.cronExpression},start_time=#{taskInfo.startTime},end_time=#{taskInfo.endTime},update_time=#{taskInfo.updateTime},updater=#{taskInfo.updater},pool=#{taskInfo.pool} where id=#{taskInfo.id}")
     public int updateTaskInfo(@Param("taskInfo")DataQualityTask taskInfo);
 
     /**
@@ -827,4 +827,7 @@ public interface TaskManageDAO {
 
     @Select("select count(*) from report2ruleTemplate where data_quality_execute_id=#{executionId}")
     public int getFilingStatus(@Param("executionId")String executionId);
+
+    @Select("select pool from data_quality_task where id=#{taskId}")
+    public String getPool(@Param("taskId") String taskId);
 }

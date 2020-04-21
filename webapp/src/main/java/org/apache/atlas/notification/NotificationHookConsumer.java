@@ -63,6 +63,7 @@ import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -111,6 +112,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
     @VisibleForTesting
     List<HookConsumer> consumers;
+    private Map<String,Future> futures;
 
     @Inject
     public NotificationHookConsumer(NotificationInterface notificationInterface, AtlasEntityStore atlasEntityStore,
@@ -149,6 +151,9 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         if (consumers == null) {
             consumers = new ArrayList<>();
         }
+        if (futures == null) {
+            futures = new HashMap<>();
+        }
         if (executorService != null) {
             executors = executorService;
         }
@@ -173,7 +178,8 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             HookConsumer hookConsumer = new HookConsumer(consumer);
 
             consumers.add(hookConsumer);
-            executors.submit(hookConsumer);
+            Future<?> submit = executors.submit(hookConsumer);
+            futures.put(hookConsumer.getName(),submit);
         }
     }
 
@@ -208,8 +214,23 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
             consumers.clear();
         }
+        if (futures!=null){
+            futures.clear();
+        }
 
         LOG.info("<== stopConsumerThreads()");
+    }
+
+    public Map<String,Boolean> isAlive(){
+        Map<String,Boolean> map = new HashMap<>();
+        if (futures==null){
+            return map;
+        }
+        for (String name :futures.keySet()){
+            Future future = futures.get(name);
+            map.put(name,!future.isDone());
+        }
+        return map;
     }
 
     /**

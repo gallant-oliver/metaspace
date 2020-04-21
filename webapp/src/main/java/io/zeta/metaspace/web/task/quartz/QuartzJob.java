@@ -261,15 +261,16 @@ public class QuartzJob implements Job {
     public void runJob(AtomicTaskExecution task) throws Exception {
         try {
              TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
+            String pool = taskManageDAO.getPool(task.getTaskId());
             switch (jobType) {
                 case TABLE_ROW_NUM:
-                    ruleResultValue(task, true, false);
+                    ruleResultValue(task, true, false,pool);
                     break;
                 case TABLE_ROW_NUM_CHANGE:
-                    ruleResultValueChange(task, true, false);
+                    ruleResultValueChange(task, true, false,pool);
                     break;
                 case TABLE_ROW_NUM_CHANGE_RATIO:
-                    ruleResultChangeRatio(task, true, false);
+                    ruleResultChangeRatio(task, true, false,pool);
                     break;
                 case TABLE_SIZE:
                     tableSize(task, true);
@@ -288,7 +289,7 @@ public class QuartzJob implements Job {
                 case UNIQUE_VALUE_NUM:
                 case EMPTY_VALUE_NUM:
                 case DUP_VALUE_NUM:
-                    ruleResultValue(task, true, true);
+                    ruleResultValue(task, true, true,pool);
                     break;
 
                 case AVG_VALUE_CHANGE:
@@ -298,7 +299,7 @@ public class QuartzJob implements Job {
                 case UNIQUE_VALUE_NUM_CHANGE:
                 case EMPTY_VALUE_NUM_CHANGE:
                 case DUP_VALUE_NUM_CHANGE:
-                    ruleResultValueChange(task, true, true);
+                    ruleResultValueChange(task, true, true,pool);
                     break;
 
                 case AVG_VALUE_CHANGE_RATIO:
@@ -308,13 +309,13 @@ public class QuartzJob implements Job {
                 case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                 case EMPTY_VALUE_NUM_CHANGE_RATIO:
                 case DUP_VALUE_NUM_CHANGE_RATIO:
-                    ruleResultChangeRatio(task, true, true);
+                    ruleResultChangeRatio(task, true, true,pool);
                     break;
 
                 case UNIQUE_VALUE_NUM_RATIO:
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
-                    getProportion(task);
+                    getProportion(task,pool);
             }
         } catch (Exception e) {
             LOG.info(e.getMessage());
@@ -324,7 +325,7 @@ public class QuartzJob implements Job {
 
 
     //规则值计算
-    public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule,String pool) throws Exception {
         Float resultValue = null;
         Connection conn = null;
         try {
@@ -332,9 +333,9 @@ public class QuartzJob implements Job {
             String tableName = task.getTableName();
             String columnName = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+                conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
             } else {
-                conn = HiveJdbcUtils.getSystemConnection(dbName);
+                conn = HiveJdbcUtils.getSystemConnection(dbName,pool);
             }
 
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
@@ -420,11 +421,11 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化
-    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule,String pool) throws Exception {
         Float nowValue = null;
         Float valueChange = null;
         try {
-            nowValue = ruleResultValue(task, false, columnRule);
+            nowValue = ruleResultValue(task, false, columnRule,pool);
             String subTaskRuleId = task.getSubTaskRuleId();
             Float lastValue = taskManageDAO.getLastValue(subTaskRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
@@ -440,12 +441,12 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化率
-    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule,String pool) throws Exception {
         Float ratio = null;
         Float ruleValueChange = 0F;
         Float lastValue = 0F;
         try {
-            ruleValueChange = ruleResultValueChange(task, false, columnRule);
+            ruleValueChange = ruleResultValueChange(task, false, columnRule,pool);
             ruleValueChange= Objects.isNull(ruleValueChange)?0:ruleValueChange;
             String subTaskRuleId = task.getSubTaskRuleId();
             lastValue = taskManageDAO.getLastValue(subTaskRuleId);
@@ -527,18 +528,18 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void getProportion(AtomicTaskExecution task) throws Exception {
+    public void getProportion(AtomicTaskExecution task,String pool) throws Exception {
         Float ratio = null;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         Connection conn = null;
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-            conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+            conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
         } else {
-            conn = HiveJdbcUtils.getSystemConnection(dbName);
+            conn = HiveJdbcUtils.getSystemConnection(dbName,pool);
         }
         try {
-            Float nowNum = ruleResultValue(task, false, true);
+            Float nowNum = ruleResultValue(task, false, true,pool);
             Float totalNum = 0F;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);

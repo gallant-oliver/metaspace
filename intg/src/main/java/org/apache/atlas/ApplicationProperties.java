@@ -110,6 +110,26 @@ public final class ApplicationProperties extends PropertiesConfiguration {
         }
     }
 
+
+    public static Configuration getByFile(File file) throws AtlasException {
+        try {
+            URL url = file.toURI().toURL();
+
+            LOG.info("Loading {} from {}", file, url);
+
+            ApplicationProperties appProperties = new ApplicationProperties(url);
+
+            appProperties.setDefaults();
+
+            Configuration configuration = appProperties.interpolatedConfiguration();
+
+            logConfiguration(configuration);
+            return configuration;
+        } catch (Exception e) {
+            throw new AtlasException("Failed to load application properties", e);
+        }
+    }
+
     private static void logConfiguration(Configuration configuration) {
         if (LOG.isDebugEnabled()) {
             Iterator<String> keys = configuration.getKeys();
