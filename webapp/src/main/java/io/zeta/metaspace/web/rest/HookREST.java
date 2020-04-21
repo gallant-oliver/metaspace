@@ -138,8 +138,8 @@ public class HookREST {
             HookCheck all = hookService.all();
             return ReturnUtil.success(all);
         }catch (Exception e) {
-            LOG.error("获取消费者线程情况失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取消费者线程情况失败");
+            LOG.error("获取所有检验失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取所有检验失败");
         }
     }
 }
