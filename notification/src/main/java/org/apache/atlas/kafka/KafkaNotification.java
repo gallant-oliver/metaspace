@@ -239,6 +239,21 @@ public class KafkaNotification extends AbstractNotification implements Service {
 
         return this.consumer;
     }
+    public KafkaConsumer getNewKafkaConsumer(Properties consumerProperties, NotificationType type, boolean autoCommitEnabled) {
+        KafkaConsumer newConsumer = null;
+        try {
+            String topic = TOPIC_MAP.get(type);
+
+            consumerProperties.put("enable.auto.commit", autoCommitEnabled);
+            //                consumerProperties.put("security.protocol","SASL_PLAINTEXT");
+            newConsumer = new KafkaConsumer(consumerProperties);
+
+            newConsumer.subscribe(Arrays.asList(topic));
+        } catch (Exception ee) {
+            LOG.error("Exception in getKafkaConsumer ", ee);
+        }
+        return newConsumer;
+    }
 
 
     @VisibleForTesting
