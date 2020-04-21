@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.rest.dataquality;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
@@ -44,6 +45,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.SearchService;
@@ -51,6 +53,7 @@ import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -437,4 +440,12 @@ public class TaskManageREST {
         return Response.status(200).entity("success").build();
     }
 
+    @GET
+    @Path("/pools")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getPools(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        List<Queue> pools = taskManageService.getPools(tenantId);
+        return ReturnUtil.success(pools);
+    }
 }

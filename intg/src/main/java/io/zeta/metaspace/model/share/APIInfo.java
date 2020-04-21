@@ -56,6 +56,15 @@ public class APIInfo {
     private Integer usedCount;
     private Boolean desensitize;
     private String sourceType;
+    private String pool;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
     public String getGuid() {
         return guid;

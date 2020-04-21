@@ -40,6 +40,15 @@ public class EditionTaskInfo {
     private List<EditionTaskInfo.SubTask> taskList;
     private List<WarningGroup> contentWarningNotificationIdList;
     private List<WarningGroup> executionWarningNotificationIdList;
+    private String pool;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
     public String getId() {
         return id;

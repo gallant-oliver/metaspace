@@ -173,8 +173,8 @@ public class TenantService {
             List<Tenant> addTenant = list.stream().filter(tenant -> !tenantIds.contains(tenant.getTenantId())).collect(Collectors.toList());
             if (addTenant!=null&&addTenant.size()!=0)
                 tenantDAO.addTenants(addTenant);
-            if (list==null||list.size()==0)
-                throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED,"该用户没有此工具的租户");
+            if (list==null)
+                return new ArrayList<>();
             return list;
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取租户列表失败");

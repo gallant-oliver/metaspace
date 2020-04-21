@@ -31,6 +31,7 @@ public class TaskExecutionReport {
     private String taskName;
     private Integer level;
     private String description;
+    private String pool;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp startTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -40,6 +41,14 @@ public class TaskExecutionReport {
     private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
     public String getTaskId() {
         return taskId;

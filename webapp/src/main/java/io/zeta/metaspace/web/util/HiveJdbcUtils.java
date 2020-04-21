@@ -65,6 +65,10 @@ public class HiveJdbcUtils {
     }
 
     public static Connection getConnection(String db, String user) throws AtlasBaseException {
+        return getConnection(db,user,hiveJobQueuName);
+    }
+
+    public static Connection getConnection(String db, String user,String pool) throws AtlasBaseException {
         Connection connection = null;
         String jdbcUrl;
         if (hiveUrlQueue != null && hiveUrlQueue.size() > 0) {
@@ -78,8 +82,10 @@ public class HiveJdbcUtils {
                     }
                     LOG.info("hive jdbc url:" + jdbcUrl);
                     Properties properties = new Properties();
-                    properties.setProperty("hiveconf:tez.queue.name",hiveJobQueuName);
-                    properties.setProperty("hiveconf:mapreduce.job.queuename",hiveJobQueuName);
+                    if (pool==null||pool.length()==0)
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源池不能为空");
+                    properties.setProperty("hiveconf:tez.queue.name",pool);
+                    properties.setProperty("hiveconf:mapreduce.job.queuename",pool);
                     connection = DriverManager.getConnection(jdbcUrl,properties);
                     return connection;
                 } catch (Exception e) {
@@ -99,8 +105,12 @@ public class HiveJdbcUtils {
      * 系统调度
      */
     public static Connection getSystemConnection(String db) throws AtlasBaseException {
-        String user = "hive";
+        String user = MetaspaceConfig.getHiveAdmin();
         return getConnection(db, user);
+    }
+    public static Connection getSystemConnection(String db,String pool) throws AtlasBaseException {
+        String user = MetaspaceConfig.getHiveAdmin();
+        return getConnection(db, user,pool);
     }
 
     public static void execute(List<String> sqlList) throws Exception {

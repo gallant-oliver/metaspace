@@ -38,6 +38,15 @@ public class TaskInfo {
     private List<SubTask> taskList;
     private List<String> contentWarningNotificationIdList;
     private List<String> executionWarningNotificationIdList;
+    private String pool;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
     public String getTaskName() {
         return taskName;
