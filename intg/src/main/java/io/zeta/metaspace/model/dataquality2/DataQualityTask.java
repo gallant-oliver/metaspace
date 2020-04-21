@@ -55,6 +55,16 @@ public class DataQualityTask {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp lastExecuteTime;
 
+    private String pool;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
+
     public String getId() {
         return id;
     }

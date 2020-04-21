@@ -24,16 +24,19 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -604,6 +607,15 @@ public class DataShareREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getColumnList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, @PathParam("tableName") String tableName, Parameters parameters) throws AtlasBaseException {
         return shareService.getDataList(DataShareService.SEARCH_TYPE.COLUMN, parameters, sourceId, schemaName, tableName);
+    }
+
+    @GET
+    @Path("/pools")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getPools(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        List<Queue> pools = shareService.getPools(tenantId);
+        return ReturnUtil.success(pools);
     }
 
 }

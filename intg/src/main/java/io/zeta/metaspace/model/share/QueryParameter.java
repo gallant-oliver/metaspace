@@ -29,6 +29,15 @@ public class QueryParameter {
     private Boolean desensitize;
     private Long limit;
     private Long offset;
+    private String pool;
+
+    public String getPool() {
+        return pool;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
 
     public long getMaxRowNumber() {
         return maxRowNumber;

@@ -48,13 +48,18 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.security.Pool;
+import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
+import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.QualityEngine;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -81,6 +86,15 @@ public class TaskManageService {
     public static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     public static String TRIGGER_NAME = "METASPACE_TRIGGER";
     public static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+    private static String engine;
+    static {
+        try {
+            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
+            engine = conf.getString("metaspace.quality.engine");
+        }  catch (Exception e) {
+            LOG.error(e.toString());
+        }
+    }
 
     @Autowired
     TaskManageDAO taskManageDAO;
@@ -94,6 +108,8 @@ public class TaskManageService {
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
     BusinessService businessService;
+    @Autowired
+    private TenantService tenantService;
 
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
@@ -250,6 +266,8 @@ public class TaskManageService {
             dataQualityTask.setErrorTotalCount(0);
             //executionCount
             dataQualityTask.setExecutionCount(0);
+            //资源池
+            dataQualityTask.setPool(taskInfo.getPool());
             //子任务
             List<TaskInfo.SubTask> subTaskList = taskInfo.getTaskList();
             addDataQualitySubTask(guid, currentTime, subTaskList);
@@ -726,5 +744,12 @@ public class TaskManageService {
         }
     }
 
-
+    public List<Queue> getPools(String tenantId) throws AtlasBaseException {
+        Pool pools = tenantService.getPools(tenantId);
+        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            return pools.getImpala();
+        } else {
+            return pools.getHive();
+        }
+    }
 }

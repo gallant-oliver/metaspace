@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /*
@@ -53,12 +56,18 @@ public class ImpalaJdbcUtils {
     }
 
     public static Connection getConnection(String db) throws SQLException, IOException, AtlasBaseException {
+        String user = AdminUtils.getUserName();
+        return getConnection(db,user,impalaResourcePool);
+    }
+
+    public static Connection getConnection(String db,String user,String pool) throws SQLException, IOException, AtlasBaseException {
 
         Connection connection = null;
-        String user = AdminUtils.getUserName();
         String jdbcUrl;
         Properties properties = new Properties();
-        properties.setProperty("REQUEST_POOL",impalaResourcePool);
+        //单引号防止特殊字符
+        pool="'"+pool+"'";
+        properties.setProperty("REQUEST_POOL",pool);
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;
@@ -74,11 +83,19 @@ public class ImpalaJdbcUtils {
      * 系统调度
      */
     static Connection connection;
-    public static Connection getSystemConnection(String db) throws SQLException {
-        String user = "hive";
+    public static Connection getSystemConnection(String db) throws SQLException, AtlasBaseException {
+        return getSystemConnection(db,impalaResourcePool);
+    }
+
+    public static Connection getSystemConnection(String db,String pool) throws SQLException, AtlasBaseException {
+        String user = MetaspaceConfig.getHiveAdmin();
         String jdbcUrl;
         Properties properties = new Properties();
-        properties.setProperty("REQUEST_POOL",impalaResourcePool);
+        if (pool==null||pool.length()==0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源池不能为空");
+        //单引号防止特殊字符
+        pool="'"+pool+"'";
+        properties.setProperty("REQUEST_POOL",pool);
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;

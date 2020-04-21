@@ -43,6 +43,8 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.security.Pool;
+import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.*;
@@ -931,10 +933,11 @@ public class DataShareService {
             } else if(sourceType == APIInfo.SourceType.HIVE) {
                 String sql = HiveJdbcUtils.getQuerySql(tableName, querySql, filterSql, limit, offset);
                 String db = dbName;
+                String pool = parameter.getPool();
                 future = CompletableFuture.supplyAsync(() -> {
                     Map resultMap = null;
                     try {
-                        resultMap = getHiveQueryResult(db, sql, true);
+                        resultMap = getHiveQueryResult(db, sql, true,pool);
                     } catch (Exception e) {
                         LOG.error("查询失败", e);
                     }
@@ -1074,15 +1077,15 @@ public class DataShareService {
         }
     }
 
-    public Map getHiveQueryResult(String dbName, String querySql, Boolean test) throws AtlasBaseException {
+    public Map getHiveQueryResult(String dbName, String querySql, Boolean test,String pool) throws AtlasBaseException {
         Map resultMap = new HashMap();
         Connection conn = null;
         long count = 0;
         try {
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+                conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
             } else {
-                conn = HiveJdbcUtils.getSystemConnection(dbName);
+                conn = HiveJdbcUtils.getSystemConnection(dbName,pool);
             }
             ResultSet resultSet = null;
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
@@ -1215,7 +1218,7 @@ public class DataShareService {
             if(sourceType == APIInfo.SourceType.HIVE) {
                 String sql = HiveJdbcUtils.getQuerySql(tableName, querySql, filterSql, limit, offset);
                 String db = dbName;
-                resultMap = getHiveQueryResult(db, sql, false);
+                resultMap = getHiveQueryResult(db, sql, false,info.getPool());
             } else if(sourceType == APIInfo.SourceType.ORACLE){
                 String sourceId = info.getSourceId();
                 String query = OracleJdbcUtils.getQuerySql(dbName, tableName, querySql, filterSql, limit, offset);
@@ -1536,6 +1539,15 @@ public class DataShareService {
 
     public enum SEARCH_TYPE {
         SCHEMA, TABLE, COLUMN
+    }
+
+    public List<Queue> getPools(String tenantId) throws AtlasBaseException {
+        Pool pools = tenantService.getPools(tenantId);
+        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            return pools.getImpala();
+        } else {
+            return pools.getHive();
+        }
     }
 }
 

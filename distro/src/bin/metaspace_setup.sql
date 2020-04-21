@@ -137,7 +137,8 @@ CREATE TABLE "public"."apiinfo" (
   "tablename" varchar(255) COLLATE "pg_catalog"."default",
   "dbname" varchar(255) COLLATE "pg_catalog"."default",
   "sourceid" varchar(255) COLLATE "pg_catalog"."default",
-  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "pool" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 
@@ -1604,7 +1605,8 @@ CREATE TABLE "public"."data_quality_task" (
   "updater" varchar COLLATE "pg_catalog"."default",
   "current_execution_percent" float4,
   "current_execution_status" int2,
-  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "pool" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task"."name" IS '任务名';
