@@ -24,6 +24,7 @@ import java.text.ParsePosition;
 public class ByteFormat{
     public static float parse(String arg0) {
         int factor = 0;
+        String substring=arg0.substring(0, arg0.length() - 2);
         if (arg0.contains("GB")) {
             factor = 1073741824;
         }
@@ -32,8 +33,11 @@ public class ByteFormat{
         }
         else if (arg0.contains("KB")) {
             factor = 1024;
+        }else if (arg0.contains("B")){
+            factor = 1;
+            substring = arg0.substring(0, arg0.length() - 1);
         }
-        String substring = arg0.substring(0, arg0.length() - 2);
+
         return Float.valueOf(substring) * factor;
     }
 }
