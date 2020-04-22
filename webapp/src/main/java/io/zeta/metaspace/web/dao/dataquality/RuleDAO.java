@@ -20,7 +20,7 @@ public interface RuleDAO {
     public String getRuleTemplateUnit(@Param("ruleTemplateId")String ruleTemplateId);
 
     @Update(" update data_quality_rule set " +
-            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime}" +
+            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime},check_threshold_unit=#{unit},scope=#{scope}" +
             " where id=#{id}")
     public int update(Rule rule);
 
@@ -61,7 +61,7 @@ public interface RuleDAO {
 
     @Select({"<script>",
              "select count(*)over() total,c.*, data_quality_rule_template.rule_type as ruleType from",
-             " (select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit" ,
+             " (select a.id,a.rule_template_id as ruleTemplateId,a.scope as scope,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit" ,
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.category_id=#{categoryId} and a.tenantId=#{tenantId}) c",
              " join data_quality_rule_template on c.ruleTemplateId=data_quality_rule_template.id",
              " order by createTime desc",
