@@ -53,7 +53,11 @@ public class ExportDataPathUtils {
 
     public static void generatePath2DataCache(String urlId, List<String> ids) throws AtlasBaseException {
         try {
-            File file = new File(urlId);
+            File dir = new File("/tmp/metaspace");
+            if (!dir.exists()){
+                dir.mkdir();
+            }
+            File file = new File(dir,urlId);
             String idsStr = com.google.common.base.Joiner.on(SEPARATOR).join(ids);
             FileWriter fw = null;
             if (!file.exists()) {
