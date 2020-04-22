@@ -98,7 +98,7 @@ public class SearchService {
         if (TenantService.defaultTenant.equals(tenantId)){
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         }else{
-            List<String> dbs = tenantService.getDatabaseByUser(account,tenantId);
+            List<String> dbs = tenantService.getDatabase(tenantId);
             String dbsToString = dbsToString(dbs);
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit,dbsToString);
         }
@@ -245,7 +245,7 @@ public class SearchService {
         if (TenantService.defaultTenant.equals(tenantId)){
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(),active, parameters.getOffset(), parameters.getLimit());
         }else{
-            List<String> dbs = tenantService.getDatabaseByUser(account,tenantId);
+            List<String> dbs = tenantService.getDatabase(tenantId);
             String dbsToString = dbsToString(dbs);
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(),active, parameters.getOffset(), parameters.getLimit(),dbsToString);
         }
@@ -273,7 +273,7 @@ public class SearchService {
         if (TenantService.defaultTenant.equals(tenantId)){
             return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         }else {
-            List<String> dbs = tenantService.getDatabaseByUser(account,tenantId);
+            List<String> dbs = tenantService.getDatabase(tenantId);
             String dbsToString = dbsToString(dbs);
             return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(),dbsToString);
         }
@@ -675,7 +675,7 @@ public class SearchService {
     //备用，一组目录查子库加表
     @Transactional
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String categoryGuid,String tenantId) throws AtlasBaseException {
-        List<DatabaseHeader> databaseHeaders = null;
+        List<DatabaseHeader> databaseHeaders = new ArrayList<>();
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
@@ -688,7 +688,7 @@ public class SearchService {
             return databasePageResult;
         }
         long totalSize = 0;
-        List<TechnologyInfo.Table> tables;
+        List<TechnologyInfo.Table> tables=new ArrayList<>();
         //判断独立部署和多租户
         if (TenantService.defaultTenant.equals(tenantId)){
             databaseHeaders = roleDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit());
@@ -697,11 +697,12 @@ public class SearchService {
             totalSize = roleDAO.getDBCountV2(strings, parameters.getQuery());
         }else{
             User user = AdminUtils.getUserData();
-            List<String> databases=tenantService.getDatabaseByUser(user.getAccount(),tenantId);
-            if (databases!=null&&databases.size()!=0)
+            List<String> databases=tenantService.getDatabase(tenantId);
+            if (databases!=null&&databases.size()!=0){
                 databaseHeaders = userGroupDAO.getDBInfo(strings, query, parameters.getOffset(), parameters.getLimit(),databases,tenantId);
-            //获取用户有权限的全部表和该目录已加关联的全部表
-            tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1,databases,tenantId);
+                //获取用户有权限的全部表和该目录已加关联的全部表
+                tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1,databases,tenantId);
+            }
             totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases,tenantId):0;
         }
         ;
@@ -861,7 +862,7 @@ public class SearchService {
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
         }else {
             User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
+            List<String> databases = tenantService.getDatabase(tenantId);
             if(databases!=null&&databases.size()!=0)
                 tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit,databases,tenantId);
         }
@@ -954,7 +955,7 @@ public class SearchService {
                 tablePageResult.setCurrentSize(0);
                 return tablePageResult;
             }
-            List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
+            List<String> databases = tenantService.getDatabase(tenantId);
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             if (databases!=null&&databases.size()!=0)
@@ -1119,7 +1120,7 @@ public class SearchService {
                 if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
                     return new ArrayList<String>();
                 }
-                List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
+                List<String> databases = tenantService.getDatabase(tenantId);
                 return databases!=null&&databases.size()!=0?userGroupDAO.getTableIds(categoryIds,databases,tenantId):new ArrayList<>();
             }
         }catch (Exception e){

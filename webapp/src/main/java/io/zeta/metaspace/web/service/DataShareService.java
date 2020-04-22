@@ -939,7 +939,7 @@ public class DataShareService {
                     try {
                         resultMap = getHiveQueryResult(db, sql, true,pool);
                     } catch (Exception e) {
-                        LOG.error("查询失败", e);
+                        throw new RuntimeException(e);
                     }
                     return resultMap;
                 });

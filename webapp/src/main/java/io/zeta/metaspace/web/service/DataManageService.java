@@ -568,7 +568,7 @@ public class DataManageService {
                 relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
             } else{
                 User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabaseByUser(user.getAccount(), tenantId);
+                List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases!=null&&databases.size()!=0)
                     relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset,databases);
             }
@@ -616,7 +616,7 @@ public class DataManageService {
                 relations = relationDao.queryRelationByCategoryGuidFilter(categoryGuid, limit, offset);
             }else {
                 User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabaseByUser(user.getAccount(), tenantId);
+                List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases!=null&&databases.size()!=0)
                     relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, limit, offset,databases);
             }
@@ -685,7 +685,7 @@ public class DataManageService {
                         }
                     }
                 }
-                List<String> databases = tenantService.getDatabaseByUser(user.getAccount(), tenantId);
+                List<String> databases = tenantService.getDatabase(tenantId);
 
                 if (databases!=null&&databases.size()!=0&&categoryIds.size()!=0)
                     list  = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset,databases);
@@ -769,7 +769,7 @@ public class DataManageService {
                         }
                     }
                 }
-                List<String> databases = tenantService.getDatabaseByUser(user.getAccount(), tenantId);
+                List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases!=null&&databases.size()!=0&&categoryIds.size()!=0)
                     list = relationDao.queryByTableNameFilterV2(tableName, tag, categoryIds, limit, offset,databases);
             }
