@@ -102,6 +102,9 @@ public class CategoryRelationUtils {
     public static String getPath(String categoryId,String tenantId) throws AtlasBaseException {
         try {
             String pathStr = utils.categoryDAO.queryPathByGuid(categoryId,tenantId);
+            if(pathStr==null){
+                return "";
+            }
             String path = pathStr.substring(1, pathStr.length()-1);
             path = path.replace(",", "/").replace("\"", "");
             return path;
