@@ -273,13 +273,13 @@ public class QuartzJob implements Job {
                     ruleResultChangeRatio(task, true, false,pool);
                     break;
                 case TABLE_SIZE:
-                    tableSize(task, true);
+                    tableSize(task, true,pool);
                     break;
                 case TABLE_SIZE_CHANGE:
-                    tableSizeChange(task, true);
+                    tableSizeChange(task, true,pool);
                     break;
                 case TABLE_SIZE_CHANGE_RATIO:
-                    tableSizeChangeRatio(task, true);
+                    tableSizeChangeRatio(task, true,pool);
                     break;
 
                 case AVG_VALUE:
@@ -467,13 +467,17 @@ public class QuartzJob implements Job {
     }
 
     //表大小
-    public Float tableSize(AtomicTaskExecution task, boolean record) throws Exception {
+    public Float tableSize(AtomicTaskExecution task, boolean record,String pool) throws Exception {
         Float totalSize = null;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         try {
             //表数据量
-            totalSize = Float.valueOf(HiveJdbcUtils.getTableSize(dbName, tableName));
+            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                totalSize = ImpalaJdbcUtils.getTableSize(dbName, tableName,pool);
+            } else {
+                totalSize = HiveJdbcUtils.getTableSize(dbName, tableName,pool);
+            }
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -485,11 +489,11 @@ public class QuartzJob implements Job {
     }
 
     //表大小变化
-    public Float tableSizeChange(AtomicTaskExecution task, boolean record) throws Exception {
+    public Float tableSizeChange(AtomicTaskExecution task, boolean record,String pool) throws Exception {
         Float tableSize = null;
         Float sizeChange = null;
         try {
-            tableSize = tableSize(task, false);
+            tableSize = tableSize(task, false,pool);
             String subTaskRuleId = task.getSubTaskRuleId();
             Float lastValue = taskManageDAO.getLastValue(subTaskRuleId);
             lastValue = (Objects.isNull(lastValue)) ? 0 : lastValue;
@@ -505,12 +509,12 @@ public class QuartzJob implements Job {
     }
 
     //表大小变化率
-    public Float tableSizeChangeRatio(AtomicTaskExecution task, boolean record) throws Exception {
+    public Float tableSizeChangeRatio(AtomicTaskExecution task, boolean record,String pool) throws Exception {
         Float tableSizeChange = 0F;
         Float lastValue = 0F;
         Float ratio = null;
         try {
-            tableSizeChange = tableSizeChange(task, false);
+            tableSizeChange = tableSizeChange(task, false,pool);
             tableSizeChange = (Objects.isNull(lastValue))? 0:lastValue;
             String subTaskRuleId = task.getSubTaskRuleId();
             lastValue = taskManageDAO.getLastValue(subTaskRuleId);
