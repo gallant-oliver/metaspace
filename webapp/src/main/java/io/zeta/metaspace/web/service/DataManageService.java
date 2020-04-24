@@ -917,6 +917,9 @@ public class DataManageService {
 
     public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
         try {
+            if("0".equals(pId)){
+                pId=ApplicationProperties.get().getString("sso.organization.first.pid");
+            }
             String query = parameters.getQuery();
             if(StringUtils.isNotEmpty(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
