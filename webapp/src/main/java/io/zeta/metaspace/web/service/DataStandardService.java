@@ -69,6 +69,8 @@ public class DataStandardService {
     DataManageService dataManageService;
     @Autowired
     TableDAO tableDAO;
+    @Autowired
+    TenantService tenantService;
 
     public int insert(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -114,29 +116,33 @@ public class DataStandardService {
         return dataStandard;
     }
 
-    public List<DataStandard> getByNumber(String number) throws AtlasBaseException {
+    public List<DataStandard> getByNumber(String number,String tenantId) throws AtlasBaseException {
         try {
-            return dataStandardDAO.getByNumber(number);
+            return dataStandardDAO.getByNumber(number,tenantId);
         } catch (Exception e) {
             LOG.error("获取标准失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标准失败");
         }
     }
     @Transactional
-    public void deleteByNumber(String number) throws AtlasBaseException {
+    public void deleteByNumber(String number,String tenantId) throws AtlasBaseException {
         try {
-            dataStandardDAO.deleteStandard2RuleByRuleId(number);
-            dataStandardDAO.deleteStandard2TableByNumber(number);
-            dataStandardDAO.deleteByNumber(number);
+            dataStandardDAO.deleteStandard2RuleByRuleId(number,tenantId);
+            List<String> database = tenantService.getDatabase(tenantId);
+            if (database!=null&&database.size()!=0){
+                dataStandardDAO.deleteStandard2TableByNumber(number,database);
+            }
+
+            dataStandardDAO.deleteByNumber(number,tenantId);
         } catch (Exception e) {
             LOG.error("删除失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
         }
     }
 
-    public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
+    public void deleteByNumberList(List<String> numberList,String tenantId) throws AtlasBaseException {
         try {
-            dataStandardDAO.deleteByNumberList(numberList);
+            dataStandardDAO.deleteByNumberList(numberList,tenantId);
         } catch (Exception e) {
             LOG.error("批量删除失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "批量删除失败");
@@ -155,7 +161,7 @@ public class DataStandardService {
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
         dataStandard.setCategoryId(old.getCategoryId());
         dataStandard.setDelete(false);
-        return dataStandardDAO.update(dataStandard);
+        return dataStandardDAO.update(dataStandard,tenantId);
     }
 
     public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters,String tenantId) throws AtlasBaseException {
@@ -207,8 +213,8 @@ public class DataStandardService {
         return pageResult;
     }
 
-    public PageResult<DataStandard> history(String number, Parameters parameters) {
-        List<DataStandard> list = dataStandardDAO.history(number, parameters.getLimit(), parameters.getOffset(), parameters.getQuery());
+    public PageResult<DataStandard> history(String number, Parameters parameters,String tenantId) {
+        List<DataStandard> list = dataStandardDAO.history(number, parameters.getLimit(), parameters.getOffset(), parameters.getQuery(),tenantId);
         PageResult<DataStandard> pageResult = new PageResult<>();
         long totalSize = 0;
         if (list.size()!=0){
@@ -238,7 +244,7 @@ public class DataStandardService {
     }
 
     public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList)
+        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList,tenantId)
                 .stream()
                 .map(dataStandard -> {
                     String path = null;
@@ -380,13 +386,13 @@ public class DataStandardService {
     }
 
     @Transactional
-    public void assignTableToStandard(DataStandAndTable dataStandAndTable,String tableName) throws AtlasBaseException {
+    public void assignTableToStandard(DataStandAndTable dataStandAndTable,String tableName,String tenantId) throws AtlasBaseException {
         try {
             dataStandAndTable.setOperator(AdminUtils.getUserData().getUserId());
             dataStandAndTable.setCreateTime(DateUtils.currentTimestamp());
             dataStandardDAO.deleteByTableId(dataStandAndTable.getTableGuid());
             for (String number : dataStandAndTable.getNumbers()){
-                String content = dataStandardDAO.getContentByNumber(number);
+                String content = dataStandardDAO.getContentByNumber(number,tenantId);
                 if (content==null){
                     LOG.error("数据标准不存在或已删除");
                     continue;
@@ -404,13 +410,13 @@ public class DataStandardService {
     }
 
     @Transactional
-    public void assignRuleToStandard(DataStandAndRule dataStandAndRule,String ruleName) throws AtlasBaseException {
+    public void assignRuleToStandard(DataStandAndRule dataStandAndRule,String ruleName,String tenantId) throws AtlasBaseException {
         try {
             dataStandAndRule.setOperator(AdminUtils.getUserData().getUserId());
             dataStandAndRule.setCreateTime(DateUtils.currentTimestamp());
             dataStandardDAO.deleteByRuleId(dataStandAndRule.getRuleId());
             for (String number : dataStandAndRule.getNumbers()){
-                String content = dataStandardDAO.getContentByNumber(number);
+                String content = dataStandardDAO.getContentByNumber(number,tenantId);
                 if (content==null){
                     LOG.error("数据标准不存在或已删除");
                     continue;
@@ -468,9 +474,12 @@ public class DataStandardService {
         }
     }
 
-    public PageResult<DataStandToTable> getTableByNumber(String number,Parameters parameters) throws AtlasBaseException {
+    public PageResult<DataStandToTable> getTableByNumber(String number,Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<DataStandToTable> list = dataStandardDAO.getTableByNumber(number,parameters);
+            List<String> databases = tenantService.getDatabase(tenantId);
+            List<DataStandToTable> list = new ArrayList<>();
+            if (databases!=null&&databases.size()!=0)
+                list = dataStandardDAO.getTableByNumber(number,parameters,databases);
             PageResult<DataStandToTable> pageResult = new PageResult<>();
             long totalSize = 0;
             if (list.size()!=0){
@@ -487,9 +496,9 @@ public class DataStandardService {
         }
     }
 
-    public PageResult<DataStandToRule> getRuleByNumber(String number,Parameters parameters) throws AtlasBaseException {
+    public PageResult<DataStandToRule> getRuleByNumber(String number,Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<DataStandToRule> list = dataStandardDAO.getRuleByNumber(number,parameters);
+            List<DataStandToRule> list = dataStandardDAO.getRuleByNumber(number,parameters,tenantId);
             PageResult<DataStandToRule> pageResult = new PageResult<>();
             long totalSize = 0;
             if (list.size()!=0){

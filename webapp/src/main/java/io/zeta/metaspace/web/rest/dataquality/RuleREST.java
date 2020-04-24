@@ -301,14 +301,14 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard")
     @OperateType(UPDATE)
-    public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable) throws AtlasBaseException {
+    public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId());
         if(null == ruleName) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "质量规则不存在");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleName);
         try {
-            dataStandardService.assignRuleToStandard(dataStandAndTable,ruleName);
+            dataStandardService.assignRuleToStandard(dataStandAndTable,ruleName,tenantId);
             return true;
         } catch (Exception e) {
             throw e;

@@ -1087,6 +1087,9 @@ public class SearchService {
             totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases,tenantId):0;
         }
         List<Database> lists = new ArrayList<>();
+        if (dbName==null){
+            return databasePageResult;
+        }
         for (DatabaseHeader db : dbName) {
             Database database = new Database();
             database.setDatabaseId(db.getDatabaseGuid());
