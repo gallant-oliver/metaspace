@@ -18,6 +18,15 @@ public class Report2RuleTemplate {
     private Integer number;
     @JsonIgnore
     private int total;
+    private boolean delete;
+
+    public boolean isDelete() {
+        return delete;
+    }
+
+    public void setDelete(boolean delete) {
+        this.delete = delete;
+    }
 
     public String getRuleTemplateId() {
         return ruleTemplateId;
