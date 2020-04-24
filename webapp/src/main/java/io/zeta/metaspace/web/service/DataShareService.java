@@ -1359,8 +1359,8 @@ public class DataShareService {
         }
     }
 
-    public List<Column> getTableColumnList(String tableGuid) throws AtlasBaseException {
-        List<Column> columnList = metaDataService.getTableInfoById(tableGuid,null).getColumns().stream().filter(column -> "ACTIVE".equals(column.getStatus())).collect(Collectors.toList());
+    public List<Column> getTableColumnList(String tableGuid,String tenantId) throws AtlasBaseException {
+        List<Column> columnList = metaDataService.getTableInfoById(tableGuid,tenantId).getColumns().stream().filter(column -> "ACTIVE".equals(column.getStatus())).collect(Collectors.toList());
         columnList.forEach(column -> {
             String columnName = column.getColumnName();
             String displayName = column.getDisplayName();

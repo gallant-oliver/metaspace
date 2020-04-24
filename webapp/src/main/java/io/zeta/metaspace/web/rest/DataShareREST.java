@@ -368,9 +368,9 @@ public class DataShareREST {
     @Path("/table/columns/{tableGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
+    public List<Column> getTableColumns(@PathParam("tableGuid") String tableGuid,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return shareService.getTableColumnList(tableGuid);
+            return shareService.getTableColumnList(tableGuid,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         }

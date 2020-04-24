@@ -171,6 +171,15 @@ public class TaskManageService {
     public void deleteTaskList(List<String> taskIdList) throws AtlasBaseException {
         try {
             if(Objects.nonNull(taskIdList)) {
+                for (String taskId:taskIdList){
+                    String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
+                    if (jobName!=null&&jobName.length()!=0){
+                        String jobGroupName = JOB_GROUP_NAME + jobName;
+                        String triggerName = TRIGGER_NAME + jobName;
+                        String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
+                        quartzManager.removeJob(jobName, jobGroupName,triggerName,triggerGroupName);
+                    }
+                }
                 taskManageDAO.deleteTaskList(taskIdList);
                 taskManageDAO.deleteSubTaskList(taskIdList);
                 taskManageDAO.deleteSubTaskObjectList(taskIdList);

@@ -49,7 +49,7 @@ public interface RuleTemplateDAO {
 
     @Select({" <script>",
             " select count(*)over() total,c.*,users.username as creatorName,ROW_NUMBER () OVER (ORDER BY createTime desc) AS number from",
-            " (select b.*,data_quality_task.name as taskName from",
+            " (select b.*,data_quality_task.name as taskName,data_quality_task.delete as delete from",
             " (select a.*,data_quality_task_execute.task_id as taskId from ",
             " (select rule_template_id as ruleTemplateId,data_quality_execute_id as executeId,",
             " report2ruletemplate.creator as creatorId,report2ruletemplate.create_time as createTime,rule_type as ruleTypeId",
