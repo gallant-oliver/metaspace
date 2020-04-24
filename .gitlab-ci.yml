@@ -2,29 +2,12 @@ image: repository.gridsum.com:8443/library/jdk-8-maven-node:latest
 variables:
   MAVEN_OPTS: "-Djava.awt.headless=true -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN"
   MAVEN_CLI_OPTS: "--batch-mode --errors --show-version"
-  DEPLOY_USER: "metaspace"
-  DEVELOP_SERVER_ID_1: "10.200.64.162"
-  DEVELOP_SERVER_ID_2: "10.200.64.151"
-  TEST_SERVER_ID_1: "10.200.64.125"
-  TEST_SERVER_ID_2: "10.200.64.95"
-  DEPLOY_HOME: "/home/metaspace/metaspace"
-  DEPLOY_PATH: "$DEPLOY_HOME/server/webapp"
-  BACKUP_DIR: "$DEPLOY_HOME/server/webapp/backup"
 
 # 定义 stages
 stages:
-  - test
   - dev_deploy
   - test_deploy
 
-
-# 执行测试
-test:
-  tags:
-    - java
-  stage: test
-  script:
-    - "mvn $MAVEN_CLI_OPTS clean test"
 
 #部署开发环境
 dev_deploy:
@@ -32,13 +15,10 @@ dev_deploy:
     - java
   stage: dev_deploy
   script:
-    - "mvn $MAVEN_CLI_OPTS package -DskipTests"
+    - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
-    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -az * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
   artifacts:
     name: metaspace_dev
@@ -52,13 +32,10 @@ test_deploy:
     - java
   stage: test_deploy
   script:
-    - "mvn $MAVEN_CLI_OPTS package -DskipTests"
+    - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
-    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -az * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
   artifacts:
     name: metaspace_test
