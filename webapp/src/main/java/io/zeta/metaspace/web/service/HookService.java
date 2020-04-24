@@ -168,7 +168,7 @@ public class HookService {
      * @throws AtlasBaseException
      */
     public List<String> hookConfigCheck() throws AtlasException, AtlasBaseException {
-        String message= "%s 配置不同，metaspace的配置为：%s,hook的配置为：%s";
+        String message= "%s 配置不同\n metaspace的配置为：%s\n hook的配置为：%s";
         Configuration applicationProperties = ApplicationProperties.get();
         String hiveConfPath = applicationProperties.getString(hiveConfig);
         File file = new File(hiveConfPath+"/atlas-application.properties");
@@ -224,7 +224,7 @@ public class HookService {
             kafkaConsumer.close();
             return lag;
         }catch (Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取kafka消费积压情况失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取kafka消费积压情况失败:"+e.getMessage());
         }
     }
 
