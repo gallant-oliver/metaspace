@@ -156,19 +156,18 @@ public class TenantService {
      */
     @Transactional
     public List<Tenant> getTenants() throws AtlasBaseException {
-        if (isStandalone){
-            List<Tenant> tenants = new ArrayList<>();
-            Tenant tenant = new Tenant();
-            tenant.setTenantId(defaultTenant);
-            tenant.setProjectName("独立部署");
-            tenants.add(tenant);
-            return tenants;
-        }
-        HashMap<String,String> hashMap = new HashMap<>();
-        hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
-        hashMap.put("User-Agent","Chrome");
-        int retryCount = 0;
-        while(retryCount < 3) {
+        try {
+            if (isStandalone){
+                List<Tenant> tenants = new ArrayList<>();
+                Tenant tenant = new Tenant();
+                tenant.setTenantId(defaultTenant);
+                tenant.setProjectName("独立部署");
+                tenants.add(tenant);
+                return tenants;
+            }
+            HashMap<String,String> hashMap = new HashMap<>();
+            hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
+            hashMap.put("User-Agent","Chrome");
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_LIST,null,hashMap);
             Gson gson = new Gson();
             List<Tenant> list = gson.fromJson(string, new TypeToken<List<Tenant>>(){}.getType());
@@ -182,8 +181,9 @@ public class TenantService {
             }
 
             return list;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取租户列表失败");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取租户列表失败");
     }
 
 
@@ -210,8 +210,7 @@ public class TenantService {
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenantId",tenantId);
         hashMap.put("toolName",toolName);
-        int retryCount = 0;
-        while(retryCount < 3) {
+        try {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_MODULE,null,hashMap);
             List<RoleResource> list = gson.fromJson(string, new TypeToken<List<RoleResource>>(){}.getType());
             List<Module> modules = new ArrayList<>();
@@ -224,8 +223,9 @@ public class TenantService {
             }
             MetaspaceContext.set(key,modules);
             return modules;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的功能权限错误");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取当前用户的功能权限错误");
     }
 
     /**
@@ -249,13 +249,14 @@ public class TenantService {
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenant-id",tenantId);
         int retryCount = 0;
-        while(retryCount < 3) {
+        try {
             String string = OKHttpClient.doGet(SECURITY_HOST+POOL,null,hashMap);
             Pool pool = gson.fromJson(string, Pool.class);
             MetaspaceContext.set(key,pool);
             return pool;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的资源池错误");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取当前用户的资源池错误");
     }
 
     /**
@@ -278,16 +279,16 @@ public class TenantService {
         hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenant-id",tenantId);
-        int retryCount = 0;
-        while(retryCount < 3) {
+        try {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_USER_DATABASE+userEmail,null,hashMap);
             HashMap<String,Object> databases = gson.fromJson(string, new TypeToken<HashMap<String,Object>>() {
             }.getType());
             ArrayList<String> strings = new ArrayList<>(databases.keySet());
             MetaspaceContext.set(key,strings);
             return strings;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取当前用户的hive库权限错误");
     }
 
     /**
@@ -308,10 +309,9 @@ public class TenantService {
         }
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put("User-Agent","Chrome");
-        int retryCount = 0;
         HashMap<String,String> query = new HashMap<>();
         query.put("tenantId",tenantId);
-        while(retryCount < 3) {
+        try {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_DATABASE,query,hashMap);
             Map map = gson.fromJson(string, HashMap.class);
             Object data = map.get("data");
@@ -325,8 +325,9 @@ public class TenantService {
             }
             MetaspaceContext.set(key,dbs);
             return dbs;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取当前用户的hive库权限错误");
     }
 
     /**
@@ -337,20 +338,16 @@ public class TenantService {
         Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put("User-Agent","Chrome");
-        int retryCount = 0;
         HashMap<String,String> query = new HashMap<>();
-        while(retryCount < 3) {
-            try {            String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_DATABASE,query,hashMap);
-                Map map = gson.fromJson(string, HashMap.class);
-                Object data = map.get("data");
-                TenantDatabaseList tenantDatabaseList = gson.fromJson(gson.toJson(data), TenantDatabaseList.class);
-                return tenantDatabaseList;
-            }catch (Exception e){
-                LOG.error(e);
-                throw e;
-            }
-
+        try {
+            String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_DATABASE,query,hashMap);
+            Map map = gson.fromJson(string, HashMap.class);
+            Object data = map.get("data");
+            TenantDatabaseList tenantDatabaseList = gson.fromJson(gson.toJson(data), TenantDatabaseList.class);
+            return tenantDatabaseList;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
         }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"从安全中心获取当前用户的hive库权限错误");
+
     }
 }
