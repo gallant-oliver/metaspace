@@ -57,12 +57,12 @@ public interface RuleTemplateDAO {
             " where rule_template_id=#{templateId}) a",
             " join data_quality_task_execute",
             " on data_quality_task_execute.id=a.executeId)b",
-            " join data_quality_task on data_quality_task.id=b.taskId) c",
+            " join data_quality_task on data_quality_task.id=b.taskId where data_quality_task.tenantid=#{tenantId}) c",
             " join users on users.account=c.creatorId",
             " order by createTime desc",
             " <if test='params.limit != null and params.limit != -1'>",
             " limit #{params.limit} offset #{params.offset}",
             " </if>",
             " </script>"})
-    public List<Report2RuleTemplate> getReportByRuleType(@Param("templateId")String templateId, @Param("params") Parameters params);
+    public List<Report2RuleTemplate> getReportByRuleType(@Param("templateId")String templateId, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 }
