@@ -97,7 +97,7 @@ public class DataStandardREST {
     @Valid
     public void insert(DataStandard dataStandard,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
-        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber());
+        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber(),tenantId);
         if (!oldList.isEmpty()) {
             throw new AtlasBaseException("标准编号已存在");
         }
@@ -119,9 +119,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByNumberList(List<String> numberList) throws AtlasBaseException {
+    public void deleteByNumberList(List<String> numberList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  Joiner.on("、").join(numberList));
-        dataStandardService.deleteByNumberList(numberList);
+        dataStandardService.deleteByNumberList(numberList,tenantId);
     }
 
     @GET
@@ -145,9 +145,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByNumber(@PathParam("number") String number) throws AtlasBaseException {
+    public void deleteByNumber(@PathParam("number") String number,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), number);
-        dataStandardService.deleteByNumber(number);
+        dataStandardService.deleteByNumber(number,tenantId);
     }
 
 
@@ -163,8 +163,8 @@ public class DataStandardREST {
     @Path("/history/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters) throws AtlasBaseException {
-        return dataStandardService.history(number, parameters);
+    public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return dataStandardService.history(number, parameters,tenantId);
     }
 
     @GET
@@ -343,9 +343,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public PageResult<DataStandToTable> getTableByNumber(@PathParam("number") String number,Parameters parameters) throws AtlasBaseException {
+    public PageResult<DataStandToTable> getTableByNumber(@PathParam("number") String number,Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataStandardService.getTableByNumber(number,parameters);
+            return dataStandardService.getTableByNumber(number,parameters,tenantId);
 
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取元数据关联失败"+e.getMessage());
@@ -363,9 +363,9 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public PageResult<DataStandToRule> getRuleByNumber(@PathParam("number") String number,Parameters parameters) throws AtlasBaseException {
+    public PageResult<DataStandToRule> getRuleByNumber(@PathParam("number") String number,Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return dataStandardService.getRuleByNumber(number,parameters);
+            return dataStandardService.getRuleByNumber(number,parameters,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据质量关联失败"+e.getMessage());
         }

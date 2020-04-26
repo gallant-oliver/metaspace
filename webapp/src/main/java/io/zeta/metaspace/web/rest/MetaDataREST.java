@@ -660,14 +660,14 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard")
-    public boolean assignTableToStandard(DataStandAndTable dataStandAndTable) throws AtlasBaseException {
+    public boolean assignTableToStandard(DataStandAndTable dataStandAndTable,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         String tableName = tableDAO.getTableNameByTableGuid(dataStandAndTable.getTableGuid());
         if (tableName==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表不存在或已删除，请刷新或者检查元数据");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableName);
         try {
-            dataStandardService.assignTableToStandard(dataStandAndTable,tableName);
+            dataStandardService.assignTableToStandard(dataStandAndTable,tableName,tenantId);
             return true;
         } catch (Exception e) {
             throw e;
