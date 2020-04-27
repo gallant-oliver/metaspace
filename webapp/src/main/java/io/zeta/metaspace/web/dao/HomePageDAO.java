@@ -96,7 +96,7 @@ public interface HomePageDAO {
     public long getCountCategory(@Param("guid") String guid,@Param("tenantId")String tenantId);
 
     @Select({" <script>",
-            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid} and tenantid=#{tenantId} A on B.parentCategoryGuid=A.guid and B.tenantid=#{tenantId} GROUP BY A.guid,A.name",
+            " select A.name,A.guid,count(B.guid) as entityDBTotal from category B right join (SELECT * from category WHERE parentCategoryGuid=#{guid} and tenantid=#{tenantId}) A on B.parentCategoryGuid=A.guid and B.tenantid=#{tenantId} GROUP BY A.guid,A.name",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
