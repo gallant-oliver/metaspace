@@ -72,7 +72,8 @@ public class ExportDataPathUtils {
     }
 
     public static List<String> getDataIdsByUrlId(String urlId) throws AtlasBaseException {
-        File file = new File(urlId);
+        File dir = new File("/tmp/metaspace");
+        File file = new File(dir,urlId);
         BufferedReader reader = null;
         String line = null;
         try {
