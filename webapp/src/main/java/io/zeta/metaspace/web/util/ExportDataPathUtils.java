@@ -78,7 +78,7 @@ public class ExportDataPathUtils {
         String line = null;
         try {
             if (file.exists()) {
-                reader = new BufferedReader(new FileReader(urlId));
+                reader = new BufferedReader(new FileReader(file));
                 line = reader.readLine();
             }
             if(null == line) {
