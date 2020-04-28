@@ -111,10 +111,10 @@ public class RuleTemplateService {
         }
     }
 
-    public PageResult<Report2RuleTemplate> getReportByRuleType(String templateId, Parameters parameters) throws AtlasBaseException {
+    public PageResult<Report2RuleTemplate> getReportByRuleType(String templateId, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult pageResult = new PageResult();
-            List<Report2RuleTemplate> list =  ruleTemplateDAO.getReportByRuleType(templateId, parameters);
+            List<Report2RuleTemplate> list =  ruleTemplateDAO.getReportByRuleType(templateId, parameters,tenantId);
             long totalSize = 0;
             if(list.size()!=0){
                 totalSize = list.get(0).getTotal();

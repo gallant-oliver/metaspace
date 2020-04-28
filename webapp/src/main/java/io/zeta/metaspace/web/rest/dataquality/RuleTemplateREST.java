@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -81,8 +82,8 @@ public class RuleTemplateREST {
     @Path("/{templateId}/report")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Report2RuleTemplate> getReportByRuleType(@PathParam("templateId")String templateId,Parameters parameters) throws AtlasBaseException {
-        return ruleTemplateService.getReportByRuleType(templateId, parameters);
+    public PageResult<Report2RuleTemplate> getReportByRuleType(@PathParam("templateId")String templateId, Parameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleTemplateService.getReportByRuleType(templateId, parameters,tenantId);
     }
 
     /**
