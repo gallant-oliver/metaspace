@@ -198,7 +198,7 @@ public class DataStandardREST {
     @Path("/export/selected/{downloadId}")
     @Valid
     @OperateType(UPDATE)
-    public void exportSelected(@PathParam("downloadId") String downloadId,@HeaderParam("tenantId") String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId") String tenantId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
         File exportExcel = dataStandardService.exportExcel(ids,tenantId);
         try {
