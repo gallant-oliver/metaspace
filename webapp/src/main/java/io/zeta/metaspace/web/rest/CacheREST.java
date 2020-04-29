@@ -24,8 +24,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 /**
  * @author lixiang03
@@ -39,6 +42,8 @@ public class CacheREST {
     TenantService tenantService;
     private static final Logger LOG = LoggerFactory.getLogger(CacheREST.class);
     @DELETE
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public Result cleanCache() throws AtlasBaseException {
         try {
             tenantService.cleanCache();
