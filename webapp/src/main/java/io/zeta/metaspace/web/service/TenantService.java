@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.service;
 
+import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -26,7 +27,6 @@ import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.web.cache.MetaspaceContext;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -46,7 +46,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import com.google.common.cache.Cache;
 
 /**
  * @author lixiang03
@@ -54,6 +56,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class TenantService {
+    public final static String USER_CACHE_EXPIRE = "user.info.expire";
     public final static String SECURITY_CENTER_HOST = "security.center.host";
     private final static String TICKET_KEY = "X-SSO-FullticketId";
     private final static String TENANT_LIST = "/service/tools/tenant/metaspace";
@@ -68,6 +71,13 @@ public class TenantService {
     private final static String METASPACE_STANDALONE = "metaspace.standalone";
     private static Configuration conf;
     private static String SECURITY_HOST;
+    private static int USER_INFO_EXPIRE ;
+    private static Cache<String, PageResult<UserAndModule>> userModulesCache;
+    private static Cache<String, List<Tenant>> tenantsCache;
+    private static Cache<String, List<Module>> modulesCache;
+    private static Cache<String, Pool> poolCache;
+    private static Cache<String, List<String>> databaseCache;
+
 
     @Autowired
     private UserDAO userDAO;
@@ -79,6 +89,12 @@ public class TenantService {
             conf = ApplicationProperties.get();
             isStandalone = conf.getBoolean(METASPACE_STANDALONE,false);
             SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
+            USER_INFO_EXPIRE = conf.getInt(USER_CACHE_EXPIRE, 30);
+            userModulesCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
+            tenantsCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
+            modulesCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
+            poolCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
+            databaseCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -95,6 +111,14 @@ public class TenantService {
      * @return
      */
     public PageResult<UserAndModule> getUserAndModule(int offset, int limit, SecuritySearch securitySearch) throws AtlasBaseException {
+        String cacheKey = getCacheKey(securitySearch.getTenantId());
+        PageResult<UserAndModule> pageResult = userModulesCache.getIfPresent(cacheKey);
+        if (pageResult!=null) {
+            return pageResult;
+        }
+        if (securitySearch.getToolName() == null) {
+            securitySearch.setToolName(toolName);
+        }
         if (securitySearch.getToolName()==null){
             securitySearch.setToolName(toolName);
         }
@@ -118,7 +142,6 @@ public class TenantService {
                 retryCount++;
                 continue;
             }
-            PageResult pageResult = new PageResult();
             Map map = gson.fromJson(string, HashMap.class);
             Object data = map.get("data");
             List<UserAndModule> userAndModules = new ArrayList<>();
@@ -144,6 +167,7 @@ public class TenantService {
                 pageResult.setLists(userAndModules);
                 pageResult.setCurrentSize(userAndModules.size());
             }
+            userModulesCache.put(cacheKey,pageResult);
             return pageResult;
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "从安全中心获取用户和用户权限失败");
@@ -165,12 +189,18 @@ public class TenantService {
                 tenants.add(tenant);
                 return tenants;
             }
+
+            String cacheKey = AdminUtils.getSSOTicket();
+            List<Tenant> list = tenantsCache.getIfPresent(cacheKey);
+            if (list!=null) {
+                return list;
+            }
             HashMap<String,String> hashMap = new HashMap<>();
             hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
             hashMap.put("User-Agent","Chrome");
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_LIST,null,hashMap);
             Gson gson = new Gson();
-            List<Tenant> list = gson.fromJson(string, new TypeToken<List<Tenant>>(){}.getType());
+            list = gson.fromJson(string, new TypeToken<List<Tenant>>(){}.getType());
             if (list==null||list.size()==0)
                 return new ArrayList<>();
             List<String> tenantIds = tenantDAO.getAllTenantId();
@@ -179,7 +209,7 @@ public class TenantService {
                 tenantDAO.addTenants(addTenant);
                 CategoryUtil.initCategorySql(addTenant);
             }
-
+            tenantsCache.put(cacheKey,list);
             return list;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取租户列表失败");
@@ -193,18 +223,12 @@ public class TenantService {
      * @return
      */
     public List<Module> getModule(String tenantId) throws AtlasBaseException {
-        Gson gson = new Gson();
-        String key = String.format("getModule(TICKET_KEY:%s,tenantId:%s)",AdminUtils.getSSOTicket(),tenantId);
-        Object o = MetaspaceContext.get(key);
-        if (o!=null){
-            try{
-                return gson.fromJson(gson.toJson(o), new TypeToken<List<Module>>(){}.getType());
-            }catch(Exception e){
-                LOG.warn("获取缓存失败", e);
-            }
-
+        String cacheKey = getCacheKey(tenantId);
+        List<Module> modules = modulesCache.getIfPresent(cacheKey);
+        if (modules!=null) {
+            return modules;
         }
-
+        Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
         hashMap.put("User-Agent","Chrome");
@@ -213,7 +237,7 @@ public class TenantService {
         try {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_MODULE,null,hashMap);
             List<RoleResource> list = gson.fromJson(string, new TypeToken<List<RoleResource>>(){}.getType());
-            List<Module> modules = new ArrayList<>();
+            modules = new ArrayList<>();
             for (RoleResource roleResource:list){
                 ModuleEnum moduleEnum = ModuleEnum.getModuleEnum(roleResource);
                 if (moduleEnum==null){
@@ -221,7 +245,7 @@ public class TenantService {
                 }
                 modules.add(moduleEnum.getModule());
             }
-            MetaspaceContext.set(key,modules);
+            modulesCache.put(cacheKey,modules);
             return modules;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的功能权限错误");
@@ -234,25 +258,20 @@ public class TenantService {
      * @return
      */
     public Pool getPools(String tenantId) throws AtlasBaseException {
-        Gson gson = new Gson();
-        String key = String.format("getPools(TICKET_KEY:%s,tenantId:%s)",AdminUtils.getSSOTicket(),tenantId);
-        Object o = MetaspaceContext.get(key);
-        if (o!=null){
-            try{
-                return gson.fromJson(gson.toJson(o), Pool.class);
-            }catch(Exception e){
-                LOG.warn("获取缓存失败", e);
-            }
+        String cacheKey = getCacheKey(tenantId);
+        Pool pool = poolCache.getIfPresent(cacheKey);
+        if (pool!=null) {
+            return pool;
         }
+        Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenant-id",tenantId);
-        int retryCount = 0;
         try {
             String string = OKHttpClient.doGet(SECURITY_HOST+POOL,null,hashMap);
-            Pool pool = gson.fromJson(string, Pool.class);
-            MetaspaceContext.set(key,pool);
+            pool = gson.fromJson(string, Pool.class);
+            poolCache.put(cacheKey,pool);
             return pool;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的资源池错误");
@@ -265,16 +284,13 @@ public class TenantService {
      * @return
      */
     public List<String> getDatabaseByUser(String userEmail,String tenantId) throws AtlasBaseException {
-        Gson gson = new Gson();
-        String key = String.format("getDatabaseByUser(TICKET_KEY:%s,userEmail:%s,tenantId:%s)",AdminUtils.getSSOTicket(),userEmail,tenantId);
-        Object o = MetaspaceContext.get(key);
-        if (o!=null){
-            try{
-                return gson.fromJson(gson.toJson(o), new TypeToken<List<String>>(){}.getType());
-            }catch(Exception e){
-                LOG.warn("获取缓存失败", e);
-            }
+
+        String cacheKey = getCacheKey(tenantId);
+        List<String> strings = databaseCache.getIfPresent(cacheKey);
+        if (strings!=null) {
+            return strings;
         }
+        Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
         hashMap.put("User-Agent","Chrome");
@@ -283,8 +299,8 @@ public class TenantService {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_USER_DATABASE+userEmail,null,hashMap);
             HashMap<String,Object> databases = gson.fromJson(string, new TypeToken<HashMap<String,Object>>() {
             }.getType());
-            ArrayList<String> strings = new ArrayList<>(databases.keySet());
-            MetaspaceContext.set(key,strings);
+            strings = new ArrayList<>(databases.keySet());
+            databaseCache.put(cacheKey,strings);
             return strings;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
@@ -297,16 +313,12 @@ public class TenantService {
      * @return
      */
     public List<String> getDatabase(String tenantId) throws AtlasBaseException {
-        Gson gson = new Gson();
-        String key = String.format("getDatabase(tenantId:%s)",tenantId);
-        Object o = MetaspaceContext.get(key);
-        if (o!=null){
-            try{
-                return gson.fromJson(gson.toJson(o), new TypeToken<List<String>>(){}.getType());
-            }catch(Exception e){
-                LOG.warn("获取缓存失败", e);
-            }
+        String cacheKey = tenantId;
+        List<String> dbs = databaseCache.getIfPresent(cacheKey);
+        if (dbs!=null) {
+            return dbs;
         }
+        Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put("User-Agent","Chrome");
         HashMap<String,String> query = new HashMap<>();
@@ -315,7 +327,7 @@ public class TenantService {
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_DATABASE,query,hashMap);
             Map map = gson.fromJson(string, HashMap.class);
             Object data = map.get("data");
-            List<String> dbs = new ArrayList<>();
+            dbs = new ArrayList<>();
             TenantDatabaseList tenantDatabaseList = gson.fromJson(gson.toJson(data), TenantDatabaseList.class);
             for (TenantDatabaseList.TenantDatabase tenantDatabase:tenantDatabaseList.getTenantDatabaseList()){
                 if (tenantDatabase.getTenantId().equals(tenantId)){
@@ -323,7 +335,7 @@ public class TenantService {
                     break;
                 }
             }
-            MetaspaceContext.set(key,dbs);
+            databaseCache.put(cacheKey,dbs);
             return dbs;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
@@ -349,5 +361,22 @@ public class TenantService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误");
         }
 
+    }
+    public String getCacheKey(String tenantId) throws AtlasBaseException {
+        return AdminUtils.getSSOTicket()+tenantId;
+    }
+    public void cleanCache() throws AtlasBaseException {
+        List<Tenant> tenants = tenantsCache.getIfPresent(AdminUtils.getSSOTicket());
+        if (tenants==null){
+            return;
+        }
+        for (Tenant tenant:tenants){
+            userModulesCache.invalidate(getCacheKey(tenant.getTenantId()));
+            modulesCache.invalidate(getCacheKey(tenant.getTenantId()));
+            poolCache.invalidate(getCacheKey(tenant.getTenantId()));
+            databaseCache.invalidate(getCacheKey(tenant.getTenantId()));
+            databaseCache.invalidate(tenant);
+            tenantsCache.invalidate(AdminUtils.getSSOTicket());
+        }
     }
 }

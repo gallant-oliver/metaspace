@@ -3,17 +3,12 @@ package io.zeta.metaspace.web.util;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.SSOConfig;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.web.cache.MetaspaceContext;
-import io.zeta.metaspace.web.service.TenantService;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
