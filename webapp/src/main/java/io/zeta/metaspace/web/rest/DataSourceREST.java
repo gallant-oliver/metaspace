@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.web.model.Progress;
@@ -681,6 +682,25 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "新增项目用户组权限失败："+e.getMessage());
         }
 
+    }
+
+    @GET
+    @Path("{id}/rely")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getAPIRely(@PathParam("id") String id)
+            throws Exception
+    {
+        try {
+            List<APIIdAndName> apiRely = dataSourceService.getAPIRely(id);
+            return ReturnUtil.success(apiRely);
+        }catch (AtlasBaseException e){
+            LOG.error("获取数据源依赖失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取数据源依赖失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取数据源依赖失败："+e.getMessage());
+        }
     }
 
 }

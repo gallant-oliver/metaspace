@@ -21,6 +21,7 @@ import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 import io.zeta.metaspace.model.dataSource.DataSourcePrivileges;
+import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
@@ -157,9 +158,6 @@ public class DataSourceService {
             if (!"w".equals(userPrivilegeDataSource.getPrivilege())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
             }
-            if(getRely(dataSourceBody.getSourceId())||getAPIRely(dataSourceBody.getSourceId())){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源有依赖,无法编辑ip等属性");
-            }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
             if (dataSourceBody.getPassword()!=null){
                 dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
@@ -229,9 +227,6 @@ public class DataSourceService {
                 UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
                 if (!UserPrivilegeDataSource.MANAGER.getPrivilegeCore().equals(userPrivilegeDataSource.getPrivilegeCore())){
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在无权限删除的数据源");
-                }
-                if(getRely(sourceId)){
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在有依赖的数据源");
                 }
             }
             dataSourceDAO.deleteRelationBySourceId(sourceIds);
@@ -404,13 +399,7 @@ public class DataSourceService {
                     head.setUpdateUserName(userDAO.getUserName(head.getUpdateUserName()));
                 }
                 String sourceId = head.getSourceId();
-                boolean rely;
-                if (isApi){
-                    rely = getAPIRely(sourceId);
-                }else {
-                    rely = getRely(sourceId);
-                }
-                head.setRely(rely);
+                head.setRely(false);
                 UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
                 if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())){
                     head.setEditManager(true);
@@ -631,12 +620,12 @@ public class DataSourceService {
      * @param sourceId
      * @return
      */
-    public boolean getAPIRely(String sourceId) throws AtlasBaseException {
+    public List<APIIdAndName> getAPIRely(String sourceId) throws AtlasBaseException {
         if (Objects.isNull(sourceId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据源id异常");
         }
 
-        return datasourceDAO.getAPIRely(sourceId)!=0;
+        return datasourceDAO.getAPIRely(sourceId);
     }
 
     /**
@@ -727,11 +716,7 @@ public class DataSourceService {
 
                 } else {
                     String sourceId = dataSourceDAO.getSourceIdBySourceName(sourceName,tenantId);
-                    if (getRely(sourceId)){
-                        dataSourceCheckInfo.setErrorMessage("更新数据源失败，数据源存在依赖");
-                        errorDataSourceCount++;
-                        errorDataSourceList.add(sourceName);
-                    }else if (!isManagerUserId(sourceId,userId)){
+                    if (!isManagerUserId(sourceId,userId)){
                         dataSourceCheckInfo.setErrorMessage("更新数据源失败，没有更新该数据源的权限");
                         errorDataSourceCount++;
                         errorDataSourceList.add(sourceName);
@@ -927,7 +912,6 @@ public class DataSourceService {
 
     /**
      * 变更管理者
-     * @param userId
      * @param sourceId
      * @return
      * @throws Exception
@@ -1095,12 +1079,11 @@ public class DataSourceService {
 
     /**
      * 获取对当前项目无权限的用户组
-     * @param id
-     * @param offset
-     * @param limit
-     * @param search
+     * @param tenantId
+     * @param parameters
+     * @param sourceId
      * @return
-     * @throws Exception
+     * @throws AtlasBaseException
      */
     public PageResult<UserGroupIdAndName> getNoUserGroupByDataSource(String tenantId, Parameters parameters, String sourceId) throws AtlasBaseException {
         //当前用户有权限才能查看，读
@@ -1132,12 +1115,10 @@ public class DataSourceService {
     /**
      * 获取权限用户组列表
      * @param tenantId
-     * @param id
-     * @param offset
-     * @param limit
-     * @param search
+     * @param parameters
+     * @param sourceId
      * @return
-     * @throws Exception
+     * @throws AtlasBaseException
      */
     public PageResult<UserGroupAndPrivilege> getUserGroupByDataSource(String tenantId, Parameters parameters, String sourceId) throws AtlasBaseException {
         PageResult<UserGroupAndPrivilege> pageResult = new PageResult<>();
@@ -1156,10 +1137,9 @@ public class DataSourceService {
 
     /**
      * 删除用户组权限
-     * @param id
      * @param userGroups
-     * @return
-     * @throws Exception
+     * @param sourceId
+     * @throws AtlasBaseException
      */
     public void deleteUserGroupByDataSource(List<String> userGroups,String sourceId) throws AtlasBaseException {
         String userId = AdminUtils.getUserData().getUserId();

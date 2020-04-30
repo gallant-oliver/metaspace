@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.dataSource.DataSourcePrivileges;
 import io.zeta.metaspace.model.dataSource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -450,8 +451,8 @@ public interface DataSourceDAO {
     public String getIsApi(@Param("sourceId") String sourceId);
 
     //查询api数据源是否依赖
-    @Select("select count(*) from apiinfo where sourceId=#{sourceId}")
-    public int getAPIRely(@Param("sourceId") String sourceId);
+    @Select("select guid,name from apiinfo where sourceId=#{sourceId}")
+    public List<APIIdAndName> getAPIRely(@Param("sourceId") String sourceId);
 
     @Select("select p.privilege_code from datasource_group_relation p join user_group_relation u on p.group_id=u.group_id " +
             "where p.source_id=#{sourceId} and u.user_id=#{userId}")
