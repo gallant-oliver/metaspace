@@ -116,6 +116,7 @@ public class TenantService {
         if (pageResult!=null) {
             return pageResult;
         }
+        pageResult = new PageResult<>();
         if (securitySearch.getToolName() == null) {
             securitySearch.setToolName(toolName);
         }
