@@ -108,13 +108,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             if (tenantId==null||tenantId.length()==0){
                 tenantId=request.getParameter("tenantId");
             }
-            if((urlStr.equals("/tenant") && "GET".equals(requestMethod)) || //判断是否是获取租户
-               (urlStr.equals("/admin/version") && "GET".equals(requestMethod)) || //判断是否是获取版本
-               prefix.equals("api") ||//判断是否是数据分享获取数据
-               prefix.equals("cache") && "DELETE".equals(requestMethod)//清楚缓存
-            ){
-                return invocation.proceed();
-            }
             if (tenantId==null||tenantId.length()==0){
                 throw new AtlasBaseException(AtlasErrorCode.TENANT_ERROE);
             }
