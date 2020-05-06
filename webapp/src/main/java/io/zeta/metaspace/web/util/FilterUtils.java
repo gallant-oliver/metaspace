@@ -15,10 +15,10 @@ public class FilterUtils {
                 || requestURL.contains("api/metaspace/market/business")
                 || requestURL.contains("api/metaspace/metadata/refreshcache")
                 || requestURL.contains("api/metaspace/api")
-                || requestURL.equals("/tenant")
-                || requestURL.contains("/admin/version")
-                || requestURL.equals("api")
-                || requestURL.equals("cache")) {
+                || requestURL.contains("/api/metaspace/tenant")
+                || requestURL.contains("/api/metaspace/admin/version")
+                || requestURL.contains("/api/metaspace/api")
+                || requestURL.contains("/api/metaspace/cache")) {
 
             return true;
         }
