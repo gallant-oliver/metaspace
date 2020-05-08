@@ -13,9 +13,9 @@ import java.sql.Statement;
 
 public class OracleJdbcUtils {
     private static final Logger LOG = LoggerFactory.getLogger(OracleJdbcUtils.class);
-    private static final String SCHEMA_NAME = "SELECT ROWNUM AS rn,USERNAME AS \"schemaName\" FROM DBA_USERS";
+    private static final String SCHEMA_NAME = "SELECT ROWNUM AS rn,USERNAME AS \"schemaName\" FROM ALL_USERS";
     private static final String SQL_FILL = " 1=1 ";
-    private static final String SCHEMA_COUNT = "SELECT COUNT(*) FROM DBA_USERS";
+    private static final String SCHEMA_COUNT = "SELECT COUNT(*) FROM ALL_USERS";
     private static final String TABLE_NAME = "SELECT ROWNUM AS rn,TABLE_NAME AS \"tableName\" FROM ALL_TABLES WHERE OWNER='%s'";
     private static final String TABLE_COUNT = "SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER='%s'";
     private static final String COLUMN_NAME = "SELECT ROWNUM AS rn,COLUMN_NAME AS \"columnName\",DATA_TYPE AS \"type\" FROM ALL_TAB_COLS WHERE OWNER='%s' AND TABLE_NAME='%s'";
