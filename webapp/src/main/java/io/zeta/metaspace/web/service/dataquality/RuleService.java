@@ -12,6 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
+import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
@@ -244,12 +245,6 @@ public class RuleService {
 
     public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {
         try {
-            if(false == enable) {
-                int count = ruleDAO.getRuleUsedCount(id);
-                if(count > 0) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前规则已被使用，禁止关闭");
-                }
-            }
             return ruleDAO.updateRuleStatus(id, enable);
         } catch (Exception e) {
             LOG.error("更新规则状态失败", e);
@@ -285,5 +280,9 @@ public class RuleService {
 
     public String getNameById(String id) {
         return ruleDAO.getNameById(id);
+    }
+
+    public List<DataTaskIdAndName> getRuleUsed(String id){
+        return ruleDAO.getRuleUsed(id);
     }
 }

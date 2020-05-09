@@ -19,6 +19,8 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.datastandard.DataStandAndRule;
@@ -28,13 +30,17 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.service.dataquality.RuleService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -82,6 +88,7 @@ public class RuleREST {
 
     private static final Integer CATEGORY_RULE = 4;
 
+    private static final Logger LOG = LoggerFactory.getLogger(RuleREST.class);
 
     /**
      * 添加规则
@@ -330,6 +337,22 @@ public class RuleREST {
             return dataStandardService.getDataStandardByRule(ruleId,tenantId);
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    @GET
+    @Path("{id}/used")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getRuleUsed(@PathParam("id") String id)
+            throws Exception
+    {
+        try {
+            List<DataTaskIdAndName> used = ruleService.getRuleUsed(id);
+            return ReturnUtil.success(used);
+        }catch (Exception e){
+            LOG.error("获取使用规则任务失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取使用规则任务失败："+e.getMessage());
         }
     }
 

@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao.dataquality;
 
+import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -86,8 +87,10 @@ public interface RuleDAO {
              " </script>"})
     public List<Rule> search(@Param("params") Parameters params,@Param("tenantId")String tenantId);
 
-    @Select("select count(*) from data_quality_sub_task_rule where ruleId=#{id} and delete=false")
-    public int getRuleUsedCount(@Param("id") String guid);
+    @Select("select t.id,t.name from data_quality_task t join " +
+            "(select s.task_id from data_quality_sub_task s join data_quality_sub_task_rule r on s.id=r.subtask_id where r.ruleId=#{id} and r.delete=false) r " +
+            " on r.task_id=t.id")
+    public List<DataTaskIdAndName> getRuleUsed(@Param("id") String guid);
 
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
