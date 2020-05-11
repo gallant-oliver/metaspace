@@ -1081,7 +1081,7 @@ public class SearchService {
             totalSize = roleDAO.getDBCountV2(strings, parameters.getQuery());
         }else {
             User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabaseByUser(user.getAccount(),tenantId);
+            List<String> databases = tenantService.getDatabase(tenantId);
             if (databases!=null&&databases.size()!=0)
                 dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),databases,tenantId);
             totalSize = databases!=null&&databases.size()!=0?userGroupDAO.getDBCountV2(strings, parameters.getQuery(),databases,tenantId):0;
