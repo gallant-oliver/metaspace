@@ -7,6 +7,7 @@ variables:
 stages:
   - dev_deploy
   - test_deploy
+  - sonarqube
 
 
 #部署开发环境
@@ -42,3 +43,11 @@ test_deploy:
     expire_in: 1 week
     paths:
       - webapp/target/atlas-webapp-*.war
+
+sonarqube:
+  tags:
+    - java
+  stage: sonarqube
+  script: mvn clean verify sonar:sonar -DskipTests  -Dsonar.scm.disabled=True
+  allow_failure: true
+  when: manual
