@@ -123,6 +123,19 @@
                 </distro.exclude.packages>
             </properties>
         </profile>
+        <profile>
+            <id>sonar</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+
+            <properties>
+                <!-- SONAR SERVER -->
+                <sonar.host.url>http://sonar.gridsum.com</sonar.host.url>
+                <sonar.login>4a6d9e3034fac46fc4dc7658229d1536502a9404</sonar.login>
+                <sonar.exclusions>**/*DataType.java,**/*DataSourceService.java</sonar.exclusions>
+            </properties>
+        </profile>
 
     </profiles>
 
