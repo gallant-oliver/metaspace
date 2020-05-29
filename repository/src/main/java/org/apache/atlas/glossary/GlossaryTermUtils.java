@@ -46,7 +46,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GlossaryTermUtils extends GlossaryUtils {
+public class GlossaryTermUtils extends AbstractGlossaryUtils {
     private static final Logger  LOG           = LoggerFactory.getLogger(GlossaryTermUtils.class);
     private static final boolean DEBUG_ENABLED = LOG.isDebugEnabled();
 
@@ -189,6 +189,7 @@ public class GlossaryTermUtils extends GlossaryUtils {
                     relationshipStore.deleteById(existingAnchor.getRelationGuid(), true);
                 }
                 break;
+            default:break;
         }
     }
 
@@ -262,6 +263,7 @@ public class GlossaryTermUtils extends GlossaryUtils {
                     deleteTermRelationships(relation, existingTermHeaders);
                 }
                 break;
+            default:break;
         }
     }
 
@@ -270,7 +272,8 @@ public class GlossaryTermUtils extends GlossaryUtils {
             Map<String, AtlasRelatedTermHeader> map = new HashMap<>();
             for (AtlasRelatedTermHeader t : relatedTerms.get(relation)) {
                 AtlasRelatedTermHeader header = map.get(t.getTermGuid());
-                if (header == null || (StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(t.getRelationGuid()))) {
+                boolean bool = StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(t.getRelationGuid());
+                if (header == null || bool) {
                     map.put(t.getTermGuid(), t);
                 }
             }
@@ -338,6 +341,7 @@ public class GlossaryTermUtils extends GlossaryUtils {
             case DELETE:
                 deleteCategorizationRelationship(existingCategories.values());
                 break;
+            default:break;
         }
     }
 
@@ -350,7 +354,8 @@ public class GlossaryTermUtils extends GlossaryUtils {
             Map<String, AtlasTermCategorizationHeader> map = new HashMap<>();
             for (AtlasTermCategorizationHeader c : term.getCategories()) {
                 AtlasTermCategorizationHeader header = map.get(c.getCategoryGuid());
-                if (header == null || (StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(c.getRelationGuid()))) {
+                boolean bool = StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(c.getRelationGuid());
+                if (header == null || bool) {
                     map.put(c.getCategoryGuid(), c);
                 }
             }
@@ -409,7 +414,8 @@ public class GlossaryTermUtils extends GlossaryUtils {
                 Map<String, AtlasRelatedTermHeader> map = new HashMap<>();
                 for (AtlasRelatedTermHeader t : storeObject.getRelatedTerms().get(relation)) {
                     AtlasRelatedTermHeader header = map.get(t.getTermGuid());
-                    if (header == null || (StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(t.getRelationGuid()))) {
+                    boolean bool = StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(t.getRelationGuid());
+                    if (header == null || bool) {
                         map.put(t.getTermGuid(), t);
                     }
                 }

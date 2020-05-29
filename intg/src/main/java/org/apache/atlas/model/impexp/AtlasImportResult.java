@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -155,12 +155,12 @@ public class AtlasImportResult {
         sb.append(", hostName='").append(hostName).append("'");
         sb.append(", timeStamp='").append(timeStamp).append("'");
         sb.append(", metrics={");
-        AtlasBaseTypeDef.dumpObjects(metrics, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(metrics, sb);
         sb.append("}");
 
         sb.append(", operationStatus='").append(operationStatus).append("'");
         sb.append(", processedEntities=[");
-        AtlasBaseTypeDef.dumpObjects(processedEntities, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(processedEntities, sb);
         sb.append("]");
         sb.append("}");
 

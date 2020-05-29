@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -82,10 +82,10 @@ public class AtlasExportRequest implements Serializable {
 
         sb.append("AtlasExportRequest{");
         sb.append("itemsToExport={");
-        AtlasBaseTypeDef.dumpObjects(itemsToExport, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(itemsToExport, sb);
         sb.append("}");
         sb.append("options={");
-        AtlasBaseTypeDef.dumpObjects(options, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(options, sb);
         sb.append("}");
         sb.append("}");
 

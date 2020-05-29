@@ -36,7 +36,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -48,7 +48,7 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
-public class AtlasClientV2 extends AtlasBaseClient {
+public class AtlasClientV2 extends AbstractAtlasBaseClient {
     // Type APIs
     public static final  String TYPES_API            = BASE_URI + "v2/types/";
     // Entity APIs
@@ -227,7 +227,7 @@ public class AtlasClientV2 extends AtlasBaseClient {
      * created
      */
     public AtlasTypesDef createAtlasTypeDefs(final AtlasTypesDef typesDef) throws AtlasServiceException {
-        return callAPI(API_V2.CREATE_ALL_TYPE_DEFS, AtlasTypesDef.class, AtlasType.toJson(typesDef));
+        return callAPI(API_V2.CREATE_ALL_TYPE_DEFS, AtlasTypesDef.class, BaseAtlasType.toJson(typesDef));
     }
 
     /**
@@ -237,7 +237,7 @@ public class AtlasClientV2 extends AtlasBaseClient {
      * @return A composite object with lists of type definitions that were updated
      */
     public AtlasTypesDef updateAtlasTypeDefs(final AtlasTypesDef typesDef) throws AtlasServiceException {
-        return callAPI(API_V2.UPDATE_ALL_TYPE_DEFS, AtlasTypesDef.class, AtlasType.toJson(typesDef));
+        return callAPI(API_V2.UPDATE_ALL_TYPE_DEFS, AtlasTypesDef.class, BaseAtlasType.toJson(typesDef));
     }
 
     /**
@@ -246,7 +246,7 @@ public class AtlasClientV2 extends AtlasBaseClient {
      * @param typesDef A composite object that captures all types to be deleted
      */
     public void deleteAtlasTypeDefs(final AtlasTypesDef typesDef) throws AtlasServiceException {
-        callAPI(API_V2.DELETE_ALL_TYPE_DEFS, (Class<?>)null, AtlasType.toJson(typesDef));
+        callAPI(API_V2.DELETE_ALL_TYPE_DEFS, (Class<?>)null, BaseAtlasType.toJson(typesDef));
     }
 
     public AtlasLineageInfo getLineageInfo(final String guid, final LineageDirection direction, final int depth) throws AtlasServiceException {

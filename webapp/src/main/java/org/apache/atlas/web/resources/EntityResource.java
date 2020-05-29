@@ -41,7 +41,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.utils.AtlasJson;
@@ -369,7 +369,7 @@ public class EntityResource {
                 LOG.debug("Partially updating entity by unique attribute {} {} {} {} ", entityType, attribute, value, entityJson);
             }
 
-            Referenceable updatedEntity = AtlasType.fromV1Json(entityJson, Referenceable.class);
+            Referenceable updatedEntity = BaseAtlasType.fromV1Json(entityJson, Referenceable.class);
 
             entityType = ParamChecker.notEmpty(entityType, "Entity type cannot be null");
             attribute  = ParamChecker.notEmpty(attribute, "attribute name cannot be null");
@@ -467,7 +467,7 @@ public class EntityResource {
                 LOG.debug("partially updating entity for guid {} : {} ", guid, entityJson);
             }
 
-            Referenceable updatedEntity = AtlasType.fromV1Json(entityJson, Referenceable.class);
+            Referenceable updatedEntity = BaseAtlasType.fromV1Json(entityJson, Referenceable.class);
 
             // update referenceable with Id if not specified in payload
             Id updateId = updatedEntity.getId();
@@ -1025,7 +1025,7 @@ public class EntityResource {
                 add(guid);
             }};
 
-            entitiesStore.addClassification(guids, restAdapters.toAtlasClassification(AtlasType.fromV1Json(traitDefinition, Struct.class)));
+            entitiesStore.addClassification(guids, restAdapters.toAtlasClassification(BaseAtlasType.fromV1Json(traitDefinition, Struct.class)));
 
             URI locationURI = getLocationURI(new ArrayList<String>() {{
                 add(guid);

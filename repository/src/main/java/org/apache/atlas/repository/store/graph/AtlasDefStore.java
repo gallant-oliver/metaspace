@@ -18,7 +18,7 @@
 package org.apache.atlas.repository.store.graph;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Interface for graph persistence store for AtlasTypeDef
  */
-public interface AtlasDefStore<T extends AtlasBaseTypeDef> {
+public interface AtlasDefStore<T extends BaseAtlasBaseTypeDef> {
     AtlasVertex preCreate(T typeDef) throws AtlasBaseException;
 
     T create(T typeDef, AtlasVertex preCreateResult) throws AtlasBaseException;

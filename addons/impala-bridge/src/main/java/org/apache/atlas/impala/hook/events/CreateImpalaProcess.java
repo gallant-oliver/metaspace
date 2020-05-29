@@ -282,14 +282,6 @@ public class CreateImpalaProcess extends BaseImpalaEvent {
         vertexNameMap.put(vertex.getVertexId(), new ImpalaNode(vertex));
 
         if (vertex.getVertexType() == ImpalaVertexType.COLUMN) {
-            /*LineageVertexMetadata metadata = vertex.getMetadata();
-
-            if (metadata == null) {
-                return;
-            }
-
-            // if the vertex is column and contains metadata, create a vertex for its table
-            String tableName = metadata.getTableName();*/
             String tableName = getTableNameFromColumn(vertex.getVertexId());
             ImpalaNode tableNode = vertexNameMap.get(tableName);
 

@@ -116,7 +116,8 @@ public class ImpalaJdbcUtils {
             return resultSet;
         } catch (SQLException e) {
             LOG.info(e.getMessage(),e);
-            if(e.getMessage().contains("Permission denied")) {
+            String noPermissionMessage = "Permission denied";
+            if(e.getMessage().contains(noPermissionMessage)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");

@@ -45,7 +45,7 @@ public enum RuleStatus {
     public static RuleStatus getRuleStatusByCode(Integer code) {
         RuleStatus defaultStatus = RuleStatus.NORMAL;
         for(RuleStatus rs : RuleStatus.values()) {
-            if(rs.code == code)
+            if(rs.code.equals(code))
                 return rs;
         }
         return defaultStatus;

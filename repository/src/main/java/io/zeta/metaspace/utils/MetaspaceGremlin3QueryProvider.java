@@ -21,7 +21,7 @@ package io.zeta.metaspace.utils;
  * @author sunhaoning
  * @date 2018/12/4 19:22
  */
-public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvider {
+public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQueryProvider {
 
     @Override
     public String getQuery(final MetaspaceGremlinQuery gremlinQuery) {
@@ -271,7 +271,8 @@ public class MetaspaceGremlin3QueryProvider extends MetaspaceGremlinQueryProvide
                 return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').as('table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').select('column','table','db','instance').range(%s,%s).toList()";
             case RDBMS_COLUMN_COUNT_BY_QUERY:
                 return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').inE().outV().has('__typeName','rdbms_db').inE().outV().has('__typeName','rdbms_table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().count().toList()";
+            default:
+                return null;
         }
-        return null;
     }
 }

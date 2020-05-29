@@ -21,7 +21,7 @@ package org.apache.atlas.hbase.bridge;
 import org.apache.atlas.AtlasConstants;
 import org.apache.atlas.hbase.model.HBaseOperationContext;
 import org.apache.atlas.hbase.model.HBaseDataTypes;
-import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AbstractAtlasHook;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 
 // This will register Hbase entities into Atlas
-public class HBaseAtlasHook extends AtlasHook {
+public class HBaseAtlasHook extends AbstractAtlasHook {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseAtlasHook.class);
 
 
@@ -179,6 +179,7 @@ public class HBaseAtlasHook extends AtlasHook {
             case DELETE_COLUMN_FAMILY:
                 deleteColumnFamilyInstance(hbaseOperationContext);
                 break;
+            default:break;
         }
     }
 
@@ -197,6 +198,7 @@ public class HBaseAtlasHook extends AtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), new AtlasEntitiesWithExtInfo(nameSpace)));
                 break;
+            default:break;
         }
     }
 
@@ -238,6 +240,7 @@ public class HBaseAtlasHook extends AtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), entities));
                 break;
+            default:break;
         }
     }
 
@@ -280,6 +283,7 @@ public class HBaseAtlasHook extends AtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), entities));
                 break;
+            default:break;
         }
     }
 

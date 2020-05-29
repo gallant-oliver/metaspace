@@ -206,12 +206,12 @@ public class MarketService {
             tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
-            List<APIInfoHeader> APIList = new ArrayList<>();
+            List<APIInfoHeader> apiList = new ArrayList<>();
 
             int apiCount = 0;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
-                APIList = shareDao.getTableRelatedAPI(tableList, limit, offset,tenantId);
-                for (APIInfoHeader api : APIList) {
+                apiList = shareDao.getTableRelatedAPI(tableList, limit, offset,tenantId);
+                for (APIInfoHeader api : apiList) {
                     String displayName = api.getTableDisplayName();
                     if(Objects.isNull(displayName) || "".equals(displayName)) {
                         api.setTableDisplayName(api.getTableName());
@@ -224,13 +224,13 @@ public class MarketService {
                     api.setDataOwner(dataOwnerName);
                 }
                 //apiCount = shareDao.countTableRelatedAPI(tableList);
-                if (APIList.size()!=0){
-                    apiCount = APIList.get(0).getTotal();
+                if (apiList.size()!=0){
+                    apiCount = apiList.get(0).getTotal();
                 }
             }
             pageResult.setTotalSize(apiCount);
-            pageResult.setLists(APIList);
-            pageResult.setCurrentSize(APIList.size());
+            pageResult.setLists(apiList);
+            pageResult.setCurrentSize(apiList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;

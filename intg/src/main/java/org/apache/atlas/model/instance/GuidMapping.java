@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
@@ -74,7 +74,7 @@ public class GuidMapping {
 
         sb.append("GuidMapping{");
         sb.append("guidAssignments={");
-        AtlasBaseTypeDef.dumpObjects(guidAssignments, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(guidAssignments, sb);
         sb.append('}');
         sb.append('}');
 

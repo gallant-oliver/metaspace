@@ -29,7 +29,7 @@ import org.apache.atlas.ha.HAConfiguration;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.listener.ChangedTypeDefs;
 import org.apache.atlas.listener.TypeDefChangeListener;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
@@ -50,7 +50,7 @@ import org.apache.atlas.type.AtlasEnumType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasRelationshipType;
 import org.apache.atlas.type.AtlasStructType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -71,7 +71,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.*;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.*;
 import static org.apache.atlas.repository.Constants.*;
 import static org.apache.atlas.repository.graphdb.AtlasCardinality.LIST;
 import static org.apache.atlas.repository.graphdb.AtlasCardinality.SET;
@@ -160,21 +160,21 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
 
             // Update index for newly created types
             if (CollectionUtils.isNotEmpty(changedTypeDefs.getCreateTypeDefs())) {
-                for (AtlasBaseTypeDef typeDef : changedTypeDefs.getCreateTypeDefs()) {
+                for (BaseAtlasBaseTypeDef typeDef : changedTypeDefs.getCreateTypeDefs()) {
                     updateIndexForTypeDef(management, typeDef);
                 }
             }
 
             // Update index for updated types
             if (CollectionUtils.isNotEmpty(changedTypeDefs.getUpdatedTypeDefs())) {
-                for (AtlasBaseTypeDef typeDef : changedTypeDefs.getUpdatedTypeDefs()) {
+                for (BaseAtlasBaseTypeDef typeDef : changedTypeDefs.getUpdatedTypeDefs()) {
                     updateIndexForTypeDef(management, typeDef);
                 }
             }
 
             // Invalidate the property key for deleted types
             if (CollectionUtils.isNotEmpty(changedTypeDefs.getDeletedTypeDefs())) {
-                for (AtlasBaseTypeDef typeDef : changedTypeDefs.getDeletedTypeDefs()) {
+                for (BaseAtlasBaseTypeDef typeDef : changedTypeDefs.getDeletedTypeDefs()) {
                     cleanupIndices(management, typeDef);
                 }
             }
@@ -299,7 +299,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         }
     }
 
-    private void addIndexForType(AtlasGraphManagement management, AtlasBaseTypeDef typeDef) {
+    private void addIndexForType(AtlasGraphManagement management, BaseAtlasBaseTypeDef typeDef) {
         if (typeDef instanceof AtlasEnumDef) {
             // Only handle complex types like Struct, Classification and Entity
             return;
@@ -328,8 +328,8 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         boolean          isMapType      = isMapType(attribTypeName);
 
         try {
-            AtlasType atlasType     = typeRegistry.getType(typeName);
-            AtlasType attributeType = typeRegistry.getType(attribTypeName);
+            BaseAtlasType atlasType     = typeRegistry.getType(typeName);
+            BaseAtlasType attributeType = typeRegistry.getType(attribTypeName);
 
             if (isClassificationType(attributeType)) {
                 LOG.warn("Ignoring non-indexable attribute {}", attribTypeName);
@@ -391,23 +391,23 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         }
     }
 
-    private boolean isEntityType(AtlasType type) {
+    private boolean isEntityType(BaseAtlasType type) {
         return type instanceof AtlasEntityType;
     }
 
-    private boolean isClassificationType(AtlasType type) {
+    private boolean isClassificationType(BaseAtlasType type) {
         return type instanceof AtlasClassificationType;
     }
 
-    private boolean isEnumType(AtlasType type) {
+    private boolean isEnumType(BaseAtlasType type) {
         return type instanceof AtlasEnumType;
     }
 
-    private boolean isStructType(AtlasType type) {
+    private boolean isStructType(BaseAtlasType type) {
         return type instanceof AtlasStructType;
     }
 
-    private boolean isRelationshipType(AtlasType type) {
+    private boolean isRelationshipType(BaseAtlasType type) {
         return type instanceof AtlasRelationshipType;
     }
 
@@ -436,9 +436,9 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
                 return BigDecimal.class;
             case ATLAS_TYPE_STRING:
                 return String.class;
+            default:
+                throw new IllegalArgumentException(String.format("Unknown primitive typename %s", attribTypeName));
         }
-
-        throw new IllegalArgumentException(String.format("Unknown primitive typename %s", attribTypeName));
     }
 
     private AtlasCardinality toAtlasCardinality(AtlasAttributeDef.Cardinality cardinality) {
@@ -449,9 +449,10 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
                 return LIST;
             case SET:
                 return SET;
+            default:
+                // Should never reach this point
+                throw new IllegalArgumentException(String.format("Bad cardinality %s", cardinality));
         }
-        // Should never reach this point
-        throw new IllegalArgumentException(String.format("Bad cardinality %s", cardinality));
     }
 
     private void createEdgeLabel(final AtlasGraphManagement management, final String propertyName) {
@@ -707,7 +708,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         }
     }
 
-    private void cleanupIndices(AtlasGraphManagement management, AtlasBaseTypeDef typeDef) {
+    private void cleanupIndices(AtlasGraphManagement management, BaseAtlasBaseTypeDef typeDef) {
         Preconditions.checkNotNull(typeDef, "Cannot process null typedef");
         if (LOG.isDebugEnabled()) {
             LOG.debug("Cleaning up index for {}", typeDef);
@@ -739,7 +740,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         boolean isMapType         = isMapType(attribTypeName);
 
         try {
-            AtlasType atlasType = typeRegistry.getType(attribTypeName);
+            BaseAtlasType atlasType = typeRegistry.getType(attribTypeName);
 
             if (isClassificationType(atlasType) || isEntityType(atlasType)) {
                 LOG.warn("Ignoring non-indexable attribute {}", attribTypeName);
@@ -775,7 +776,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
         }
     }
 
-    private void updateIndexForTypeDef(AtlasGraphManagement management, AtlasBaseTypeDef typeDef) {
+    private void updateIndexForTypeDef(AtlasGraphManagement management, BaseAtlasBaseTypeDef typeDef) {
         Preconditions.checkNotNull(typeDef, "Cannot index on null typedefs");
         if (LOG.isDebugEnabled()) {
             LOG.debug("Creating indexes for type name={}, definition={}", typeDef.getName(), typeDef.getClass());

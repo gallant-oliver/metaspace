@@ -50,7 +50,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasEnumType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.v1.model.typedef.EnumTypeDefinition.EnumValue;
@@ -64,7 +64,7 @@ public final class TypeConverterUtil {
     private TypeConverterUtil() {}
     private static final Logger LOG = LoggerFactory.getLogger(TypeConverterUtil.class);
 
-    public static TypesDef toTypesDef(AtlasType type, AtlasTypeRegistry typeRegistry) throws AtlasBaseException {
+    public static TypesDef toTypesDef(BaseAtlasType type, AtlasTypeRegistry typeRegistry) throws AtlasBaseException {
         final TypesDef ret;
 
         if (type instanceof AtlasEnumType) {
@@ -148,7 +148,7 @@ public final class TypeConverterUtil {
                 throw new AtlasBaseException(INVALID_TYPE_DEFINITION, typeDefinition);
             }
 
-            TypesDef typesDef = AtlasType.fromV1Json(typeDefinition, TypesDef.class);
+            TypesDef typesDef = BaseAtlasType.fromV1Json(typeDefinition, TypesDef.class);
             if (CollectionUtils.isNotEmpty(typesDef.getEnumTypes())) {
                 List<AtlasEnumDef> enumDefs = toAtlasEnumDefs(typesDef.getEnumTypes());
                 ret.setEnumDefs(enumDefs);
@@ -336,7 +336,8 @@ public final class TypeConverterUtil {
             ret.setValuesMinCount(minCount);
         }
 
-        if (maxCount < 2) {
+        int count = 2;
+        if (maxCount < count) {
             ret.setCardinality(Cardinality.SINGLE);
             ret.setValuesMaxCount(1);
         } else {

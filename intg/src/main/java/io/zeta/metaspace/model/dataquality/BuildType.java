@@ -50,7 +50,7 @@ public enum BuildType {
     public static BuildType getBuildTypeByCode(Integer code) {
         BuildType defaultBuildType = BuildType.ONCE;
         for(BuildType bt : BuildType.values()) {
-            if(bt.code == code)
+            if(bt.code.equals(code) )
                 return bt;
         }
         return defaultBuildType;

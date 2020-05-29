@@ -19,7 +19,7 @@
 package org.apache.atlas.repository.graphdb.janus.migration;
 
 import org.apache.atlas.repository.Constants;
-import org.apache.atlas.repository.graphdb.janus.migration.postProcess.PostProcessListProperty;
+import org.apache.atlas.repository.graphdb.janus.migration.postprocess.PostProcessListProperty;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;

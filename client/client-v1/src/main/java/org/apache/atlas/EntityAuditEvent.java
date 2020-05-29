@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.apache.atlas.v1.model.instance.Referenceable;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -84,6 +84,7 @@ public class EntityAuditEvent implements Serializable {
                     return TERM_ADD;
                 case "TERM_DELETE":
                     return TERM_DELETE;
+                default:break;
             }
 
             throw new IllegalArgumentException("No enum constant " + EntityAuditAction.class.getCanonicalName() + "." + strValue);
@@ -132,7 +133,7 @@ public class EntityAuditEvent implements Serializable {
 
     @Override
     public String toString() {
-        return AtlasType.toV1Json(this);
+        return BaseAtlasType.toV1Json(this);
     }
 
     public String getEntityId() {
@@ -194,18 +195,18 @@ public class EntityAuditEvent implements Serializable {
     @JsonIgnore
     public String getEntityDefinitionString() {
         if (entityDefinition != null) {
-            return AtlasType.toV1Json(entityDefinition);
+            return BaseAtlasType.toV1Json(entityDefinition);
         }
         return null;
     }
 
     @JsonIgnore
     public void setEntityDefinition(String entityDefinition) {
-        this.entityDefinition = AtlasType.fromV1Json(entityDefinition, Referenceable.class);
+        this.entityDefinition = BaseAtlasType.fromV1Json(entityDefinition, Referenceable.class);
     }
 
     @JsonIgnore
     public static EntityAuditEvent fromString(String eventString) {
-        return AtlasType.fromV1Json(eventString, EntityAuditEvent.class);
+        return BaseAtlasType.fromV1Json(eventString, EntityAuditEvent.class);
     }
 }

@@ -109,7 +109,7 @@ public class RoleService {
         return "success";
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public String deleteRole(String roleId) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
         if (role.getDelete() == 0) {
@@ -140,7 +140,7 @@ public class RoleService {
         return "success";
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<User> getUsers(String roleId, String query, long offset, long limit) throws AtlasBaseException {
         try {
             PageResult<User> userPageResult = new PageResult<>();
@@ -172,7 +172,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<Role> getRoles(String query, long offset, long limit, boolean containUnenable) throws AtlasBaseException {
         try {
             PageResult<Role> rolePageResult = new PageResult<>();
@@ -197,7 +197,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<Role> getIncrRoles(String startTime) throws AtlasBaseException {
         try {
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -229,7 +229,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public String addUsers(String roleId, List<String> users) throws AtlasBaseException {
         List<String> updateUsers = new ArrayList<>();
         for (String user : users) {
@@ -249,7 +249,7 @@ public class RoleService {
         return "success";
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addRoleToUser(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
         for(UserWithRole userWithRole: userWithRoleList) {
             List<String> roleIds = userWithRole.getRoleId();
@@ -307,7 +307,7 @@ public class RoleService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public String removeUser(String roleId,List<String> users) throws AtlasBaseException {
         List<String> deleteUsers = new ArrayList<>();
         if (SystemRole.ADMIN.getCode().equals(roleId)) {
@@ -327,7 +327,7 @@ public class RoleService {
         return "success";
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void removeUserRole(List<UserWithRole> userWithRoleList) throws AtlasBaseException {
         for(UserWithRole userWithRole: userWithRoleList) {
             List<String> roleIds = userWithRole.getRoleId();
@@ -364,7 +364,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public RoleModulesCategories getPrivileges(String roleId) throws AtlasBaseException {
         RoleModulesCategories roleModulesCategories = new RoleModulesCategories();
         User user = AdminUtils.getUserData();
@@ -390,7 +390,7 @@ public class RoleService {
         return roleModulesCategories;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<RoleModulesCategories.Category> getCategorys(String roleId, List<String> userRoleIds, int categorytype) {
         //用户有权限的Category
         //上级不打勾，不展示，去重;同级，下级不打勾，展示
@@ -443,7 +443,7 @@ public class RoleService {
         return resultList;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList) {
         List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys(resultList, categorytype,TenantService.defaultTenant);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
@@ -455,7 +455,7 @@ public class RoleService {
         resultList.addAll(otherCategorys);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public Map<String, RoleModulesCategories.Category> getRoleStringCategoryMap(String roleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         if (roleId.equals(SystemRole.ADMIN.getCode())) {
@@ -486,7 +486,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public Map<String, RoleModulesCategories.Category> getUserStringCategoryMap(String userRoleId, int categorytype) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         if (userRoleId.equals(SystemRole.ADMIN.getCode())) {
@@ -507,7 +507,7 @@ public class RoleService {
         return userCategorys;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public String putPrivileges(String roleId, RoleModulesCategories roleModulesCategories) throws AtlasBaseException {
         Role role = roleDAO.getRoleByRoleId(roleId);
         if (role.getEdit() == 0) {
@@ -564,10 +564,11 @@ public class RoleService {
      * @return
      */
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<CategoryPrivilege> getUserCategory(String userRoleId, int categorytype) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        if (userRoleId.equals(SystemRole.ADMIN.getCode()) || 4 == categorytype) {
+        int ruleType = 4;
+        if (userRoleId.equals(SystemRole.ADMIN.getCode()) || ruleType == categorytype) {
             List<RoleModulesCategories.Category> allCategorys = roleDAO.getAllCategorys(categorytype,TenantService.defaultTenant);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
@@ -634,6 +635,7 @@ public class RoleService {
                         }
                         break;
                     }
+                    default:break;
                 }
                 addPrivilege(userCategorys, userChildCategorys, childPrivilege, categorytype);
                 addPrivilege(userCategorys, userParentCategorys, parentPrivilege, categorytype);
@@ -667,7 +669,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList) {
         List<RoleModulesCategories.Category> otherCategorys = roleDAO.getOtherCategorys2(resultList, categorytype,TenantService.defaultTenant);
         ArrayList<CategoryPrivilege> others = new ArrayList<>();
@@ -680,7 +682,7 @@ public class RoleService {
         resultList.addAll(others);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public String editRole(Role role) throws AtlasBaseException {
         try {
             String id = role.getRoleId();
@@ -701,7 +703,7 @@ public class RoleService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateUserInfo() throws AtlasBaseException {
         try {
             Timestamp updateTime = new Timestamp(System.currentTimeMillis());
@@ -728,10 +730,11 @@ public class RoleService {
             String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
             Gson gson = new Gson();
             Map userBody = gson.fromJson(userSession, Map.class);
-            if (StringUtils.isEmpty(userBody.get("data").toString())) {
+            String data = "data";
+            if (StringUtils.isEmpty(userBody.get(data).toString())) {
                 return null;
             }
-            Map userData = (Map) userBody.get("data");
+            Map userData = (Map) userBody.get(data);
             String email = userData.get("loginEmail").toString();
             String name = userData.get("displayName").toString();
             User user = new User();

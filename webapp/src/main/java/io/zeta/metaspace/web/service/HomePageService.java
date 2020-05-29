@@ -248,7 +248,8 @@ public class HomePageService {
         names.add(systemStatistical.getDesc());
         long startDate = DateUtils.get29day().getTime();
         long endDate = DateUtils.getYesterday().getTime();
-        if (dates.size() < 30) {
+        int dateSize = 30;
+        if (dates.size() < dateSize) {
             for (long time = startDate; time <= DateUtils.getToday().getTime(); time = DateUtils.getNext(time).getTime()) {
                 dates.add(DateUtils.getDate(time));
             }
@@ -301,6 +302,7 @@ public class HomePageService {
                 switchCase(startDate, list, statisticalByDateType, map, aLong);
                 break;
             }
+            default:break;
         }
         data.add(list);
         brokenLine.setData(data);

@@ -42,7 +42,7 @@ import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasRelationshipStore;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.type.AtlasArrayType;
 import org.apache.atlas.type.AtlasBuiltInTypes;
 import org.apache.atlas.type.AtlasClassificationType;
@@ -51,7 +51,7 @@ import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.utils.AtlasJson;
@@ -124,7 +124,7 @@ public class EntityGraphMapper {
 
     private final GraphHelper               graphHelper = GraphHelper.getInstance();
     private final AtlasGraph                graph;
-    private final DeleteHandlerV1           deleteHandler;
+    private final BaseDeleteHandlerV1 deleteHandler;
     private final AtlasTypeRegistry         typeRegistry;
     private final AtlasRelationshipStore    relationshipStore;
     private final AtlasEntityChangeNotifier entityChangeNotifier;
@@ -132,7 +132,7 @@ public class EntityGraphMapper {
     private final EntityGraphRetriever      entityRetriever;
 
     @Inject
-    public EntityGraphMapper(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph,
+    public EntityGraphMapper(BaseDeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph,
                              AtlasRelationshipStore relationshipStore, AtlasEntityChangeNotifier entityChangeNotifier,
                              AtlasInstanceConverter instanceConverter) {
         this.deleteHandler        = deleteHandler;
@@ -379,7 +379,7 @@ public class EntityGraphMapper {
     private void mapAttribute(AtlasAttribute attribute, Object attrValue, AtlasVertex vertex, EntityOperation op, EntityMutationContext context) throws AtlasBaseException {
         if (attrValue == null) {
             AtlasAttributeDef attributeDef = attribute.getAttributeDef();
-            AtlasType         attrType     = attribute.getAttributeType();
+            BaseAtlasType attrType     = attribute.getAttributeType();
 
             if (attrType.getTypeCategory() == TypeCategory.PRIMITIVE) {
                 if (attributeDef.getDefaultValue() != null) {
@@ -570,7 +570,7 @@ public class EntityGraphMapper {
         }
 
         String      inverseAttributeName   = inverseAttribute.getName();
-        AtlasType   inverseAttributeType   = inverseAttribute.getDefinedInType();
+        BaseAtlasType inverseAttributeType   = inverseAttribute.getDefinedInType();
         AtlasVertex inverseVertex          = edge.getInVertex();
         AtlasVertex vertex                 = edge.getOutVertex();
         AtlasEdge   ret;
@@ -659,7 +659,8 @@ public class EntityGraphMapper {
             if (value.length() > INDEXED_STR_MAX_ALLOWED_LEN) {
                 LOG.warn("Indexed-String-Attribute: {} exceeds {} characters, trimming and appending checksum",
                          ctx.getAttribute().getQualifiedName(), INDEXED_STR_MAX_ALLOWED_LEN);
-                String sha256Hex = DigestUtils.shaHex(value); // Storing SHA checksum in case verification is needed after retrieval
+                // Storing SHA checksum in case verification is needed after retrieval
+                String sha256Hex = DigestUtils.shaHex(value);
                 ret = value.substring(0, (INDEXED_STR_MAX_ALLOWED_LEN - 1) - sha256Hex.length()) + ":" + sha256Hex;
             }
         }
@@ -777,7 +778,7 @@ public class EntityGraphMapper {
         }
 
         String    attributeName = ctx.getAttribute().getName();
-        AtlasType type          = typeRegistry.getType(AtlasGraphUtilsV2.getTypeName(entityVertex));
+        BaseAtlasType type          = typeRegistry.getType(AtlasGraphUtilsV2.getTypeName(entityVertex));
 
         AtlasRelationshipEdgeDirection edgeDirection = ctx.getAttribute().getRelationshipEdgeDirection();
         String                         edgeLabel     = ctx.getAttribute().getRelationshipEdgeLabel();
@@ -915,7 +916,7 @@ public class EntityGraphMapper {
         AtlasAttribute attribute           = ctx.getAttribute();
         List           newElements         = (List) ctx.getValue();
         AtlasArrayType arrType             = (AtlasArrayType) attribute.getAttributeType();
-        AtlasType      elementType         = arrType.getElementType();
+        BaseAtlasType elementType         = arrType.getElementType();
         boolean        isReference         = isReference(elementType);
         AtlasAttribute inverseRefAttribute = attribute.getInverseRefAttribute();
         Cardinality    cardinality         = attribute.getAttributeDef().getCardinality();
@@ -1000,7 +1001,7 @@ public class EntityGraphMapper {
     }
 
     private AtlasStructType getStructType(String typeName) throws AtlasBaseException {
-        AtlasType objType = typeRegistry.getType(typeName);
+        BaseAtlasType objType = typeRegistry.getType(typeName);
 
         if (!(objType instanceof AtlasStructType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, typeName);
@@ -1010,7 +1011,7 @@ public class EntityGraphMapper {
     }
 
     private AtlasEntityType getEntityType(String typeName) throws AtlasBaseException {
-        AtlasType objType = typeRegistry.getType(typeName);
+        BaseAtlasType objType = typeRegistry.getType(typeName);
 
         if (!(objType instanceof AtlasEntityType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, typeName);
@@ -1233,7 +1234,7 @@ public class EntityGraphMapper {
         return ret;
     }
 
-    public static List<Object> getArrayElementsProperty(AtlasType elementType, AtlasVertex vertex, String vertexPropertyName) {
+    public static List<Object> getArrayElementsProperty(BaseAtlasType elementType, AtlasVertex vertex, String vertexPropertyName) {
         if (isReference(elementType)) {
             return (List)vertex.getListProperty(vertexPropertyName, AtlasEdge.class);
         }
@@ -1242,7 +1243,7 @@ public class EntityGraphMapper {
         }
     }
 
-    private AtlasEdge getEdgeAt(List<Object> currentElements, int index, AtlasType elemType) {
+    private AtlasEdge getEdgeAt(List<Object> currentElements, int index, BaseAtlasType elemType) {
         AtlasEdge ret = null;
 
         if (isReference(elemType)) {
@@ -1258,7 +1259,7 @@ public class EntityGraphMapper {
 
     private List<AtlasEdge> removeUnusedArrayEntries(AtlasAttribute attribute, List<AtlasEdge> currentEntries, List<AtlasEdge> newEntries, AtlasVertex entityVertex) throws AtlasBaseException {
         if (CollectionUtils.isNotEmpty(currentEntries)) {
-            AtlasType entryType = ((AtlasArrayType) attribute.getAttributeType()).getElementType();
+            BaseAtlasType entryType = ((AtlasArrayType) attribute.getAttributeType()).getElementType();
 
             if (isReference(entryType)) {
                 Collection<AtlasEdge> edgesToRemove = CollectionUtils.subtract(currentEntries, newEntries);
@@ -1282,7 +1283,7 @@ public class EntityGraphMapper {
 
         return Collections.emptyList();
     }
-    private void setArrayElementsProperty(AtlasType elementType, AtlasVertex vertex, String vertexPropertyName, List<Object> values) {
+    private void setArrayElementsProperty(BaseAtlasType elementType, AtlasVertex vertex, String vertexPropertyName, List<Object> values) {
         if (!isReference(elementType)) {
             AtlasGraphUtilsV2.setEncodedProperty(vertex, vertexPropertyName, values);
         }
@@ -1622,7 +1623,7 @@ public class EntityGraphMapper {
             Boolean currentRemovePropagations = currentClassification.getRemovePropagationsOnEntityDelete();
             Boolean updatedRemovePropagations = classification.getRemovePropagationsOnEntityDelete();
 
-            if (updatedRemovePropagations != null && (updatedRemovePropagations != currentRemovePropagations)) {
+            if (updatedRemovePropagations != null && (updatedRemovePropagations.equals(currentRemovePropagations))) {
                 AtlasGraphUtilsV2.setEncodedProperty(classificationVertex, CLASSIFICATION_VERTEX_REMOVE_PROPAGATIONS_KEY, updatedRemovePropagations);
 
                 isClassificationUpdated = true;
@@ -1645,7 +1646,7 @@ public class EntityGraphMapper {
             Boolean updatedTagPropagation = classification.isPropagate();
 
             // compute propagatedEntityVertices once and use it for subsequent iterations and notifications
-            if (updatedTagPropagation != null && currentTagPropagation != updatedTagPropagation) {
+            if (updatedTagPropagation != null && currentTagPropagation.equals(updatedTagPropagation)) {
                 if (updatedTagPropagation) {
                     if (CollectionUtils.isEmpty(entitiesToPropagateTo)) {
                         entitiesToPropagateTo = graphHelper.getImpactedVerticesWithRestrictions(guid, classificationVertex.getIdForDisplay());

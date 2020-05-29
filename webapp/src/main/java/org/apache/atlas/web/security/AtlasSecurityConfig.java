@@ -155,8 +155,9 @@ public class AtlasSecurityConfig extends WebSecurityConfigurerAdapter {
         //@formatter:on
 
         boolean configMigrationEnabled = !StringUtils.isEmpty(configuration.getString(ATLAS_MIGRATION_MODE_FILENAME));
-        if (configuration.getBoolean("atlas.server.ha.enabled", false) ||
-                configMigrationEnabled) {
+        String key = "atlas.server.ha.enabled";
+        if (configuration.getBoolean(key, false) ||
+            configMigrationEnabled) {
             if(configMigrationEnabled) {
                 LOG.info("Atlas is in Migration Mode, enabling ActiveServerFilter");
             } else {

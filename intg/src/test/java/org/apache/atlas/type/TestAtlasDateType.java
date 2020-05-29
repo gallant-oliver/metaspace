@@ -17,7 +17,7 @@
  */
 package org.apache.atlas.type;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.type.AtlasBuiltInTypes.AtlasDateType;
 import org.testng.annotations.Test;
 
@@ -46,7 +46,7 @@ public class TestAtlasDateType {
     private final Object[] invalidValues  = { "12ab", "abcd", "-12ab", };
 
     private final Date   now    = new Date();
-    private final String strNow = AtlasBaseTypeDef.getDateFormatter().format(now);
+    private final String strNow = BaseAtlasBaseTypeDef.getDateFormatter().format(now);
 
     @Test
     public void testDateTypeDefaultValue() {

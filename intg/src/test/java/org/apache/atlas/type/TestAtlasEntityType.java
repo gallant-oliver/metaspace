@@ -27,7 +27,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef;
@@ -56,11 +56,11 @@ public class TestAtlasEntityType {
         Map<String, Object> invalidValue3 = entityType.createDefaultValue().getAttributes();
 
         // invalid value for int
-        invalidValue1.setAttribute(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_INT), "xyz");
+        invalidValue1.setAttribute(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_INT), "xyz");
         // invalid value for date
-        invalidValue2.setAttribute(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_DATE), "xyz");
+        invalidValue2.setAttribute(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE), "xyz");
         // invalid value for bigint
-        invalidValue3.put(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER), "xyz");
+        invalidValue3.put(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER), "xyz");
 
         validValues.add(null);
         validValues.add(entityType.createDefaultValue());
@@ -302,9 +302,9 @@ public class TestAtlasEntityType {
 
     private AtlasEntityDef createTableEntityDef() {
         AtlasEntityDef    table       = new AtlasEntityDef(TYPE_TABLE);
-        AtlasAttributeDef attrName    = new AtlasAttributeDef(ATTR_NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrName    = new AtlasAttributeDef(ATTR_NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
         AtlasAttributeDef attrColumns = new AtlasAttributeDef(ATTR_COLUMNS,
-                                                              AtlasBaseTypeDef.getArrayTypeName(TYPE_COLUMN));
+                                                              BaseAtlasBaseTypeDef.getArrayTypeName(TYPE_COLUMN));
 
         attrColumns.addConstraint(new AtlasConstraintDef(AtlasConstraintDef.CONSTRAINT_TYPE_OWNED_REF));
 
@@ -316,7 +316,7 @@ public class TestAtlasEntityType {
 
     private AtlasEntityDef createTableEntityDefWithOwnedRefOnInvalidType() {
         AtlasEntityDef    table    = new AtlasEntityDef(TYPE_TABLE);
-        AtlasAttributeDef attrName = new AtlasAttributeDef(ATTR_NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrName = new AtlasAttributeDef(ATTR_NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
 
         attrName.addConstraint(new AtlasConstraintDef(AtlasConstraintDef.CONSTRAINT_TYPE_OWNED_REF));
 
@@ -337,7 +337,7 @@ public class TestAtlasEntityType {
 
     private AtlasEntityDef createColumnEntityDefWithInvaidAttributeTypeForInverseAttribute() {
         AtlasEntityDef    column    = new AtlasEntityDef(TYPE_COLUMN);
-        AtlasAttributeDef attrTable = new AtlasAttributeDef(ATTR_NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrTable = new AtlasAttributeDef(ATTR_NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
 
         Map<String, Object> params = new HashMap<>();
         params.put(AtlasConstraintDef.CONSTRAINT_PARAM_ATTRIBUTE, ATTR_NAME);

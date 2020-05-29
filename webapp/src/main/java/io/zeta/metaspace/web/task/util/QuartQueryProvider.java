@@ -62,6 +62,7 @@ public class QuartQueryProvider {
             case DUP_VALUE_NUM_CHANGE_RATIO:
             case DUP_VALUE_NUM_RATIO:
                 return "SELECT count(distinct(%s)) from %s where %s in (SELECT %s from %s GROUP BY %s HAVING count(*)>1)";
+            default:break;
         }
         return null;
     }

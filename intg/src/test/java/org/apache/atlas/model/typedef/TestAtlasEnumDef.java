@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.typedef.AtlasEnumDef.AtlasEnumElementDef;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -36,9 +36,9 @@ public class TestAtlasEnumDef {
     public void testEnumDefSerDeEmpty() {
         AtlasEnumDef enumDef1 = new AtlasEnumDef();
 
-        String jsonString = AtlasType.toJson(enumDef1);
+        String jsonString = BaseAtlasType.toJson(enumDef1);
 
-        AtlasEnumDef enumDef2 = AtlasType.fromJson(jsonString, AtlasEnumDef.class);
+        AtlasEnumDef enumDef2 = BaseAtlasType.fromJson(jsonString, AtlasEnumDef.class);
 
         assertEquals(enumDef1, enumDef2, "Incorrect serialization/deserialization of AtlasEnumDef");
     }
@@ -47,9 +47,9 @@ public class TestAtlasEnumDef {
     public void testEnumDefSerDe() {
         AtlasEnumDef enumDef = ModelTestUtil.getEnumDef();
 
-        String jsonString = AtlasType.toJson(enumDef);
+        String jsonString = BaseAtlasType.toJson(enumDef);
 
-        AtlasEnumDef enumDef2 = AtlasType.fromJson(jsonString, AtlasEnumDef.class);
+        AtlasEnumDef enumDef2 = BaseAtlasType.fromJson(jsonString, AtlasEnumDef.class);
 
         assertEquals(enumDef, enumDef2, "Incorrect serialization/deserialization of AtlasEnumDef");
     }

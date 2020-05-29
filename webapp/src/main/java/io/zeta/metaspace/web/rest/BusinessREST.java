@@ -49,6 +49,7 @@ import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -606,7 +607,7 @@ public class BusinessREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if((name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) && (name.length() < 5 || !name.substring(name.length() - 4).equals(".xls"))) {
+            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
             }
 

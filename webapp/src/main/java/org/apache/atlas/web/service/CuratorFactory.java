@@ -235,6 +235,8 @@ public class CuratorFactory {
                 // Maybe we have to throw an exception here to terminate the JobManager
                 LOG.warn("Connection to ZooKeeper lost. The contender no longer participates in the leader election.");
                 break;
+            default:
+                break;
         }
     }
 }

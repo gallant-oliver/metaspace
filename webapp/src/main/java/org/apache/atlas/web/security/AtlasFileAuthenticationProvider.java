@@ -33,7 +33,7 @@ import java.util.Collection;
  
 
 @Component
-public class AtlasFileAuthenticationProvider extends AtlasAbstractAuthenticationProvider {
+public class AtlasFileAuthenticationProvider extends BaseAtlasAbstractAuthenticationProvider {
 
     private static Logger logger = LoggerFactory.getLogger(AtlasFileAuthenticationProvider.class);
 

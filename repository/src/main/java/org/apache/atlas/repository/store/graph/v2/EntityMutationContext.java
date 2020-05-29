@@ -53,7 +53,8 @@ public class EntityMutationContext {
     }
 
     public void addUpdated(String internalGuid, AtlasEntity entity, AtlasEntityType type, AtlasVertex atlasVertex) {
-        if (!entityVsVertex.containsKey(internalGuid)) { // if the entity was already created/updated
+        // if the entity was already created/updated
+        if (!entityVsVertex.containsKey(internalGuid)) {
             entitiesUpdated.add(entity);
             entityVsType.put(entity.getGuid(), type);
             entityVsVertex.put(entity.getGuid(), atlasVertex);

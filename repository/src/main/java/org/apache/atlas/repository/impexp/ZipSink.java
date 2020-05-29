@@ -21,7 +21,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.impexp.AtlasExportResult;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +83,7 @@ public class ZipSink {
     }
 
     private String convertToJSON(Object entity) {
-        return AtlasType.toJson(entity);
+        return BaseAtlasType.toJson(entity);
     }
 
     private void saveToZip(ZipExportFileNames fileName, String jsonData) throws AtlasBaseException {

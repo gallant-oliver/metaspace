@@ -70,7 +70,8 @@ class GraphSONUtility {
                 final String      key         = entry.getKey();
                 final Object      val         = entry.getValue();
 
-                if ((cardinality == Cardinality.list || cardinality == Cardinality.set) && (val instanceof Collection)) {
+                boolean bool = cardinality == Cardinality.list || cardinality == Cardinality.set;
+                if (bool && (val instanceof Collection)) {
                     for (Object elem : (Collection) val) {
                         vertex.property(key, elem);
                     }
@@ -95,7 +96,8 @@ class GraphSONUtility {
         final JsonNode nodeLabel = json.get(GraphSONTokensTP2._LABEL);
               String   label     = nodeLabel == null ? EMPTY_STRING : nodeLabel.textValue();
 
-        if (label.startsWith("__type.")) {
+        String prefix = "__type.";
+        if (label.startsWith(prefix)) {
             return null;
         }
 

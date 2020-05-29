@@ -20,7 +20,7 @@ package org.apache.atlas.type;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
 import static org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.COUNT_NOT_SET;
 
 /**
  * class that implements behaviour of an array-type.
  */
-public class AtlasArrayType extends AtlasType {
+public class AtlasArrayType extends BaseAtlasType {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasArrayType.class);
 
     private final String elementTypeName;
@@ -47,14 +47,14 @@ public class AtlasArrayType extends AtlasType {
     private int          maxCount;
     private Cardinality  cardinality;
 
-    private AtlasType elementType;
+    private BaseAtlasType elementType;
 
-    public AtlasArrayType(AtlasType elementType) {
+    public AtlasArrayType(BaseAtlasType elementType) {
         this(elementType, COUNT_NOT_SET, COUNT_NOT_SET, Cardinality.LIST);
     }
 
-    public AtlasArrayType(AtlasType elementType, int minCount, int maxCount, Cardinality cardinality) {
-        super(AtlasBaseTypeDef.getArrayTypeName(elementType.getTypeName()), TypeCategory.ARRAY, SERVICE_TYPE_ATLAS_CORE);
+    public AtlasArrayType(BaseAtlasType elementType, int minCount, int maxCount, Cardinality cardinality) {
+        super(BaseAtlasBaseTypeDef.getArrayTypeName(elementType.getTypeName()), TypeCategory.ARRAY, SERVICE_TYPE_ATLAS_CORE);
 
         this.elementTypeName = elementType.getTypeName();
         this.minCount        = minCount;
@@ -69,7 +69,7 @@ public class AtlasArrayType extends AtlasType {
 
     public AtlasArrayType(String elementTypeName, int minCount, int maxCount, Cardinality cardinality, AtlasTypeRegistry typeRegistry)
         throws  AtlasBaseException {
-        super(AtlasBaseTypeDef.getArrayTypeName(elementTypeName), TypeCategory.ARRAY, SERVICE_TYPE_ATLAS_CORE);
+        super(BaseAtlasBaseTypeDef.getArrayTypeName(elementTypeName), TypeCategory.ARRAY, SERVICE_TYPE_ATLAS_CORE);
 
         this.elementTypeName = elementTypeName;
         this.minCount        = minCount;
@@ -99,7 +99,7 @@ public class AtlasArrayType extends AtlasType {
 
     public Cardinality getCardinality() { return cardinality; }
 
-    public AtlasType getElementType() {
+    public BaseAtlasType getElementType() {
         return elementType;
     }
 
@@ -151,7 +151,8 @@ public class AtlasArrayType extends AtlasType {
                     }
                 }
             } else {
-                return false; // invalid type
+                // invalid type
+                return false;
             }
         }
 
@@ -199,7 +200,8 @@ public class AtlasArrayType extends AtlasType {
                     }
                 }
             } else {
-                return false; // invalid type
+                // invalid type
+                return false;
             }
         }
 
@@ -211,7 +213,7 @@ public class AtlasArrayType extends AtlasType {
         Collection<Object> ret = null;
 
         if (obj instanceof String) {
-            obj = AtlasType.fromJson(obj.toString(), List.class);
+            obj = BaseAtlasType.fromJson(obj.toString(), List.class);
         }
 
         if (obj instanceof List || obj instanceof Set) {
@@ -227,7 +229,8 @@ public class AtlasArrayType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.add(normalizedValue);
                         } else {
-                            ret = null; // invalid element value
+                            // invalid element value
+                            ret = null;
 
                             break;
                         }
@@ -251,7 +254,8 @@ public class AtlasArrayType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.add(normalizedValue);
                         } else {
-                            ret = null; // invalid element value
+                            // invalid element value
+                            ret = null;
 
                             break;
                         }
@@ -270,7 +274,7 @@ public class AtlasArrayType extends AtlasType {
         Collection<Object> ret = null;
 
         if (obj instanceof String) {
-            obj = AtlasType.fromJson(obj.toString(), List.class);
+            obj = BaseAtlasType.fromJson(obj.toString(), List.class);
         }
 
         if (obj instanceof List || obj instanceof Set) {
@@ -286,7 +290,8 @@ public class AtlasArrayType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.add(normalizedValue);
                         } else {
-                            ret = null; // invalid element value
+                            // invalid element value
+                            ret = null;
 
                             break;
                         }
@@ -310,7 +315,8 @@ public class AtlasArrayType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.add(normalizedValue);
                         } else {
-                            ret = null; // invalid element value
+                            // invalid element value
+                            ret = null;
 
                             break;
                         }
@@ -411,13 +417,13 @@ public class AtlasArrayType extends AtlasType {
     }
 
     @Override
-    public AtlasType getTypeForAttribute() {
-        AtlasType elementAttributeType = elementType.getTypeForAttribute();
+    public BaseAtlasType getTypeForAttribute() {
+        BaseAtlasType elementAttributeType = elementType.getTypeForAttribute();
 
         if (elementAttributeType == elementType) {
             return this;
         } else {
-            AtlasType attributeType = new AtlasArrayType(elementAttributeType, minCount, maxCount, cardinality);
+            BaseAtlasType attributeType = new AtlasArrayType(elementAttributeType, minCount, maxCount, cardinality);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("getTypeForAttribute(): {} ==> {}", getTypeName(), attributeType.getTypeName());
@@ -449,7 +455,7 @@ public class AtlasArrayType extends AtlasType {
         } else if (val.getClass().isArray()) {
             return Array.getLength(val) == 0;
         } else if (val instanceof String){
-            List list = AtlasType.fromJson(val.toString(), List.class);
+            List list = BaseAtlasType.fromJson(val.toString(), List.class);
 
             return list == null || list.isEmpty();
         }
@@ -557,7 +563,7 @@ public class AtlasArrayType extends AtlasType {
                 ret.add(Array.get(val, i));
             }
         } else if (val instanceof String){
-            ret = AtlasType.fromJson(val.toString(), List.class);
+            ret = BaseAtlasType.fromJson(val.toString(), List.class);
         } else {
             ret = null;
         }
@@ -581,7 +587,7 @@ public class AtlasArrayType extends AtlasType {
                 ret.add(Array.get(val, i));
             }
         } else if (val instanceof String){
-            ret = AtlasType.fromJson(val.toString(), Set.class);
+            ret = BaseAtlasType.fromJson(val.toString(), Set.class);
         } else {
             ret = null;
         }

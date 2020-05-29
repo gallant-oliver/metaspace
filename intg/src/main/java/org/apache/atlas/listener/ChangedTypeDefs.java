@@ -17,19 +17,19 @@
  */
 package org.apache.atlas.listener;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChangedTypeDefs {
-    private List<? extends AtlasBaseTypeDef> createTypeDefs;
-    private List<? extends AtlasBaseTypeDef> updatedTypeDefs;
-    private List<? extends AtlasBaseTypeDef> deletedTypeDefs;
+    private List<? extends BaseAtlasBaseTypeDef> createTypeDefs;
+    private List<? extends BaseAtlasBaseTypeDef> updatedTypeDefs;
+    private List<? extends BaseAtlasBaseTypeDef> deletedTypeDefs;
 
-    public ChangedTypeDefs(List<? extends AtlasBaseTypeDef> createTypeDefs,
-                           List<? extends AtlasBaseTypeDef> updatedTypeDefs,
-                           List<? extends AtlasBaseTypeDef> deletedTypeDefs) {
+    public ChangedTypeDefs(List<? extends BaseAtlasBaseTypeDef> createTypeDefs,
+                           List<? extends BaseAtlasBaseTypeDef> updatedTypeDefs,
+                           List<? extends BaseAtlasBaseTypeDef> deletedTypeDefs) {
         this.createTypeDefs = createTypeDefs;
         this.updatedTypeDefs = updatedTypeDefs;
         this.deletedTypeDefs = deletedTypeDefs;
@@ -41,29 +41,29 @@ public class ChangedTypeDefs {
         deletedTypeDefs = new ArrayList<>();
     }
 
-    public List<? extends AtlasBaseTypeDef> getCreateTypeDefs() {
+    public List<? extends BaseAtlasBaseTypeDef> getCreateTypeDefs() {
         return createTypeDefs;
     }
 
-    public ChangedTypeDefs setCreateTypeDefs(List<? extends AtlasBaseTypeDef> createTypeDefs) {
+    public ChangedTypeDefs setCreateTypeDefs(List<? extends BaseAtlasBaseTypeDef> createTypeDefs) {
         this.createTypeDefs = createTypeDefs;
         return this;
     }
 
-    public List<? extends AtlasBaseTypeDef> getUpdatedTypeDefs() {
+    public List<? extends BaseAtlasBaseTypeDef> getUpdatedTypeDefs() {
         return updatedTypeDefs;
     }
 
-    public ChangedTypeDefs setUpdatedTypeDefs(List<? extends AtlasBaseTypeDef> updatedTypeDefs) {
+    public ChangedTypeDefs setUpdatedTypeDefs(List<? extends BaseAtlasBaseTypeDef> updatedTypeDefs) {
         this.updatedTypeDefs = updatedTypeDefs;
         return this;
     }
 
-    public List<? extends AtlasBaseTypeDef> getDeletedTypeDefs() {
+    public List<? extends BaseAtlasBaseTypeDef> getDeletedTypeDefs() {
         return deletedTypeDefs;
     }
 
-    public ChangedTypeDefs setDeletedTypeDefs(List<? extends AtlasBaseTypeDef> deletedTypeDefs) {
+    public ChangedTypeDefs setDeletedTypeDefs(List<? extends BaseAtlasBaseTypeDef> deletedTypeDefs) {
         this.deletedTypeDefs = deletedTypeDefs;
         return this;
     }

@@ -23,7 +23,7 @@ import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.model.SearchFilter;
 import org.apache.atlas.model.TypeCategory;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -306,10 +306,10 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
                 createClassTypeDef("table", Collections.<String>emptySet(),
                         AtlasTypeUtil.createUniqueRequiredAttrDef("name", "string"),
                         AtlasTypeUtil.createRequiredAttrDef("description", "string"),
-                        AtlasTypeUtil.createOptionalAttrDef("columnNames", AtlasBaseTypeDef.getArrayTypeName("string")),
+                        AtlasTypeUtil.createOptionalAttrDef("columnNames", BaseAtlasBaseTypeDef.getArrayTypeName("string")),
                         AtlasTypeUtil.createOptionalAttrDef("created", "date"),
                         AtlasTypeUtil.createOptionalAttrDef("parameters",
-                                AtlasBaseTypeDef.getMapTypeName("string", "string")),
+                                                            BaseAtlasBaseTypeDef.getMapTypeName("string", "string")),
                         AtlasTypeUtil.createRequiredAttrDef("type", "string"),
                         new AtlasAttributeDef("database", "database",
                                 false,
@@ -326,9 +326,9 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
         return atlasTypesDef;
     }
 
-    private void verifyByNameAndGUID(AtlasBaseTypeDef typeDef) {
+    private void verifyByNameAndGUID(BaseAtlasBaseTypeDef typeDef) {
         try {
-            AtlasBaseTypeDef byName = null;
+            BaseAtlasBaseTypeDef byName = null;
             if (typeDef.getCategory() == TypeCategory.ENUM) {
                 byName = clientV2.getEnumDefByName(typeDef.getName());
             } else if (typeDef.getCategory() == TypeCategory.ENTITY) {
@@ -344,7 +344,7 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
         }
         if (StringUtils.isNotBlank(typeDef.getGuid())) {
             try {
-                AtlasBaseTypeDef byGuid = null;
+                BaseAtlasBaseTypeDef byGuid = null;
                 if (typeDef.getCategory() == TypeCategory.ENUM) {
                     byGuid = clientV2.getEnumDefByGuid(typeDef.getGuid());
                 } else if (typeDef.getCategory() == TypeCategory.ENTITY) {

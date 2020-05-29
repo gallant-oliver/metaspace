@@ -23,7 +23,7 @@ import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.type.AtlasClassificationType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class AtlasClassificationFormatConverter extends AtlasStructFormatConvert
     }
 
     @Override
-    public AtlasClassification fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext ctx) throws AtlasBaseException {
+    public AtlasClassification fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext ctx) throws AtlasBaseException {
         AtlasClassification ret = null;
 
         if (v1Obj != null) {

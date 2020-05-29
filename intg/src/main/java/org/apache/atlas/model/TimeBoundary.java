@@ -46,7 +46,8 @@ public class TimeBoundary implements Serializable {
 
     private String startTime;
     private String endTime;
-    private String timeZone; // null for local-time; or a valid ID for TimeZone.getTimeZone(id)
+    // null for local-time; or a valid ID for TimeZone.getTimeZone(id)
+    private String timeZone;
 
     public TimeBoundary() {
         this(null, null, null);

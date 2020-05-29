@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeHeader;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
@@ -55,7 +56,7 @@ public class PrivilegeService {
     private static final int TECHNICAL_TYPE = 0;
     private static final int BUSINESS_TYPE = 1;
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addPrivilege(PrivilegeHeader privilege) throws AtlasBaseException {
         try {
             int nameCount = privilegeDAO.getPrivilegeNameCount(privilege.getPrivilegeName());
@@ -83,12 +84,13 @@ public class PrivilegeService {
             }
             privilegeDAO.addPrivilege(privilege);
 
-            if(!modules.contains(2) && !modules.contains(4) && !modules.contains(5)) {
+
+            if(!modules.contains(ModuleEnum.BUSINESS.getId()) && !modules.contains(ModuleEnum.BUSINESSEDIT) && !modules.contains(ModuleEnum.BUSINESSMANAGE)) {
                 for(String roleId : roleIds) {
                     privilegeDAO.deleteRole2Category(roleId, BUSINESS_TYPE);
                 }
             }
-            if(!modules.contains(1) && !modules.contains(3)) {
+            if(!modules.contains(ModuleEnum.TECHNICAL) && !modules.contains(ModuleEnum.TECHNICALEDIT)) {
                 for(String roleId: roleIds) {
                     privilegeDAO.deleteRole2Category(roleId, TECHNICAL_TYPE);
                 }
@@ -110,7 +112,7 @@ public class PrivilegeService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void delPrivilege(String privilegeId) throws AtlasBaseException {
         try {
             int enableDelete = privilegeDAO.getEnableDelete(privilegeId);
@@ -142,7 +144,7 @@ public class PrivilegeService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updatePrivilege(String privilegeId, PrivilegeHeader privilege) throws AtlasBaseException {
         try {
             PrivilegeInfo currentPrivilege = privilegeDAO.getPrivilegeInfo(privilegeId);
@@ -155,12 +157,12 @@ public class PrivilegeService {
             List<Integer> moduleIds = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
 
-            if(!moduleIds.contains(2) && !moduleIds.contains(4) && !moduleIds.contains(5)) {
+            if(!moduleIds.contains(ModuleEnum.BUSINESS.getId()) && !moduleIds.contains(ModuleEnum.BUSINESSEDIT) && !moduleIds.contains(ModuleEnum.BUSINESSMANAGE)) {
                 for(String roleId : roleIds) {
                     privilegeDAO.deleteRole2Category(roleId, BUSINESS_TYPE);
                 }
             }
-            if(!moduleIds.contains(1) && !moduleIds.contains(3)) {
+            if(!moduleIds.contains(ModuleEnum.TECHNICAL) && !moduleIds.contains(ModuleEnum.TECHNICALEDIT)) {
                 for(String roleId: roleIds) {
                     privilegeDAO.deleteRole2Category(roleId, TECHNICAL_TYPE);
                 }

@@ -166,8 +166,9 @@ public final class Constants {
         try {
             Configuration configuration = ApplicationProperties.get();
 
-            if (configuration.containsKey("atlas.graph.index.search.backend") &&
-                configuration.getString("atlas.graph.index.search.backend").equals("elasticsearch")) {
+            String key = "atlas.graph.index.search.backend";
+            if (configuration.containsKey(key) &&
+                configuration.getString(key).equals("elasticsearch")) {
 
                 return defaultKey.replaceAll("\\.", "_");
             }

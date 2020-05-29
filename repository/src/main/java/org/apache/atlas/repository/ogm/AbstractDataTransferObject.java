@@ -18,15 +18,14 @@
 package org.apache.atlas.repository.ogm;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.AtlasBaseModelObject;
+import org.apache.atlas.model.BaseAtlasBaseModelObject;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.repository.Constants;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.lang3.StringUtils;
 
 
-public abstract class AbstractDataTransferObject<T extends AtlasBaseModelObject> implements DataTransferObject<T> {
+public abstract class AbstractDataTransferObject<T extends BaseAtlasBaseModelObject> implements DataTransferObject<T> {
     private final AtlasTypeRegistry typeRegistry;
     private final Class<T>          objectType;
     private final String            entityTypeName;

@@ -22,7 +22,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.query.antlr4.AtlasDSLParser;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.lang.StringUtils;
 import org.testng.annotations.DataProvider;
@@ -401,10 +401,10 @@ public class GremlinQueryComposerTest {
         }
 
         @Override
-        public AtlasType getType(String typeName) throws AtlasBaseException {
-            AtlasType type;
+        public BaseAtlasType getType(String typeName) throws AtlasBaseException {
+            BaseAtlasType type;
             if(typeName.equals("PII") || typeName.equals("Dimension")) {
-                type = mock(AtlasType.class);
+                type = mock(BaseAtlasType.class);
                 when(type.getTypeCategory()).thenReturn(TypeCategory.CLASSIFICATION);
             } else {
                 type = mock(AtlasEntityType.class);

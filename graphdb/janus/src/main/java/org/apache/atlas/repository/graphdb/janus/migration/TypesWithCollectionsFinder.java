@@ -23,7 +23,7 @@ import org.apache.atlas.type.AtlasArrayType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +81,7 @@ public class TypesWithCollectionsFinder {
     }
 
     private static void addIfCollectionAttribute(AtlasAttribute attr, Map<String, List<String>> collectionProperties) {
-        AtlasType    attrType         = attr.getAttributeType();
+        BaseAtlasType attrType         = attr.getAttributeType();
         TypeCategory attrTypeCategory = attrType.getTypeCategory();
 
         switch (attrTypeCategory) {
@@ -104,6 +104,8 @@ public class TypesWithCollectionsFinder {
                 }
             }
             break;
+            default:
+                break;
         }
     }
 

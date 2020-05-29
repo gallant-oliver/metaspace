@@ -22,15 +22,15 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 
 public interface AtlasFormatConverter {
-    boolean isValidValueV1(Object v1Ob, AtlasType typej);
+    boolean isValidValueV1(Object v1Ob, BaseAtlasType typej);
 
-    Object fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext context) throws AtlasBaseException;
+    Object fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext context) throws AtlasBaseException;
 
-    Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext context) throws AtlasBaseException;
+    Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext context) throws AtlasBaseException;
 
     TypeCategory getTypeCategory();
 

@@ -99,10 +99,10 @@ public class ImportTransformsTest {
     }
 
     private void addColumnTransform(ImportTransforms transform) throws AtlasBaseException {
-        Map<String, List<ImportTransformer>> tr     = new HashMap<>();
-        List<ImportTransformer>              trList = new ArrayList<>();
+        Map<String, List<BaseImportTransformer>> tr     = new HashMap<>();
+        List<BaseImportTransformer>              trList = new ArrayList<>();
 
-        trList.add(ImportTransformer.getTransformer(String.format("replace:%s:%s", lowerCaseCL1, lowerCaseCL2)));
+        trList.add(BaseImportTransformer.getTransformer(String.format("replace:%s:%s", lowerCaseCL1, lowerCaseCL2)));
 
         tr.put(qualifiedName, trList);
 

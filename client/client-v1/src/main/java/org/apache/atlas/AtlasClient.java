@@ -31,7 +31,7 @@ import org.apache.atlas.v1.model.typedef.TraitTypeDefinition;
 import org.apache.atlas.v1.model.typedef.TypesDef;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AtlasJson;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -50,7 +50,7 @@ import java.util.*;
  * Client for metadata.
  */
 @Deprecated
-public class AtlasClient extends AtlasBaseClient {
+public class AtlasClient extends AbstractAtlasBaseClient {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasClient.class);
 
     public static final String TYPE             = "type";
@@ -272,7 +272,7 @@ public class AtlasClient extends AtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> createType(TypesDef typeDef) throws AtlasServiceException {
-        return createType(AtlasType.toV1Json(typeDef));
+        return createType(BaseAtlasType.toV1Json(typeDef));
     }
 
     /**
@@ -288,9 +288,9 @@ public class AtlasClient extends AtlasBaseClient {
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait),
                 Collections.emptyList());
 
-        LOG.debug("Creating trait type {} {}", traitName, AtlasType.toV1Json(piiTrait));
+        LOG.debug("Creating trait type {} {}", traitName, BaseAtlasType.toV1Json(piiTrait));
 
-        return createType(AtlasType.toV1Json(typesDef));
+        return createType(BaseAtlasType.toV1Json(typesDef));
     }
 
     /**
@@ -329,7 +329,7 @@ public class AtlasClient extends AtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> updateType(TypesDef typeDef) throws AtlasServiceException {
-        return updateType(AtlasType.toV1Json(typeDef));
+        return updateType(BaseAtlasType.toV1Json(typeDef));
     }
 
     /**
@@ -391,8 +391,8 @@ public class AtlasClient extends AtlasBaseClient {
 
     public TypesDef getType(String typeName) throws AtlasServiceException {
         ObjectNode response = callAPIWithBodyAndParams(API_V1.GET_TYPE, null, typeName);
-        String     typeJson = AtlasType.toJson(response.get(DEFINITION));
-        return AtlasType.fromV1Json(typeJson, TypesDef.class);
+        String     typeJson = BaseAtlasType.toJson(response.get(DEFINITION));
+        return BaseAtlasType.fromV1Json(typeJson, TypesDef.class);
     }
 
     /**
@@ -439,7 +439,7 @@ public class AtlasClient extends AtlasBaseClient {
     private ArrayNode getEntitiesArray(Collection<Referenceable> entities) {
         ArrayNode entityArray = AtlasJson.createV1ArrayNode();
         for (Referenceable entity : entities) {
-            entityArray.add(AtlasType.toV1Json(entity));
+            entityArray.add(BaseAtlasType.toV1Json(entity));
         }
         return entityArray;
     }
@@ -497,7 +497,7 @@ public class AtlasClient extends AtlasBaseClient {
      * @param entity entity definition
      */
     public EntityResult updateEntity(String guid, Referenceable entity) throws AtlasServiceException {
-        String entityJson = AtlasType.toV1Json(entity);
+        String entityJson = BaseAtlasType.toV1Json(entity);
         LOG.debug("Updating entity id {} with {}", guid, entityJson);
         ObjectNode response = callAPIWithBodyAndParams(API_V1.UPDATE_ENTITY_PARTIAL, entityJson, guid);
         return extractEntityResult(response);
@@ -510,7 +510,7 @@ public class AtlasClient extends AtlasBaseClient {
      * @param traitDefinition trait definition
      */
     public void addTrait(String guid, Struct traitDefinition) throws AtlasServiceException {
-        String traitJson = AtlasType.toV1Json(traitDefinition);
+        String traitJson = BaseAtlasType.toV1Json(traitDefinition);
         LOG.debug("Adding trait to entity with id {} {}", guid, traitJson);
         callAPIWithBodyAndParams(API_V1.ADD_TRAITS, traitJson, guid, URI_TRAITS);
     }
@@ -537,7 +537,7 @@ public class AtlasClient extends AtlasBaseClient {
                                      final String uniqueAttributeValue,
                                      Referenceable entity) throws AtlasServiceException {
         final API api        = API_V1.UPDATE_ENTITY_PARTIAL;
-        String    entityJson = AtlasType.toV1Json(entity);
+        String    entityJson = BaseAtlasType.toV1Json(entity);
         LOG.debug("Updating entity type: {}, attributeName: {}, attributeValue: {}, entity: {}", entityType,
                   uniqueAttributeName, uniqueAttributeValue, entityJson);
         ObjectNode response = callAPIWithRetries(api, entityJson, new ResourceCreator() {
@@ -614,8 +614,8 @@ public class AtlasClient extends AtlasBaseClient {
      */
     public Referenceable getEntity(String guid) throws AtlasServiceException {
         ObjectNode jsonResponse = callAPIWithBodyAndParams(API_V1.GET_ENTITY, null, guid);
-        String entityInstanceDefinition = AtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
-        return AtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
+        String entityInstanceDefinition = BaseAtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
+        return BaseAtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
     }
 
     public static String toString(ArrayNode jsonArray) {
@@ -647,8 +647,8 @@ public class AtlasClient extends AtlasBaseClient {
                 return resource;
             }
         });
-        String entityInstanceDefinition =  AtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
-        return AtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
+        String entityInstanceDefinition =  BaseAtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
+        return BaseAtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
     }
 
     /**
@@ -691,7 +691,7 @@ public class AtlasClient extends AtlasBaseClient {
         List<ObjectNode>  traitDefList    = extractResults(jsonResponse, AtlasClient.RESULTS, new ExtractOperation<ObjectNode, ObjectNode>());
         ArrayList<Struct> traitStructList = new ArrayList<>();
         for (ObjectNode traitDef : traitDefList) {
-            Struct traitStruct = AtlasType.fromV1Json(traitDef.toString(), Struct.class);
+            Struct traitStruct = BaseAtlasType.fromV1Json(traitDef.toString(), Struct.class);
             traitStructList.add(traitStruct);
         }
         return traitStructList;
@@ -707,7 +707,7 @@ public class AtlasClient extends AtlasBaseClient {
     public Struct getTraitDefinition(final String guid, final String traitName) throws AtlasServiceException {
         ObjectNode jsonResponse = callAPIWithBodyAndParams(API_V1.GET_TRAIT_DEFINITION, null, guid, TRAIT_DEFINITIONS, traitName);
 
-        return AtlasType.fromV1Json(AtlasType.toJson(jsonResponse.get(AtlasClient.RESULTS)), Struct.class);
+        return BaseAtlasType.fromV1Json(BaseAtlasType.toJson(jsonResponse.get(AtlasClient.RESULTS)), Struct.class);
     }
 
     protected class ExtractOperation<T, U> {
@@ -759,7 +759,7 @@ public class AtlasClient extends AtlasBaseClient {
         return extractResults(jsonResponse, AtlasClient.EVENTS, new ExtractOperation<EntityAuditEvent, ObjectNode>() {
             @Override
             EntityAuditEvent extractElement(ObjectNode element) {
-                return AtlasType.fromV1Json(element.toString(), EntityAuditEvent.class);
+                return BaseAtlasType.fromV1Json(element.toString(), EntityAuditEvent.class);
             }
         });
 

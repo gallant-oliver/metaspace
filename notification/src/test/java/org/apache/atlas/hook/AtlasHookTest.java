@@ -55,8 +55,8 @@ public class AtlasHookTest {
         List<HookNotification> hookNotifications = new ArrayList<>();
         doThrow(new NotificationException(new Exception())).when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 0, null, notificationInterface, false,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 0, null, notificationInterface, false,
+                                                 failedMessagesLogger);
         // if we've reached here, the method finished OK.
     }
 
@@ -69,8 +69,8 @@ public class AtlasHookTest {
             };
         doThrow(new NotificationException(new Exception())).when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, false,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, false,
+                                                 failedMessagesLogger);
 
         verify(notificationInterface, times(2)).
                 send(NotificationInterface.NotificationType.HOOK, hookNotifications);
@@ -86,8 +86,8 @@ public class AtlasHookTest {
         doThrow(new NotificationException(new Exception(), Arrays.asList("test message")))
                 .when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
+                                                 failedMessagesLogger);
 
         verify(failedMessagesLogger, times(1)).log("test message");
     }
@@ -98,8 +98,8 @@ public class AtlasHookTest {
         doThrow(new NotificationException(new Exception(), Arrays.asList("test message")))
                 .when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, false,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, false,
+                                                 failedMessagesLogger);
 
         verifyZeroInteractions(failedMessagesLogger);
     }
@@ -114,8 +114,8 @@ public class AtlasHookTest {
         doThrow(new NotificationException(new Exception(), Arrays.asList("test message1", "test message2")))
                 .when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
+                                                 failedMessagesLogger);
 
         verify(failedMessagesLogger, times(1)).log("test message1");
         verify(failedMessagesLogger, times(1)).log("test message2");
@@ -126,8 +126,8 @@ public class AtlasHookTest {
         List<HookNotification> hookNotifications = new ArrayList<>();
         doThrow(new RuntimeException("test message")).when(notificationInterface)
                 .send(NotificationInterface.NotificationType.HOOK, hookNotifications);
-        AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
-                failedMessagesLogger);
+        AbstractAtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
+                                                 failedMessagesLogger);
 
         verifyZeroInteractions(failedMessagesLogger);
     }

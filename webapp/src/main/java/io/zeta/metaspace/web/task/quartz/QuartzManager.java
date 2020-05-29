@@ -58,20 +58,18 @@ public class QuartzManager {
             TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger();
             //触发器名，触发器组
             triggerBuilder.withIdentity(triggerName, triggerGroupName);
-            //triggerBuilder.startNow();
             Trigger trigger = null;
             //触发器时间设定
             if( Objects.isNull(cron) || StringUtils.isEmpty(cron)) {
 
                 trigger = triggerBuilder.newTrigger()
-                        .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(0))//重复执行的次数，因为加入任务的时候马上执行了，所以不需要重复，否则会多一次。
+                        //重复执行的次数，因为加入任务的时候马上执行了，所以不需要重复，否则会多一次。
+                        .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(0))
                         .startNow().build();
             } else {
                 triggerBuilder.withSchedule(CronScheduleBuilder.cronSchedule(cron));
                 trigger = triggerBuilder.build();
             }
-            //创建Trigger对象
-            //CronTrigger trigger = (CronTrigger)triggerBuilder.build();
             //调度器设置JobDetail和Trigger
             scheduler.scheduleJob(jobDetail, trigger);
             //启动

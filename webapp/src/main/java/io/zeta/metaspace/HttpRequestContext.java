@@ -22,6 +22,9 @@ public class HttpRequestContext {
         }
         return context;
     }
+    public static void remove(){
+        CURRENT_CONTEXT.remove();
+    }
 
     public void auditLog(String module, String content) {
         request.setAttribute(OperateLogInterceptor.OPERATELOG_MODULE, module);

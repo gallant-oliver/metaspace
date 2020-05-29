@@ -23,7 +23,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metrics.AtlasMetrics;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.util.AtlasGremlinQueryProvider;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.INSTANCE;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.INSTANCE;
 
 @AtlasService
 public class MetricsService {
@@ -74,7 +74,7 @@ public class MetricsService {
     public static final String METRIC_COLLECTION_TIME = "collectionTime";
 
     private static Configuration             configuration        = null;
-    private static AtlasGremlinQueryProvider gremlinQueryProvider = null;
+    private static BaseAtlasGremlinQueryProvider gremlinQueryProvider = null;
 
     private final AtlasGraph        atlasGraph;
     private final AtlasTypeRegistry typeRegistry;
@@ -91,7 +91,7 @@ public class MetricsService {
     }
 
     @VisibleForTesting
-    MetricsService(Configuration configuration, AtlasGraph graph, AtlasTypeRegistry typeRegistry, AtlasGremlinQueryProvider queryProvider) {
+    MetricsService(Configuration configuration, AtlasGraph graph, AtlasTypeRegistry typeRegistry, BaseAtlasGremlinQueryProvider queryProvider) {
         MetricsService.configuration = configuration;
         atlasGraph = graph;
         cacheTTLInSecs = configuration != null ? configuration.getInt(METRIC_QUERY_CACHE_TTL, DEFAULT_CACHE_TTL_IN_SECS)

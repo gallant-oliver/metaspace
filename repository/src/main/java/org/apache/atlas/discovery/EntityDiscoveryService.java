@@ -53,10 +53,10 @@ import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.util.AtlasGremlinQueryProvider;
-import org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery;
 import org.apache.atlas.util.SearchTracker;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -82,7 +82,7 @@ import static org.apache.atlas.model.TypeCategory.OBJECT_ID_TYPE;
 import static org.apache.atlas.model.instance.AtlasEntity.Status.ACTIVE;
 import static org.apache.atlas.model.instance.AtlasEntity.Status.DELETED;
 import static org.apache.atlas.repository.graph.GraphHelper.EDGE_LABEL_PREFIX;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery.*;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery.*;
 
 @Component
 public class EntityDiscoveryService implements AtlasDiscoveryService {
@@ -91,7 +91,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
 
     private final AtlasGraph                      graph;
     private final EntityGraphRetriever            entityRetriever;
-    private final AtlasGremlinQueryProvider       gremlinQueryProvider;
+    private final BaseAtlasGremlinQueryProvider gremlinQueryProvider;
     private final AtlasTypeRegistry               typeRegistry;
     private final GraphBackedSearchIndexer        indexer;
     private final SearchTracker                   searchTracker;
@@ -109,7 +109,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
         this.entityRetriever          = new EntityGraphRetriever(typeRegistry);
         this.indexer                  = indexer;
         this.searchTracker            = searchTracker;
-        this.gremlinQueryProvider     = AtlasGremlinQueryProvider.INSTANCE;
+        this.gremlinQueryProvider     = BaseAtlasGremlinQueryProvider.INSTANCE;
         this.typeRegistry             = typeRegistry;
         this.maxResultSetSize         = ApplicationProperties.get().getInt(Constants.INDEX_SEARCH_MAX_RESULT_SET_SIZE, 150);
         this.maxTypesLengthInIdxQuery = ApplicationProperties.get().getInt(Constants.INDEX_SEARCH_TYPES_MAX_QUERY_STR_LENGTH, 512);
@@ -428,7 +428,8 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
         searchParameters.setOffset(params.offset());
 
         SearchContext context  = new SearchContext(searchParameters, typeRegistry, graph, indexer.getVertexIndexKeys());
-        String        searchID = searchTracker.add(context); // For future cancellations
+        // For future cancellations
+        String        searchID = searchTracker.add(context);
 
         try {
             List<AtlasVertex> resultList = context.getSearchProcessor().execute();
@@ -453,7 +454,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
                     AtlasAttribute  attribute  = entityType.getAttribute(resultAttribute);
 
                     if (attribute != null) {
-                        AtlasType attributeType = attribute.getAttributeType();
+                        BaseAtlasType attributeType = attribute.getAttributeType();
 
                         if (attributeType instanceof AtlasArrayType) {
                             attributeType = ((AtlasArrayType) attributeType).getElementType();
@@ -793,7 +794,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
 
     private boolean isRelationshipAttribute(AtlasAttribute attribute) throws AtlasBaseException {
         boolean   ret      = true;
-        AtlasType attrType = attribute.getAttributeType();
+        BaseAtlasType attrType = attribute.getAttributeType();
 
         if (attrType.getTypeCategory() == ARRAY) {
             attrType = ((AtlasArrayType) attrType).getElementType();
@@ -926,7 +927,8 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
     private String escapeTypeName(String typeName) {
         String ret;
 
-        if (StringUtils.startsWith(typeName, "`") && StringUtils.endsWith(typeName, "`")) {
+        String prefix = "`";
+        if (StringUtils.startsWith(typeName, prefix) && StringUtils.endsWith(typeName, prefix)) {
             ret = typeName;
         } else {
             ret = String.format("`%s`", typeName);

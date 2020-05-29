@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,9 +91,9 @@ public class EntityResult {
     }
 
     @Override
-    public String toString() { return AtlasType.toV1Json(this); }
+    public String toString() { return BaseAtlasType.toV1Json(this); }
 
     public static EntityResult fromString(String json) {
-        return AtlasType.fromV1Json(json, EntityResult.class);
+        return BaseAtlasType.fromV1Json(json, EntityResult.class);
     }
 }

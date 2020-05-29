@@ -53,8 +53,10 @@ public class AtlasZookeeperSecurityProperties {
         Preconditions.checkArgument(!StringUtils.isEmpty(securityString),
                 String.format("%s cannot be null or empty. " +
                 "Needs to be of form %s", variableName, formatExample));
-        String[] aclComponents = securityString.split(":", 2);
-        if (aclComponents.length != 2) {
+        int length = 2;
+        String[] aclComponents = securityString.split(":", length);
+
+        if (aclComponents.length != length) {
             throw new IllegalArgumentException(
                     String.format("Invalid %s string. " +
                     "Needs to be of form %s", variableName, formatExample));

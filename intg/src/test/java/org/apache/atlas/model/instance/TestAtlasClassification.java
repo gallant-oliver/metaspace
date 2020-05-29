@@ -20,7 +20,7 @@ package org.apache.atlas.model.instance;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.testng.annotations.Test;
@@ -42,9 +42,9 @@ public class TestAtlasClassification {
 
         AtlasClassification ent1 = ModelTestUtil.newClassification(classificationDef, typeRegistry);
 
-        String jsonString = AtlasType.toJson(ent1);
+        String jsonString = BaseAtlasType.toJson(ent1);
 
-        AtlasClassification ent2 = AtlasType.fromJson(jsonString, AtlasClassification.class);
+        AtlasClassification ent2 = BaseAtlasType.fromJson(jsonString, AtlasClassification.class);
 
         classificationType.normalizeAttributeValues(ent2);
 
@@ -61,9 +61,9 @@ public class TestAtlasClassification {
 
         AtlasClassification ent1 =  classificationType.createDefaultValue();
 
-        String jsonString = AtlasType.toJson(ent1);
+        String jsonString = BaseAtlasType.toJson(ent1);
 
-        AtlasClassification ent2 = AtlasType.fromJson(jsonString, AtlasClassification.class);
+        AtlasClassification ent2 = BaseAtlasType.fromJson(jsonString, AtlasClassification.class);
 
         classificationType.normalizeAttributeValues(ent2);
 
@@ -80,9 +80,9 @@ public class TestAtlasClassification {
 
         AtlasClassification ent1 =  classificationType.createDefaultValue();
 
-        String jsonString = AtlasType.toJson(ent1);
+        String jsonString = BaseAtlasType.toJson(ent1);
 
-        AtlasClassification ent2 = AtlasType.fromJson(jsonString, AtlasClassification.class);
+        AtlasClassification ent2 = BaseAtlasType.fromJson(jsonString, AtlasClassification.class);
 
         classificationType.normalizeAttributeValues(ent2);
 

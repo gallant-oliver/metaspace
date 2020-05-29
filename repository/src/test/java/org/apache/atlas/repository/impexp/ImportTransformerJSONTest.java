@@ -40,8 +40,8 @@ public class ImportTransformerJSONTest {
         assertEquals(transforms.getTransforms().get(hiveTableType).get(qualifiedName).size(), 2);
         Assert.assertEquals(transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(0).getTransformType(), "lowercase");
         assertEquals(transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1).getTransformType(), "replace");
-        assertTrue(transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1) instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1)).getToFindStr(), "@cl1");
-        assertEquals(((ImportTransformer.Replace)transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1)).getReplaceStr(), "@cl2");
+        assertTrue(transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1) instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1)).getToFindStr(), "@cl1");
+        assertEquals(((BaseImportTransformer.Replace)transforms.getTransforms().get(hiveTableType).get(qualifiedName).get(1)).getReplaceStr(), "@cl2");
     }
 }

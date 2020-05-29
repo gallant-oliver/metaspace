@@ -1,8 +1,9 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.SqlEnum;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
-import io.zeta.metaspace.model.dataSource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -11,10 +12,8 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
@@ -377,14 +376,14 @@ public class SearchService {
         }
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(guidCount.getGuid(), attributes, relationshipAttributes).getEntity();
 
-        String name_path = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
+        String namePath = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
         String sourceId = qualifiedName.split("\\.")[0];
         DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
         StringBuffer dbName = new StringBuffer();
         StringBuffer  tableName = new StringBuffer();
-        String[] strs = name_path.split("\\.");
+        String[] strs = namePath.split("\\.");
         for (int i=0;i<strs.length;i++){
             if (i<strs.length-name.split("\\.").length){
                 dbName.append(strs[i]);
@@ -396,7 +395,8 @@ public class SearchService {
         }
 
         String db = dbName.substring(0,dbName.length()-1);
-        if (db.startsWith("\"")){
+        String start = "\"";
+        if (db.startsWith(start)){
             db = db.substring(1,db.length()-1);
         }
         String table = "";
@@ -407,11 +407,11 @@ public class SearchService {
         }
 
         String sql = "";
-        if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+        if (dataSourceInfo.getSourceType().toUpperCase().equals(SqlEnum.MYSQL.getName())){
             db.replace("`","``");
             table.replace("`","``");
             sql = "select * from `"+ db +"`.`"+ table +"` limit " + guidCount.getCount();
-        }else if (dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
+        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(dataSourceInfo.getSourceType().toUpperCase())){
             sql = "select * from \""+ db +"\".\""+ table +"\" where rownum <" + guidCount.getCount();
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
@@ -486,13 +486,13 @@ public class SearchService {
         }
         AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
 
-        String name_path = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
+        String namePath = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
         String sourceId = qualifiedName.split("\\.")[0];
         StringBuffer dbName = new StringBuffer();
         StringBuffer  tableName = new StringBuffer();
-        String[] strs = name_path.split("\\.");
+        String[] strs = namePath.split("\\.");
         for (int i=0;i<strs.length;i++){
             if (i<strs.length-name.split("\\.").length){
                 dbName.append(strs[i]);
@@ -503,7 +503,8 @@ public class SearchService {
             }
         }
         String db = dbName.substring(0,dbName.length()-1);
-        if (db.startsWith("\"")){
+        String start = "\"";
+        if (db.startsWith(start)){
             db = db.substring(1,db.length()-1);
         }
         String table = "";
@@ -519,11 +520,11 @@ public class SearchService {
         DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
 
         String sql = "";
-        if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+        if (dataSourceInfo.getSourceType().toUpperCase().equals(SqlEnum.MYSQL.getName())){
             db.replace("`","``");
             table.replace("`","``");
             sql = "SHOW CREATE TABLE `" + table+"`";
-        }else if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")){
+        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(dataSourceInfo.getSourceType().toUpperCase())){
             db.replace("'","''");
             table.replace("'","''");
             sql = "select dbms_metadata.get_ddl('TABLE','"+ table +"','"+ db +"') from dual";
@@ -546,9 +547,9 @@ public class SearchService {
     }
 
     public int getSqlPlace(String sourceType) throws AtlasBaseException {
-        if (sourceType.toLowerCase().equals("mysql")){
+        if (sourceType.toUpperCase().equals(SqlEnum.MYSQL.getName())){
             return 2;
-        }else if(sourceType.toLowerCase().equals("oracle")){
+        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(sourceType.toUpperCase())){
             return 1;
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+sourceType);
@@ -561,19 +562,20 @@ public class SearchService {
         String           sourceType     = dataSourceInfo.getSourceType();
         String           jdbcParameter  = dataSourceInfo.getJdbcParameter();
         String           userName       = dataSourceInfo.getUserName();
-        String           password       = AESUtils.AESDecode(dataSourceInfo.getPassword());
+        String           password       = AESUtils.aesDecode(dataSourceInfo.getPassword());
         String connectUrl = RMDBEnum.of(sourceType).getConnectUrl();
         String connectionUrl = "";
-        if(dataSourceInfo.getSourceType().toLowerCase().equals("oracle")|| dbName==null){
+        if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(sourceType.toUpperCase())){
             connectionUrl = String.format(connectUrl, ip, port, dataSourceInfo.getDatabase());
-        } else if (dataSourceInfo.getSourceType().toLowerCase().equals("mysql")){
+        } else if (sourceType.toUpperCase().equals(SqlEnum.MYSQL.getName())){
             connectionUrl = String.format(connectUrl, ip, port, dbName);
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
         }
         Map<String,String> map = new HashMap<>();
         if (StringUtils.isNotEmpty(jdbcParameter)) {
-            for (String str :jdbcParameter.split("&")){
+            String regex = "&";
+            for (String str :jdbcParameter.split(regex)){
                 String[] strings = str.split("=");
                 if (strings.length==2){
                     map.put(strings[0],strings[1]);
@@ -588,7 +590,7 @@ public class SearchService {
 
 
     //1.4获取关联表，获取有权限的目录下的库
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<DatabaseHeader> getTechnicalDatabasePageResultV2(Parameters parameters, String categoryId,String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
@@ -640,7 +642,7 @@ public class SearchService {
      * @return
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getTechnicalTablePageResultByDB(Parameters parameters, String databaseGuid, String categoryId,String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
@@ -673,7 +675,7 @@ public class SearchService {
     }
 
     //备用，一组目录查子库加表
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String categoryGuid,String tenantId) throws AtlasBaseException {
         List<DatabaseHeader> databaseHeaders = new ArrayList<>();
         String query = parameters.getQuery();
@@ -758,7 +760,7 @@ public class SearchService {
 
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId,String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
@@ -806,7 +808,7 @@ public class SearchService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getPermissionTablePageResultV2(Parameters parameters,String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         //判断多租户和独立部署
@@ -843,7 +845,7 @@ public class SearchService {
 
 
     //一组目录查子表,找出目录已勾选的表
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getTableResultV3(Parameters parameters, List<String> strings,String categoryId,String tenantId) throws AtlasBaseException {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         String query = parameters.getQuery();
@@ -886,7 +888,7 @@ public class SearchService {
     }
     //一组目录查子表
     //独立部署
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds) {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
 
@@ -919,7 +921,7 @@ public class SearchService {
         }
         return tablePageResult;
     }
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<AddRelationTable> getTables(List<TechnologyInfo.Table> tableInfo) {
         List<AddRelationTable> lists = new ArrayList<>();
         for (TechnologyInfo.Table table : tableInfo) {
@@ -936,7 +938,7 @@ public class SearchService {
     }
 
     //多租户
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds,String tenantId) throws AtlasBaseException {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         User user = AdminUtils.getUserData();
@@ -994,7 +996,7 @@ public class SearchService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters,String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
@@ -1063,7 +1065,7 @@ public class SearchService {
         return strings;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public PageResult<Database> getDatabaseV2(Parameters parameters, List<String> strings,String tenantId) throws AtlasBaseException {
         List<DatabaseHeader> dbName = null;
         long totalSize;

@@ -36,11 +36,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_ARRAY_PREFIX;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_ARRAY_SUFFIX;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_MAP_KEY_VAL_SEP;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_MAP_PREFIX;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_MAP_SUFFIX;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_ARRAY_PREFIX;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_ARRAY_SUFFIX;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_MAP_KEY_VAL_SEP;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_MAP_PREFIX;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_MAP_SUFFIX;
 
 public class TypesDefScrubber {
     private static final Logger LOG = LoggerFactory.getLogger(TypesDefScrubber.class);
@@ -60,8 +60,8 @@ public class TypesDefScrubber {
         display("incoming: ", typesDef);
 
         createClassificationNameIndexMap(typesDef.getClassificationDefs());
-
-        for (AtlasStructDef structDef : new ArrayList<>(typesDef.getStructDefs())) { // work on copy of typesDef.getStructDefs(), as the list is modified by checkAndUpdate()
+        // work on copy of typesDef.getStructDefs(), as the list is modified by checkAndUpdate()
+        for (AtlasStructDef structDef : new ArrayList<>(typesDef.getStructDefs())) {
             checkAndUpdate(structDef);
         }
 

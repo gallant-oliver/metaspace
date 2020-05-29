@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -85,9 +85,9 @@ public class EntityAuditEventV2 implements Serializable {
                     return TERM_ADD;
                 case "TERM_DELETE":
                     return TERM_DELETE;
+                default:
+                    throw new IllegalArgumentException("No enum constant " + EntityAuditActionV2.class.getCanonicalName() + "." + strValue);
             }
-
-            throw new IllegalArgumentException("No enum constant " + EntityAuditActionV2.class.getCanonicalName() + "." + strValue);
         }
     }
 
@@ -185,7 +185,7 @@ public class EntityAuditEventV2 implements Serializable {
     @JsonIgnore
     public String getEntityDefinitionString() {
         if (entity != null) {
-            return AtlasType.toJson(entity);
+            return BaseAtlasType.toJson(entity);
         }
 
         return null;
@@ -193,7 +193,7 @@ public class EntityAuditEventV2 implements Serializable {
 
     @JsonIgnore
     public void setEntityDefinition(String entityDefinition) {
-        this.entity = AtlasType.fromJson(entityDefinition, AtlasEntity.class);
+        this.entity = BaseAtlasType.fromJson(entityDefinition, AtlasEntity.class);
     }
 
     @Override

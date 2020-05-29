@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class DataStandardService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataStandardService.class);
@@ -124,7 +124,7 @@ public class DataStandardService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标准失败");
         }
     }
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteByNumber(String number,String tenantId) throws AtlasBaseException {
         try {
             dataStandardDAO.deleteStandard2RuleByRuleId(number,tenantId);
@@ -385,7 +385,7 @@ public class DataStandardService {
         dataManageService.updateCategory(categoryInfo, categoryInfo.getCategoryType(),tenantId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void assignTableToStandard(DataStandAndTable dataStandAndTable,String tableName,String tenantId) throws AtlasBaseException {
         try {
             dataStandAndTable.setOperator(AdminUtils.getUserData().getUserId());
@@ -409,7 +409,7 @@ public class DataStandardService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void assignRuleToStandard(DataStandAndRule dataStandAndRule,String ruleName,String tenantId) throws AtlasBaseException {
         try {
             dataStandAndRule.setOperator(AdminUtils.getUserData().getUserId());

@@ -23,7 +23,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.profile.AtlasUserSavedSearch;
 import org.apache.atlas.repository.ogm.AbstractDataTransferObject;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -59,7 +59,7 @@ public class AtlasSavedSearchDTO extends AbstractDataTransferObject<AtlasUserSav
         String jsonSearchParams = (String) entity.getAttribute(PROPERTY_SEARCH_PARAMETERS);
 
         if (StringUtils.isNotEmpty(jsonSearchParams)) {
-            savedSearch.setSearchParameters(AtlasType.fromJson(jsonSearchParams, SearchParameters.class));
+            savedSearch.setSearchParameters(BaseAtlasType.fromJson(jsonSearchParams, SearchParameters.class));
         }
 
         savedSearch.setUiParameters((String) entity.getAttribute(PROPERTY_UI_PARAMETERS));
@@ -82,7 +82,7 @@ public class AtlasSavedSearchDTO extends AbstractDataTransferObject<AtlasUserSav
         entity.setAttribute(PROPERTY_UNIQUE_NAME, getUniqueValue(obj));
 
         if (obj.getSearchParameters() != null) {
-            entity.setAttribute(PROPERTY_SEARCH_PARAMETERS, AtlasType.toJson(obj.getSearchParameters()));
+            entity.setAttribute(PROPERTY_SEARCH_PARAMETERS, BaseAtlasType.toJson(obj.getSearchParameters()));
         }
 
         entity.setAttribute(PROPERTY_UI_PARAMETERS, obj.getUiParameters());
@@ -106,5 +106,10 @@ public class AtlasSavedSearchDTO extends AbstractDataTransferObject<AtlasUserSav
 
     private String getUniqueValue(AtlasUserSavedSearch obj) {
         return String.format("%s:%s", obj.getOwnerName(), obj.getName()) ;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
     }
 }

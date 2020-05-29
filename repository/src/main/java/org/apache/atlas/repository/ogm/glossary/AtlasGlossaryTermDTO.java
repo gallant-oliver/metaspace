@@ -254,4 +254,10 @@ public class AtlasGlossaryTermDTO extends AbstractGlossaryDTO<AtlasGlossaryTerm>
         ret.put("qualifiedName", obj.getQualifiedName());
         return ret;
     }
+
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

@@ -23,7 +23,7 @@ import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasStruct;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -174,9 +174,9 @@ public final class TestUtilsV2 {
             createUniqueRequiredAttrDef("name", "string"),
             new AtlasAttributeDef("b", "B", true, SINGLE, 0, 1, false, false, false, Collections.<AtlasConstraintDef>emptyList()), // 1-1
             new AtlasAttributeDef("oneB", "B", true, SINGLE, 0, 1, false, false, false, Collections.<AtlasConstraintDef>emptyList()), // 1-*
-            new AtlasAttributeDef("manyB", AtlasBaseTypeDef.getArrayTypeName("B"), true, SINGLE, 0, 1, false, false, false, Collections.<AtlasConstraintDef>emptyList()),
-            new AtlasAttributeDef("mapToB", AtlasBaseTypeDef.getMapTypeName("string", "B"), true, SINGLE, 0, 1, false, false, false,
-                Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
+            new AtlasAttributeDef("manyB", BaseAtlasBaseTypeDef.getArrayTypeName("B"), true, SINGLE, 0, 1, false, false, false, Collections.<AtlasConstraintDef>emptyList()),
+            new AtlasAttributeDef("mapToB", BaseAtlasBaseTypeDef.getMapTypeName("string", "B"), true, SINGLE, 0, 1, false, false, false,
+                                  Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
                 CONSTRAINT_TYPE_INVERSE_REF, Collections.<String, Object>singletonMap(CONSTRAINT_PARAM_ATTRIBUTE, "mappedFromA"))))); // *-*
 
         AtlasEntityDef bDef = createClassTypeDef("B", Collections.<String>emptySet(),
@@ -184,11 +184,11 @@ public final class TestUtilsV2 {
             new AtlasAttributeDef("a", "A", true, SINGLE, 0, 1, false, false, false,
                 Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
                     CONSTRAINT_TYPE_INVERSE_REF, Collections.<String, Object>singletonMap(CONSTRAINT_PARAM_ATTRIBUTE, "b")))),
-            new AtlasAttributeDef("manyA", AtlasBaseTypeDef.getArrayTypeName("A"), true, SINGLE, 0, 1, false, false, false,
-                Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
+            new AtlasAttributeDef("manyA", BaseAtlasBaseTypeDef.getArrayTypeName("A"), true, SINGLE, 0, 1, false, false, false,
+                                  Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
                     CONSTRAINT_TYPE_INVERSE_REF, Collections.<String, Object>singletonMap(CONSTRAINT_PARAM_ATTRIBUTE, "oneB")))),
-            new AtlasAttributeDef("manyToManyA", AtlasBaseTypeDef.getArrayTypeName("A"), true, SINGLE, 0, 1, false, false, false,
-                Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
+            new AtlasAttributeDef("manyToManyA", BaseAtlasBaseTypeDef.getArrayTypeName("A"), true, SINGLE, 0, 1, false, false, false,
+                                  Collections.<AtlasConstraintDef>singletonList(new AtlasConstraintDef(
                     CONSTRAINT_TYPE_INVERSE_REF, Collections.<String, Object>singletonMap(CONSTRAINT_PARAM_ATTRIBUTE, "manyB")))),
             new AtlasAttributeDef("mappedFromA", "A", true, SINGLE, 0, 1, false, false, false, Collections.<AtlasConstraintDef>emptyList()));
 
@@ -1219,27 +1219,27 @@ public final class TestUtilsV2 {
     public static AtlasEntityDef createPrimitiveEntityDef() {
 
         AtlasEntityDef newtestEntityDef = new AtlasEntityDef("newtest");
-        AtlasAttributeDef attrName = new AtlasAttributeDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrName = new AtlasAttributeDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
 
-        AtlasAttributeDef attrDescription = new AtlasAttributeDef("description", AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrDescription = new AtlasAttributeDef("description", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
         attrDescription.setIsOptional(false);
 
-        AtlasAttributeDef attrcheck = new AtlasAttributeDef("check", AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrcheck = new AtlasAttributeDef("check", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
         attrcheck.setIsOptional(true);
 
-        AtlasAttributeDef attrSourceCode = new AtlasAttributeDef("sourcecode", AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AtlasAttributeDef attrSourceCode = new AtlasAttributeDef("sourcecode", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
         attrSourceCode.setDefaultValue("Hello World");
         attrSourceCode.setIsOptional(true);
 
-        AtlasAttributeDef attrCost = new AtlasAttributeDef("Cost", AtlasBaseTypeDef.ATLAS_TYPE_INT);
+        AtlasAttributeDef attrCost = new AtlasAttributeDef("Cost", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT);
         attrCost.setIsOptional(true);
         attrCost.setDefaultValue("30");
 
-        AtlasAttributeDef attrDiskUsage = new AtlasAttributeDef("diskUsage", AtlasBaseTypeDef.ATLAS_TYPE_FLOAT);
+        AtlasAttributeDef attrDiskUsage = new AtlasAttributeDef("diskUsage", BaseAtlasBaseTypeDef.ATLAS_TYPE_FLOAT);
         attrDiskUsage.setIsOptional(true);
         attrDiskUsage.setDefaultValue("70.50");
 
-        AtlasAttributeDef attrisStoreUse = new AtlasAttributeDef("isstoreUse", AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN);
+        AtlasAttributeDef attrisStoreUse = new AtlasAttributeDef("isstoreUse", BaseAtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN);
         attrisStoreUse.setIsOptional(true);
         attrisStoreUse.setDefaultValue("true");
 
@@ -1381,15 +1381,15 @@ public final class TestUtilsV2 {
         populateSystemAttributes(typesDef.getRelationshipDefs());
     }
 
-    public static void populateSystemAttributes(List<? extends AtlasBaseTypeDef> typeDefs) {
+    public static void populateSystemAttributes(List<? extends BaseAtlasBaseTypeDef> typeDefs) {
         if (CollectionUtils.isNotEmpty(typeDefs)) {
-            for (AtlasBaseTypeDef typeDef : typeDefs) {
+            for (BaseAtlasBaseTypeDef typeDef : typeDefs) {
                 populateSystemAttributes(typeDef);
             }
         }
     }
 
-    public static void populateSystemAttributes(AtlasBaseTypeDef typeDef) {
+    public static void populateSystemAttributes(BaseAtlasBaseTypeDef typeDef) {
         typeDef.setCreatedBy(TestUtilsV2.TEST_USER);
         typeDef.setUpdatedBy(TestUtilsV2.TEST_USER);
     }

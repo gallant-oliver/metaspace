@@ -22,7 +22,7 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.HookNotificationType;
 import org.apache.atlas.notification.NotificationInterface.NotificationType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.configuration.Configuration;
 
 import java.util.ArrayList;
@@ -94,8 +94,8 @@ public class AbstractNotificationTest {
 
     // ignore msgCreationTime in Json
     private void assertEqualsMessageJson(String msgJsonActual, String msgJsonExpected) {
-        Map<Object, Object> msgActual   = AtlasType.fromV1Json(msgJsonActual, Map.class);
-        Map<Object, Object> msgExpected = AtlasType.fromV1Json(msgJsonExpected, Map.class);
+        Map<Object, Object> msgActual   = BaseAtlasType.fromV1Json(msgJsonActual, Map.class);
+        Map<Object, Object> msgExpected = BaseAtlasType.fromV1Json(msgJsonExpected, Map.class);
 
         msgActual.remove("msgCreationTime");
         msgExpected.remove("msgCreationTime");

@@ -111,7 +111,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
             if (tenantId==null||tenantId.length()==0){
                 throw new AtlasBaseException(AtlasErrorCode.TENANT_ERROE);
             }
-            if ("privilegecheck".equals(prefix.toLowerCase().trim())) {
+            String privilegecheck = "privilegecheck";
+            if (privilegecheck.equals(prefix.toLowerCase().trim())) {
                 String privilegeType = "";
                 String privilegeGuid = "";
                 try {
@@ -152,7 +153,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 }else {
                     List<Module> modules = tenantService.getModule(tenantId);
                     moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
-                    if (prefix.equals("dataquality")){
+                    String dataquality = "dataquality";
+                    if (prefix.equals(dataquality)){
                         Path annotation = method.getDeclaringClass().getAnnotation(Path.class);
                         prefix = annotation==null?prefix : annotation.value();
                         urlStr = prefix + pathStr;

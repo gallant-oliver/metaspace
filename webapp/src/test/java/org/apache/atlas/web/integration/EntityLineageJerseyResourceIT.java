@@ -20,11 +20,11 @@ package org.apache.atlas.web.integration;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
-import org.apache.atlas.AtlasBaseClient;
+import org.apache.atlas.AbstractAtlasBaseClient;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.testng.Assert;
@@ -40,7 +40,7 @@ import java.util.*;
  */
 public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceIT {
     private static final String              BASE_URI         = "api/atlas/v2/lineage";
-    private static final AtlasBaseClient.API LINEAGE_V2_API   = new AtlasBaseClient.API(BASE_URI, "GET", Response.Status.OK);
+    private static final AbstractAtlasBaseClient.API LINEAGE_V2_API   = new AbstractAtlasBaseClient.API(BASE_URI, "GET", Response.Status.OK);
     private static final String              INPUT_DIRECTION  = "INPUT";
     private static final String              OUTPUT_DIRECTION = "OUTPUT";
     private static final String              BOTH_DIRECTION   = "BOTH";
@@ -72,7 +72,7 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         System.out.println("input lineage info = " + response
         );
 
-        AtlasLineageInfo inputLineageInfo = AtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
+        AtlasLineageInfo inputLineageInfo = BaseAtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
 
         Map<String, AtlasEntityHeader> entities = inputLineageInfo.getGuidEntityMap();
         Assert.assertNotNull(entities);
@@ -100,7 +100,7 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         Assert.assertNotNull(response);
         System.out.println("output lineage info = " + response);
 
-        AtlasLineageInfo outputLineageInfo = AtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
+        AtlasLineageInfo outputLineageInfo = BaseAtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
 
         Map<String, AtlasEntityHeader> entities = outputLineageInfo.getGuidEntityMap();
         Assert.assertNotNull(entities);
@@ -128,7 +128,7 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         Assert.assertNotNull(response);
         System.out.println("both lineage info = " + response);
 
-        AtlasLineageInfo bothLineageInfo = AtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
+        AtlasLineageInfo bothLineageInfo = BaseAtlasType.fromJson(response.toString(), AtlasLineageInfo.class);
 
         Map<String, AtlasEntityHeader> entities = bothLineageInfo.getGuidEntityMap();
         Assert.assertNotNull(entities);

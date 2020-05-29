@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.apache.atlas.model.notification.HookNotification;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.typedef.TypesDef;
 
@@ -148,7 +148,7 @@ public class HookNotificationV1 {
             sb.append("EntityCreateRequest{");
             super.toString(sb);
             sb.append("entities=[");
-            AtlasBaseTypeDef.dumpObjects(getEntities(), sb);
+            BaseAtlasBaseTypeDef.dumpObjects(getEntities(), sb);
             sb.append("]");
             sb.append("}");
 
@@ -187,7 +187,7 @@ public class HookNotificationV1 {
             sb.append("EntityUpdateRequest{");
             super.toString(sb);
             sb.append("entities=[");
-            AtlasBaseTypeDef.dumpObjects(getEntities(), sb);
+            BaseAtlasBaseTypeDef.dumpObjects(getEntities(), sb);
             sb.append("]");
             sb.append("}");
 

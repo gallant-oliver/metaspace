@@ -87,19 +87,25 @@ public class AtlasAuthorizationUtils {
     }
 
     public static boolean isAccessAllowed(AtlasAdminAccessRequest request) {
-        boolean ret      = false;
-        String  userName = getCurrentUserName();
-
-        if (StringUtils.isNotEmpty(userName)) {
+        boolean ret      = reuseIsAccess(request);
+        if (!ret){
             try {
                 AtlasAuthorizer authorizer = AtlasAuthorizerFactory.getAtlasAuthorizer();
-
-                request.setUser(userName, getCurrentUserGroups());
-                request.setClientIPAddress(RequestContext.get().getClientIPAddress());
                 ret = authorizer.isAccessAllowed(request);
             } catch (AtlasAuthorizationException e) {
                 LOG.error("Unable to obtain AtlasAuthorizer", e);
             }
+        }
+        return ret;
+    }
+
+    private static boolean reuseIsAccess(AtlasAccessRequest request){
+        boolean ret      = false;
+        String  userName = getCurrentUserName();
+
+        if (StringUtils.isNotEmpty(userName)) {
+            request.setUser(userName, getCurrentUserGroups());
+            request.setClientIPAddress(RequestContext.get().getClientIPAddress());
         } else {
             ret = true;
         }
@@ -108,65 +114,41 @@ public class AtlasAuthorizationUtils {
     }
 
     public static boolean isAccessAllowed(AtlasEntityAccessRequest request) {
-        boolean ret      = false;
-        String  userName = getCurrentUserName();
-
-        if (StringUtils.isNotEmpty(userName)) {
+        boolean ret      = reuseIsAccess(request);
+        if (!ret){
             try {
                 AtlasAuthorizer authorizer = AtlasAuthorizerFactory.getAtlasAuthorizer();
-
-                request.setUser(getCurrentUserName(), getCurrentUserGroups());
-                request.setClientIPAddress(RequestContext.get().getClientIPAddress());
                 ret = authorizer.isAccessAllowed(request);
             } catch (AtlasAuthorizationException e) {
                 LOG.error("Unable to obtain AtlasAuthorizer", e);
             }
-        } else {
-            ret = true;
         }
-
         return ret;
     }
 
     public static boolean isAccessAllowed(AtlasTypeAccessRequest request) {
-        boolean ret      = false;
-        String  userName = getCurrentUserName();
-
-        if (StringUtils.isNotEmpty(userName)) {
+        boolean ret      = reuseIsAccess(request);
+        if (!ret){
             try {
                 AtlasAuthorizer authorizer = AtlasAuthorizerFactory.getAtlasAuthorizer();
-
-                request.setUser(getCurrentUserName(), getCurrentUserGroups());
-                request.setClientIPAddress(RequestContext.get().getClientIPAddress());
                 ret = authorizer.isAccessAllowed(request);
             } catch (AtlasAuthorizationException e) {
                 LOG.error("Unable to obtain AtlasAuthorizer", e);
             }
-        } else {
-            ret = true;
         }
-
         return ret;
     }
 
     public static boolean isAccessAllowed(AtlasRelationshipAccessRequest request) {
-        boolean ret      = false;
-        String  userName = getCurrentUserName();
-
-        if (StringUtils.isNotEmpty(userName)) {
+        boolean ret      = reuseIsAccess(request);
+        if (!ret){
             try {
                 AtlasAuthorizer authorizer = AtlasAuthorizerFactory.getAtlasAuthorizer();
-
-                request.setUser(getCurrentUserName(), getCurrentUserGroups());
-                request.setClientIPAddress(RequestContext.get().getClientIPAddress());
                 ret = authorizer.isAccessAllowed(request);
             } catch (AtlasAuthorizationException e) {
                 LOG.error("Unable to obtain AtlasAuthorizer", e);
             }
-        } else {
-            ret = true;
         }
-
         return ret;
     }
 

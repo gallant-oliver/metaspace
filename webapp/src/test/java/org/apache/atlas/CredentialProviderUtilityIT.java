@@ -50,7 +50,7 @@ public class CredentialProviderUtilityIT {
         }
         new File(testPath.toUri().getPath()).delete();
         final Path finalTestPath = testPath;
-        CredentialProviderUtility.textDevice = new CredentialProviderUtility.TextDevice() {
+        CredentialProviderUtility.textDevice = new CredentialProviderUtility.BaseTextDevice() {
             @Override
             public void printf(String fmt, Object... params) {
                 System.out.print(String.format(fmt, params));
@@ -103,7 +103,7 @@ public class CredentialProviderUtilityIT {
         }
         new File(testPath.toUri().getPath()).delete();
         final Path finalTestPath = testPath;
-        CredentialProviderUtility.textDevice = new CredentialProviderUtility.TextDevice() {
+        CredentialProviderUtility.textDevice = new CredentialProviderUtility.BaseTextDevice() {
 
             private Random random = new Random();
 
@@ -156,7 +156,7 @@ public class CredentialProviderUtilityIT {
         }
         new File(testPath.toUri().getPath()).delete();
         final Path finalTestPath = testPath;
-        CredentialProviderUtility.textDevice = new CredentialProviderUtility.TextDevice() {
+        CredentialProviderUtility.textDevice = new CredentialProviderUtility.BaseTextDevice() {
 
             int i = 0;
 
@@ -210,7 +210,7 @@ public class CredentialProviderUtilityIT {
         }
         new File(testPath.toUri().getPath()).delete();
         final Path finalTestPath = testPath;
-        CredentialProviderUtility.textDevice = new CredentialProviderUtility.TextDevice() {
+        CredentialProviderUtility.textDevice = new CredentialProviderUtility.BaseTextDevice() {
             @Override
             public void printf(String fmt, Object... params) {
                 System.out.print(String.format(fmt, params));
@@ -229,7 +229,7 @@ public class CredentialProviderUtilityIT {
         CredentialProviderUtility.main(new String[]{});
 
         // now attempt to overwrite values
-        CredentialProviderUtility.textDevice = new CredentialProviderUtility.TextDevice() {
+        CredentialProviderUtility.textDevice = new CredentialProviderUtility.BaseTextDevice() {
 
             int i = 0;
 

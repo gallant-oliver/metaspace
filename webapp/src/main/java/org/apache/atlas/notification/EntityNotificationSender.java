@@ -95,7 +95,7 @@ public class EntityNotificationSender<T> {
             }
         }
 
-        class PostCommitNotificationHook<T> extends GraphTransactionInterceptor.PostTransactionHook {
+        class PostCommitNotificationHook<T> extends GraphTransactionInterceptor.AbstractPostTransactionHook {
             private final List<T> notifications = new ArrayList<>();
 
             public PostCommitNotificationHook(List<T> notifications) {

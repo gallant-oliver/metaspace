@@ -137,7 +137,8 @@ public class TenantService {
         Gson gson = new Gson();
         String json = gson.toJson(securitySearch);
         int retryCount = 0;
-        while(retryCount < 3) {
+        int retries = 3;
+        while(retryCount < retries) {
             String string = OKHttpClient.doPost(SECURITY_HOST + TENANT_USER_MODULE, hashMap, queryParamMap, json);
             if (string == null||string.length()==0) {
                 retryCount++;
@@ -159,8 +160,13 @@ public class TenantService {
                     List<User> users = userDAO.getAllUser();
                     Optional<User> first = users.stream().filter(user -> user.getUserId().equals(userAndModule.getAccountGuid())).findFirst();
 
-                    if (first.isPresent()&&(first.get().getUsername().equals(userAndModule.getUserName())||first.get().getAccount().equals(userAndModule.getEmail()))){
-                        userDAO.updateUser(userAndModule,new Timestamp(System.currentTimeMillis()));
+
+                    if (first.isPresent()){
+                        boolean isUserName = first.get().getUsername().equals(userAndModule.getUserName());
+                        boolean isEmail = first.get().getAccount().equals(userAndModule.getEmail());
+                        if ((isUserName || isEmail)){
+                            userDAO.updateUser(userAndModule,new Timestamp(System.currentTimeMillis()));
+                        }
                     }else if (!first.isPresent()){
                         userDAO.insertUser(userAndModule,new Timestamp(System.currentTimeMillis()));
                     }
@@ -179,7 +185,7 @@ public class TenantService {
      * 获取metaspace的租户
      * @return
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<Tenant> getTenants() throws AtlasBaseException {
         try {
             if (isStandalone){

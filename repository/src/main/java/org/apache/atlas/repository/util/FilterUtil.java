@@ -22,7 +22,7 @@ import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.collections.PredicateUtils;
@@ -76,12 +76,12 @@ public class FilterUtil {
     private static Predicate getNamePredicate(final String name) {
         return new Predicate() {
             private boolean isAtlasType(Object o) {
-                return o instanceof AtlasType;
+                return o instanceof BaseAtlasType;
             }
 
             @Override
             public boolean evaluate(Object o) {
-                return o != null && isAtlasType(o) && Objects.equals(((AtlasType) o).getTypeName(), name);
+                return o != null && isAtlasType(o) && Objects.equals(((BaseAtlasType) o).getTypeName(), name);
             }
         };
     }
@@ -108,8 +108,8 @@ public class FilterUtil {
         return new Predicate() {
             @Override
             public boolean evaluate(Object o) {
-                if (o instanceof AtlasType) {
-                    AtlasType atlasType = (AtlasType) o;
+                if (o instanceof BaseAtlasType) {
+                    BaseAtlasType atlasType = (BaseAtlasType) o;
 
                     switch (type.toUpperCase()) {
                         case "CLASS":

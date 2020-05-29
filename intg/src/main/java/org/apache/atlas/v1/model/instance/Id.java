@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -236,7 +236,7 @@ public class Id implements Serializable {
             }
 
             try {
-                return AtlasBaseTypeDef.getDateFormatter().parse(val.toString());
+                return BaseAtlasBaseTypeDef.getDateFormatter().parse(val.toString());
             } catch (ParseException excp) {
                 // ignore
             }

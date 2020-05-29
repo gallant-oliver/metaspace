@@ -31,14 +31,18 @@ public class IdentifierHelper {
     private static final Pattern DOUBLE_QUOTED_IDENTIFIER   = Pattern.compile("\"(\\w[\\w\\d\\.\\s]*)\"");
     private static final Pattern BACKTICK_QUOTED_IDENTIFIER = Pattern.compile("`(\\w[\\w\\d\\.\\s]*)`");
 
+    private static final char char1 = '`';
+    private static final char char2 = '\'';
+    private static final char char3 = '"';
+
     public static String get(String quotedIdentifier) {
         String ret;
 
-        if (quotedIdentifier.charAt(0) == '`') {
+        if (quotedIdentifier.charAt(0) == char1) {
             ret = extract(BACKTICK_QUOTED_IDENTIFIER, quotedIdentifier);
-        } else if (quotedIdentifier.charAt(0) == '\'') {
+        } else if (quotedIdentifier.charAt(0) == char2) {
             ret = extract(SINGLE_QUOTED_IDENTIFIER, quotedIdentifier);
-        } else if (quotedIdentifier.charAt(0) == '"') {
+        } else if (quotedIdentifier.charAt(0) == char3) {
             ret = extract(DOUBLE_QUOTED_IDENTIFIER, quotedIdentifier);
         } else {
             ret = quotedIdentifier;
@@ -79,7 +83,8 @@ public class IdentifierHelper {
             char first = val.charAt(0);
             char last  = val.charAt(val.length() - 1);
 
-            if (first == last && (first == '\'' || first == '"' || first == '`')) {
+            boolean bool = first == char1 || first == char2 || first == char3;
+            if (first == last && bool) {
                 ret = true;
             }
         }
@@ -180,7 +185,8 @@ public class IdentifierHelper {
                 attributeName = parts[0];
             }
 
-            if (parts.length == 2) {
+            int length = 2;
+            if (parts.length == length) {
                 boolean isAttrOfActiveType = lookup.hasAttribute(context, parts[0]);
                 if (isAttrOfActiveType) {
                     attributeName = parts[0];
@@ -232,7 +238,8 @@ public class IdentifierHelper {
         }
 
         private void updateParts() {
-            parts = StringUtils.split(raw, ".");
+            String separatorChars = ".";
+            parts = StringUtils.split(raw, separatorChars);
         }
 
         public String getQualifiedName() {

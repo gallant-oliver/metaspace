@@ -23,7 +23,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.TimeBoundary;
 import org.apache.atlas.model.instance.AtlasClassification;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.type.AtlasTypeRegistry.AtlasTransientTypeRegistry;
@@ -89,11 +89,11 @@ public class TestAtlasClassificationType {
 
 
         // invalid value for int
-        invalidValue1.setAttribute(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_INT), "xyz");
+        invalidValue1.setAttribute(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_INT), "xyz");
         // invalid value for date
-        invalidValue2.setAttribute(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_DATE), "xyz");
+        invalidValue2.setAttribute(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE), "xyz");
         // invalid value for bigint
-        invalidValue3.put(ModelTestUtil.getDefaultAttributeName(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER), "xyz");
+        invalidValue3.put(ModelTestUtil.getDefaultAttributeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER), "xyz");
 
         validValues.add(null);
         validValues.add(classificationType.createDefaultValue());

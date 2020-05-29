@@ -19,7 +19,7 @@ package org.apache.atlas.repository.graphdb.janus.migration;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.repository.graphdb.janus.migration.JsonNodeParsers.ParseElement;
+import org.apache.atlas.repository.graphdb.janus.migration.JsonNodeParsers.BaseParseElement;
 import org.apache.atlas.repository.graphdb.janus.migration.JsonNodeProcessManager.WorkItemManager;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.structure.Graph;
@@ -93,7 +93,7 @@ public final class AtlasGraphSONReader {
 
                         final String mode = parser.getText();
 
-                        if (!mode.equals("EXTENDED")) {
+                        if (!"EXTENDED".equals(mode)) {
                             throw new IllegalStateException("The legacy GraphSON must be generated with GraphSONMode.EXTENDED");
                         }
 
@@ -140,7 +140,7 @@ public final class AtlasGraphSONReader {
         return (this.suppliedStartIndex == 0) ? readerStatusManager.getStartIndex() : this.suppliedStartIndex;
     }
 
-    private void processElement(JsonParser parser, ParseElement parseElement, long startIndex) throws InterruptedException {
+    private void processElement(JsonParser parser, BaseParseElement parseElement, long startIndex) throws InterruptedException {
         LOG.info("processElement: {}: Starting... : counter at: {}", parseElement.getMessage(), counter.get());
 
         try {

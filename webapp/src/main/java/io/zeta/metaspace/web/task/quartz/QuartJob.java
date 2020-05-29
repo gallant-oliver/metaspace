@@ -248,6 +248,8 @@ public class QuartJob implements Job {
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(rule);
+                    break;
+                default:break;
             }
         } catch (Exception e) {
             LOG.info(e.getMessage());
@@ -666,6 +668,7 @@ public class QuartJob implements Job {
                                 ruleStatus = RuleStatus.RED;
                             break;
                         }
+                        default:break;
                     }
                     break;
                 }
@@ -681,6 +684,7 @@ public class QuartJob implements Job {
                     }
                     break;
                 }
+                default:break;
             }
         } catch (Exception e) {
             LOG.info(e.getMessage(),e);

@@ -28,7 +28,7 @@ import org.apache.atlas.groovy.GroovyExpression;
 import org.apache.atlas.repository.graphdb.*;
 import org.apache.atlas.repository.graphdb.janus.query.AtlasJanusGraphQuery;
 import org.apache.atlas.repository.graphdb.utils.IteratorToIterableAdapter;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.groovy.jsr223.GremlinGroovyScriptEngine;
 import org.apache.tinkerpop.gremlin.jsr223.DefaultImportCustomizer;
@@ -297,13 +297,13 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
     }
 
     @Override
-    public GroovyExpression generatePersisentToLogicalConversionExpression(GroovyExpression expr, AtlasType type) {
+    public GroovyExpression generatePersisentToLogicalConversionExpression(GroovyExpression expr, BaseAtlasType type) {
         //nothing special needed, value is stored in required type
         return expr;
     }
 
     @Override
-    public boolean isPropertyValueConversionNeeded(AtlasType type) {
+    public boolean isPropertyValueConversionNeeded(BaseAtlasType type) {
         return false;
     }
 

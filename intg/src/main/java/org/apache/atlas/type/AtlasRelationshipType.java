@@ -21,7 +21,7 @@ package org.apache.atlas.type;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelationship;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef.RelationshipCategory;
 import org.apache.atlas.model.typedef.AtlasRelationshipEndDef;
@@ -83,8 +83,8 @@ public class AtlasRelationshipType extends AtlasStructType {
         String end1TypeName = relationshipDef.getEndDef1() != null ? relationshipDef.getEndDef1().getType() : null;
         String end2TypeName = relationshipDef.getEndDef2() != null ? relationshipDef.getEndDef2().getType() : null;
 
-        AtlasType type1 = typeRegistry.getType(end1TypeName);
-        AtlasType type2 = typeRegistry.getType(end2TypeName);
+        BaseAtlasType type1 = typeRegistry.getType(end1TypeName);
+        BaseAtlasType type2 = typeRegistry.getType(end2TypeName);
 
         if (type1 instanceof AtlasEntityType) {
             end1Type = (AtlasEntityType) type1;
@@ -308,11 +308,11 @@ public class AtlasRelationshipType extends AtlasStructType {
         if (relationshipLabel == null) {
             relationshipLabel = getLegacyEdgeLabel(entityType, attrName);
         }
-
-        if (attribute == null) { //attr doesn't exist in type - is a new relationship attribute
+        //attr doesn't exist in type - is a new relationship attribute
+        if (attribute == null) {
 
             if (endDef.getCardinality() == Cardinality.SET) {
-                attrTypeName = AtlasBaseTypeDef.getArrayTypeName(attrTypeName);
+                attrTypeName = BaseAtlasBaseTypeDef.getArrayTypeName(attrTypeName);
             }
 
             attribute = new AtlasAttribute(entityType, new AtlasAttributeDef(attrName, attrTypeName),

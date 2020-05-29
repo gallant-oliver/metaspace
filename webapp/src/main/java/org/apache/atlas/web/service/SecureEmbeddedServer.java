@@ -90,22 +90,22 @@ public class SecureEmbeddedServer extends EmbeddedServer {
 
         // SSL HTTP Configuration
         // HTTP Configuration
-        HttpConfiguration http_config = new HttpConfiguration();
-        http_config.setSecureScheme("https");
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setSecureScheme("https");
         final int bufferSize = AtlasConfiguration.WEBSERVER_REQUEST_BUFFER_SIZE.getInt();
-        http_config.setSecurePort(port);
-        http_config.setRequestHeaderSize(bufferSize);
-        http_config.setResponseHeaderSize(bufferSize);
-        http_config.setSendServerVersion(true);
-        http_config.setSendDateHeader(false);
+        httpConfig.setSecurePort(port);
+        httpConfig.setRequestHeaderSize(bufferSize);
+        httpConfig.setResponseHeaderSize(bufferSize);
+        httpConfig.setSendServerVersion(true);
+        httpConfig.setSendDateHeader(false);
 
-        HttpConfiguration https_config = new HttpConfiguration(http_config);
-        https_config.addCustomizer(new SecureRequestCustomizer());
+        HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+        httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
         // SSL Connector
         ServerConnector sslConnector = new ServerConnector(server,
             new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
-            new HttpConnectionFactory(https_config));
+            new HttpConnectionFactory(httpsConfig));
         sslConnector.setPort(port);
         server.addConnector(sslConnector);
 

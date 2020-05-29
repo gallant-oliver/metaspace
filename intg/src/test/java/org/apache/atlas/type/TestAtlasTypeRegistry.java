@@ -64,13 +64,13 @@ public class TestAtlasTypeRegistry {
         classifiL2_3.addSuperType(classifiL1_2.getName());
         classifiL2_4.addSuperType(classifiL1_2.getName());
 
-        classifiL0.addAttribute(new AtlasAttributeDef("L0_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL1_1.addAttribute(new AtlasAttributeDef("L1-1_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL1_2.addAttribute(new AtlasAttributeDef("L1-2_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL2_1.addAttribute(new AtlasAttributeDef("L2-1_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL2_2.addAttribute(new AtlasAttributeDef("L2-2_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL2_3.addAttribute(new AtlasAttributeDef("L2-3_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        classifiL2_4.addAttribute(new AtlasAttributeDef("L2-4_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL0.addAttribute(new AtlasAttributeDef("L0_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL1_1.addAttribute(new AtlasAttributeDef("L1-1_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL1_2.addAttribute(new AtlasAttributeDef("L1-2_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL2_1.addAttribute(new AtlasAttributeDef("L2-1_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL2_2.addAttribute(new AtlasAttributeDef("L2-2_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL2_3.addAttribute(new AtlasAttributeDef("L2-3_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        classifiL2_4.addAttribute(new AtlasAttributeDef("L2-4_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
 
         AtlasTypesDef typesDef = new AtlasTypesDef();
 
@@ -245,13 +245,13 @@ public class TestAtlasTypeRegistry {
         entL2_3.addSuperType(entL1_2.getName());
         entL2_4.addSuperType(entL1_2.getName());
 
-        entL0.addAttribute(new AtlasAttributeDef("L0_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL1_1.addAttribute(new AtlasAttributeDef("L1-1_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL1_2.addAttribute(new AtlasAttributeDef("L1-2_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL2_1.addAttribute(new AtlasAttributeDef("L2-1_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL2_2.addAttribute(new AtlasAttributeDef("L2-2_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL2_3.addAttribute(new AtlasAttributeDef("L2-3_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL2_4.addAttribute(new AtlasAttributeDef("L2-4_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL0.addAttribute(new AtlasAttributeDef("L0_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL1_1.addAttribute(new AtlasAttributeDef("L1-1_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL1_2.addAttribute(new AtlasAttributeDef("L1-2_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL2_1.addAttribute(new AtlasAttributeDef("L2-1_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL2_2.addAttribute(new AtlasAttributeDef("L2-2_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL2_3.addAttribute(new AtlasAttributeDef("L2-3_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL2_4.addAttribute(new AtlasAttributeDef("L2-4_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
 
         AtlasTypesDef typesDef = new AtlasTypesDef();
 
@@ -509,8 +509,8 @@ public class TestAtlasTypeRegistry {
 
         entL1.addSuperType(entL0.getName());
 
-        entL0.addAttribute(new AtlasAttributeDef("L0_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
-        entL1.addAttribute(new AtlasAttributeDef("L1_a1", AtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL0.addAttribute(new AtlasAttributeDef("L0_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
+        entL1.addAttribute(new AtlasAttributeDef("L1_a1", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
 
         AtlasTypesDef typesDef = new AtlasTypesDef();
 
@@ -575,7 +575,7 @@ public class TestAtlasTypeRegistry {
         validateAllSubTypes(typeRegistry, "L1", new HashSet<String>());
     }
 
-    private boolean addType(AtlasTypeRegistry typeRegistry, AtlasBaseTypeDef typeDef) {
+    private boolean addType(AtlasTypeRegistry typeRegistry, BaseAtlasBaseTypeDef typeDef) {
         boolean                    ret = false;
         AtlasTransientTypeRegistry ttr = null;
 
@@ -595,7 +595,7 @@ public class TestAtlasTypeRegistry {
     }
 
     private void validateAllSuperTypes(AtlasTypeRegistry typeRegistry, String typeName, Set<String> expectedSuperTypes) {
-        AtlasType type = null;
+        BaseAtlasType type = null;
 
         try {
             type = typeRegistry.getType(typeName);
@@ -616,7 +616,7 @@ public class TestAtlasTypeRegistry {
     }
 
     private void validateAllSubTypes(AtlasTypeRegistry typeRegistry, String typeName, Set<String> expectedSubTypes) {
-        AtlasType type = null;
+        BaseAtlasType type = null;
 
         try {
             type = typeRegistry.getType(typeName);
@@ -637,7 +637,7 @@ public class TestAtlasTypeRegistry {
     }
 
     private void validateSubTypes(AtlasTypeRegistry typeRegistry, String typeName, Set<String> expectedSubTypes) {
-        AtlasType type = null;
+        BaseAtlasType type = null;
 
         try {
             type = typeRegistry.getType(typeName);
@@ -658,7 +658,7 @@ public class TestAtlasTypeRegistry {
     }
 
     private void validateAttributeNames(AtlasTypeRegistry typeRegistry, String typeName, Set<String> attributeNames) {
-        AtlasType type = null;
+        BaseAtlasType type = null;
 
         try {
             type = typeRegistry.getType(typeName);

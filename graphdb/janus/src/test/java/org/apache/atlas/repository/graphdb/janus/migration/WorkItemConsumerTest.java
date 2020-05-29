@@ -18,7 +18,7 @@
 
 package org.apache.atlas.repository.graphdb.janus.migration;
 
-import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemConsumer;
+import org.apache.atlas.repository.graphdb.janus.migration.pc.BaseWorkItemConsumer;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.BlockingQueue;
@@ -29,7 +29,7 @@ import static org.testng.Assert.assertTrue;
 
 public class WorkItemConsumerTest {
 
-    private class IntegerConsumerSpy extends WorkItemConsumer<Integer> {
+    private class IntegerConsumerSpy extends BaseWorkItemConsumer<Integer> {
         boolean commitDirtyCalled = false;
         private boolean updateCommitTimeCalled;
 

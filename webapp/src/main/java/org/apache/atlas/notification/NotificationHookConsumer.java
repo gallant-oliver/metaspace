@@ -64,6 +64,8 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -128,8 +130,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         maxRetries            = applicationProperties.getInt(CONSUMER_RETRIES_PROPERTY, 3);
         failedMsgCacheSize    = applicationProperties.getInt(CONSUMER_FAILEDCACHESIZE_PROPERTY, 20);
         consumerRetryInterval = applicationProperties.getInt(CONSUMER_RETRY_INTERVAL, 500);
-        minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
-        maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
+        // 500 ms  by default
+        minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval);
+        //  30 sec by default
+        maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);
         consumerDisabled = applicationProperties.getBoolean(CONSUMER_DISABLED, false);
         restAddresses = applicationProperties.getStringArray(AtlasConstants.ATLAS_REST_ADDRESS_KEY);
         if (ArrayUtils.isEmpty(restAddresses)) {
@@ -169,7 +173,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         List<NotificationConsumer<HookNotification>> notificationConsumers = notificationInterface.createConsumers(NotificationType.HOOK, numThreads);
 
         if (executorService == null) {
-            executorService = Executors.newFixedThreadPool(notificationConsumers.size(), new ThreadFactoryBuilder().setNameFormat(THREADNAME_PREFIX + " thread-%d").build());
+            executorService = new ThreadPoolExecutor(notificationConsumers.size(), notificationConsumers.size(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryBuilder().setNameFormat(THREADNAME_PREFIX + " thread-%d").build());
         }
 
         executors = executorService;
@@ -191,7 +195,8 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             if (executors != null) {
                 executors.shutdown();
 
-                if (!executors.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                int timeout = 5000;
+                if (!executors.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
                     LOG.error("Timed out waiting for consumer threads to shut down, exiting uncleanly");
                 }
 

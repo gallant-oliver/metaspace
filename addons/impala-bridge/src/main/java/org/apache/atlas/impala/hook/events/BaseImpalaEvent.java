@@ -271,6 +271,7 @@ public abstract class BaseImpalaEvent {
                         case INSERT_OVERWRITE:
                             addWriteType = true;
                             break;
+                        default:break;
                     }
 
                     if (addWriteType) {
@@ -296,6 +297,7 @@ public abstract class BaseImpalaEvent {
                 ret = toAtlasEntity(node, entityExtInfo);
             }
             break;
+            default:break;
         }
 
         return ret;

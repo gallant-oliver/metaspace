@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.atlas.model.PList;
 import org.apache.atlas.model.SearchFilter.SortType;
 import org.apache.atlas.model.glossary.relations.AtlasTermAssignmentHeader;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -169,7 +169,7 @@ public class AtlasEntityHeader extends AtlasStruct implements Serializable {
         dumpObjects(classificationNames, sb);
         sb.append("], ");
         sb.append("classifications=[");
-        AtlasBaseTypeDef.dumpObjects(classifications, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(classifications, sb);
         sb.append("], ");
         super.toString(sb);
         sb.append('}');

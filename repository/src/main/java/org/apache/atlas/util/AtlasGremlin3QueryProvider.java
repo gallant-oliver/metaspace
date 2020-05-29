@@ -87,8 +87,9 @@ public class AtlasGremlin3QueryProvider extends AtlasGremlin2QueryProvider {
                                            "inE().has('__state', 'ACTIVE').has('tagPropagation', within('TWO_TO_ONE', 'BOTH')).has('_r__guid', neq(guidRelationshipToExclude))" +
                                                 ".not(has('blockedPropagatedClassifications', org.janusgraph.core.attribute.Text.textContains(classificationId))).outV())" +
                             ".dedup().where(without('src')).simplePath()).emit().toList();";
+            default:
+                return super.getQuery(gremlinQuery);
 
         }
-        return super.getQuery(gremlinQuery);
     }
 }

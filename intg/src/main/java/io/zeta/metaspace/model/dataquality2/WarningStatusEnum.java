@@ -51,7 +51,7 @@ public enum WarningStatusEnum {
 
     public static WarningStatusEnum getRuleCheckTypeByCode(Integer code) {
         for (WarningStatusEnum rc : WarningStatusEnum.values()) {
-            if (rc.code == code) {
+            if (rc.code.equals(code)) {
                 return rc;
             }
         }

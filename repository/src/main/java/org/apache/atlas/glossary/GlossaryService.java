@@ -51,9 +51,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.atlas.glossary.GlossaryUtils.getAtlasGlossaryCategorySkeleton;
-import static org.apache.atlas.glossary.GlossaryUtils.getAtlasGlossaryTermSkeleton;
-import static org.apache.atlas.glossary.GlossaryUtils.getGlossarySkeleton;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.getAtlasGlossaryCategorySkeleton;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.getAtlasGlossaryTermSkeleton;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.getGlossarySkeleton;
 
 @Service
 public class GlossaryService {
@@ -99,13 +99,13 @@ public class GlossaryService {
             LOG.debug("==> GlossaryService.getGlossaries({}, {}, {})", limit, offset, sortOrder);
         }
 
-        List<String>     glossaryGuids    = AtlasGraphUtilsV2.findEntityGUIDsByType(GlossaryUtils.ATLAS_GLOSSARY_TYPENAME, sortOrder);
+        List<String>     glossaryGuids    = AtlasGraphUtilsV2.findEntityGUIDsByType(AbstractGlossaryUtils.ATLAS_GLOSSARY_TYPENAME, sortOrder);
         PaginationHelper paginationHelper = new PaginationHelper<>(glossaryGuids, offset, limit);
 
         List<AtlasGlossary> ret;
         List<String>        guidsToLoad = paginationHelper.getPaginatedList();
         if (CollectionUtils.isNotEmpty(guidsToLoad)) {
-            ret = guidsToLoad.stream().map(GlossaryUtils::getGlossarySkeleton).collect(Collectors.toList());
+            ret = guidsToLoad.stream().map(AbstractGlossaryUtils::getGlossarySkeleton).collect(Collectors.toList());
             Iterable<AtlasGlossary> glossaries = dataAccess.load(ret);
             ret.clear();
 
@@ -358,7 +358,7 @@ public class GlossaryService {
         }
 
         AtlasGlossaryTerm storeObject = dataAccess.save(glossaryTerm);
-        glossaryTermUtils.processTermRelations(storeObject, glossaryTerm, GlossaryUtils.RelationshipOperation.CREATE);
+        glossaryTermUtils.processTermRelations(storeObject, glossaryTerm, AbstractGlossaryUtils.RelationshipOperation.CREATE);
 
         // Re-load term after handling relations
         storeObject = dataAccess.load(glossaryTerm);
@@ -422,7 +422,7 @@ public class GlossaryService {
                 LOG.debug("Glossary term had no immediate attr updates. Exception: {}", e.getMessage());
             }
 
-            glossaryTermUtils.processTermRelations(storeObject, atlasGlossaryTerm, GlossaryUtils.RelationshipOperation.UPDATE);
+            glossaryTermUtils.processTermRelations(storeObject, atlasGlossaryTerm, AbstractGlossaryUtils.RelationshipOperation.UPDATE);
 
             // If qualifiedName changes due to anchor change, we need to persist the term again with updated qualifiedName
             if (StringUtils.equals(storeObject.getQualifiedName(), atlasGlossaryTerm.getQualifiedName())) {
@@ -464,7 +464,7 @@ public class GlossaryService {
         }
 
         // Remove term from Glossary
-        glossaryTermUtils.processTermRelations(storeObject, storeObject, GlossaryUtils.RelationshipOperation.DELETE);
+        glossaryTermUtils.processTermRelations(storeObject, storeObject, AbstractGlossaryUtils.RelationshipOperation.DELETE);
 
 
         // Now delete the term
@@ -593,7 +593,7 @@ public class GlossaryService {
         AtlasGlossaryCategory storeObject = dataAccess.save(glossaryCategory);
 
         // Attempt relation creation and gather all impacted categories
-        Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, GlossaryUtils.RelationshipOperation.CREATE);
+        Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, AbstractGlossaryUtils.RelationshipOperation.CREATE);
 
         // Since the current category is also affected, we need to update qualifiedName and save again
         if (StringUtils.equals(glossaryCategory.getQualifiedName(), storeObject.getQualifiedName())) {
@@ -620,42 +620,6 @@ public class GlossaryService {
         return storeObject;
     }
 
-    /*@GraphTransaction
-    public AtlasGlossaryCategory createBrotherCategory(String brotherGuid, AtlasGlossaryCategory glossaryCategory, String direction) throws AtlasBaseException {
-        AtlasGlossaryCategory newCategory = null;
-        if(direction.equals("up")) {
-            AtlasGlossaryCategory brotherCategory = getCategory(brotherGuid);
-            String brotherUpCategoryGuid = brotherCategory.getUpBrothCategoryGuid();
-            glossaryCategory.setDownBrothCategoryGuid(brotherGuid);
-            newCategory = createCategory(glossaryCategory);
-
-            if(Objects.nonNull(brotherUpCategoryGuid) && !brotherUpCategoryGuid.isEmpty()) {
-                AtlasGlossaryCategory brotherUpCategory = getCategory(brotherUpCategoryGuid);
-                brotherUpCategory.setDownBrothCategoryGuid(newCategory.getGuid());
-                newCategory.setUpBrothCategoryGuid(brotherUpCategoryGuid);
-                updateCategory(brotherUpCategory);
-            }
-
-            brotherCategory.setUpBrothCategoryGuid(newCategory.getGuid());
-            updateCategory(newCategory);
-            updateCategory(brotherCategory);
-        } else if(direction.equals("down")) {
-            AtlasGlossaryCategory brotherCategory = getCategory(brotherGuid);
-            String brotherDownCategoryGuid = brotherCategory.getDownBrothCategoryGuid();
-            if(Objects.nonNull(brotherDownCategoryGuid) && !brotherDownCategoryGuid.isEmpty()) {
-                AtlasGlossaryCategory brotherDownCategory = getCategory(brotherDownCategoryGuid);
-                brotherDownCategory.setUpBrothCategoryGuid(newCategory.getGuid());
-                newCategory.setDownBrothCategoryGuid(brotherDownCategoryGuid);
-                updateCategory(brotherDownCategory);
-
-            }
-            newCategory.setUpBrothCategoryGuid(brotherGuid);
-            brotherCategory.setDownBrothCategoryGuid(newCategory.getGuid());
-            updateCategory(newCategory);
-            updateCategory(brotherCategory);
-        }
-        return newCategory;
-    }*/
 
     @GraphTransaction
     public List<AtlasGlossaryCategory> createCategories(List<AtlasGlossaryCategory> glossaryCategory) throws AtlasBaseException {
@@ -708,7 +672,7 @@ public class GlossaryService {
                 LOG.debug("No immediate attribute update. Exception: {}", e.getMessage());
             }
 
-            Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, GlossaryUtils.RelationshipOperation.UPDATE);
+            Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, AbstractGlossaryUtils.RelationshipOperation.UPDATE);
 
             // Since the current category is also affected, we need to update qualifiedName and save again
             if (StringUtils.equals(glossaryCategory.getQualifiedName(), storeObject.getQualifiedName())) {
@@ -736,7 +700,7 @@ public class GlossaryService {
     }
 
     @GraphTransaction
-    public AtlasGlossaryCategory updateCategory_V2(AtlasGlossaryCategory glossaryCategory) throws AtlasBaseException {
+    public AtlasGlossaryCategory updateCategoryV2(AtlasGlossaryCategory glossaryCategory) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> GlossaryService.updateCategory({})", glossaryCategory);
         }
@@ -780,7 +744,7 @@ public class GlossaryService {
                 LOG.debug("No immediate attribute update. Exception: {}", e.getMessage());
             }
 
-            Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, GlossaryUtils.RelationshipOperation.UPDATE);
+            Map<String, AtlasGlossaryCategory> impactedCategories = glossaryCategoryUtils.processCategoryRelations(storeObject, glossaryCategory, AbstractGlossaryUtils.RelationshipOperation.UPDATE);
 
             // Since the current category is also affected, we need to update qualifiedName and save again
             if (StringUtils.equals(glossaryCategory.getQualifiedName(), storeObject.getQualifiedName())) {
@@ -820,7 +784,7 @@ public class GlossaryService {
         AtlasGlossaryCategory storeObject = dataAccess.load(getAtlasGlossaryCategorySkeleton(categoryGuid));
 
         // Delete all relations
-        glossaryCategoryUtils.processCategoryRelations(storeObject, storeObject, GlossaryUtils.RelationshipOperation.DELETE);
+        glossaryCategoryUtils.processCategoryRelations(storeObject, storeObject, AbstractGlossaryUtils.RelationshipOperation.DELETE);
 
         // Now delete the category
         dataAccess.delete(categoryGuid);
@@ -1056,21 +1020,21 @@ public class GlossaryService {
     }
 
     private boolean glossaryExists(AtlasGlossary atlasGlossary) {
-        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(GlossaryUtils.ATLAS_GLOSSARY_TYPENAME), new HashMap<String, Object>() {{
+        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(AbstractGlossaryUtils.ATLAS_GLOSSARY_TYPENAME), new HashMap<String, Object>() {{
             put(QUALIFIED_NAME_ATTR, atlasGlossary.getQualifiedName());
         }});
         return Objects.nonNull(vertex);
     }
 
     private boolean termExists(AtlasGlossaryTerm term) {
-        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(GlossaryUtils.ATLAS_GLOSSARY_TERM_TYPENAME), new HashMap<String, Object>() {{
+        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(AbstractGlossaryUtils.ATLAS_GLOSSARY_TERM_TYPENAME), new HashMap<String, Object>() {{
             put(QUALIFIED_NAME_ATTR, term.getQualifiedName());
         }});
         return Objects.nonNull(vertex);
     }
 
     private boolean categoryExists(AtlasGlossaryCategory category) {
-        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(GlossaryUtils.ATLAS_GLOSSARY_CATEGORY_TYPENAME), new HashMap<String, Object>() {{
+        AtlasVertex vertex = AtlasGraphUtilsV2.findByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(AbstractGlossaryUtils.ATLAS_GLOSSARY_CATEGORY_TYPENAME), new HashMap<String, Object>() {{
             put(QUALIFIED_NAME_ATTR, category.getQualifiedName());
         }});
         return Objects.nonNull(vertex);

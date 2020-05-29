@@ -38,13 +38,13 @@ import org.apache.atlas.repository.graph.GraphBackedSearchIndexer;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.type.AtlasArrayType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -78,7 +78,7 @@ public class AtlasEntityTestBase {
     AtlasEntityStore entityStore;
 
     @Inject
-    DeleteHandlerV1 deleteHandler;
+    BaseDeleteHandlerV1 deleteHandler;
 
     @Inject
     private EntityGraphMapper graphMapper;
@@ -162,12 +162,12 @@ public class AtlasEntityTestBase {
             Object expectedVal = expected.getAttribute(attrName);
             Object actualVal   = actual.getAttribute(attrName);
 
-            AtlasType attrType = entityType.getAttributeType(attrName);
+            BaseAtlasType attrType = entityType.getAttributeType(attrName);
             validateAttribute(entityExtInfo, actualVal, expectedVal, attrType, attrName);
         }
     }
 
-    protected void validateAttribute(AtlasEntityExtInfo entityExtInfo, Object actual, Object expected, AtlasType attributeType, String attrName) throws AtlasBaseException, AtlasException {
+    protected void validateAttribute(AtlasEntityExtInfo entityExtInfo, Object actual, Object expected, BaseAtlasType attributeType, String attrName) throws AtlasBaseException, AtlasException {
         switch(attributeType.getTypeCategory()) {
             case OBJECT_ID_TYPE:
                 Assert.assertTrue(actual instanceof AtlasObjectId);
@@ -182,7 +182,7 @@ public class AtlasEntityTestBase {
 
             case MAP:
                 AtlasMapType mapType     = (AtlasMapType) attributeType;
-                AtlasType    valueType   = mapType.getValueType();
+                BaseAtlasType valueType   = mapType.getValueType();
                 Map          actualMap   = (Map) actual;
                 Map          expectedMap = (Map) expected;
 
@@ -200,7 +200,7 @@ public class AtlasEntityTestBase {
 
             case ARRAY:
                 AtlasArrayType arrType      = (AtlasArrayType) attributeType;
-                AtlasType      elemType     = arrType.getElementType();
+                BaseAtlasType elemType     = arrType.getElementType();
                 List           actualList   = (List) actual;
                 List           expectedList = (List) expected;
 

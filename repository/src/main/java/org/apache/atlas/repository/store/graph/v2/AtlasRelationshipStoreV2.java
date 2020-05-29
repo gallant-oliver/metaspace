@@ -41,7 +41,7 @@ import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasEdgeDirection;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasRelationshipStore;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasRelationshipType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
@@ -92,12 +92,12 @@ public class AtlasRelationshipStoreV2 implements AtlasRelationshipStore {
 
     private final AtlasTypeRegistry         typeRegistry;
     private final EntityGraphRetriever      entityRetriever;
-    private final DeleteHandlerV1 deleteHandler;
+    private final BaseDeleteHandlerV1 deleteHandler;
     private final GraphHelper               graphHelper = GraphHelper.getInstance();
     private final AtlasEntityChangeNotifier entityChangeNotifier;
 
     @Inject
-    public AtlasRelationshipStoreV2(AtlasTypeRegistry typeRegistry, DeleteHandlerV1 deleteHandler, AtlasEntityChangeNotifier entityChangeNotifier) {
+    public AtlasRelationshipStoreV2(AtlasTypeRegistry typeRegistry, BaseDeleteHandlerV1 deleteHandler, AtlasEntityChangeNotifier entityChangeNotifier) {
         this.typeRegistry         = typeRegistry;
         this.entityRetriever      = new EntityGraphRetriever(typeRegistry);
         this.deleteHandler        = deleteHandler;
@@ -341,8 +341,8 @@ public class AtlasRelationshipStoreV2 implements AtlasRelationshipStore {
             }
 
             AtlasRelationshipType relationType = typeRegistry.getRelationshipTypeByName(relationship.getTypeName());
-
-            if (!relationType.hasLegacyAttributeEnd()) { // skip authorization for legacy attributes, as these would be covered as entity-update
+            // skip authorization for legacy attributes, as these would be covered as entity-update
+            if (!relationType.hasLegacyAttributeEnd()) {
                 AtlasEntityHeader end1Entity = entityRetriever.toAtlasEntityHeaderWithClassifications(end1Vertex);
                 AtlasEntityHeader end2Entity = entityRetriever.toAtlasEntityHeaderWithClassifications(end2Vertex);
 
@@ -699,8 +699,9 @@ public class AtlasRelationshipStoreV2 implements AtlasRelationshipStore {
             if (edge != null) {
                 Status status = graphHelper.getStatus(edge);
 
-                if ((status == null || status == ACTIVE) &&
-                        StringUtils.equals(getIdFromVertex(edge.getInVertex()), getIdFromVertex(toVertex))) {
+                boolean bool = status == null || status == ACTIVE;
+                if (bool &&
+                    StringUtils.equals(getIdFromVertex(edge.getInVertex()), getIdFromVertex(toVertex))) {
                     ret = edge;
                     break;
                 }

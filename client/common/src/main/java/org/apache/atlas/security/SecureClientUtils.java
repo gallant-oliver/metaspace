@@ -54,8 +54,8 @@ import static org.apache.atlas.security.SecurityProperties.TRUSTSTORE_FILE_KEY;
  *
  */
 public class SecureClientUtils {
-
-    public final static int DEFAULT_SOCKET_TIMEOUT_IN_MSECS = 1 * 60 * 1000; // 1 minute
+    // 1 minute
+    public final static int DEFAULT_SOCKET_TIMEOUT_IN_MSECS = 1 * 60 * 1000;
     private static final Logger LOG = LoggerFactory.getLogger(SecureClientUtils.class);
 
 

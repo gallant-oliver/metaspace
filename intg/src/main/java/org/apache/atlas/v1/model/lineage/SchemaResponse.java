@@ -73,8 +73,10 @@ public class SchemaResponse {
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class SchemaDetails {
-        private ClassTypeDefinition       dataType;   // Data type of the (hive) columns
-        private List<Map<String, Object>> rows;       // Column instances for the given table
+        // Data type of the (hive) columns
+        private ClassTypeDefinition       dataType;
+        // Column instances for the given table
+        private List<Map<String, Object>> rows;
 
         public SchemaDetails() {
         }

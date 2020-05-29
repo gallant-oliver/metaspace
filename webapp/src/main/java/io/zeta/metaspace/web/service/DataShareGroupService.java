@@ -71,7 +71,9 @@ public class DataShareGroupService {
 
     public int deleteGroup(String guid) throws AtlasBaseException {
         try {
-            if("1".equals(guid) || "2".equals(guid)) {
+            String initId1="1";
+            String initId2="2";
+            if(initId1.equals(guid) || initId2.equals(guid)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不允许删除当前分组");
             }
             int count = groupDAO.getGroupRelatedAPI(guid);

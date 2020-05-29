@@ -218,20 +218,25 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
         String kerberosAuthEnabled = configuration != null ? configuration.getString("atlas.authentication.method.kerberos") : null;
         // getString may return null, and would like to log the nature of the default setting
         String authMethod = "";
-        if (kerberosAuthEnabled == null || kerberosAuthEnabled.equalsIgnoreCase("false")) {
+        String aFalse = "false";
+        String aTrue = "true";
+        if (kerberosAuthEnabled == null || kerberosAuthEnabled.equalsIgnoreCase(aFalse)) {
             LOG.info("No authentication method configured.  Defaulting to simple authentication");
             authMethod = "simple";
-        } else if (kerberosAuthEnabled.equalsIgnoreCase("true")) {
+        } else if (kerberosAuthEnabled.equalsIgnoreCase(aTrue)) {
             authMethod = "kerberos";
         }
 
-        if (configuration.getString("atlas.authentication.method.kerberos.name.rules") != null) {
+        String key1 = "atlas.authentication.method.kerberos.name.rules";
+        if (configuration.getString(key1) != null) {
             config.put("kerberos.name.rules", configuration.getString("atlas.authentication.method.kerberos.name.rules"));
         }
-        if (configuration.getString("atlas.authentication.method.kerberos.keytab") != null) {
+        String key2 = "atlas.authentication.method.kerberos.keytab";
+        if (configuration.getString(key2) != null) {
             config.put("kerberos.keytab", configuration.getString("atlas.authentication.method.kerberos.keytab"));
         }
-        if (configuration.getString("atlas.authentication.method.kerberos.principal") != null) {
+        String key3 = "atlas.authentication.method.kerberos.principal";
+        if (configuration.getString(key3) != null) {
             config.put("kerberos.principal", configuration.getString("atlas.authentication.method.kerberos.principal"));
         }
         config.put(AuthenticationFilter.AUTH_TYPE, authMethod);
@@ -306,7 +311,8 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
                         userName = httpRequest.getRemoteUser();
                     }
 
-                    if ((existingAuth == null || !existingAuth.isAuthenticated()) && (!StringUtils.isEmpty(userName))) {
+                    boolean bool = existingAuth == null || !existingAuth.isAuthenticated();
+                    if (bool && (!StringUtils.isEmpty(userName))) {
 
                         List<GrantedAuthority> grantedAuths = AtlasAuthenticationProvider.getAuthoritiesFromUGI(userName);
 
@@ -321,7 +327,8 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
                     }
                 }
                 // OPTIONS method is sent from quick start jersey atlas client
-                if (httpRequest.getMethod().equals("OPTIONS")) {
+                String options = "OPTIONS";
+                if (options.equals(httpRequest.getMethod())) {
                     optionsServlet.service(request, response);
                 } else {
                     try {
@@ -358,7 +365,8 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
 
             if (existingAuth == null) {
                 String authHeader = httpRequest.getHeader("Authorization");
-                if (authHeader != null && authHeader.startsWith("Basic")) {
+                String basic = "Basic";
+                if (authHeader != null && authHeader.startsWith(basic)) {
                     filterChain.doFilter(request, response);
                 } else if (isKerberos) {
                     doKerberosAuth(request, response, filterChainWrapper, filterChain);
@@ -486,8 +494,10 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
                         KerberosAuthenticator.WWW_AUTHENTICATE))) {
                     errCode = HttpServletResponse.SC_FORBIDDEN;
                 }
-                if (authenticationEx == null) { // added this code for atlas error handling and fallback
-                    if (!supportKeyTabBrowserLogin && isBrowser(httpRequest.getHeader("User-Agent"))) {
+                if (authenticationEx == null) {
+                    String name = "User-Agent";
+                    boolean browser = isBrowser(httpRequest.getHeader(name));
+                    if (!supportKeyTabBrowserLogin && browser) {
                         filterChain.doFilter(request, response);
                     } else {
                         boolean chk = true;
@@ -502,8 +512,11 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
                         String authHeader = httpRequest.getHeader("Authorization");
                         if (authHeader == null && chk) {
                             filterChain.doFilter(request, response);
-                        } else if (authHeader != null && authHeader.startsWith("Basic")) {
-                            filterChain.doFilter(request, response);
+                        } else {
+                            String basic = "Basic";
+                            if (authHeader != null && authHeader.startsWith(basic)) {
+                                filterChain.doFilter(request, response);
+                            }
                         }
                     }
                 } else {

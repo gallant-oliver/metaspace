@@ -26,7 +26,7 @@ import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.v1.model.typedef.TraitTypeDefinition;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -74,7 +74,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
         JsonNode results = response.get(AtlasClient.RESULTS);
         Assert.assertNotNull(results);
 
-        Struct resultsInstance = AtlasType.fromV1Json(results.toString(), Struct.class);
+        Struct resultsInstance = BaseAtlasType.fromV1Json(results.toString(), Struct.class);
         Map<String, Struct> vertices = (Map<String, Struct>) resultsInstance.get("vertices");
         Assert.assertEquals(vertices.size(), 4);
 
@@ -89,7 +89,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
         ObjectNode results = atlasClientV1.getInputGraphForEntity(tableId);
         Assert.assertNotNull(results);
 
-        Struct resultsInstance = AtlasType.fromV1Json(results.toString(), Struct.class);
+        Struct resultsInstance = BaseAtlasType.fromV1Json(results.toString(), Struct.class);
         resultsInstance.normalize();
 
         Map<String, Object> vertices = (Map<String, Object>) resultsInstance.get("vertices");
@@ -123,7 +123,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
         JsonNode results = response.get(AtlasClient.RESULTS);
         Assert.assertNotNull(results);
 
-        Struct resultsInstance = AtlasType.fromV1Json(results.toString(), Struct.class);
+        Struct resultsInstance = BaseAtlasType.fromV1Json(results.toString(), Struct.class);
         Map<String, Struct> vertices = (Map<String, Struct>) resultsInstance.get("vertices");
         Assert.assertEquals(vertices.size(), 3);
 
@@ -137,7 +137,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
         ObjectNode results = atlasClientV1.getOutputGraphForEntity(tableId);
         Assert.assertNotNull(results);
 
-        Struct resultsInstance = AtlasType.fromV1Json(results.toString(), Struct.class);
+        Struct resultsInstance = BaseAtlasType.fromV1Json(results.toString(), Struct.class);
         Map<String, Object> vertices = (Map<String, Object>) resultsInstance.get("vertices");
         Assert.assertEquals(vertices.size(), 3);
 

@@ -98,10 +98,12 @@ public class LoginProcessor {
         String authMethod = "";
         String kerberosAuthNEnabled = configuration != null ? configuration.getString(AUTHENTICATION_KERBEROS_METHOD) : null;
         // getString may return null, and would like to log the nature of the default setting
-        if (kerberosAuthNEnabled == null || kerberosAuthNEnabled.equalsIgnoreCase("false")) {
+        String aFalse = "false";
+        String aTrue = "true";
+        if (kerberosAuthNEnabled == null || kerberosAuthNEnabled.equalsIgnoreCase(aFalse)) {
             LOG.info("No authentication method configured.  Defaulting to simple authentication");
             authMethod = "simple";
-        } else if (kerberosAuthNEnabled.equalsIgnoreCase("true")) {
+        } else if (kerberosAuthNEnabled.equalsIgnoreCase(aTrue)) {
             authMethod = "kerberos";
         }
         SecurityUtil

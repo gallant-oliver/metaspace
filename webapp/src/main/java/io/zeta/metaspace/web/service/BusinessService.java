@@ -41,7 +41,7 @@ import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnDAO;
@@ -58,7 +58,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -128,12 +127,12 @@ public class BusinessService {
     private ColumnDAO columnDAO;
 
 
-    private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
+    private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
     private static final int FINISHED_STATUS = 1;
     private static final int BUSINESS_TYPE = 1;
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int addBusiness(String categoryId, BusinessInfo info,String tenantId) throws AtlasBaseException {
         try {
             int count = businessDao.sameNameCount(info.getName(),tenantId);
@@ -161,7 +160,8 @@ public class BusinessService {
             path = path.replace("\"", "");
             String[] pathArr = path.split(",");
             String level2CategoryId = "";
-            if(pathArr.length >= 2) {
+            int length = 2;
+            if(pathArr.length >= length) {
                 level2CategoryId = pathArr[1];
             }
             info.setLevel2CategoryId(level2CategoryId);
@@ -305,7 +305,8 @@ public class BusinessService {
             StringJoiner joiner = null;
             String[] pathArr = path.split("/");
             String level2Category = "";
-            if(pathArr.length >= 2)
+            int length = 2;
+            if(pathArr.length >= length)
                 level2Category = pathArr[1];
             for(BusinessInfoHeader infoHeader : list) {
                 joiner = new StringJoiner(".");
@@ -389,7 +390,8 @@ public class BusinessService {
                 infoHeader.setPath(joiner.toString());
                 String[] pathArr = path.split("/");
                 String level2Category = "";
-                if(pathArr.length >= 2)
+                int length = 2;
+                if(pathArr.length >= length)
                     level2Category = pathArr[1];
                 infoHeader.setLevel2Category(level2Category);
             }
@@ -470,7 +472,8 @@ public class BusinessService {
                     String path = CategoryRelationUtils.getPath(categoryId,tenantId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
                     String[] pathArr = path.split("/");
-                    if (pathArr.length >= 2)
+                    int length = 2;
+                    if (pathArr.length >= length)
                         infoHeader.setLevel2Category(pathArr[1]);
                 }
                 //pageResult.setOffset(offset);
@@ -492,7 +495,7 @@ public class BusinessService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addBusinessAndTableRelation(String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
         List<String> list = tableIdList.getList();
         String trustTable = tableIdList.getTrust();
@@ -528,7 +531,7 @@ public class BusinessService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteBusiness(String businessId) throws AtlasBaseException {
         try {
             businessDao.deleteBusinessById(businessId);
@@ -596,7 +599,7 @@ public class BusinessService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int addColumnPrivilegeRelation(ColumnPrivilegeRelation relation) throws AtlasBaseException {
         try {
             int columnPrivilegeGuid = relation.getColumnPrivilegeGuid();
@@ -621,12 +624,12 @@ public class BusinessService {
             tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
             Integer limit = parameters.getLimit();
             Integer offset = parameters.getOffset();
-            List<APIInfoHeader> APIList = new ArrayList<>();
+            List<APIInfoHeader> apiList = new ArrayList<>();
             PageResult<APIInfoHeader> pageResult = new PageResult<>();
             int totalSize = 0;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
-                APIList = shareDAO.getTableRelatedAPI(tableList, limit, offset,tenantId);
-                for (APIInfoHeader api : APIList) {
+                apiList = shareDAO.getTableRelatedAPI(tableList, limit, offset,tenantId);
+                for (APIInfoHeader api : apiList) {
                     String displayName = api.getTableDisplayName();
                     if(Objects.isNull(displayName) || "".equals(displayName)) {
                         api.setTableDisplayName(api.getTableName());
@@ -639,14 +642,14 @@ public class BusinessService {
                     api.setDataOwner(dataOwnerName);
                 }
                 //totalSize = shareDAO.countTableRelatedAPI(tableList);
-                if (APIList.size()!=0) {
-                    totalSize = APIList.get(0).getTotal();
+                if (apiList.size()!=0) {
+                    totalSize = apiList.get(0).getTotal();
                 }
             }
             //pageResult.setOffset(offset);
             pageResult.setTotalSize(totalSize);
-            pageResult.setLists(APIList);
-            pageResult.setCurrentSize(APIList.size());
+            pageResult.setLists(apiList);
+            pageResult.setCurrentSize(apiList.size());
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -656,7 +659,7 @@ public class BusinessService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateBusinessTrustTable(String tenantId) throws AtlasBaseException {
         try {
             List<String> nonTrustBusinessList = businessDao.getNonTrustBusiness(tenantId);
@@ -715,7 +718,7 @@ public class BusinessService {
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO_MAP);
                 String columnQuery = String.format(query, tableGuid);
                 List<Map> columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
-                List<Column> columnInfoList = ConvertMapToColumnInfoList(tableGuid, columnMapList);
+                List<Column> columnInfoList = convertMapToColumnInfoList(tableGuid, columnMapList);
                 if(Objects.isNull(columnInfoList) || columnInfoList.size()==0) {
                     return pageResult;
                 }
@@ -805,7 +808,7 @@ public class BusinessService {
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO_MAP);
                 String columnQuery = String.format(query, tableGuid);
                 List<Map> columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
-                columnInfoList = ConvertMapToColumnInfoList(tableGuid, columnMapList);
+                columnInfoList = convertMapToColumnInfoList(tableGuid, columnMapList);
                 List<String> editColumnList = new ArrayList<>();
                 String editColumnId = column.getColumnId();
                 columnInfoList.forEach(col -> {
@@ -985,7 +988,7 @@ public class BusinessService {
                 String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_INFO_MAP);
                 String columnQuery = String.format(query, tableGuid);
                 List<Map> columnMapList = (List<Map>) graph.executeGremlinScript(columnQuery, false);
-                columnInfoList = ConvertMapToColumnInfoList(tableGuid, columnMapList);
+                columnInfoList = convertMapToColumnInfoList(tableGuid, columnMapList);
             }
             return checkColumnName(tableGuid, columnInfoList, columnAndDisplayMap, existOnPg);
         } catch (AtlasBaseException e) {
@@ -995,7 +998,7 @@ public class BusinessService {
         }
     }
 
-    public List<Column> ConvertMapToColumnInfoList(String tableGuid, List<Map> columnMapList) {
+    public List<Column> convertMapToColumnInfoList(String tableGuid, List<Map> columnMapList) {
         List<Column> columnInfoList = new ArrayList<>();
         for(Map obj : columnMapList) {
             List<String> guidList = (List) obj.get("__guid");
@@ -1056,7 +1059,9 @@ public class BusinessService {
             valueCell = row.getCell(1);
             key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
             value = Objects.nonNull(valueCell)?valueCell.getStringCellValue():"";
-            if(!"字段名称".equals(key) || !"显示名称".equals(value)) {
+            String header1 = "显示名称";
+            String header2 = "字段名称";
+            if(!header1.equals(key) || !header2.equals(value)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Excel表头错误，表头名称应为【字段名称】和【显示名称】");
             }
             for(int i=1; i<rowNum; i++) {

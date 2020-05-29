@@ -24,7 +24,7 @@ import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
 import org.apache.atlas.model.glossary.relations.AtlasTermCategorizationHeader;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @AtlasJSON
-public class AtlasGlossaryTerm extends AtlasGlossaryBaseObject {
+public class AtlasGlossaryTerm extends BaseAtlasGlossaryBaseObject {
     // Core attributes
     private List<String> examples;
     private String       abbreviation;
@@ -293,7 +293,7 @@ public class AtlasGlossaryTerm extends AtlasGlossaryBaseObject {
         t.setName(this.getName());
         t.setQualifiedName(this.getQualifiedName());
 
-        return AtlasType.toJson(t);
+        return BaseAtlasType.toJson(t);
     }
 
     @JsonIgnore

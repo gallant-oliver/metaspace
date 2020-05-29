@@ -152,7 +152,8 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
             LOG.debug("Knox doFilter {}", httpRequest.getRequestURI());
         }
 
-        if (httpRequest.getSession() != null && httpRequest.getSession().getAttribute("locallogin") != null) {
+        String locallogin = "locallogin";
+        if (httpRequest.getSession() != null && httpRequest.getSession().getAttribute(locallogin) != null) {
             servletRequest.setAttribute("ssoEnabled", false);
             filterChain.doFilter(servletRequest, servletResponse);
             return;
@@ -208,14 +209,16 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
 
     private void redirectToKnox(HttpServletRequest httpRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) throws IOException, ServletException {
 
-        if (!isWebUserAgent(httpRequest.getHeader("User-Agent"))) {
+        String name = "User-Agent";
+        if (!isWebUserAgent(httpRequest.getHeader(name))) {
             filterChain.doFilter(httpRequest, httpServletResponse);
             return;
         }
 
         String ajaxRequestHeader = httpRequest.getHeader("X-Requested-With");
 
-        if ("XMLHttpRequest".equals(ajaxRequestHeader)) {
+        String xmlHttpRequest = "XMLHttpRequest";
+        if (xmlHttpRequest.equals(ajaxRequestHeader)) {
             String ssourl = constructLoginURL(httpRequest, true);
             JSONObject json = new JSONObject();
             json.put("knoxssoredirectURL", URLEncoder.encode(ssourl, "UTF-8"));
@@ -233,7 +236,7 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
     private boolean isWebUserAgent(String userAgent) {
         boolean isWeb = false;
         if (jwtProperties != null) {
-            String userAgentList[] = jwtProperties.getUserAgentList();
+            String[] userAgentList = jwtProperties.getUserAgentList();
             if (userAgentList != null && userAgentList.length > 0) {
                 for (String ua : userAgentList) {
                     if (StringUtils.startsWithIgnoreCase(userAgent, ua)) {
@@ -303,7 +306,8 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
      */
     protected String constructLoginURL(HttpServletRequest request, boolean isXMLRequest) {
         String delimiter = "?";
-        if (authenticationProviderUrl.contains("?")) {
+        String sub = "?";
+        if (authenticationProviderUrl.contains(sub)) {
             delimiter = "&";
         }
 
@@ -528,7 +532,8 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
 
     public SSOAuthenticationProperties loadJwtProperties() {
         String providerUrl = configuration.getString(JWT_AUTH_PROVIDER_URL);
-        if (providerUrl != null && configuration.getBoolean("atlas.sso.knox.enabled", false)) {
+        String key = "atlas.sso.knox.enabled";
+        if (providerUrl != null && configuration.getBoolean(key, false)) {
             SSOAuthenticationProperties jwtProperties = new SSOAuthenticationProperties();
             String publicKeyPathStr = configuration.getString(JWT_PUBLIC_KEY);
             if (publicKeyPathStr == null) {
@@ -570,9 +575,9 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
     public static RSAPublicKey parseRSAPublicKey(String pem)
             throws CertificateException, UnsupportedEncodingException,
             ServletException {
-        String PEM_HEADER = "-----BEGIN CERTIFICATE-----\n";
-        String PEM_FOOTER = "\n-----END CERTIFICATE-----";
-        String fullPem = PEM_HEADER + pem + PEM_FOOTER;
+        String pemHeader = "-----BEGIN CERTIFICATE-----\n";
+        String pemFooter = "\n-----END CERTIFICATE-----";
+        String fullPem = pemHeader + pem + pemFooter;
         PublicKey key = null;
         try {
             CertificateFactory fact = CertificateFactory.getInstance("X.509");
@@ -581,7 +586,7 @@ public class AtlasKnoxSSOAuthenticationFilter implements Filter {
             key = cer.getPublicKey();
         } catch (CertificateException ce) {
             String message = null;
-            if (pem.startsWith(PEM_HEADER)) {
+            if (pem.startsWith(pemHeader)) {
                 message = "CertificateException - be sure not to include PEM header " + "and footer in the PEM configuration element.";
             } else {
                 message = "CertificateException - PEM may be corrupt";

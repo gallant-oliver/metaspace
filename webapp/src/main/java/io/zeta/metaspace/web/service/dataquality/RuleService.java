@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class RuleService {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuleService.class);
@@ -97,7 +96,7 @@ public class RuleService {
         return ruleDAO.getByNameV2(id,name,tenantId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteById(String number) throws AtlasBaseException {
         try {
             Boolean enableStatus = ruleDAO.getEnableStatusById(number);

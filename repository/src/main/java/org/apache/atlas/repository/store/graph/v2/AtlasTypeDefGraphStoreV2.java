@@ -39,7 +39,7 @@ import org.apache.atlas.model.typedef.*;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.*;
 import org.apache.atlas.repository.store.graph.*;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.collections.CollectionUtils;
@@ -57,7 +57,7 @@ import javax.inject.Singleton;
  */
 @Singleton
 @Component
-public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
+public class AtlasTypeDefGraphStoreV2 extends BaseAtlasTypeDefGraphStore {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasTypeDefGraphStoreV2.class);
 
     protected final AtlasGraph atlasGraph;
@@ -152,7 +152,7 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
                 .vertices().iterator();
     }
 
-    AtlasVertex createTypeVertex(AtlasBaseTypeDef typeDef) {
+    AtlasVertex createTypeVertex(BaseAtlasBaseTypeDef typeDef) {
         // Validate all the required checks
         Preconditions.checkArgument(StringUtils.isNotBlank(typeDef.getName()), "Type name can't be null/empty");
 
@@ -177,8 +177,8 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
         if (typeDef.getUpdateTime() == null) {
             typeDef.setUpdateTime(new Date());
         }
-
-        ret.setProperty(VERTEX_TYPE_PROPERTY_KEY, VERTEX_TYPE); // Mark as type vertex
+        // Mark as type vertex
+        ret.setProperty(VERTEX_TYPE_PROPERTY_KEY, VERTEX_TYPE);
         ret.setProperty(TYPE_CATEGORY_PROPERTY_KEY, getTypeCategory(typeDef));
 
         ret.setProperty(Constants.TYPENAME_PROPERTY_KEY, typeDef.getName());
@@ -191,12 +191,12 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
         ret.setProperty(Constants.MODIFIED_BY_KEY, getCurrentUser());
         ret.setProperty(Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, typeDef.getUpdateTime().getTime());
         ret.setProperty(Constants.VERSION_PROPERTY_KEY, typeDef.getVersion());
-        ret.setProperty(Constants.TYPEOPTIONS_PROPERTY_KEY, AtlasType.toJson(typeDef.getOptions()));
+        ret.setProperty(Constants.TYPEOPTIONS_PROPERTY_KEY, BaseAtlasType.toJson(typeDef.getOptions()));
 
         return ret;
     }
 
-    void updateTypeVertex(AtlasBaseTypeDef typeDef, AtlasVertex vertex) {
+    void updateTypeVertex(BaseAtlasBaseTypeDef typeDef, AtlasVertex vertex) {
         if (!isTypeVertex(vertex)) {
             LOG.warn("updateTypeVertex(): not a type-vertex - {}", vertex);
 
@@ -212,7 +212,7 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
          */
         updateVertexProperty(vertex, Constants.TYPEDESCRIPTION_PROPERTY_KEY, typeDef.getDescription());
         updateVertexProperty(vertex, Constants.TYPEVERSION_PROPERTY_KEY, typeDef.getTypeVersion());
-        updateVertexProperty(vertex, Constants.TYPEOPTIONS_PROPERTY_KEY, AtlasType.toJson(typeDef.getOptions()));
+        updateVertexProperty(vertex, Constants.TYPEOPTIONS_PROPERTY_KEY, BaseAtlasType.toJson(typeDef.getOptions()));
 
         markVertexUpdated(vertex);
     }
@@ -262,7 +262,7 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
         atlasGraph.removeVertex(vertex);
     }
 
-    void vertexToTypeDef(AtlasVertex vertex, AtlasBaseTypeDef typeDef) {
+    void vertexToTypeDef(AtlasVertex vertex, BaseAtlasBaseTypeDef typeDef) {
         String name        = vertex.getProperty(Constants.TYPENAME_PROPERTY_KEY, String.class);
         String description = vertex.getProperty(Constants.TYPEDESCRIPTION_PROPERTY_KEY, String.class);
         String typeVersion = vertex.getProperty(Constants.TYPEVERSION_PROPERTY_KEY, String.class);
@@ -305,7 +305,7 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
         }
 
         if (options != null) {
-            typeDef.setOptions(AtlasType.fromJson(options, Map.class));
+            typeDef.setOptions(BaseAtlasType.fromJson(options, Map.class));
         }
     }
 
@@ -423,7 +423,8 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
                 }
                 getOrCreateEdge(classificationVertex, entityTypeVertex, AtlasGraphUtilsV2.ENTITYTYPE_EDGE_LABEL);
             }
-        } else if (CollectionUtils.isNotEmpty(currentEntityTypes)) { // remove the restrictions, if present
+        } else if (CollectionUtils.isNotEmpty(currentEntityTypes)) {
+            // remove the restrictions, if present
             for (String entityType : currentEntityTypes) {
                 AtlasVertex entityTypeVertex = findTypeVertexByNameAndCategory(entityType, TypeCategory.CLASS);
 
@@ -463,7 +464,7 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
         return ret;
     }
 
-    TypeCategory getTypeCategory(AtlasBaseTypeDef typeDef) {
+    TypeCategory getTypeCategory(BaseAtlasBaseTypeDef typeDef) {
         switch (typeDef.getCategory()) {
             case ENTITY:
                 return TypeCategory.CLASS;
@@ -479,9 +480,9 @@ public class AtlasTypeDefGraphStoreV2 extends AtlasTypeDefGraphStore {
 
             case RELATIONSHIP:
                 return TypeCategory.RELATIONSHIP;
+            default:
+                return null;
         }
-
-        return null;
     }
 
     /*

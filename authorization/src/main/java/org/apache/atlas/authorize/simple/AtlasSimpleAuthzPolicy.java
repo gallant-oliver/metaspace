@@ -132,8 +132,8 @@ public class AtlasSimpleAuthzPolicy implements Serializable {
     @XmlAccessorType(XmlAccessType.PROPERTY)
     public static class AtlasAdminPermission implements Serializable {
         private static final long serialVersionUID = 1L;
-
-        private List<String> privileges; // name of AtlasPrivilege enum, wildcards supported
+        // name of AtlasPrivilege enum, wildcards supported
+        private List<String> privileges;
 
         public AtlasAdminPermission() {
         }
@@ -158,10 +158,12 @@ public class AtlasSimpleAuthzPolicy implements Serializable {
     @XmlAccessorType(XmlAccessType.PROPERTY)
     public static class AtlasTypePermission implements Serializable {
         private static final long serialVersionUID = 1L;
-
-        private List<String> privileges;     // name of AtlasPrivilege enum, wildcards supported
-        private List<String> typeCategories; // category of the type (entity, classification, struct, enum, relationship), wildcards supported
-        private List<String> typeNames;      // name of type, wildcards supported
+        // name of AtlasPrivilege enum, wildcards supported
+        private List<String> privileges;
+        // category of the type (entity, classification, struct, enum, relationship), wildcards supported
+        private List<String> typeCategories;
+        // name of type, wildcards supported
+        private List<String> typeNames;
 
         public AtlasTypePermission() {
         }
@@ -204,12 +206,16 @@ public class AtlasSimpleAuthzPolicy implements Serializable {
     @XmlAccessorType(XmlAccessType.PROPERTY)
     public static class AtlasEntityPermission implements Serializable {
         private static final long serialVersionUID = 1L;
-
-        private List<String> privileges;      // name of AtlasPrivilege enum, wildcards supported
-        private List<String> entityTypes;     // name of entity-type, wildcards supported
-        private List<String> entityIds;       // value of entity-unique attribute, wildcards supported
-        private List<String> classifications; // name of classification-type, wildcards supported
-        private List<String> attributes;      // name of entity-attribute, wildcards supported
+        // name of AtlasPrivilege enum, wildcards supported
+        private List<String> privileges;
+        // name of entity-type, wildcards supported
+        private List<String> entityTypes;
+        // value of entity-unique attribute, wildcards supported
+        private List<String> entityIds;
+        // name of classification-type, wildcards supported
+        private List<String> classifications;
+        // name of entity-attribute, wildcards supported
+        private List<String> attributes;
 
         public AtlasEntityPermission() {
         }
@@ -271,15 +277,22 @@ public class AtlasSimpleAuthzPolicy implements Serializable {
     @XmlAccessorType(XmlAccessType.PROPERTY)
     public static class AtlasRelationshipPermission implements Serializable {
         private static final long serialVersionUID = 1L;
-
-        private List<String> privileges;               // name of AtlasPrivilege enum, wildcards supported
-        private List<String> relationshipTypes;        // name of relationship-type, wildcards supported
-        private List<String> end1EntityType;           // name of end1 entity-type, wildcards supported
-        private List<String> end1EntityId;             // value of end1 entity-unique attribute, wildcards supported
-        private List<String> end1EntityClassification; // name of end1 classification-type, wildcards supported
-        private List<String> end2EntityType;           // name of end2 entity-type, wildcards supported
-        private List<String> end2EntityId;             // value of end2 entity-unique attribute, wildcards supported
-        private List<String> end2EntityClassification; // name of end2 classification-type, wildcards supported
+        // name of AtlasPrivilege enum, wildcards supported
+        private List<String> privileges;
+        // name of relationship-type, wildcards supported
+        private List<String> relationshipTypes;
+        // name of end1 entity-type, wildcards supported
+        private List<String> end1EntityType;
+        // value of end1 entity-unique attribute, wildcards supported
+        private List<String> end1EntityId;
+        // name of end1 classification-type, wildcards supported
+        private List<String> end1EntityClassification;
+        // name of end2 entity-type, wildcards supported
+        private List<String> end2EntityType;
+        // value of end2 entity-unique attribute, wildcards supported
+        private List<String> end2EntityId;
+        // name of end2 classification-type, wildcards supported
+        private List<String> end2EntityClassification;
 
 
         public AtlasRelationshipPermission() {

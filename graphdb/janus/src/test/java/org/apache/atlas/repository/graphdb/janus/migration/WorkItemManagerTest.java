@@ -19,7 +19,7 @@
 package org.apache.atlas.repository.graphdb.janus.migration;
 
 import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemBuilder;
-import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemConsumer;
+import org.apache.atlas.repository.graphdb.janus.migration.pc.BaseWorkItemConsumer;
 import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemManager;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ import static org.testng.Assert.assertEquals;
 public class WorkItemManagerTest {
     private static final Logger LOG = LoggerFactory.getLogger(WorkItemManagerTest.class);
 
-    private class IntegerConsumer extends WorkItemConsumer<Integer> {
+    private class IntegerConsumer extends BaseWorkItemConsumer<Integer> {
 
         private final ConcurrentLinkedQueue<Integer> target;
 
@@ -74,7 +74,7 @@ public class WorkItemManagerTest {
         IntegerConsumerBuilder cb = new IntegerConsumerBuilder();
         int numberOfItems = 10;
         try {
-            WorkItemManager<Integer, WorkItemConsumer> wi = getWorkItemManger(cb, 1);
+            WorkItemManager<Integer, BaseWorkItemConsumer> wi = getWorkItemManger(cb, 1);
             for (int i = 0; i < numberOfItems; i++) {
                 wi.produce(i);
             }
@@ -97,7 +97,7 @@ public class WorkItemManagerTest {
         IntegerConsumerBuilder cb = new IntegerConsumerBuilder();
         int numberOfItems = 100;
         try {
-            WorkItemManager<Integer, WorkItemConsumer> wi = getWorkItemManger(cb, 5);
+            WorkItemManager<Integer, BaseWorkItemConsumer> wi = getWorkItemManger(cb, 5);
             for (int i = 0; i < numberOfItems; i++) {
                 wi.produce(i);
             }
@@ -110,7 +110,7 @@ public class WorkItemManagerTest {
         assertEquals(cb.integers.size(), numberOfItems);
     }
 
-    private WorkItemManager<Integer, WorkItemConsumer> getWorkItemManger(IntegerConsumerBuilder cb, int numWorkers) {
+    private WorkItemManager<Integer, BaseWorkItemConsumer> getWorkItemManger(IntegerConsumerBuilder cb, int numWorkers) {
         return new WorkItemManager<>(cb, 5, numWorkers);
     }
 }

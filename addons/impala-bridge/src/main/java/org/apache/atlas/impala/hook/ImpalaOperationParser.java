@@ -62,10 +62,14 @@ public class ImpalaOperationParser {
 
     public static ImpalaOperationType getImpalaOperationSubType(ImpalaOperationType operationType, String queryText) {
         if (operationType == ImpalaOperationType.QUERY) {
-            if (StringUtils.containsIgnoreCase(queryText, "insert into")) {
+            String insertInto = "insert into";
+            if (StringUtils.containsIgnoreCase(queryText, insertInto)) {
                 return ImpalaOperationType.INSERT;
-            } else if (StringUtils.containsIgnoreCase(queryText, "insert overwrite")) {
-                return ImpalaOperationType.INSERT_OVERWRITE;
+            } else {
+                String insertOverwrite = "insert overwrite";
+                if (StringUtils.containsIgnoreCase(queryText, insertOverwrite)) {
+                    return ImpalaOperationType.INSERT_OVERWRITE;
+                }
             }
         }
 

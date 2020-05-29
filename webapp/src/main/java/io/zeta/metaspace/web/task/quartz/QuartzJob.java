@@ -65,7 +65,7 @@ import java.util.UUID;
  * @date 2019/7/25 17:28
  */
 
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class QuartzJob implements Job {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
@@ -316,6 +316,8 @@ public class QuartzJob implements Job {
                 case EMPTY_VALUE_NUM_RATIO:
                 case DUP_VALUE_NUM_RATIO:
                     getProportion(task,pool);
+                    break;
+                default:break;
             }
         } catch (Exception e) {
             LOG.info(e.getMessage());
@@ -678,7 +680,7 @@ public class QuartzJob implements Job {
             if (FIX == ruleCheckType) {
                 switch (checkExpression) {
                     case EQU: {
-                        if (resultValue == checkThresholdMaxValue) {
+                        if (resultValue.equals(checkThresholdMaxValue)) {
                             ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
                             ruleStatus = RuleExecuteStatus.WARNING;
@@ -686,7 +688,7 @@ public class QuartzJob implements Job {
                         break;
                     }
                     case NEQ: {
-                        if (resultValue != checkThresholdMaxValue) {
+                        if (!resultValue.equals(checkThresholdMaxValue)) {
                             ruleStatus = RuleExecuteStatus.NORMAL;
                         } else {
                             ruleStatus = RuleExecuteStatus.WARNING;
@@ -725,6 +727,7 @@ public class QuartzJob implements Job {
                         }
                         break;
                     }
+                    default:break;
                 }
             } else if (FLU == ruleCheckType) {
                 if(resultValue>= checkThresholdMinValue && resultValue<=checkThresholdMaxValue) {

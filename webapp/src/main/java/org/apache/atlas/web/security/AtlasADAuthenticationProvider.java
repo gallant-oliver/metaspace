@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Properties;
 
 @Component
-public class AtlasADAuthenticationProvider extends AtlasAbstractAuthenticationProvider {
+public class AtlasADAuthenticationProvider extends BaseAtlasAbstractAuthenticationProvider {
     private static Logger LOG = LoggerFactory.getLogger(AtlasADAuthenticationProvider.class);
 
     private String adURL;

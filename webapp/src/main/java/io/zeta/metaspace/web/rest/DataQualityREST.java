@@ -225,24 +225,6 @@ public class DataQualityREST {
         }
     }
 
-    /**
-     * 获取一个模板的所有报表
-     *
-     * @return List<ReportResult>
-     */
-    /*@GET
-    @Path("/reports/{templateId}/{offset}/{limit}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map getReports(@PathParam("templateId") String templateId, @PathParam("offset") int offset, @PathParam("limit") int limit) throws AtlasBaseException {
-        try {
-            Map reports = dataQualityService.getReports(templateId, offset, limit);
-            return reports;
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模块报表失败");
-        }
-    }*/
     @POST
     @Path("/reports/{tableGuid}/{templateId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -346,19 +328,7 @@ public class DataQualityREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改报告告警状态失败");
         }
     }
-
-    /*@GET
-    @Path("/templates/percent/{templateId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Float getFinishedPercent(@PathParam("templateId") String templateId) throws AtlasBaseException {
-        try {
-            return dataQualityService.getFinishedPercent(templateId);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
-        }
-    }*/
+    
     @GET
     @Path("/template/{templateId}/percent")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

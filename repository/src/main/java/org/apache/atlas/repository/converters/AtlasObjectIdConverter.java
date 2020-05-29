@@ -24,7 +24,7 @@ import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class AtlasObjectIdConverter extends  AtlasAbstractFormatConverter {
+public class AtlasObjectIdConverter extends BaseAtlasAbstractFormatConverter {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasObjectIdConverter.class);
 
 
@@ -48,7 +48,7 @@ public class AtlasObjectIdConverter extends  AtlasAbstractFormatConverter {
     }
 
     @Override
-    public boolean isValidValueV1(Object v1Obj, AtlasType type) {
+    public boolean isValidValueV1(Object v1Obj, BaseAtlasType type) {
         boolean ret = (v1Obj == null) || v1Obj instanceof Id || v1Obj instanceof Referenceable;
 
         if (LOG.isDebugEnabled()) {
@@ -59,7 +59,7 @@ public class AtlasObjectIdConverter extends  AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV1ToV2(Object v1Obj, AtlasType type, AtlasFormatConverter.ConverterContext converterContext) throws AtlasBaseException {
+    public Object fromV1ToV2(Object v1Obj, BaseAtlasType type, AtlasFormatConverter.ConverterContext converterContext) throws AtlasBaseException {
         Object ret = null;
 
         if (v1Obj != null) {
@@ -87,7 +87,7 @@ public class AtlasObjectIdConverter extends  AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext converterContext) throws AtlasBaseException {
+    public Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext converterContext) throws AtlasBaseException {
         Id ret = null;
 
         if (v2Obj != null) {
@@ -101,7 +101,8 @@ public class AtlasObjectIdConverter extends  AtlasAbstractFormatConverter {
                 }
 
                 ret = new Id(idStr, 0, typeName);
-            } else if (v2Obj instanceof AtlasObjectId) { // transient-id
+            } else if (v2Obj instanceof AtlasObjectId) {
+                // transient-id
                 AtlasObjectId objId = (AtlasObjectId) v2Obj;
 
                 ret = new Id(objId.getGuid(), 0, objId.getTypeName());

@@ -54,7 +54,7 @@ public enum  WarningMessageStatus {
 
     public static WarningMessageStatus getWarningMessageStatusByCode(Integer code) {
         for (WarningMessageStatus rc : WarningMessageStatus.values()) {
-            if (rc.code == code) {
+            if (rc.code.equals(code)) {
                 return rc;
             }
         }

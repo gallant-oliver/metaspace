@@ -27,7 +27,7 @@ import javax.script.ScriptException;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.groovy.GroovyExpression;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 /**
  * Represents a graph.
@@ -220,7 +220,7 @@ public interface AtlasGraph<V, E> {
      * @param type
      * @return
      */
-    GroovyExpression generatePersisentToLogicalConversionExpression(GroovyExpression valueExpr, AtlasType type);
+    GroovyExpression generatePersisentToLogicalConversionExpression(GroovyExpression valueExpr, BaseAtlasType type);
 
     /**
      * Indicates whether or not stored values with the specified type need to be converted
@@ -232,7 +232,7 @@ public interface AtlasGraph<V, E> {
      * gremlin expression with the converted value.  In addition, this cause the gremlin
      * 'filter' step to be used to compare the values instead of a 'has' step.
      */
-    boolean isPropertyValueConversionNeeded(AtlasType type);
+    boolean isPropertyValueConversionNeeded(BaseAtlasType type);
 
     /**
      * Gets the version of Gremlin that this graph uses.

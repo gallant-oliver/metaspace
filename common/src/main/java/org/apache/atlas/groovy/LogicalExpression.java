@@ -23,7 +23,7 @@ import java.util.List;
  * Represents a logical (and/or) expression.
  *
  */
-public class LogicalExpression extends BinaryExpression {
+public class LogicalExpression extends AbstractBinaryExpression {
 
     /**
      * Allowed logical operators.

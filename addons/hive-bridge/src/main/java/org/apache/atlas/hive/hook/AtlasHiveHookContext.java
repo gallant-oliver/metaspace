@@ -260,6 +260,7 @@ public class AtlasHiveHookContext {
                     tables.add(toTable(((AlterTableEvent) metastoreEvent).getOldTable()));
                     tables.add(toTable(((AlterTableEvent) metastoreEvent).getNewTable()));
                     break;
+                default:break;
             }
         } else {
             if (getOutputs() != null) {
@@ -271,6 +272,7 @@ public class AtlasHiveHookContext {
                         case TABLE:
                             tables.add(output.getTable());
                             break;
+                        default:break;
                     }
                 }
             }

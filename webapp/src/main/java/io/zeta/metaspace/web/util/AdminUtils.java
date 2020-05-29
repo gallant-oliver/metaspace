@@ -69,16 +69,16 @@ public class AdminUtils {
 
     }
     public static String getSSOTicket() throws AtlasBaseException {
-        String SSOTicket=null;
+        String ssoTicket=null;
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            SSOTicket =  request.getHeader(TICKET_KEY);
-            if (SSOTicket == null || SSOTicket == "") {
-                SSOTicket = request.getParameter(TICKET_KEY);
+            ssoTicket =  request.getHeader(TICKET_KEY);
+            if (ssoTicket == null || ssoTicket == "") {
+                ssoTicket = request.getParameter(TICKET_KEY);
             }
-            if(SSOTicket==null||SSOTicket.equals(""))
+            if(ssoTicket==null||ssoTicket.equals(""))
                 throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
-            return SSOTicket;
+            return ssoTicket;
         }catch (AtlasBaseException e){
             throw e;
         } catch (Exception e) {

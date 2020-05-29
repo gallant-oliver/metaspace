@@ -27,7 +27,7 @@ import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasClassificationType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.lang.StringUtils;
@@ -45,7 +45,7 @@ import static org.apache.atlas.repository.Constants.TYPENAME_PROPERTY_KEY;
 /**
  * ClassificationDef store in v1 format.
  */
-class AtlasClassificationDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasClassificationDef> {
+class AtlasClassificationDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasClassificationDef> {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasClassificationDefStoreV2.class);
 
     private static final String  TRAIT_NAME_REGEX   = "[a-zA-Z][a-zA-Z0-9_ .]*";
@@ -64,7 +64,7 @@ class AtlasClassificationDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasClassif
 
         validateType(classificationDef);
 
-        AtlasType type = typeRegistry.getType(classificationDef.getName());
+        BaseAtlasType type = typeRegistry.getType(classificationDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.CLASSIFICATION) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, classificationDef.getName(), TypeCategory.TRAIT.name());
@@ -202,7 +202,7 @@ class AtlasClassificationDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasClassif
 
         validateType(classificationDef);
 
-        AtlasType type = typeRegistry.getType(classificationDef.getName());
+        BaseAtlasType type = typeRegistry.getType(classificationDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.CLASSIFICATION) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, classificationDef.getName(), TypeCategory.TRAIT.name());
@@ -238,7 +238,7 @@ class AtlasClassificationDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasClassif
 
         validateType(classificationDef);
 
-        AtlasType type = typeRegistry.getTypeByGuid(guid);
+        BaseAtlasType type = typeRegistry.getTypeByGuid(guid);
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.CLASSIFICATION) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, classificationDef.getName(), TypeCategory.TRAIT.name());

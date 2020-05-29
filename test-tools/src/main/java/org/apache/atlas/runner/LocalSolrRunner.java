@@ -44,6 +44,8 @@ public class LocalSolrRunner {
     private   static final String   TEMPLATE_DIRECTORY = "core-template";
     protected static final String[] COLLECTIONS        = readCollections();
 
+    private static final Pattern pattern = Pattern.compile("\\s+");
+
     private static final Logger LOG = LoggerFactory.getLogger(LocalSolrRunner.class);
 
     private static MiniSolrCloudCluster miniSolrCloudCluster;
@@ -110,7 +112,7 @@ public class LocalSolrRunner {
             InputStream inputStream = LocalSolrRunner.class.getResourceAsStream(resName);
             InputStreamReader isr = new InputStreamReader(inputStream);
             BufferedReader buffer = new BufferedReader(isr);
-            return Pattern.compile("\\s+").split(buffer.lines().collect(Collectors.joining("\n")));
+            return pattern.split(buffer.lines().collect(Collectors.joining("\n")));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read collections file", e);
         }
@@ -136,9 +138,11 @@ public class LocalSolrRunner {
     }
 
     public static void main(String[] args) {
+        String start = "start";
+        String stop = "stop";
         if (ArrayUtils.isEmpty(args)) {
             System.out.println("No argument!");
-        } else if (args[0].equals("start")) {
+        } else if (start.equals(args[0])) {
             try {
                 start();
                 System.out.println("Started Local Solr Server: "+ getZookeeperUrls());
@@ -146,7 +150,7 @@ public class LocalSolrRunner {
             } catch (Exception e) {
                 System.out.println("Error starting Local Solr Server: " + e);
             }
-        } else if (args[0].equals("stop")) {
+        } else if (stop.equals(args[0])) {
             try {
                 System.out.println("Stopping Local Solr Server.");
                 stop();

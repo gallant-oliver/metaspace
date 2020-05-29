@@ -19,7 +19,6 @@
 package org.apache.atlas.notification;
 
 import org.apache.atlas.AtlasClient;
-import org.apache.atlas.kafka.NotificationProvider;
 import org.apache.atlas.notification.NotificationInterface.NotificationType;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
@@ -27,7 +26,7 @@ import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.v1.model.notification.EntityNotificationV1;
 import org.apache.atlas.v1.model.notification.EntityNotificationV1.OperationType;
 import org.apache.atlas.v1.model.typedef.*;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.web.integration.BaseResourceIT;
 import org.testng.annotations.AfterClass;
@@ -120,7 +119,7 @@ public class EntityNotificationIT extends BaseResourceIT {
         createTrait(traitName, superTraitName);
 
         Struct traitInstance     = new Struct(traitName);
-        String traitInstanceJSON = AtlasType.toV1Json(traitInstance);
+        String traitInstanceJSON = BaseAtlasType.toV1Json(traitInstance);
 
         LOG.debug("Trait instance = {}", traitInstanceJSON);
 
@@ -150,7 +149,7 @@ public class EntityNotificationIT extends BaseResourceIT {
         createTrait(anotherTraitName, superTraitName);
 
         traitInstance     = new Struct(anotherTraitName);
-        traitInstanceJSON = AtlasType.toV1Json(traitInstance);
+        traitInstanceJSON = BaseAtlasType.toV1Json(traitInstance);
 
         LOG.debug("Trait instance = {}", traitInstanceJSON);
 
@@ -191,7 +190,7 @@ public class EntityNotificationIT extends BaseResourceIT {
                                                     Collections.<StructTypeDefinition>emptyList(),
                                                     Collections.singletonList(traitDef),
                                                     Collections.<ClassTypeDefinition>emptyList());
-        String traitDefinitionJSON = AtlasType.toV1Json(typesDef);
+        String traitDefinitionJSON = BaseAtlasType.toV1Json(typesDef);
 
         LOG.debug("Trait definition = {}", traitDefinitionJSON);
 

@@ -55,7 +55,7 @@ public class AtlasTypeDefHeader implements java.io.Serializable {
         this.category = category;
     }
 
-    public AtlasTypeDefHeader(AtlasBaseTypeDef typeDef) {
+    public AtlasTypeDefHeader(BaseAtlasBaseTypeDef typeDef) {
         this(typeDef.getGuid(), typeDef.getName(), typeDef.getCategory());
     }
 

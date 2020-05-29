@@ -19,7 +19,7 @@
 package org.apache.atlas.hive.hook;
 
 import org.apache.atlas.hive.hook.events.*;
-import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AbstractAtlasHook;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.utils.LruCache;
 import org.apache.commons.collections.CollectionUtils;
@@ -49,7 +49,7 @@ import static org.apache.atlas.hive.hook.events.BaseHiveEvent.ATTRIBUTE_QUALIFIE
 import static org.apache.atlas.hive.hook.events.BaseHiveEvent.HIVE_TYPE_DB;
 import static org.apache.atlas.hive.hook.events.BaseHiveEvent.HIVE_TYPE_TABLE;
 
-public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
+public class HiveHook extends AbstractAtlasHook implements ExecuteWithHookContext {
     private static final Logger LOG = LoggerFactory.getLogger(HiveHook.class);
 
     public enum PreprocessAction { NONE, IGNORE, PRUNE }
@@ -96,9 +96,11 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         nameCacheEnabled                = atlasProperties.getBoolean(HOOK_NAME_CACHE_ENABLED, true);
         nameCacheDatabaseMaxCount       = atlasProperties.getInt(HOOK_NAME_CACHE_DATABASE_COUNT, 10000);
         nameCacheTableMaxCount          = atlasProperties.getInt(HOOK_NAME_CACHE_TABLE_COUNT, 10000);
-        nameCacheRebuildIntervalSeconds = atlasProperties.getInt(HOOK_NAME_CACHE_REBUID_INTERVAL_SEC, 60 * 60); // 60 minutes default
+        // 60 minutes default
+        nameCacheRebuildIntervalSeconds = atlasProperties.getInt(HOOK_NAME_CACHE_REBUID_INTERVAL_SEC, 60 * 60);
         skipHiveColumnLineageHive20633                = atlasProperties.getBoolean(HOOK_SKIP_HIVE_COLUMN_LINEAGE_HIVE_20633, false);
-        skipHiveColumnLineageHive20633InputsThreshold = atlasProperties.getInt(HOOK_SKIP_HIVE_COLUMN_LINEAGE_HIVE_20633_INPUTS_THRESHOLD, 15); // skip if avg # of inputs is > 15
+        // skip if avg # of inputs is > 15
+        skipHiveColumnLineageHive20633InputsThreshold = atlasProperties.getInt(HOOK_SKIP_HIVE_COLUMN_LINEAGE_HIVE_20633_INPUTS_THRESHOLD, 15);
 
         String[] patternHiveTablesToIgnore = atlasProperties.getStringArray(HOOK_HIVE_TABLE_IGNORE_PATTERN);
         String[] patternHiveTablesToPrune  = atlasProperties.getStringArray(HOOK_HIVE_TABLE_PRUNE_PATTERN);
@@ -274,7 +276,8 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
     public PreprocessAction getPreprocessActionForHiveTable(String qualifiedName) {
         PreprocessAction ret = PreprocessAction.NONE;
 
-        if (qualifiedName != null && (CollectionUtils.isNotEmpty(hiveTablesToIgnore) || CollectionUtils.isNotEmpty(hiveTablesToPrune))) {
+        boolean bool = CollectionUtils.isNotEmpty(hiveTablesToIgnore) || CollectionUtils.isNotEmpty(hiveTablesToPrune);
+        if (qualifiedName != null && bool) {
             ret = hiveTablesCache.get(qualifiedName);
 
             if (ret == null) {

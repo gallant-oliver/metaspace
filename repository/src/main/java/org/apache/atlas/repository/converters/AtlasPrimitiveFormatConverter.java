@@ -20,22 +20,22 @@ package org.apache.atlas.repository.converters;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 
-public class AtlasPrimitiveFormatConverter extends AtlasAbstractFormatConverter {
+public class AtlasPrimitiveFormatConverter extends BaseAtlasAbstractFormatConverter {
 
     public AtlasPrimitiveFormatConverter(AtlasFormatConverters registry, AtlasTypeRegistry typeRegistry) {
         super(registry, typeRegistry, TypeCategory.PRIMITIVE);
     }
 
     @Override
-    public Object fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext ctx) throws AtlasBaseException {
+    public Object fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext ctx) throws AtlasBaseException {
         return type.getNormalizedValue(v1Obj);
     }
 
     @Override
-    public Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext ctx) throws AtlasBaseException {
+    public Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext ctx) throws AtlasBaseException {
         return type.getNormalizedValue(v2Obj);
     }
 }

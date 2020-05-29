@@ -28,11 +28,10 @@ import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef;
 import org.apache.atlas.v1.model.typedef.AttributeDefinition;
 import org.apache.atlas.repository.Constants;
-import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
@@ -52,7 +51,7 @@ import java.util.Set;
 /**
  * StructDef store in v1 format.
  */
-public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDef> {
+public class AtlasStructDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasStructDef> {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasStructDefStoreV2.class);
 
     public AtlasStructDefStoreV2(AtlasTypeDefGraphStoreV2 typeDefStore, AtlasTypeRegistry typeRegistry) {
@@ -67,7 +66,7 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
 
         validateType(structDef);
 
-        AtlasType type = typeRegistry.getType(structDef.getName());
+        BaseAtlasType type = typeRegistry.getType(structDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.STRUCT) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, structDef.getName(), TypeCategory.STRUCT.name());
@@ -208,7 +207,7 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
 
         validateType(structDef);
 
-        AtlasType type = typeRegistry.getType(structDef.getName());
+        BaseAtlasType type = typeRegistry.getType(structDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.STRUCT) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, structDef.getName(), TypeCategory.STRUCT.name());
@@ -244,7 +243,7 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
 
         validateType(structDef);
 
-        AtlasType type = typeRegistry.getTypeByGuid(guid);
+        BaseAtlasType type = typeRegistry.getTypeByGuid(guid);
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.STRUCT) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, structDef.getName(), TypeCategory.STRUCT.name());
@@ -450,7 +449,7 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
                 String encodedAttrPropertyKey = AtlasGraphUtilsV2.encodePropertyKey(attrPropertyKey);
                 String attrJson               = vertex.getProperty(encodedAttrPropertyKey, String.class);
 
-                attributeDefs.add(toAttributeDefFromJson(structDef, AtlasType.fromJson(attrJson, Map.class), typeDefStore));
+                attributeDefs.add(toAttributeDefFromJson(structDef, BaseAtlasType.fromJson(attrJson, Map.class), typeDefStore));
             }
         }
 
@@ -516,9 +515,9 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
         multiplicity.put("upper", upper);
         multiplicity.put("isUnique", AtlasAttributeDef.Cardinality.SET.equals(attributeDef.getCardinality()));
 
-        attribInfo.put("multiplicity", AtlasType.toJson(multiplicity));
+        attribInfo.put("multiplicity", BaseAtlasType.toJson(multiplicity));
 
-        return AtlasType.toJson(attribInfo);
+        return BaseAtlasType.toJson(attribInfo);
     }
 
     @VisibleForTesting
@@ -536,7 +535,8 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
         ret.setDefaultValue((String) attribInfo.get("defaultValue"));
         ret.setDescription((String) attribInfo.get("description"));
 
-        if ((Boolean)attribInfo.get("isComposite")) {
+        String isComposite = "isComposite";
+        if ((Boolean)attribInfo.get(isComposite)) {
             ret.addConstraint(new AtlasConstraintDef(AtlasConstraintDef.CONSTRAINT_TYPE_OWNED_REF));
         }
 
@@ -548,7 +548,7 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
                     }}));
         }
 
-        Map     multiplicity = AtlasType.fromJson((String) attribInfo.get("multiplicity"), Map.class);
+        Map     multiplicity = BaseAtlasType.fromJson((String) attribInfo.get("multiplicity"), Map.class);
         Number  minCount     = (Number) multiplicity.get("lower");
         Number  maxCount     = (Number) multiplicity.get("upper");
         Boolean isUnique     = (Boolean) multiplicity.get("isUnique");
@@ -561,11 +561,12 @@ public class AtlasStructDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasStructDe
             ret.setValuesMinCount(minCount.intValue());
         }
 
-        if (maxCount == null || maxCount.intValue() < 2) {
+        int value = 2;
+        if (maxCount == null || maxCount.intValue() < value) {
             ret.setCardinality(AtlasAttributeDef.Cardinality.SINGLE);
             ret.setValuesMaxCount(1);
         } else {
-            if (isUnique == null || isUnique == Boolean.FALSE) {
+            if (isUnique == null || isUnique.equals(Boolean.FALSE)) {
                 ret.setCardinality(AtlasAttributeDef.Cardinality.LIST);
             } else {
                 ret.setCardinality(AtlasAttributeDef.Cardinality.SET);

@@ -125,13 +125,13 @@ public class Multiplicity implements Serializable {
         @Override
         public void serialize(Multiplicity value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             if (value != null) {
-                if (value.equals(Multiplicity.REQUIRED)) {
+                if (Multiplicity.REQUIRED.equals(value)) {
                     jgen.writeString("required");
-                } else if (value.equals(Multiplicity.OPTIONAL)) {
+                } else if (Multiplicity.OPTIONAL.equals(value)) {
                     jgen.writeString("optional");
-                } else if (value.equals(Multiplicity.COLLECTION)) {
+                } else if (Multiplicity.COLLECTION.equals(value)) {
                     jgen.writeString("collection");
-                } else if (value.equals(Multiplicity.SET)) {
+                } else if (Multiplicity.SET.equals(value)) {
                     jgen.writeString("set");
                 }
             }
@@ -146,13 +146,17 @@ public class Multiplicity implements Serializable {
             String value = parser.readValueAs(String.class);
 
             if (value != null) {
-                if (value.equals("required")) {
+                String required = "required";
+                String set = "set";
+                String collection = "collection";
+                String optional = "optional";
+                if (required.equals(value)) {
                     ret = new Multiplicity(Multiplicity.REQUIRED);
-                } else if (value.equals("optional")) {
+                } else if (optional.equals(value)) {
                     ret = new Multiplicity(Multiplicity.OPTIONAL);
-                } else if (value.equals("collection")) {
+                } else if (collection.equals(value)) {
                     ret = new Multiplicity(Multiplicity.COLLECTION);
-                } else if (value.equals("set")) {
+                } else if (set.equals(value)) {
                     ret = new Multiplicity(Multiplicity.SET);
                 }
             }

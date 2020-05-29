@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Transactional
 public class RuleTemplateService {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuleTemplateService.class);

@@ -34,7 +34,7 @@ import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV
 import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityPartialUpdateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.instance.AtlasSystemAttributes;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
@@ -255,7 +255,7 @@ public class AtlasJson {
         @Override
         public void serialize(Date value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             if (value != null) {
-                jgen.writeString(AtlasBaseTypeDef.getDateFormatter().format(value));
+                jgen.writeString(BaseAtlasBaseTypeDef.getDateFormatter().format(value));
             }
         }
     }
@@ -269,7 +269,7 @@ public class AtlasJson {
 
             if (value != null) {
                 try {
-                    ret = AtlasBaseTypeDef.getDateFormatter().parse(value);
+                    ret = BaseAtlasBaseTypeDef.getDateFormatter().parse(value);
                 } catch (ParseException excp) {
                 }
             }
@@ -380,6 +380,8 @@ public class AtlasJson {
                     case ENTITY_DELETE_V2:
                         ret = mapper.treeToValue(root, EntityDeleteRequestV2.class);
                         break;
+                    default:
+                        break;
                 }
             }
 
@@ -405,6 +407,8 @@ public class AtlasJson {
 
                     case ENTITY_NOTIFICATION_V2:
                         ret = mapper.treeToValue(root, EntityNotificationV2.class);
+                        break;
+                    default:
                         break;
                 }
             }

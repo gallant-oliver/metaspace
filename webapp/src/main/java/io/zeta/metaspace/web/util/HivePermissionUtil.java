@@ -12,11 +12,11 @@ import java.util.*;
 public class HivePermissionUtil {
 
     public static TablePermission getHivePermission(String db, String table,List<Column> columns ) throws AtlasBaseException {
-        Set<String> ALLCLOUMN = new HashSet<>();
-        ALLCLOUMN.add("*");
-        Set<String> ALLCLOUMN2 = new HashSet<>();
+        Set<String> allColumn = new HashSet<>();
+        allColumn.add("*");
+        Set<String> allColumn2 = new HashSet<>();
         for (Column column : columns) {
-            ALLCLOUMN2.add(column.getColumnName());
+            allColumn2.add(column.getColumnName());
         }
         TablePermission tablePermission = new TablePermission();
         if (SecurePlusConfig.getSecurePlusEnable()) {
@@ -32,7 +32,8 @@ public class HivePermissionUtil {
             queryParamMap.put("user", userName);
             queryParamMap.put("database", db);
             queryParamMap.put("table", table);
-            while (Objects.isNull(session) && retryCount < 3) {
+            int retries = 3;
+            while (Objects.isNull(session) && retryCount < retries) {
                 session = OKHttpClient.doGet(SecurePlusConfig.getSecurePlusPrivilegeREST(),
                                             queryParamMap, map);
                 if (Objects.nonNull(session)) {
@@ -47,40 +48,40 @@ public class HivePermissionUtil {
                             Set privilegeContents = new HashSet((List) privilege.get("privilegeContents"));
                             allPrivileges.put(allColumns, privilegeContents);
                         }
-                        if (allPrivileges.containsKey(ALLCLOUMN)) {
-                            Set<String> set = allPrivileges.get(ALLCLOUMN);
+                        if (allPrivileges.containsKey(allColumn)) {
+                            Set<String> set = allPrivileges.get(allColumn);
                             if (set.contains("r")) {
-                                tablePermission.setREAD(true);
+                                tablePermission.setRead(true);
                             }
                             if (set.contains("w")) {
-                                tablePermission.setWRITE(true);
+                                tablePermission.setWrite(true);
                             }
-                        } else if (allPrivileges.containsKey(ALLCLOUMN2)) {
-                            Set<String> set = allPrivileges.get(ALLCLOUMN2);
+                        } else if (allPrivileges.containsKey(allColumn2)) {
+                            Set<String> set = allPrivileges.get(allColumn2);
                             if (set.contains("r")) {
-                                tablePermission.setREAD(true);
+                                tablePermission.setRead(true);
                             }
                             if (set.contains("w")) {
-                                tablePermission.setWRITE(true);
+                                tablePermission.setWrite(true);
                             }
                         } else {
-                            tablePermission.setREAD(false);
-                            tablePermission.setWRITE(false);
+                            tablePermission.setRead(false);
+                            tablePermission.setWrite(false);
                         }
 
                     } else {
-                        tablePermission.setREAD(false);
-                        tablePermission.setWRITE(false);
+                        tablePermission.setRead(false);
+                        tablePermission.setWrite(false);
                     }
                 } else {
-                    tablePermission.setREAD(false);
-                    tablePermission.setWRITE(false);
+                    tablePermission.setRead(false);
+                    tablePermission.setWrite(false);
                     retryCount++;
                 }
             }
         } else {
-            tablePermission.setREAD(true);
-            tablePermission.setWRITE(true);
+            tablePermission.setRead(true);
+            tablePermission.setWrite(true);
         }
         return tablePermission;
     }

@@ -155,7 +155,7 @@ public class HBaseBridge {
                     String         line = null;
 
                     while((line = br.readLine()) != null) {
-                        String val[] = line.split(":");
+                        String[] val = line.split(":");
 
                         if (ArrayUtils.isNotEmpty(val)) {
                             namespaceToImport = val[0];
@@ -455,7 +455,8 @@ public class HBaseBridge {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_NAMESPACE.getName(), nsQualifiedName);
             clearRelationshipAttributes(ret);
         } catch (Exception e) {
-            ret = null; // entity doesn't exist in Atlas
+            // entity doesn't exist in Atlas
+            ret = null;
         }
 
         return ret;
@@ -468,7 +469,8 @@ public class HBaseBridge {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_TABLE.getName(), tableQualifiedName);
             clearRelationshipAttributes(ret);
         } catch (Exception e) {
-            ret = null; // entity doesn't exist in Atlas
+            // entity doesn't exist in Atlas
+            ret = null;
         }
 
         return ret;
@@ -481,7 +483,8 @@ public class HBaseBridge {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_COLUMN_FAMILY.getName(), columnFamilyQualifiedName);
             clearRelationshipAttributes(ret);
         } catch (Exception e) {
-            ret = null; // entity doesn't exist in Atlas
+            // entity doesn't exist in Atlas
+            ret = null;
         }
 
         return ret;

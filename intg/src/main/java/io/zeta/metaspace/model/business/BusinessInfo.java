@@ -36,16 +36,12 @@ public class BusinessInfo {
     private String dataAssets;
     private String businessLastUpdate;
     private String businessOperator;
-    //private String technicalLastUpdate;
-    //private String technicalOperator;
     private String submitter;
     private String submissionTime;
     private String ticketNumber;
     private Boolean editBusiness;
     private String level2CategoryId;
     private String trustTable;
-    //private Boolean editTechnical;
-    //private List<Table> tables;
 
 
     public String getBusinessId() {

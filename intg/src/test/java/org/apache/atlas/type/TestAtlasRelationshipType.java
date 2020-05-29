@@ -19,7 +19,7 @@ package org.apache.atlas.type;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.atlas.type.AtlasTypeRegistry.AtlasTransientTypeRegistry;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
@@ -161,7 +161,7 @@ public class TestAtlasRelationshipType {
         Assert.assertTrue(deptRelationAttrs.containsKey("employees"));
 
         AtlasAttribute employeesAttr = deptRelationAttrs.get("employees");
-        Assert.assertEquals(employeesAttr.getTypeName(),AtlasBaseTypeDef.getArrayTypeName(EMPLOYEE_TYPE));
+        Assert.assertEquals(employeesAttr.getTypeName(), BaseAtlasBaseTypeDef.getArrayTypeName(EMPLOYEE_TYPE));
 
         Map<String, AtlasAttribute> addressRelationAttrs = getRelationAttrsForType(ADDRESS_TYPE);
 
@@ -170,7 +170,7 @@ public class TestAtlasRelationshipType {
         Assert.assertTrue(addressRelationAttrs.containsKey("employees"));
 
         AtlasAttribute employeesAttr1 = addressRelationAttrs.get("employees");
-        Assert.assertEquals(employeesAttr1.getTypeName(),AtlasBaseTypeDef.getArrayTypeName(EMPLOYEE_TYPE));
+        Assert.assertEquals(employeesAttr1.getTypeName(), BaseAtlasBaseTypeDef.getArrayTypeName(EMPLOYEE_TYPE));
     }
 
     @Test(dependsOnMethods = "testRelationshipAttributes")
@@ -229,11 +229,11 @@ public class TestAtlasRelationshipType {
         createTypes(new ArrayList<>(Arrays.asList(deptEmployeeRelationDef, employeeAddrRelationDef)));
     }
 
-    private void createType(AtlasBaseTypeDef typeDef) throws AtlasBaseException {
+    private void createType(BaseAtlasBaseTypeDef typeDef) throws AtlasBaseException {
         createTypes(new ArrayList<>(Arrays.asList(typeDef)));
     }
 
-    private void createTypes(List<? extends AtlasBaseTypeDef> typeDefs) throws AtlasBaseException {
+    private void createTypes(List<? extends BaseAtlasBaseTypeDef> typeDefs) throws AtlasBaseException {
         AtlasTransientTypeRegistry ttr = typeRegistry.lockTypeRegistryForUpdate();
 
         ttr.addTypes(typeDefs);

@@ -62,7 +62,7 @@ public class SearchContext {
     private final Set<String>             entityAttributes;
     private final AtlasEntityType         entityType;
     private final AtlasClassificationType classificationType;
-    private       SearchProcessor         searchProcessor;
+    private AbstractSearchProcessor searchProcessor;
     private       boolean                 terminateSearch = false;
 
     public final static AtlasClassificationType MATCH_ALL_WILDCARD_CLASSIFICATION = new AtlasClassificationType(new AtlasClassificationDef(WILDCARD_CLASSIFICATIONS));
@@ -134,7 +134,7 @@ public class SearchContext {
 
     public AtlasClassificationType getClassificationType() { return classificationType; }
 
-    public SearchProcessor getSearchProcessor() { return searchProcessor; }
+    public AbstractSearchProcessor getSearchProcessor() { return searchProcessor; }
 
     public boolean terminateSearch() { return terminateSearch; }
 
@@ -194,7 +194,7 @@ public class SearchContext {
                (CollectionUtils.isNotEmpty(filterCriteria.getCriterion()) || StringUtils.isNotEmpty(filterCriteria.getAttributeName()));
     }
 
-    private void addProcessor(SearchProcessor processor) {
+    private void addProcessor(AbstractSearchProcessor processor) {
         if (searchProcessor == null) {
             searchProcessor = processor;
         } else {

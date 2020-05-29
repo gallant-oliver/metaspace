@@ -147,4 +147,9 @@ public class AtlasGlossaryDTO extends AbstractGlossaryDTO<AtlasGlossary> {
         ret.put("qualifiedName", obj.getQualifiedName());
         return ret;
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

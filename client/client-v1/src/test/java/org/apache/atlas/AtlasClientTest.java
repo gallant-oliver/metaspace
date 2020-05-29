@@ -22,7 +22,7 @@ import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import org.apache.atlas.model.legacy.EntityResult;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.commons.configuration.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -95,11 +95,11 @@ public class AtlasClientTest {
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.CREATED.getStatusCode());
 
-        String jsonResponse = AtlasType.toV1Json(new EntityResult(Arrays.asList("id"), null, null));
+        String jsonResponse = BaseAtlasType.toV1Json(new EntityResult(Arrays.asList("id"), null, null));
         when(response.getEntity(String.class)).thenReturn(jsonResponse.toString());
         when(response.getLength()).thenReturn(jsonResponse.length());
 
-        String entityJson = AtlasType.toV1Json(new Referenceable("type"));
+        String entityJson = BaseAtlasType.toV1Json(new Referenceable("type"));
         when(builder.method(anyString(), Matchers.<Class>any(), anyString())).thenReturn(response);
 
         List<String> ids = atlasClient.createEntity(entityJson);
@@ -436,9 +436,9 @@ public class AtlasClientTest {
     private WebResource.Builder getBuilder(WebResource resourceObject) {
         when(resourceObject.getRequestBuilder()).thenReturn(resourceBuilderMock);
         when(resourceObject.path(anyString())).thenReturn(resourceObject);
-        when(resourceBuilderMock.accept(AtlasBaseClient.JSON_MEDIA_TYPE)).thenReturn(resourceBuilderMock);
+        when(resourceBuilderMock.accept(AbstractAtlasBaseClient.JSON_MEDIA_TYPE)).thenReturn(resourceBuilderMock);
         when(resourceBuilderMock.accept(MediaType.APPLICATION_JSON)).thenReturn(resourceBuilderMock);
-        when(resourceBuilderMock.type(AtlasBaseClient.JSON_MEDIA_TYPE)).thenReturn(resourceBuilderMock);
+        when(resourceBuilderMock.type(AbstractAtlasBaseClient.JSON_MEDIA_TYPE)).thenReturn(resourceBuilderMock);
         when(resourceBuilderMock.type(MediaType.MULTIPART_FORM_DATA)).thenReturn(resourceBuilderMock);
         return resourceBuilderMock;
     }

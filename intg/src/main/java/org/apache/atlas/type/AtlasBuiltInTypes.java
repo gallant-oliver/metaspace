@@ -21,7 +21,7 @@ package org.apache.atlas.type;
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
 
 
 /**
@@ -43,11 +43,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of boolean type.
      */
-    public static class AtlasBooleanType extends AtlasType {
+    public static class AtlasBooleanType extends BaseAtlasType {
         private static final Boolean DEFAULT_VALUE = Boolean.FALSE;
 
         public AtlasBooleanType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -77,11 +77,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of byte type.
      */
-    public static class AtlasByteType extends AtlasType {
+    public static class AtlasByteType extends BaseAtlasType {
         private static final Byte DEFAULT_VALUE = (byte) 0;
 
         public AtlasByteType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BYTE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_BYTE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -125,11 +125,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of short type.
      */
-    public static class AtlasShortType extends AtlasType {
+    public static class AtlasShortType extends BaseAtlasType {
         private static final Short DEFAULT_VALUE = (short) 0;
 
         public AtlasShortType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_SHORT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_SHORT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -169,11 +169,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of integer type.
      */
-    public static class AtlasIntType extends AtlasType {
+    public static class AtlasIntType extends BaseAtlasType {
         private static final Integer DEFAULT_VALUE = 0;
 
         public AtlasIntType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_INT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_INT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -213,11 +213,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of long type.
      */
-    public static class AtlasLongType extends AtlasType {
+    public static class AtlasLongType extends BaseAtlasType {
         private static final Long DEFAULT_VALUE = 0L;
 
         public AtlasLongType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_LONG, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -257,12 +257,12 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of float type.
      */
-    public static class AtlasFloatType extends AtlasType {
+    public static class AtlasFloatType extends BaseAtlasType {
         private static final Float DEFAULT_VALUE = 0f;
         private static final Float FLOAT_EPSILON = 0.00000001f;
 
         public AtlasFloatType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_FLOAT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_FLOAT, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -334,12 +334,12 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of double type.
      */
-    public static class AtlasDoubleType extends AtlasType {
+    public static class AtlasDoubleType extends BaseAtlasType {
         private static final Double DEFAULT_VALUE = 0d;
         private static final Double DOUBLE_EPSILON = 0.00000001d;
 
         public AtlasDoubleType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -413,11 +413,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of Java BigInteger type.
      */
-    public static class AtlasBigIntegerType extends AtlasType {
+    public static class AtlasBigIntegerType extends BaseAtlasType {
         private static final BigInteger DEFAULT_VALUE = BigInteger.ZERO;
 
         public AtlasBigIntegerType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -459,11 +459,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of Java BigDecimal type.
      */
-    public static class AtlasBigDecimalType extends AtlasType {
+    public static class AtlasBigDecimalType extends BaseAtlasType {
         private static final BigDecimal DEFAULT_VALUE = BigDecimal.ZERO;
 
         public AtlasBigDecimalType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -505,11 +505,11 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of Date type.
      */
-    public static class AtlasDateType extends AtlasType {
+    public static class AtlasDateType extends BaseAtlasType {
         private static final Date DEFAULT_VALUE = new Date(0);
 
         public AtlasDateType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_DATE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -539,7 +539,7 @@ public class AtlasBuiltInTypes {
                     return new Date(((Number) obj).longValue());
                 } else {
                     try {
-                        return AtlasBaseTypeDef.getDateFormatter().parse(obj.toString());
+                        return BaseAtlasBaseTypeDef.getDateFormatter().parse(obj.toString());
                     } catch (ParseException excp) {
                         try { // try to read it as a number
                             long longDate = Long.valueOf(obj.toString());
@@ -558,12 +558,12 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of String type.
      */
-    public static class AtlasStringType extends AtlasType {
+    public static class AtlasStringType extends BaseAtlasType {
         private static final String DEFAULT_VALUE = "";
         private static final String OPTIONAL_DEFAULT_VALUE = null;
 
         public AtlasStringType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_STRING, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, TypeCategory.PRIMITIVE, SERVICE_TYPE_ATLAS_CORE);
         }
 
         @Override
@@ -594,19 +594,19 @@ public class AtlasBuiltInTypes {
     /**
      * class that implements behaviour of Atlas object-id type.
      */
-    public static class AtlasObjectIdType extends AtlasType {
+    public static class AtlasObjectIdType extends BaseAtlasType {
         public static final String DEFAULT_UNASSIGNED_GUID = "-1";
 
         private final String objectType;
 
         public AtlasObjectIdType() {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
 
-            objectType = AtlasBaseTypeDef.ATLAS_TYPE_ASSET;
+            objectType = BaseAtlasBaseTypeDef.ATLAS_TYPE_ASSET;
         }
 
         public AtlasObjectIdType(String objectType) {
-            super(AtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
+            super(BaseAtlasBaseTypeDef.ATLAS_TYPE_OBJECT_ID, TypeCategory.OBJECT_ID_TYPE, SERVICE_TYPE_ATLAS_CORE);
 
             this.objectType = objectType;
         }
@@ -659,8 +659,8 @@ public class AtlasBuiltInTypes {
 
                     boolean isV1AssignedGuid = AtlasTypeUtil.isAssignedGuid(guid1);
                     boolean isV2AssignedGuid = AtlasTypeUtil.isAssignedGuid(guid2);
-
-                    if (isV1AssignedGuid == isV2AssignedGuid) { // if both have assigned/unassigned guids, compare guids
+                    // if both have assigned/unassigned guids, compare guids
+                    if (isV1AssignedGuid == isV2AssignedGuid) {
                         ret = Objects.equals(guid1, guid2);
                     } else { // if one has assigned and other unassigned guid, compare typeName and unique-attribute
                         ret = Objects.equals(v1.getTypeName(), v2.getTypeName()) && Objects.equals(v1.getUniqueAttributes(), v2.getUniqueAttributes());

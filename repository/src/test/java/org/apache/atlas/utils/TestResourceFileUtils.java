@@ -17,7 +17,7 @@
  */
 package org.apache.atlas.utils;
 
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -64,7 +64,7 @@ public class TestResourceFileUtils {
         final String userDir = System.getProperty("user.dir");
         String filePath = getTestJsonPath(userDir, subDir, filename);
         String json = FileUtils.readFileToString(new File(filePath));
-        return AtlasType.fromJson(json, objectClass);
+        return BaseAtlasType.fromJson(json, objectClass);
     }
 
     public static <T> T readObjectFromJson(String filename, Class<T> objectClass) throws IOException {

@@ -13,14 +13,12 @@
 
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dataSource.DataSource;
-import io.zeta.metaspace.model.dataSource.DataSourceBody;
-import io.zeta.metaspace.model.dataSource.DataSourceConnection;
-import io.zeta.metaspace.model.dataSource.DataSourceHead;
-import io.zeta.metaspace.model.dataSource.DataSourceInfo;
-import io.zeta.metaspace.model.dataSource.DataSourcePrivileges;
-import io.zeta.metaspace.model.dataSource.DataSourceSearch;
-import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.datasource.DataSourceBody;
+import io.zeta.metaspace.model.datasource.DataSourceConnection;
+import io.zeta.metaspace.model.datasource.DataSourceHead;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourcePrivileges;
+import io.zeta.metaspace.model.datasource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
@@ -291,7 +289,7 @@ public interface DataSourceDAO {
     //获取测试连接参数
     @Select("select source_type sourceType,ip,port,username userName,password as AESPassword,database,jdbc_parameter jdbcParameter,servicetype " +
             "from data_source where source_id=#{sourceId};")
-    public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String SourceId);
+    public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String sourceId);
 
     //判断是否是管理者
     @Select("select count(1) from data_source where source_id=#{sourceId} and manager=#{userId}")

@@ -294,6 +294,8 @@ public class AtlasEntityChangeNotifier {
                     case DELETE:
                         listener.onEntitiesDeleted(typedRefInsts, isImport);
                         break;
+                    default:
+                        break;
                 }
             } catch (AtlasException e) {
                 throw new AtlasBaseException(AtlasErrorCode.NOTIFICATION_FAILED, e, getListenerName(listener), operation.toString());
@@ -315,6 +317,8 @@ public class AtlasEntityChangeNotifier {
                     break;
                 case DELETE:
                     listener.onEntitiesDeleted(entities, isImport);
+                    break;
+                default:
                     break;
             }
         }

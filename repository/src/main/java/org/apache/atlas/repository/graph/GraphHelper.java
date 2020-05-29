@@ -35,7 +35,7 @@ import org.apache.atlas.repository.graphdb.AtlasVertexQuery;
 import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.type.AtlasArrayType;
 import org.apache.atlas.type.AtlasMapType;
-import org.apache.atlas.util.AtlasGremlinQueryProvider;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
@@ -51,7 +51,7 @@ import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasRelationshipType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.exception.EntityNotFoundException;
 import org.apache.atlas.util.AttributeValueMap;
 import org.apache.atlas.util.IndexedInstance;
@@ -104,10 +104,10 @@ import static org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2.isRef
 import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.BOTH;
 import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.IN;
 import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.OUT;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_EXCLUDE_RELATIONSHIP;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_FOR_REMOVAL;
-import static org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_WITH_RESTRICTIONS;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_EXCLUDE_RELATIONSHIP;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_FOR_REMOVAL;
+import static org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery.TAG_PROPAGATION_IMPACTED_INSTANCES_WITH_RESTRICTIONS;
 
 /**
  * Utility class for graph operations.
@@ -121,7 +121,7 @@ public final class GraphHelper {
     public static final String RETRY_DELAY = "atlas.graph.storage.retry.sleeptime.ms";
     public static final String DEFAULT_REMOVE_PROPAGATIONS_ON_ENTITY_DELETE = "atlas.graph.remove.propagations.default";
 
-    private final AtlasGremlinQueryProvider queryProvider = AtlasGremlinQueryProvider.INSTANCE;
+    private final BaseAtlasGremlinQueryProvider queryProvider = BaseAtlasGremlinQueryProvider.INSTANCE;
 
     private static volatile GraphHelper INSTANCE;
 
@@ -324,7 +324,8 @@ public final class GraphHelper {
     private AtlasElement findElement(boolean isVertexSearch, Object... args) throws EntityNotFoundException {
         AtlasGraphQuery query = graph.query();
 
-        for (int i = 0; i < args.length; i += 2) {
+        int spacing = 2;
+        for (int i = 0; i < args.length; i += spacing) {
             query = query.has((String) args[i], args[i + 1]);
         }
 
@@ -587,6 +588,8 @@ public final class GraphHelper {
 
             case BOTH:
                 ret = getAdjacentEdgesByLabel(vertex, AtlasEdgeDirection.BOTH, edgeLabel);
+                break;
+            default:
                 break;
         }
 
@@ -1536,7 +1539,7 @@ public final class GraphHelper {
         return typeName != null && typeName.startsWith(Constants.INTERNAL_PROPERTY_KEY_PREFIX);
     }
 
-    public static List<Object> getArrayElementsProperty(AtlasType elementType, AtlasVertex instanceVertex, AtlasAttribute attribute) {
+    public static List<Object> getArrayElementsProperty(BaseAtlasType elementType, AtlasVertex instanceVertex, AtlasAttribute attribute) {
         String propertyName = attribute.getVertexPropertyName();
 
         if (isReference(elementType)) {
@@ -1547,7 +1550,7 @@ public final class GraphHelper {
     }
 
     public static Map<String, Object> getMapElementsProperty(AtlasMapType mapType, AtlasVertex instanceVertex, String propertyName, AtlasAttribute attribute) {
-        AtlasType mapValueType = mapType.getValueType();
+        BaseAtlasType mapValueType = mapType.getValueType();
 
         if (isReference(mapValueType)) {
             return getReferenceMap(instanceVertex, attribute);
@@ -1750,8 +1753,8 @@ public final class GraphHelper {
 
     private String getConditionString(Object[] args) {
         StringBuilder condition = new StringBuilder();
-
-        for (int i = 0; i < args.length; i+=2) {
+        int spacing = 2;
+        for (int i = 0; i < args.length; i+=spacing) {
             condition.append(args[i]).append(" = ").append(args[i+1]).append(", ");
         }
 

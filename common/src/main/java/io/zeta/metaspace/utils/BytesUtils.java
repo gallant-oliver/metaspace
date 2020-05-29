@@ -17,10 +17,11 @@ public class BytesUtils {
 
     private static final int UNIT = 1024;
     private static String[] units = new String[]{"KB", "MB", "GB", "TB", "PB", "EB"};
+    private static String basic="B";
 
     public static String humanReadableByteCount(long bytes) {
         if (bytes < UNIT) {
-            return bytes + " B";
+            return bytes + " "+basic;
         }
         int exp = (int) (Math.log(bytes) / Math.log(UNIT));
         String pre = "KMGTPE".charAt(exp - 1) + "";
@@ -28,7 +29,7 @@ public class BytesUtils {
     }
 
     public static Double byteCountByUnit(long bytes, String unit) {
-        if ("B".equals(unit)) {
+        if (basic.equals(unit)) {
             return Double.valueOf(String.valueOf(bytes));
         }
         int exp = 1;

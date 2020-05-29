@@ -46,50 +46,17 @@ public class AtlasDSLLexer extends Lexer {
 		"K_FALSE", "KEYWORD", "ID", "STRING"
 	};
 
-	private static final String[] _LITERAL_NAMES = {
-		null, null, null, null, null, null, null, "','", "'+'", "'-'", "'*'", 
-		"'/'", "'.'", null, null, null, "'('", "'['", "')'", "']'"
-	};
-	private static final String[] _SYMBOLIC_NAMES = {
-		null, "SINGLE_LINE_COMMENT", "MULTILINE_COMMENT", "WS", "NUMBER", "FLOATING_NUMBER", 
-		"BOOL", "K_COMMA", "K_PLUS", "K_MINUS", "K_STAR", "K_DIV", "K_DOT", "K_LIKE", 
-		"K_AND", "K_OR", "K_LPAREN", "K_LBRACKET", "K_RPAREN", "K_RBRACKET", "K_LT", 
-		"K_LTE", "K_EQ", "K_NEQ", "K_GT", "K_GTE", "K_FROM", "K_WHERE", "K_ORDERBY", 
-		"K_GROUPBY", "K_LIMIT", "K_SELECT", "K_MAX", "K_MIN", "K_SUM", "K_COUNT", 
-		"K_OFFSET", "K_AS", "K_ISA", "K_IS", "K_HAS", "K_ASC", "K_DESC", "K_TRUE", 
-		"K_FALSE", "KEYWORD", "ID", "STRING"
-	};
-	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
-
-	/**
-	 * @deprecated Use {@link #VOCABULARY} instead.
-	 */
-	@Deprecated
-	public static final String[] tokenNames;
-	static {
-		tokenNames = new String[_SYMBOLIC_NAMES.length];
-		for (int i = 0; i < tokenNames.length; i++) {
-			tokenNames[i] = VOCABULARY.getLiteralName(i);
-			if (tokenNames[i] == null) {
-				tokenNames[i] = VOCABULARY.getSymbolicName(i);
-			}
-
-			if (tokenNames[i] == null) {
-				tokenNames[i] = "<INVALID>";
-			}
-		}
-	}
 
 	@Override
 	@Deprecated
 	public String[] getTokenNames() {
-		return tokenNames;
+		return AtlasDSLParser.tokenNames;
 	}
 
 	@Override
 
 	public Vocabulary getVocabulary() {
-		return VOCABULARY;
+		return AtlasDSLParser.VOCABULARY;
 	}
 
 

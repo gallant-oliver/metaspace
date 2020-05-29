@@ -45,7 +45,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GlossaryCategoryUtils extends GlossaryUtils {
+public class GlossaryCategoryUtils extends AbstractGlossaryUtils {
     private static final Logger  LOG           = LoggerFactory.getLogger(GlossaryCategoryUtils.class);
     private static final boolean DEBUG_ENABLED = LOG.isDebugEnabled();
 
@@ -130,6 +130,7 @@ public class GlossaryCategoryUtils extends GlossaryUtils {
                     relationshipStore.deleteById(storeObject.getAnchor().getRelationGuid(), true);
                 }
                 break;
+            default:break;
         }
     }
 
@@ -176,6 +177,7 @@ public class GlossaryCategoryUtils extends GlossaryUtils {
                     processParentRemoval(storeObject, updatedCategory, existingParent, impactedCategories);
                 }
                 break;
+            default:break;
         }
     }
 
@@ -271,6 +273,7 @@ public class GlossaryCategoryUtils extends GlossaryUtils {
             case DELETE:
                 deleteTermCategorizationRelationships(storeObject, existingTerms.values());
                 break;
+            default:break;
         }
     }
 
@@ -405,6 +408,7 @@ public class GlossaryCategoryUtils extends GlossaryUtils {
             case DELETE:
                 deleteCategoryRelationships(storeObject, existingChildren.values());
                 break;
+            default:break;
         }
     }
 
@@ -417,7 +421,8 @@ public class GlossaryCategoryUtils extends GlossaryUtils {
             Map<String, AtlasRelatedCategoryHeader> map = new HashMap<>();
             for (AtlasRelatedCategoryHeader c : category.getChildrenCategories()) {
                 AtlasRelatedCategoryHeader header = map.get(c.getCategoryGuid());
-                if (header == null || (StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(c.getRelationGuid()))) {
+                boolean bool = StringUtils.isEmpty(header.getRelationGuid()) && StringUtils.isNotEmpty(c.getRelationGuid());
+                if (header == null || bool) {
                     map.put(c.getCategoryGuid(), c);
                 }
             }

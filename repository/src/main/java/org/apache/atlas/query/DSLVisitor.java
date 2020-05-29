@@ -293,8 +293,9 @@ public class DSLVisitor extends AtlasDSLParserBaseVisitor<Void> {
                 String       lhs      = comparisonClause.arithE(0).getText();
                 String       op, rhs;
                 AtomEContext atomECtx = comparisonClause.arithE(1).multiE().atomE();
+                boolean bool = atomECtx.literal() != null && atomECtx.literal().valueArray() == null;
                 if (atomECtx.literal() == null ||
-                            (atomECtx.literal() != null && atomECtx.literal().valueArray() == null)) {
+                    bool) {
                     op = comparisonClause.operator().getText().toUpperCase();
                     rhs = comparisonClause.arithE(1).getText();
                 } else {

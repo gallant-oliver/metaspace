@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 /**
  * Base notification message deserializer.
  */
-public abstract class AbstractMessageDeserializer<T> extends AtlasNotificationMessageDeserializer<T> {
+public abstract class AbstractMessageDeserializer<T> extends BaseAtlasNotificationMessageDeserializer<T> {
 
     // ----- Constructors ----------------------------------------------------
 

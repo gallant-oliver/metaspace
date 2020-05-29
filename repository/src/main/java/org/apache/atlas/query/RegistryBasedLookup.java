@@ -20,7 +20,7 @@ package org.apache.atlas.query;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.type.*;
 import org.apache.commons.lang.StringUtils;
@@ -44,13 +44,13 @@ class RegistryBasedLookup implements Lookup {
             ));
 
     private static final Map<String, String> NUMERIC_ATTRIBUTES = new HashMap<String, String>() {{
-            put(AtlasBaseTypeDef.ATLAS_TYPE_SHORT, "");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_INT, "");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_LONG, "L");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_FLOAT, "f");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, "d");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, "");
-            put(AtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, "");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_SHORT, "");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_INT, "");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG, "L");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_FLOAT, "f");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_DOUBLE, "d");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER, "");
+            put(BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL, "");
         }};
 
     private final AtlasTypeRegistry typeRegistry;
@@ -60,8 +60,8 @@ class RegistryBasedLookup implements Lookup {
     }
 
     @Override
-    public AtlasType getType(String typeName) throws AtlasBaseException {
-        AtlasType ret;
+    public BaseAtlasType getType(String typeName) throws AtlasBaseException {
+        BaseAtlasType ret;
 
         if (typeName.equalsIgnoreCase(ALL_CLASSIFICATIONS)) {
             ret = MATCH_ALL_CLASSIFIED;
@@ -103,7 +103,7 @@ class RegistryBasedLookup implements Lookup {
             return true;
         }
 
-        AtlasType at = et.getAttributeType(attributeName);
+        BaseAtlasType at = et.getAttributeType(attributeName);
         if(at == null) {
             return false;
         }
@@ -169,7 +169,7 @@ class RegistryBasedLookup implements Lookup {
 
     @Override
     public boolean isTraitType(String typeName) {
-        AtlasType t = null;
+        BaseAtlasType t = null;
         try {
             if (typeName.equalsIgnoreCase(ALL_CLASSIFICATIONS)) {
                 t = MATCH_ALL_CLASSIFIED;
@@ -186,7 +186,7 @@ class RegistryBasedLookup implements Lookup {
         return isTraitType(t);
     }
 
-    private boolean isTraitType(AtlasType t) {
+    private boolean isTraitType(BaseAtlasType t) {
         return (t != null && t.getTypeCategory() == TypeCategory.CLASSIFICATION);
     }
 
@@ -202,7 +202,7 @@ class RegistryBasedLookup implements Lookup {
             return null;
         }
 
-        AtlasType at = attr.getAttributeType();
+        BaseAtlasType at = attr.getAttributeType();
         switch (at.getTypeCategory()) {
             case ARRAY:
                 AtlasArrayType arrType = ((AtlasArrayType)at);
@@ -211,12 +211,12 @@ class RegistryBasedLookup implements Lookup {
             case MAP:
                 AtlasMapType mapType = ((AtlasMapType)at);
                 return getCollectionElementType(mapType.getValueType());
+            default:
+                return context.getActiveEntityType().getAttribute(item).getTypeName();
         }
-
-        return context.getActiveEntityType().getAttribute(item).getTypeName();
     }
 
-    private String getCollectionElementType(AtlasType elemType) {
+    private String getCollectionElementType(BaseAtlasType elemType) {
         if(elemType.getTypeCategory() == TypeCategory.OBJECT_ID_TYPE) {
             return ((AtlasBuiltInTypes.AtlasObjectIdType)elemType).getObjectType();
         } else {
@@ -231,8 +231,8 @@ class RegistryBasedLookup implements Lookup {
             return false;
         }
 
-        AtlasType attr = et.getAttributeType(attributeName);
-        return attr != null && attr.getTypeName().equals(AtlasBaseTypeDef.ATLAS_TYPE_DATE);
+        BaseAtlasType attr = et.getAttributeType(attributeName);
+        return attr != null && attr.getTypeName().equals(BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE);
     }
 
     @Override
@@ -242,7 +242,7 @@ class RegistryBasedLookup implements Lookup {
             return false;
         }
 
-        AtlasType attr = et.getAttributeType(attrName);
+        BaseAtlasType attr = et.getAttributeType(attrName);
         boolean ret = attr != null && NUMERIC_ATTRIBUTES.containsKey(attr.getTypeName());
         if(ret) {
             context.setNumericTypeFormatter(NUMERIC_ATTRIBUTES.get(attr.getTypeName()));

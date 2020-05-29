@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 import java.util.*;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
@@ -39,7 +39,7 @@ import org.apache.atlas.repository.store.graph.v2.AtlasTypeDefGraphStoreV2;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeRegistry.AtlasTransientTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
@@ -62,7 +62,7 @@ public class RestUtilsTest {
     public void testBidirectonalCompositeMappingConsistent() throws AtlasBaseException {
 
         ClassTypeDefinition dbV1Type = TypesUtil.createClassTypeDef("database", "", Collections.emptySet(),
-                                           new AttributeDefinition("tables", AtlasBaseTypeDef.getArrayTypeName("table"),
+                                           new AttributeDefinition("tables", BaseAtlasBaseTypeDef.getArrayTypeName("table"),
                                                                    Multiplicity.OPTIONAL, true, "containingDatabase"));
 
         ClassTypeDefinition tableV1Type = TypesUtil.createClassTypeDef("table", "", Collections.emptySet(),
@@ -77,7 +77,7 @@ public class RestUtilsTest {
     // in "table" attribute in "database".  See ATLAS-1528.
     public void testBidirectonalNonCompositeMappingConsistent() throws AtlasBaseException {
         ClassTypeDefinition dbV1Type = TypesUtil.createClassTypeDef("database", "", Collections.emptySet(),
-                                        new AttributeDefinition("tables", AtlasBaseTypeDef.getArrayTypeName("table"),
+                                        new AttributeDefinition("tables", BaseAtlasBaseTypeDef.getArrayTypeName("table"),
                                                                 Multiplicity.OPTIONAL, false, "containingDatabase"));
 
         ClassTypeDefinition tableV1Type = TypesUtil.createClassTypeDef("table", "", Collections.emptySet(),
@@ -119,7 +119,7 @@ public class RestUtilsTest {
         AtlasStructType          structType   = (AtlasStructType) registry.getType(structDef.getName());
         AtlasAttribute           attribute    = structType.getAttribute(attributeDef.getName());
         String                   attribJson   = AtlasStructDefStoreV2.toJsonFromAttribute(attribute);
-        Map                      attrInfo     = AtlasType.fromJson(attribJson, Map.class);
+        Map                      attrInfo     = BaseAtlasType.fromJson(attribJson, Map.class);
 
         Assert.assertEquals(attrInfo.get("isComposite"), compositeExpected);
 
@@ -183,7 +183,7 @@ public class RestUtilsTest {
     private List<AtlasEntityDef> convertV1toV2(List<ClassTypeDefinition> types) throws AtlasBaseException {
         List<ClassTypeDefinition> classTypeList       = new ArrayList(types);
         TypesDef                  toConvert           = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), classTypeList);
-        String                    json                = AtlasType.toV1Json(toConvert);
+        String                    json                = BaseAtlasType.toV1Json(toConvert);
         AtlasTypeRegistry         emptyRegistry       = new AtlasTypeRegistry();
         AtlasTypesDef             converted           = TypeConverterUtil.toAtlasTypesDef(json, emptyRegistry);
         List<AtlasEntityDef>      convertedEntityDefs = converted.getEntityDefs();

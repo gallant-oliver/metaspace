@@ -25,7 +25,7 @@ import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 
 import java.util.Objects;
@@ -41,7 +41,7 @@ public class AttributeMutationContext {
     /**
      * Overriding type for which elements are being mapped
      */
-    private AtlasType currentElementType;
+    private BaseAtlasType currentElementType;
 
     /**
      * Current attribute value/entity/Struct instance
@@ -66,7 +66,7 @@ public class AttributeMutationContext {
     }
 
     public AttributeMutationContext(EntityOperation op, AtlasVertex referringVertex, AtlasAttribute attribute, Object value,
-                                    String vertexProperty, AtlasType currentElementType, AtlasEdge currentEdge) {
+                                    String vertexProperty, BaseAtlasType currentElementType, AtlasEdge currentEdge) {
         this.op                 = op;
         this.referringVertex    = referringVertex;
         this.attribute          = attribute;
@@ -114,11 +114,11 @@ public class AttributeMutationContext {
         return attribute.getAttributeDef();
     }
 
-    public AtlasType getAttrType() {
+    public BaseAtlasType getAttrType() {
         return currentElementType == null ? attribute.getAttributeType() : currentElementType;
     }
 
-    public AtlasType getCurrentElementType() {
+    public BaseAtlasType getCurrentElementType() {
         return currentElementType;
     }
 
@@ -134,7 +134,7 @@ public class AttributeMutationContext {
         return existingEdge;
     }
 
-    public void setElementType(final AtlasType attrType) {
+    public void setElementType(final BaseAtlasType attrType) {
         this.currentElementType = attrType;
     }
 

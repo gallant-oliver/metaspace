@@ -33,13 +33,15 @@ public class AtlasEdgeLabel {
     public AtlasEdgeLabel(String edgeLabel) {
         String labelWithoutPrefix = edgeLabel.substring(GraphHelper.EDGE_LABEL_PREFIX.length());
         String[] fields = labelWithoutPrefix.split("\\.", 3);
-        if (fields.length < 2 || fields.length > 3) {
+        int minLength = 2;
+        int maxLength = 3;
+        if (fields.length < minLength || fields.length > maxLength) {
             throw new IllegalArgumentException("Invalid edge label " + edgeLabel + 
                 ": expected 2 or 3 label components but found " + fields.length); 
         }
         typeName_ = fields[0];
         attributeName_ = fields[1];
-        if (fields.length == 3) {
+        if (fields.length == maxLength) {
             mapKey_ = fields[2];
             qualifiedMapKey_ = labelWithoutPrefix;
             qualifiedAttributeName_ = typeName_ + '.' + attributeName_;

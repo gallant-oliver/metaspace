@@ -45,7 +45,7 @@ public class SSOFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
     private String loginURL = SSOConfig.getLoginURL();
-    private String TICKET_KEY = "X-SSO-FullticketId";
+    private static String TICKET_KEY = "X-SSO-FullticketId";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -70,7 +70,8 @@ public class SSOFilter implements Filter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            if (httpServletRequest.getMethod().equals("OPTIONS")) {
+            String options = "OPTIONS";
+            if (options.equals(httpServletRequest.getMethod())) {
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -107,10 +108,10 @@ public class SSOFilter implements Filter {
         }finally {
             long timeTaken = System.currentTimeMillis() - startTime;
             AuditLog auditLog = new AuditLog(userName, getIpAdress(httpServletRequest), httpServletRequest.getMethod(), Servlets.getRequestURL(httpServletRequest), date, httpServletResponse.getStatus(), timeTaken);
-            if(requestURL.contains("/roles/sso/incr")) {
-                return;
+            String rolePath = "/roles/sso/incr";
+            if(!requestURL.contains(rolePath)) {
+                AUDIT_LOG.info(auditLog.toString());
             }
-            AUDIT_LOG.info(auditLog.toString());
         }
 
 
@@ -142,16 +143,17 @@ public class SSOFilter implements Filter {
 
     private String getIpAdress(HttpServletRequest request) {
         String ip = request.getHeader("x-forwarded-for");
-        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        String unknown = "unknown";
+        if (StringUtils.isEmpty(ip) || unknown.equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         }
-        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtils.isEmpty(ip) || unknown.equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_CLIENT_IP");
         }
-        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtils.isEmpty(ip) || unknown.equalsIgnoreCase(ip)) {
             ip = request.getHeader("HTTP_X_FORWARDED_FOR");
         }
-        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+        if (StringUtils.isEmpty(ip) || unknown.equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
         return ip;

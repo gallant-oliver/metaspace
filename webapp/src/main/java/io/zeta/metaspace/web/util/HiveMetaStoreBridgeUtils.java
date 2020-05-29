@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.model.TableSchema;
 import org.apache.atlas.*;
@@ -97,7 +97,7 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     private Configuration atlasConf        = null;
     private final boolean convertHdfsPathToLowerCase;
     private final AtlasGraph graph;
-    private final MetaspaceGremlinQueryProvider gremlinQueryProvider;
+    private final AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider;
     private final EntityGraphRetriever entityRetriever;
     private final AtlasTypeRegistry atlasTypeRegistry;
     private final AtlasEntityStore     atlasEntityStore;
@@ -130,7 +130,7 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         clusterName = atlasConf.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
         convertHdfsPathToLowerCase = atlasConf.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true);
         this.graph = atlasGraph;
-        this.gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
+        this.gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
         this.entityRetriever = new EntityGraphRetriever(typeRegistry);
         this.atlasTypeRegistry = typeRegistry;
         this.atlasEntityStore = atlasEntityStore;
@@ -934,7 +934,8 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
     private boolean isTableWithDatabaseName(String tableName) {
         boolean ret = false;
-        if (tableName.contains(".")) {
+        String sub = ".";
+        if (tableName.contains(sub)) {
             ret = true;
         }
         return ret;

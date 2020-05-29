@@ -44,7 +44,7 @@ import java.util.Properties;
 
 @Component
 public class AtlasLdapAuthenticationProvider extends
-        AtlasAbstractAuthenticationProvider {
+        BaseAtlasAbstractAuthenticationProvider {
     private static Logger LOG = LoggerFactory.getLogger(AtlasLdapAuthenticationProvider.class);
     private boolean isDebugEnabled = LOG.isDebugEnabled();
 

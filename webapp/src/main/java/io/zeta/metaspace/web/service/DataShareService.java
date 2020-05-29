@@ -43,6 +43,7 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.Pool;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.security.SecuritySearch;
@@ -353,7 +354,7 @@ public class DataShareService {
             return true;
         }
         User user = userDAO.getUserInfo(userId);
-        if(user.getRoles()!=null && user.getRoles().contains("1")) {
+        if(user.getRoles()!=null && user.getRoles().contains(SystemRole.ADMIN.getCode())) {
             return true;
         }
         return false;
@@ -478,16 +479,18 @@ public class DataShareService {
             String jsonStr = gson.toJson(content, APIContent.class);
             String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
             int retryCount = 0;
-            String error_id = null;
-            String error_reason = null;
-            while(retryCount < 3) {
+            String errorId = null;
+            String errorReason = null;
+            int retries = 3;
+            String proper = "0.0";
+            while(retryCount < retries) {
                 String res = OKHttpClient.doPost(mobiusURL, jsonStr);
                 LOG.info(res);
                 if(Objects.nonNull(res)) {
                     Map response = convertMobiusResponse(res);
-                    error_id = String.valueOf(response.get("error-id"));
-                    error_reason = String.valueOf(response.get("reason"));
-                    if ("0.0".equals(error_id)) {
+                    errorId = String.valueOf(response.get("error-id"));
+                    errorReason = String.valueOf(response.get("reason"));
+                    if (proper.equals(errorId)) {
                         break;
                     } else {
                         retryCount++;
@@ -496,8 +499,9 @@ public class DataShareService {
                     retryCount++;
                 }
             }
-            if(!"0.0".equals(error_id)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + error_reason);
+
+            if(!proper.equals(errorId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + errorReason);
             }
 
             return shareDAO.updatePublishStatus(guidList, true);
@@ -511,7 +515,8 @@ public class DataShareService {
 
     public void checkTableStatus(String apiGuid) throws AtlasBaseException {
         String status = shareDAO.getTableStatusByAPIGuid(apiGuid);
-        if("DELETED".equals(status.trim())) {
+        String deletedStatus = "DELETED";
+        if(deletedStatus.equals(status.trim())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
         }
     }
@@ -552,24 +557,26 @@ public class DataShareService {
             String jsonStr = gson.toJson(param, Map.class);
 
             int retryCount = 0;
-            String error_id = null;
-            String error_reason = null;
-            while(retryCount < 3) {
+            String errorId = null;
+            String errorReason = null;
+            int retries = 3;
+            String proper = "0.0";
+            while(retryCount < retries) {
                 String res = OKHttpClient.doPut(mobiusURL, jsonStr);
                 LOG.info(res);
                 if(Objects.nonNull(res)) {
                     Map response = convertMobiusResponse(res);
-                    error_id = String.valueOf(response.get("error-id"));
-                    error_reason = String.valueOf(response.get("reason"));
-                    if ("0.0".equals(error_id)) {
+                    errorId = String.valueOf(response.get("error-id"));
+                    errorReason = String.valueOf(response.get("reason"));
+                    if (proper.equals(errorId)) {
                         break;
                     } else {
                         retryCount++;
                     }
                 }
             }
-            if(!"0.0".equals(error_id)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + error_reason);
+            if(!proper.equals(errorId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + errorReason);
             }
             return shareDAO.updatePublishStatus(apiGuidList, false);
         } catch (AtlasBaseException e) {
@@ -583,12 +590,12 @@ public class DataShareService {
     public APIContent generateAPIContent(List<String> guidList,String tenantId) throws Exception {
         APIContent content = new APIContent();
         List<APIContent.APIDetail> contentList = new ArrayList<>();
-        for(String api_id : guidList) {
-            APIInfo info = shareDAO.getAPIInfoByGuid(api_id);
+        for(String apiId : guidList) {
+            APIInfo info = shareDAO.getAPIInfoByGuid(apiId);
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
             if(sourceType == APIInfo.SourceType.HIVE) {
-                checkTableStatus(api_id);
-                checkApiPermission(api_id,tenantId);
+                checkTableStatus(apiId);
+                checkApiPermission(apiId,tenantId);
                 String tableGuid = info.getTableGuid();
                 Table table = shareDAO.getTableByGuid(tableGuid);
                 info.setTableName(table.getTableName());
@@ -596,20 +603,20 @@ public class DataShareService {
                 info.setTableDisplayName(StringUtils.isNotEmpty(table.getDisplayName()) ? table.getDisplayName() : table.getTableName());
             }
             String tableGuid = info.getTableGuid();
-            String api_name = info.getName();
-            String api_desc = info.getDescription();
-            String api_version = info.getVersion();
+            String apiName = info.getName();
+            String apiDesc = info.getDescription();
+            String apiVersion = info.getVersion();
             List<String> owners = new ArrayList<>();
             User user = userDAO.getUserInfo(info.getManager());
             owners.add(user.getAccount());
             List<APIContent.APIDetail.Organization> organizations = getOrganization(tableGuid);
-            String api_catalog = shareDAO.getGroupByAPIGuid(api_id);
-            String create_time = info.getGenerateTime();
+            String apiCatalog = shareDAO.getGroupByAPIGuid(apiId);
+            String createTime = info.getGenerateTime();
             String uri = getURL(info);
             String method = info.getRequestMode();
-            String upstream_url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace";
-            String swagger_content = generateSwaggerContent(info);
-            APIContent.APIDetail detail = new APIContent.APIDetail(api_id, api_name, api_desc, api_version, owners, organizations, api_catalog, create_time, uri, method, upstream_url, swagger_content);
+            String upstreamUrl = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace";
+            String swaggerContent = generateSwaggerContent(info);
+            APIContent.APIDetail detail = new APIContent.APIDetail(apiId, apiName, apiDesc, apiVersion, owners, organizations, apiCatalog, createTime, uri, method, upstreamUrl, swaggerContent);
             contentList.add(detail);
         }
         content.setApis_detail(contentList);
@@ -645,7 +652,8 @@ public class DataShareService {
     public static Scheme getRequestMode() {
         String url = MetaspaceConfig.getMetaspaceUrl();
         String prefix = url.substring(0, url.indexOf("://"));
-        if("https".equals(prefix)) {
+        String https = "https";
+        if(https.equals(prefix)) {
             return Scheme.HTTPS;
         }
         return Scheme.HTTP;
@@ -900,7 +908,8 @@ public class DataShareService {
                 String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
                 dbName = shareDAO.querydbNameByGuid(tableGuid);
                 tableName = shareDAO.queryTableNameByGuid(tableGuid);
-                if("DELETED".equals(tableStatus)) {
+                String deletedStatus = "DELETED";
+                if(deletedStatus.equals(tableStatus)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
                 }
             } else if(parameter instanceof OracleQueryParameter) {
@@ -1231,7 +1240,8 @@ public class DataShareService {
             }
             Long count = Long.parseLong(resultMap.get("queryCount").toString());
             //数据格式转换
-            if(acceptHeader.contains("xml")) {
+            String xml = "xml";
+            if(acceptHeader.contains(xml)) {
                 XmlQueryResult queryResult = new XmlQueryResult();
                 XmlQueryResult.QueryData queryData = new XmlQueryResult.QueryData();
                 queryData.setData(queryDataList);
@@ -1395,8 +1405,9 @@ public class DataShareService {
                 securitySearch.setTenantId(tenantId);
                 PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
                 for (UserAndModule userAndModule:userAndModules.getLists()){
-                    if (userAndModule.getToolRoleResources()==null //不为空
-                        ||!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASHARE.getTenantModule().equalsIgnoreCase(module.getRoleName()))){//含有数据分享模块
+                    boolean isDataShare = !userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASHARE.getTenantModule().equalsIgnoreCase(module.getRoleName()));
+                    if (userAndModule.getToolRoleResources()==null
+                        ||isDataShare){//含有数据分享模块
                         continue;
                     }
                     User user = userDAO.getUserByName(userAndModule.getUserName(),userAndModule.getEmail());
@@ -1464,6 +1475,7 @@ public class DataShareService {
                     countSet = OracleJdbcUtils.getColumnCount(conn, schemaName, tableName);
                     break;
                 }
+                default:break;
             }
             result = extractResultSetData(dataSet, conn);
             long totalSize = extractSizeData(countSet);

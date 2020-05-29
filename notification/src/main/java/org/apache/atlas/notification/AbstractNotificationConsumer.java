@@ -24,9 +24,9 @@ import org.apache.kafka.common.TopicPartition;
  * Abstract notification consumer.
  */
 public abstract class AbstractNotificationConsumer<T> implements NotificationConsumer<T> {
-    protected final AtlasNotificationMessageDeserializer<T> deserializer;
+    protected final BaseAtlasNotificationMessageDeserializer<T> deserializer;
 
-    protected AbstractNotificationConsumer(AtlasNotificationMessageDeserializer<T> deserializer) {
+    protected AbstractNotificationConsumer(BaseAtlasNotificationMessageDeserializer<T> deserializer) {
         this.deserializer = deserializer;
     }
 

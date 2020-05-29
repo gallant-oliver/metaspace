@@ -44,7 +44,7 @@ import org.apache.atlas.v1.model.typedef.EnumTypeDefinition.EnumValue;
 import org.apache.atlas.notification.NotificationConsumer;
 import org.apache.atlas.kafka.*;
 import org.apache.atlas.v1.model.notification.EntityNotificationV1;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AuthenticationUtil;
@@ -212,7 +212,7 @@ public abstract class BaseResourceIT {
     }
 
     protected List<String> createType(String typesAsJSON) throws Exception {
-        return createType(AtlasType.fromV1Json(typesAsJSON, TypesDef.class));
+        return createType(BaseAtlasType.fromV1Json(typesAsJSON, TypesDef.class));
     }
 
     protected Id createInstance(Referenceable referenceable) throws Exception {
@@ -299,21 +299,21 @@ public abstract class BaseResourceIT {
     protected void createTypeDefinitionsV1() throws Exception {
         ClassTypeDefinition dbClsDef = TypesUtil
                 .createClassTypeDef(DATABASE_TYPE, null, null,
-                        TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef(DESCRIPTION, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("locationUri", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("owner", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", AtlasBaseTypeDef.ATLAS_TYPE_INT),
-                        new AttributeDefinition("tables", AtlasBaseTypeDef.getArrayTypeName(HIVE_TABLE_TYPE),
-                                Multiplicity.OPTIONAL, false, "db")
+                                    TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    TypesUtil.createRequiredAttrDef(DESCRIPTION, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("locationUri", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("owner", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT),
+                                    new AttributeDefinition("tables", BaseAtlasBaseTypeDef.getArrayTypeName(HIVE_TABLE_TYPE),
+                                                            Multiplicity.OPTIONAL, false, "db")
                 );
 
         ClassTypeDefinition columnClsDef = TypesUtil
-                .createClassTypeDef(COLUMN_TYPE, null, null, attrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("dataType", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("comment", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                .createClassTypeDef(COLUMN_TYPE, null, null, attrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("dataType", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("comment", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         StructTypeDefinition structTypeDefinition = new StructTypeDefinition("serdeType", null,
-                Arrays.asList(new AttributeDefinition[]{TypesUtil.createRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef("serde", AtlasBaseTypeDef.ATLAS_TYPE_STRING)}));
+                Arrays.asList(new AttributeDefinition[]{TypesUtil.createRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef("serde", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING)}));
 
         EnumValue values[] = {new EnumValue("MANAGED", 1), new EnumValue("EXTERNAL", 2),};
 
@@ -321,28 +321,28 @@ public abstract class BaseResourceIT {
 
         ClassTypeDefinition tblClsDef = TypesUtil
                 .createClassTypeDef(HIVE_TABLE_TYPE, null, Collections.singleton("DataSet"),
-                        attrDef("owner", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("lastAccessTime", AtlasBaseTypeDef.ATLAS_TYPE_DATE),
-                        attrDef("temporary", AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN),
-                        new AttributeDefinition("db", DATABASE_TYPE, Multiplicity.OPTIONAL, true, "tables"),
-                        new AttributeDefinition("columns", AtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
-                                Multiplicity.OPTIONAL, true, null),
-                        new AttributeDefinition("tableType", "tableType", Multiplicity.OPTIONAL, false, null),
-                        new AttributeDefinition("serde1", "serdeType", Multiplicity.OPTIONAL, false, null),
-                        new AttributeDefinition("serde2", "serdeType", Multiplicity.OPTIONAL, false, null));
+                                    attrDef("owner", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("lastAccessTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE),
+                                    attrDef("temporary", BaseAtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN),
+                                    new AttributeDefinition("db", DATABASE_TYPE, Multiplicity.OPTIONAL, true, "tables"),
+                                    new AttributeDefinition("columns", BaseAtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
+                                                            Multiplicity.OPTIONAL, true, null),
+                                    new AttributeDefinition("tableType", "tableType", Multiplicity.OPTIONAL, false, null),
+                                    new AttributeDefinition("serde1", "serdeType", Multiplicity.OPTIONAL, false, null),
+                                    new AttributeDefinition("serde2", "serdeType", Multiplicity.OPTIONAL, false, null));
 
         ClassTypeDefinition loadProcessClsDef = TypesUtil
                 .createClassTypeDef(HIVE_PROCESS_TYPE, null, Collections.singleton("Process"),
-                        attrDef("userName", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("startTime", AtlasBaseTypeDef.ATLAS_TYPE_INT),
-                        attrDef("endTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("queryText", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryPlan", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryId", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryGraph", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED));
+                                    attrDef("userName", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("startTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT),
+                                    attrDef("endTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("queryText", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryPlan", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryId", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryGraph", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED));
 
         TraitTypeDefinition classificationTrait = TypesUtil
                 .createTraitTypeDef("classification", null, Collections.<String>emptySet(),
-                        TypesUtil.createRequiredAttrDef("tag", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createRequiredAttrDef("tag", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         TraitTypeDefinition piiTrait       = TypesUtil.createTraitTypeDef(PII_TAG, null, Collections.<String>emptySet());
         TraitTypeDefinition phiTrait       = TypesUtil.createTraitTypeDef(PHI_TAG, null, Collections.<String>emptySet());
@@ -376,10 +376,10 @@ public abstract class BaseResourceIT {
                 AtlasTypeUtil.createOptionalAttrDef("createTime", "int"),
                 //there is a serializ
                 new AtlasAttributeDef("randomTable",
-                        AtlasBaseTypeDef.getArrayTypeName(HIVE_TABLE_TYPE_V2),
-                        true,
-                        Cardinality.SET,
-                        0, -1, false, true, false, Collections.singletonList(isCompositeSourceConstraint))
+                                      BaseAtlasBaseTypeDef.getArrayTypeName(HIVE_TABLE_TYPE_V2),
+                                      true,
+                                      Cardinality.SET,
+                                      0, -1, false, true, false, Collections.singletonList(isCompositeSourceConstraint))
         );
 
         AtlasEntityDef columnClsDef = AtlasTypeUtil
@@ -412,7 +412,7 @@ public abstract class BaseResourceIT {
                                 0, 1, false, true, false, Collections.singletonList(isCompositeTargetConstraint)),
 
                         //some tests don't set the columns field or set it to null...
-                        AtlasTypeUtil.createOptionalAttrDef("columns", AtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE_V2)),
+                        AtlasTypeUtil.createOptionalAttrDef("columns", BaseAtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE_V2)),
                         AtlasTypeUtil.createOptionalAttrDef("tableType", "tableType"),
                         AtlasTypeUtil.createOptionalAttrDef("serde1", "serdeType"),
                         AtlasTypeUtil.createOptionalAttrDef("serde2", "serdeType"));

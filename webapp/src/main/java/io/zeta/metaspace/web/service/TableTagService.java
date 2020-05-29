@@ -44,7 +44,7 @@ public class TableTagService {
             tags = tableTagDAO.getTags(query, offset, limit,tenantId);
         return tags;
     }
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addTable2Tag(Table table, List<String> tagId){
         tableTagDAO.delAllTable2Tag(table.getTableId());
         for (String s : tagId) {

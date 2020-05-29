@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.atlas.model.PList;
 import org.apache.atlas.model.SearchFilter.SortType;
 import org.apache.atlas.model.glossary.relations.AtlasTermAssignmentHeader;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -362,10 +362,10 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
         dumpObjects(relationshipAttributes, sb);
         sb.append("]");
         sb.append(", classifications=[");
-        AtlasBaseTypeDef.dumpObjects(classifications, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(classifications, sb);
         sb.append(']');
         sb.append(", meanings=[");
-        AtlasBaseTypeDef.dumpObjects(meanings, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(meanings, sb);
         sb.append(']');
         sb.append('}');
 
@@ -512,7 +512,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
 
             sb.append("AtlasEntityExtInfo{");
             sb.append("referredEntities={");
-            AtlasBaseTypeDef.dumpObjects(referredEntities, sb);
+            BaseAtlasBaseTypeDef.dumpObjects(referredEntities, sb);
             sb.append("}");
             sb.append("}");
 
@@ -724,7 +724,7 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
 
             sb.append("AtlasEntitiesWithExtInfo{");
             sb.append("entities=[");
-            AtlasBaseTypeDef.dumpObjects(entities, sb);
+            BaseAtlasBaseTypeDef.dumpObjects(entities, sb);
             sb.append("],");
             super.toString(sb);
             sb.append("}");

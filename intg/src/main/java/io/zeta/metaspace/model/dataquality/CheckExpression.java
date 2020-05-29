@@ -49,7 +49,7 @@ public enum CheckExpression {
     public static CheckExpression getExpressionByCode(Integer code) {
         CheckExpression defaultExpression = CheckExpression.EQU;
         for(CheckExpression ce : CheckExpression.values()) {
-            if(ce.code == code)
+            if(ce.code.equals(code))
                 return ce;
         }
         return defaultExpression;
