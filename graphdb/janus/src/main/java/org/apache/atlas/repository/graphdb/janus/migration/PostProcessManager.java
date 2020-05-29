@@ -19,9 +19,9 @@
 package org.apache.atlas.repository.graphdb.janus.migration;
 
 import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemBuilder;
-import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemConsumer;
+import org.apache.atlas.repository.graphdb.janus.migration.pc.BaseWorkItemConsumer;
 import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemManager;
-import org.apache.atlas.repository.graphdb.janus.migration.postProcess.PostProcessListProperty;
+import org.apache.atlas.repository.graphdb.janus.migration.postprocess.PostProcessListProperty;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
@@ -36,7 +36,7 @@ import static org.apache.atlas.repository.Constants.ENTITY_TYPE_PROPERTY_KEY;
 import static org.apache.atlas.repository.Constants.TYPENAME_PROPERTY_KEY;
 
 public class PostProcessManager {
-    static class Consumer extends WorkItemConsumer<Object> {
+    static class Consumer extends BaseWorkItemConsumer<Object> {
         private static final Logger LOG = LoggerFactory.getLogger(Consumer.class);
 
         private final Graph                                  bulkLoadGraph;

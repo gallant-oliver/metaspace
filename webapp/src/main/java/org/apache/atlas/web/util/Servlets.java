@@ -74,13 +74,13 @@ public final class Servlets {
         if (!StringUtils.isEmpty(user)) {
             return user;
         }
-
-        user = httpRequest.getParameter("user.name"); // available in query-param
+        // available in query-param
+        user = httpRequest.getParameter("user.name");
         if (!StringUtils.isEmpty(user)) {
             return user;
         }
-
-        user = httpRequest.getHeader("Remote-User"); // backwards-compatibility
+        // backwards-compatibility
+        user = httpRequest.getHeader("Remote-User");
         if (!StringUtils.isEmpty(user)) {
             return user;
         }

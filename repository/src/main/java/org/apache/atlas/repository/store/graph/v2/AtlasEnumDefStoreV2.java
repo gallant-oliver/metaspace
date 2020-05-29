@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * EnumDef store in v2 format.
  */
-class AtlasEnumDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasEnumDef> {
+class AtlasEnumDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasEnumDef> {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasEnumDefStoreV2.class);
 
     public AtlasEnumDefStoreV2(AtlasTypeDefGraphStoreV2 typeDefStore, AtlasTypeRegistry typeRegistry) {

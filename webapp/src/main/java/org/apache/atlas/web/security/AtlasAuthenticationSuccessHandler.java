@@ -44,7 +44,8 @@ public class AtlasAuthenticationSuccessHandler implements AuthenticationSuccessH
         JSONObject json = new JSONObject();
         json.put("msgDesc", "Success");
 
-        if (request.getSession() != null) { // incase of form based login mark it as local login in session
+        // incase of form based login mark it as local login in session
+        if (request.getSession() != null) {
             request.getSession().setAttribute("locallogin","true");
             request.getServletContext().setAttribute(request.getSession().getId(), "locallogin");
         }

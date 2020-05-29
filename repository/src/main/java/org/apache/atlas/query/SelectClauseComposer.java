@@ -32,7 +32,8 @@ class SelectClauseComposer {
     public boolean  isSelectNoop;
 
     private String[]            labels;
-    private String[]            attributes; // Qualified names
+    // Qualified names
+    private String[]            attributes;
     private String[]            items;
     private Map<String, String> itemAssignmentExprs;
 

@@ -27,11 +27,11 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.typedef.*;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.commons.configuration.Configuration;
@@ -135,7 +135,7 @@ public class QuickStart {
     void createTypes() throws Exception {
         TypesDef typesDef = createTypeDefinitions();
 
-        String typesAsJSON = AtlasType.toV1Json(typesDef);
+        String typesAsJSON = BaseAtlasType.toV1Json(typesDef);
         System.out.println("typesAsJSON = " + typesAsJSON);
         metadataServiceClient.createType(typesAsJSON);
 
@@ -146,45 +146,45 @@ public class QuickStart {
     TypesDef createTypeDefinitions() throws Exception {
         ClassTypeDefinition dbClsDef = TypesUtil
                 .createClassTypeDef(DATABASE_TYPE, DATABASE_TYPE, null,
-                        TypesUtil.createUniqueRequiredAttrDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("description", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("locationUri", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("owner", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG));
+                                    TypesUtil.createUniqueRequiredAttrDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("description", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("locationUri", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("owner", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG));
 
         ClassTypeDefinition storageDescClsDef = TypesUtil
-                .createClassTypeDef(STORAGE_DESC_TYPE, STORAGE_DESC_TYPE, null, attrDef("location", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("inputFormat", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("outputFormat", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("compressed", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED, false, null));
+                .createClassTypeDef(STORAGE_DESC_TYPE, STORAGE_DESC_TYPE, null, attrDef("location", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("inputFormat", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("outputFormat", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("compressed", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED, false, null));
 
         ClassTypeDefinition columnClsDef = TypesUtil
-                .createClassTypeDef(COLUMN_TYPE, COLUMN_TYPE, null, attrDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("dataType", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("comment", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                .createClassTypeDef(COLUMN_TYPE, COLUMN_TYPE, null, attrDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("dataType", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("comment", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         ClassTypeDefinition tblClsDef = TypesUtil
                 .createClassTypeDef(TABLE_TYPE, TABLE_TYPE, Collections.singleton("DataSet"),
-                        new AttributeDefinition(DB_ATTRIBUTE, DATABASE_TYPE, Multiplicity.REQUIRED, false, null),
-                        new AttributeDefinition("sd", STORAGE_DESC_TYPE, Multiplicity.REQUIRED, true, null),
-                        attrDef("owner", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("lastAccessTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG), attrDef("retention", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("viewOriginalText", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("viewExpandedText", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("tableType", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        attrDef("temporary", AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN),
-                        new AttributeDefinition(COLUMNS_ATTRIBUTE, AtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
-                                Multiplicity.COLLECTION, true, null));
+                                    new AttributeDefinition(DB_ATTRIBUTE, DATABASE_TYPE, Multiplicity.REQUIRED, false, null),
+                                    new AttributeDefinition("sd", STORAGE_DESC_TYPE, Multiplicity.REQUIRED, true, null),
+                                    attrDef("owner", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("createTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("lastAccessTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG), attrDef("retention", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("viewOriginalText", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("viewExpandedText", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("tableType", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                    attrDef("temporary", BaseAtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN),
+                                    new AttributeDefinition(COLUMNS_ATTRIBUTE, BaseAtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
+                                                            Multiplicity.COLLECTION, true, null));
 
         ClassTypeDefinition loadProcessClsDef = TypesUtil
                 .createClassTypeDef(LOAD_PROCESS_TYPE, LOAD_PROCESS_TYPE, Collections.singleton("Process"),
-                        attrDef("userName", AtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("startTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("endTime", AtlasBaseTypeDef.ATLAS_TYPE_LONG),
-                        attrDef("queryText", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryPlan", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryId", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
-                        attrDef("queryGraph", AtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED));
+                                    attrDef("userName", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING), attrDef("startTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("endTime", BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG),
+                                    attrDef("queryText", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryPlan", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryId", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED),
+                                    attrDef("queryGraph", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, Multiplicity.REQUIRED));
 
         ClassTypeDefinition viewClsDef = TypesUtil
             .createClassTypeDef(VIEW_TYPE, VIEW_TYPE, Collections.singleton("DataSet"),
                 new AttributeDefinition("db", DATABASE_TYPE, Multiplicity.REQUIRED, false, null),
-                new AttributeDefinition("inputTables", AtlasBaseTypeDef.getArrayTypeName(TABLE_TYPE),
-                    Multiplicity.COLLECTION, false, null));
+                new AttributeDefinition("inputTables", BaseAtlasBaseTypeDef.getArrayTypeName(TABLE_TYPE),
+                                        Multiplicity.COLLECTION, false, null));
 
         TraitTypeDefinition dimTraitDef = TypesUtil.createTraitTypeDef("Dimension_v1",  "Dimension Trait", null);
 
@@ -300,7 +300,7 @@ public class QuickStart {
     private Id createInstance(Referenceable referenceable) throws Exception {
         String typeName = referenceable.getTypeName();
 
-        String entityJSON = AtlasType.toV1Json(referenceable);
+        String entityJSON = BaseAtlasType.toV1Json(referenceable);
         System.out.println("Submitting new entity= " + entityJSON);
         List<String> guids = metadataServiceClient.createEntity(entityJSON);
         System.out.println("created instance for type " + typeName + ", guid: " + guids);

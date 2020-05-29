@@ -148,7 +148,7 @@ public class HiveMetaStoreBridge {
                     String         line = null;
 
                     while((line = br.readLine()) != null) {
-                        String val[] = line.split(":");
+                        String[] val = line.split(":");
 
                         if (ArrayUtils.isNotEmpty(val)) {
                             databaseToImport = val[0];
@@ -269,7 +269,7 @@ public class HiveMetaStoreBridge {
         } else if (StringUtils.isEmpty(databaseToImport) && StringUtils.isNotEmpty(tableToImport)) {
             //when database is empty and table is not, then check table has database name in it and import that db and table
             if (isTableWithDatabaseName(tableToImport)) {
-                String val[] = tableToImport.split("\\.");
+                String[] val = tableToImport.split("\\.");
                 if (val.length > 1) {
                     databaseToImport = val[0];
                     tableToImport = val[1];
@@ -961,7 +961,8 @@ public class HiveMetaStoreBridge {
 
     private boolean isTableWithDatabaseName(String tableName) {
         boolean ret = false;
-        if (tableName.contains(".")) {
+        String sub = ".";
+        if (tableName.contains(sub)) {
             ret = true;
         }
         return ret;

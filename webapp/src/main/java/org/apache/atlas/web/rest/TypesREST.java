@@ -19,7 +19,7 @@ package org.apache.atlas.web.rest;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.SearchFilter;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -71,10 +71,10 @@ public class TypesREST {
     @GET
     @Path("/typedef/name/{name}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public AtlasBaseTypeDef getTypeDefByName(@PathParam("name") String name) throws AtlasBaseException {
+    public BaseAtlasBaseTypeDef getTypeDefByName(@PathParam("name") String name) throws AtlasBaseException {
         Servlets.validateQueryParamLength("name", name);
 
-        AtlasBaseTypeDef ret = typeDefStore.getByName(name);
+        BaseAtlasBaseTypeDef ret = typeDefStore.getByName(name);
 
         return ret;
     }
@@ -89,10 +89,10 @@ public class TypesREST {
     @GET
     @Path("/typedef/guid/{guid}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public AtlasBaseTypeDef getTypeDefByGuid(@PathParam("guid") String guid) throws AtlasBaseException {
+    public BaseAtlasBaseTypeDef getTypeDefByGuid(@PathParam("guid") String guid) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
 
-        AtlasBaseTypeDef ret = typeDefStore.getByGuid(guid);
+        BaseAtlasBaseTypeDef ret = typeDefStore.getByGuid(guid);
 
         return ret;
     }

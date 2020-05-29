@@ -85,8 +85,9 @@ public class UserDao {
         }
         String password = "";
         String role = "";
-        String dataArr[] = userdetailsStr.split("::");
-        if (dataArr != null && dataArr.length == 2) {
+        String[] dataArr = userdetailsStr.split("::");
+        int length = 2;
+        if (dataArr != null && dataArr.length == length) {
             role = dataArr[0];
             password = dataArr[1];
         } else {

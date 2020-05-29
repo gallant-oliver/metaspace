@@ -22,7 +22,6 @@ import java.sql.Timestamp;
 
 public class UserGroupListAndSearchResult {
     private String id;
-    // private String tenantId;
     private String name;
     private String description;
     private String member;

@@ -4,24 +4,24 @@ import java.io.Serializable;
 
 public class TablePermission implements Serializable {
     //读
-    private boolean READ ;
+    private boolean read ;
     //写
-    private boolean WRITE ;
+    private boolean write ;
 
-    public boolean isREAD() {
-        return READ;
+    public boolean isRead() {
+        return read;
     }
 
-    public void setREAD(boolean READ) {
-        this.READ = READ;
+    public void setRead(boolean read) {
+        this.read = read;
     }
 
-    public boolean isWRITE() {
-        return WRITE;
+    public boolean isWrite() {
+        return write;
     }
 
-    public void setWRITE(boolean WRITE) {
-        this.WRITE = WRITE;
+    public void setWrite(boolean write) {
+        this.write = write;
     }
 
 }

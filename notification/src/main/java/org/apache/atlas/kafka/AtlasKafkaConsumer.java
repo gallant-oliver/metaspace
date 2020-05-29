@@ -18,7 +18,7 @@
 package org.apache.atlas.kafka;
 
 import org.apache.atlas.notification.AbstractNotificationConsumer;
-import org.apache.atlas.notification.AtlasNotificationMessageDeserializer;
+import org.apache.atlas.notification.BaseAtlasNotificationMessageDeserializer;
 import org.apache.atlas.notification.NotificationInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public class AtlasKafkaConsumer<T> extends AbstractNotificationConsumer<T> {
         this(notificationType.getDeserializer(), kafkaConsumer, autoCommitEnabled, pollTimeoutMilliSeconds);
     }
 
-    public AtlasKafkaConsumer(AtlasNotificationMessageDeserializer<T> deserializer, KafkaConsumer kafkaConsumer, boolean autoCommitEnabled, long pollTimeoutMilliSeconds) {
+    public AtlasKafkaConsumer(BaseAtlasNotificationMessageDeserializer<T> deserializer, KafkaConsumer kafkaConsumer, boolean autoCommitEnabled, long pollTimeoutMilliSeconds) {
         super(deserializer);
 
         this.autoCommitEnabled       = autoCommitEnabled;

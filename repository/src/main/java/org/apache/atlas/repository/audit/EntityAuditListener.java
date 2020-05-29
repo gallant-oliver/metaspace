@@ -28,7 +28,7 @@ import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -90,7 +90,7 @@ public class EntityAuditListener implements EntityChangeListener {
         if (traits != null) {
             for (Struct trait : traits) {
                 EntityAuditEvent event = createEvent(entity, EntityAuditAction.TAG_ADD,
-                                                     "Added trait: " + AtlasType.toV1Json(trait));
+                                                     "Added trait: " + BaseAtlasType.toV1Json(trait));
 
                 auditRepository.putEventsV1(event);
             }
@@ -113,7 +113,7 @@ public class EntityAuditListener implements EntityChangeListener {
         if (traits != null) {
             for (Struct trait : traits) {
                 EntityAuditEvent event = createEvent(entity, EntityAuditAction.TAG_UPDATE,
-                                                     "Updated trait: " + AtlasType.toV1Json(trait));
+                                                     "Updated trait: " + BaseAtlasType.toV1Json(trait));
 
                 auditRepository.putEventsV1(event);
             }
@@ -173,12 +173,12 @@ public class EntityAuditListener implements EntityChangeListener {
         Map<String, Object> prunedAttributes = pruneEntityAttributesForAudit(entity);
 
         String auditPrefix  = getV1AuditPrefix(action);
-        String auditString  = auditPrefix + AtlasType.toV1Json(entity);
+        String auditString  = auditPrefix + BaseAtlasType.toV1Json(entity);
         byte[] auditBytes   = auditString.getBytes(StandardCharsets.UTF_8);
         long   auditSize    = auditBytes != null ? auditBytes.length : 0;
         long   auditMaxSize = auditRepository.repositoryMaxSize();
-
-        if (auditMaxSize >= 0 && auditSize > auditMaxSize) { // don't store attributes in audit
+        // don't store attributes in audit
+        if (auditMaxSize >= 0 && auditSize > auditMaxSize) {
             LOG.warn("audit record too long: entityType={}, guid={}, size={}; maxSize={}. entity attribute values not stored in audit",
                     entity.getTypeName(), entity.getId()._getId(), auditSize, auditMaxSize);
 
@@ -186,17 +186,18 @@ public class EntityAuditListener implements EntityChangeListener {
 
             entity.setValues(null);
 
-            auditString = auditPrefix + AtlasType.toV1Json(entity);
-            auditBytes  = auditString.getBytes(StandardCharsets.UTF_8); // recheck auditString size
+            auditString = auditPrefix + BaseAtlasType.toV1Json(entity);
+            // recheck auditString size
+            auditBytes  = auditString.getBytes(StandardCharsets.UTF_8);
             auditSize   = auditBytes != null ? auditBytes.length : 0;
-
-            if (auditMaxSize >= 0 && auditSize > auditMaxSize) { // don't store classifications as well
+            // don't store classifications as well
+            if (auditMaxSize >= 0 && auditSize > auditMaxSize) {
                 LOG.warn("audit record still too long: entityType={}, guid={}, size={}; maxSize={}. audit will have only summary details",
                         entity.getTypeName(), entity.getId()._getId(), auditSize, auditMaxSize);
 
                 Referenceable shallowEntity = new Referenceable(entity.getId(), entity.getTypeName(), null, entity.getSystemAttributes(), null, null);
 
-                auditString = auditPrefix + AtlasType.toJson(shallowEntity);
+                auditString = auditPrefix + BaseAtlasType.toJson(shallowEntity);
             }
 
             entity.setValues(attrValues);

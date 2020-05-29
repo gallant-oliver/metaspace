@@ -40,10 +40,12 @@ public class BooleanParam extends AbstractParam<Boolean> {
 
     @Override
     protected Boolean parse(String input) throws AtlasBaseException {
-        if ("true".equalsIgnoreCase(input)) {
+        String aTrue = "true";
+        if (aTrue.equalsIgnoreCase(input)) {
             return Boolean.TRUE;
         }
-        if ("false".equalsIgnoreCase(input)) {
+        String aFalse = "false";
+        if (aFalse.equalsIgnoreCase(input)) {
             return Boolean.FALSE;
         }
         throw new AtlasBaseException(AtlasErrorCode.PARAMETER_PARSING_FAILED, "Boolean.parse: input=" + input);

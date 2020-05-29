@@ -20,8 +20,8 @@ package org.apache.atlas.repository.graphdb.janus.migration;
 
 import org.apache.tinkerpop.shaded.jackson.databind.JsonNode;
 import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemBuilder;
-import org.apache.atlas.repository.graphdb.janus.migration.pc.WorkItemConsumer;
-import org.apache.atlas.repository.graphdb.janus.migration.JsonNodeParsers.ParseElement;
+import org.apache.atlas.repository.graphdb.janus.migration.pc.BaseWorkItemConsumer;
+import org.apache.atlas.repository.graphdb.janus.migration.JsonNodeParsers.BaseParseElement;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,20 +33,20 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 
 public class JsonNodeProcessManager {
-    private static class Consumer extends WorkItemConsumer<JsonNode> {
+    private static class Consumer extends BaseWorkItemConsumer<JsonNode> {
         private static final Logger LOG = LoggerFactory.getLogger(Consumer.class);
 
         private static final int WAIT_DURATION_AFTER_COMMIT_EXCEPTION = 1000;
 
         private   final Graph              graph;
         protected final Graph              bulkLoadGraph;
-        protected final ParseElement       parseElement;
+        protected final BaseParseElement parseElement;
         private   final long               batchSize;
         private         long               counter;
         private   final MappedElementCache cache;
         private   final List<JsonNode>     nodes = new ArrayList<>();
 
-        public Consumer(BlockingQueue<JsonNode> workQueue, Graph graph, Graph bulkLoadGraph, ParseElement parseElement, long batchSize) {
+        public Consumer(BlockingQueue<JsonNode> workQueue, Graph graph, Graph bulkLoadGraph, BaseParseElement parseElement, long batchSize) {
             super(workQueue);
 
             this.graph         = graph;
@@ -116,7 +116,8 @@ public class JsonNodeProcessManager {
                 try {
                     display("updateSchema: type: {}: ...", typeName);
 
-                    if (schema.containsKey("oid")) {
+                    String key = "oid";
+                    if (schema.containsKey(key)) {
                         parseElement.parse(graph, cache, node);
                     } else {
                         Object id = schema.get("id");
@@ -167,7 +168,7 @@ public class JsonNodeProcessManager {
     }
 
     private static class ResumingConsumer extends Consumer {
-        public ResumingConsumer(BlockingQueue<JsonNode> workQueue, Graph graph, Graph bulkLoadGraph, ParseElement parseElement, long batchSize) {
+        public ResumingConsumer(BlockingQueue<JsonNode> workQueue, Graph graph, Graph bulkLoadGraph, BaseParseElement parseElement, long batchSize) {
             super(workQueue, graph, bulkLoadGraph, parseElement, batchSize);
         }
 
@@ -186,11 +187,11 @@ public class JsonNodeProcessManager {
     private static class ConsumerBuilder implements WorkItemBuilder<Consumer, JsonNode> {
         private final Graph        graph;
         private final Graph        bulkLoadGraph;
-        private final ParseElement parseElement;
+        private final BaseParseElement parseElement;
         private final int          batchSize;
         private final boolean      isResuming;
 
-        public ConsumerBuilder(Graph graph, Graph bulkLoadGraph, ParseElement parseElement, int batchSize, boolean isResuming) {
+        public ConsumerBuilder(Graph graph, Graph bulkLoadGraph, BaseParseElement parseElement, int batchSize, boolean isResuming) {
             this.graph         = graph;
             this.bulkLoadGraph = bulkLoadGraph;
             this.batchSize     = batchSize;
@@ -213,7 +214,7 @@ public class JsonNodeProcessManager {
     }
 
     public static WorkItemManager create(Graph rGraph, Graph bGraph,
-                                         ParseElement parseElement, int numWorkers, int batchSize, boolean isResuming) {
+                                         BaseParseElement parseElement, int numWorkers, int batchSize, boolean isResuming) {
         ConsumerBuilder cb = new ConsumerBuilder(rGraph, bGraph, parseElement, batchSize, isResuming);
 
         return new WorkItemManager(cb, batchSize, numWorkers);

@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class HBaseAtlasCoprocessor extends HBaseAtlasCoprocessorBase {
+public class HBaseAtlasCoprocessor extends AbstractHBaseAtlasCoprocessorBase {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseAtlasCoprocessor.class);
 
     final HBaseAtlasHook hbaseAtlasHook;

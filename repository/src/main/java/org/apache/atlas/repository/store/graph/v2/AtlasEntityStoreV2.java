@@ -33,7 +33,7 @@ import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.EntityGraphDiscovery;
 import org.apache.atlas.repository.store.graph.EntityGraphDiscoveryContext;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v1.HardDeleteHandlerV1;
 import org.apache.atlas.type.*;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
@@ -58,17 +58,15 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("store.EntityStore");
 
 
-    private final DeleteHandlerV1 deleteHandler;
+    private final BaseDeleteHandlerV1 deleteHandler;
     private final AtlasTypeRegistry         typeRegistry;
     private final AtlasEntityChangeNotifier entityChangeNotifier;
     private final EntityGraphMapper         entityGraphMapper;
     private final EntityGraphRetriever      entityRetriever;
 
-    /*@Autowired
-    private HistoryMetadataService metadataService;*/
 
     @Inject
-    public AtlasEntityStoreV2(DeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
+    public AtlasEntityStoreV2(BaseDeleteHandlerV1 deleteHandler, AtlasTypeRegistry typeRegistry,
                               AtlasEntityChangeNotifier entityChangeNotifier, EntityGraphMapper entityGraphMapper) {
         this.deleteHandler        = deleteHandler;
         this.typeRegistry         = typeRegistry;
@@ -322,7 +320,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             throw new AtlasBaseException(AtlasErrorCode.UNKNOWN_ATTRIBUTE, attrName, entity.getTypeName());
         }
 
-        AtlasType   attrType     = attr.getAttributeType();
+        BaseAtlasType attrType     = attr.getAttributeType();
         AtlasEntity updateEntity = new AtlasEntity();
 
         updateEntity.setGuid(guid);
@@ -718,14 +716,17 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     String          guid       = entity.getGuid();
                     AtlasVertex     vertex     = context.getVertex(guid);
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
-                    boolean         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED; // entity status could be updated during import
+                    // entity status could be updated during import
+                    boolean         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED;
                     /*if("hive_table".equals(entity.getTypeName())) {
                         metadataService.storeHistoryMetadata(guid);
                     }*/
-                    if (!hasUpdates && MapUtils.isNotEmpty(entity.getAttributes())) { // check for attribute value change
+                    // check for attribute value change
+                    if (!hasUpdates && MapUtils.isNotEmpty(entity.getAttributes())) {
                         for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {
                             String attributeName = attribute.getName();
-                            if (!entity.getAttributes().containsKey(attributeName)) {  // if value is not provided, current value will not be updated
+                            // if value is not provided, current value will not be updated
+                            if (!entity.getAttributes().containsKey(attributeName)) {
                                 continue;
                             }
 
@@ -734,7 +735,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                             //当guid为null时，通过UniqueAttributes查找guid并设置guid
                             setGuid(newVal);
 
-                            AtlasType attributeType = attribute.getAttributeType();
+                            BaseAtlasType attributeType = attribute.getAttributeType();
                             if (!attributeType.areEqualValues(currVal, newVal, context.getGuidAssignments())) {
                                 hasUpdates = true;
                                 if (LOG.isDebugEnabled()) {
@@ -744,10 +745,11 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                             }
                         }
                     }
-
-                    if (!hasUpdates && MapUtils.isNotEmpty(entity.getRelationshipAttributes())) { // check of relationsship-attribute value change
+                    // check of relationsship-attribute value change
+                    if (!hasUpdates && MapUtils.isNotEmpty(entity.getRelationshipAttributes())) {
                         for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
-                            if (!entity.getRelationshipAttributes().containsKey(attribute.getName())) {  // if value is not provided, current value will not be updated
+                            // if value is not provided, current value will not be updated
+                            if (!entity.getRelationshipAttributes().containsKey(attribute.getName())) {
                                 continue;
                             }
 
@@ -853,8 +855,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
         for (String guid : discoveryContext.getReferencedGuids()) {
             AtlasVertex vertex = discoveryContext.getResolvedEntityVertex(guid);
             AtlasEntity entity = entityStream.getByGuid(guid);
-
-            if (entity != null) { // entity would be null if guid is not in the stream but referenced by an entity in the stream
+            // entity would be null if guid is not in the stream but referenced by an entity in the stream
+            if (entity != null) {
                 if (vertex != null) {
                     if (!isPartialUpdate) {
                         graphDiscoverer.validateAndNormalize(entity);
@@ -865,8 +867,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
 
                     String guidVertex = AtlasGraphUtilsV2.getIdFromVertex(vertex);
-
-                    if (!StringUtils.equals(guidVertex, guid)) { // if entity was found by unique attribute
+                    // if entity was found by unique attribute
+                    if (!StringUtils.equals(guidVertex, guid)) {
                         entity.setGuid(guidVertex);
                     }
 
@@ -917,8 +919,8 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private EntityMutationResponse deleteVertices(Collection<AtlasVertex> deletionCandidates) throws AtlasBaseException {
         EntityMutationResponse response = new EntityMutationResponse();
         RequestContext         req      = RequestContext.get();
-
-        deleteHandler.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
+        // this will update req with list of deleted/updated entities
+        deleteHandler.deleteEntities(deletionCandidates);
 
         for (AtlasObjectId entity : req.getDeletedEntities()) {
             response.addEntity(DELETE, entity);
@@ -934,8 +936,9 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
     private EntityMutationResponse hardDeleteVertices(Collection<AtlasVertex> deletionCandidates) throws AtlasBaseException {
         EntityMutationResponse response = new EntityMutationResponse();
         RequestContext         req      = RequestContext.get();
-        DeleteHandlerV1 delete = new HardDeleteHandlerV1(typeRegistry);
-        delete.deleteEntities(deletionCandidates); // this will update req with list of deleted/updated entities
+        BaseDeleteHandlerV1 delete = new HardDeleteHandlerV1(typeRegistry);
+        // this will update req with list of deleted/updated entities
+        delete.deleteEntities(deletionCandidates);
 
         for (AtlasObjectId entity : req.getDeletedEntities()) {
             response.addEntity(DELETE, entity);

@@ -19,7 +19,7 @@
 package org.apache.atlas;
 
 import org.apache.atlas.model.metrics.AtlasMetrics;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -85,7 +85,8 @@ public class AtlasAdminClient {
 
         int cmdStatus = PROGRAM_ERROR_STATUS;
         if (commandLine.hasOption(STATUS.getOpt())) {
-            atlasClient = initAtlasClient(atlasServerUri, providedUserPassword); // Status is open API, no auth needed
+            // Status is open API, no auth needed
+            atlasClient = initAtlasClient(atlasServerUri, providedUserPassword);
             try {
                 System.out.println(atlasClient.getAdminStatus());
                 cmdStatus = 0;
@@ -94,10 +95,11 @@ public class AtlasAdminClient {
                 printStandardHttpErrorDetails(e);
             }
         } else if (commandLine.hasOption(STATS.getOpt())) {
-            atlasClient = initAtlasClient(atlasServerUri, providedUserPassword); // Stats/metrics is open API, no auth needed
+            // Stats/metrics is open API, no auth needed
+            atlasClient = initAtlasClient(atlasServerUri, providedUserPassword);
             try {
                 AtlasMetrics atlasMetrics = atlasClient.getAtlasMetrics();
-                String json = AtlasType.toJson(atlasMetrics);
+                String json = BaseAtlasType.toJson(atlasMetrics);
                 System.out.println(json);
                 cmdStatus = 0;
             } catch (AtlasServiceException e) {
@@ -122,7 +124,8 @@ public class AtlasAdminClient {
                 basicAuthUsernamePassword = value.split(":");
             }
         }
-        if (basicAuthUsernamePassword == null || basicAuthUsernamePassword.length != 2) {
+        int length = 2;
+        if (basicAuthUsernamePassword == null || basicAuthUsernamePassword.length != length) {
             System.err.println("Invalid credentials. Format: <user>:<password>");
         }
         return basicAuthUsernamePassword;
@@ -132,7 +135,8 @@ public class AtlasAdminClient {
         AtlasClient atlasClient;
 
         if (!AuthenticationUtil.isKerberosAuthenticationEnabled()) {
-            if (providedUserNamePassword == null || providedUserNamePassword.length < 2) {
+            int length = 2;
+            if (providedUserNamePassword == null || providedUserNamePassword.length < length) {
                 atlasClient = new AtlasClient(atlasServerUri, AuthenticationUtil.getBasicAuthenticationInput());
             } else {
                 atlasClient = new AtlasClient(atlasServerUri, providedUserNamePassword);

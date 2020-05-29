@@ -86,7 +86,7 @@ public class DataQualityService {
     @Autowired
     private MetaDataService metadataService;
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addTemplate(Template template,String tenantId) throws AtlasBaseException {
         try {
             String templateId = UUID.randomUUID().toString();
@@ -115,7 +115,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteTemplate(String templateId) throws AtlasBaseException {
         try {
             //template
@@ -139,7 +139,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addRulesByTemlpateId(Template template) throws AtlasBaseException {
         String templateId = template.getTemplateId();
         List<UserRule> userRules = template.getRules();
@@ -176,7 +176,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteRulesByTemplateId(String templateId) throws AtlasBaseException {
         try {
             //rules
@@ -195,7 +195,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateTemplate(String templateId, Template template) throws AtlasBaseException {
         try {
             template.setTemplateId(templateId);
@@ -211,7 +211,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public Template viewTemplate(String templateId) throws AtlasBaseException {
         try {
             Template template = qualityDao.queryTemplateById(templateId);
@@ -233,7 +233,7 @@ public class DataQualityService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void startTemplate(String templateId, int templateStatus) throws AtlasBaseException {
         //启动模板
         try {
@@ -284,7 +284,7 @@ public class DataQualityService {
             String cron = qualityDao.getCronByTemplateId(templateId);
             quartzManager.addJob(jobName, jobGroupName, triggerName, triggerGroupName, QuartJob.class, cron);
             //设置模板状态为【已启用】
-            qualityDao.insertTemplate2Qrtz_Trigger(templateId, jobName);
+            qualityDao.insertTemplate2QrtzTrigger(templateId, jobName);
             qualityDao.updateTemplateStatus(TemplateStatus.RUNNING.code, templateId);
         } catch (Exception e) {
             LOG.error("添加任务失败", e);
@@ -491,7 +491,8 @@ public class DataQualityService {
             Integer limit = parameters.getLimit();
             List<ReportResult> reports = null;
             long total = 0;
-            if ("-1".equals(templateId)) {
+            String all = "-1";
+            if (all.equals(templateId)) {
                 reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit,tenantId);
                 //total = qualityDao.getCountByTableGuid(tableGuid);
                 if (reports.size()!=0){
@@ -520,7 +521,9 @@ public class DataQualityService {
     public Report getReport(String reportId) throws SQLException, AtlasBaseException {
         try {
             List<Report> reports = qualityDao.getReport(reportId);
-            if (reports.size() == 0) throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该报表不存在");
+            if (reports.size() == 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该报表不存在");
+            }
             Report report = reports.get(0);
             List<Report.ReportRule> reportRule = qualityDao.getReportRule(reportId);
             for (Report.ReportRule rule : reportRule) {

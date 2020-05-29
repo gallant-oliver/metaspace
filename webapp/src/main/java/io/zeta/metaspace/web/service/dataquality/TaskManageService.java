@@ -79,7 +79,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class TaskManageService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
@@ -168,6 +167,7 @@ public class TaskManageService {
         }
     }
 
+    @Transactional(rollbackFor=Exception.class)
     public void deleteTaskList(List<String> taskIdList) throws AtlasBaseException {
         try {
             if(Objects.nonNull(taskIdList)) {
@@ -235,7 +235,7 @@ public class TaskManageService {
         addDataQualityTask(currentTime, taskInfo,tenantId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
         try {
             DataQualityTask dataQualityTask = new DataQualityTask();
@@ -361,6 +361,7 @@ public class TaskManageService {
         }
     }
 
+    @Transactional(rollbackFor=Exception.class)
     public void addDataQualitySubTaskRule(String subTaskId, Timestamp currentTime, List<TaskInfo.SubTaskRule> subTaskRuleList) throws AtlasBaseException {
         try {
             for (int i=0,size=subTaskRuleList.size(); i<size; i++) {

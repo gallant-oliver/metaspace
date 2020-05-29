@@ -33,7 +33,7 @@ import static org.apache.atlas.model.instance.AtlasEntity.Status.ACTIVE;
 
 @Component
 @ConditionalOnAtlasProperty(property = "atlas.DeleteHandlerV1.impl")
-public class HardDeleteHandlerV1 extends DeleteHandlerV1 {
+public class HardDeleteHandlerV1 extends BaseDeleteHandlerV1 {
 
     @Inject
     public HardDeleteHandlerV1(AtlasTypeRegistry typeRegistry) {

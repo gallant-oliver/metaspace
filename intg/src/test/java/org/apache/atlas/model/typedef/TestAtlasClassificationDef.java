@@ -18,7 +18,7 @@
 package org.apache.atlas.model.typedef;
 
 import org.apache.atlas.model.ModelTestUtil;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -32,9 +32,9 @@ public class TestAtlasClassificationDef {
     public void testClassificationDefSerDeEmpty() {
         AtlasClassificationDef classificationDef = new AtlasClassificationDef("emptyClassificationDef");
 
-        String jsonString = AtlasType.toJson(classificationDef);
+        String jsonString = BaseAtlasType.toJson(classificationDef);
 
-        AtlasClassificationDef classificationDef2 = AtlasType.fromJson(jsonString, AtlasClassificationDef.class);
+        AtlasClassificationDef classificationDef2 = BaseAtlasType.fromJson(jsonString, AtlasClassificationDef.class);
 
         assertEquals(classificationDef2, classificationDef,
                      "Incorrect serialization/deserialization of AtlasClassificationDef");
@@ -44,9 +44,9 @@ public class TestAtlasClassificationDef {
     public void testClassificationDefSerDe() {
         AtlasClassificationDef classificationDef = ModelTestUtil.getClassificationDef();
 
-        String jsonString = AtlasType.toJson(classificationDef);
+        String jsonString = BaseAtlasType.toJson(classificationDef);
 
-        AtlasClassificationDef classificationDef2 = AtlasType.fromJson(jsonString, AtlasClassificationDef.class);
+        AtlasClassificationDef classificationDef2 = BaseAtlasType.fromJson(jsonString, AtlasClassificationDef.class);
 
         assertEquals(classificationDef2, classificationDef,
                      "Incorrect serialization/deserialization of AtlasClassificationDef");
@@ -56,9 +56,9 @@ public class TestAtlasClassificationDef {
     public void testClassificationDefSerDeWithSuperType() {
         AtlasClassificationDef classificationDef = ModelTestUtil.getClassificationDefWithSuperType();
 
-        String jsonString = AtlasType.toJson(classificationDef);
+        String jsonString = BaseAtlasType.toJson(classificationDef);
 
-        AtlasClassificationDef classificationDef2 = AtlasType.fromJson(jsonString, AtlasClassificationDef.class);
+        AtlasClassificationDef classificationDef2 = BaseAtlasType.fromJson(jsonString, AtlasClassificationDef.class);
 
         assertEquals(classificationDef2, classificationDef,
                      "Incorrect serialization/deserialization of AtlasClassificationDef with superType");
@@ -68,9 +68,9 @@ public class TestAtlasClassificationDef {
     public void testClassificationDefSerDeWithSuperTypes() {
         AtlasClassificationDef classificationDef = ModelTestUtil.getClassificationDefWithSuperTypes();
 
-        String jsonString = AtlasType.toJson(classificationDef);
+        String jsonString = BaseAtlasType.toJson(classificationDef);
 
-        AtlasClassificationDef classificationDef2 = AtlasType.fromJson(jsonString, AtlasClassificationDef.class);
+        AtlasClassificationDef classificationDef2 = BaseAtlasType.fromJson(jsonString, AtlasClassificationDef.class);
 
         assertEquals(classificationDef2, classificationDef,
                      "Incorrect serialization/deserialization of AtlasClassificationDef with superTypes");

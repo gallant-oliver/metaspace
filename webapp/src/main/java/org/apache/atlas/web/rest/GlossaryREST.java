@@ -27,7 +27,6 @@ import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedTermHeader;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
-//import org.apache.atlas.model.metadata.BrotherCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections.MapUtils;
@@ -905,26 +904,13 @@ public class GlossaryREST {
     }
 
 
-    /*@POST
-    @Path("/uplevel/category/")
-    public AtlasGlossaryCategory createBrotherCategory(BrotherCategory brotherCategory) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.createBrotherCategory()");
-            }
-            return glossaryService.createBrotherCategory(brotherCategory.getGuid(), brotherCategory.getGlossaryCategory(), brotherCategory.getDirect());
-
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }*/
 
     private SortOrder toSortOrder(final String sort) {
         SortOrder ret = SortOrder.ASCENDING;
-        if (!"ASC".equals(sort)) {
-            if ("DESC".equals(sort)) {
+        String asc = "ASC";
+        String desc = "DESC";
+        if (!asc.equals(sort)) {
+            if (desc.equals(sort)) {
                 ret = SortOrder.DESCENDING;
             }
         }

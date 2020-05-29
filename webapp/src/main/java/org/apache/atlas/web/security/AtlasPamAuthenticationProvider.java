@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Properties;
 
 @Component
-public class AtlasPamAuthenticationProvider extends AtlasAbstractAuthenticationProvider {
+public class AtlasPamAuthenticationProvider extends BaseAtlasAbstractAuthenticationProvider {
 
     private static Logger LOG = LoggerFactory.getLogger(AtlasPamAuthenticationProvider.class);
     private boolean isDebugEnabled = LOG.isDebugEnabled();
@@ -124,7 +124,8 @@ public class AtlasPamAuthenticationProvider extends AtlasAbstractAuthenticationP
                 String value = properties.getProperty(key);
                 options.put(key, value);
             }
-            if (!options.containsKey("service")) {
+            String service = "service";
+            if (!options.containsKey(service)) {
                 options.put("service", "atlas-login");
             }
         } catch (Exception e) {

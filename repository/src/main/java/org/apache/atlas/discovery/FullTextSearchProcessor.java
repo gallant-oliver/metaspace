@@ -36,7 +36,7 @@ import static org.apache.atlas.discovery.SearchContext.MATCH_ALL_NOT_CLASSIFIED;
 import static org.apache.atlas.discovery.SearchContext.MATCH_ALL_WILDCARD_CLASSIFICATION;
 
 
-public class FullTextSearchProcessor extends SearchProcessor {
+public class FullTextSearchProcessor extends AbstractSearchProcessor {
     private static final Logger LOG      = LoggerFactory.getLogger(FullTextSearchProcessor.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("FullTextSearchProcessor");
 

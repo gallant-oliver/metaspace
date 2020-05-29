@@ -191,11 +191,12 @@ public class MetaspaceScheduler {
                 Integer fieldNum = ((ArrayList) columns).size();
                 tableStat.setFieldNum(fieldNum);
             }
-            if (null == entity.getAttribute("qualifiedName")) {
+            String qualified = "qualifiedName";
+            if (null == entity.getAttribute(qualified)) {
                 return tableStatList;
             }
             //表名
-            String qualifiedName = entity.getAttribute("qualifiedName").toString();
+            String qualifiedName = entity.getAttribute(qualified).toString();
             String displayName = entity.getAttribute("name").toString();
             String dbAndtableName = qualifiedName.substring(0, qualifiedName.indexOf("@"));
 
@@ -255,11 +256,15 @@ public class MetaspaceScheduler {
                     String sourceTableTypeName = entityHeader.getTypeName();
                     String sourceDisplayName = entityHeader.getAttribute("name").toString();
                     String sourceTableName = sourceTableQualifiedName.substring(0, sourceTableQualifiedName.indexOf("@"));
-                    if ("hdfs_path".equals(sourceTableTypeName)) {
+                    String hdfsPath = "hdfs_path";
+                    if (hdfsPath.equals(sourceTableTypeName)) {
                         sourceTableList.add(new Table(sourceTableGuid, "", sourceTableName));
-                    } else if ("hive_table".equals(sourceTableTypeName)) {
-                        String[] split = sourceTableName.split("\\.");
-                        sourceTableList.add(new Table(sourceTableGuid, split[0], sourceDisplayName));
+                    } else {
+                        String hiveTable = "hive_table";
+                        if (hiveTable.equals(sourceTableTypeName)) {
+                            String[] split = sourceTableName.split("\\.");
+                            sourceTableList.add(new Table(sourceTableGuid, split[0], sourceDisplayName));
+                        }
                     }
                 });
                 tableStat.setSourceTable(sourceTableList);

@@ -30,7 +30,7 @@ import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasRelationshipType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.lang.StringUtils;
@@ -47,7 +47,7 @@ import java.util.List;
 /**
  * RelationshipDef store in v1 format.
  */
-public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRelationshipDef> {
+public class AtlasRelationshipDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasRelationshipDef> {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasRelationshipDefStoreV2.class);
 
     @Inject
@@ -63,7 +63,7 @@ public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRe
 
         validateType(relationshipDef);
 
-        AtlasType type = typeRegistry.getType(relationshipDef.getName());
+        BaseAtlasType type = typeRegistry.getType(relationshipDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.RELATIONSHIP) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, relationshipDef.getName(), TypeCategory.RELATIONSHIP.name());
@@ -240,7 +240,7 @@ public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRe
 
         validateType(relationshipDef);
 
-        AtlasType type = typeRegistry.getType(relationshipDef.getName());
+        BaseAtlasType type = typeRegistry.getType(relationshipDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.RELATIONSHIP) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, relationshipDef.getName(), TypeCategory.RELATIONSHIP.name());
@@ -276,7 +276,7 @@ public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRe
 
         validateType(relationshipDef);
 
-        AtlasType type = typeRegistry.getTypeByGuid(guid);
+        BaseAtlasType type = typeRegistry.getTypeByGuid(guid);
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.RELATIONSHIP) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, relationshipDef.getName(), TypeCategory.RELATIONSHIP.name());
@@ -447,8 +447,8 @@ public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRe
     }
 
     public static void setVertexPropertiesFromRelationshipDef(AtlasRelationshipDef relationshipDef, AtlasVertex vertex) {
-        vertex.setProperty(Constants.RELATIONSHIPTYPE_END1_KEY, AtlasType.toJson(relationshipDef.getEndDef1()));
-        vertex.setProperty(Constants.RELATIONSHIPTYPE_END2_KEY, AtlasType.toJson(relationshipDef.getEndDef2()));
+        vertex.setProperty(Constants.RELATIONSHIPTYPE_END1_KEY, BaseAtlasType.toJson(relationshipDef.getEndDef1()));
+        vertex.setProperty(Constants.RELATIONSHIPTYPE_END2_KEY, BaseAtlasType.toJson(relationshipDef.getEndDef2()));
         // default the relationship category to association if it has not been specified.
         String relationshipCategory = RelationshipCategory.ASSOCIATION.name();
         if (relationshipDef.getRelationshipCategory()!=null) {
@@ -477,8 +477,8 @@ public class AtlasRelationshipDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasRe
             String propagateStr = vertex.getProperty(Constants.RELATIONSHIPTYPE_TAG_PROPAGATION_KEY, String.class);
 
             // set the ends
-            AtlasRelationshipEndDef endDef1 = AtlasType.fromJson(end1Str, AtlasRelationshipEndDef.class);
-            AtlasRelationshipEndDef endDef2 = AtlasType.fromJson(end2Str, AtlasRelationshipEndDef.class);
+            AtlasRelationshipEndDef endDef1 = BaseAtlasType.fromJson(end1Str, AtlasRelationshipEndDef.class);
+            AtlasRelationshipEndDef endDef2 = BaseAtlasType.fromJson(end2Str, AtlasRelationshipEndDef.class);
 
             // set the relationship Category
             RelationshipCategory relationshipCategory = null;

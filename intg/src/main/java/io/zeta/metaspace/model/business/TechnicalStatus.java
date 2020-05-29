@@ -46,7 +46,7 @@ public enum TechnicalStatus {
     public static TechnicalStatus getTechnicalStatusByCode(Integer code) {
         TechnicalStatus defaultTechnicalStatus = TechnicalStatus.BLANK;
         for(TechnicalStatus ts : TechnicalStatus.values()) {
-            if(ts.code == code)
+            if(ts.code.equals(code) )
                 return ts;
         }
         return defaultTechnicalStatus;

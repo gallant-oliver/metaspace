@@ -145,7 +145,7 @@ public class AtlasTypesDef {
     }
 
 
-    private <T extends AtlasBaseTypeDef> boolean hasTypeDef(Collection<T> typeDefs, String name) {
+    private <T extends BaseAtlasBaseTypeDef> boolean hasTypeDef(Collection<T> typeDefs, String name) {
         if (CollectionUtils.isNotEmpty(typeDefs)) {
             for (T typeDef : typeDefs) {
                 if (typeDef.getName().equals(name)) {
@@ -193,19 +193,19 @@ public class AtlasTypesDef {
 
         sb.append("AtlasTypesDef{");
         sb.append("enumDefs={");
-        AtlasBaseTypeDef.dumpObjects(enumDefs, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(enumDefs, sb);
         sb.append("}");
         sb.append("structDefs={");
-        AtlasBaseTypeDef.dumpObjects(structDefs, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(structDefs, sb);
         sb.append("}");
         sb.append("classificationDefs={");
-        AtlasBaseTypeDef.dumpObjects(classificationDefs, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(classificationDefs, sb);
         sb.append("}");
         sb.append("entityDefs={");
-        AtlasBaseTypeDef.dumpObjects(entityDefs, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(entityDefs, sb);
         sb.append("}");
         sb.append("relationshipDefs={");
-        AtlasBaseTypeDef.dumpObjects(relationshipDefs, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(relationshipDefs, sb);
         sb.append("}");
 
         return sb;

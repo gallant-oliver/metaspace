@@ -48,7 +48,7 @@ import static org.apache.atlas.repository.Constants.TRAIT_NAMES_PROPERTY_KEY;
 import static org.apache.atlas.repository.graphdb.AtlasGraphQuery.ComparisionOperator.EQUAL;
 import static org.apache.atlas.repository.graphdb.AtlasGraphQuery.ComparisionOperator.NOT_EQUAL;
 
-public class EntitySearchProcessor extends SearchProcessor {
+public class EntitySearchProcessor extends AbstractSearchProcessor {
     private static final Logger LOG      = LoggerFactory.getLogger(EntitySearchProcessor.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("EntitySearchProcessor");
 
@@ -252,7 +252,8 @@ public class EntitySearchProcessor extends SearchProcessor {
             // when subsequent filtering stages are involved, query should start at 0 even though startIdx can be higher
             //
             // first 'startIdx' number of entries will be ignored
-            int qryOffset = (nextProcessor != null || (graphQuery != null && indexQuery != null)) ? 0 : startIdx;
+            boolean isNull = graphQuery != null && indexQuery != null;
+            int qryOffset = (nextProcessor != null || isNull) ? 0 : startIdx;
             int resultIdx = qryOffset;
 
             final List<AtlasVertex> entityVertices = new ArrayList<>();

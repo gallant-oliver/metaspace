@@ -19,10 +19,10 @@
 package org.apache.atlas.query;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 
 public interface Lookup {
-    AtlasType getType(String typeName) throws AtlasBaseException;
+    BaseAtlasType getType(String typeName) throws AtlasBaseException;
 
     String getQualifiedName(GremlinQueryComposer.Context context, String name) throws AtlasBaseException;
 

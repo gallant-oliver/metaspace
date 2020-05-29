@@ -27,7 +27,7 @@ import org.apache.atlas.model.impexp.AtlasImportResult;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.AtlasJson;
 import org.apache.atlas.utils.TestResourceFileUtils;
@@ -210,12 +210,12 @@ public class ZipFileResourceTestUtils {
     private static AtlasTypesDef getAtlasTypesDefFromFile(String fileName) throws IOException {
         String sampleTypes = ZipFileResourceTestUtils.getModelJson(fileName);
         if(sampleTypes == null) return null;
-        return AtlasType.fromJson(sampleTypes, AtlasTypesDef.class);
+        return BaseAtlasType.fromJson(sampleTypes, AtlasTypesDef.class);
     }
 
     private static AtlasTypesDef getAtlasTypesDefFromResourceFile(String fileName) throws IOException {
         String sampleTypes = getModelJsonFromResources(fileName);
-        return AtlasType.fromJson(sampleTypes, AtlasTypesDef.class);
+        return BaseAtlasType.fromJson(sampleTypes, AtlasTypesDef.class);
     }
 
     public static AtlasImportRequest getDefaultImportRequest() {

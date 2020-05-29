@@ -35,26 +35,26 @@ import org.apache.atlas.repository.graph.GraphHelper;
 public class AttributeValueMap {
 
     //need collection in case they are adding the same entity twice?
-    private Map<Object,Collection<IndexedInstance>> valueMap_ = new HashMap<>();
+    private Map<Object,Collection<IndexedInstance>> valueMap = new HashMap<>();
 
     public void put(Object value, Referenceable instance, int index) {
         IndexedInstance wrapper = new IndexedInstance(instance, index);
-        Collection<IndexedInstance> existingValues = valueMap_.get(value);
+        Collection<IndexedInstance> existingValues = valueMap.get(value);
         if(existingValues == null) {
             //only expect 1 value
             existingValues = new HashSet<>(1);
-            valueMap_.put(value, existingValues);
+            valueMap.put(value, existingValues);
         }
         existingValues.add(wrapper);
     }
 
     public Collection<IndexedInstance> get(Object value) {
-        return valueMap_.get(value);
+        return valueMap.get(value);
     }
 
 
     public Set<Object> getAttributeValues() {
-        return valueMap_.keySet();
+        return valueMap.keySet();
     }
 
 }

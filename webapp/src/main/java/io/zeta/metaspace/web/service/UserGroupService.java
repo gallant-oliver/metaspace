@@ -14,8 +14,8 @@
 package io.zeta.metaspace.web.service;
 
 
-import io.zeta.metaspace.model.dataSource.DataSourceIdAndName;
-import io.zeta.metaspace.model.dataSource.SourceAndPrivilege;
+import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
+import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -24,7 +24,6 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
 import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
@@ -34,17 +33,14 @@ import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +139,7 @@ public class UserGroupService {
     /**
      * 四.删除用户组信息
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void deleteUserGroupByID(String id) {
 
         userGroupDAO.deleteUserGroupByID(id);
@@ -280,12 +276,13 @@ public class UserGroupService {
      * @param all
      * @return
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public UserGroupCategories getPrivileges(String userGroupId,String tenant,boolean all) throws AtlasBaseException {
         UserGroupCategories userGroupCategories = new UserGroupCategories();
         User user = AdminUtils.getUserData();
         List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenant);
-        if((userGroups==null||userGroups.size()==0)&&all==false) {
+        boolean isnull = userGroups == null || userGroups.size() == 0;
+        if(isnull && all == false) {
             return userGroupCategories;
         }
 
@@ -300,7 +297,7 @@ public class UserGroupService {
         return userGroupCategories;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<RoleModulesCategories.Category> getCategorys(String userGroupId, List<String> userGroupIds, int categorytype,String tenant,boolean all) {
         //用户有权限的Category
         //上级不打勾，不展示，去重;同级，下级不打勾，展示
@@ -361,7 +358,7 @@ public class UserGroupService {
      * @param tenant
      * @return
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public Map<String, RoleModulesCategories.Category> getGroupStringCategoryMap(String userGroupId, int categorytype,String tenant) {
         Map<String, RoleModulesCategories.Category> categorys = new HashMap<>();
         List<String> businessCategories = userGroupDAO.getCategorysByTypeIds(userGroupId, categorytype,tenant);
@@ -384,7 +381,7 @@ public class UserGroupService {
      * @param tenant
      * @return
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public Map<String, RoleModulesCategories.Category> getUserStringCategoryMap(String userGroupId, int categorytype,String tenant) {
         Map<String, RoleModulesCategories.Category> userCategorys = new HashMap<>();
         List<String> userBusinessCategories = userGroupDAO.getCategorysByTypeIds(userGroupId, categorytype,tenant);
@@ -410,7 +407,7 @@ public class UserGroupService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void setOtherCategory(int categorytype, List<RoleModulesCategories.Category> resultList,String tenantId) {
         List<RoleModulesCategories.Category> otherCategorys = userGroupDAO.getOtherCategorys(resultList, categorytype,tenantId);
         for (RoleModulesCategories.Category otherCategory : otherCategorys) {
@@ -428,7 +425,7 @@ public class UserGroupService {
      * @param userGroupCategories
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void putPrivileges(String userGroupId, UserGroupCategories userGroupCategories) throws AtlasBaseException {
         userGroupDAO.deleteUserGroup2category(userGroupId);
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
@@ -460,14 +457,16 @@ public class UserGroupService {
      * @param tenantId
      * @return
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public List<CategoryPrivilege> getUserCategory(String userGroupId, int categorytype,List<Module> modulesByUser,String tenantId) {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         List<Integer> modules = new ArrayList<>();
         for (Module module : modulesByUser) {
             modules.add(module.getModuleId());
         }
-        if (3 == categorytype||4 == categorytype) {
+        int roleType=4;
+        int dateStanderType=3;
+        if (dateStanderType == categorytype||roleType == categorytype) {
             List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorys(categorytype,tenantId);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
@@ -530,6 +529,7 @@ public class UserGroupService {
                         }
                         break;
                     }
+                    default:break;
                 }
                 addPrivilege(userCategorys, userChildCategorys, childPrivilege, categorytype);
                 addPrivilege(userCategorys, userParentCategorys, parentPrivilege, categorytype);
@@ -569,7 +569,7 @@ public class UserGroupService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList,String tenantId) {
         List<RoleModulesCategories.Category> otherCategorys = userGroupDAO.getOtherCategorys2(resultList, categorytype,tenantId);
         ArrayList<CategoryPrivilege> others = new ArrayList<>();

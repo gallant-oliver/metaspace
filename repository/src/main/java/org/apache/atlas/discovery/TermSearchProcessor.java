@@ -28,7 +28,7 @@ import java.util.List;
 
 
 
-public class TermSearchProcessor extends SearchProcessor {
+public class TermSearchProcessor extends AbstractSearchProcessor {
     private static final Logger LOG      = LoggerFactory.getLogger(TermSearchProcessor.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("TermSearchProcessor");
 

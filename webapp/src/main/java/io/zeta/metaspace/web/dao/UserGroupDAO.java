@@ -14,8 +14,8 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
-import io.zeta.metaspace.model.dataSource.DataSourceIdAndName;
-import io.zeta.metaspace.model.dataSource.SourceAndPrivilege;
+import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
+import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -297,8 +297,8 @@ public interface UserGroupDAO {
     public int deleteUserGroup2category(String groupId);
 
     //获取用户组的用户id
-    @Select("select user_id from user_group_relation where group_id=#{group_id}")
-    public List<String> getUserIdByUserGroup(String group_id);
+    @Select("select user_id from user_group_relation where group_id=#{groupId}")
+    public List<String> getUserIdByUserGroup(String groupId);
 
     //更新用户组
     @Update("update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id=#{groupId}")

@@ -98,7 +98,8 @@ public class AuditFilter implements Filter {
         final String fromAddress = httpRequest.getRemoteAddr();
         final String whatRequest = httpRequest.getMethod();
         final String whatURL     = Servlets.getRequestURL(httpRequest);
-        final String whatUrlPath = httpRequest.getRequestURL().toString(); //url path without query string
+        //url path without query string
+        final String whatUrlPath = httpRequest.getRequestURL().toString();
 
         if (!isOperationExcludedFromAudit(whatRequest, whatUrlPath.toLowerCase(), null)) {
             audit(new AuditLog(who, fromAddress, whatRequest, whatURL, when, httpStatus, timeTaken));

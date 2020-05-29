@@ -86,7 +86,8 @@ public class TableREST {
     public Table sqlCreate(TableSql sql) throws Exception {
         try {
             String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
-            if(split.length < 2) {
+            int length = 2;
+            if(split.length < length) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库名和表名不能为空");
             }
             String database = split[0];
@@ -120,8 +121,11 @@ public class TableREST {
     public Response sqlFormat(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
         String formatedSql = SQLUtils.formatHive(sql);
-        if (formatedSql.contains("STORE") && !formatedSql.contains("STORED")) {//druid's bug
-            formatedSql = formatedSql.replace("STORE", "STORED");
+        //druid's bug
+        String store = "STORE";
+        String stored = "STORED";
+        if (formatedSql.contains(store) && !formatedSql.contains(stored)) {
+            formatedSql = formatedSql.replace(store, stored);
         }
         return Response.status(200).entity(formatedSql).build();
     }
@@ -135,7 +139,8 @@ public class TableREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if(!name.substring(name.length() - 4).equals(".sql")) {
+            String fileFormat = ".sql";
+            if(name.endsWith(fileFormat)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
             }
             file = new File(name);

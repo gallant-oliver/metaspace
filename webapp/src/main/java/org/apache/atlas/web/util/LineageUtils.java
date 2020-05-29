@@ -22,10 +22,10 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.v1.model.instance.Struct;
 
@@ -118,11 +118,11 @@ public final class LineageUtils {
 
     private static boolean isDataSet(String typeName, AtlasTypeRegistry registry) throws AtlasBaseException {
         boolean   ret  = false;
-        AtlasType type = registry.getType(typeName);
+        BaseAtlasType type = registry.getType(typeName);
 
         if (type instanceof AtlasEntityType) {
             AtlasEntityType entityType = (AtlasEntityType) type;
-            ret = entityType.getAllSuperTypes().contains(AtlasBaseTypeDef.ATLAS_TYPE_DATASET);
+            ret = entityType.getAllSuperTypes().contains(BaseAtlasBaseTypeDef.ATLAS_TYPE_DATASET);
         }
 
         return ret;

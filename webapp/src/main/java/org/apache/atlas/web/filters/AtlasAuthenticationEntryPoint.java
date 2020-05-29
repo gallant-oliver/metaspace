@@ -50,7 +50,8 @@ public class AtlasAuthenticationEntryPoint extends LoginUrlAuthenticationEntryPo
         String ajaxRequestHeader = request.getHeader("X-Requested-With");
         response.setHeader("X-Frame-Options", "DENY");
 
-        if ("XMLHttpRequest".equals(ajaxRequestHeader)) {
+        String xmlHttpRequest = "XMLHttpRequest";
+        if (xmlHttpRequest.equals(ajaxRequestHeader)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         } else {
             LOG.debug("redirecting to login page loginPath" + loginPath);

@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class WarningService {
 
     private static final Logger LOG = LoggerFactory.getLogger(WarningService.class);

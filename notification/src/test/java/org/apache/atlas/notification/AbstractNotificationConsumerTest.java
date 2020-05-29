@@ -21,7 +21,7 @@ package org.apache.atlas.notification;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.atlas.kafka.AtlasKafkaMessage;
 import org.apache.atlas.model.notification.AtlasNotificationMessage;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.model.notification.MessageVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +54,10 @@ public class AbstractNotificationConsumerTest {
 
         List jsonList = new LinkedList<>();
 
-        jsonList.add(AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1)));
-        jsonList.add(AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage2)));
-        jsonList.add(AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage3)));
-        jsonList.add(AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage4)));
+        jsonList.add(BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1)));
+        jsonList.add(BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage2)));
+        jsonList.add(BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage3)));
+        jsonList.add(BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage4)));
 
         NotificationConsumer<TestMessage> consumer = new TestNotificationConsumer(jsonList, logger);
 
@@ -85,10 +85,10 @@ public class AbstractNotificationConsumerTest {
 
         List jsonList = new LinkedList<>();
 
-        String json1 = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1));
-        String json2 = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("0.0.5"), testMessage2));
-        String json3 = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("0.5.0"), testMessage3));
-        String json4 = AtlasType.toV1Json(testMessage4);
+        String json1 = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1));
+        String json2 = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("0.0.5"), testMessage2));
+        String json3 = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("0.5.0"), testMessage3));
+        String json4 = BaseAtlasType.toV1Json(testMessage4);
 
         jsonList.add(json1);
         jsonList.add(json2);
@@ -118,8 +118,8 @@ public class AbstractNotificationConsumerTest {
 
         List jsonList = new LinkedList<>();
 
-        String json1 = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1));
-        String json2 = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("2.0.0"), testMessage2));
+        String json1 = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), testMessage1));
+        String json2 = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("2.0.0"), testMessage2));
 
         jsonList.add(json1);
         jsonList.add(json2);

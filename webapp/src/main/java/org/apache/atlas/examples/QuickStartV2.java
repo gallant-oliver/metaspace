@@ -38,7 +38,7 @@ import org.apache.atlas.model.instance.EntityMutations.EntityOperation;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.lineage.AtlasLineageInfo.LineageDirection;
 import org.apache.atlas.model.lineage.AtlasLineageInfo.LineageRelation;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -223,8 +223,8 @@ public class QuickStartV2 {
                                   AtlasTypeUtil.createOptionalAttrDef("viewExpandedText", "string"),
                                   AtlasTypeUtil.createOptionalAttrDef("tableType", "string"),
                                   AtlasTypeUtil.createOptionalAttrDef("temporary", "boolean"),
-                                  AtlasTypeUtil.createRequiredListAttrDefWithConstraint("columns", AtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
-                                          CONSTRAINT_TYPE_OWNED_REF, null));
+                                  AtlasTypeUtil.createRequiredListAttrDefWithConstraint("columns", BaseAtlasBaseTypeDef.getArrayTypeName(COLUMN_TYPE),
+                                                                                        CONSTRAINT_TYPE_OWNED_REF, null));
 
         tblType.setOptions(new HashMap<String, String>() {{ put("schemaElementsAttribute", "columns"); }});
 
@@ -239,7 +239,7 @@ public class QuickStartV2 {
 
         AtlasEntityDef viewType = AtlasTypeUtil.createClassTypeDef(VIEW_TYPE, VIEW_TYPE, "1.0", Collections.singleton("DataSet"),
                                   AtlasTypeUtil.createRequiredAttrDef("db", DATABASE_TYPE),
-                                  AtlasTypeUtil.createOptionalListAttrDef("inputTables", AtlasBaseTypeDef.getArrayTypeName(TABLE_TYPE)));
+                                  AtlasTypeUtil.createOptionalListAttrDef("inputTables", BaseAtlasBaseTypeDef.getArrayTypeName(TABLE_TYPE)));
 
         AtlasClassificationDef dimClassifDef    = AtlasTypeUtil.createTraitTypeDef(DIMENSION_CLASSIFICATION,  "Dimension Classification", "1.0", Collections.<String>emptySet());
         AtlasClassificationDef factClassifDef   = AtlasTypeUtil.createTraitTypeDef(FACT_CLASSIFICATION, "Fact Classification", "1.0", Collections.<String>emptySet());

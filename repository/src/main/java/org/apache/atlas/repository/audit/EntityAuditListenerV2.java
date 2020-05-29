@@ -31,7 +31,7 @@ import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -123,9 +123,9 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
 
             for (AtlasClassification classification : classifications) {
                 if (entity.getGuid().equals(classification.getEntityGuid())) {
-                    events.add(createEvent(entity, CLASSIFICATION_ADD, "Added classification: " + AtlasType.toJson(classification)));
+                    events.add(createEvent(entity, CLASSIFICATION_ADD, "Added classification: " + BaseAtlasType.toJson(classification)));
                 } else {
-                    events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_ADD, "Added propagated classification: " + AtlasType.toJson(classification)));
+                    events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_ADD, "Added propagated classification: " + BaseAtlasType.toJson(classification)));
                 }
             }
 
@@ -141,14 +141,14 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
 
             for (AtlasClassification classification : classifications) {
                 if (guid.equals(classification.getEntityGuid())) {
-                    events.add(createEvent(entity, CLASSIFICATION_UPDATE, "Updated classification: " + AtlasType.toJson(classification)));
+                    events.add(createEvent(entity, CLASSIFICATION_UPDATE, "Updated classification: " + BaseAtlasType.toJson(classification)));
                 } else {
                     if (isPropagatedClassificationAdded(guid, classification)) {
-                        events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_ADD, "Added propagated classification: " + AtlasType.toJson(classification)));
+                        events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_ADD, "Added propagated classification: " + BaseAtlasType.toJson(classification)));
                     } else if (isPropagatedClassificationDeleted(guid, classification)) {
                         events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_DELETE, "Deleted propagated classification: " + classification.getTypeName()));
                     } else {
-                        events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_UPDATE, "Updated propagated classification: " + AtlasType.toJson(classification)));
+                        events.add(createEvent(entity, PROPAGATED_CLASSIFICATION_UPDATE, "Updated propagated classification: " + BaseAtlasType.toJson(classification)));
                     }
                 }
             }
@@ -225,12 +225,12 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
         Map<String, Object> prunedAttributes = pruneEntityAttributesForAudit(entity);
 
         String auditPrefix  = getV2AuditPrefix(action);
-        String auditString  = auditPrefix + AtlasType.toJson(entity);
+        String auditString  = auditPrefix + BaseAtlasType.toJson(entity);
         byte[] auditBytes   = auditString.getBytes(StandardCharsets.UTF_8);
         long   auditSize    = auditBytes != null ? auditBytes.length : 0;
         long   auditMaxSize = auditRepository.repositoryMaxSize();
-
-        if (auditMaxSize >= 0 && auditSize > auditMaxSize) { // don't store attributes in audit
+        // don't store attributes in audit
+        if (auditMaxSize >= 0 && auditSize > auditMaxSize) {
             LOG.warn("audit record too long: entityType={}, guid={}, size={}; maxSize={}. entity attribute values not stored in audit",
                     entity.getTypeName(), entity.getGuid(), auditSize, auditMaxSize);
 
@@ -240,11 +240,12 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
             entity.setAttributes(null);
             entity.setRelationshipAttributes(null);
 
-            auditString = auditPrefix + AtlasType.toJson(entity);
-            auditBytes  = auditString.getBytes(StandardCharsets.UTF_8); // recheck auditString size
+            auditString = auditPrefix + BaseAtlasType.toJson(entity);
+            // recheck auditString size
+            auditBytes  = auditString.getBytes(StandardCharsets.UTF_8);
             auditSize   = auditBytes != null ? auditBytes.length : 0;
-
-            if (auditMaxSize >= 0 && auditSize > auditMaxSize) { // don't store classifications and meanings as well
+            // don't store classifications and meanings as well
+            if (auditMaxSize >= 0 && auditSize > auditMaxSize) {
                 LOG.warn("audit record still too long: entityType={}, guid={}, size={}; maxSize={}. audit will have only summary details",
                         entity.getTypeName(), entity.getGuid(), auditSize, auditMaxSize);
 
@@ -259,7 +260,7 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
                 shallowEntity.setStatus(entity.getStatus());
                 shallowEntity.setVersion(entity.getVersion());
 
-                auditString = auditPrefix + AtlasType.toJson(shallowEntity);
+                auditString = auditPrefix + BaseAtlasType.toJson(shallowEntity);
             }
 
             entity.setAttributes(attrValues);

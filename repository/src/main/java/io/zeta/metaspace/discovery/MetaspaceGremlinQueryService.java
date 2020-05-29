@@ -53,7 +53,7 @@ import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -76,14 +76,15 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     private static final String PROCESS_OUTPUTS_EDGE = "__Process.outputs";
 
     private final AtlasGraph graph;
-    private final MetaspaceGremlinQueryProvider gremlinQueryProvider;
+    private final AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider;
     private final EntityGraphRetriever entityRetriever;
     private final AtlasTypeRegistry atlasTypeRegistry;
+    private String temporary = "temporary";
 
     @Inject
     MetaspaceGremlinQueryService(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph) {
         this.graph = atlasGraph;
-        this.gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
+        this.gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
         this.entityRetriever = new EntityGraphRetriever(typeRegistry);
         this.atlasTypeRegistry = typeRegistry;
     }
@@ -350,7 +351,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     @Override
     public PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset,String dbs) throws AtlasBaseException {
         try {
-            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_DB_TABLE_BY_QUERY);
+            AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_DB_TABLE_BY_QUERY);
             String query = gremlinQueryProvider.getQuery(gremlinQeury);
 
             String dbQuery = String.format(query, queryDb,dbs,offset, offset + limit);
@@ -374,7 +375,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     @Override
     public PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset) throws AtlasBaseException {
         try {
-            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_QUERY);
+            AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQeury = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_TABLE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.DB_TABLE_BY_QUERY);
             String query = gremlinQueryProvider.getQuery(gremlinQeury);
 
             String dbQuery = String.format(query, queryDb, offset, offset + limit);
@@ -474,13 +475,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return databases;
     }
 
-    /*private void setVirtualTable(Table table) {
-        if(table.getTableName().contains("values__tmp__table"))
-            table.setVirtualTable(true);
-        else
-            table.setVirtualTable(false);
-    }*/
-
     @Override
     public String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException {
         int[] sleepSeconds = new int[]{4, 3, 2};
@@ -504,8 +498,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         PageResult<Table> tablePageResult = new PageResult<>();
         ArrayList<Table> tables = new ArrayList<>();
         try {
-            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_TABLE_DB_BY_QUERY))
-                                                                                      : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_TABLE_DB_BY_QUERY));
+            AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_TABLE_DB_BY_QUERY))
+                                                                                              : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_TABLE_DB_BY_QUERY));
             String query = gremlinQueryProvider.getQuery(gremlinQuery);
             String tableQuery = String.format(query, dbs,queryTable, offset, offset + limit);
             List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
@@ -531,8 +525,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         PageResult<Table> tablePageResult = new PageResult<>();
         ArrayList<Table> tables = new ArrayList<>();
         try {
-            MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_DB_BY_QUERY))
-                                                                                      : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY));
+            AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_DB_BY_QUERY))
+                                                                                              : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_DB_BY_QUERY));
             String query = gremlinQueryProvider.getQuery(gremlinQuery);
             String tableQuery = String.format(query, queryTable, offset, offset + limit);
             List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
@@ -558,7 +552,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<RDBMSDatabase> getRDBMSDBNameAndSourceNameByQuery(String queryTable, int offset, int limit,String sourceType,Boolean active) throws AtlasBaseException {
         PageResult<RDBMSDatabase> dbPageResult = new PageResult<>();
         ArrayList<RDBMSDatabase> dbs = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery= null;
+        AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery= null;
         if (active){
             gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_FULL_RDBMS_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_RDBMS_DB_SOURCE_BY_QUERY);
         }else {
@@ -613,7 +607,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<RDBMSTable> getRDBMSTableNameAndDBAndSourceNameByQuery(String queryTable, int offset, int limit,String sourceType,Boolean active) throws AtlasBaseException {
         PageResult<RDBMSTable> tablePageResult = new PageResult<>();
         ArrayList<RDBMSTable> tables = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = null;
+        AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = null;
         if (active){
             gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_FULL_RDBMS_TABLE_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_RDBMS_TABLE_DB_SOURCE_BY_QUERY);
         }else{
@@ -645,7 +639,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         attributes.add("comment");
         attributes.add("description");
         attributes.add("createTime");
-        attributes.add("temporary");
+        attributes.add(temporary);
         RDBMSTable table = new RDBMSTable();
         if (Objects.nonNull(tableVertex)) {
             AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
@@ -680,7 +674,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<RDBMSColumn> getRDBMSColumnNameTableNameAndDBAndSourceNameByQuery(String queryTable, int offset, int limit, String sourceType) throws AtlasBaseException {
         PageResult<RDBMSColumn> columnPageResult = new PageResult<>();
         ArrayList<RDBMSColumn> columns = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_COLUMN_TABLE_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_COLUMN_TABLE_DB_SOURCE_BY_QUERY);
+        AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = (limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_COLUMN_TABLE_DB_SOURCE : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_COLUMN_TABLE_DB_SOURCE_BY_QUERY);
         String query = gremlinQueryProvider.getQuery(gremlinQuery);
         String columnQuery = String.format(query,sourceType.toLowerCase(), queryTable, offset, offset + limit);
         List<Map<String, AtlasVertex>> sourceDBTableColumns = (List) graph.executeGremlinScript(columnQuery, false);
@@ -758,14 +752,14 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         attributes.add("comment");
         attributes.add("description");
         attributes.add("createTime");
-        attributes.add("temporary");
+        attributes.add(temporary);
         Table table = new Table();
         if (Objects.nonNull(tableVertex)) {
             AtlasEntity.AtlasEntityWithExtInfo tableEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(tableVertex, attributes, null, true);
             AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
             table.setTableId(tableEntity.getGuid());
             table.setTableName(tableEntity.getAttribute("name").toString());
-            if(Boolean.getBoolean(tableEntity.getAttribute("temporary").toString()) == true) {
+            if(Boolean.getBoolean(tableEntity.getAttribute(temporary).toString()) == true) {
                 table.setVirtualTable(true);
             } else {
                 table.setVirtualTable(false);
@@ -792,8 +786,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String queryColumn, Boolean active, int offset, int limit) throws AtlasBaseException {
         PageResult<Column> columnPageResult = new PageResult<>();
         ArrayList<Column> columns = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_COLUMN_TABLE_DB_BY_QUERY))
-                                                                                  :((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY));
+        AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_ACTIVE_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_COLUMN_TABLE_DB_BY_QUERY))
+                                                                                          : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.COLUMN_TABLE_DB_BY_QUERY));
         String query = gremlinQueryProvider.getQuery(gremlinQuery);
         String columnQuery = String.format(query, queryColumn, offset, offset + limit);
         List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(columnQuery, false);
@@ -817,8 +811,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String queryColumn, Boolean active, int offset, int limit,String dbs) throws AtlasBaseException {
         PageResult<Column> columnPageResult = new PageResult<>();
         ArrayList<Column> columns = new ArrayList<>();
-        MetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_COLUMN_TABLE_DB_BY_QUERY))
-                                                                                  :((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_COLUMN_TABLE_DB_BY_QUERY));
+        AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_COLUMN_TABLE_DB_BY_QUERY))
+                                                                                          : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_COLUMN_TABLE_DB_BY_QUERY));
         String query = gremlinQueryProvider.getQuery(gremlinQuery);
         String columnQuery = String.format(query, queryColumn,dbs, offset, offset + limit);
         List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(columnQuery, false);
@@ -1080,14 +1074,14 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             List<String> attributes = new ArrayList<>();
             attributes.add("name");
             attributes.add("comment");
-            attributes.add("temporary");
+            attributes.add(temporary);
             List<String> relationAttributes = new ArrayList<>();
             relationAttributes.add("db");
             if (Objects.nonNull(table)) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
                 AtlasEntity entity = dbEntityWithExtInfo.getEntity();
                 tb.setTableName(entity.getAttribute("name").toString());
-                if(Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
+                if(Boolean.getBoolean(entity.getAttribute(temporary).toString()) == true) {
                     tb.setVirtualTable(true);
                 } else {
                     tb.setVirtualTable(false);

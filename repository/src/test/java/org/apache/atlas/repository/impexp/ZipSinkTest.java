@@ -23,7 +23,7 @@ import org.apache.atlas.model.impexp.AtlasExportRequest;
 import org.apache.atlas.model.impexp.AtlasExportResult;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -204,7 +204,7 @@ public class ZipSinkTest {
     }
 
     private boolean compareJsonWithObject(String s, AtlasExportResult defaultExportResult) {
-        String json = AtlasType.toJson(defaultExportResult);
+        String json = BaseAtlasType.toJson(defaultExportResult);
         return json.equals(s);
     }
 }

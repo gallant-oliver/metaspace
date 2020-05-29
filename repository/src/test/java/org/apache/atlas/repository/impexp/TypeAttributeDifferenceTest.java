@@ -17,7 +17,7 @@
  */
 package org.apache.atlas.repository.impexp;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
@@ -49,7 +49,7 @@ public class TypeAttributeDifferenceTest {
     private List<AtlasStructDef.AtlasAttributeDef> getAtlasAttributeDefs(String... names) {
         List<AtlasStructDef.AtlasAttributeDef> list = new ArrayList<>();
         for (String s : names) {
-            list.add(new AtlasStructDef.AtlasAttributeDef(s, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+            list.add(new AtlasStructDef.AtlasAttributeDef(s, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         }
 
         return list;

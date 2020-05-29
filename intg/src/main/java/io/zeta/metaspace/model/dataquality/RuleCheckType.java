@@ -53,7 +53,7 @@ public enum RuleCheckType {
     public static RuleCheckType getRuleCheckTypeByCode(Integer code) {
 //        RuleCheckType defaultRuleCheckType = RuleCheckType.FIX;
         for(RuleCheckType rc : RuleCheckType.values()) {
-            if(rc.code == code)
+            if(rc.code.equals(code))
                 return rc;
         }
         throw  new RuntimeException();

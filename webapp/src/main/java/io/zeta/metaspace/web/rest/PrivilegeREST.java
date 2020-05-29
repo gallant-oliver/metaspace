@@ -81,7 +81,7 @@ public class PrivilegeREST {
     @GET
     @Path("/users/{userId}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public UserInfo UserInfo(@PathParam("userId") String userId) throws AtlasBaseException {
+    public UserInfo userInfo(@PathParam("userId") String userId) throws AtlasBaseException {
         try {
             return usersService.getUserInfoById(userId);
         } catch (Exception e) {
@@ -99,7 +99,7 @@ public class PrivilegeREST {
     @Path("/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<User> UserList(Parameters parameters) throws AtlasBaseException {
+    public PageResult<User> userList(Parameters parameters) throws AtlasBaseException {
         try {
             return usersService.getUserList(parameters);
         } catch (Exception e) {

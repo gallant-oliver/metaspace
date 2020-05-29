@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-public class WorkItemManager<T, U extends WorkItemConsumer> {
+public class WorkItemManager<T, U extends BaseWorkItemConsumer> {
     private static final Logger LOG = LoggerFactory.getLogger(WorkItemManager.class);
 
     private final BlockingQueue<T> workQueue;

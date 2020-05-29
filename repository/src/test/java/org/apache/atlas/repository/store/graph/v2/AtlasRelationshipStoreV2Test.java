@@ -35,7 +35,7 @@ import org.apache.atlas.repository.graph.GraphBackedSearchIndexer;
 import org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.AtlasRelationshipStore;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.type.AtlasEntityType;
@@ -77,7 +77,7 @@ public abstract class AtlasRelationshipStoreV2Test {
     AtlasTypeDefStore typeDefStore;
 
     @Inject
-    DeleteHandlerV1 deleteHandler;
+    BaseDeleteHandlerV1 deleteHandler;
 
     @Inject
     EntityGraphMapper graphMapper;

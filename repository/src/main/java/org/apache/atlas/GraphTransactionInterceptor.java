@@ -43,7 +43,7 @@ public class GraphTransactionInterceptor implements MethodInterceptor {
 
     @VisibleForTesting
     private static final ObjectUpdateSynchronizer               OBJECT_UPDATE_SYNCHRONIZER = new ObjectUpdateSynchronizer();
-    private static final ThreadLocal<List<PostTransactionHook>> postTransactionHooks       = new ThreadLocal<>();
+    private static final ThreadLocal<List<AbstractPostTransactionHook>> postTransactionHooks       = new ThreadLocal<>();
     private static final ThreadLocal<Boolean>                   isTxnOpen                  = ThreadLocal.withInitial(() -> Boolean.FALSE);
     private static final ThreadLocal<Boolean>                   innerFailure               = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
@@ -107,7 +107,7 @@ public class GraphTransactionInterceptor implements MethodInterceptor {
                 isTxnOpen.set(Boolean.FALSE);
                 innerFailure.set(Boolean.FALSE);
 
-                List<PostTransactionHook> trxHooks = postTransactionHooks.get();
+                List<AbstractPostTransactionHook> trxHooks = postTransactionHooks.get();
 
                 if (trxHooks != null) {
                     if (LOG.isDebugEnabled()) {
@@ -116,7 +116,7 @@ public class GraphTransactionInterceptor implements MethodInterceptor {
 
                     postTransactionHooks.remove();
 
-                    for (PostTransactionHook trxHook : trxHooks) {
+                    for (AbstractPostTransactionHook trxHook : trxHooks) {
                         try {
                             trxHook.onComplete(isSuccess);
                         } catch (Throwable t) {
@@ -177,9 +177,9 @@ public class GraphTransactionInterceptor implements MethodInterceptor {
         }
     }
 
-    public static abstract class PostTransactionHook {
-        protected PostTransactionHook() {
-            List<PostTransactionHook> trxHooks = postTransactionHooks.get();
+    public static abstract class AbstractPostTransactionHook {
+        protected AbstractPostTransactionHook() {
+            List<AbstractPostTransactionHook> trxHooks = postTransactionHooks.get();
 
             if (trxHooks == null) {
                 trxHooks = new ArrayList<>();

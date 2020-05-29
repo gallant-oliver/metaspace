@@ -263,7 +263,7 @@ public class WarningGroupREST {
     @Path("/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<User> UserList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult<User> userList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return TenantService.defaultTenant.equals(tenantId)?usersService.getUserList(parameters) : usersService.getUserListV2(tenantId, parameters);
         } catch (Exception e) {

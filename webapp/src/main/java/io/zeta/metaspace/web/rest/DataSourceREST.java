@@ -20,13 +20,13 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.dataSource.*;
-import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
-import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
-import io.zeta.metaspace.model.dataSource.DataSourceBody;
-import io.zeta.metaspace.model.dataSource.DataSourceConnection;
-import io.zeta.metaspace.model.dataSource.DataSourceHead;
-import io.zeta.metaspace.model.dataSource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.*;
+import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
+import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUserId;
+import io.zeta.metaspace.model.datasource.DataSourceBody;
+import io.zeta.metaspace.model.datasource.DataSourceConnection;
+import io.zeta.metaspace.model.datasource.DataSourceHead;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -41,6 +41,7 @@ import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.util.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -118,7 +119,7 @@ public class DataSourceREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
 
-        dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+        dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
         dataSourceService.setNewDataSource(dataSourceBody,false,tenantId);
         return true;
     }
@@ -141,7 +142,7 @@ public class DataSourceREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
 
-        dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+        dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
         dataSourceService.setNewDataSource(dataSourceBody,true,tenantId);
         return true;
     }
@@ -341,7 +342,7 @@ public class DataSourceREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if(name.length() < 6 || !name.substring(name.length() - 5).equals(".xlsx")) {
+            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
             }
 
@@ -419,7 +420,7 @@ public class DataSourceREST {
         TableSchema  tableSchema = new TableSchema();
         tableSchema.setInstance(sourceId);
         UserPrivilegeDataSource userPrivilegeDataSource = dataSourceService.getUserPrivilegesDataSource(AdminUtils.getUserData().getUserId(), sourceId);
-        if (userPrivilegeDataSource.getPrivilege().equals("r")) {
+        if (UserPrivilegeDataSource.READ.getPrivilege().equals(userPrivilegeDataSource.getPrivilege())) {
             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
         }
         AtomicBoolean importing;

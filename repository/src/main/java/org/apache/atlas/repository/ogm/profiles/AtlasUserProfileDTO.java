@@ -117,4 +117,9 @@ public class AtlasUserProfileDTO extends AbstractDataTransferObject<AtlasUserPro
 
         return ret;
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

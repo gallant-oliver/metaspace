@@ -31,7 +31,7 @@ import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityCreateReq
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.EntityStream;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.web.service.ServiceState;
 import org.apache.commons.configuration.Configuration;
@@ -79,7 +79,7 @@ public class NotificationHookConsumerTest {
     public void setup() throws AtlasBaseException {
         MockitoAnnotations.initMocks(this);
 
-        AtlasType                mockType   = mock(AtlasType.class);
+        BaseAtlasType mockType   = mock(BaseAtlasType.class);
         AtlasEntitiesWithExtInfo mockEntity = mock(AtlasEntitiesWithExtInfo.class);
 
         when(typeRegistry.getType(anyString())).thenReturn(mockType);

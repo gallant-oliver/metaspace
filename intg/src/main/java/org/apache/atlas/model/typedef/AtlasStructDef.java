@@ -57,7 +57,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class AtlasStructDef extends AtlasBaseTypeDef implements Serializable {
+public class AtlasStructDef extends BaseAtlasBaseTypeDef implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // do not update this list contents directly - the list might be in the middle of iteration in another thread
@@ -545,9 +545,10 @@ public class AtlasStructDef extends AtlasBaseTypeDef implements Serializable {
         public static final String CONSTRAINT_TYPE_OWNED_REF   = "ownedRef";
         public static final String CONSTRAINT_TYPE_INVERSE_REF = "inverseRef";
         public static final String CONSTRAINT_PARAM_ATTRIBUTE  = "attribute";
-
-        private String              type;   // foreignKey/mappedFromRef/valueInRange
-        private Map<String, Object> params; // onDelete=cascade/refAttribute=attr2/min=0,max=23
+        // foreignKey/mappedFromRef/valueInRange
+        private String              type;
+        // onDelete=cascade/refAttribute=attr2/min=0,max=23
+        private Map<String, Object> params;
 
 
         public AtlasConstraintDef() { }

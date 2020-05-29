@@ -26,7 +26,7 @@ import java.util.List;
  * built-in null handling and some other nice features.
  *
  */
-public class ComparisonOperatorExpression extends BinaryExpression {
+public class ComparisonOperatorExpression extends AbstractBinaryExpression {
 
     public ComparisonOperatorExpression(GroovyExpression left, GroovyExpression right) {
         super(left, "<=>", right);

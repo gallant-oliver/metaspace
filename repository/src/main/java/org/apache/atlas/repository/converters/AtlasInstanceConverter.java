@@ -39,7 +39,7 @@ import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.repository.converters.AtlasFormatConverter.ConverterContext;
 import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -112,7 +112,7 @@ public class AtlasInstanceConverter {
 
     public Referenceable getReferenceable(AtlasEntity entity, final ConverterContext ctx) throws AtlasBaseException {
         AtlasFormatConverter converter  = instanceFormatters.getConverter(TypeCategory.ENTITY);
-        AtlasType            entityType = typeRegistry.getType(entity.getTypeName());
+        BaseAtlasType entityType = typeRegistry.getType(entity.getTypeName());
         Referenceable        ref        = (Referenceable) converter.fromV2ToV1(entity, entityType, ctx);
 
         return ref;
@@ -120,7 +120,7 @@ public class AtlasInstanceConverter {
 
     public Struct getTrait(AtlasClassification classification) throws AtlasBaseException {
         AtlasFormatConverter converter          = instanceFormatters.getConverter(TypeCategory.CLASSIFICATION);
-        AtlasType            classificationType = typeRegistry.getType(classification.getTypeName());
+        BaseAtlasType classificationType = typeRegistry.getType(classification.getTypeName());
         Struct               trait               = (Struct)converter.fromV2ToV1(classification, classificationType, new ConverterContext());
 
         return trait;
@@ -182,7 +182,7 @@ public class AtlasInstanceConverter {
         Referenceable[] referenceables = new Referenceable[jsonEntities.length];
 
         for (int i = 0; i < jsonEntities.length; i++) {
-            referenceables[i] = AtlasType.fromV1Json(jsonEntities[i], Referenceable.class);
+            referenceables[i] = BaseAtlasType.fromV1Json(jsonEntities[i], Referenceable.class);
         }
 
         AtlasEntityFormatConverter converter = (AtlasEntityFormatConverter) instanceFormatters.getConverter(TypeCategory.ENTITY);
@@ -266,6 +266,8 @@ public class AtlasInstanceConverter {
                                 Collections.reverse(deletedEntities);
                                 entityResult.set(EntityResult.OP_DELETED, getGuids(deletedEntities));
                             }
+                            break;
+                        default:
                             break;
                     }
 
@@ -374,9 +376,9 @@ public class AtlasInstanceConverter {
                 return EntityAuditEvent.EntityAuditAction.PROPAGATED_TAG_DELETE;
             case PROPAGATED_CLASSIFICATION_UPDATE:
                 return EntityAuditEvent.EntityAuditAction.PROPAGATED_TAG_UPDATE;
+            default:
+                return null;
         }
-
-        return null;
     }
 
     private EntityAuditEventV2.EntityAuditActionV2 getV2AuditAction(EntityAuditEvent.EntityAuditAction v1AuditAction) {
@@ -405,8 +407,8 @@ public class AtlasInstanceConverter {
                 return EntityAuditEventV2.EntityAuditActionV2.PROPAGATED_CLASSIFICATION_DELETE;
             case PROPAGATED_TAG_UPDATE:
                 return EntityAuditEventV2.EntityAuditActionV2.PROPAGATED_CLASSIFICATION_UPDATE;
+            default:
+                return null;
         }
-
-        return null;
     }
 }

@@ -25,7 +25,6 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.apache.tinkerpop.shaded.jackson.databind.JsonNode;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ public class JsonNodeParsersTest extends BaseUtils {
         Object nodeId = getId(nd);
         TinkerGraph tg = TinkerGraph.open();
 
-        JsonNodeParsers.ParseElement pe = new JsonNodeParsers.ParseVertex();
+        JsonNodeParsers.BaseParseElement pe = new JsonNodeParsers.ParseVertex();
         pe.setContext(graphSONUtility);
         pe.parse(tg, new MappedElementCache(),  nd);
 
@@ -77,13 +76,13 @@ public class JsonNodeParsersTest extends BaseUtils {
 
         TinkerGraph tg = TinkerGraph.open();
         MappedElementCache cache = new MappedElementCache();
-        JsonNodeParsers.ParseElement peVertex = new JsonNodeParsers.ParseVertex();
+        JsonNodeParsers.BaseParseElement peVertex = new JsonNodeParsers.ParseVertex();
         peVertex.setContext(graphSONUtility);
 
         peVertex.parse(tg, cache, getDBV());
         peVertex.parse(tg, cache, getTableV());
 
-        JsonNodeParsers.ParseElement pe = new JsonNodeParsers.ParseEdge();
+        JsonNodeParsers.BaseParseElement pe = new JsonNodeParsers.ParseEdge();
         pe.setContext(graphSONUtility);
         pe.parse(tg, cache, getEdge());
 
@@ -107,7 +106,7 @@ public class JsonNodeParsersTest extends BaseUtils {
         assertProperties(e);
     }
 
-    private void updateParseElement(TinkerGraph tg, JsonNodeParsers.ParseElement pe, Object nodeId) {
+    private void updateParseElement(TinkerGraph tg, JsonNodeParsers.BaseParseElement pe, Object nodeId) {
         Map<String, Object> props = new HashMap<>();
         props.put("k1", "v1");
         props.put("k2", "v2");

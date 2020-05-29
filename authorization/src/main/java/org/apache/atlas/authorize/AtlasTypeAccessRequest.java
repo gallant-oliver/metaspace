@@ -17,27 +17,27 @@
  */
 package org.apache.atlas.authorize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import java.util.Set;
 
 public class AtlasTypeAccessRequest extends AtlasAccessRequest {
-    private final AtlasBaseTypeDef typeDef;
+    private final BaseAtlasBaseTypeDef typeDef;
 
 
-    public AtlasTypeAccessRequest(AtlasPrivilege action, AtlasBaseTypeDef typeDef) {
+    public AtlasTypeAccessRequest(AtlasPrivilege action, BaseAtlasBaseTypeDef typeDef) {
         super(action);
 
         this.typeDef = typeDef;
     }
 
-    public AtlasTypeAccessRequest(AtlasPrivilege action, AtlasBaseTypeDef typeDef, String userName, Set<String> usergroups) {
+    public AtlasTypeAccessRequest(AtlasPrivilege action, BaseAtlasBaseTypeDef typeDef, String userName, Set<String> usergroups) {
         super(action, userName, usergroups);
 
         this.typeDef = typeDef;
     }
 
-    public AtlasBaseTypeDef getTypeDef() {
+    public BaseAtlasBaseTypeDef getTypeDef() {
         return typeDef;
     }
 

@@ -32,7 +32,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.slf4j.Logger;
@@ -200,7 +200,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
         }
     }
 
-    void visitAttribute(AtlasType attrType, Object val) throws AtlasBaseException {
+    void visitAttribute(BaseAtlasType attrType, Object val) throws AtlasBaseException {
         if (attrType == null || val == null) {
             return;
         }
@@ -212,15 +212,15 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
 
             case ARRAY: {
                 AtlasArrayType arrayType = (AtlasArrayType) attrType;
-                AtlasType      elemType  = arrayType.getElementType();
+                BaseAtlasType elemType  = arrayType.getElementType();
 
                 visitCollectionReferences(elemType, val);
             }
             break;
 
             case MAP: {
-                AtlasType keyType   = ((AtlasMapType) attrType).getKeyType();
-                AtlasType valueType = ((AtlasMapType) attrType).getValueType();
+                BaseAtlasType keyType   = ((AtlasMapType) attrType).getKeyType();
+                BaseAtlasType valueType = ((AtlasMapType) attrType).getValueType();
 
                 visitMapReferences(keyType, valueType, val);
             }
@@ -239,7 +239,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
         }
     }
 
-    void visitMapReferences(AtlasType keyType, AtlasType valueType, Object val) throws AtlasBaseException {
+    void visitMapReferences(BaseAtlasType keyType, BaseAtlasType valueType, Object val) throws AtlasBaseException {
         if (keyType == null || valueType == null || val == null) {
             return;
         }
@@ -258,7 +258,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
         }
     }
 
-    void visitCollectionReferences(AtlasType elemType, Object val) throws AtlasBaseException {
+    void visitCollectionReferences(BaseAtlasType elemType, Object val) throws AtlasBaseException {
         if (elemType == null || val == null || isPrimitive(elemType.getTypeCategory())) {
             return;
         }
@@ -309,7 +309,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
 
         // visit struct attributes
         for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {
-            AtlasType attrType = attribute.getAttributeType();
+            BaseAtlasType attrType = attribute.getAttributeType();
             String    attrName = attribute.getName();
             Object    attrVal  = entity.getAttribute(attrName);
 
@@ -321,7 +321,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
 
     private void visitRelationships(AtlasEntityType entityType, AtlasEntity entity, List<String> visitedAttributes) throws AtlasBaseException {
         for (AtlasAttribute attribute : entityType.getRelationshipAttributes().values()) {
-            AtlasType attrType = attribute.getAttributeType();
+            BaseAtlasType attrType = attribute.getAttributeType();
             String attrName = attribute.getName();
             Object attrVal = entity.getRelationshipAttribute(attrName);
 
@@ -335,7 +335,7 @@ public class AtlasEntityGraphDiscoveryV2 implements EntityGraphDiscovery {
 
     void visitStruct(AtlasStructType structType, AtlasStruct struct) throws AtlasBaseException {
         for (AtlasAttribute attribute : structType.getAllAttributes().values()) {
-            AtlasType attrType = attribute.getAttributeType();
+            BaseAtlasType attrType = attribute.getAttributeType();
             Object    attrVal  = struct.getAttribute(attribute.getName());
 
             visitAttribute(attrType, attrVal);

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -105,13 +105,13 @@ public class TypesDef implements Serializable {
 
         sb.append("TypesDef{");
         sb.append("enumTypes=[");
-        AtlasBaseTypeDef.dumpObjects(enumTypes, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(enumTypes, sb);
         sb.append("], structTypes=[");
-        AtlasBaseTypeDef.dumpObjects(structTypes, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(structTypes, sb);
         sb.append("], traitTypes=[");
-        AtlasBaseTypeDef.dumpObjects(traitTypes, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(traitTypes, sb);
         sb.append("], classTypes=[");
-        AtlasBaseTypeDef.dumpObjects(classTypes, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(classTypes, sb);
         sb.append("]");
         sb.append("}");
 

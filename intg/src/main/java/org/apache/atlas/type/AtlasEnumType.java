@@ -30,7 +30,7 @@ import org.apache.atlas.model.typedef.AtlasEnumDef.AtlasEnumElementDef;
 /**
  * class that implements behaviour of an enum-type.
  */
-public class AtlasEnumType extends AtlasType {
+public class AtlasEnumType extends BaseAtlasType {
     private final AtlasEnumDef                     enumDef;
     private final Map<String, AtlasEnumElementDef> elementDefs;
     private final String                           defaultValue;

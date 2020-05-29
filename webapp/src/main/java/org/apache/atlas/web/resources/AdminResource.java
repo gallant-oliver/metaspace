@@ -32,7 +32,7 @@ import org.apache.atlas.model.impexp.*;
 import org.apache.atlas.model.metrics.AtlasMetrics;
 import org.apache.atlas.repository.impexp.*;
 import org.apache.atlas.services.MetricsService;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.util.SearchTracker;
 import org.apache.atlas.utils.AtlasJson;
@@ -361,7 +361,7 @@ public class AdminResource {
         AtlasImportResult result;
 
         try {
-            AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+            AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
             ZipSource zipSource = new ZipSource(inputStream);
 
             result = importService.run(zipSource, request, Servlets.getUserName(httpServletRequest),
@@ -397,7 +397,7 @@ public class AdminResource {
         AtlasImportResult result;
 
         try {
-            AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+            AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
             result = importService.run(request, Servlets.getUserName(httpServletRequest),
                                        Servlets.getHostName(httpServletRequest),
                                        AtlasAuthorizationUtils.getRequestIpAddress(httpServletRequest));

@@ -150,7 +150,8 @@ public final class InMemoryJAASConfiguration extends Configuration {
             Properties properties = new Properties();
             in = ClassLoader.getSystemResourceAsStream(propFile);
             if (in == null) {
-                if (!propFile.startsWith("/")) {
+                String prefix = "/";
+                if (!propFile.startsWith(prefix)) {
                     in = ClassLoader.getSystemResourceAsStream("/" + propFile);
                 }
                 if (in == null) {
@@ -378,7 +379,8 @@ public final class InMemoryJAASConfiguration extends Configuration {
     }
 
     private static boolean isNumeric(String str) {
-        return str.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
+        //match a number with optional '-' and decimal.
+        return str.matches("-?\\d+(\\.\\d+)?");
     }
 
     public static void setConfigSectionRedirect(String name, String redirectTo) {

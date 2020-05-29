@@ -169,7 +169,8 @@ public class AlterTableRename extends BaseHiveEvent {
 
     private void renameStorageDesc(AtlasEntityWithExtInfo oldEntityExtInfo, AtlasEntityWithExtInfo newEntityExtInfo, List<HookNotification> notifications) {
         AtlasEntity oldSd = getStorageDescEntity(oldEntityExtInfo);
-        AtlasEntity newSd = new AtlasEntity(getStorageDescEntity(newEntityExtInfo)); // make a copy of newSd, since we will be setting relationshipAttributes to 'null' below
+        // make a copy of newSd, since we will be setting relationshipAttributes to 'null' below
+        AtlasEntity newSd = new AtlasEntity(getStorageDescEntity(newEntityExtInfo));
         // and we need relationship attributes later during entity full update
 
         if (oldSd != null && newSd != null) {

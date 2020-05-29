@@ -264,7 +264,7 @@ public class AtlasRelationshipDefStoreV2Test {
     @Test(dataProvider = "invalidAttributeNameWithReservedKeywords")
     public void testCreateTypeWithReservedKeywords(AtlasRelationshipDef atlasRelationshipDef) throws AtlasException {
         try {
-            ApplicationProperties.get().setProperty(AtlasAbstractDefStoreV2.ALLOW_RESERVED_KEYWORDS, false);
+            ApplicationProperties.get().setProperty(BaseAtlasAbstractDefStoreV2.ALLOW_RESERVED_KEYWORDS, false);
             relationshipDefStore.create(atlasRelationshipDef, null);
         } catch (AtlasBaseException e) {
             Assert.assertEquals(e.getAtlasErrorCode(), AtlasErrorCode.ATTRIBUTE_NAME_INVALID);

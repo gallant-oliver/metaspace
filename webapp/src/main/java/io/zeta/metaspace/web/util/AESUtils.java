@@ -51,7 +51,7 @@ public class AESUtils {
      * @throws UnsupportedEncodingException
      * @throws InvalidKeyException
      */
-    public static String AESEncode(String password) {
+    public static String aesEncode(String password) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
             SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
@@ -72,7 +72,7 @@ public class AESUtils {
     }
     /**
      * 解密
-     * @param AESPassword
+     * @param AesPassword
      * @return
      * @throws NoSuchPaddingException
      * @throws BadPaddingException
@@ -81,7 +81,7 @@ public class AESUtils {
      * @throws UnsupportedEncodingException
      * @throws InvalidKeyException
      */
-    public static String AESDecode(String AESPassword) {
+    public static String aesDecode(String aesPassword) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
             SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
@@ -92,7 +92,7 @@ public class AESUtils {
             SecretKey key = new SecretKeySpec(raw,AES);
             Cipher cipher = Cipher.getInstance(AES);
             cipher.init(Cipher.DECRYPT_MODE,key);
-            byte[] byteContent = new BASE64Decoder().decodeBuffer(AESPassword);
+            byte[] byteContent = new BASE64Decoder().decodeBuffer(aesPassword);
             byte[] byteDecode = cipher.doFinal(byteContent);
             return new String(byteDecode,CHARACTER);
         }catch (Exception e){
@@ -100,12 +100,4 @@ public class AESUtils {
             return null;
         }
     }
-//    @Test
-//    public void test()  {
-//        String password = "abcdefg";
-//        String AESPassword = AESEncode(password);
-//        String password2 = AESDecode(AESPassword);
-//        System.out.println(AESPassword);
-//        System.out.println(password2);
-//    }
 }

@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
 @Service
 public class TableService {
     private static final Logger LOG = LoggerFactory.getLogger(TableService.class);
-
+    public static final String SQL_REGEX = "CREATE[\\s\\S]*TABLE[\\s|\\sIF\\sNOT\\sEXISTS\\s]*([\\S]*\\.[\\S]*)";
     public String databaseAndTable(String sql) throws Exception {
-        Pattern pattern = Pattern.compile("CREATE[\\s\\S]*TABLE[\\s|\\sIF\\sNOT\\sEXISTS\\s]*([\\S]*\\.[\\S]*)");
+        Pattern pattern = Pattern.compile(SQL_REGEX);
         Matcher matcher = pattern.matcher(sql);
         if (matcher.find()) {
             return matcher.group(1);
@@ -45,16 +45,17 @@ public class TableService {
             HiveJdbcUtils.execute(sqlList);
             resultMap.put("errorCode", 0);
             resultMap.put("errorMsg", "执行成功");
+            return resultMap;
         } catch (Exception e) {
             resultMap.put("errorCode", -1);
             resultMap.put("errorMsg", "执行失败，[" + e.getMessage() + "]");
+            return resultMap;
         } finally {
             try {
                 reader.close();
             } catch (Exception e) {
                 LOG.warn("关闭文件失败");
             }
-            return resultMap;
         }
     }
 }

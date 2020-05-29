@@ -57,7 +57,7 @@ import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasRelationshipStoreV2;
 import org.apache.atlas.repository.store.graph.v2.AtlasTypeDefGraphStoreV2;
 import org.apache.atlas.repository.store.graph.v2.BulkImporterImpl;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v2.EntityGraphMapper;
 import org.apache.atlas.repository.store.graph.v1.HardDeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v1.SoftDeleteHandlerV1;
@@ -183,7 +183,7 @@ public class TestModules {
         }
 
         protected void bindDeleteHandler(Binder binder) {
-            binder.bind(DeleteHandlerV1.class).to(AtlasRepositoryConfiguration.getDeleteHandlerV1Impl()).asEagerSingleton();
+            binder.bind(BaseDeleteHandlerV1.class).to(AtlasRepositoryConfiguration.getDeleteHandlerV1Impl()).asEagerSingleton();
         }
 
         protected void bindAuditRepository(Binder binder) {
@@ -205,7 +205,7 @@ public class TestModules {
     public static class SoftDeleteModule extends TestOnlyModule {
         @Override
         protected void bindDeleteHandler(Binder binder) {
-            bind(DeleteHandlerV1.class).to(SoftDeleteHandlerV1.class).asEagerSingleton();
+            bind(BaseDeleteHandlerV1.class).to(SoftDeleteHandlerV1.class).asEagerSingleton();
             bind(AtlasEntityChangeNotifier.class).toProvider(MockNotifier.class);
         }
     }
@@ -213,7 +213,7 @@ public class TestModules {
     public static class HardDeleteModule extends TestOnlyModule {
         @Override
         protected void bindDeleteHandler(Binder binder) {
-            bind(DeleteHandlerV1.class).to(HardDeleteHandlerV1.class).asEagerSingleton();
+            bind(BaseDeleteHandlerV1.class).to(HardDeleteHandlerV1.class).asEagerSingleton();
             bind(AtlasEntityChangeNotifier.class).toProvider(MockNotifier.class);
         }
     }

@@ -20,7 +20,7 @@ package org.apache.atlas.web.errors;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.Response;
@@ -62,7 +62,7 @@ public class AtlasBaseExceptionMapper implements ExceptionMapper<AtlasBaseExcept
 
         // No body for 204 (and maybe 304)
         if (Response.Status.NO_CONTENT != errorCode.getHttpCode()) {
-            responseBuilder.entity(AtlasType.toJson(errorJsonMap));
+            responseBuilder.entity(BaseAtlasType.toJson(errorJsonMap));
         }
         return responseBuilder.build();
     }

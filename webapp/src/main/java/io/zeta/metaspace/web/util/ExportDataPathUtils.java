@@ -41,6 +41,8 @@ import java.util.UUID;
 public class ExportDataPathUtils {
 
     public static String SEPARATOR = ",";
+    public static String fileFormat1 = ".xlsx";
+    public static String fileFormat2 = ".xls";
 
     public static DownloadUri generateURL(String address,List<String> ids) throws AtlasBaseException {
         String downloadId = UUID.randomUUID().toString();

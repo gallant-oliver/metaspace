@@ -134,7 +134,9 @@ public final class AtlasGraphSONUtility {
         final ObjectNode jsonElement = createJSONMap(
                 createPropertyMap(element, propertyKeys, elementPropertyConfig, normalized), propertyKeys, showTypes);
 
-        if ((isEdge && this.includeReservedEdgeId) || (!isEdge && this.includeReservedVertexId)) {
+        boolean bool1 = isEdge && this.includeReservedEdgeId;
+        boolean bool2 = !isEdge && this.includeReservedVertexId;
+        if (bool1 || bool2) {
             putObject(jsonElement, AtlasGraphSONTokens.INTERNAL_ID, element.getId());
         }
 

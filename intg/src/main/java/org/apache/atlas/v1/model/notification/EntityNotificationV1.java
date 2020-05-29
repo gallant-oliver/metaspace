@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.apache.atlas.model.notification.EntityNotification;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.type.AtlasClassificationType;
@@ -181,7 +181,7 @@ public class EntityNotificationV1 extends EntityNotification implements Serializ
         }
         sb.append(", operationType=").append(operationType);
         sb.append(", traits=[");
-        AtlasBaseTypeDef.dumpObjects(traits, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(traits, sb);
         sb.append("]");
         sb.append("}");
 

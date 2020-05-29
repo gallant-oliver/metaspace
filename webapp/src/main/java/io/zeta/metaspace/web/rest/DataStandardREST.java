@@ -243,7 +243,7 @@ public class DataStandardREST {
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
-            if(!(name.endsWith(".xlsx") || name.endsWith(".xls"))) {
+            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
             }
 

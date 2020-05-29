@@ -32,7 +32,7 @@ import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
@@ -286,10 +286,10 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
         String ret = getResultString(result, COLUMN_DEFINITION);
 
         if (getAuditType(result) != ENTITY_AUDIT_V2) {
-            Referenceable referenceable = AtlasType.fromV1Json(ret, Referenceable.class);
+            Referenceable referenceable = BaseAtlasType.fromV1Json(ret, Referenceable.class);
             AtlasEntity entity = toAtlasEntity(referenceable);
 
-            ret = AtlasType.toJson(entity);
+            ret = BaseAtlasType.toJson(entity);
         }
 
         return ret;
@@ -329,9 +329,10 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
                 String v1AuditPrefix = EntityAuditListener.getV1AuditPrefix(v1AuditAction);
                 String[] split = v1DetailsWithPrefix.split(v1AuditPrefix);
 
-                if (ArrayUtils.isNotEmpty(split) && split.length == 2) {
+                int length = 2;
+                if (ArrayUtils.isNotEmpty(split) && split.length == length) {
                     String v1AuditDetails = split[1];
-                    Referenceable referenceable = AtlasType.fromV1Json(v1AuditDetails, Referenceable.class);
+                    Referenceable referenceable = BaseAtlasType.fromV1Json(v1AuditDetails, Referenceable.class);
                     String v2Json = (referenceable != null) ? toV2Json(referenceable, v1AuditAction) : v1AuditDetails;
 
                     if (v2Json != null) {
@@ -352,11 +353,11 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
         if (action == TAG_ADD || action == TAG_UPDATE || action == TAG_DELETE) {
             AtlasClassification classification = instanceConverter.toAtlasClassification(referenceable);
 
-            ret = AtlasType.toJson(classification);
+            ret = BaseAtlasType.toJson(classification);
         } else {
             AtlasEntity entity = toAtlasEntity(referenceable);
 
-            ret = AtlasType.toJson(entity);
+            ret = BaseAtlasType.toJson(entity);
         }
 
         return ret;

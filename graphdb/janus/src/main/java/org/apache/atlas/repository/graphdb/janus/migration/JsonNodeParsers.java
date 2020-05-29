@@ -35,7 +35,7 @@ public class JsonNodeParsers {
     private static final Logger LOG = LoggerFactory.getLogger(JsonNodeParsers.class);
 
 
-    static abstract class ParseElement {
+    static abstract class BaseParseElement {
         protected GraphSONUtility utility;
 
         abstract String getMessage();
@@ -50,7 +50,7 @@ public class JsonNodeParsers {
             this.utility = utility;
         }
 
-        abstract Map<String, Object> parse(Graph gr, MappedElementCache cache, JsonNode Node);
+        abstract Map<String, Object> parse(Graph gr, MappedElementCache cache, JsonNode node);
 
         public void commit(Graph graph) {
             graph.tx().commit();
@@ -76,7 +76,7 @@ public class JsonNodeParsers {
 
     }
 
-    static class ParseEdge extends ParseElement {
+    static class ParseEdge extends BaseParseElement {
         private static final String MESSAGE_EDGE          = "edge";
 
 
@@ -127,7 +127,7 @@ public class JsonNodeParsers {
         }
     }
 
-    static class ParseVertex extends ParseElement {
+    static class ParseVertex extends BaseParseElement {
         private static final String NODE_VALUE_KEY = "value";
         private static final String MESSAGE_VERTEX = "vertex";
 

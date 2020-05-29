@@ -26,7 +26,7 @@ import org.apache.atlas.notification.NotificationInterface.NotificationType;
 import org.apache.atlas.model.notification.AtlasNotificationMessage;
 import org.apache.atlas.notification.entity.EntityNotificationTest;
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityUpdateRequest;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.model.notification.MessageVersion;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -67,7 +67,7 @@ public class KafkaConsumerTest {
     public void testReceive() throws Exception {
         Referenceable                        entity  = getEntity(TRAIT_NAME);
         EntityUpdateRequest                  message = new EntityUpdateRequest("user1", entity);
-        String                               json    = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), message));
+        String                               json    = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("1.0.0"), message));
         TopicPartition                       tp      = new TopicPartition("ATLAS_HOOK", 0);
         List<ConsumerRecord<String, String>> klist   = Collections.singletonList(new ConsumerRecord<>("ATLAS_HOOK", 0, 0L, "mykey", json));
         Map                                  mp      = Collections.singletonMap(tp, klist);
@@ -91,7 +91,7 @@ public class KafkaConsumerTest {
     public void testNextVersionMismatch() throws Exception {
         Referenceable                        entity  = getEntity(TRAIT_NAME);
         EntityUpdateRequest                  message = new EntityUpdateRequest("user1", entity);
-        String                               json    = AtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("2.0.0"), message));
+        String                               json    = BaseAtlasType.toV1Json(new AtlasNotificationMessage<>(new MessageVersion("2.0.0"), message));
         TopicPartition                       tp      = new TopicPartition("ATLAS_HOOK",0);
         List<ConsumerRecord<String, String>> klist   = Collections.singletonList(new ConsumerRecord<>("ATLAS_HOOK", 0, 0L, "mykey", json));
         Map                                  mp      = Collections.singletonMap(tp,klist);

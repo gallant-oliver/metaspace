@@ -56,13 +56,13 @@ public class FullTextMapperV2 {
     private final boolean                  followReferences;
     private final Map<String, Set<String>> excludeAttributesCache = new HashMap<>();
 
-    private Configuration APPLICATION_PROPERTIES = null;
+    private Configuration applicationProperties=null;
 
     @Inject
     public FullTextMapperV2(AtlasTypeRegistry typeRegistry, Configuration configuration) {
         entityGraphRetriever   = new EntityGraphRetriever(typeRegistry);
-        APPLICATION_PROPERTIES = configuration;
-        followReferences       = APPLICATION_PROPERTIES != null && APPLICATION_PROPERTIES.getBoolean(FULL_TEXT_FOLLOW_REFERENCES, false);
+        applicationProperties = configuration;
+        followReferences       = applicationProperties != null && applicationProperties.getBoolean(FULL_TEXT_FOLLOW_REFERENCES, false);
     }
 
     /**
@@ -230,8 +230,8 @@ public class FullTextMapperV2 {
         if (excludeAttributesCache.containsKey(typeName)) {
             ret = excludeAttributesCache.get(typeName);
 
-        } else if (APPLICATION_PROPERTIES != null) {
-            String[] excludeAttributes = APPLICATION_PROPERTIES.getStringArray(FULL_TEXT_EXCLUDE_ATTRIBUTE_PROPERTY + "." +
+        } else if (applicationProperties != null) {
+            String[] excludeAttributes = applicationProperties.getStringArray(FULL_TEXT_EXCLUDE_ATTRIBUTE_PROPERTY + "." +
                                                                                typeName + "." + "attributes.exclude");
 
             if (ArrayUtils.isNotEmpty(excludeAttributes)) {

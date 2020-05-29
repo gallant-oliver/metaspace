@@ -26,11 +26,11 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.instance.AtlasStruct;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_INT;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_DATE;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_INT;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinality;
@@ -56,18 +56,18 @@ public class TestAtlasStructType {
         AtlasAttributeDef multiValuedAttribMax    = new AtlasAttributeDef();
 
         multiValuedAttribMinMax.setName(MULTI_VAL_ATTR_NAME_MIN_MAX);
-        multiValuedAttribMinMax.setTypeName(AtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
+        multiValuedAttribMinMax.setTypeName(BaseAtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
         multiValuedAttribMinMax.setCardinality(Cardinality.LIST);
         multiValuedAttribMinMax.setValuesMinCount(MULTI_VAL_ATTR_MIN_COUNT);
         multiValuedAttribMinMax.setValuesMaxCount(MULTI_VAL_ATTR_MAX_COUNT);
 
         multiValuedAttribMin.setName(MULTI_VAL_ATTR_NAME_MIN);
-        multiValuedAttribMin.setTypeName(AtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
+        multiValuedAttribMin.setTypeName(BaseAtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
         multiValuedAttribMin.setCardinality(Cardinality.SET);
         multiValuedAttribMin.setValuesMinCount(MULTI_VAL_ATTR_MIN_COUNT);
 
         multiValuedAttribMax.setName(MULTI_VAL_ATTR_NAME_MAX);
-        multiValuedAttribMax.setTypeName(AtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
+        multiValuedAttribMax.setTypeName(BaseAtlasBaseTypeDef.getArrayTypeName(ATLAS_TYPE_INT));
         multiValuedAttribMax.setCardinality(Cardinality.LIST);
         multiValuedAttribMax.setValuesMaxCount(MULTI_VAL_ATTR_MAX_COUNT);
 

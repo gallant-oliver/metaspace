@@ -21,7 +21,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef.RelationshipCategory;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinality;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -43,12 +43,12 @@ public class TestAtlasRelationshipDef {
         AtlasRelationshipDef relationshipDef = new AtlasRelationshipDef("emptyRelationshipDef", "desc 1", "version1",
                 RelationshipCategory.ASSOCIATION, AtlasRelationshipDef.PropagateTags.ONE_TO_TWO, ep1, ep2);
 
-        String jsonString = AtlasType.toJson(relationshipDef);
+        String jsonString = BaseAtlasType.toJson(relationshipDef);
         System.out.println(jsonString);
         assertNotNull(jsonString);
 
-        AtlasRelationshipDef relationshipDef2 = AtlasType.fromJson(jsonString, AtlasRelationshipDef.class);
-        String jsonString2 = AtlasType.toJson(relationshipDef2);
+        AtlasRelationshipDef relationshipDef2 = BaseAtlasType.fromJson(jsonString, AtlasRelationshipDef.class);
+        String jsonString2 = BaseAtlasType.toJson(relationshipDef2);
 
         assertEquals(jsonString, jsonString2);
         assertEquals(relationshipDef2, relationshipDef,
@@ -64,11 +64,11 @@ public class TestAtlasRelationshipDef {
                 RelationshipCategory.ASSOCIATION, AtlasRelationshipDef.PropagateTags.ONE_TO_TWO, ep1, ep2);
         relationshipDef.setAttributeDefs(
                 ModelTestUtil.newAttributeDefsWithAllBuiltInTypesForRelationship(PREFIX_ATTRIBUTE_NAME));
-        String jsonString = AtlasType.toJson(relationshipDef);
+        String jsonString = BaseAtlasType.toJson(relationshipDef);
         assertNotNull(jsonString);
 
-        AtlasRelationshipDef relationshipDef2 = AtlasType.fromJson(jsonString, AtlasRelationshipDef.class);
-        String jsonString2 = AtlasType.toJson(relationshipDef2);
+        AtlasRelationshipDef relationshipDef2 = BaseAtlasType.fromJson(jsonString, AtlasRelationshipDef.class);
+        String jsonString2 = BaseAtlasType.toJson(relationshipDef2);
 
         assertEquals(jsonString, jsonString2);
         assertEquals(relationshipDef2, relationshipDef,

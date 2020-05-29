@@ -32,7 +32,8 @@ public class GuavaUtils {
                 String s = OKHttpClient.doGet(infoURL, null, header);
                 JSONObject jsonObject = gson.fromJson(s, JSONObject.class);
                 Object message = jsonObject.get("message");
-                if (message == null || (!message.toString().equals("Success"))) {
+                String success = "Success";
+                if (message == null || (!message.toString().equals(success))) {
                     String error = message == null? String.format("调用sso接口%s返回信息为空", infoURL): message.toString();
                     throw new Exception(error);
                 }

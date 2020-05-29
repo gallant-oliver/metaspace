@@ -22,30 +22,30 @@ public enum UserPrivilegeDataSource {
     WRITE("WRITE","编辑","w"),
     MANAGER("MANAGER","管理者","w"),
     NOPROVILEGE("NOPROVILEGE","无权限",null);
-    UserPrivilegeDataSource(String PrivilegeCore, String PrivilegeName,String privilege) {
-        this.PrivilegeName = PrivilegeName;
-        this.PrivilegeCore = PrivilegeCore;
-        this.Privilege = privilege;
+    UserPrivilegeDataSource(String privilegeCore, String privilegeName,String privilege) {
+        this.privilegeName = privilegeName;
+        this.privilegeCore = privilegeCore;
+        this.privilege = privilege;
     }
 
-    private String PrivilegeName;
-    private String PrivilegeCore;
-    private String  Privilege;
+    private String privilegeName;
+    private String privilegeCore;
+    private String  privilege;
     public String getPrivilegeName() {
-        return PrivilegeName;
+        return privilegeName;
     }
 
     public String getPrivilegeCore() {
-        return PrivilegeCore;
+        return privilegeCore;
     }
 
     public String getPrivilege() {
-        return Privilege;
+        return privilege;
     }
 
-    public static UserPrivilegeDataSource getUserPrivilegeProjectByName(String PrivilegeCore){
+    public static UserPrivilegeDataSource getUserPrivilegeProjectByName(String privilegeCore){
         for (UserPrivilegeDataSource module: UserPrivilegeDataSource.values()){
-            if (module.getPrivilegeCore().equalsIgnoreCase(PrivilegeCore)){
+            if (module.getPrivilegeCore().equalsIgnoreCase(privilegeCore)){
                 return module;
             }
         }

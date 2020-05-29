@@ -23,9 +23,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasServiceException;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.typedef.*;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.testng.Assert;
@@ -77,7 +77,7 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
                             Collections.singletonList((TraitTypeDefinition) typeDefinition), Collections.emptyList());
                 }
 
-                String typesAsJSON = AtlasType.toV1Json(typesDef);
+                String typesAsJSON = BaseAtlasType.toV1Json(typesDef);
 
                 System.out.println("typesAsJSON = " + typesAsJSON);
 
@@ -95,7 +95,7 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
     @Test
     public void testDuplicateSubmit() throws Exception {
         ClassTypeDefinition type = TypesUtil.createClassTypeDef(randomString(), null,
-                Collections.<String>emptySet(), TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                Collections.<String>emptySet(), TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         TypesDef typesDef =
                 new TypesDef(Collections.<EnumTypeDefinition>emptyList(), Collections.<StructTypeDefinition>emptyList(),
                         Collections.<TraitTypeDefinition>emptyList(), Collections.singletonList(type));
@@ -113,19 +113,19 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
     public void testUpdate() throws Exception {
         ClassTypeDefinition classTypeDef = TypesUtil
                 .createClassTypeDef(randomString(), null, "1.0", Collections.<String>emptySet(),
-                        TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         TypesDef typesDef = new TypesDef(Collections.<EnumTypeDefinition>emptyList(), Collections.<StructTypeDefinition>emptyList(), Collections.<TraitTypeDefinition>emptyList(), Collections.singletonList(classTypeDef));
 
-        List<String> typesCreated = atlasClientV1.createType(AtlasType.toV1Json(typesDef));
+        List<String> typesCreated = atlasClientV1.createType(BaseAtlasType.toV1Json(typesDef));
         assertEquals(typesCreated.size(), 1);
         assertEquals(typesCreated.get(0), classTypeDef.getTypeName());
 
         //Add attribute description
         classTypeDef = TypesUtil.createClassTypeDef(classTypeDef.getTypeName(), null, "2.0",
                 Collections.<String>emptySet(),
-                TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                createOptionalAttrDef(DESCRIPTION, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                createOptionalAttrDef(DESCRIPTION, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         TypesDef typeDef = new TypesDef(Collections.<EnumTypeDefinition>emptyList(), Collections.<StructTypeDefinition>emptyList(), Collections.<TraitTypeDefinition>emptyList(), Collections.singletonList(classTypeDef));
         List<String> typesUpdated = atlasClientV1.updateType(typeDef);
         assertEquals(typesUpdated.size(), 1);
@@ -149,7 +149,7 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
             Assert.assertNotNull(response.get(AtlasClient.DEFINITION));
             Assert.assertNotNull(response.get(AtlasClient.REQUEST_ID));
 
-            TypesDef typesDef = AtlasType.fromV1Json(AtlasType.toJson(response.get(AtlasClient.DEFINITION)), TypesDef.class);
+            TypesDef typesDef = BaseAtlasType.fromV1Json(BaseAtlasType.toJson(response.get(AtlasClient.DEFINITION)), TypesDef.class);
 
             List<? extends HierarchicalTypeDefinition> hierarchicalTypeDefs = Collections.emptyList();
 
@@ -210,23 +210,23 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
 
     @Test
     public void testListTypesByFilter() throws Exception {
-        AttributeDefinition attr = TypesUtil.createOptionalAttrDef("attr", AtlasBaseTypeDef.ATLAS_TYPE_STRING);
+        AttributeDefinition attr = TypesUtil.createOptionalAttrDef("attr", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING);
 
         ClassTypeDefinition classTypeDef = TypesUtil.createClassTypeDef("A" + randomString(), null, Collections.emptySet(), attr);
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(classTypeDef));
-        String a = createType(AtlasType.toV1Json(typesDef)).get(0);
+        String a = createType(BaseAtlasType.toV1Json(typesDef)).get(0);
 
         classTypeDef = TypesUtil.createClassTypeDef("A1" + randomString(), null, Collections.singleton(a), attr);
         typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(classTypeDef));
-        String a1 = createType(AtlasType.toV1Json(typesDef)).get(0);
+        String a1 = createType(BaseAtlasType.toV1Json(typesDef)).get(0);
 
         classTypeDef = TypesUtil.createClassTypeDef("B" + randomString(), null, Collections.<String>emptySet(), attr);
         typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(classTypeDef));
-        String b = createType(AtlasType.toV1Json(typesDef)).get(0);
+        String b = createType(BaseAtlasType.toV1Json(typesDef)).get(0);
 
         classTypeDef = TypesUtil.createClassTypeDef("C" + randomString(), null, new HashSet<>(Arrays.asList(a, b)), attr);
         typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(classTypeDef));
-        String c = createType(AtlasType.toV1Json(typesDef)).get(0);
+        String c = createType(BaseAtlasType.toV1Json(typesDef)).get(0);
 
         List<String> results = atlasClientV1.listTypes(DataTypes.TypeCategory.CLASS, a, b);
         assertEquals(results, Arrays.asList(a1), "Results: " + results);
@@ -240,7 +240,7 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
                     TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
             TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(traitTypeDef), Collections.emptyList());
 
-            String json = AtlasType.toV1Json(typesDef);
+            String json = BaseAtlasType.toV1Json(typesDef);
             createType(json);
         }
 
@@ -252,27 +252,27 @@ public class TypesJerseyResourceIT extends BaseResourceIT {
 
         ClassTypeDefinition databaseTypeDefinition = TypesUtil
                 .createClassTypeDef("database", null, Collections.<String>emptySet(),
-                        TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef(DESCRIPTION, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef(QUALIFIED_NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef(DESCRIPTION, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef(QUALIFIED_NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         typeDefinitions.add(databaseTypeDefinition);
 
         ClassTypeDefinition tableTypeDefinition = TypesUtil
                 .createClassTypeDef("table", null, Collections.<String>emptySet(),
-                        TypesUtil.createUniqueRequiredAttrDef(NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef(DESCRIPTION, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef(QUALIFIED_NAME, AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        createOptionalAttrDef("columnNames", AtlasBaseTypeDef.getArrayTypeName(AtlasBaseTypeDef.ATLAS_TYPE_STRING)),
-                        createOptionalAttrDef("created", AtlasBaseTypeDef.ATLAS_TYPE_DATE),
+                        TypesUtil.createUniqueRequiredAttrDef(NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef(DESCRIPTION, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef(QUALIFIED_NAME, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        createOptionalAttrDef("columnNames", BaseAtlasBaseTypeDef.getArrayTypeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING)),
+                        createOptionalAttrDef("created", BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE),
                         createOptionalAttrDef("parameters",
-                                AtlasBaseTypeDef.getMapTypeName(AtlasBaseTypeDef.ATLAS_TYPE_STRING, AtlasBaseTypeDef.ATLAS_TYPE_STRING)),
-                        TypesUtil.createRequiredAttrDef("type", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                                              BaseAtlasBaseTypeDef.getMapTypeName(BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING)),
+                        TypesUtil.createRequiredAttrDef("type", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
                         new AttributeDefinition("database", "database", Multiplicity.REQUIRED, false, null));
         typeDefinitions.add(tableTypeDefinition);
 
         TraitTypeDefinition fetlTypeDefinition = TypesUtil
                 .createTraitTypeDef("fetl", null, Collections.<String>emptySet(),
-                        TypesUtil.createRequiredAttrDef("level", AtlasBaseTypeDef.ATLAS_TYPE_INT));
+                        TypesUtil.createRequiredAttrDef("level", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
         typeDefinitions.add(fetlTypeDefinition);
 
         return typeDefinitions;

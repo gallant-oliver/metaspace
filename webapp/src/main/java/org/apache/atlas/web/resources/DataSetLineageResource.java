@@ -214,9 +214,9 @@ public class DataSetLineageResource {
         Map<String, Object> lookupAttributes = new HashMap<>();
         lookupAttributes.put("qualifiedName", tableName);
         AtlasEntityType                    entityType = typeRegistry.getEntityTypeByName("hive_table");
-        AtlasEntity.AtlasEntityWithExtInfo hive_table = atlasEntityStore.getByUniqueAttributes(entityType, lookupAttributes);
-        if (hive_table != null) {
-            return hive_table.getEntity().getGuid();
+        AtlasEntity.AtlasEntityWithExtInfo hiveTable = atlasEntityStore.getByUniqueAttributes(entityType, lookupAttributes);
+        if (hiveTable != null) {
+            return hiveTable.getEntity().getGuid();
         } else {
             throw new AtlasBaseException(AtlasErrorCode.INSTANCE_NOT_FOUND, tableName);
         }

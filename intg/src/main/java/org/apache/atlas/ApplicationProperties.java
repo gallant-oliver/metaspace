@@ -263,7 +263,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
     }
 
     private void setDbCacheConfDefaults() {
-        SimpleEntry<String, String> keyValues[] = new SimpleEntry[]{ DB_CACHE_CONF, DB_CACHE_CLEAN_WAIT_CONF,
+        SimpleEntry<String, String>[] keyValues = new SimpleEntry[]{ DB_CACHE_CONF, DB_CACHE_CLEAN_WAIT_CONF,
                                                                      DB_CACHE_SIZE_CONF, DB_TX_CACHE_SIZE_CONF,
                                                                      DB_CACHE_TX_DIRTY_SIZE_CONF };
 

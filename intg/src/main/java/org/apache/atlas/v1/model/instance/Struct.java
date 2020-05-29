@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.collections.MapUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -195,7 +195,7 @@ public class Struct implements Serializable {
         sb.append("Struct{");
         sb.append("typeName=").append(typeName);
         sb.append(", values={");
-        AtlasBaseTypeDef.dumpObjects(values, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(values, sb);
         sb.append("}");
         sb.append("}");
 

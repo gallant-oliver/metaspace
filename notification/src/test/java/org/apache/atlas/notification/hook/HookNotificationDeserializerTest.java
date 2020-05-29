@@ -24,7 +24,7 @@ import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.notification.AbstractNotification;
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityUpdateRequest;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.testng.annotations.Test;
 
@@ -60,7 +60,7 @@ public class HookNotificationDeserializerTest {
     public void testDeserializeLegacyMessage() throws Exception {
         Referenceable       entity              = generateEntityWithTrait();
         EntityUpdateRequest message             = new EntityUpdateRequest("user1", entity);
-        String              jsonMsg             = AtlasType.toV1Json(message);
+        String              jsonMsg             = BaseAtlasType.toV1Json(message);
         HookNotification    deserializedMessage = deserialize(Collections.singletonList(jsonMsg));
 
         assertEqualMessage(deserializedMessage, message);
@@ -77,7 +77,7 @@ public class HookNotificationDeserializerTest {
         assertTrue(jsonMsgList.size() == 1);
 
         String compressedMsg   = jsonMsgList.get(0);
-        String uncompressedMsg = AtlasType.toV1Json(message);
+        String uncompressedMsg = BaseAtlasType.toV1Json(message);
 
         assertTrue(compressedMsg.length() < uncompressedMsg.length(), "Compressed message (" + compressedMsg.length() + ") should be shorter than uncompressed message (" + uncompressedMsg.length() + ")");
 

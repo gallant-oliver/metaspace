@@ -22,7 +22,7 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.repository.audit.EntityAuditRepository;
 import org.apache.atlas.repository.audit.HBaseBasedAuditRepository;
 import org.apache.atlas.repository.graphdb.GraphDatabase;
-import org.apache.atlas.repository.store.graph.v1.DeleteHandlerV1;
+import org.apache.atlas.repository.store.graph.v1.BaseDeleteHandlerV1;
 import org.apache.atlas.repository.store.graph.v1.SoftDeleteHandlerV1;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
@@ -92,11 +92,11 @@ public class AtlasRepositoryConfiguration {
 
     private static final String DELETE_HANDLER_V1_IMPLEMENTATION_PROPERTY = "atlas.DeleteHandlerV1.impl";
 
-    public static Class<? extends DeleteHandlerV1> getDeleteHandlerV1Impl() {
+    public static Class<? extends BaseDeleteHandlerV1> getDeleteHandlerV1Impl() {
         try {
             Configuration config = ApplicationProperties.get();
             return ApplicationProperties.getClass(config,
-                                                  DELETE_HANDLER_V1_IMPLEMENTATION_PROPERTY, SoftDeleteHandlerV1.class.getName(), DeleteHandlerV1.class);
+                                                  DELETE_HANDLER_V1_IMPLEMENTATION_PROPERTY, SoftDeleteHandlerV1.class.getName(), BaseDeleteHandlerV1.class);
         } catch (AtlasException e) {
             throw new RuntimeException(e);
         }

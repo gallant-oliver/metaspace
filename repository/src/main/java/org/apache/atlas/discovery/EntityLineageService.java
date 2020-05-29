@@ -41,8 +41,8 @@ import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
-import org.apache.atlas.util.AtlasGremlinQueryProvider;
-import org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery;
 import org.apache.atlas.v1.model.lineage.SchemaResponse.SchemaDetails;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -71,14 +71,14 @@ public class EntityLineageService implements AtlasLineageService {
     private static final String COLUMNS              = "columns";
 
     private final AtlasGraph                graph;
-    private final AtlasGremlinQueryProvider gremlinQueryProvider;
+    private final BaseAtlasGremlinQueryProvider gremlinQueryProvider;
     private final EntityGraphRetriever      entityRetriever;
     private final AtlasTypeRegistry         atlasTypeRegistry;
 
     @Inject
     EntityLineageService(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph) {
         this.graph = atlasGraph;
-        this.gremlinQueryProvider = AtlasGremlinQueryProvider.INSTANCE;
+        this.gremlinQueryProvider = BaseAtlasGremlinQueryProvider.INSTANCE;
         this.entityRetriever = new EntityGraphRetriever(typeRegistry);
         this.atlasTypeRegistry = typeRegistry;
     }
@@ -123,11 +123,11 @@ public class EntityLineageService implements AtlasLineageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST);
         }
 
-        AtlasEntityType hive_table = atlasTypeRegistry.getEntityTypeByName("hive_table");
+        AtlasEntityType hiveTable = atlasTypeRegistry.getEntityTypeByName("hive_table");
 
         Map<String, Object> lookupAttributes = new HashMap<>();
         lookupAttributes.put("qualifiedName", datasetName);
-        String guid = AtlasGraphUtilsV2.getGuidByUniqueAttributes(hive_table, lookupAttributes);
+        String guid = AtlasGraphUtilsV2.getGuidByUniqueAttributes(hiveTable, lookupAttributes);
 
         return getSchemaForHiveTableByGuid(guid);
     }
@@ -139,9 +139,9 @@ public class EntityLineageService implements AtlasLineageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST);
         }
         SchemaDetails ret = new SchemaDetails();
-        AtlasEntityType hive_column = atlasTypeRegistry.getEntityTypeByName("hive_column");
+        AtlasEntityType hiveColumn = atlasTypeRegistry.getEntityTypeByName("hive_column");
 
-        ret.setDataType(AtlasTypeUtil.toClassTypeDefinition(hive_column));
+        ret.setDataType(AtlasTypeUtil.toClassTypeDefinition(hiveColumn));
 
         AtlasEntityWithExtInfo entityWithExtInfo = entityRetriever.toAtlasEntityWithExtInfo(guid);
         AtlasEntity            entity            = entityWithExtInfo.getEntity();

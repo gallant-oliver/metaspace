@@ -44,7 +44,6 @@ public class LineageVertex {
   private String vertexId;
 
   // It is optional, and could be null. It is only set if the entity is a column, and this field contains metadata of its table.
-  //private LineageVertexMetadata metadata;
 
   // It is optional. Its unit in seconds.
   private Long createTime;
@@ -59,9 +58,6 @@ public class LineageVertex {
     return vertexId;
   }
 
-  /*public LineageVertexMetadata getMetadata() {
-    return metadata;
-  }*/
 
   public Long getCreateTime() { return createTime; }
 
@@ -77,7 +73,6 @@ public class LineageVertex {
     this.vertexId = vertexId;
   }
 
-  //public void setMetadata(LineageVertexMetadata metadata) { this.metadata = metadata; }
 
   public void setCreateTime(Long createTime) { this.createTime = createTime; }
 }

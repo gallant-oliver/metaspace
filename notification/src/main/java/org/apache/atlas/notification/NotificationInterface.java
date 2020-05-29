@@ -48,13 +48,13 @@ public interface NotificationInterface {
         // Notifications to entity change consumers.
         ENTITIES(new EntityMessageDeserializer());
 
-        private final AtlasNotificationMessageDeserializer deserializer;
+        private final BaseAtlasNotificationMessageDeserializer deserializer;
 
-        NotificationType(AtlasNotificationMessageDeserializer deserializer) {
+        NotificationType(BaseAtlasNotificationMessageDeserializer deserializer) {
             this.deserializer = deserializer;
         }
 
-        public AtlasNotificationMessageDeserializer getDeserializer() {
+        public BaseAtlasNotificationMessageDeserializer getDeserializer() {
             return deserializer;
         }
     }

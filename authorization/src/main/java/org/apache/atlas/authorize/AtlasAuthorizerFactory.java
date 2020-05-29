@@ -53,11 +53,14 @@ public class AtlasAuthorizerFactory {
                     String authorizerClass = configuration != null ? configuration.getString("atlas.authorizer.impl") : "SIMPLE";
 
                     if (StringUtils.isNotEmpty(authorizerClass)) {
-                        if (StringUtils.equalsIgnoreCase(authorizerClass, "SIMPLE")) {
+                        String simple = "SIMPLE";
+                        String ranger = "RANGER";
+                        String none = "NONE";
+                        if (StringUtils.equalsIgnoreCase(authorizerClass, simple)) {
                             authorizerClass = SIMPLE_AUTHORIZER;
-                        } else if (StringUtils.equalsIgnoreCase(authorizerClass, "RANGER")) {
+                        } else if (StringUtils.equalsIgnoreCase(authorizerClass, ranger)) {
                             authorizerClass = RANGER_AUTHORIZER;
-                        } else if (StringUtils.equalsIgnoreCase(authorizerClass, "NONE")) {
+                        } else if (StringUtils.equalsIgnoreCase(authorizerClass, none)) {
                             authorizerClass = NONE_AUTHORIZER;
                         }
                     } else {

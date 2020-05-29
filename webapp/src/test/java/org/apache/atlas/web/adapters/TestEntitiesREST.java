@@ -33,7 +33,7 @@ import org.apache.atlas.model.instance.EntityMutations;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.web.rest.EntityREST;
@@ -246,8 +246,8 @@ public class TestEntitiesREST {
 
     AtlasEntity serDeserEntity(AtlasEntity entity) throws IOException {
         //Convert from json to object and back to trigger the case where it gets translated to a map for attributes instead of AtlasEntity
-        String      jsonString = AtlasType.toJson(entity);
-        AtlasEntity newEntity  = AtlasType.fromJson(jsonString, AtlasEntity.class);
+        String      jsonString = BaseAtlasType.toJson(entity);
+        AtlasEntity newEntity  = BaseAtlasType.fromJson(jsonString, AtlasEntity.class);
 
         return newEntity;
     }

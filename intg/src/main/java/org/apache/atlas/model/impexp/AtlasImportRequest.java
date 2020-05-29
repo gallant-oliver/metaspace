@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class AtlasImportRequest implements Serializable {
 
         sb.append("AtlasImportRequest{");
         sb.append("options={");
-        AtlasBaseTypeDef.dumpObjects(options, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(options, sb);
         sb.append("}");
         sb.append("}");
 

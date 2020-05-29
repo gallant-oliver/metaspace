@@ -49,7 +49,7 @@ import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasRelationshipType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.utils.AtlasJson;
@@ -73,24 +73,24 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_CONFIDENCE;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_CREATED_BY;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_DESCRIPTION;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_EXPRESSION;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_SOURCE;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_STATUS;
-import static org.apache.atlas.glossary.GlossaryUtils.TERM_ASSIGNMENT_ATTR_STEWARD;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_BYTE;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_DATE;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_DOUBLE;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_FLOAT;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_INT;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_LONG;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_SHORT;
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.ATLAS_TYPE_STRING;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_CONFIDENCE;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_CREATED_BY;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_DESCRIPTION;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_EXPRESSION;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_SOURCE;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_STATUS;
+import static org.apache.atlas.glossary.AbstractGlossaryUtils.TERM_ASSIGNMENT_ATTR_STEWARD;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGDECIMAL;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_BIGINTEGER;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_BOOLEAN;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_BYTE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_DATE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_DOUBLE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_FLOAT;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_INT;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_LONG;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_SHORT;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING;
 import static org.apache.atlas.repository.Constants.CLASSIFICATION_ENTITY_GUID;
 import static org.apache.atlas.repository.Constants.CLASSIFICATION_LABEL;
 import static org.apache.atlas.repository.Constants.CLASSIFICATION_VALIDITY_PERIODS_KEY;
@@ -457,7 +457,7 @@ public final class EntityGraphRetriever {
 
             mapSystemAttributes(entityVertex, entity);
             entity.setTypeName(getTypeName(entityVertex));
-            AtlasType objType = typeRegistry.getType(entity.getTypeName());
+            BaseAtlasType objType = typeRegistry.getType(entity.getTypeName());
             if (!(objType instanceof AtlasStructType)) {
                 throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, entity.getTypeName());
             }
@@ -579,7 +579,8 @@ public final class EntityGraphRetriever {
 
     private String toNonQualifiedName(String attrName) {
         String ret;
-        if (attrName.contains(".")) {
+        String sub = ".";
+        if (attrName.contains(sub)) {
             String[] attributeParts = attrName.split("\\.");
             ret = attributeParts[attributeParts.length - 1];
         } else {
@@ -616,7 +617,7 @@ public final class EntityGraphRetriever {
     }
 
     private void mapAttributes(AtlasVertex entityVertex, AtlasStruct struct, AtlasEntityExtInfo entityExtInfo, boolean isMinExtInfo) throws AtlasBaseException {
-        AtlasType objType = typeRegistry.getType(struct.getTypeName());
+        BaseAtlasType objType = typeRegistry.getType(struct.getTypeName());
 
         if (!(objType instanceof AtlasStructType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, struct.getTypeName());
@@ -632,7 +633,7 @@ public final class EntityGraphRetriever {
     }
 
     private void mapAttributes(AtlasVertex entityVertex, AtlasStruct struct, AtlasEntityExtInfo entityExtInfo, List<String> attributes, boolean isMinExtInfo) throws AtlasBaseException {
-        AtlasType objType = typeRegistry.getType(struct.getTypeName());
+        BaseAtlasType objType = typeRegistry.getType(struct.getTypeName());
 
         if (!(objType instanceof AtlasStructType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, struct.getTypeName());
@@ -760,7 +761,7 @@ public final class EntityGraphRetriever {
 
     private Object mapVertexToAttribute(AtlasVertex entityVertex, AtlasAttribute attribute, AtlasEntityExtInfo entityExtInfo, final boolean isMinExtInfo) throws AtlasBaseException {
         Object    ret                = null;
-        AtlasType attrType           = attribute.getAttributeType();
+        BaseAtlasType attrType           = attribute.getAttributeType();
         String    edgeLabel          = EDGE_LABEL_PREFIX + attribute.getQualifiedName();
         boolean   isOwnedAttribute   = attribute.isOwnedRef();
         AtlasRelationshipEdgeDirection edgeDirection = attribute.getRelationshipEdgeDirection();
@@ -791,6 +792,8 @@ public final class EntityGraphRetriever {
             case CLASSIFICATION:
                 // do nothing
                 break;
+            default:
+                break;
         }
 
         return ret;
@@ -801,7 +804,7 @@ public final class EntityGraphRetriever {
 
         Map<String, Object> ret          = null;
         AtlasMapType        mapType      = (AtlasMapType) attribute.getAttributeType();
-        AtlasType           mapValueType = mapType.getValueType();
+        BaseAtlasType mapValueType = mapType.getValueType();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Mapping map attribute {} for vertex {}", mapType.getTypeName(), entityVertex);
@@ -838,7 +841,7 @@ public final class EntityGraphRetriever {
                                           boolean isOwnedAttribute, AtlasAttribute attribute, final boolean isMinExtInfo) throws AtlasBaseException {
 
         AtlasArrayType arrayType        = (AtlasArrayType) attribute.getAttributeType();
-        AtlasType      arrayElementType = arrayType.getElementType();
+        BaseAtlasType arrayElementType = arrayType.getElementType();
         List<Object>   arrayElements    = getArrayElementsProperty(arrayElementType, entityVertex, attribute);
 
         if (CollectionUtils.isEmpty(arrayElements)) {
@@ -872,7 +875,7 @@ public final class EntityGraphRetriever {
         return arrValues;
     }
 
-    private Object mapVertexToCollectionEntry(AtlasVertex entityVertex, AtlasType arrayElement, Object value,
+    private Object mapVertexToCollectionEntry(AtlasVertex entityVertex, BaseAtlasType arrayElement, Object value,
                                               String edgeLabel, AtlasEntityExtInfo entityExtInfo, boolean isOwnedAttribute,
                                               AtlasRelationshipEdgeDirection edgeDirection, final boolean isMinExtInfo) throws AtlasBaseException {
         Object ret = null;
@@ -1057,8 +1060,9 @@ public final class EntityGraphRetriever {
             case SET:
                 ret = mapRelationshipArrayAttribute(entityVertex, attribute);
                 break;
+            default:
+                break;
         }
-
         return ret;
     }
 
@@ -1256,7 +1260,7 @@ public final class EntityGraphRetriever {
 
     private void mapAttributes(AtlasEdge edge, AtlasRelationshipWithExtInfo relationshipWithExtInfo) throws AtlasBaseException {
         AtlasRelationship relationship = relationshipWithExtInfo.getRelationship();
-        AtlasType         objType      = typeRegistry.getType(relationship.getTypeName());
+        BaseAtlasType objType      = typeRegistry.getType(relationship.getTypeName());
 
         if (!(objType instanceof AtlasRelationshipType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, relationship.getTypeName());

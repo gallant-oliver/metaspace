@@ -32,7 +32,7 @@ public class SplitMessageAggregatorTest {
 
         Thread.currentThread().sleep(500);
 
-        AtlasNotificationMessageDeserializer.purgeStaleMessages(map, System.currentTimeMillis(), 250);
+        BaseAtlasNotificationMessageDeserializer.purgeStaleMessages(map, System.currentTimeMillis(), 250);
 
         Assert.assertEquals(map.size(), 0);
     }
@@ -46,7 +46,7 @@ public class SplitMessageAggregatorTest {
 
         Thread.currentThread().sleep(500);
 
-        AtlasNotificationMessageDeserializer.purgeStaleMessages(map, System.currentTimeMillis(), Long.MAX_VALUE);
+        BaseAtlasNotificationMessageDeserializer.purgeStaleMessages(map, System.currentTimeMillis(), Long.MAX_VALUE);
 
         Assert.assertEquals(map.size(), expectedSize);
     }

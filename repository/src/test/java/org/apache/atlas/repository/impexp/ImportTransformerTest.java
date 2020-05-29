@@ -30,11 +30,11 @@ public class ImportTransformerTest {
         String param1 = "@cl1";
         String param2 = "@cl2";
 
-        ImportTransformer e = ImportTransformer.getTransformer(String.format("%s:%s:%s", "replace", param1, param2));
+        BaseImportTransformer e = BaseImportTransformer.getTransformer(String.format("%s:%s:%s", "replace", param1, param2));
 
-        assertTrue(e instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)e).getToFindStr(), param1);
-        assertEquals(((ImportTransformer.Replace)e).getReplaceStr(), param2);
+        assertTrue(e instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)e).getToFindStr(), param1);
+        assertEquals(((BaseImportTransformer.Replace)e).getReplaceStr(), param2);
     }
 
     @Test
@@ -42,35 +42,35 @@ public class ImportTransformerTest {
         String param1 = "@cl1";
         String param2 = "@cl2";
 
-        ImportTransformer e1 = ImportTransformer.getTransformer(String.format("%s:%s:%s", "replace", param1, param2));
-        ImportTransformer e2 = ImportTransformer.getTransformer(String.format("replace:tt1:tt2"));
+        BaseImportTransformer e1 = BaseImportTransformer.getTransformer(String.format("%s:%s:%s", "replace", param1, param2));
+        BaseImportTransformer e2 = BaseImportTransformer.getTransformer(String.format("replace:tt1:tt2"));
 
-        assertTrue(e1 instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)e1).getToFindStr(), param1);
-        assertEquals(((ImportTransformer.Replace)e1).getReplaceStr(), param2);
+        assertTrue(e1 instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)e1).getToFindStr(), param1);
+        assertEquals(((BaseImportTransformer.Replace)e1).getReplaceStr(), param2);
 
-        assertTrue(e2 instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)e2).getToFindStr(), "tt1");
-        assertEquals(((ImportTransformer.Replace)e2).getReplaceStr(), "tt2");
+        assertTrue(e2 instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)e2).getToFindStr(), "tt1");
+        assertEquals(((BaseImportTransformer.Replace)e2).getReplaceStr(), "tt2");
     }
 
     @Test
     public void createWithDefaultParameters() throws AtlasBaseException {
-        ImportTransformer e1 = ImportTransformer.getTransformer("replace:@cl1");
-        ImportTransformer e2 = ImportTransformer.getTransformer("replace");
+        BaseImportTransformer e1 = BaseImportTransformer.getTransformer("replace:@cl1");
+        BaseImportTransformer e2 = BaseImportTransformer.getTransformer("replace");
 
-        assertTrue(e1 instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)e1).getToFindStr(), "@cl1");
-        assertEquals(((ImportTransformer.Replace)e1).getReplaceStr(), "");
+        assertTrue(e1 instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)e1).getToFindStr(), "@cl1");
+        assertEquals(((BaseImportTransformer.Replace)e1).getReplaceStr(), "");
 
-        assertTrue(e2 instanceof ImportTransformer.Replace);
-        assertEquals(((ImportTransformer.Replace)e2).getToFindStr(), "");
-        assertEquals(((ImportTransformer.Replace)e2).getReplaceStr(), "");
+        assertTrue(e2 instanceof BaseImportTransformer.Replace);
+        assertEquals(((BaseImportTransformer.Replace)e2).getToFindStr(), "");
+        assertEquals(((BaseImportTransformer.Replace)e2).getReplaceStr(), "");
     }
 
     @Test
     public void applyLowercaseTransformer() throws AtlasBaseException {
-        ImportTransformer e = ImportTransformer.getTransformer("lowercase");
+        BaseImportTransformer e = BaseImportTransformer.getTransformer("lowercase");
 
         assertEquals(e.apply("@CL1"), "@cl1");
         assertEquals(e.apply("@cl1"), "@cl1");
@@ -81,7 +81,7 @@ public class ImportTransformerTest {
 
     @Test
     public void applyUppercaseTransformer() throws AtlasBaseException {
-        ImportTransformer e = ImportTransformer.getTransformer("uppercase");
+        BaseImportTransformer e = BaseImportTransformer.getTransformer("uppercase");
 
         assertEquals(e.apply("@CL1"), "@CL1");
         assertEquals(e.apply("@cl1"), "@CL1");
@@ -92,7 +92,7 @@ public class ImportTransformerTest {
 
     @Test
     public void applyReplaceTransformer1() throws AtlasBaseException {
-        ImportTransformer e = ImportTransformer.getTransformer("replace:@cl1:@cl2");
+        BaseImportTransformer e = BaseImportTransformer.getTransformer("replace:@cl1:@cl2");
 
         assertEquals(e.apply("@cl1"), "@cl2");
         assertEquals(e.apply("default@cl1"), "default@cl2");
@@ -105,7 +105,7 @@ public class ImportTransformerTest {
 
     @Test
     public void applyReplaceTransformer2() throws AtlasBaseException {
-        ImportTransformer e = ImportTransformer.getTransformer("replace:@cl1");
+        BaseImportTransformer e = BaseImportTransformer.getTransformer("replace:@cl1");
 
         assertEquals(e.apply("@cl1"), "");
         assertEquals(e.apply("default@cl1"), "default");
@@ -118,7 +118,7 @@ public class ImportTransformerTest {
 
     @Test
     public void applyReplaceTransformer3() throws AtlasBaseException {
-        ImportTransformer e = ImportTransformer.getTransformer("replace");
+        BaseImportTransformer e = BaseImportTransformer.getTransformer("replace");
 
         assertEquals(e.apply("@cl1"), "@cl1");
         assertEquals(e.apply("default@cl1"), "default@cl1");

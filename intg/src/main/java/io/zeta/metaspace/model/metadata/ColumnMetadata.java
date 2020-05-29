@@ -27,23 +27,9 @@ import java.sql.Timestamp;
  * @date 2019/9/19 9:44
  */
 public class ColumnMetadata extends BasicMetadata {
-    /*private String guid;
-    private String name;*/
     private String type;
     private String tableGuid;
-    /*private Integer version;
-    private String description;
-    private String status;*/
     private Boolean partitionField;
-
-    /*private String creator;
-    private String updater;
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp createTime;
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp updateTime;
-    @JsonIgnore
-    private Integer total;*/
 
     public ColumnMetadata() { }
 
@@ -62,22 +48,6 @@ public class ColumnMetadata extends BasicMetadata {
         this.updateTime = updateTime;
     }
 
-    /*public String getGuid() {
-        return guid;
-    }
-
-    public void setGuid(String guid) {
-        this.guid = guid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }*/
-
     public String getType() {
         return type;
     }
@@ -94,37 +64,6 @@ public class ColumnMetadata extends BasicMetadata {
         this.tableGuid = tableGuid;
     }
 
-    /*public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Integer getTotal() {
-        return total;
-    }
-
-    public void setTotal(Integer total) {
-        this.total = total;
-    }*/
 
     public Boolean getPartitionField() {
         return partitionField;
@@ -134,35 +73,4 @@ public class ColumnMetadata extends BasicMetadata {
         this.partitionField = partitionField;
     }
 
-    /*public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public String getUpdater() {
-        return updater;
-    }
-
-    public void setUpdater(String updater) {
-        this.updater = updater;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Timestamp createTime) {
-        this.createTime = createTime;
-    }
-
-    public Timestamp getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Timestamp updateTime) {
-        this.updateTime = updateTime;
-    }*/
 }

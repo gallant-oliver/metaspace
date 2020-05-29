@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 import org.apache.atlas.model.PList;
 import org.apache.atlas.model.SearchFilter.SortType;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.lang.StringUtils;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
@@ -146,7 +146,7 @@ public class AtlasObjectId  implements Serializable {
         sb.append("guid='").append(guid).append('\'');
         sb.append(", typeName='").append(typeName).append('\'');
         sb.append(", uniqueAttributes={");
-        AtlasBaseTypeDef.dumpObjects(uniqueAttributes, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(uniqueAttributes, sb);
         sb.append('}');
         sb.append('}');
 

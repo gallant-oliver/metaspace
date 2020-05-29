@@ -25,7 +25,7 @@ import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.typedef.AtlasStructDef;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -55,7 +55,7 @@ public class GremlinQueryComposer {
     private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd";
 
     private static final ThreadLocal<DateFormat[]> DSL_DATE_FORMAT = ThreadLocal.withInitial(() -> {
-        final String formats[] = {ISO8601_FORMAT, ISO8601_DATE_FORMAT};
+        final String[] formats = {ISO8601_FORMAT, ISO8601_DATE_FORMAT};
         DateFormat[] dfs       = new DateFormat[formats.length];
         for (int i = 0; i < formats.length; i++) {
             dfs[i] = new SimpleDateFormat(formats[i]);
@@ -297,7 +297,7 @@ public class GremlinQueryComposer {
         close();
 
         boolean mustTransform = !isNestedQuery && queryMetadata.needTransformation();
-        String  items[]       = getFormattedClauses(mustTransform);
+        String[]  items       = getFormattedClauses(mustTransform);
         String s = mustTransform ?
                            getTransformedClauses(items) :
                            String.join(".", items);
@@ -422,7 +422,8 @@ public class GremlinQueryComposer {
     }
 
     private void addLimitHelper(final String limit, final String offset) {
-        if (offset.equalsIgnoreCase("0")) {
+        String anotherString = "0";
+        if (offset.equalsIgnoreCase(anotherString)) {
             add(GremlinClause.LIMIT, limit, limit);
         } else {
             addRangeClause(offset, limit);
@@ -509,7 +510,8 @@ public class GremlinQueryComposer {
             return;
 
         // Need de-duping at the end so that correct results are fetched
-        if (queryClauses.size() > 2) {
+        int length = 2;
+        if (queryClauses.size() > length) {
             // QueryClauses should've something more that just g.V() (hence 2)
             add(GremlinClause.DEDUP);
             // Range and limit must be present after the de-duping construct
@@ -641,7 +643,7 @@ public class GremlinQueryComposer {
 
         private final Lookup lookup;
         private final Map<String, String>   aliasMap = new HashMap<>();
-        private AtlasType                   activeType;
+        private BaseAtlasType activeType;
         private SelectClauseComposer        selectClauseComposer;
         private ClauseValidator             validator;
         private String                      numericTypeFormatter = "";
@@ -682,7 +684,7 @@ public class GremlinQueryComposer {
             return activeType.getTypeName();
         }
 
-        public AtlasType getActiveType() {
+        public BaseAtlasType getActiveType() {
             return activeType;
         }
 

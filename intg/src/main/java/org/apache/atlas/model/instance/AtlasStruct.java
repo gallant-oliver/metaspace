@@ -39,7 +39,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 import org.apache.atlas.model.PList;
 import org.apache.atlas.model.SearchFilter.SortType;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 
@@ -284,7 +284,7 @@ public class AtlasStruct implements Serializable {
         if (value == null) {
             sb.append(value);
         } else {
-            sb.append(AtlasBaseTypeDef.getDateFormatter().format(value));
+            sb.append(BaseAtlasBaseTypeDef.getDateFormatter().format(value));
         }
 
         return sb;

@@ -19,7 +19,7 @@ package org.apache.atlas.store;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.SearchFilter;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -100,7 +100,7 @@ public interface AtlasTypeDefStore {
     AtlasTypesDef searchTypesDef(SearchFilter searchFilter) throws AtlasBaseException;
 
     /* Generic operation */
-    AtlasBaseTypeDef getByName(String name) throws AtlasBaseException;
+    BaseAtlasBaseTypeDef getByName(String name) throws AtlasBaseException;
 
-    AtlasBaseTypeDef getByGuid(String guid) throws AtlasBaseException;
+    BaseAtlasBaseTypeDef getByGuid(String guid) throws AtlasBaseException;
 }

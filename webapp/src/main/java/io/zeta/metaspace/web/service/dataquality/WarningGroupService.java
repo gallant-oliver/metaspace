@@ -43,7 +43,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class WarningGroupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(WarningGroupService.class);

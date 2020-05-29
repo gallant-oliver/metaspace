@@ -22,7 +22,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.impexp.MigrationStatus;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.graphdb.GraphDBMigrator;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ public class GraphDBGraphSONMigrator implements GraphDBMigrator {
 
     @Override
     public AtlasTypesDef getScrubbedTypesDef(String jsonStr) {
-        AtlasTypesDef typesDef = AtlasType.fromJson(jsonStr, AtlasTypesDef.class);
+        AtlasTypesDef typesDef = BaseAtlasType.fromJson(jsonStr, AtlasTypesDef.class);
 
         return typesDefStrubberForMigrationImport.scrub(typesDef);
     }

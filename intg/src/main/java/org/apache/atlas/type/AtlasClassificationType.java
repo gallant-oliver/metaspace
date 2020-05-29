@@ -96,7 +96,7 @@ public class AtlasClassificationType extends AtlasStructType {
         getTypeHierarchyInfo(typeRegistry, allS, allA);
 
         for (String superTypeName : classificationDef.getSuperTypes()) {
-            AtlasType superType = typeRegistry.getType(superTypeName);
+            BaseAtlasType superType = typeRegistry.getType(superTypeName);
 
             if (superType instanceof AtlasClassificationType) {
                 s.add((AtlasClassificationType)superType);
@@ -110,10 +110,14 @@ public class AtlasClassificationType extends AtlasStructType {
         this.allSuperTypes      = Collections.unmodifiableSet(allS);
         this.allAttributes      = Collections.unmodifiableMap(allA);
         this.uniqAttributes     = getUniqueAttributes(this.allAttributes);
-        this.subTypes           = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
-        this.allSubTypes        = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
-        this.typeAndAllSubTypes = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
-        this.entityTypes        = new HashSet<>(); // this will be populated in resolveReferencesPhase3()
+        // this will be populated in resolveReferencesPhase2()
+        this.subTypes           = new HashSet<>();
+        // this will be populated in resolveReferencesPhase2()
+        this.allSubTypes        = new HashSet<>();
+        // this will be populated in resolveReferencesPhase2()
+        this.typeAndAllSubTypes = new HashSet<>();
+        // this will be populated in resolveReferencesPhase3()
+        this.entityTypes        = new HashSet<>();
 
         this.typeAndAllSubTypes.add(this.getTypeName());
 
@@ -158,7 +162,8 @@ public class AtlasClassificationType extends AtlasStructType {
         subTypes                 = Collections.unmodifiableSet(subTypes);
         allSubTypes              = Collections.unmodifiableSet(allSubTypes);
         typeAndAllSubTypes       = Collections.unmodifiableSet(typeAndAllSubTypes);
-        typeAndAllSubTypesQryStr = ""; // will be computed on next access
+        // will be computed on next access
+        typeAndAllSubTypesQryStr = "";
 
         /*
           Add any entityTypes defined in our parents as restrictions.
@@ -173,8 +178,8 @@ public class AtlasClassificationType extends AtlasStructType {
         for (String superType : this.allSuperTypes) {
             AtlasClassificationDef superTypeDef    = typeRegistry.getClassificationDefByName(superType);
             Set<String>            entityTypeNames = superTypeDef.getEntityTypes();
-
-            if (CollectionUtils.isEmpty(entityTypeNames)) { // no restrictions specified
+            // no restrictions specified
+            if (CollectionUtils.isEmpty(entityTypeNames)) {
                 continue;
             }
 
@@ -192,8 +197,8 @@ public class AtlasClassificationType extends AtlasStructType {
                 break;
             }
         }
-
-        if (superTypeEntityTypes == null) {  // no supertype restrictions; use current classification restrictions
+        // no supertype restrictions; use current classification restrictions
+        if (superTypeEntityTypes == null) {
             this.entityTypes = AtlasEntityType.getEntityTypesAndAllSubTypes(classificationDefEntityTypes, typeRegistry);
         } else {                             // restrictions are specified in super-types
             if (CollectionUtils.isEmpty(superTypeEntityTypes)) {
@@ -211,8 +216,8 @@ public class AtlasClassificationType extends AtlasStructType {
                  */
                 throw new AtlasBaseException(AtlasErrorCode.CLASSIFICATIONDEF_PARENTS_ENTITYTYPES_DISJOINT, this.classificationDef.getName());
             }
-
-            if (CollectionUtils.isEmpty(classificationDefEntityTypes)) { // no restriction specified; use the restrictions from super-types
+            // no restriction specified; use the restrictions from super-types
+            if (CollectionUtils.isEmpty(classificationDefEntityTypes)) {
                 this.entityTypes = superTypeEntityTypes;
             } else {
                 this.entityTypes = AtlasEntityType.getEntityTypesAndAllSubTypes(classificationDefEntityTypes,typeRegistry);
@@ -525,7 +530,7 @@ public class AtlasClassificationType extends AtlasStructType {
 
         if (CollectionUtils.isNotEmpty(classificationDef.getAttributeDefs())) {
             for (AtlasAttributeDef attributeDef : classificationDef.getAttributeDefs()) {
-                AtlasType type = typeRegistry.getType(attributeDef.getTypeName());
+                BaseAtlasType type = typeRegistry.getType(attributeDef.getTypeName());
                 allAttributes.put(attributeDef.getName(), new AtlasAttribute(this, attributeDef, type));
             }
         }
@@ -603,14 +608,14 @@ public class AtlasClassificationType extends AtlasStructType {
     }
 
     public static boolean isValidTimeZone(final String timeZone) {
-        final String DEFAULT_GMT_TIMEZONE = "GMT";
-        if (timeZone.equals(DEFAULT_GMT_TIMEZONE)) {
+        final String defaultGmtTimezone = "GMT";
+        if (timeZone.equals(defaultGmtTimezone)) {
             return true;
         } else {
             // if custom time zone is invalid,
             // time zone id returned is always "GMT" by default
             String id = TimeZone.getTimeZone(timeZone).getID();
-            if (!id.equals(DEFAULT_GMT_TIMEZONE)) {
+            if (!id.equals(defaultGmtTimezone)) {
                 return true;
             }
         }

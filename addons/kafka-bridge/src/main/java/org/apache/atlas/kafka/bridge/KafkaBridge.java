@@ -168,13 +168,13 @@ public class KafkaBridge {
         List<String> topics = availableTopics;
 
         if (StringUtils.isNotEmpty(topicToImport)) {
-            List<String> topics_subset = new ArrayList<>();
+            List<String> topicsSubset = new ArrayList<>();
             for(String topic : topics) {
                 if (topic.startsWith(topicToImport)) {
-                    topics_subset.add(topic);
+                    topicsSubset.add(topic);
                 }
             }
-            topics = topics_subset;
+            topics = topicsSubset;
         }
 
         if (CollectionUtils.isNotEmpty(topics)) {
@@ -245,7 +245,8 @@ public class KafkaBridge {
             ret = findEntityInAtlas(KafkaDataTypes.KAFKA_TOPIC.getName(), topicQualifiedName);
             clearRelationshipAttributes(ret);
         } catch (Exception e) {
-            ret = null; // entity doesn't exist in Atlas
+            // entity doesn't exist in Atlas
+            ret = null;
         }
 
         return ret;

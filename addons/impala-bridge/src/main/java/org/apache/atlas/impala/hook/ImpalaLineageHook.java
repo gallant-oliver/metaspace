@@ -22,12 +22,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import com.google.common.collect.Sets;
 import java.io.IOException;
-import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AbstractAtlasHook;
 import org.apache.atlas.impala.hook.events.BaseImpalaEvent;
 import org.apache.atlas.impala.hook.events.CreateImpalaProcess;
 import org.apache.atlas.impala.model.ImpalaOperationType;
 import org.apache.atlas.impala.model.ImpalaQuery;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import java.util.HashSet;
 
-public class ImpalaLineageHook extends AtlasHook {
+public class ImpalaLineageHook extends AbstractAtlasHook {
     private static final Logger LOG = LoggerFactory.getLogger(ImpalaLineageHook.class);
     public static final String ATLAS_ENDPOINT                      = "atlas.rest.address";
     public static final String REALM_SEPARATOR                     = "@";
@@ -50,7 +50,8 @@ public class ImpalaLineageHook extends AtlasHook {
     private static       String  hostName;
 
     static {
-        realm                      = atlasProperties.getString(CONF_REALM_NAME, DEFAULT_CLUSTER_NAME);  // what should default be ??
+        // what should default be ??
+        realm                      = atlasProperties.getString(CONF_REALM_NAME, DEFAULT_CLUSTER_NAME);
         convertHdfsPathToLowerCase = atlasProperties.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, false);
 
         try {
@@ -71,7 +72,7 @@ public class ImpalaLineageHook extends AtlasHook {
             return;
         }
 
-        ImpalaQuery lineageQuery = AtlasType.fromJson(impalaQueryString, ImpalaQuery.class);
+        ImpalaQuery lineageQuery = BaseAtlasType.fromJson(impalaQueryString, ImpalaQuery.class);
         process(lineageQuery);
     }
 
@@ -120,7 +121,7 @@ public class ImpalaLineageHook extends AtlasHook {
         } catch (Throwable t) {
 
             LOG.error("ImpalaLineageHook.process(): failed to process query {}",
-                AtlasType.toJson(lineageQuery), t);
+                      BaseAtlasType.toJson(lineageQuery), t);
         }
 
         if (LOG.isDebugEnabled()) {

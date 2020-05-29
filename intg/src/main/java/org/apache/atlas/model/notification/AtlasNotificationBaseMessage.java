@@ -49,8 +49,8 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class AtlasNotificationBaseMessage {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasNotificationBaseMessage.class);
-
-    public static final int     MESSAGE_MAX_LENGTH_BYTES    = AtlasConfiguration.NOTIFICATION_MESSAGE_MAX_LENGTH_BYTES.getInt() - 512; // 512 bytes for envelop;
+    // 512 bytes for envelop;
+    public static final int     MESSAGE_MAX_LENGTH_BYTES    = AtlasConfiguration.NOTIFICATION_MESSAGE_MAX_LENGTH_BYTES.getInt() - 512;
     public static final boolean MESSAGE_COMPRESSION_ENABLED = AtlasConfiguration.NOTIFICATION_MESSAGE_COMPRESSION_ENABLED.getBoolean();
 
     public enum CompressionKind { NONE, GZIP };

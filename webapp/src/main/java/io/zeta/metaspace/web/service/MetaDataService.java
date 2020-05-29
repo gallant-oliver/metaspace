@@ -26,11 +26,10 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
-import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.metadata.MetaDataProvider;
-import io.zeta.metaspace.web.metadata.Oracle.OracleMetaDataProvider;
+import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
+import io.zeta.metaspace.web.metadata.oracle.OracleMetaDataProvider;
 import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
@@ -45,7 +44,6 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -135,6 +133,11 @@ public class MetaDataService {
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
     private Map<String, String> errorMap = new HashMap<>();
 
+    private String tableAttribute = "table";
+    private String temporaryAttribute = "temporary";
+    private String nameAttribute="name";
+    private String partitionKeysAttribute = "partitionKeys";
+
     @Autowired
     private ColumnDAO columnDAO;
 
@@ -185,7 +188,8 @@ public class MetaDataService {
 
             return table;
         } catch (AtlasBaseException e) {
-            if (e.getMessage().contains("无效的实体ID")) {
+            String message = "无效的实体ID";
+            if (e.getMessage().contains(message)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
@@ -197,7 +201,7 @@ public class MetaDataService {
     public Table extractTableInfo(AtlasEntity entity, String guid,String tenantId) throws AtlasBaseException {
         Table table = new Table();
         table.setTableId(guid);
-        if (entity.getTypeName().contains("table")) {
+        if (entity.getTypeName().contains(tableAttribute)) {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
             //中文别名
@@ -208,7 +212,8 @@ public class MetaDataService {
                 table.setDisplayName(table.getTableName());
             }
             //判断是否为虚拟表
-            if (Boolean.getBoolean(entity.getAttribute("temporary").toString()) == true) {
+
+            if (Boolean.getBoolean(entity.getAttribute(temporaryAttribute).toString()) == true) {
                 table.setVirtualTable(true);
             } else {
                 table.setVirtualTable(false);
@@ -261,7 +266,7 @@ public class MetaDataService {
                         List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
                         for (Module module : modules) {
                             if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                                if (table.getTablePermission().isWRITE()) {
+                                if (table.getTablePermission().isWrite()) {
                                     table.setEdit(true);
                                     break;
                                 }
@@ -276,7 +281,7 @@ public class MetaDataService {
                     List<Module> modules = tenantService.getModule(tenantId);
                     for (Module module : modules) {
                         if (module.getModuleId() == ModuleEnum.TECHNICALEDIT.getId()) {
-                            if (table.getTablePermission().isWRITE()) {
+                            if (table.getTablePermission().isWrite()) {
                                 table.setEdit(true);
                                 break;
                             }
@@ -389,13 +394,14 @@ public class MetaDataService {
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
-        if (entity.getTypeName().contains("table")) {
+        if (entity.getTypeName().contains(tableAttribute)) {
             //表名称
             table.setTableName(getEntityAttribute(entity, "name"));
             //状态
             table.setStatus(entity.getStatus().name());
             //创建时间
-            if (entity.hasAttribute("createTime") && Objects.nonNull(entity.getAttribute("createTime"))) {
+            String createTimeAttribute = "createTime";
+            if (entity.hasAttribute(createTimeAttribute) && Objects.nonNull(entity.getAttribute(createTimeAttribute))) {
 
                 Date createTime = (Date) entity.getAttribute("createTime");
                 ;
@@ -410,8 +416,8 @@ public class MetaDataService {
             table.setTableDescription(getEntityAttribute(entity, "comment"));
             //数据库名
             AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
-            AtlasEntity.AtlasEntityWithExtInfo DBInfo = entitiesStore.getById(relatedObject.getGuid());
-            AtlasRelatedObjectId relatedInstance = getRelatedInstance(DBInfo.getEntity());
+            AtlasEntity.AtlasEntityWithExtInfo dbInfo = entitiesStore.getById(relatedObject.getGuid());
+            AtlasRelatedObjectId relatedInstance = getRelatedInstance(dbInfo.getEntity());
             table.setDatabaseId(relatedObject.getGuid());
             table.setDatabaseName(relatedObject.getDisplayText());
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
@@ -536,8 +542,8 @@ public class MetaDataService {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
             AtlasRelatedObjectId relatedDB = getRelatedDB(info.getEntity());
-            AtlasEntity.AtlasEntityWithExtInfo DBInfo = entitiesStore.getById(relatedDB.getGuid());
-            AtlasRelatedObjectId relatedInstance = getRelatedInstance(DBInfo.getEntity());
+            AtlasEntity.AtlasEntityWithExtInfo dbInfo = entitiesStore.getById(relatedDB.getGuid());
+            AtlasRelatedObjectId relatedInstance = getRelatedInstance(dbInfo.getEntity());
             //columns
             columns = extractRDBMSColumnInfo(info, guid, relatedDB, relatedInstance);
             //filter
@@ -615,8 +621,8 @@ public class MetaDataService {
                 index.setIndexId(referredEntity.getGuid());
                 //attribute
                 Map<String, Object> attributes = referredEntity.getAttributes();
-                if (attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
-                    index.setName(attributes.get("name").toString());
+                if (attributes.containsKey(nameAttribute) && Objects.nonNull(attributes.get(nameAttribute))) {
+                    index.setName(attributes.get(nameAttribute).toString());
                 } else {
                     index.setName("");
                 }
@@ -697,38 +703,44 @@ public class MetaDataService {
 
     public void extractAttributeInfo(AtlasEntity referredEntity, RDBMSColumn column) {
         Map<String, Object> attributes = referredEntity.getAttributes();
-        if (attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
+        if (attributes.containsKey(nameAttribute) && Objects.nonNull(attributes.get(nameAttribute))) {
             column.setColumnName(attributes.get("name").toString());
         } else {
             column.setColumnName("");
         }
-        if (attributes.containsKey("data_type") && Objects.nonNull(attributes.get("data_type"))) {
-            column.setType(attributes.get("data_type").toString());
+        String dataTypeAttribute = "data_type";
+        if (attributes.containsKey(dataTypeAttribute) && Objects.nonNull(attributes.get(dataTypeAttribute))) {
+            column.setType(attributes.get(dataTypeAttribute).toString());
         } else {
             column.setType("");
         }
-        if (attributes.containsKey("length") && Objects.nonNull(attributes.get("length"))) {
-            column.setLength((int) attributes.get("length"));
+        String lengthAttribute = "length";
+        if (attributes.containsKey(lengthAttribute) && Objects.nonNull(attributes.get(lengthAttribute))) {
+            column.setLength((int) attributes.get(lengthAttribute));
         } else {
             column.setLength(-1);
         }
-        if (attributes.containsKey("defaultValue") && Objects.nonNull(attributes.get("defaultValue"))) {
-            column.setDefaultValue(attributes.get("defaultValue").toString());
+        String defaultValueAttribute = "defaultValue";
+        if (attributes.containsKey(defaultValueAttribute) && Objects.nonNull(attributes.get(defaultValueAttribute))) {
+            column.setDefaultValue(attributes.get(defaultValueAttribute).toString());
         } else {
             column.setDefaultValue("");
         }
-        if (attributes.containsKey("isNullable") && Objects.nonNull(attributes.get("isNullable"))) {
-            column.setNullable((boolean) attributes.get("isNullable"));
+        String isNullableAttribute = "isNullable";
+        if (attributes.containsKey(isNullableAttribute) && Objects.nonNull(attributes.get(isNullableAttribute))) {
+            column.setNullable((boolean) attributes.get(isNullableAttribute));
         } else {
             column.setNullable(true);
         }
-        if (attributes.containsKey("isPrimaryKey") && Objects.nonNull(attributes.get("isPrimaryKey"))) {
-            column.setPrimaryKey((boolean) attributes.get("isPrimaryKey"));
+        String isPrimaryKeyAttribute = "isPrimaryKey";
+        if (attributes.containsKey(isPrimaryKeyAttribute) && Objects.nonNull(attributes.get(isPrimaryKeyAttribute))) {
+            column.setPrimaryKey((boolean) attributes.get(isPrimaryKeyAttribute));
         } else {
             column.setPrimaryKey(false);
         }
-        if (attributes.containsKey("comment") && Objects.nonNull(attributes.get("comment"))) {
-            column.setColumnDescription(attributes.get("comment").toString());
+        String commentAttribute = "comment";
+        if (attributes.containsKey(commentAttribute) && Objects.nonNull(attributes.get(commentAttribute))) {
+            column.setColumnDescription(attributes.get(commentAttribute).toString());
         } else {
             column.setColumnDescription("");
         }
@@ -747,8 +759,10 @@ public class MetaDataService {
             }
             if (Objects.nonNull(type) && !type.equals("")) {
                 columns = columns.stream().filter(col -> {
-                    if (col.getType().contains("(") && col.getType().contains(")")) {
-                        int lastIndex = col.getType().lastIndexOf("(");
+                    String start = "(";
+                    String end = ")";
+                    if (col.getType().contains(start) && col.getType().contains(end)) {
+                        int lastIndex = col.getType().lastIndexOf(start);
                         String typeStr = col.getType().substring(0, lastIndex);
                         return typeStr.equals(type);
                     }
@@ -764,8 +778,9 @@ public class MetaDataService {
 
     public AtlasRelatedObjectId getRelatedInstance(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("instance") && Objects.nonNull(entity.getRelationshipAttribute("instance"))) {
-            Object obj = entity.getRelationshipAttribute("instance");
+        String instanceAttribute = "instance";
+        if (entity.hasRelationshipAttribute(instanceAttribute) && Objects.nonNull(entity.getRelationshipAttribute(instanceAttribute))) {
+            Object obj = entity.getRelationshipAttribute(instanceAttribute);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }
@@ -774,8 +789,8 @@ public class MetaDataService {
     }
 
     public void extractPartitionInfo(AtlasEntity entity, Table table) {
-        if (entity.hasAttribute("partitionKeys") && entity.getAttribute("partitionKeys") != null) {
-            List<AtlasObjectId> partitionKeys = toAtlasObjectIdList(entity.getAttribute("partitionKeys"));
+        if (entity.hasAttribute(partitionKeysAttribute) && entity.getAttribute(partitionKeysAttribute) != null) {
+            List<AtlasObjectId> partitionKeys = toAtlasObjectIdList(entity.getAttribute(partitionKeysAttribute));
             if(partitionKeys.isEmpty())
                 table.setPartitionTable(false);
             else
@@ -823,7 +838,8 @@ public class MetaDataService {
         } else if (obj instanceof Map) {
             ret = new AtlasObjectId((Map) obj);
         } else if (obj != null) {
-            ret = new AtlasObjectId(obj.toString()); // guid
+            // guid
+            ret = new AtlasObjectId(obj.toString());
         } else {
             ret = null;
         }
@@ -833,15 +849,17 @@ public class MetaDataService {
 
     public void extractVirtualTable(AtlasEntity entity, Table table) {
         String tableName = getEntityAttribute(entity, "name");
-        if (tableName.contains("values__tmp__table"))
+        String tmpTable = "values__tmp__table";
+        if (tableName.contains(tmpTable))
             table.setVirtualTable(true);
         else
             table.setVirtualTable(false);
     }
 
     public void extractSdInfo(AtlasEntity entity, Table table) throws AtlasBaseException {
-        if (entity.hasAttribute("sd") && Objects.nonNull(entity.getAttribute("sd"))) {
-            Object obj = entity.getAttribute("sd");
+        String sd = "sd";
+        if (entity.hasAttribute(sd) && Objects.nonNull(entity.getAttribute(sd))) {
+            Object obj = entity.getAttribute(sd);
             if (obj instanceof AtlasObjectId) {
                 AtlasObjectId atlasObject = (AtlasObjectId) obj;
                 String sdGuid = atlasObject.getGuid();
@@ -860,7 +878,8 @@ public class MetaDataService {
 
     public void extractTypeInfo(AtlasEntity entity, Table table) {
         String tableType = getEntityAttribute(entity, "tableType");
-        if (tableType.contains("EXTERNAL")) {
+        String external = "EXTERNAL";
+        if (tableType.contains(external)) {
             table.setType("EXTERNAL_TABLE");
         } else {
             table.setType("INTERNAL_TABLE");
@@ -882,8 +901,9 @@ public class MetaDataService {
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-            Object obj = entity.getRelationshipAttribute("db");
+        String dbAttribute = "db";
+        if (entity.hasRelationshipAttribute(dbAttribute) && Objects.nonNull(entity.getRelationshipAttribute(dbAttribute))) {
+            Object obj = entity.getRelationshipAttribute(dbAttribute);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }
@@ -969,7 +989,8 @@ public class MetaDataService {
 
     public List<AtlasObjectId> extractPartitionKeyInfo(AtlasEntity entity) {
         List<AtlasObjectId> partitionKeys = null;
-        if (Objects.nonNull(entity.getAttribute("partitionKeys"))) {
+        String partitionKeysAttribute = "partitionKeys";
+        if (Objects.nonNull(entity.getAttribute(partitionKeysAttribute))) {
             Object partitionObjects = entity.getAttribute("partitionKeys");
             if (partitionObjects instanceof ArrayList<?>) {
                 partitionKeys = (ArrayList<AtlasObjectId>) partitionObjects;
@@ -980,18 +1001,20 @@ public class MetaDataService {
 
     public void extractAttributeInfo(AtlasEntity referredEntity, Column column) {
         Map<String, Object> attributes = referredEntity.getAttributes();
-        if (attributes.containsKey("name") && Objects.nonNull(attributes.get("name"))) {
-            column.setColumnName(attributes.get("name").toString());
+        if (attributes.containsKey(nameAttribute) && Objects.nonNull(attributes.get(nameAttribute))) {
+            column.setColumnName(attributes.get(nameAttribute).toString());
         } else {
             column.setColumnName("");
         }
-        if (attributes.containsKey("type") && Objects.nonNull(attributes.get("type"))) {
-            column.setType(attributes.get("type").toString());
+        String typeAttribute = "type";
+        if (attributes.containsKey(typeAttribute) && Objects.nonNull(attributes.get(typeAttribute))) {
+            column.setType(attributes.get(typeAttribute).toString());
         } else {
             column.setType("");
         }
-        if (attributes.containsKey("comment") && Objects.nonNull(attributes.get("comment"))) {
-            column.setDescription(attributes.get("comment").toString());
+        String commentAttribute = "comment";
+        if (attributes.containsKey(commentAttribute) && Objects.nonNull(attributes.get(commentAttribute))) {
+            column.setDescription(attributes.get(commentAttribute).toString());
         } else {
             column.setDescription("");
         }
@@ -1022,10 +1045,12 @@ public class MetaDataService {
             if (Objects.nonNull(columnName) && !columnName.equals("")) {
                 columns = columns.stream().filter(col -> col.getColumnName().contains(filter.getColumnName())).collect(Collectors.toList());
             }
+            String start = "(";
+            String end = ")";
             if (Objects.nonNull(type) && !type.equals("")) {
                 columns = columns.stream().filter(col -> {
-                    if (col.getType().contains("(") && col.getType().contains(")")) {
-                        int lastIndex = col.getType().lastIndexOf("(");
+                    if (col.getType().contains(start) && col.getType().contains(end)) {
+                        int lastIndex = col.getType().lastIndexOf(start);
                         String typeStr = col.getType().substring(0, lastIndex);
                         return typeStr.equals(type);
                     }
@@ -1082,7 +1107,8 @@ public class MetaDataService {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
             AtlasEntity entity = entitiesStore.getById(guid).getEntity();
             if (Objects.nonNull(entity)) {
-                if (entity.getTypeName().contains("table") || entity.getTypeName().contains("hdfs")) {
+                String hdfs = "hdfs";
+                if (entity.getTypeName().contains(tableAttribute) || entity.getTypeName().contains(hdfs)) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     //tableName
@@ -1183,7 +1209,7 @@ public class MetaDataService {
             String guid = entity.getGuid();
             AtlasEntityHeader header = entitiesStore.getHeaderById(guid);
             String typeName = header.getTypeName();
-            if (typeName.contains("table")) {
+            if (typeName.contains(tableAttribute)) {
                 removeEntity.add(entity);
                 Iterator<LineageTrace> iterator = lineageRelations.iterator();
                 while (iterator.hasNext()) {
@@ -1237,7 +1263,8 @@ public class MetaDataService {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
             AtlasEntity entity = entitiesStore.getById(guid).getEntity();
             if (Objects.nonNull(entity)) {
-                if (entity.getTypeName().contains("column")) {
+                String columnType = "column";
+                if (entity.getTypeName().contains(columnType)) {
                     //guid
                     lineageDepthEntity.setGuid(guid);
                     AtlasEntity atlasColumnEntity = getEntityById(guid);
@@ -1252,8 +1279,8 @@ public class MetaDataService {
                     if (Objects.nonNull(relatedTable)) {
                         AtlasEntity atlasTableEntity = entitiesStore.getById(relatedTable.getGuid()).getEntity();
                         //tableName
-                        if (atlasTableEntity.hasAttribute("name") && Objects.nonNull(atlasTableEntity.getAttribute("name")))
-                            lineageDepthEntity.setTableName(atlasTableEntity.getAttribute("name").toString());
+                        if (atlasTableEntity.hasAttribute(nameAttribute) && Objects.nonNull(atlasTableEntity.getAttribute(nameAttribute)))
+                            lineageDepthEntity.setTableName(atlasTableEntity.getAttribute(nameAttribute).toString());
                         AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
                         if (Objects.nonNull(relatedObject)) {
                             //dbName
@@ -1299,7 +1326,8 @@ public class MetaDataService {
         Iterator<String> typeIterator = types.iterator();
         if (Objects.nonNull(typeIterator) && typeIterator.hasNext()) {
             String type = typeIterator.next();
-            if (type.contains("Process"))
+            String processType = "Process";
+            if (type.contains(processType))
                 lineageEntity.setProcess(true);
         }
         lineageEntity.setStatus(atlasEntity.getStatus().name());
@@ -1309,8 +1337,8 @@ public class MetaDataService {
         }
         AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
         //tableName
-        if (atlasEntity.hasAttribute("name") && Objects.nonNull(atlasEntity.getAttribute("name")))
-            lineageEntity.setTableName(atlasEntity.getAttribute("name").toString());
+        if (atlasEntity.hasAttribute(nameAttribute) && Objects.nonNull(atlasEntity.getAttribute(nameAttribute)))
+            lineageEntity.setTableName(atlasEntity.getAttribute(nameAttribute).toString());
         //dbName
         AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
         if (Objects.nonNull(relatedObject))
@@ -1371,7 +1399,7 @@ public class MetaDataService {
         return max + 1;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateTable(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
@@ -1460,8 +1488,8 @@ public class MetaDataService {
         if (null != metaDataProvider) {
             metaDataProvider.getEndTime().set(System.currentTimeMillis());
         }
-        if (metaDataProvider instanceof MetaDataProvider){
-            ((MetaDataProvider) metaDataProvider).setThread(false);
+        if (metaDataProvider instanceof AbstractMetaDataProvider){
+            ((AbstractMetaDataProvider) metaDataProvider).setThread(false);
         }
     }
     public void stopSource(String sourceId,Thread thread) throws AtlasBaseException {
@@ -1474,10 +1502,10 @@ public class MetaDataService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
                 }
                 if (metaDataProvider.getTotalTables().get()!=0){
-                    if (!(metaDataProvider instanceof MetaDataProvider)){
+                    if (!(metaDataProvider instanceof AbstractMetaDataProvider)){
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
                     }
-                    ((MetaDataProvider) metaDataProvider).setThread(true);
+                    ((AbstractMetaDataProvider) metaDataProvider).setThread(true);
                 }else{
                     metaDataProvider.getEndTime().set(System.currentTimeMillis());
                     errorMap.put(sourceId,"终止采集元数据");
@@ -1561,7 +1589,7 @@ public class MetaDataService {
                 }
                 progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
                 break;
-            case POSTGRESQL:
+            default:
                 progress.setError(String.format("不支持的数据源类型 %s", databaseType));
                 break;
         }
@@ -1624,7 +1652,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
@@ -1637,7 +1665,8 @@ public class MetaDataService {
             List<String> deleteTableGuids = new ArrayList<>();
             deleteAllGuids.add(guid);
             //如果是数据库，则查找数据库下的表
-            if (entity.getTypeName().equals("hive_db")) {
+            String hiveDb = "hive_db";
+            if (entity.getTypeName().equals(hiveDb)) {
                 Map<String, Object> relationshipAttributes = entity.getRelationshipAttributes();
                 if (null != relationshipAttributes) {
                     for (Object collection : relationshipAttributes.values()) {
@@ -1678,7 +1707,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public EntityMutationResponse hardDeleteRDBMSByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
@@ -1698,7 +1727,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
@@ -1730,7 +1759,7 @@ public class MetaDataService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateTableInfo(String tableGuid, Table tableInfo) throws AtlasBaseException {
         try {
             tableDAO.updateTableInfo(tableGuid, tableInfo);
@@ -1790,10 +1819,14 @@ public class MetaDataService {
             headerStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
             CellStyle cellStyle = workbook.createCellStyle();
-            cellStyle.setBorderBottom(CellStyle.BORDER_THIN); //下边框
-            cellStyle.setBorderLeft(CellStyle.BORDER_THIN);//左边框
-            cellStyle.setBorderTop(CellStyle.BORDER_THIN);//上边框
-            cellStyle.setBorderRight(CellStyle.BORDER_THIN);//右边框*/
+            //下边框
+            cellStyle.setBorderBottom(CellStyle.BORDER_THIN);
+            //左边框
+            cellStyle.setBorderLeft(CellStyle.BORDER_THIN);
+            //上边框
+            cellStyle.setBorderTop(CellStyle.BORDER_THIN);
+            //右边框
+            cellStyle.setBorderRight(CellStyle.BORDER_THIN);
             for (int i=0; i<tableList.size(); i++) {
                 Table table = tableList.get(i);
                 createMetadataTableSheet(workbook, i+1, table, headerStyle, cellStyle);
@@ -1803,30 +1836,12 @@ public class MetaDataService {
         return workbook;
     }
 
-    /*public String processSpecialCharacter(String sheetName) {
-        return sheetName.replace(":", "_")
-                .replace("\\", "_")
-                .replace("/", "_")
-                .replace("?", "_")
-                .replace("*", "_")
-                .replace("[", "_")
-                .replace("]", "_");
-    }*/
+
 
     public void createMetadataTableSheet(Workbook workbook, int index, Table table, CellStyle headerStyle, CellStyle cellStyle) {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        /*String sheetNamePrefix = dbName + "." + tableName;
-        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
-        String sheetName = sheetNamePrefix + "-表信息";
-        Sheet hasSheet = workbook.getSheet(sheetName);
-        int sheetIndex = 1;
-        while (null != hasSheet) {
-            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
-            sheetName = sheetNamePrefix + "-表信息";
-            hasSheet = workbook.getSheet(sheetName);
-        }*/
         String sheetName = "表" + index + "-表信息";
         Sheet sheet = workbook.createSheet(sheetName);
 
@@ -2346,8 +2361,8 @@ public class MetaDataService {
                 String guid = atlasEntity.getGuid();
                 tableHeader.setTableId(guid);
                 //tableName
-                if (atlasEntity.hasAttribute("name") && Objects.nonNull(atlasEntity.getAttribute("name")))
-                    tableHeader.setTableName(atlasEntity.getAttribute("name").toString());
+                if (atlasEntity.hasAttribute(nameAttribute) && Objects.nonNull(atlasEntity.getAttribute(nameAttribute)))
+                    tableHeader.setTableName(atlasEntity.getAttribute(nameAttribute).toString());
                 //dbName
                 AtlasEntity atlasTableEntity = entitiesStore.getById(guid).getEntity();
                 AtlasRelatedObjectId relatedObject = getRelatedDB(atlasTableEntity);
@@ -2388,7 +2403,8 @@ public class MetaDataService {
 
             int ratio = checkBasicInfo(tableInfo);
             checkingInfo.setFillRate(ratio);
-            if(ratio != 100) {
+            int proper = 100;
+            if(ratio != proper) {
                 checkingInfo.setMessageIntegrity("不完整");
             } else {
                 checkingInfo.setMessageIntegrity("完整");
@@ -2420,8 +2436,9 @@ public class MetaDataService {
         }
     }
 
+    public static final String CHINES_REGEX = "[\u4e00-\u9fa5]";
     public static boolean isContainChinese(String str) {
-        Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
+        Pattern p = Pattern.compile(CHINES_REGEX);
         Matcher m = p.matcher(str);
         if (m.find()) {
             return true;

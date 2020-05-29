@@ -18,7 +18,7 @@
 package org.apache.atlas.repository.graphdb.janus.query;
 
 import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
-import org.apache.atlas.repository.graphdb.tinkerpop.query.TinkerpopGraphQuery;
+import org.apache.atlas.repository.graphdb.tinkerpop.query.BaseTinkerpopGraphQuery;
 import org.apache.atlas.repository.graphdb.tinkerpop.query.NativeTinkerpopGraphQuery;
 import org.apache.atlas.repository.graphdb.tinkerpop.query.NativeTinkerpopQueryFactory;
 import org.apache.atlas.repository.graphdb.janus.AtlasJanusEdge;
@@ -28,7 +28,7 @@ import org.apache.atlas.repository.graphdb.janus.AtlasJanusVertex;
 /**
  * Janus implementation of TinkerpopGraphQuery.
  */
-public class AtlasJanusGraphQuery extends TinkerpopGraphQuery<AtlasJanusVertex, AtlasJanusEdge>
+public class AtlasJanusGraphQuery extends BaseTinkerpopGraphQuery<AtlasJanusVertex, AtlasJanusEdge>
         implements NativeTinkerpopQueryFactory<AtlasJanusVertex, AtlasJanusEdge> {
 
     public AtlasJanusGraphQuery(AtlasJanusGraph graph, boolean isChildQuery) {

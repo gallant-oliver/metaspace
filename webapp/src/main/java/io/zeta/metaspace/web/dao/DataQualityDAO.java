@@ -293,22 +293,22 @@ public interface DataQualityDAO {
     /**
      * 插入桥接表，保存定时任务与TemplateId
      * @param templateId
-     * @param qrtz_job
+     * @param jobName
      * @return
      */
     @Insert("insert into template2qrtz_job(templateId,qrtz_job)values(#{templateId},#{qrtz_job})")
-    public int insertTemplate2Qrtz_Trigger(@Param("templateId") String templateId, @Param("qrtz_job") String qrtz_job);
+    public int insertTemplate2QrtzTrigger(@Param("templateId") String templateId, @Param("qrtz_job") String jobName);
 
     @Delete("delete from template2qrtz_job where templateId=#{templateId}")
     public int deleteTemplate2QrtzByTemplateId(@Param("templateId") String templateId);
 
     /**
      * 根据quartzName查询Template
-     * @param qrtz_job
+     * @param jobName
      * @return
      */
     @Select("select * from template where templateId = (select templateId from template2qrtz_job where qrtz_job=#{qrtz_job})")
-    public Template getTemplateByJob(@Param("qrtz_job") String qrtz_job);
+    public Template getTemplateByJob(@Param("qrtz_job") String jobName);
 
     @Select("select qrtz_job from template2qrtz_job where templateId=#{templateId}")
     public String getJobByTemplateId(@Param("templateId") String templateId);

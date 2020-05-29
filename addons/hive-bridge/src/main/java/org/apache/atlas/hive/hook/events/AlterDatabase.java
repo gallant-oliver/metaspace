@@ -48,25 +48,6 @@ public class AlterDatabase extends CreateDatabase {
         return ret;
     }
 
-    /*public AtlasEntitiesWithExtInfo getHiveMetastoreEntities() throws Exception {
-        AtlasEntitiesWithExtInfo ret     = new AtlasEntitiesWithExtInfo();
-        AlterDatabaseEvent       dbEvent = (AlterDatabaseEvent) context.getMetastoreEvent();
-        Database                 oldDb   = dbEvent.getOldDatabase();
-        Database                 newDb   = dbEvent.getNewDatabase();
-
-        if (newDb != null) {
-            AtlasEntity dbEntity = toDbEntity(newDb);
-
-            ret.addEntity(dbEntity);
-        } else {
-            LOG.error("AlterDatabase.getEntities(): failed to retrieve db");
-        }
-
-        addProcessedEntities(ret);
-
-        return ret;
-    }*/
-
     public AtlasEntitiesWithExtInfo getHiveEntities() throws Exception {
         return super.getHiveEntities();
     }

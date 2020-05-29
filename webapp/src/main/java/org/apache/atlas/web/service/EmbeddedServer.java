@@ -92,14 +92,14 @@ public class EmbeddedServer {
     }
 
     protected Connector getConnector(String host, int port) throws IOException {
-        HttpConfiguration http_config = new HttpConfiguration();
+        HttpConfiguration httpConfig = new HttpConfiguration();
         // this is to enable large header sizes when Kerberos is enabled with AD
         final int bufferSize = AtlasConfiguration.WEBSERVER_REQUEST_BUFFER_SIZE.getInt();;
-        http_config.setResponseHeaderSize(bufferSize);
-        http_config.setRequestHeaderSize(bufferSize);
-        http_config.setSendServerVersion(false);
+        httpConfig.setResponseHeaderSize(bufferSize);
+        httpConfig.setRequestHeaderSize(bufferSize);
+        httpConfig.setSendServerVersion(false);
 
-        ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(http_config));
+        ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         connector.setPort(port);
         connector.setHost(host);
         return connector;

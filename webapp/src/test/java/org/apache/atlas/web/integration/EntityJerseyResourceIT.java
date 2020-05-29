@@ -26,12 +26,12 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.EntityAuditEvent;
 import org.apache.atlas.model.legacy.EntityResult;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.v1.model.instance.Id;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.v1.model.typedef.*;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.commons.lang.RandomStringUtils;
@@ -172,7 +172,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         databaseInstance.set("parameters", Collections.EMPTY_MAP);
         databaseInstance.set("location", "/tmp");
 
-        ObjectNode response = atlasClientV1.callAPIWithBody(AtlasClient.API_V1.CREATE_ENTITY, AtlasType.toV1Json(databaseInstance));
+        ObjectNode response = atlasClientV1.callAPIWithBody(AtlasClient.API_V1.CREATE_ENTITY, BaseAtlasType.toV1Json(databaseInstance));
         assertNotNull(response);
         Assert.assertNotNull(response.get(AtlasClient.REQUEST_ID));
 
@@ -227,11 +227,11 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         //create type
         ClassTypeDefinition typeDefinition = TypesUtil
                 .createClassTypeDef(randomString(), null, Collections.<String>emptySet(),
-                        TypesUtil.createUniqueRequiredAttrDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createUniqueRequiredAttrDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(typeDefinition));
 
-        atlasClientV1.createType(AtlasType.toV1Json(typesDef));
+        atlasClientV1.createType(BaseAtlasType.toV1Json(typesDef));
 
         //create entity for the type
         Referenceable instance = new Referenceable(typeDefinition.getTypeName());
@@ -240,8 +240,8 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
 
         //update type - add attribute
         typeDefinition = TypesUtil.createClassTypeDef(typeDefinition.getTypeName(), null, Collections.<String>emptySet(),
-                TypesUtil.createUniqueRequiredAttrDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                TypesUtil.createOptionalAttrDef("description", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                TypesUtil.createUniqueRequiredAttrDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                TypesUtil.createOptionalAttrDef("description", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         TypesDef typeDef = new TypesDef(Collections.<EnumTypeDefinition>emptyList(),
                 Collections.<StructTypeDefinition>emptyList(), Collections.<TraitTypeDefinition>emptyList(),
                 Arrays.asList(typeDefinition));
@@ -526,12 +526,12 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String typeName = "test" + randomString();
         ClassTypeDefinition testTypeDefinition = TypesUtil
                 .createClassTypeDef(typeName, null, Collections.<String>emptySet(),
-                        TypesUtil.createRequiredAttrDef("name", AtlasBaseTypeDef.ATLAS_TYPE_STRING),
-                        TypesUtil.createRequiredAttrDef("description", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createRequiredAttrDef("name", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING),
+                        TypesUtil.createRequiredAttrDef("description", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.singletonList(testTypeDefinition));
 
-        createType(AtlasType.toV1Json(typesDef));
+        createType(BaseAtlasType.toV1Json(typesDef));
         return typeName;
     }
 
@@ -575,7 +575,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait =
                 TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
-        String traitDefinitionAsJSON = AtlasType.toV1Json(piiTrait);
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(piiTrait);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
@@ -608,9 +608,9 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         TraitTypeDefinition piiTrait = TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
-        String traitDefinitionAsJSON = AtlasType.toV1Json(typesDef);
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(typesDef);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
-        createType(AtlasType.toV1Json(typesDef));
+        createType(BaseAtlasType.toV1Json(typesDef));
 
         Struct traitInstance = new Struct(traitName);
         atlasClientV1.addTrait(guid, traitInstance);
@@ -641,7 +641,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait =
                 TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
-        String traitDefinitionAsJSON = AtlasType.toV1Json(piiTrait);
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(piiTrait);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
@@ -678,8 +678,8 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         final String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait = TypesUtil
                 .createTraitTypeDef(traitName, null, Collections.<String>emptySet(),
-                        TypesUtil.createRequiredAttrDef("type", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
-        String traitDefinitionAsJSON = AtlasType.toV1Json(piiTrait);
+                        TypesUtil.createRequiredAttrDef("type", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(piiTrait);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
@@ -704,11 +704,11 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         final String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait =
                 TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
-        String traitDefinitionAsJSON = AtlasType.toV1Json(piiTrait);
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(piiTrait);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
 
         Struct traitInstance = new Struct(traitName);
-        String traitInstanceAsJSON = AtlasType.toV1Json(traitInstance);
+        String traitInstanceAsJSON = BaseAtlasType.toV1Json(traitInstance);
         LOG.debug("traitInstanceAsJSON = {}", traitInstanceAsJSON);
 
         atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.CREATE_ENTITY, traitInstanceAsJSON, "random", TRAITS);
@@ -733,7 +733,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait =
                 TypesUtil.createTraitTypeDef(traitName, null, Collections.<String>emptySet());
-        String traitDefinitionAsJSON = AtlasType.toV1Json(piiTrait);
+        String traitDefinitionAsJSON = BaseAtlasType.toV1Json(piiTrait);
         LOG.debug("traitDefinitionAsJSON = {}", traitDefinitionAsJSON);
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
@@ -796,11 +796,11 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         final String traitName = "PII_Trait" + randomString();
         TraitTypeDefinition piiTrait = TypesUtil
                 .createTraitTypeDef(traitName, null, Collections.<String>emptySet(),
-                        TypesUtil.createRequiredAttrDef("type", AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createRequiredAttrDef("type", BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
 
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait), Collections.emptyList());
 
-        createType(AtlasType.toV1Json(typesDef));
+        createType(BaseAtlasType.toV1Json(typesDef));
 
         try {
             atlasClientV1.deleteTrait(guid, traitName);
@@ -825,7 +825,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
 
         ClassTypeDefinition classTypeDefinition = TypesUtil
                 .createClassTypeDef(classType, null, Collections.<String>emptySet(),
-                        TypesUtil.createUniqueRequiredAttrDef(attrName, AtlasBaseTypeDef.ATLAS_TYPE_STRING));
+                        TypesUtil.createUniqueRequiredAttrDef(attrName, BaseAtlasBaseTypeDef.ATLAS_TYPE_STRING));
         TypesDef typesDef = new TypesDef(Collections.<EnumTypeDefinition>emptyList(), Collections.<StructTypeDefinition>emptyList(),
                 Collections.<TraitTypeDefinition>emptyList(),
                 Collections.singletonList(classTypeDefinition));
@@ -836,7 +836,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         Id guid = createInstance(instance);
 
         ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.GET_ENTITY, null, guid._getId());
-        Referenceable getReferenceable = AtlasType.fromV1Json(AtlasType.toJson(response.get(AtlasClient.DEFINITION)), Referenceable.class);
+        Referenceable getReferenceable = BaseAtlasType.fromV1Json(BaseAtlasType.toJson(response.get(AtlasClient.DEFINITION)), Referenceable.class);
         Assert.assertEquals(getReferenceable.get(attrName), attrValue);
     }
 

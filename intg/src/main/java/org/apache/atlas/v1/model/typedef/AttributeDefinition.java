@@ -42,10 +42,12 @@ public class AttributeDefinition implements Serializable {
     private String       name;
     private String       dataTypeName;
     private Multiplicity multiplicity;
-    private boolean      isComposite; // A composite is the one whose lifecycle is dependent on the enclosing type and is not just a reference
+    // A composite is the one whose lifecycle is dependent on the enclosing type and is not just a reference
+    private boolean      isComposite;
     private boolean      isUnique;
     private boolean      isIndexable;
-    private String       reverseAttributeName; // If this is a reference attribute, then the name of the attribute on the Class that this refers to.
+    // If this is a reference attribute, then the name of the attribute on the Class that this refers to.
+    private String       reverseAttributeName;
     private String       defaultValue;
     private String       description;
 

@@ -19,7 +19,7 @@ package org.apache.atlas.hive.hook;
 
 import org.apache.atlas.hive.hook.events.*;
 import org.apache.atlas.hive.util.SecurityUtils;
-import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AbstractAtlasHook;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.MetaStoreEventListener;
@@ -88,13 +88,14 @@ public class HiveMetastoreHookImpl extends MetaStoreEventListener {
         } else if (isColumnRename(oldTable, newTable, context)) {
             context.setOperation(ALTERTABLE_RENAMECOL);
         } else {
-            context.setOperation(ALTERTABLE_PROPERTIES); // map other alter table operations to ALTERTABLE_PROPERTIES
+            // map other alter table operations to ALTERTABLE_PROPERTIES
+            context.setOperation(ALTERTABLE_PROPERTIES);
         }
 
         hook.handleEvent(context);
     }
 
-    public class HiveMetastoreHook extends AtlasHook {
+    public class HiveMetastoreHook extends AbstractAtlasHook {
         public HiveMetastoreHook() {
         }
 

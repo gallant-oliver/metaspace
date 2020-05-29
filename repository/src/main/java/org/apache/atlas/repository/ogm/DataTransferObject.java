@@ -18,7 +18,7 @@
 package org.apache.atlas.repository.ogm;
 
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.AtlasBaseModelObject;
+import org.apache.atlas.model.BaseAtlasBaseModelObject;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.type.AtlasEntityType;
@@ -26,7 +26,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import java.util.Map;
 
 
-public interface DataTransferObject<T extends AtlasBaseModelObject> {
+public interface DataTransferObject<T extends BaseAtlasBaseModelObject> {
     Class getObjectType();
 
     AtlasEntityType getEntityType();

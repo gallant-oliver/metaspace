@@ -27,7 +27,7 @@ import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV
 import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityPartialUpdateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.HookNotificationType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.utils.AtlasJson;
 import org.apache.atlas.v1.model.instance.Referenceable;
@@ -63,7 +63,7 @@ public class HookNotificationTest {
         String user = "user";
 
         EntityCreateRequest request           = new EntityCreateRequest(user, entity1, entity2);
-        String              notificationJson  = AtlasType.toV1Json(request);
+        String              notificationJson  = BaseAtlasType.toV1Json(request);
         HookNotification    actualNotification = deserializer.deserialize(notificationJson);
 
         assertEquals(actualNotification.getType(), HookNotificationType.ENTITY_CREATE);
@@ -88,7 +88,7 @@ public class HookNotificationTest {
         entity.set("attr", "value");
 
         EntityCreateRequest request                  = new EntityCreateRequest(null, entity);
-        String              notificationJsonFromCode = AtlasType.toV1Json(request);
+        String              notificationJsonFromCode = BaseAtlasType.toV1Json(request);
 
         System.out.println(notificationJsonFromCode);
 

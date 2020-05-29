@@ -2,11 +2,8 @@ package org.apache.atlas.query.antlr4;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class AtlasDSLParser extends Parser {
@@ -171,25 +168,32 @@ public class AtlasDSLParser extends Parser {
 			{
 			setState(78);
 			_la = _input.LA(1);
-			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << K_LIKE) | (1L << K_LT) | (1L << K_LTE) | (1L << K_EQ) | (1L << K_NEQ) | (1L << K_GT) | (1L << K_GTE))) != 0)) ) {
-			_errHandler.recoverInline(this);
-			}
-			else {
-				if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
-				_errHandler.reportMatch(this);
-				consume();
-			}
+				reuseCode(!((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << K_LIKE) | (1L << K_LT) | (1L << K_LTE) | (1L << K_EQ) | (1L << K_NEQ) | (1L << K_GT) | (1L << K_GTE))) != 0)));
 			}
 		}
 		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
+			cacheRecognitionException(_localctx,re);
 		}
 		finally {
 			exitRule();
 		}
 		return _localctx;
+	}
+	public void reuseCode(boolean bool){
+		if ( bool) {
+			_errHandler.recoverInline(this);
+		}
+			else {
+			if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+			_errHandler.reportMatch(this);
+			consume();
+		}
+	}
+
+	public void cacheRecognitionException(ParserRuleContext _localctx,RecognitionException re){
+		_localctx.exception = re;
+		_errHandler.reportError(this, re);
+		_errHandler.recover(this, re);
 	}
 
 	public static class SortOrderContext extends ParserRuleContext {
@@ -215,20 +219,11 @@ public class AtlasDSLParser extends Parser {
 			{
 			setState(80);
 			_la = _input.LA(1);
-			if ( !(_la==K_ASC || _la==K_DESC) ) {
-			_errHandler.recoverInline(this);
-			}
-			else {
-				if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
-				_errHandler.reportMatch(this);
-				consume();
-			}
+			reuseCode(!(_la == K_ASC || _la == K_DESC));
 			}
 		}
 		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
+			cacheRecognitionException(_localctx,re);
 		}
 		finally {
 			exitRule();

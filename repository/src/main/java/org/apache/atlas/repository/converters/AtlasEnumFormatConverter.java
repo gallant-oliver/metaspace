@@ -23,14 +23,14 @@ import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.typedef.AtlasEnumDef.AtlasEnumElementDef;
 import org.apache.atlas.v1.model.typedef.EnumTypeDefinition.EnumValue;
 import org.apache.atlas.type.AtlasEnumType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class AtlasEnumFormatConverter extends AtlasAbstractFormatConverter {
+public class AtlasEnumFormatConverter extends BaseAtlasAbstractFormatConverter {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasEnumFormatConverter.class);
 
 
@@ -39,7 +39,7 @@ public class AtlasEnumFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public boolean isValidValueV1(Object v1Obj, AtlasType type) {
+    public boolean isValidValueV1(Object v1Obj, BaseAtlasType type) {
         boolean ret = false;
 
         if (v1Obj == null) {
@@ -80,7 +80,7 @@ public class AtlasEnumFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext ctx) throws AtlasBaseException {
+    public Object fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext ctx) throws AtlasBaseException {
         String ret = null;
 
         if (v1Obj == null || !(type instanceof AtlasEnumType)) {
@@ -106,8 +106,8 @@ public class AtlasEnumFormatConverter extends AtlasAbstractFormatConverter {
                 v1Value = mapValue.get("ordinal");
             }
         }
-
-        if (v1Value == null) { // could be 'value' or 'ordinal'
+        // could be 'value' or 'ordinal'
+        if (v1Value == null) {
             v1Value = v1Obj;
         }
 
@@ -127,7 +127,7 @@ public class AtlasEnumFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext ctx) throws AtlasBaseException {
+    public Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext ctx) throws AtlasBaseException {
         EnumValue ret = null;
 
         if (v2Obj == null || !(type instanceof AtlasEnumType)) {

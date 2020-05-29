@@ -18,7 +18,7 @@
 package org.apache.atlas.model.typedef;
 
 import org.apache.atlas.model.ModelTestUtil;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import java.util.HashSet;
@@ -35,9 +35,9 @@ public class TestAtlasEntityDef {
     public void testEntityDefSerDeEmpty() {
         AtlasEntityDef entityDef = new AtlasEntityDef("emptyEntityDef");
 
-        String jsonString = AtlasType.toJson(entityDef);
+        String jsonString = BaseAtlasType.toJson(entityDef);
 
-        AtlasEntityDef entityDef2 = AtlasType.fromJson(jsonString, AtlasEntityDef.class);
+        AtlasEntityDef entityDef2 = BaseAtlasType.fromJson(jsonString, AtlasEntityDef.class);
 
         assertEquals(entityDef2, entityDef, "Incorrect serialization/deserialization of AtlasEntityDef");
     }
@@ -46,9 +46,9 @@ public class TestAtlasEntityDef {
     public void testEntityDefSerDe() {
         AtlasEntityDef entityDef = ModelTestUtil.getEntityDef();
 
-        String jsonString = AtlasType.toJson(entityDef);
+        String jsonString = BaseAtlasType.toJson(entityDef);
 
-        AtlasEntityDef entityDef2 = AtlasType.fromJson(jsonString, AtlasEntityDef.class);
+        AtlasEntityDef entityDef2 = BaseAtlasType.fromJson(jsonString, AtlasEntityDef.class);
 
         assertEquals(entityDef2, entityDef, "Incorrect serialization/deserialization of AtlasEntityDef");
     }
@@ -57,9 +57,9 @@ public class TestAtlasEntityDef {
     public void testEntityDefSerDeWithSuperType() {
         AtlasEntityDef entityDef = ModelTestUtil.getEntityDefWithSuperType();
 
-        String jsonString = AtlasType.toJson(entityDef);
+        String jsonString = BaseAtlasType.toJson(entityDef);
 
-        AtlasEntityDef entityDef2 = AtlasType.fromJson(jsonString, AtlasEntityDef.class);
+        AtlasEntityDef entityDef2 = BaseAtlasType.fromJson(jsonString, AtlasEntityDef.class);
 
         assertEquals(entityDef2, entityDef, "Incorrect serialization/deserialization of AtlasEntityDef with superType");
     }
@@ -68,9 +68,9 @@ public class TestAtlasEntityDef {
     public void testEntityDefSerDeWithSuperTypes() {
         AtlasEntityDef entityDef = ModelTestUtil.getEntityDefWithSuperTypes();
 
-        String jsonString = AtlasType.toJson(entityDef);
+        String jsonString = BaseAtlasType.toJson(entityDef);
 
-        AtlasEntityDef entityDef2 = AtlasType.fromJson(jsonString, AtlasEntityDef.class);
+        AtlasEntityDef entityDef2 = BaseAtlasType.fromJson(jsonString, AtlasEntityDef.class);
 
         assertEquals(entityDef2, entityDef,
                      "Incorrect serialization/deserialization of AtlasEntityDef with superTypes");

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -169,7 +169,7 @@ public class AtlasExportResult implements Serializable {
         sb.append(", hostName='").append(hostName).append("'");
         sb.append(", timeStamp='").append(timeStamp).append("'");
         sb.append(", metrics={");
-        AtlasBaseTypeDef.dumpObjects(metrics, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(metrics, sb);
         sb.append("}");
 
         sb.append(", data='").append(data).append("'");
@@ -233,10 +233,10 @@ public class AtlasExportResult implements Serializable {
             sb.append("AtlasExportData{");
             sb.append("typesDef={").append(typesDef).append("}");
             sb.append("entities={");
-            AtlasBaseTypeDef.dumpObjects(entities, sb);
+            BaseAtlasBaseTypeDef.dumpObjects(entities, sb);
             sb.append("}");
             sb.append("entityCreationOrder={");
-            AtlasBaseTypeDef.dumpObjects(entityCreationOrder, sb);
+            BaseAtlasBaseTypeDef.dumpObjects(entityCreationOrder, sb);
             sb.append("}");
             sb.append("}");
 

@@ -239,6 +239,7 @@ public abstract class BaseHiveEvent {
                 ret = toAtlasEntity(entity, entityExtInfo);
             }
             break;
+            default:break;
         }
 
         return ret;
@@ -687,7 +688,7 @@ public abstract class BaseHiveEvent {
         ret.setAttribute(ATTRIBUTE_QUERY_TEXT, queryStr);
         ret.setAttribute(ATTRIBUTE_QUERY_ID, getQueryId());
         ret.setAttribute(ATTRIBUTE_QUERY_PLAN, "Not Supported");
-        ret.setAttribute(ATTRIBUTE_HOSTNAME, getContext().getHostName()); //
+        ret.setAttribute(ATTRIBUTE_HOSTNAME, getContext().getHostName());
         AtlasRelatedObjectId hiveProcessRelationObjectId = AtlasTypeUtil.toAtlasRelatedObjectId(hiveProcess, RELATIONSHIP_HIVE_PROCESS_PROCESS_EXE);
         ret.setRelationshipAttribute(ATTRIBUTE_PROCESS, hiveProcessRelationObjectId);
         return ret;
@@ -828,9 +829,8 @@ public abstract class BaseHiveEvent {
 
             case DFS_DIR:
                 return getQualifiedName(entity.getLocation());
+            default:return null;
         }
-
-        return null;
     }
 
     protected String getQualifiedName(Database db) {
@@ -1018,9 +1018,9 @@ public abstract class BaseHiveEvent {
                 return hasPartitionEntity(getInputs());
             case QUERY:
                 return true;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     private boolean hasPartitionEntity(Collection<? extends Entity> entities) {
@@ -1047,7 +1047,8 @@ public abstract class BaseHiveEvent {
         Set<String> dataSetsProcessed = new HashSet<>();
 
         for (Entity entity : sortedEntities) {
-            if (ignoreHDFSPaths && (Entity.Type.DFS_DIR.equals(entity.getType()) || Entity.Type.LOCAL_DIR.equals(entity.getType()))) {
+            boolean bool = Entity.Type.DFS_DIR.equals(entity.getType()) || Entity.Type.LOCAL_DIR.equals(entity.getType());
+            if (ignoreHDFSPaths && bool) {
                 continue;
             }
 
@@ -1072,8 +1073,8 @@ public abstract class BaseHiveEvent {
             if (qualifiedName == null || !dataSetsProcessed.add(qualifiedName)) {
                 continue;
             }
-
-            if (entity instanceof WriteEntity) { // output entity
+            // output entity
+            if (entity instanceof WriteEntity) {
                 WriteEntity writeEntity = (WriteEntity) entity;
 
                 if (writeEntity.getWriteType() != null && HiveOperation.QUERY.equals(context.getHiveOperation())) {
@@ -1090,6 +1091,7 @@ public abstract class BaseHiveEvent {
                         case PATH_WRITE:
                             addWriteType = !Entity.Type.LOCAL_DIR.equals(entity.getType());
                             break;
+                        default:break;
                     }
 
                     if (addWriteType) {
@@ -1124,9 +1126,9 @@ public abstract class BaseHiveEvent {
             case ALTERVIEW_RENAME:
             case ALTERVIEW_AS:
                 return true;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     private boolean isS3Path(String strPath) {

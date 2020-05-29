@@ -20,29 +20,29 @@ package org.apache.atlas.type;
 
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.apache.atlas.model.typedef.AtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
+import static org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef.SERVICE_TYPE_ATLAS_CORE;
 
 
 /**
  * class that implements behaviour of a map-type.
  */
-public class AtlasMapType extends AtlasType {
+public class AtlasMapType extends BaseAtlasType {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasMapType.class);
 
     private final String keyTypeName;
     private final String valueTypeName;
 
-    private AtlasType keyType;
-    private AtlasType valueType;
+    private BaseAtlasType keyType;
+    private BaseAtlasType valueType;
 
-    public AtlasMapType(AtlasType keyType, AtlasType valueType) {
-        super(AtlasBaseTypeDef.getMapTypeName(keyType.getTypeName(), valueType.getTypeName()), TypeCategory.MAP, SERVICE_TYPE_ATLAS_CORE);
+    public AtlasMapType(BaseAtlasType keyType, BaseAtlasType valueType) {
+        super(BaseAtlasBaseTypeDef.getMapTypeName(keyType.getTypeName(), valueType.getTypeName()), TypeCategory.MAP, SERVICE_TYPE_ATLAS_CORE);
 
         this.keyTypeName   = keyType.getTypeName();
         this.valueTypeName = valueType.getTypeName();
@@ -52,7 +52,7 @@ public class AtlasMapType extends AtlasType {
 
     public AtlasMapType(String keyTypeName, String valueTypeName, AtlasTypeRegistry typeRegistry)
         throws AtlasBaseException {
-        super(AtlasBaseTypeDef.getMapTypeName(keyTypeName, valueTypeName), TypeCategory.MAP, SERVICE_TYPE_ATLAS_CORE);
+        super(BaseAtlasBaseTypeDef.getMapTypeName(keyTypeName, valueTypeName), TypeCategory.MAP, SERVICE_TYPE_ATLAS_CORE);
 
         this.keyTypeName   = keyTypeName;
         this.valueTypeName = valueTypeName;
@@ -68,15 +68,15 @@ public class AtlasMapType extends AtlasType {
         return valueTypeName;
     }
 
-    public AtlasType getKeyType() {
+    public BaseAtlasType getKeyType() {
         return keyType;
     }
 
-    public AtlasType getValueType() {
+    public BaseAtlasType getValueType() {
         return valueType;
     }
 
-    public void setKeyType(AtlasType keyType) {
+    public void setKeyType(BaseAtlasType keyType) {
         this.keyType = keyType;
     }
 
@@ -107,11 +107,13 @@ public class AtlasMapType extends AtlasType {
 
                 for (Map.Entry e : map.entrySet()) {
                     if (!keyType.isValidValue(e.getKey()) || !valueType.isValidValue(e.getValue())) {
-                        return false; // invalid key/value
+                        // invalid key/value
+                        return false;
                     }
                 }
             } else {
-                return false; // invalid type
+                // invalid type
+                return false;
             }
         }
 
@@ -165,11 +167,13 @@ public class AtlasMapType extends AtlasType {
 
                 for (Map.Entry e : map.entrySet()) {
                     if (!keyType.isValidValueForUpdate(e.getKey()) || !valueType.isValidValueForUpdate(e.getValue())) {
-                        return false; // invalid key/value
+                        // invalid key/value
+                        return false;
                     }
                 }
             } else {
-                return false; // invalid type
+                // invalid type
+                return false;
             }
         }
 
@@ -183,7 +187,7 @@ public class AtlasMapType extends AtlasType {
         }
 
         if (obj instanceof String) {
-            obj = AtlasType.fromJson(obj.toString(), Map.class);
+            obj = BaseAtlasType.fromJson(obj.toString(), Map.class);
         }
 
         if (obj instanceof Map) {
@@ -203,13 +207,15 @@ public class AtlasMapType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.put(normalizedKey, normalizedValue);
                         } else {
-                            return null; // invalid value
+                            // invalid value
+                            return null;
                         }
                     } else {
                         ret.put(normalizedKey, value);
                     }
                 } else {
-                    return null; // invalid key
+                    // invalid key
+                    return null;
                 }
             }
 
@@ -242,13 +248,15 @@ public class AtlasMapType extends AtlasType {
                         if (normalizedValue != null) {
                             ret.put(normalizedKey, normalizedValue);
                         } else {
-                            return null; // invalid value
+                            // invalid value
+                            return null;
                         }
                     } else {
                         ret.put(normalizedKey, value);
                     }
                 } else {
-                    return null; // invalid key
+                    // invalid key
+                    return null;
                 }
             }
 
@@ -321,14 +329,14 @@ public class AtlasMapType extends AtlasType {
     }
 
     @Override
-    public AtlasType getTypeForAttribute() {
-        AtlasType keyAttributeType   = keyType.getTypeForAttribute();
-        AtlasType valueAttributeType = valueType.getTypeForAttribute();
+    public BaseAtlasType getTypeForAttribute() {
+        BaseAtlasType keyAttributeType   = keyType.getTypeForAttribute();
+        BaseAtlasType valueAttributeType = valueType.getTypeForAttribute();
 
         if (keyAttributeType == keyType && valueAttributeType == valueType) {
             return this;
         } else {
-            AtlasType attributeType = new AtlasMapType(keyAttributeType, valueAttributeType);
+            BaseAtlasType attributeType = new AtlasMapType(keyAttributeType, valueAttributeType);
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("getTypeForAttribute(): {} ==> {}", getTypeName(), attributeType.getTypeName());
@@ -344,7 +352,7 @@ public class AtlasMapType extends AtlasType {
         } else if (val instanceof Map) {
             return ((Map) val).isEmpty();
         } else if (val instanceof String) {
-            Map map = AtlasType.fromJson(val.toString(), Map.class);
+            Map map = BaseAtlasType.fromJson(val.toString(), Map.class);
 
             return map == null || map.isEmpty();
         }
@@ -358,7 +366,7 @@ public class AtlasMapType extends AtlasType {
         if (val instanceof Map) {
             ret = (Map) val;
         } else if (val instanceof String) {
-            ret = AtlasType.fromJson(val.toString(), Map.class);
+            ret = BaseAtlasType.fromJson(val.toString(), Map.class);
         } else {
             ret = null;
         }

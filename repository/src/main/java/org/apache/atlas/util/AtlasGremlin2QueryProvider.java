@@ -17,7 +17,7 @@
  */
 package org.apache.atlas.util;
 
-public class AtlasGremlin2QueryProvider extends AtlasGremlinQueryProvider {
+public class AtlasGremlin2QueryProvider extends BaseAtlasGremlinQueryProvider {
     @Override
     public String getQuery(final AtlasGremlinQuery gremlinQuery) {
         switch (gremlinQuery) {
@@ -100,9 +100,9 @@ public class AtlasGremlin2QueryProvider extends AtlasGremlinQueryProvider {
                 return "g.V.range(0,0).collect()";
             case GREMLIN_SEARCH_RETURNS_EDGE_ID:
                 return "g.E.range(0,0).collect()";
+            default:
+                return null;
         }
-        // Should never reach this point
-        return null;
     }
 
 }

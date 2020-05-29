@@ -26,7 +26,7 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +41,7 @@ import java.util.List;
 /**
  * EntityDef store in v1 format.
  */
-public class AtlasEntityDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasEntityDef> {
+public class AtlasEntityDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasEntityDef> {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasEntityDefStoreV2.class);
 
     @Inject
@@ -57,7 +57,7 @@ public class AtlasEntityDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasEntityDe
 
         validateType(entityDef);
 
-        AtlasType type = typeRegistry.getType(entityDef.getName());
+        BaseAtlasType type = typeRegistry.getType(entityDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.ENTITY) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, entityDef.getName(), TypeCategory.CLASS.name());
@@ -197,7 +197,7 @@ public class AtlasEntityDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasEntityDe
 
         validateType(entityDef);
 
-        AtlasType type = typeRegistry.getType(entityDef.getName());
+        BaseAtlasType type = typeRegistry.getType(entityDef.getName());
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.ENTITY) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, entityDef.getName(), TypeCategory.CLASS.name());
@@ -233,7 +233,7 @@ public class AtlasEntityDefStoreV2 extends AtlasAbstractDefStoreV2<AtlasEntityDe
 
         validateType(entityDef);
 
-        AtlasType type = typeRegistry.getTypeByGuid(guid);
+        BaseAtlasType type = typeRegistry.getTypeByGuid(guid);
 
         if (type.getTypeCategory() != org.apache.atlas.model.TypeCategory.ENTITY) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_MATCH_FAILED, entityDef.getName(), TypeCategory.CLASS.name());

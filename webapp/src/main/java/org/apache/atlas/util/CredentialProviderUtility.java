@@ -20,10 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
-import org.apache.hadoop.security.alias.JavaKeyStoreProvider;
 
 import java.io.Console;
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -40,7 +38,7 @@ public class CredentialProviderUtility {
     private static final String[] KEYS =
             new String[]{KEYSTORE_PASSWORD_KEY, TRUSTSTORE_PASSWORD_KEY, SERVER_CERT_PASSWORD_KEY};
 
-    public static abstract class TextDevice {
+    public static abstract class BaseTextDevice {
         public abstract void printf(String fmt, Object... params);
 
         public abstract String readLine(String fmt, Object... args);
@@ -49,7 +47,7 @@ public class CredentialProviderUtility {
 
     }
 
-    private static TextDevice DEFAULT_TEXT_DEVICE = new TextDevice() {
+    private static BaseTextDevice DEFAULT_TEXT_DEVICE = new BaseTextDevice() {
         Console console = System.console();
 
         @Override
@@ -68,7 +66,7 @@ public class CredentialProviderUtility {
         }
     };
 
-    public static TextDevice textDevice = DEFAULT_TEXT_DEVICE;
+    public static BaseTextDevice textDevice = DEFAULT_TEXT_DEVICE;
 
     public static void main(String[] args) throws IOException {
         // prompt for the provider name
@@ -106,7 +104,7 @@ public class CredentialProviderUtility {
      * @param key   the password key/alias.
      * @return the password.
      */
-    private static char[] getPassword(TextDevice textDevice, String key) {
+    private static char[] getPassword(BaseTextDevice textDevice, String key) {
         boolean noMatch;
         char[] cred = new char[0];
         char[] passwd1;
@@ -141,7 +139,7 @@ public class CredentialProviderUtility {
      * @return the Credential provider
      * @throws IOException
      */
-    private static CredentialProvider getCredentialProvider(TextDevice textDevice) throws IOException {
+    private static CredentialProvider getCredentialProvider(BaseTextDevice textDevice) throws IOException {
         String providerPath = textDevice.readLine("Please enter the full path to the credential provider:");
 
         if (providerPath != null) {

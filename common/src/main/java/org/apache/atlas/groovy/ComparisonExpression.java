@@ -26,7 +26,7 @@ import org.apache.atlas.AtlasException;
  * using a comparison operator (==, <, >, etc).
  *
  */
-public class ComparisonExpression extends BinaryExpression {
+public class ComparisonExpression extends AbstractBinaryExpression {
 
     /**
      * Allowed comparison operators.

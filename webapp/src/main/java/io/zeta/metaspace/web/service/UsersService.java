@@ -78,7 +78,8 @@ public class UsersService {
                 List<UserInfo.Role> roles = new ArrayList<>();
                 UserInfo.Role role = new UserInfo.Role();
                 roles.add(role);
-                if (user.getUsername().equals("msadmin")) {
+                String msadmin = "msadmin";
+                if (msadmin.equals(user.getUsername())) {
                     role.setRoleId(SystemRole.ADMIN.getCode());
                 } else {
                     role.setRoleId(SystemRole.ADMIN.getCode());
@@ -92,7 +93,7 @@ public class UsersService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public UserInfo getUserInfoById(String userId) throws AtlasBaseException {
         try {
             UserInfo info = new UserInfo();
@@ -187,7 +188,8 @@ public class UsersService {
         String level2Category = null;
         String[] pathArr = path.split("\\.");
         int level = pathArr.length;
-        if (level >= 2) {
+        int length = 2;
+        if (level >= length) {
             level2Category = pathArr[1];
         }
         if (categoryType==0){
@@ -305,7 +307,7 @@ public class UsersService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public UserInfoGroup getUserInfoByIdV2(String tenantId,String userId) throws AtlasBaseException {
         try {
             UserInfoGroup info = new UserInfoGroup();

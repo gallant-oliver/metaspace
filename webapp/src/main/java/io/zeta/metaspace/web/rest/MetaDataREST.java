@@ -526,21 +526,6 @@ public class MetaDataREST {
         }
     }
 
-    /*@PUT
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/table/{guid}")
-    public String updateTableEditInfo(@PathParam("guid") final String guid, Table table) throws AtlasBaseException {
-        try {
-            metadataService.updateTableEditInfo(guid, table);
-            return "success";
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
-        }
-    }*/
-
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

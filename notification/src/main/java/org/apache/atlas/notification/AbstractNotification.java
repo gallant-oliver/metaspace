@@ -23,7 +23,7 @@ import org.apache.atlas.model.notification.AtlasNotificationBaseMessage;
 import org.apache.atlas.model.notification.AtlasNotificationMessage;
 import org.apache.atlas.model.notification.AtlasNotificationStringMessage;
 import org.apache.atlas.model.notification.AtlasNotificationBaseMessage.CompressionKind;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.model.notification.MessageVersion;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -54,8 +54,8 @@ public abstract class AbstractNotification implements NotificationInterface {
      * The current expected version for notification messages.
      */
     public static final MessageVersion CURRENT_MESSAGE_VERSION = new MessageVersion("1.0.0");
-
-    public static final int MAX_BYTES_PER_CHAR = 4;  // each char can encode upto 4 bytes in UTF-8
+    // each char can encode upto 4 bytes in UTF-8
+    public static final int MAX_BYTES_PER_CHAR = 4;
 
     /**
      * IP address of the host in which this process has started
@@ -116,7 +116,7 @@ public abstract class AbstractNotification implements NotificationInterface {
     public static String getMessageJson(Object message) {
         AtlasNotificationMessage<?> notificationMsg = new AtlasNotificationMessage<>(CURRENT_MESSAGE_VERSION, message);
 
-        return AtlasType.toV1Json(notificationMsg);
+        return BaseAtlasType.toV1Json(notificationMsg);
     }
 
     private static String getHostAddress() {
@@ -146,11 +146,11 @@ public abstract class AbstractNotification implements NotificationInterface {
      */
     public static void createNotificationMessages(Object message, List<String> msgJsonList) {
         AtlasNotificationMessage<?> notificationMsg = new AtlasNotificationMessage<>(CURRENT_MESSAGE_VERSION, message, getHostAddress(), getCurrentUser());
-        String                      msgJson         = AtlasType.toV1Json(notificationMsg);
+        String                      msgJson         = BaseAtlasType.toV1Json(notificationMsg);
 
         boolean msgLengthExceedsLimit = (msgJson.length() * MAX_BYTES_PER_CHAR) > MESSAGE_MAX_LENGTH_BYTES;
-
-        if (msgLengthExceedsLimit) { // get utf-8 bytes for msgJson and check for length limit again
+        // get utf-8 bytes for msgJson and check for length limit again
+        if (msgLengthExceedsLimit) {
             byte[] msgBytes = AtlasNotificationBaseMessage.getBytesUtf8(msgJson);
 
             msgLengthExceedsLimit = msgBytes.length > MESSAGE_MAX_LENGTH_BYTES;
@@ -167,14 +167,17 @@ public abstract class AbstractNotification implements NotificationInterface {
                     LOG.info("Compressed large message: msgID={}, uncompressed={} bytes, compressed={} bytes", msgId, msgBytes.length, encodedBytes.length);
 
                     msgLengthExceedsLimit = encodedBytes.length > MESSAGE_MAX_LENGTH_BYTES;
-
-                    if (!msgLengthExceedsLimit) { // no need to split
+                    // no need to split
+                    if (!msgLengthExceedsLimit) {
                         AtlasNotificationStringMessage compressedMsg = new AtlasNotificationStringMessage(encodedBytes, msgId, compressionKind);
-
-                        msgJson  = AtlasType.toV1Json(compressedMsg); // msgJson will not have multi-byte characters here, due to use of encodeBase64() above
-                        msgBytes = null; // not used after this point
-                    } else { // encodedBytes will be split
-                        msgJson  = null; // not used after this point
+                        // msgJson will not have multi-byte characters here, due to use of encodeBase64() above
+                        msgJson  = BaseAtlasType.toV1Json(compressedMsg);
+                        // not used after this point
+                        msgBytes = null;
+                    } else {
+                        // encodedBytes will be split
+                        // not used after this point
+                        msgJson  = null;
                         msgBytes = encodedBytes;
                     }
                 }
@@ -197,7 +200,7 @@ public abstract class AbstractNotification implements NotificationInterface {
 
                         AtlasNotificationStringMessage splitMsg = new AtlasNotificationStringMessage(encodedBytes, offset, length, msgId, compressionKind, i, splitCount);
 
-                        String splitMsgJson = AtlasType.toV1Json(splitMsg);
+                        String splitMsgJson = BaseAtlasType.toV1Json(splitMsg);
 
                         msgJsonList.add(splitMsgJson);
 
@@ -217,8 +220,8 @@ public abstract class AbstractNotification implements NotificationInterface {
     private static String getNextMessageId() {
         String nextMsgIdPrefix = msgIdPrefix;
         int    nextMsgIdSuffix = msgIdSuffix.getAndIncrement();
-
-        if (nextMsgIdSuffix == Short.MAX_VALUE) { // get a new UUID after 32,767 IDs
+        // get a new UUID after 32,767 IDs
+        if (nextMsgIdSuffix == Short.MAX_VALUE) {
             msgIdPrefix = UUID.randomUUID().toString();
             msgIdSuffix = new AtomicInteger(0);
         }

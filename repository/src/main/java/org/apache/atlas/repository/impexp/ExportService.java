@@ -29,7 +29,7 @@ import org.apache.atlas.model.instance.AtlasClassification;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.model.typedef.AtlasEnumDef;
@@ -45,11 +45,11 @@ import org.apache.atlas.type.AtlasEnumType;
 import org.apache.atlas.type.AtlasMapType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.AtlasTypeUtil;
-import org.apache.atlas.util.AtlasGremlinQueryProvider;
-import org.apache.atlas.util.AtlasGremlinQueryProvider.AtlasGremlinQuery;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider;
+import org.apache.atlas.util.BaseAtlasGremlinQueryProvider.AtlasGremlinQuery;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -71,14 +71,14 @@ public class ExportService {
     private final AtlasTypeRegistry         typeRegistry;
     private final AtlasGraph                atlasGraph;
     private final EntityGraphRetriever      entityGraphRetriever;
-    private final AtlasGremlinQueryProvider gremlinQueryProvider;
+    private final BaseAtlasGremlinQueryProvider gremlinQueryProvider;
 
     @Inject
     public ExportService(final AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph) throws AtlasBaseException {
         this.typeRegistry         = typeRegistry;
         this.entityGraphRetriever = new EntityGraphRetriever(this.typeRegistry);
         this.atlasGraph           = atlasGraph;
-        this.gremlinQueryProvider = AtlasGremlinQueryProvider.INSTANCE;
+        this.gremlinQueryProvider = BaseAtlasGremlinQueryProvider.INSTANCE;
     }
 
     public AtlasExportResult run(ZipSink exportSink, AtlasExportRequest request, String userName, String hostName,
@@ -153,7 +153,7 @@ public class ExportService {
     }
 
     private AtlasExportResult.OperationStatus[] processItems(AtlasExportRequest request, ExportContext context) throws AtlasServiceException, AtlasException, AtlasBaseException {
-        AtlasExportResult.OperationStatus statuses[] = new AtlasExportResult.OperationStatus[request.getItemsToExport().size()];
+        AtlasExportResult.OperationStatus[] statuses = new AtlasExportResult.OperationStatus[request.getItemsToExport().size()];
         List<AtlasObjectId> itemsToExport = request.getItemsToExport();
         for (int i = 0; i < itemsToExport.size(); i++) {
             AtlasObjectId item = itemsToExport.get(i);
@@ -373,7 +373,7 @@ public class ExportService {
         String          typeName   = entity.getTypeName();
         AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
 
-        return entityType.isSubTypeOf(AtlasBaseTypeDef.ATLAS_TYPE_PROCESS);
+        return entityType.isSubTypeOf(BaseAtlasBaseTypeDef.ATLAS_TYPE_PROCESS);
     }
 
     private void getConnectedEntityGuids(AtlasEntity entity, ExportContext context, TraversalDirection... directions) {
@@ -488,7 +488,7 @@ public class ExportService {
     }
 
     private void addType(String typeName, ExportContext context) {
-        AtlasType type = null;
+        BaseAtlasType type = null;
 
         try {
             type = typeRegistry.getType(typeName);
@@ -515,7 +515,7 @@ public class ExportService {
         }
     }
 
-    private void addType(AtlasType type, ExportContext context) {
+    private void addType(BaseAtlasType type, ExportContext context) {
         if (type.getTypeCategory() == TypeCategory.PRIMITIVE) {
             return;
         }
@@ -759,7 +759,8 @@ public class ExportService {
 
         public void reportProgress() {
 
-            if ((guidsProcessed.size() - progressReportCount) > 1000) {
+            int count = 1000;
+            if ((guidsProcessed.size() - progressReportCount) > count) {
                 progressReportCount = guidsProcessed.size();
 
                 LOG.info("export(): in progress.. number of entities exported: {}", this.guidsProcessed.size());

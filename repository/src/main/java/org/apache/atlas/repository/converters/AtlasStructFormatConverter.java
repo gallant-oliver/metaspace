@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
+public class AtlasStructFormatConverter extends BaseAtlasAbstractFormatConverter {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasStructFormatConverter.class);
 
     public static final String ATTRIBUTES_PROPERTY_KEY = "attributes";
@@ -52,7 +52,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public boolean isValidValueV1(Object v1Obj, AtlasType type) {
+    public boolean isValidValueV1(Object v1Obj, BaseAtlasType type) {
         boolean ret = (v1Obj == null) || v1Obj instanceof Map || v1Obj instanceof Struct;
 
         if (LOG.isDebugEnabled()) {
@@ -63,7 +63,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext converterContext) throws AtlasBaseException {
+    public Object fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext converterContext) throws AtlasBaseException {
         AtlasStruct ret = null;
 
         if (v1Obj != null) {
@@ -91,7 +91,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
     }
 
     @Override
-    public Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext converterContext) throws AtlasBaseException {
+    public Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext converterContext) throws AtlasBaseException {
         Struct ret = null;
 
         if (v2Obj != null) {
@@ -140,7 +140,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
                     continue;
                 }
 
-                AtlasType            attrType      = attr.getAttributeType();
+                BaseAtlasType attrType      = attr.getAttributeType();
                 AtlasFormatConverter attrConverter = converterRegistry.getConverter(attrType.getTypeCategory());
                 Object               v2Value       = attributes.get(attr.getName());
 
@@ -151,7 +151,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
 
                     if (attrType instanceof AtlasArrayType) {
                         AtlasArrayType  arrayType  = (AtlasArrayType) attrType;
-                        AtlasType       elemType   = arrayType.getElementType();
+                        BaseAtlasType elemType   = arrayType.getElementType();
                         String          elemTypeName;
 
                         if (elemType instanceof AtlasObjectIdType) {
@@ -255,7 +255,7 @@ public class AtlasStructFormatConverter extends AtlasAbstractFormatConverter {
                     continue;
                 }
 
-                AtlasType            attrType      = attr.getAttributeType();
+                BaseAtlasType attrType      = attr.getAttributeType();
                 AtlasFormatConverter attrConverter = converterRegistry.getConverter(attrType.getTypeCategory());
                 Object               v1Value       = attributes.get(attrName);
 

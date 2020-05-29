@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Represents an arithmetic expression such as a+b.
  */
-public class ArithmeticExpression extends BinaryExpression {
+public class ArithmeticExpression extends AbstractBinaryExpression {
 
     /**
      * Allowed arithmetic operators.

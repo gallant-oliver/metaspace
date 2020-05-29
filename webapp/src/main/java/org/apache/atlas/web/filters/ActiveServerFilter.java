@@ -104,12 +104,13 @@ public class ActiveServerFilter implements Filter {
         }
     }
 
-    final String adminUriNotFiltered[] = { "/admin/export", "/admin/import", "/admin/importfile" };
+    final String[] adminUriNotFiltered = { "/admin/export", "/admin/import", "/admin/importfile" };
     private boolean isFilteredURI(ServletRequest servletRequest) {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String requestURI = httpServletRequest.getRequestURI();
 
-        if(requestURI.contains("/admin/")) {
+        String sub = "/admin/";
+        if(requestURI.contains(sub)) {
             for (String s : adminUriNotFiltered) {
                 if (requestURI.contains(s)) {
                     LOG.error("URL not supported in HA mode: {}", requestURI);

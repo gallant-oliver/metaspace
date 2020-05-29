@@ -21,11 +21,11 @@ package org.apache.atlas.repository.store.graph.v2;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.SortOrder;
-import org.apache.atlas.discovery.SearchProcessor;
+import org.apache.atlas.discovery.AbstractSearchProcessor;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.TypeCategory;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graph.AtlasGraphProvider;
 import org.apache.atlas.repository.graph.GraphHelper;
@@ -37,7 +37,7 @@ import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -85,11 +85,11 @@ public class AtlasGraphUtilsV2 {
         }
     }
 
-    public static String getTypeDefPropertyKey(AtlasBaseTypeDef typeDef) {
+    public static String getTypeDefPropertyKey(BaseAtlasBaseTypeDef typeDef) {
         return getTypeDefPropertyKey(typeDef.getName());
     }
 
-    public static String getTypeDefPropertyKey(AtlasBaseTypeDef typeDef, String child) {
+    public static String getTypeDefPropertyKey(BaseAtlasBaseTypeDef typeDef, String child) {
         return getTypeDefPropertyKey(typeDef.getName(), child);
     }
 
@@ -140,7 +140,7 @@ public class AtlasGraphUtilsV2 {
         return StringUtils.isNotEmpty(getIdFromVertex(vertex)) && StringUtils.isNotEmpty(getTypeName(vertex));
     }
 
-    public static boolean isReference(AtlasType type) {
+    public static boolean isReference(BaseAtlasType type) {
         return isReference(type.getTypeCategory());
     }
 
@@ -205,7 +205,8 @@ public class AtlasGraphUtilsV2 {
 
         Object existingValue = element.getProperty(propertyName, Object.class);
 
-        if (value == null || (value instanceof Collection && ((Collection)value).isEmpty())) {
+        boolean bool = value instanceof Collection && ((Collection) value).isEmpty();
+        if (value == null || bool) {
             if (existingValue != null) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Removing property {} from {}", propertyName, toString(element));
@@ -480,7 +481,7 @@ public class AtlasGraphUtilsV2 {
         if (USE_INDEX_QUERY_TO_FIND_ENTITY_BY_UNIQUE_ATTRIBUTES) {
             final String typeAndSubTypesQryStr = entityType.getTypeAndAllSubTypesQryStr();
 
-            ret = typeAndSubTypesQryStr.length() <= SearchProcessor.MAX_QUERY_STR_LENGTH_TYPES;
+            ret = typeAndSubTypesQryStr.length() <= AbstractSearchProcessor.MAX_QUERY_STR_LENGTH_TYPES;
 
             if (ret) {
                 Set<String> indexSet = AtlasGraphProvider.getGraphInstance().getVertexIndexKeys();

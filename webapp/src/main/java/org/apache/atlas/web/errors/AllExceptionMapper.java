@@ -18,7 +18,7 @@
 
 package org.apache.atlas.web.errors;
 
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
@@ -55,7 +55,8 @@ public class AllExceptionMapper implements ExceptionMapper<Exception> {
         Map<String, String> errorJsonMap = new LinkedHashMap<>();
         errorJsonMap.put("errorCode", URL_NOT_FOUND.getErrorCode());
         String errorMessage = exception.getMessage();
-        if (StringUtils.isNotEmpty(errorMessage) && errorMessage.contains("null for")) {
+        String nullFor = "null for";
+        if (StringUtils.isNotEmpty(errorMessage) && errorMessage.contains(nullFor)) {
             errorMessage = "not found" + errorMessage.substring(8);
         }
         errorJsonMap.put("errorMessage", errorMessage);
@@ -64,7 +65,7 @@ public class AllExceptionMapper implements ExceptionMapper<Exception> {
             errorJsonMap.put("errorCause", exception.getCause().getMessage());
         }
         Response.ResponseBuilder responseBuilder = Response.status(400);
-        responseBuilder.entity(AtlasType.toJson(errorJsonMap)).type(Servlets.JSON_MEDIA_TYPE);
+        responseBuilder.entity(BaseAtlasType.toJson(errorJsonMap)).type(Servlets.JSON_MEDIA_TYPE);
         return responseBuilder.build();
     }
 

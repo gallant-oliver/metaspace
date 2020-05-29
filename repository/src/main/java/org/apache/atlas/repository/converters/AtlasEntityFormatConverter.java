@@ -30,7 +30,7 @@ import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.instance.Struct;
 import org.apache.atlas.type.AtlasClassificationType;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -50,7 +50,7 @@ public class AtlasEntityFormatConverter extends AtlasStructFormatConverter {
     }
 
     @Override
-    public boolean isValidValueV1(Object v1Obj, AtlasType type) {
+    public boolean isValidValueV1(Object v1Obj, BaseAtlasType type) {
         boolean ret = (v1Obj == null) || v1Obj instanceof Id || v1Obj instanceof Referenceable;
 
         if (LOG.isDebugEnabled()) {
@@ -61,7 +61,7 @@ public class AtlasEntityFormatConverter extends AtlasStructFormatConverter {
     }
 
     @Override
-    public AtlasEntity fromV1ToV2(Object v1Obj, AtlasType type, ConverterContext context) throws AtlasBaseException {
+    public AtlasEntity fromV1ToV2(Object v1Obj, BaseAtlasType type, ConverterContext context) throws AtlasBaseException {
         AtlasEntity entity = null;
 
         if (v1Obj != null) {
@@ -93,7 +93,7 @@ public class AtlasEntityFormatConverter extends AtlasStructFormatConverter {
 
                         for (String traitName : entRef.getTraitNames()) {
                             Struct              trait          = entRef.getTraits().get(traitName);
-                            AtlasType           classifiType   = typeRegistry.getType(traitName);
+                            BaseAtlasType classifiType   = typeRegistry.getType(traitName);
                             AtlasClassification classification = (AtlasClassification) traitConverter.fromV1ToV2(trait, classifiType, context);
 
                             classifications.add(classification);
@@ -112,7 +112,7 @@ public class AtlasEntityFormatConverter extends AtlasStructFormatConverter {
     }
 
     @Override
-    public Object fromV2ToV1(Object v2Obj, AtlasType type, ConverterContext context) throws AtlasBaseException {
+    public Object fromV2ToV1(Object v2Obj, BaseAtlasType type, ConverterContext context) throws AtlasBaseException {
         Object ret = null;
 
         if (v2Obj != null) {
@@ -161,7 +161,8 @@ public class AtlasEntityFormatConverter extends AtlasStructFormatConverter {
                 }
 
                 ret = referenceable;
-            } else if (v2Obj instanceof AtlasObjectId) { // transient-id
+            } else if (v2Obj instanceof AtlasObjectId) {
+                // transient-id
                 AtlasEntity entity = context.getById(((AtlasObjectId) v2Obj).getGuid());
                 if ( entity == null) {
                     throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "Could not find entity ",

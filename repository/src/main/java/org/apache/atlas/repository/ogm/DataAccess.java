@@ -19,7 +19,7 @@ package org.apache.atlas.repository.ogm;
 
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.AtlasBaseModelObject;
+import org.apache.atlas.model.BaseAtlasBaseModelObject;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.EntityMutationResponse;
@@ -52,7 +52,7 @@ public class DataAccess {
         this.dtoRegistry = dtoRegistry;
     }
 
-    public <T extends AtlasBaseModelObject> T save(T obj) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> T save(T obj) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't save a null object");
 
         AtlasPerfTracer perf = null;
@@ -87,7 +87,7 @@ public class DataAccess {
 
     }
 
-    public <T extends AtlasBaseModelObject> Iterable<T> save(Iterable<T> obj) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> Iterable<T> save(Iterable<T> obj) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't save a null object");
 
         AtlasPerfTracer perf = null;
@@ -108,7 +108,7 @@ public class DataAccess {
         }
     }
 
-    public <T extends AtlasBaseModelObject> Iterable<T> load(final Iterable<T> objects) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> Iterable<T> load(final Iterable<T> objects) throws AtlasBaseException {
         Objects.requireNonNull(objects, "Objects to load");
 
         AtlasPerfTracer perf = null;
@@ -118,7 +118,7 @@ public class DataAccess {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAccess.multiLoad()");
             }
 
-            List<AtlasBaseModelObject> ret = new ArrayList<>();
+            List<BaseAtlasBaseModelObject> ret = new ArrayList<>();
 
             for (T object : objects) {
                 try {
@@ -137,14 +137,14 @@ public class DataAccess {
         }
     }
 
-    public <T extends AtlasBaseModelObject> T load(T obj) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> T load(T obj) throws AtlasBaseException {
         return load(obj, false);
     }
 
-    public <T extends AtlasBaseModelObject> T load(T obj, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> T load(T obj, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
         return load(obj, false, attributes, relationshipAttributes);
     }
-    public <T extends AtlasBaseModelObject> T load(T obj, boolean loadDeleted, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> T load(T obj, boolean loadDeleted, List<String> attributes, List<String> relationshipAttributes) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't load a null object");
 
         AtlasPerfTracer perf = null;
@@ -160,7 +160,8 @@ public class DataAccess {
 
             String guid = obj.getGuid();
             // GUID can be null/empty/-ve
-            if (StringUtils.isNotEmpty(guid) && guid.charAt(0) != '-') {
+            char first = '-';
+            if (StringUtils.isNotEmpty(guid) && guid.charAt(0) != first) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Load using GUID");
                 }
@@ -193,7 +194,7 @@ public class DataAccess {
 
 
 
-    public <T extends AtlasBaseModelObject> T load(T obj, boolean loadDeleted) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> T load(T obj, boolean loadDeleted) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't load a null object");
 
         AtlasPerfTracer perf = null;
@@ -209,7 +210,8 @@ public class DataAccess {
 
             String guid = obj.getGuid();
             // GUID can be null/empty/-ve
-            if (StringUtils.isNotEmpty(guid) && guid.charAt(0) != '-') {
+            char first = '-';
+            if (StringUtils.isNotEmpty(guid) && guid.charAt(0) != first) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Load using GUID");
                 }
@@ -273,7 +275,7 @@ public class DataAccess {
         }
     }
 
-    public <T extends AtlasBaseModelObject> void delete(T obj) throws AtlasBaseException {
+    public <T extends BaseAtlasBaseModelObject> void delete(T obj) throws AtlasBaseException {
         Objects.requireNonNull(obj, "Can't delete a null object");
 
         AtlasPerfTracer perf = null;

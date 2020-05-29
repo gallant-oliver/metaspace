@@ -173,26 +173,30 @@ public class DataManageService {
             List<Module> modules = tenantService.getModule(tenantId);
             if (type!=1&&type!=0){
                 valueList = userGroupService.getUserCategory(null, type,modules,tenantId);
-            }else if ((userGroups==null||userGroups.size()==0)//无用户组
-                      &&modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())//目录管理权限
-            ){
-                valueList = userGroupService.getAdminCategory(type,tenantId);
-            }else{
-                Map<String,CategoryPrivilege> valueMap = new HashMap<>();
-                if (userGroups==null||userGroups.size()==0){
-                    return new ArrayList<>();
-                }
-                for (UserGroup userGroup:userGroups){
-                    String userGroupId = userGroup.getId();
-                    for (CategoryPrivilege categoryPrivilege:userGroupService.getUserCategory(userGroupId, type,modules,tenantId)){
-                        if (valueMap.containsKey(categoryPrivilege.getGuid())&&valueMap.get(categoryPrivilege.getGuid())!=null){
-                            valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
-                        }else{
-                            valueMap.put(categoryPrivilege.getGuid(),categoryPrivilege);
+            }else {
+                //无用户组
+                boolean isUserGroup = userGroups == null || userGroups.size() == 0;
+                //目录管理权限
+                boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
+                if (isUserGroup && isAdmin){
+                    valueList = userGroupService.getAdminCategory(type,tenantId);
+                }else{
+                    Map<String,CategoryPrivilege> valueMap = new HashMap<>();
+                    if (userGroups==null||userGroups.size()==0){
+                        return new ArrayList<>();
+                    }
+                    for (UserGroup userGroup:userGroups){
+                        String userGroupId = userGroup.getId();
+                        for (CategoryPrivilege categoryPrivilege:userGroupService.getUserCategory(userGroupId, type,modules,tenantId)){
+                            if (valueMap.containsKey(categoryPrivilege.getGuid())&&valueMap.get(categoryPrivilege.getGuid())!=null){
+                                valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
+                            }else{
+                                valueMap.put(categoryPrivilege.getGuid(),categoryPrivilege);
+                            }
                         }
                     }
+                    valueList = new ArrayList<>(valueMap.values());
                 }
-                valueList = new ArrayList<>(valueMap.values());
             }
             if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())){
                 for (CategoryPrivilege categoryPrivilege:valueList){
@@ -215,7 +219,7 @@ public class DataManageService {
      * @return
      * @throws Exception
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public CategoryPrivilege createCategory(CategoryInfoV2 info, Integer type,String tenantId) throws Exception {
         try {
             String currentCategoryGuid = info.getGuid();
@@ -326,7 +330,9 @@ public class DataManageService {
                 }
             } else {
                 //同级目录
-                if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), "up")) {
+                String up = "up";
+                String down = "down";
+                if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), up)) {
                     entity.setDownBrotherCategoryGuid(currentCategoryGuid);
                     String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                     if (StringUtils.isNotEmpty(upBrotherGuid)) {
@@ -334,7 +340,7 @@ public class DataManageService {
                         categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid,tenantId);
                     }
                     categoryDao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid,tenantId);
-                } else if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), "down")) {
+                } else if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), down)) {
                     entity.setUpBrotherCategoryGuid(info.getGuid());
                     String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                     if (StringUtils.isNotEmpty(downBrotherGuid)) {
@@ -360,8 +366,12 @@ public class DataManageService {
                     privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
                 }
             }
-            if ((type==1||type==0)&&modules.contains(ModuleEnum.AUTHORIZATION.getId())&&//有目录权限管理模块权限，可以随意建目录
-                !userGroupService.isPrivilegeCategory(user.getUserId(),newCategoryGuid,tenantId,type)){//无当前目录权限
+            //有目录权限管理模块权限，可以随意建目录
+            boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
+            //无当前目录权限
+            boolean isPrivilege = !userGroupService.isPrivilegeCategory(user.getUserId(), newCategoryGuid, tenantId, type);
+            boolean typeBoolean = type == 1 || type == 0;
+            if (typeBoolean && isAdmin && isPrivilege){
                 privilege.setAsh(true);
             }
             returnEntity.setPrivilege(privilege);
@@ -390,7 +400,7 @@ public class DataManageService {
      * @return
      * @throws Exception
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int deleteCategory(String guid,String tenantId) throws Exception {
         try {
             int childrenNum = categoryDao.queryChildrenNum(guid,tenantId);
@@ -486,7 +496,7 @@ public class DataManageService {
      * @param relations
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
             long time = System.currentTimeMillis();
@@ -509,7 +519,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int addRelation(RelationEntityV2 relationEntity) throws AtlasBaseException {
         try {
             String relationshiGuid = UUID.randomUUID().toString();
@@ -524,7 +534,7 @@ public class DataManageService {
 
 
     //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList,String tenantId) throws AtlasBaseException {
         try {
             if (Objects.nonNull(relationshipList)) {
@@ -797,7 +807,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateStatus(List<AtlasEntity> entities) {
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
@@ -823,7 +833,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int addTableOwner(TableOwner tableOwner,String tenantId) throws AtlasBaseException {
         try {
             List<String> tableList = tableOwner.getTables();
@@ -889,16 +899,17 @@ public class DataManageService {
             String jsonStr = gson.toJson(dataOwner, APIDataOwner.class);
 
             int retryCount = 0;
-            String error_id = null;
-            String error_reason = null;
-            while(retryCount < 3) {
+            String errorId = null;
+            String errorReason = null;
+            int retries = 3;
+            while(retryCount < retries) {
                 String res = OKHttpClient.doPut(mobiusURL, jsonStr);
                 LOG.info(res);
                 if(StringUtils.isNotEmpty(res)) {
                     Map response = gson.fromJson(res, Map.class);
-                    error_id = String.valueOf(response.get("error-id"));
-                    error_reason = String.valueOf(response.get("reason"));
-                    if ("0.0".equals(error_id)) {
+                    errorId = String.valueOf(response.get("error-id"));
+                    errorReason = String.valueOf(response.get("reason"));
+                    if ("0.0".equals(errorId)) {
                         break;
                     } else {
                         retryCount++;
@@ -907,8 +918,8 @@ public class DataManageService {
                     retryCount++;
                 }
             }
-            if(!"0.0".equals(error_id)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + error_reason);
+            if(!"0.0".equals(errorId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + errorReason);
             }
         }
 
@@ -917,7 +928,8 @@ public class DataManageService {
 
     public PageResult<Organization> getOrganizationByPid(String pId, Parameters parameters) throws AtlasBaseException {
         try {
-            if("0".equals(pId)){
+            String zero = "0";
+            if(zero.equals(pId)){
                 pId=ApplicationProperties.get().getString("sso.organization.first.pid");
             }
             String query = parameters.getQuery();
@@ -995,7 +1007,8 @@ public class DataManageService {
             queryCountParamMap.put("endTime", endTime);
             List data = new ArrayList();
             int retryCount = 0;
-            while(retryCount < 3) {
+            int retries = 3;
+            while(retryCount < retries) {
                 String countSession = OKHttpClient.doGet(organizationCountURL, queryCountParamMap, header);
                 if(Objects.isNull(countSession)) {
                     retryCount++;
@@ -1025,7 +1038,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateOrganization() throws AtlasBaseException {
         try {
             organizationDAO.deleteOrganization();
@@ -1067,7 +1080,7 @@ public class DataManageService {
         return gson.fromJson(gson.toJson(paramMap),cls);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addEntity(List<AtlasEntity> entities) throws AtlasBaseException {
         try {
             //添加到tableinfo
@@ -1119,7 +1132,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void addFullRelation() {
         //添加关联
         List<String> newTable = tableDAO.getNewTable();
@@ -1136,7 +1149,7 @@ public class DataManageService {
             tableDAO.addRelations(tableRelations);
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void supplementTable(String tenantId) throws AtlasBaseException {
         try {
             PageResult<Table> tableNameAndDbNameByQuery;
@@ -1171,7 +1184,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateEntityInfo(List<AtlasEntity> entities) {
         try {
             Configuration configuration = ApplicationProperties.get();
@@ -1206,7 +1219,8 @@ public class DataManageService {
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
         String store="db";
-        if(entity.getTypeName().equals("hbase_table")){
+        String hbaseTable = "hbase_table";
+        if(entity.getTypeName().equals(hbaseTable)){
             store="namespace";
         }
         if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {

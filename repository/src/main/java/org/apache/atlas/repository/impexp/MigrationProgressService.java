@@ -37,7 +37,8 @@ public class MigrationProgressService {
     public static final String MIGRATION_QUERY_CACHE_TTL = "atlas.migration.query.cache.ttlInSecs";
 
     @VisibleForTesting
-    static long DEFAULT_CACHE_TTL_IN_SECS = 30 * 1000; // 30 secs
+    // 30 secs
+    static long DEFAULT_CACHE_TTL_IN_SECS = 30 * 1000;
 
     private final long            cacheValidity;
     private final GraphDBMigrator migrator;

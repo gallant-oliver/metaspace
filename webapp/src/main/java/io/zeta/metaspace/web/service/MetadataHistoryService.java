@@ -54,6 +54,7 @@ public class MetadataHistoryService {
     private MetadataHistoryDAO metadataDAO;
     @Autowired
     private AtlasEntityStoreV2 entityStore;
+    private String partitionAttribute = "partitionKeys";
 
     public Set<String> getTableGuid(List<AtlasEntity> entities) {
         Set<String> tableSet = new HashSet<>();
@@ -72,7 +73,7 @@ public class MetadataHistoryService {
         return tableSet;
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void storeHistoryMetadata(List<AtlasEntity> entities) throws AtlasBaseException {
         try {
             Set<String> tableSet = getTableGuid(entities);
@@ -170,8 +171,8 @@ public class MetadataHistoryService {
 
     public List<String> extractPartitionKeyInfo(AtlasEntity entity) {
         List<AtlasObjectId> partitionKeys = null;
-        if (Objects.nonNull(entity.getAttribute("partitionKeys"))) {
-            Object partitionObjects = entity.getAttribute("partitionKeys");
+        if (Objects.nonNull(entity.getAttribute(partitionAttribute))) {
+            Object partitionObjects = entity.getAttribute(partitionAttribute);
             if (partitionObjects instanceof ArrayList<?>) {
                 partitionKeys = (ArrayList<AtlasObjectId>) partitionObjects;
             }
@@ -184,7 +185,7 @@ public class MetadataHistoryService {
     }
 
     public boolean extractPartitionInfo(AtlasEntity entity) {
-        if (entity.hasAttribute("partitionKeys") && Objects.nonNull(entity.getAttribute("partitionKeys"))) {
+        if (entity.hasAttribute(partitionAttribute) && Objects.nonNull(entity.getAttribute(partitionAttribute))) {
             return true;
         } else {
             return false;
@@ -193,8 +194,9 @@ public class MetadataHistoryService {
 
     public AtlasRelatedObjectId getRelatedDB(AtlasEntity entity) {
         AtlasRelatedObjectId objectId = null;
-        if (entity.hasRelationshipAttribute("db") && Objects.nonNull(entity.getRelationshipAttribute("db"))) {
-            Object obj = entity.getRelationshipAttribute("db");
+        String db = "db";
+        if (entity.hasRelationshipAttribute(db) && Objects.nonNull(entity.getRelationshipAttribute(db))) {
+            Object obj = entity.getRelationshipAttribute(db);
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }

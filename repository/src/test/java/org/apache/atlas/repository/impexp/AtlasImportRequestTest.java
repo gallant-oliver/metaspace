@@ -18,7 +18,7 @@
 package org.apache.atlas.repository.impexp;
 
 import org.apache.atlas.model.impexp.AtlasImportRequest;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -28,7 +28,7 @@ public class AtlasImportRequestTest {
     public void serializeAtlasImportRequstFromJsonWithEmptyOptions() {
         String jsonData = "{ \"options\": {} }";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNotNull(request.getOptions());
@@ -53,7 +53,7 @@ public class AtlasImportRequestTest {
                 "}" +
                 "}";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNotNull(request.getStartGuid());
@@ -72,7 +72,7 @@ public class AtlasImportRequestTest {
                     "}" +
                 "}";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNull(request.getStartGuid());
@@ -84,7 +84,7 @@ public class AtlasImportRequestTest {
     public void serializeAtlasImportRequstFromJsonWithEmptyTransforms() {
         String jsonData = "{ \"options\": { \"transforms\": \"{ }\" } }";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNotNull(request.getOptions());
@@ -101,7 +101,7 @@ public class AtlasImportRequestTest {
     public void serializeAtlasImportRequstFromJsonWith1Transform() {
         String jsonData = "{ \"options\": { \"transforms\": \"{ \\\"hive_db\\\": { \\\"qualifiedName\\\": [ \\\"replace:@cl1:@cl2\\\" ] } }\" } }";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNotNull(request.getOptions());
@@ -122,7 +122,7 @@ public class AtlasImportRequestTest {
     public void serializeAtlasImportRequstFromJson() {
         String jsonData = "{ \"options\": { \"transforms\": \"{ \\\"hive_db\\\": { \\\"qualifiedName\\\": [ \\\"replace:@cl1:@cl2\\\" ] }, \\\"hive_table\\\": { \\\"qualifiedName\\\": [ \\\"lowercase\\\", \\\"replace:@cl1:@cl2\\\" ] } }\" } } }";
 
-        AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
+        AtlasImportRequest request = BaseAtlasType.fromJson(jsonData, AtlasImportRequest.class);
 
         assertNotNull(request);
         assertNotNull(request.getOptions());

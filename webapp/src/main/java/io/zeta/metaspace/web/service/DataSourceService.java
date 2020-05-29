@@ -14,29 +14,29 @@
 package io.zeta.metaspace.web.service;
 
 
-import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUser;
-import io.zeta.metaspace.model.dataSource.DataSourceAuthorizeUserId;
+import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
+import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUserId;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
-import io.zeta.metaspace.model.dataSource.DataSourcePrivileges;
+import io.zeta.metaspace.model.datasource.DataSourcePrivileges;
 import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
-import io.zeta.metaspace.model.dataSource.DataSourceBody;
-import io.zeta.metaspace.model.dataSource.DataSourceConnection;
-import io.zeta.metaspace.model.dataSource.DataSourceHead;
-import io.zeta.metaspace.model.dataSource.DataSourceCheckMessage;
-import io.zeta.metaspace.model.dataSource.DataSourceInfo;
-import io.zeta.metaspace.model.dataSource.DataSourceSearch;
+import io.zeta.metaspace.model.datasource.DataSourceBody;
+import io.zeta.metaspace.model.datasource.DataSourceConnection;
+import io.zeta.metaspace.model.datasource.DataSourceHead;
+import io.zeta.metaspace.model.datasource.DataSourceCheckMessage;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceSearch;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
-import io.zeta.metaspace.utils.MetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
@@ -108,7 +108,7 @@ public class DataSourceService {
     private UserGroupDAO userGroupDAO;
 
 
-    private MetaspaceGremlinQueryProvider gremlinQueryProvider = MetaspaceGremlinQueryProvider.INSTANCE;
+    private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
 
     /**
@@ -118,7 +118,7 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int setNewDataSource(DataSourceBody dataSourceBody,boolean isApi,String tenantId) throws AtlasBaseException {
         if (!dataSourceBody.getIp().matches("(((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2}))(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}")){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"ip格式错误");
@@ -160,7 +160,7 @@ public class DataSourceService {
             }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
             if (dataSourceBody.getPassword()!=null){
-                dataSourceBody.setPassword(AESUtils.AESEncode(dataSourceBody.getPassword()));
+                dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
             }
             return dataSourceDAO.updateNoRely(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
@@ -219,7 +219,7 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public int deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -312,7 +312,7 @@ public class DataSourceService {
     }
     public void getPassword(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         if (dataSourceConnection.getAesPassword()!=null) {
-            String password = AESUtils.AESDecode(dataSourceConnection.getAesPassword());
+            String password = AESUtils.aesDecode(dataSourceConnection.getAesPassword());
             dataSourceConnection.setPassword(password);
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");
@@ -530,7 +530,7 @@ public class DataSourceService {
      * @param dataSourceAuthorizeUserId
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void dataSourceAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
         try {
 
@@ -569,7 +569,7 @@ public class DataSourceService {
      * @param dataSourceAuthorizeUserId
      * @throws AtlasBaseException
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void dataSourceApiAuthorize(DataSourceAuthorizeUserId dataSourceAuthorizeUserId) throws AtlasBaseException {
         try {
 
@@ -730,8 +730,8 @@ public class DataSourceService {
 
                 String sourceType = dataSource.getSourceType();
                 String description = dataSource.getDescription();
-                String Ip = dataSource.getIp();
-                String Port = dataSource.getPort();
+                String ip = dataSource.getIp();
+                String port = dataSource.getPort();
                 String userName = dataSource.getUserName();
                 String password = dataSource.getPassword();
                 String jdbcParameter = dataSource.getJdbcParameter();
@@ -739,8 +739,8 @@ public class DataSourceService {
                 dataSourceCheckInfo.setSourceType(sourceType);
                 dataSourceCheckInfo.setDatabase(database);
                 dataSourceCheckInfo.setDescription(description);
-                dataSourceCheckInfo.setIp(Ip);
-                dataSourceCheckInfo.setPort(Port);
+                dataSourceCheckInfo.setIp(ip);
+                dataSourceCheckInfo.setPort(port);
                 dataSourceCheckInfo.setUserName(userName);
                 dataSourceCheckInfo.setPassword(password);
                 dataSourceCheckInfo.setJdbcParameter(jdbcParameter);
@@ -758,7 +758,7 @@ public class DataSourceService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public DataSourceCheckMessage importDataSource(File file,String tenantId) throws AtlasBaseException {
         try {
             //提取excel数据
@@ -916,7 +916,7 @@ public class DataSourceService {
      * @return
      * @throws Exception
      */
-    @Transactional
+    @Transactional(rollbackFor=Exception.class)
     public void updateManager(String sourceId,String managerUserId) throws AtlasBaseException {
         try {
 

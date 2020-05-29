@@ -206,17 +206,22 @@ public class HookService {
         KafkaNotification kafkaNotification = NotificationProvider.get();
         try{
             KafkaConsumer kafkaConsumer = kafkaNotification.getNewKafkaConsumer(kafkaNotification.getConsumerProperties(NotificationInterface.NotificationType.HOOK), NotificationInterface.NotificationType.HOOK, false);
-            Map<String, List<PartitionInfo>> topics = kafkaConsumer.listTopics();//获取topic和分区
-            List<PartitionInfo> atlas_hook = topics.get(KafkaNotification.ATLAS_HOOK_TOPIC);
+            //获取topic和分区
+            Map<String, List<PartitionInfo>> topics = kafkaConsumer.listTopics();
+            List<PartitionInfo> atlasHook = topics.get(KafkaNotification.ATLAS_HOOK_TOPIC);
             List<TopicPartition> assignment = new ArrayList<>();
-            atlas_hook.forEach(partitionInfo -> assignment.add(new TopicPartition(partitionInfo.topic(),partitionInfo.partition())));
-            Map<TopicPartition, Long> map = kafkaConsumer.endOffsets(assignment);//最后提交的的offset
+            atlasHook.forEach(partitionInfo -> assignment.add(new TopicPartition(partitionInfo.topic(),partitionInfo.partition())));
+            //最后提交的的offset
+            Map<TopicPartition, Long> map = kafkaConsumer.endOffsets(assignment);
             long sum =0;
             long sumOffset=0;
             for (TopicPartition topicPartition : assignment){
-                Long partitionOffset = map.get(topicPartition);//最后提交的offset
-                OffsetAndMetadata committed = kafkaConsumer.committed(topicPartition);//消费的offset；
-                long  readOffset = committed.offset();//最后消费的offset
+                //最后提交的offset
+                Long partitionOffset = map.get(topicPartition);
+                //消费的offset；
+                OffsetAndMetadata committed = kafkaConsumer.committed(topicPartition);
+                //最后消费的offset
+                long  readOffset = committed.offset();
                 sum+=partitionOffset;
                 sumOffset+=readOffset;
             }
@@ -245,9 +250,9 @@ public class HookService {
      */
     public HookCheck all() throws AtlasException, AtlasBaseException, IOException {
         HookCheck hookCheck = new HookCheck();
-        hookCheck.setConsumerThread(notificationHookConsumer.isAlive());
-        hookCheck.setHookConfigCheck(hookConfigCheck());
-        hookCheck.setHookJar(hookJar());
+//        hookCheck.setConsumerThread(notificationHookConsumer.isAlive());
+//        hookCheck.setHookConfigCheck(hookConfigCheck());
+//        hookCheck.setHookJar(hookJar());
         hookCheck.setKafkaCheck(kafkaCheck());
         return hookCheck;
     }

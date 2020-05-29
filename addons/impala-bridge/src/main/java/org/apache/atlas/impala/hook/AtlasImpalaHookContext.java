@@ -104,42 +104,6 @@ public class AtlasImpalaHookContext {
     public String getQualifiedNameForColumn(LineageVertex vertex) {
         return getQualifiedNameForColumn(vertex.getVertexId());
     }
-    /*public String getQualifiedNameForColumn(LineageVertex vertex) {
-        // get database name and table name
-        LineageVertexMetadata metadata = vertex.getMetadata();
-
-        if (metadata == null) {
-            return getQualifiedNameForColumn(vertex.getVertexId());
-        }
-
-        String fullTableName = metadata.getTableName();
-
-        if (StringUtils.isEmpty(fullTableName)) {
-            throw new IllegalArgumentException("fullTableName in column metadata is null");
-        }
-
-        int sepPos = fullTableName.lastIndexOf(QNAME_SEP_ENTITY_NAME);
-
-        if (!isSeparatorIndexValid(sepPos)) {
-            throw new IllegalArgumentException(fullTableName + "in column metadata does not contain database name");
-        }
-
-        // get pure column name
-        String columnName = vertex.getVertexId();
-        if (StringUtils.isEmpty(columnName)) {
-            throw new IllegalArgumentException("column name in vertexId is null");
-        }
-
-        int sepPosLast = columnName.lastIndexOf(QNAME_SEP_ENTITY_NAME);
-        if (isSeparatorIndexValid(sepPosLast)) {
-            columnName = columnName.substring(sepPosLast+1);
-        }
-
-        return getQualifiedNameForColumn(
-            fullTableName.substring(0, sepPos),
-            fullTableName.substring(sepPos+1),
-            columnName);
-    }*/
 
     public String getQualifiedNameForColumn(String fullColumnName) throws IllegalArgumentException {
         if (fullColumnName == null) {

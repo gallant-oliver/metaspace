@@ -85,7 +85,8 @@ public class ImpalaLineageTool {
   }
 
   public static void main(String[] args) {
-    if (args != null && args.length != 4) {
+    int length = 4;
+    if (args != null && args.length != length) {
       // The lineage file location and prefix should be input as the parameters
       System.out.println("Impala bridge: wrong number of arguments. Please try again");
       printUsage();
@@ -181,7 +182,8 @@ public class ImpalaLineageTool {
     List<String> lineageList = new ArrayList<>();
 
     try {
-      File lineageFile = new File(name); //use current file length to minus the offset
+      //use current file length to minus the offset
+      File lineageFile = new File(name);
       File walFile = new File(walfile);
       // if the wal file does not exist, create one with 0 byte read, else, read the number
       if(!walFile.exists()) {

@@ -29,7 +29,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 @Component
-public class AtlasAuthenticationProvider extends AtlasAbstractAuthenticationProvider {
+public class AtlasAuthenticationProvider extends BaseAtlasAbstractAuthenticationProvider {
     private static final Logger LOG = LoggerFactory
             .getLogger(AtlasAuthenticationProvider.class);
 
@@ -98,13 +98,15 @@ public class AtlasAuthenticationProvider extends AtlasAbstractAuthenticationProv
             }
         } else {
 
-            if (ldapType.equalsIgnoreCase("LDAP")) {
+            String ldap = "LDAP";
+            String ad = "AD";
+            if (ldapType.equalsIgnoreCase(ldap)) {
                 try {
                     authentication = ldapAuthenticationProvider.authenticate(authentication);
                 } catch (Exception ex) {
                     LOG.error("Error while LDAP authentication", ex);
                 }
-            } else if (ldapType.equalsIgnoreCase("AD")) {
+            } else if (ldapType.equalsIgnoreCase(ad)) {
                 try {
                     authentication = adAuthenticationProvider.authenticate(authentication);
                 } catch (Exception ex) {
@@ -122,7 +124,9 @@ public class AtlasAuthenticationProvider extends AtlasAbstractAuthenticationProv
         if (authentication != null) {
             if (authentication.isAuthenticated()) {
                 return authentication;
-            } else if (fileAuthenticationMethodEnabled) {  // If the LDAP/AD/PAM authentication fails try the local filebased login method
+            }
+            // If the LDAP/AD/PAM authentication fails try the local filebased login method
+            else if (fileAuthenticationMethodEnabled) {
                 authentication = fileAuthenticationProvider.authenticate(authentication);
 
                 if (authentication != null && authentication.isAuthenticated()) {

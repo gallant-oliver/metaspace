@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @AtlasJSON
-public class AtlasGlossary extends AtlasGlossaryBaseObject {
+public class AtlasGlossary extends BaseAtlasGlossaryBaseObject {
     private String language;
     private String usage;
 

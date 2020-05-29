@@ -37,7 +37,7 @@ import static org.apache.atlas.repository.Constants.STATE_PROPERTY_KEY;
 
 @Component
 @ConditionalOnAtlasProperty(property = "atlas.DeleteHandlerV1.impl", isDefault = true)
-public class SoftDeleteHandlerV1 extends DeleteHandlerV1 {
+public class SoftDeleteHandlerV1 extends BaseDeleteHandlerV1 {
 
     @Inject
     public SoftDeleteHandlerV1(AtlasTypeRegistry typeRegistry) {

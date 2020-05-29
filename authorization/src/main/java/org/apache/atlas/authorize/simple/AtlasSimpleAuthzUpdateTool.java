@@ -123,7 +123,8 @@ public class AtlasSimpleAuthzUpdateTool {
 
 
     public static String toJson(Object obj, ObjectMapper mapper) {
-        mapper.enable(SerializationFeature.INDENT_OUTPUT); // to beautify json
+        // to beautify json
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         String ret;
         try {

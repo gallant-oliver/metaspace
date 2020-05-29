@@ -23,7 +23,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
 import org.apache.atlas.repository.store.graph.v2.EntityImportStream;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +107,10 @@ public class ZipSource implements EntityImportStream {
 
             int n = 0;
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            while ((n = zipInputStream.read(buf, 0, 1024)) > -1) {
+            while (true) {
+                int length = 1024;
+                if (!((n = zipInputStream.read(buf, 0, length)) > -1))
+                    break;
                 bos.write(buf, 0, n);
             }
 
@@ -137,7 +140,7 @@ public class ZipSource implements EntityImportStream {
     private <T> T convertFromJson(Class<T> clazz, String jsonData) throws AtlasBaseException {
         T t;
         try {
-            t = AtlasType.fromJson(jsonData, clazz);
+            t = BaseAtlasType.fromJson(jsonData, clazz);
             if(t == null) {
                 throw new AtlasBaseException("Error converting file to JSON.");
             }

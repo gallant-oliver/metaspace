@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.collections.MapUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -241,9 +241,9 @@ public class Referenceable extends Struct implements Serializable {
             id.asString(sb);
         }
         sb.append(", triats={");
-        AtlasBaseTypeDef.dumpObjects(this.traits, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(this.traits, sb);
         sb.append("}, traitNames=[");
-        AtlasBaseTypeDef.dumpObjects(traitNames, sb);
+        BaseAtlasBaseTypeDef.dumpObjects(traitNames, sb);
         sb.append("], systemAttributes=");
         if (systemAttributes != null) {
             systemAttributes.toString(sb);

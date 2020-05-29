@@ -19,7 +19,7 @@ package org.apache.atlas.model.typedef;
 
 import org.apache.atlas.model.ModelTestUtil;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
-import org.apache.atlas.type.AtlasType;
+import org.apache.atlas.type.BaseAtlasType;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -35,9 +35,9 @@ public class TestAtlasStructDef {
     public void testStructDefSerDeEmpty() {
         AtlasStructDef structDef = new AtlasStructDef("emptyStructDef");
 
-        String jsonString = AtlasType.toJson(structDef);
+        String jsonString = BaseAtlasType.toJson(structDef);
 
-        AtlasStructDef structDef2 = AtlasType.fromJson(jsonString, AtlasStructDef.class);
+        AtlasStructDef structDef2 = BaseAtlasType.fromJson(jsonString, AtlasStructDef.class);
 
         assertEquals(structDef2, structDef, "Incorrect serialization/deserialization of AtlasStructDef");
     }
@@ -46,9 +46,9 @@ public class TestAtlasStructDef {
     public void testStructDefSerDe() {
         AtlasStructDef structDef = ModelTestUtil.getStructDef();
 
-        String jsonString = AtlasType.toJson(structDef);
+        String jsonString = BaseAtlasType.toJson(structDef);
 
-        AtlasStructDef structDef2 = AtlasType.fromJson(jsonString, AtlasStructDef.class);
+        AtlasStructDef structDef2 = BaseAtlasType.fromJson(jsonString, AtlasStructDef.class);
 
         assertEquals(structDef2, structDef, "Incorrect serialization/deserialization of AtlasStructDef");
     }
@@ -68,7 +68,7 @@ public class TestAtlasStructDef {
     public void testStructDefAddAttribute() {
         AtlasStructDef structDef = ModelTestUtil.newStructDef();
 
-        structDef.addAttribute(new AtlasAttributeDef("newAttribute", AtlasBaseTypeDef.ATLAS_TYPE_INT));
+        structDef.addAttribute(new AtlasAttributeDef("newAttribute", BaseAtlasBaseTypeDef.ATLAS_TYPE_INT));
         assertTrue(structDef.hasAttribute("newAttribute"));
     }
 

@@ -17,7 +17,7 @@
  */
 package org.apache.atlas.repository.ogm.glossary;
 
-import org.apache.atlas.model.AtlasBaseModelObject;
+import org.apache.atlas.model.BaseAtlasBaseModelObject;
 import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.glossary.relations.AtlasGlossaryHeader;
 import org.apache.atlas.model.glossary.relations.AtlasRelatedCategoryHeader;
@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class AbstractGlossaryDTO<T extends AtlasBaseModelObject> extends AbstractDataTransferObject<T> {
+public abstract class AbstractGlossaryDTO<T extends BaseAtlasBaseModelObject> extends AbstractDataTransferObject<T> {
     protected AbstractGlossaryDTO(final AtlasTypeRegistry typeRegistry, final Class<T> tClass) {
         super(typeRegistry, tClass);
     }

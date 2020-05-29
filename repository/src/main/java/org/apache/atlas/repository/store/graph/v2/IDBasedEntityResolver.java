@@ -50,11 +50,11 @@ public class IDBasedEntityResolver implements EntityResolver {
         for (String guid : context.getReferencedGuids()) {
             boolean isAssignedGuid = AtlasTypeUtil.isAssignedGuid(guid);
             AtlasVertex vertex = isAssignedGuid ? AtlasGraphUtilsV2.findByGuid(guid) : null;
-
-            if (vertex == null && !(entityStream instanceof EntityImportStream)) { // if not found in the store, look if the entity is present in the stream
+            // if not found in the store, look if the entity is present in the stream
+            if (vertex == null && !(entityStream instanceof EntityImportStream)) {
                 AtlasEntity entity = entityStream.getByGuid(guid);
-
-                if (entity != null) { // look for the entity in the store using unique-attributes
+                // look for the entity in the store using unique-attributes
+                if (entity != null) {
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
 
                     if (entityType == null) {
@@ -62,7 +62,9 @@ public class IDBasedEntityResolver implements EntityResolver {
                     }
 
                     vertex = AtlasGraphUtilsV2.findByUniqueAttributes(entityType, entity.getAttributes());
-                } else if (!isAssignedGuid) { // for local-guids, entity must be in the stream
+                }
+                // for local-guids, entity must be in the streamLocalSolrRunner
+                else if (!isAssignedGuid) {
                     throw new AtlasBaseException(AtlasErrorCode.REFERENCED_ENTITY_NOT_FOUND, guid);
                 }
             }

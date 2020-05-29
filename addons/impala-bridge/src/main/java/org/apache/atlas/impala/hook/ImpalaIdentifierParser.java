@@ -45,7 +45,8 @@ public class ImpalaIdentifierParser {
         }
 
         String[] tokens = inTableName.split(".");
-        if (tokens.length > 2) {
+        int length = 2;
+        if (tokens.length > length) {
             // valid value should be <dbName>.<tableName> or <tableName>
             return false;
         }
@@ -365,11 +366,6 @@ public class ImpalaIdentifierParser {
             "varying", "versioning", "whenever", "width_bucket", "window", "within",
             "without", "year"}));
         // TODO: Remove impala builtin function names. Need to find content of
-        // BuiltinsDb.getInstance().getAllFunctions()
-        //reservedWords.removeAll(BuiltinsDb.getInstance().getAllFunctions().keySet());
-
-        // Remove whitelist words. These words might be heavily used in production, and
-        // impala is unlikely to implement SQL features around these words in the near future.
         reservedWords.removeAll(Arrays.asList(new String[] {
             // time units
             "year", "month", "day", "hour", "minute", "second",
