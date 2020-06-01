@@ -312,7 +312,6 @@ public class DataSourceREST {
             File xlsxFile = dataSourceService.exportExcel(sourceIds,tenantId);
             httpServletResponse.setContentType("application/msexcel;charset=utf-8");
             httpServletResponse.setCharacterEncoding("utf-8");
-            //String fileName = new String( new String(xlsxFile.getName()).getBytes(), "ISO-8859-1");
             String fileName = new String( xlsxFile.getName());
             // Content-disposition属性设置成以附件方式进行下载
             httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName);

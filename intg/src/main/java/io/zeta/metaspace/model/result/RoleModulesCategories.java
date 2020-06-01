@@ -1,7 +1,9 @@
 package io.zeta.metaspace.model.result;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,6 +55,34 @@ public class RoleModulesCategories {
         private String description;
         private int level;
         private String safe;
+        @JsonIgnore
+        private Timestamp createTime;
+        private String qualifiedName;
+        private int count;
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+
+        public String getQualifiedName() {
+            return qualifiedName;
+        }
+
+        public void setQualifiedName(String qualifiedName) {
+            this.qualifiedName = qualifiedName;
+        }
+
+        public Timestamp getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(Timestamp createTime) {
+            this.createTime = createTime;
+        }
 
         public String getSafe() {
             return safe;

@@ -77,7 +77,6 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).dedup().count().toList()";
 
             case TABLE_GUID_QUERY:
-                //g.tx().commit();
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name','%s').inE().outV().has('__typeName','hive_table').has('Asset.name','%s').values('__guid').toList()";
 
             case ACTIVE_TABLE_DB_BY_QUERY:

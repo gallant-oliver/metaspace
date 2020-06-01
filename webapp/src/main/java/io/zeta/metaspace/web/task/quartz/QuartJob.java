@@ -133,7 +133,6 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
-        //conn = HiveJdbcUtils.getSystemConnection(dbName);
         LOG.info("query engine:" + engine);
 
         int totalStep = rules.size();
@@ -157,7 +156,6 @@ public class QuartJob implements Job {
                     qualityDao.updateFinishedPercent(templateId, ratio);
                     break;
                 } catch (Exception e) {
-                    //LOG.error(e.getMessage());
                     try {
                         retryCount++;
                         LOG.info("retryCount=" + retryCount);
@@ -421,14 +419,6 @@ public class QuartJob implements Job {
                     return result.longValue();
             }
 
-            //TableMetadata metadata = HiveJdbcUtils.systemMetadata(source);
-
-            /*TableMetadata metadata;
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                metadata = ImpalaJdbcUtils.systemMetadata(source);
-            } else {
-                metadata = HiveJdbcUtils.systemMetadata(source);
-            }*/
 
             //表数据量
             totalSize = HiveJdbcUtils.getTableSize(dbName, tableName,"metaspace");

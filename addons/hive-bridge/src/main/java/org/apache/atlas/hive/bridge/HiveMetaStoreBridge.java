@@ -669,7 +669,6 @@ public class HiveMetaStoreBridge {
             SerDeInfo serdeInfo = storageDesc.getSerdeInfo();
 
             LOG.debug("serdeInfo = {}", serdeInfo);
-            // SkewedInfo skewedInfo = storageDesc.getSkewedInfo();
 
             AtlasStruct serdeInfoStruct = new AtlasStruct(HiveDataTypes.HIVE_SERDE.getName());
 

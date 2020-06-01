@@ -78,8 +78,7 @@ public class AtlasGlossaryTermDTO extends AbstractGlossaryDTO<AtlasGlossaryTerm>
                 }
             }
         }
-//        ret.setContextRelevantTerms(toRelatedObjectIdsSet(entity.getRelationshipAttribute("contextRelevantTerms")));
-//        ret.setUsedInContexts(toRelatedObjectIdsSet(entity.getRelationshipAttribute("usedInContexts")));
+
 
         Object assignedEntities = entity.getRelationshipAttribute("assignedEntities");
         if (assignedEntities instanceof Collection) {

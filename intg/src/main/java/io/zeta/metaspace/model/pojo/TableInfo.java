@@ -76,11 +76,6 @@ public class TableInfo {
     }
 
     public List<String> getDataOwner() {
-        /*List<Map> list = new ArrayList<>();
-        if (dataOwner != null) {
-            Gson gson = new Gson();
-            list = gson.fromJson(dataOwner.getValue(), List.class);
-        }*/
         return dataOwner;
     }
 

@@ -298,7 +298,6 @@ public class MetaDataService {
                 List<DataOwnerHeader> owners = getDataOwner(guid);
                 table.setDataOwner(owners);
                 //更新时间
-                //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
                 table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
             } catch (Exception e) {
                 LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
@@ -334,9 +333,7 @@ public class MetaDataService {
                 //表关联信息
                 List<String> relations = getRelationList(guid,tenantId);
                 table.setRelations(relations);
-                //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
                 //目录管理员
-                //                table.setCatalogAdmin(adminByTableguid);
                 //关联时间
                 if (relations.size() == 1)
                     table.setRelationTime(tableDAO.getDateByTableguid(guid));
@@ -431,98 +428,6 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
-            //权限,可能从secureplus获取，获取不到就不展示
-            //            try {
-            //                TablePermission permission = HivePermissionUtil.getHivePermission(table.getDatabaseName(), table.getTableName(), table.getColumns());
-            //                table.setTablePermission(permission);
-            //            } catch (Exception e) {
-            //                LOG.error("获取权限失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //tag，从postgresql获取，获取不到不展示
-            //            try {
-            //                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
-            //                table.setTags(tags);
-            //            } catch (Exception e) {
-            //                LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //获取权限判断是否能编辑,默认不能
-            //            table.setEdit(false);
-            //            try {
-            //                Role role = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-            //                if("1".equals(role.getRoleId())) {
-            //                    table.setEdit(true);
-            //                } else {
-            //                    List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-            //                    for (Module module : modules) {
-            //                        if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-            //                            if (table.getTablePermission().isWRITE()) {
-            //                                table.setEdit(true);
-            //                                break;
-            //                            }
-            //                        }
-            //                    }
-            //                }
-            //            } catch (Exception e) {
-            //                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
-            //            }
-
-            //1.4新增
-            //            try {
-            //                //owner.name
-            //                List<DataOwnerHeader> owners = getDataOwner(guid);
-            //                table.setDataOwner(owners);
-            //                //更新时间
-            //                //table.setUpdateTime((entity.hasAttribute("last_modified_time") && Objects.nonNull(entity.getAttribute("last_modified_time")))?DateUtils.date2String((Date)entity.getAttribute("last_modified_time")):null);
-            //                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
-            //            } catch (Exception e) {
-            //                LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //            try {
-            //                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
-            //                //所属系统
-            //                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
-            //                //所属数据库
-            //                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
-            //                //源系统管理员
-            //                table.setSystemAdmin(tableInfo.getSystemAdmin());
-            //                //数仓管理员
-            //                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
-            //                //数仓描述
-            //                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
-            //                //目录管理员
-            //                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
-            //                //创建时间
-            //                Object createTime = entity.getAttribute("createTime");
-            //                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            //                String formatDateStr = sdf.format(createTime);
-            //                table.setCreateTime(formatDateStr);
-            //            } catch (Exception e) {
-            //                LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //            try {
-            //
-            //            } catch (Exception e) {
-            //                LOG.error("获取数仓维度失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //            try {
-            //                //表关联信息
-            //                List<String> relations = getRelationList(guid);
-            //                table.setRelations(relations);
-            //                //                List<String> adminByTableguid = tableDAO.getAdminByTableguid(guid);
-            //                //目录管理员
-            //                //                table.setCatalogAdmin(adminByTableguid);
-            //                //关联时间
-            //                if(relations.size()==1)
-            //                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
-            //            } catch (Exception e) {
-            //                LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
-            //            }
-            //            try {
-            //                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid);
-            //                table.setBusinessObjects(businessObjectByTableguid);
-            //            } catch (Exception e) {
-            //                LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
-            //            }
         }
         return table;
     }
@@ -1114,7 +1019,6 @@ public class MetaDataService {
                     //tableName
                     lineageDepthEntity.setTableName(getEntityAttribute(entity, "name"));
                     //displayText
-                    //lineageDepthEntity.setDisplayText(entity);
                     //updateTime
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String formatDateStr = sdf.format(entity.getUpdateTime());
@@ -2137,16 +2041,6 @@ public class MetaDataService {
         String tableName = table.getTableName();
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
-        /*String sheetNamePrefix = dbName + "." + tableName;
-        sheetNamePrefix = processSpecialCharacter(sheetNamePrefix);
-        String sheetName = sheetNamePrefix + "-字段信息";
-        Sheet hasSheet = workbook.getSheet(sheetName);
-        int sheetIndex = 1;
-        while (null != hasSheet) {
-            sheetNamePrefix = sheetNamePrefix + (++sheetIndex);
-            sheetName = sheetNamePrefix + "-字段信息";
-            hasSheet = workbook.getSheet(sheetName);
-        }*/
         String sheetName = "表" + index + "-字段信息";
         Sheet sheet = workbook.createSheet(sheetName);
 

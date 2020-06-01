@@ -16,7 +16,10 @@
  */
 package org.apache.atlas.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.sql.Timestamp;
 
 /*
  * @description
@@ -39,6 +42,18 @@ public class CategoryEntityV2 {
     @JsonIgnore
     private String safe;
 
+    @JsonIgnore
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
+
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
+    }
+
     public String getSafe() {
         return safe;
     }
@@ -58,7 +73,7 @@ public class CategoryEntityV2 {
         this.parentCategoryGuid = parentCategoryGuid;
         this.categoryType = categoryType;
     }
-    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe) {
+    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe,Timestamp createTime) {
         this.guid = guid;
         this.name = name;
         this.description = description;
@@ -68,6 +83,7 @@ public class CategoryEntityV2 {
         this.categoryType = categoryType;
         this.level=level;
         this.safe=safe;
+        this.createTime=createTime;
     }
 
     public String getGuid() {

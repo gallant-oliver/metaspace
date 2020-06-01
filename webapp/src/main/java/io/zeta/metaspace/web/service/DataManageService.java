@@ -24,10 +24,12 @@ package io.zeta.metaspace.web.service;
 
 import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
+import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
@@ -41,6 +43,7 @@ import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -51,7 +54,10 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CategoryUtil;
 import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -60,10 +66,18 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
+import org.apache.atlas.model.metadata.SortCategory;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +90,12 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -116,6 +135,11 @@ public class DataManageService {
     UserGroupDAO userGroupDAO;
     @Autowired
     TenantService tenantService;
+
+    int technicalType=0;
+    int dataStandType = 3;
+    int technicalCount=5;
+    int dataStandCount=14;
 
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
@@ -241,6 +265,8 @@ public class DataManageService {
             entity.setGuid(newCategoryGuid);
             //name
             entity.setName(name);
+            //createtime
+            entity.setCreateTime(io.zeta.metaspace.utils.DateUtils.currentTimestamp());
             //description
             entity.setDescription(info.getDescription());
             entity.setCategoryType(type);
@@ -249,19 +275,46 @@ public class DataManageService {
                 entity.setSafe("1");
             }
 
-            //创建第一个目录
+            //创建一级目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
-                if(categoryDao.ifExistCategory(type,tenantId) > 0) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在首个目录，请刷新后重新操作");
-                }
                 if (TenantService.defaultTenant.equals(tenantId)){
                     List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
                     if (!roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
                         throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
                     }
 
-                }else if (!modules.contains(ModuleEnum.AUTHORIZATION.getId())&&type==1){
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级业务目录");
+                }else {
+                    boolean bool = type == 1 || type == 0;
+                    if (!modules.contains(ModuleEnum.AUTHORIZATION.getId()) && bool){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级目录");
+                    }
+                }
+
+                if(categoryDao.ifExistCategory(type,tenantId) > 0) {
+                    int count = categoryDao.querySameNameOne(name, type,tenantId);
+                    if (count > 0)
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+                    String lastCategoryId = categoryDao.queryLastCategory(type,tenantId);
+                    qualifiedName.append(name);
+                    entity.setQualifiedName(qualifiedName.toString());
+                    entity.setLevel(1);
+                    entity.setUpBrotherCategoryGuid(lastCategoryId);
+                    categoryDao.add(entity,tenantId);
+                    categoryDao.updateDownBrotherCategoryGuid(lastCategoryId,newCategoryGuid,tenantId);
+                    CategoryPrivilege returnEntity = new CategoryPrivilege();
+                    returnEntity.setGuid(newCategoryGuid);
+                    returnEntity.setName(name);
+                    returnEntity.setDescription(info.getDescription());
+                    returnEntity.setLevel(1);
+                    returnEntity.setParentCategoryGuid(null);
+                    returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
+                    returnEntity.setDownBrotherCategoryGuid(null);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+                    if(type==technicalType){
+                        privilege.setDeleteRelation(false);
+                    }
+                    returnEntity.setPrivilege(privilege);
+                    return returnEntity;
                 }
                 //qualifiedName
                 qualifiedName.append(name);
@@ -280,7 +333,7 @@ public class DataManageService {
                 if (type==1){
                     privilege.setAsh(true);
                 }
-                if(type==0){
+                if(type==technicalType){
                     privilege.setDeleteRelation(false);
                 }
                 returnEntity.setPrivilege(privilege);
@@ -353,7 +406,7 @@ public class DataManageService {
             categoryDao.add(entity,tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid,tenantId);
             CategoryPrivilege.Privilege privilege =null;
-            if(type==0) {
+            if(type==technicalType) {
                 if(modules.contains(ModuleEnum.TECHNICALEDIT.getId())) {
                     privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
                 }else{
@@ -590,14 +643,12 @@ public class DataManageService {
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                 entity.setDataOwner(ownerHeaders);
             }
-            //totalNum = relationDao.queryTotalNumByCategoryGuid(categoryGuid);
             if (relations.size()!=0){
                 totalNum = relations.get(0).getTotal();
             }
             getPath(relations,tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
-            //pageResult.setOffset(query.getOffset());
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -630,14 +681,12 @@ public class DataManageService {
                 if (databases!=null&&databases.size()!=0)
                     relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, limit, offset,databases);
             }
-            //totalNum = relationDao.queryTotalNumByCategoryGuidFilter(categoryGuid);
             if (relations.size()!=0){
                 totalNum = relations.get(0).getTotal();
             }
             getPath(relations,tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
-            //pageResult.setOffset(query.getOffset());
             pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
@@ -982,7 +1031,7 @@ public class DataManageService {
             }
             long count = list.size();
             PageResult pageResult = new PageResult();
-            //pageResult.setOffset(offset);
+
             pageResult.setLists(list);
             pageResult.setCurrentSize(count);
             pageResult.setTotalSize(totalSize);
@@ -1317,5 +1366,598 @@ public class DataManageService {
         }
         str.deleteCharAt(str.length()-1);
         return str.toString();
+    }
+
+
+    /**
+     * 目录转化为文件
+     * @param ids
+     * @param categoryType
+     * @return
+     * @throws IOException
+     * @throws AtlasBaseException
+     */
+    public File exportExcel(List<String> ids, int categoryType,String tenantId) throws IOException, AtlasBaseException {
+        List<CategoryExport> data = queryByIds(ids, categoryType,tenantId);
+        Workbook workbook = data2workbook(data);
+        return workbook2file(workbook);
+    }
+
+    /**
+     * 全局导出
+     * @param categoryType
+     * @return
+     * @throws IOException
+     * @throws AtlasBaseException
+     */
+    public File exportExcelAll(int categoryType,String tenantId) throws IOException, SQLException {
+        Set<CategoryEntityV2> data = categoryDao.getAll(categoryType,tenantId);
+        Workbook workbook = allData2workbook(data);
+        return workbook2file(workbook);
+    }
+
+    private List<CategoryExport> queryByIds(List<String> ids, int categoryType,String tenantId) throws AtlasBaseException {
+        List<CategoryExport> data = userGroupDAO.getCategoryByIds(ids,categoryType,tenantId);
+        int i=0;
+        List<CategoryExport> sortData = new ArrayList<>();
+        sortData.addAll(data);
+        Map<String,Integer> idMap = new HashMap<>();
+        for (String id:ids){
+            idMap.put(id,i);
+            i++;
+        }
+        for (CategoryExport categoryExport:data){
+            Integer integer = idMap.get(categoryExport.getGuid());
+            if (integer!=null){
+                sortData.set(integer,categoryExport);
+            }
+        }
+        return sortData;
+    }
+
+    private Workbook data2workbook(List<CategoryExport> list) {
+        List<List<String>> dataList = list.stream().map(categoryExport -> {
+            List<String> data = Lists.newArrayList(categoryExport.getName(), categoryExport.getDescription());
+            return data;
+        }).collect(Collectors.toList());
+
+        Workbook workbook = new XSSFWorkbook();
+        PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录名字", "目录描述"), dataList);
+        return workbook;
+    }
+
+    //全局导出
+    private Workbook allData2workbook(Set<CategoryEntityV2> list) {
+        List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
+            List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(),categoryEntityV2.getDescription(),categoryEntityV2.getUpBrotherCategoryGuid(),categoryEntityV2.getDownBrotherCategoryGuid(),categoryEntityV2.getParentCategoryGuid(),categoryEntityV2.getQualifiedName(),new Integer(categoryEntityV2.getLevel()).toString());
+            return data;
+        }).collect(Collectors.toList());
+
+        Workbook workbook = new XSSFWorkbook();
+        PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录id","目录名字","目录描述","同级的上方目录id","同级的下方目录id","父目录id","全名称", "级别"), dataList);
+        return workbook;
+    }
+    private File workbook2file(Workbook workbook) throws IOException {
+        File tmpFile = File.createTempFile("CategoryExport", ".xlsx");
+        try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+            workbook.write(output);
+            output.flush();
+            output.close();
+        }
+        return tmpFile;
+    }
+
+    /**
+     * 同名校验
+     * @param categoryId
+     * @param categoryExports
+     */
+    public void  checkSameName(String categoryId,String direction,List<CategoryExport> categoryExports,int type,String tenantId) throws SQLException {
+        List<String> childCategoryName;
+        if (categoryId!=null&&categoryId.length()!=0){
+            String up = "up";
+            String down = "down";
+            if (up.equals(direction) || down.equals(direction)){
+                String parentCategoryGuid = categoryDao.queryByGuid(categoryId,tenantId).getParentCategoryGuid();
+                childCategoryName = categoryDao.getChildCategoryName(parentCategoryGuid,tenantId);
+            }else{
+                childCategoryName= categoryDao.getChildCategoryName(categoryId,tenantId);
+            }
+
+        }else{
+            childCategoryName=categoryDao.getChildCategoryNameByType(type,tenantId);
+        }
+
+        List<CategoryExport> categoryExportList = new ArrayList<>(categoryExports);
+        for (CategoryExport categoryExport : categoryExportList){
+            if (!childCategoryName.contains(categoryExport.getName())){
+                continue;
+            }
+            categoryExports.remove(categoryExport);
+        }
+
+    }
+
+    /**
+     * 导入目录
+     * @param categoryId
+     * @param fileInputStream
+     * @param type
+     * @throws Exception
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void importCategory(String categoryId,String direction, File fileInputStream,int type,String tenantId) throws Exception {
+        if (!fileInputStream.exists()){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        List<CategoryExport> categoryExports;
+        try {
+            categoryExports = file2Data(fileInputStream);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"文件异常："+e.getMessage());
+        }
+        checkSameName(categoryId,direction,categoryExports,type,tenantId);
+        if(categoryExports.isEmpty()){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或全部重名");
+        }
+        Map<String,CategoryEntityV2> newCategorys = new HashMap<>();
+
+        //是否是导入一级目录
+        String upGuid;
+        String downGuid;
+        String parentQualifiedName=null;
+        String parentCategoryGuid=null;
+        int level;
+        String down = "down";
+        String up = "up";
+        if (categoryId!=null&&categoryId.length()!=0){
+            if (up.equals(direction)){
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId,tenantId);
+                downGuid=categoryId;
+                upGuid = currentEntity.getUpBrotherCategoryGuid();
+                level = currentEntity.getLevel()-1;
+                if (currentEntity.getParentCategoryGuid()!=null&&currentEntity.getParentCategoryGuid().length()>0){
+                    CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(),tenantId);
+                    parentQualifiedName = categoryEntityV2.getQualifiedName();
+                    parentCategoryGuid = currentEntity.getParentCategoryGuid();
+                }
+            }else if(down.equals(direction)){
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId,tenantId);
+                upGuid=categoryId;
+                downGuid = currentEntity.getDownBrotherCategoryGuid();
+                level = currentEntity.getLevel()-1;
+                if (currentEntity.getParentCategoryGuid()!=null&&currentEntity.getParentCategoryGuid().length()>0){
+                    CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(),tenantId);
+                    parentQualifiedName = categoryEntityV2.getQualifiedName();
+                    parentCategoryGuid = currentEntity.getParentCategoryGuid();
+                }
+            }else{
+                parentCategoryGuid=categoryId;
+                upGuid = categoryDao.queryLastChildCategory(categoryId,tenantId);
+                downGuid = null;
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId,tenantId);
+                parentQualifiedName = currentEntity.getQualifiedName();
+                level = currentEntity.getLevel();
+            }
+        }else{
+            upGuid = categoryDao.queryLastCategory(type,tenantId);
+            downGuid=null;
+            parentQualifiedName = null;
+            level = 0;
+        }
+
+        CategoryEntityV2 upChild = categoryDao.queryByGuid(upGuid,tenantId);
+        if (upChild==null){
+            upChild=new CategoryEntityV2();
+        }
+        newCategorys.put(upGuid,upChild);
+        Timestamp createTime = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+        String upId = upGuid;
+        for (CategoryExport categoryExport:categoryExports){
+            StringBuffer qualifiedName = new StringBuffer();
+            String name = categoryExport.getName();
+            CategoryEntityV2 categoryEntityV2 = new CategoryEntityV2();
+            categoryEntityV2.setName(name);
+            categoryEntityV2.setSafe("1");
+            categoryEntityV2.setCategoryType(type);
+            categoryEntityV2.setDescription(categoryExport.getDescription());
+            categoryEntityV2.setGuid(categoryExport.getGuid());
+            categoryEntityV2.setParentCategoryGuid(parentCategoryGuid);
+            categoryEntityV2.setLevel(level+1);
+            categoryEntityV2.setCreateTime(createTime);
+
+            if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
+                qualifiedName.append(parentQualifiedName + ".");
+            qualifiedName.append(name);
+
+            categoryEntityV2.setUpBrotherCategoryGuid(upId);
+            newCategorys.get(upId).setDownBrotherCategoryGuid(categoryExport.getGuid());
+            upId = categoryEntityV2.getGuid();
+
+            newCategorys.put(categoryEntityV2.getGuid(),categoryEntityV2);
+        }
+        newCategorys.remove(upGuid);
+        if (newCategorys.get(upId)!=null){
+            newCategorys.get(upId).setDownBrotherCategoryGuid(downGuid);
+        }
+        if (upGuid!=null){
+            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(),tenantId);
+        }
+        if (downGuid!=null){
+            categoryDao.updateUpBrotherCategoryGuid(downGuid,upId,tenantId);
+        }
+        categoryDao.addAll(new ArrayList<>(newCategorys.values()),tenantId);
+        fileInputStream.delete();
+    }
+
+    /**
+     * 文件转化为目录
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    private List<CategoryExport> file2Data(File file) throws Exception {
+        List<String> names = new ArrayList<>();
+        List<CategoryExport> categoryExports = new ArrayList<>();
+        Workbook workbook = WorkbookFactory.create(file);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        //文件格式校验
+        Row first = sheet.getRow(0);
+        ArrayList<String> strings = Lists.newArrayList("目录名字", "目录描述");
+        ArrayList<String> allStrings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
+
+        for(int i=0;i<strings.size();i++){
+            Cell cell = first.getCell(i);
+            if(Objects.isNull(cell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+            }else{
+                if (!strings.get(i).equals(cell.getStringCellValue())){
+                    if(allStrings.get(i).equals(cell.getStringCellValue())){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "全局导出文件只能用于全局导入，请导入正确的文件");
+                    }
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                }
+            }
+        }
+
+        int rowNum = sheet.getLastRowNum() + 1;
+        for (int i = 1; i < rowNum; i++) {
+            Row row = sheet.getRow(i);
+            CategoryExport category = new CategoryExport();
+            Cell nameCell = row.getCell(0);
+            if(Objects.isNull(nameCell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
+            }
+            if (names.contains(nameCell.getStringCellValue())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"文件中存在相同目录名");
+            }
+            category.setName(nameCell.getStringCellValue());
+
+            Cell discriptionCell = row.getCell(1);
+            if(Objects.isNull(discriptionCell)) {
+                category.setDescription("");
+            } else {
+                category.setDescription(discriptionCell.getStringCellValue());
+            }
+
+            String guid = UUID.randomUUID().toString();
+            category.setGuid(guid);
+            categoryExports.add(category);
+            names.add(nameCell.getStringCellValue());
+        }
+        return categoryExports;
+    }
+
+
+    /**
+     * 变更目录结构
+     * @param categories
+     * @param type
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void moveCategories(MoveCategory categories, int type,String tenantId) throws AtlasBaseException {
+        if (categories.getInit()!=null){
+            categories.getInit().setGuid(categories.getGuid());
+            sortAndAlterCategory(categories.getInit(),type,tenantId);
+        }
+        for (CategoryEntityV2 categoryEntityV2: categories.getMove()){
+            moveCategory(categoryEntityV2,tenantId);
+        }
+    }
+
+    /**
+     * 移动目录
+     * @param category
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void moveCategory(CategoryEntityV2 category,String tenantId) throws AtlasBaseException {
+        try {
+            CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(category.getGuid(),tenantId);
+            String newUpBrotherCategoryGuid = category.getUpBrotherCategoryGuid();
+            String newDownBrotherCategoryGuid = category.getDownBrotherCategoryGuid();
+            String oldParentCategoryGuid = categoryEntityV2.getParentCategoryGuid();
+            if (oldParentCategoryGuid==null||oldParentCategoryGuid.length()==0){
+                oldParentCategoryGuid=null;
+            }
+
+            if (newDownBrotherCategoryGuid!=null){
+                newUpBrotherCategoryGuid=categoryDao.queryByGuid(newDownBrotherCategoryGuid,tenantId).getUpBrotherCategoryGuid();
+            }else if(newUpBrotherCategoryGuid!=null){
+                newDownBrotherCategoryGuid=categoryDao.queryByGuid(newUpBrotherCategoryGuid,tenantId).getDownBrotherCategoryGuid();
+            }
+
+            String newParentCategoryGuid = category.getParentCategoryGuid();
+            if (newParentCategoryGuid==null||newParentCategoryGuid.length()==0){
+                newParentCategoryGuid=null;
+            }
+            if (!Objects.equals(oldParentCategoryGuid,newParentCategoryGuid)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"只能移动同级目录");
+            }
+
+            String oldUpBrotherCategoryGuid = categoryEntityV2.getUpBrotherCategoryGuid();
+            String oldDownBrotherCategoryGuid = categoryEntityV2.getDownBrotherCategoryGuid();
+
+            //修改原所在位置目录结构
+            if (oldUpBrotherCategoryGuid!=null&&oldUpBrotherCategoryGuid.length()!=0){
+                categoryDao.updateDownBrotherCategoryGuid(oldUpBrotherCategoryGuid,oldDownBrotherCategoryGuid,tenantId);
+            }
+            if (oldDownBrotherCategoryGuid!=null&&oldDownBrotherCategoryGuid.length()!=0){
+                categoryDao.updateUpBrotherCategoryGuid(oldDownBrotherCategoryGuid,oldUpBrotherCategoryGuid,tenantId);
+            }
+            //修改移动后的结构
+            if (newUpBrotherCategoryGuid!=null&&newUpBrotherCategoryGuid.length()!=0){
+                categoryDao.updateDownBrotherCategoryGuid(newUpBrotherCategoryGuid,category.getGuid(),tenantId);
+            }
+            if (newDownBrotherCategoryGuid!=null&&newDownBrotherCategoryGuid.length()!=0){
+                categoryDao.updateUpBrotherCategoryGuid(newDownBrotherCategoryGuid,category.getGuid(),tenantId);
+            }
+            //修改自己的目录结构
+            categoryDao.updateUpBrotherCategoryGuid(category.getGuid(),newUpBrotherCategoryGuid,tenantId);
+            categoryDao.updateDownBrotherCategoryGuid(category.getGuid(),newDownBrotherCategoryGuid,tenantId);
+        }catch (SQLException e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"移动目录失败");
+        }
+
+    }
+
+    /**
+     * 排序并变更目录
+     * @param sortCategory
+     * @param type
+     */
+    public void sortAndAlterCategory(SortCategory sortCategory, int type,String tenantId) throws AtlasBaseException {
+        List<RoleModulesCategories.Category> childCategorys;
+        if (sortCategory.getGuid()==null||sortCategory.getGuid().length()==0){
+            List<Module> modules = tenantService.getModule(tenantId);
+            if (!modules.contains(ModuleEnum.AUTHORIZATION.getId())&&type==1){
+                throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有变更所有目录的权限");
+            }
+            childCategorys=userGroupDAO.getAllCategorysAndSort(type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);
+        }else{
+            childCategorys = userGroupDAO.getChildCategorysAndSort(Arrays.asList(sortCategory.getGuid()), type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);
+        }
+        if (childCategorys!=null&&childCategorys.size()!=0){
+            categoryDao.updateCategoryTree(childCategorys,tenantId);
+        }
+    }
+
+    /**
+     * 变更目录
+     * @param sortCategory
+     * @param type
+     * @return
+     */
+    public List<RoleModulesCategories.Category> sortCategory(SortCategory sortCategory,int type,String tenantId) throws AtlasBaseException {
+        List<RoleModulesCategories.Category> childCategorys;
+        if (sortCategory.getGuid()==null||sortCategory.getGuid().length()==0){
+            List<Module> modules = tenantService.getModule(tenantId);
+            if (!modules.contains(ModuleEnum.AUTHORIZATION.getId())&&type==1){
+                throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有变更所有目录的权限");
+            }
+            childCategorys=userGroupDAO.getAllCategorysAndSort(type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);
+        }else{
+            childCategorys = userGroupDAO.getChildCategorysAndSort(Arrays.asList(sortCategory.getGuid()), type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);
+        }
+        if (sortCategory.getGuid()!=null&&sortCategory.getGuid().length()!=0){
+            RoleModulesCategories.Category category = categoryDao.getCategoryByGuid(sortCategory.getGuid(),tenantId);
+            childCategorys.add(category);
+        }
+        return childCategorys;
+    }
+
+    /**
+     * 导入目录
+     * @param fileInputStream
+     * @param type
+     * @throws Exception
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void importAllCategory(File fileInputStream,int type,String tenantId) throws Exception {
+        if (!fileInputStream.exists()){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        Set<CategoryEntityV2> all = categoryDao.getAll(type,tenantId);
+        if (all.size() != 0 && type != 0 && type != dataStandType){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在目录，无法全局导入");
+        }else if(type==technicalType&&all.size()!=technicalCount){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+        }else if (type==dataStandType&&all.size()>dataStandCount){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+        }
+        List<CategoryEntityV2> categories;
+        List<CategoryEntityV2> systemCategory = new ArrayList<>();
+        try {
+            categories = file2AllData(fileInputStream,type,systemCategory);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"文件异常："+e.getMessage());
+        }
+        if (systemCategory.size()!=0){
+            categoryDao.updateCategoryEntityV2Tree(systemCategory,tenantId);
+        }
+        try{
+            if (categories.size()!=0){
+                categoryDao.addAll(categories,tenantId);
+            }
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"禁止不同类型的目录互相导入，请选择正确的文件导入");
+        }
+
+        fileInputStream.delete();
+    }
+
+    /**
+     * 文件转化为目录
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    private List<CategoryEntityV2> file2AllData(File file,int type,List<CategoryEntityV2> systemCategory) throws Exception {
+        List<CategoryEntityV2> categories = new ArrayList<>();
+        Workbook workbook = WorkbookFactory.create(file);
+        Sheet sheet = workbook.getSheetAt(0);
+        int rowNum = sheet.getLastRowNum() + 1;
+
+        List<String> systemCategoryGuids;
+        if (type==technicalType){
+            systemCategoryGuids= new ArrayList<>(CategoryUtil.initTechnicalCategoryId);
+        }else if (type==dataStandType){
+            systemCategoryGuids=new ArrayList<>(CategoryUtil.initDataStandardCategoryId);
+        }else{
+            systemCategoryGuids=new ArrayList<>();
+        }
+        Timestamp createTime = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+
+        //文件格式校验
+        Row first = sheet.getRow(0);
+        ArrayList<String> strings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
+        for(int i=0;i<strings.size();i++){
+            Cell cell = first.getCell(i);
+            if(Objects.isNull(cell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+            }else{
+                if (!strings.get(i).equals(cell.getStringCellValue())){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                }
+            }
+        }
+
+        for (int i = 1; i < rowNum; i++) {
+            Row row = sheet.getRow(i);
+            CategoryEntityV2 category = new CategoryEntityV2();
+
+            Cell guidCell = row.getCell(0);
+            if(Objects.isNull(guidCell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "guid不能为空");
+            }
+            category.setGuid(guidCell.getStringCellValue());
+
+            Cell nameCell = row.getCell(1);
+            if(Objects.isNull(nameCell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
+            }
+            category.setName(nameCell.getStringCellValue());
+
+            Cell discriptionCell = row.getCell(2);
+            if(Objects.isNull(discriptionCell)) {
+                category.setDescription("");
+            } else {
+                category.setDescription(discriptionCell.getStringCellValue());
+            }
+
+            Cell upCell = row.getCell(3);
+            if(Objects.isNull(upCell)||upCell.getStringCellValue().length()==0) {
+                category.setUpBrotherCategoryGuid(null);
+            } else {
+                category.setUpBrotherCategoryGuid(upCell.getStringCellValue());
+            }
+
+            Cell downCell = row.getCell(4);
+            if(Objects.isNull(downCell)||downCell.getStringCellValue().length()==0) {
+                category.setDownBrotherCategoryGuid(null);
+            }else{
+                category.setDownBrotherCategoryGuid(downCell.getStringCellValue());
+            }
+
+            Cell parentCell = row.getCell(5);
+            if(Objects.isNull(parentCell)||parentCell.getStringCellValue().length()==0) {
+                category.setParentCategoryGuid(null);
+            } else {
+                category.setParentCategoryGuid(parentCell.getStringCellValue());
+            }
+
+            Cell qualifiedNameCell = row.getCell(6);
+            if(Objects.isNull(qualifiedNameCell)) {
+                category.setQualifiedName(null);
+            } else {
+                category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+            }
+
+            Cell levelNameCell = row.getCell(7);
+            if(Objects.isNull(levelNameCell)) {
+                category.setLevel(0);
+            } else {
+                category.setLevel(Integer.parseInt(levelNameCell.getStringCellValue()));
+            }
+
+            category.setCategoryType(type);
+            category.setCreateTime(createTime);
+            if (systemCategoryGuids.contains(category.getGuid())){
+                systemCategoryGuids.remove(category.getGuid());
+                systemCategory.add(category);
+            }else{
+                categories.add(category);
+            }
+        }
+        if (systemCategoryGuids.size()!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不合规范，不包含初始目录，请使用全局导出的文件");
+        }
+        return categories;
+    }
+
+    public String uploadCategory(String categoryId,String direction,File fileInputStream, int type,String tenantId) throws Exception {
+        List<CategoryExport> categoryExports;
+        try {
+            categoryExports = file2Data(fileInputStream);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件异常：" + e.getMessage());
+        }
+        checkSameName(categoryId,direction,categoryExports,type,tenantId);
+        if(categoryExports.isEmpty()){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或全部重名");
+        }
+        return ExportDataPathUtils.transferTo(fileInputStream);
+    }
+
+    public String uploadAllCategory(File fileInputStream,int type,String tenantId) throws Exception {
+        Set<CategoryEntityV2> all = categoryDao.getAll(type,tenantId);
+        if (all.size() != 0 && type != 0 && type != dataStandType){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在目录，无法全局导入");
+        }else if(type==technicalType&&all.size()!=technicalCount){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+        }else if (type==dataStandType&&all.size()>dataStandCount){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+        }
+        List<CategoryEntityV2> categories;
+        try {
+            categories = file2AllData(fileInputStream,type,new ArrayList<>());
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"文件异常："+e.getMessage());
+        }
+        return ExportDataPathUtils.transferTo(fileInputStream);
     }
 }

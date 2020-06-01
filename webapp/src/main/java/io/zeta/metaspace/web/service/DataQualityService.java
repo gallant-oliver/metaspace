@@ -494,23 +494,18 @@ public class DataQualityService {
             String all = "-1";
             if (all.equals(templateId)) {
                 reports = qualityDao.getReportsByTableGuid(tableGuid, offset, limit,tenantId);
-                //total = qualityDao.getCountByTableGuid(tableGuid);
                 if (reports.size()!=0){
                     total = reports.get(0).getTotal();
                 }
             } else {
                 reports = qualityDao.getReports(tableGuid, templateId, offset, limit);
-                //total = qualityDao.getCount(tableGuid, templateId);
                 if (reports.size()!=0){
                     total = reports.get(0).getTotal();
                 }
             }
-            //pageResult.setOffset(offset);
             pageResult.setLists(reports);
             pageResult.setCurrentSize(reports.size());
             pageResult.setTotalSize(total);
-            /*map.put("reports", reports);
-            map.put("total", count);*/
             return pageResult;
         } catch (Exception e) {
             LOG.info("获取报告失败", e);

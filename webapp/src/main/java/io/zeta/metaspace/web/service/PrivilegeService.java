@@ -204,12 +204,10 @@ public class PrivilegeService {
                 List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
                 info.setRoles(roleList);
             }
-            //long privilegetotalSize = privilegeDAO.getRolesCount(query);
             long privilegetotalSize = 0;
             if (privilegeList.size()!=0){
                 privilegetotalSize = privilegeList.get(0).getTotal();
             }
-            //rolePageResult.setOffset(offset);
             rolePageResult.setLists(privilegeList);
             rolePageResult.setCurrentSize(privilegeList.size());
             rolePageResult.setTotalSize(privilegetotalSize);
@@ -244,12 +242,10 @@ public class PrivilegeService {
             int offset = parameters.getOffset();
             PageResult<Role> pageResult = new PageResult<>();
             List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
-            //long totalSize = privilegeDAO.getCountAllPermissionRole();
             long totalSize = 0;
             if (roleList.size()!=0){
                 totalSize = roleList.get(0).getTotal();
             }
-            //pageResult.setOffset(offset);
             pageResult.setLists(roleList);
             pageResult.setCurrentSize(roleList.size());
             pageResult.setTotalSize(totalSize);

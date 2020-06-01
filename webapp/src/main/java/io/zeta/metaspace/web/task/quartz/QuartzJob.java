@@ -211,8 +211,6 @@ public class QuartzJob implements Job {
                         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
                         taskManageDAO.updateTaskErrorCount(taskId);
                         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
-                        /*taskManageDAO.updateTaskExecuteStatus(task.getTaskExecuteId(), 3);
-                        taskManageDAO.updateTaskStatus(taskId, 3);*/
                     }
                 } finally {
                     recordExecutionInfo(task, errorMsg);
@@ -405,12 +403,6 @@ public class QuartzJob implements Job {
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
-            /*taskManageDAO.updateTaskExecuteErrorMsg(task.getTaskExecuteId(), e.toString());
-            taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
-            taskManageDAO.updateTaskErrorCount(task.getTaskId());
-            taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
-            taskManageDAO.updateTaskExecuteStatus(task.getTaskExecuteId(), 3);
-            taskManageDAO.updateTaskStatus(task.getTaskId(), 3);*/
             throw e;
         } finally {
             if (record) {
@@ -643,28 +635,20 @@ public class QuartzJob implements Job {
                                                                                         resultValue, referenceValue, Objects.isNull(checkStatus)?2:checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus)?null:orangeWarningcheckStatus.getCode(),
                                                                                         Objects.isNull(redWarningcheckStatus)?null:redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(),currentTime, currentTime);
 
-            //taskManageDAO.insertDataQualityTaskRuleExecute(taskRuleExecute);
             taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
             //橙色告警数量
             if(Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
-                //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                 taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //红色告警数量
             if(Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
                 taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
-                //taskManageDAO.updateTaskExecuteRuleWarningStatus(task.getId(), WarningStatus.WARNING.code);
                 taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
             }
             //计算异常数量
-            /*if(Objects.isNull(resultValue)) {
-                taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskErrorCount(task.getTaskId());
-                taskManageDAO.updateSubTaskErrorCount(task.getSubTaskRuleId());
-            }*/
 
         } catch (Exception e) {
             LOG.info(e.getMessage(),e);

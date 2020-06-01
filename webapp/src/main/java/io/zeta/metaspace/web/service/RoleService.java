@@ -117,7 +117,6 @@ public class RoleService {
         }
         User user = AdminUtils.getUserData();
         String userId = user.getUserId();
-        //roleDAO.deleteRole(roleId);
         //删除更新状态
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         List<User> users = roleDAO.getUsers(roleId,null,0,-1);
@@ -145,11 +144,6 @@ public class RoleService {
         try {
             PageResult<User> userPageResult = new PageResult<>();
             List<User> users;
-        /*if (limit == -1) {
-            if(Objects.nonNull(query))
-                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-            users = roleDAO.getUser(roleId, query, offset);
-        } else {*/
             if (Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             users = roleDAO.getUsers(roleId, query, offset, limit);
@@ -157,8 +151,6 @@ public class RoleService {
                 List<UserInfo.Role> roles =  userDAO.getRolesByUser(user.getUserId());
                 user.setRoles(roles);
             }
-            //}
-            //long usersTotalSize = roleDAO.getUsersCount(roleId, query);
             long usersTotalSize = 0;
             if (users.size()!=0){
                 usersTotalSize = users.get(0).getTotal();
@@ -182,13 +174,11 @@ public class RoleService {
                 query = "";
             }
             List<Role> roles = roleDAO.getRoles(query, offset, limit, containUnenable);
-            //long rolesTotalSize = roleDAO.getRolesCount(query, containUnenable);
             long rolesTotalSize = 0;
             if (roles.size()!=0){
                 rolesTotalSize = roles.get(0).getTotal();
             }
             rolePageResult.setLists(roles);
-            //rolePageResult.setOffset(offset);
             rolePageResult.setTotalSize(rolesTotalSize);
             rolePageResult.setCurrentSize(roles.size());
             return rolePageResult;

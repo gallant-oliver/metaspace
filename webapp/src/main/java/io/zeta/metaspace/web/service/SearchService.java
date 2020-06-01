@@ -163,7 +163,6 @@ public class SearchService {
             }
             for (Role role :roles){
                 String roleId = role.getRoleId();
-                //List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
                 if (role.getStatus() == 0){
                     continue;
                 }
@@ -193,7 +192,6 @@ public class SearchService {
             List<String> categoryIds=null;
             for (UserGroup userGroup :userGroups){
                 String userGroupId = userGroup.getId();
-                //List<UserInfo.Module> moduleByRoleId = userDAO.getModuleByRoleId(roleId);
                 categoryIds = userGroupDAO.getCategorysByTypeIds(userGroupId, 0,tenantId);
                 if (categoryIds.size()==0){
                     continue;
@@ -684,7 +682,6 @@ public class SearchService {
         PageResult<DatabaseHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
-            //databasePageResult.setOffset(parameters.getOffset());
             databasePageResult.setCurrentSize(0);
             databasePageResult.setTotalSize(0);
             return databasePageResult;
@@ -728,7 +725,6 @@ public class SearchService {
             }
         });
         databasePageResult.setLists(databaseHeaders);
-        //databasePageResult.setOffset(parameters.getOffset());
         databasePageResult.setCurrentSize(databaseHeaders.size());
         databasePageResult.setTotalSize(totalSize);
         return databasePageResult;
@@ -738,7 +734,6 @@ public class SearchService {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
-            //tablePageResult.setOffset(parameters.getOffset());
             tablePageResult.setCurrentSize(0);
             tablePageResult.setTotalSize(0);
             return tablePageResult;
@@ -916,7 +911,6 @@ public class SearchService {
                 tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
             }
             tablePageResult.setCurrentSize(tableInfo.size());
-            //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
         }
         return tablePageResult;
@@ -968,7 +962,6 @@ public class SearchService {
                 tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
             }
             tablePageResult.setCurrentSize(tableInfo.size());
-            //tablePageResult.setOffset(offset);
             tablePageResult.setLists(tables);
         }
         return tablePageResult;
@@ -1072,7 +1065,6 @@ public class SearchService {
         PageResult<Database> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
-            //databasePageResult.setOffset(parameters.getOffset());
             databasePageResult.setCurrentSize(0);
             databasePageResult.setTotalSize(0);
             return databasePageResult;
@@ -1099,7 +1091,6 @@ public class SearchService {
             lists.add(database);
         }
         databasePageResult.setLists(lists);
-        //databasePageResult.setOffset(parameters.getOffset());
         databasePageResult.setCurrentSize(dbName.size());
         databasePageResult.setTotalSize(totalSize);
         return databasePageResult;

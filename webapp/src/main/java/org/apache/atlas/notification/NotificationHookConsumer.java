@@ -507,17 +507,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                                                             AtlasClientV2.API_V2.UPDATE_ENTITY.getMethod(),
                                                             AtlasClientV2.API_V2.UPDATE_ENTITY.getNormalizedPath());
                                 }
-                                /*if (AtlasTypeUtil.isAssignedGuid(entityId.getGuid())) {
-                                    String guid = entityId.getGuid();
-                                } else {
-                                    AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entityId.getTypeName());
-
-                                    if (entityType == null) {
-                                        throw new AtlasBaseException(AtlasErrorCode.UNKNOWN_TYPENAME, entityId.getTypeName());
-                                    }
-
-                                    String guid = AtlasGraphUtilsV2.getGuidByUniqueAttributes(typeRegistry.getEntityTypeByName(entityId.getTypeName()), entityId.getUniqueAttributes());
-                                }*/
                                 atlasEntityStore.updateEntity(entityId, entity, true);
                             }
                             break;

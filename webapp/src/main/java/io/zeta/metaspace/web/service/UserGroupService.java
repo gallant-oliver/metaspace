@@ -458,7 +458,7 @@ public class UserGroupService {
      * @return
      */
     @Transactional(rollbackFor=Exception.class)
-    public List<CategoryPrivilege> getUserCategory(String userGroupId, int categorytype,List<Module> modulesByUser,String tenantId) {
+    public List<CategoryPrivilege> getUserCategory(String userGroupId, int categorytype,List<Module> modulesByUser,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         List<Integer> modules = new ArrayList<>();
         for (Module module : modulesByUser) {
@@ -467,16 +467,30 @@ public class UserGroupService {
         int roleType=4;
         int dateStanderType=3;
         if (dateStanderType == categorytype||roleType == categorytype) {
-            List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorys(categorytype,tenantId);
+            List<RoleModulesCategories.Category> allCategorys;
+            if (categorytype==0){
+                List<String> dbNames = tenantService.getDatabase(tenantId);
+                allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,dbNames);
+            }else{
+                allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,new ArrayList<>());
+            }
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         } else {
 
             List<String> userBusinessCategories = userGroupDAO.getCategorysByTypeIds(userGroupId, categorytype,tenantId);
             if (userBusinessCategories.size() > 0) {
-                List<RoleModulesCategories.Category> userChildCategorys = userGroupDAO.getChildCategorys(userBusinessCategories, categorytype,tenantId);
+                List<RoleModulesCategories.Category> userChildCategorys;
+                List<RoleModulesCategories.Category> userPrivilegeCategorys;
+                if (categorytype==0){
+                    List<String> dbNames = tenantService.getDatabase(tenantId);
+                    userChildCategorys = userGroupDAO.getChildCategorysAndCount(userBusinessCategories, categorytype,tenantId,dbNames);
+                    userPrivilegeCategorys = userGroupDAO.getCategorysByTypeAndCount(userGroupId, categorytype,tenantId,dbNames);
+                }else{
+                    userChildCategorys = userGroupDAO.getChildCategorysAndCount(userBusinessCategories, categorytype,tenantId,new ArrayList<>());
+                    userPrivilegeCategorys = userGroupDAO.getCategorysByTypeAndCount(userGroupId, categorytype,tenantId,new ArrayList<>());
+                }
                 List<RoleModulesCategories.Category> userParentCategorys = userGroupDAO.getParentCategorys(userBusinessCategories, categorytype,tenantId);
-                List<RoleModulesCategories.Category> userPrivilegeCategorys = userGroupDAO.getCategorysByType(userGroupId, categorytype,tenantId);
                 //按角色方案
                 CategoryPrivilege.Privilege childPrivilege = null;
                 CategoryPrivilege.Privilege parentPrivilege = null;
@@ -540,9 +554,15 @@ public class UserGroupService {
         return userCategorys;
     }
 
-    public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId){
+    public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorys(categorytype,tenantId);
+        List<RoleModulesCategories.Category> allCategorys;
+        if (categorytype==0){
+            List<String> dbNames = tenantService.getDatabase(tenantId);
+            allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,dbNames);
+        }else{
+            allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,new ArrayList<>());
+        }
         CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true,false);
         addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         return userCategorys;
