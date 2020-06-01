@@ -16,17 +16,24 @@
  */
 package io.zeta.metaspace.web.util;
 
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+
 import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Joiner;
+import com.google.common.io.Files;
 import io.zeta.metaspace.model.result.DownloadUri;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +46,18 @@ import java.util.UUID;
  * @date 2019/9/18 13:47
  */
 public class ExportDataPathUtils {
-
+    private static Configuration conf;
     public static String SEPARATOR = ",";
+    public static String tmpFilePath;
+    static {
+        try {
+            conf = ApplicationProperties.get();
+            tmpFilePath=conf.getString("metaspace.tmp.filepath","/tmp/metaspace");
+        } catch (AtlasException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
     public static String fileFormat1 = ".xlsx";
     public static String fileFormat2 = ".xls";
 
@@ -55,7 +72,7 @@ public class ExportDataPathUtils {
 
     public static void generatePath2DataCache(String urlId, List<String> ids) throws AtlasBaseException {
         try {
-            File dir = new File("/tmp/metaspace");
+            File dir = new File(tmpFilePath);
             if (!dir.exists()){
                 dir.mkdir();
             }
@@ -74,7 +91,7 @@ public class ExportDataPathUtils {
     }
 
     public static List<String> getDataIdsByUrlId(String urlId) throws AtlasBaseException {
-        File dir = new File("/tmp/metaspace");
+        File dir = new File(tmpFilePath);
         File file = new File(dir,urlId);
         BufferedReader reader = null;
         String line = null;
@@ -97,5 +114,19 @@ public class ExportDataPathUtils {
 
             }
         }
+    }
+
+    public static String transferTo(File file) throws AtlasBaseException, IOException {
+        String uploadId = UUIDUtils.alphaUUID();
+        String filePath = tmpFilePath + File.separatorChar + uploadId;
+        org.apache.commons.io.FileUtils.forceMkdir(new File(tmpFilePath));
+        File uploadFile = new File(filePath);
+        File absoluteFile = uploadFile.getAbsoluteFile();
+        try {
+            Files.copy(file, absoluteFile);
+        } catch (IOException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        return uploadId;
     }
 }

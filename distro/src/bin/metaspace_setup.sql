@@ -208,7 +208,8 @@ CREATE TABLE "public"."category" (
   "categorytype" int2 DEFAULT NULL,
   "level" int2 DEFAULT NULL,
   "safe" varchar(225) COLLATE "pg_catalog"."default",
-  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(6)
 )
 ;
 

@@ -115,7 +115,6 @@ public class TaskManageService {
             String userId = AdminUtils.getUserData().getUserId();
             List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters,tenantId);
 
-            //long totalSize = taskManageDAO.countTaskList(my, userId, parameters);
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();

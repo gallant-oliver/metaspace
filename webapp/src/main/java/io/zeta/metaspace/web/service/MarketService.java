@@ -123,7 +123,6 @@ public class MarketService {
                     level2Category = pathArr[1];
                 infoHeader.setLevel2Category(level2Category);
             }
-            //long businessCount = businessDao.queryBusinessCountByNameWithoutPrivilege(businessName);
             long businessCount = 0;
             if (businessInfoList.size()!=0){
                 businessCount = businessInfoList.get(0).getTotal();
@@ -223,7 +222,6 @@ public class MarketService {
                     }
                     api.setDataOwner(dataOwnerName);
                 }
-                //apiCount = shareDao.countTableRelatedAPI(tableList);
                 if (apiList.size()!=0){
                     apiCount = apiList.get(0).getTotal();
                 }

@@ -250,9 +250,6 @@ public class HookService {
      */
     public HookCheck all() throws AtlasException, AtlasBaseException, IOException {
         HookCheck hookCheck = new HookCheck();
-//        hookCheck.setConsumerThread(notificationHookConsumer.isAlive());
-//        hookCheck.setHookConfigCheck(hookConfigCheck());
-//        hookCheck.setHookJar(hookJar());
         hookCheck.setKafkaCheck(kafkaCheck());
         return hookCheck;
     }

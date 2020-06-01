@@ -648,8 +648,6 @@ public class AtlasTypeUtil {
                         ret.put(entry.getKey(), new LinkedHashMap<String, Object>(){{
                             put("id", ((AtlasObjectId) entry.getValue()).getGuid());
                             put("$typeName$", ((AtlasObjectId) entry.getValue()).getTypeName());
-//                        put("version", entity.getVersion().intValue());
-//                        put("state", entity.getStatus().name());
                         }});
                     } else {
                         ret.put(entry.getKey(), entry.getValue());

@@ -718,9 +718,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
                     // entity status could be updated during import
                     boolean         hasUpdates = entity.getStatus() == AtlasEntity.Status.DELETED;
-                    /*if("hive_table".equals(entity.getTypeName())) {
-                        metadataService.storeHistoryMetadata(guid);
-                    }*/
                     // check for attribute value change
                     if (!hasUpdates && MapUtils.isNotEmpty(entity.getAttributes())) {
                         for (AtlasAttribute attribute : entityType.getAllAttributes().values()) {

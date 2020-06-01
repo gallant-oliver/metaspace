@@ -19,13 +19,6 @@ public class KerberosConfig {
         return kerberosEnable;
     }
 
-//    public static String getMetaspaceAdmin() {
-//        return metaspaceAdmin;
-//    }
-//
-//    public static String getMetaspaceKeytab() {
-//        return metaspaceKeytab;
-//    }
 
     public static String getHivePrincipal() {
         return hivePrincipal;
@@ -46,8 +39,6 @@ public class KerberosConfig {
             //默认关闭
             kerberosEnable = enable != null && enable.equals("true");
             if (kerberosEnable) {
-//                metaspaceAdmin = conf.getString("metaspace.kerberos.admin");
-//                metaspaceKeytab = conf.getString("metaspace.kerberos.keytab");
                 hivePrincipal = conf.getString("metaspace.hive.principal");
                 impalaPrincipal = conf.getString("metaspace.impala.principal");
                 impalaJdbc = conf.getString("metaspace.impala.kerberos.jdbc");

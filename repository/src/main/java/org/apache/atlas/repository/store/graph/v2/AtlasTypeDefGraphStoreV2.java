@@ -208,7 +208,6 @@ public class AtlasTypeDefGraphStoreV2 extends BaseAtlasTypeDefGraphStore {
          * rename of a type is supported yet - as the typename is used to in the name of the edges from this vertex
          * To support rename of types, he edge names should be derived from an internal-name - not directly the typename
          *
-        updateVertexProperty(vertex, Constants.TYPENAME_PROPERTY_KEY, typeDef.getName());
          */
         updateVertexProperty(vertex, Constants.TYPEDESCRIPTION_PROPERTY_KEY, typeDef.getDescription());
         updateVertexProperty(vertex, Constants.TYPEVERSION_PROPERTY_KEY, typeDef.getTypeVersion());

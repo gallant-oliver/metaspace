@@ -37,6 +37,16 @@ public class CategoryPrivilege {
     private Integer objectCount;
     private String safe;
 
+    private int count;
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
     public String getSafe() {
         return safe;
     }
@@ -62,6 +72,7 @@ public class CategoryPrivilege {
         this.description = category.getDescription();
         this.level = category.getLevel();
         this.safe=category.getSafe();
+        this.count=category.getCount();
     }
 
 

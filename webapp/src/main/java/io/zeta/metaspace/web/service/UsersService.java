@@ -216,12 +216,10 @@ public class UsersService {
                 user.setRoles(userDAO.getRolesByUser(user.getUserId()));
             }
             userPageResult.setLists(userList);
-            //long userCount = userDAO.getUsersCount(query);
             long userTotalSize = 0;
             if (userList.size()!=0){
                 userTotalSize = userList.get(0).getTotal();
             }
-            //userPageResult.setOffset(offset);
             userPageResult.setCurrentSize(userList.size());
             userPageResult.setTotalSize(userTotalSize);
             return userPageResult;
@@ -297,7 +295,6 @@ public class UsersService {
             List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
             userPageResult.setLists(userList);
             long userCount = userDAO.getUsersCount(query);
-            //userPageResult.setOffset(offset);
             userPageResult.setCurrentSize(userList.size());
             userPageResult.setTotalSize(userCount);
             return userPageResult;
@@ -427,12 +424,10 @@ public class UsersService {
                 users.add(user);
             }
             userPageResult.setLists(users);
-            //long userCount = userDAO.getUsersCount(query);
             long userTotalSize = 0;
             if (users.size()!=0){
                 userTotalSize = userAndModules.getTotalSize();
             }
-            //userPageResult.setOffset(offset);
             userPageResult.setCurrentSize(users.size());
             userPageResult.setTotalSize(userTotalSize);
             return userPageResult;

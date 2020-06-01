@@ -118,12 +118,10 @@ public class WarningGroupService {
         try {
             List<WarningGroup> list = warningGroupDAO.search(parameters,tenantId);
             PageResult<WarningGroup> pageResult = new PageResult<>();
-            //long totalSize = warningGroupDAO.countBySearch(parameters.getQuery());
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();
             }
-            //pageResult.setOffset(parameters.getOffset());
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
@@ -147,7 +145,6 @@ public class WarningGroupService {
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();
             }
-            //pageResult.setOffset(parameters.getOffset());
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
             pageResult.setLists(list);
@@ -167,7 +164,6 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warning.getTaskId(), 0);
                 warning.setWarningGroupList(groupHeaderList);
             }
-            //Long totalSize = warningGroupDAO.countWarning(warningType, parameters);
             long totalSize = 0;
             if (warningList.size()!=0){
                 totalSize = warningList.get(0).getTotal();
@@ -190,7 +186,6 @@ public class WarningGroupService {
                 List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
                 error.setWarningGroupList(groupHeaderList);
             }
-            //Long totalSize = warningGroupDAO.countError(errorType, parameters);
             long totalSize = 0;
             if (warningList.size()!=0){
                 totalSize = warningList.get(0).getTotal();
@@ -208,7 +203,6 @@ public class WarningGroupService {
     public void closeTaskExecutionWarning(Integer warningType, List<String> taskIdList) throws AtlasBaseException {
         try {
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
-            //warningGroupDAO.closeAllTaskRuleExecutionWarning(warningType, taskIdList, currentTime, userId);
         } catch (Exception e) {
             LOG.error("关闭失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
@@ -266,14 +260,6 @@ public class WarningGroupService {
             info.setSubTaskList(subTaskList);
 
             //通知对象
-            /*List<String> warningGroupMemberList = warningGroupDAO.getWarningGroupMemberList(executionRuleId);
-            Set<String> memberSet = new HashSet<>();
-            StringJoiner memberJoiner = new StringJoiner(";");
-            for (String warningGroup : warningGroupMemberList) {
-                List<String> members = Arrays.asList(warningGroup.split(","));
-                members.forEach(member -> memberSet.add(member));
-            }
-            memberSet.stream().forEach(member -> memberJoiner.add(member));*/
 
             return info;
         } catch (Exception e) {

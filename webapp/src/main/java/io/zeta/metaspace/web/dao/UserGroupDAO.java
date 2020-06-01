@@ -16,6 +16,9 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
+import io.zeta.metaspace.model.metadata.CategoryExport;
+import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
+import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -26,6 +29,7 @@ import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -218,11 +222,67 @@ public interface UserGroupDAO {
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
+    @Select("<script>" +
+            "select category.*,item.count count from category " +
+            " left join ( " +
+            " select count(*) count," +
+            "<choose>" +
+            "    <when test=\"categoryType==0\">" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
+            "    <foreach item='item' index='index' collection='dbNames'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    </when>" +
+            "    <when test=\"categoryType==1\">" +
+            "        categoryguid as guid from business_relation " +
+            "    </when>" +
+            "    <when test=\"categoryType==3\">" +
+            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        category_id as guid from data_quality_rule " +
+            "    </otherwise>" +
+            "</choose>" +
+            " group by guid" +
+            ") item on category.guid=item.guid " +
+            "where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+
     @Select("select c.guid from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId}")
     public List<String> getCategorysByTypeIds(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
     @Select("select c.* from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getCategorysByType(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select c.*,item.count from category_group_relation g join category c on g.category_id=c.guid " +
+            " left join ( " +
+            " select count(*) count," +
+            "<choose>" +
+            "    <when test=\"categoryType==0\">" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
+            "    <foreach item='item' index='index' collection='dbNames'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    </when>" +
+            "    <when test=\"categoryType==1\">" +
+            "        categoryguid as guid from business_relation " +
+            "    </when>" +
+            "    <when test=\"categoryType==3\">" +
+            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        category_id as guid from data_quality_rule " +
+            "    </otherwise>" +
+            "</choose>" +
+            " group by guid" +
+            ") item on c.guid=item.guid " +
+            " where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId}" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getCategorysByTypeAndCount(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId,@Param("dbNames") List<String> dbNames);
 
     //递归找子节点
     @Select("<script>WITH RECURSIVE categoryTree AS " +
@@ -240,6 +300,45 @@ public interface UserGroupDAO {
             ")" +
             "SELECT * FROM categoryTree</script>")
     public List<RoleModulesCategories.Category> getChildCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where tenantid=#{tenantId} and parentCategoryGuid in" +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId}" +
+            ")" +
+            "SELECT categoryTree.*,item.count FROM categoryTree " +
+            " left join ( " +
+            " select count(*) count," +
+            "<choose>" +
+            "    <when test=\"categoryType==0\">" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
+            "    <foreach item='item' index='index' collection='dbNames'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    </when>" +
+            "    <when test=\"categoryType==1\">" +
+            "        categoryguid as guid from business_relation " +
+            "    </when>" +
+            "    <when test=\"categoryType==3\">" +
+            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        category_id as guid from data_quality_rule " +
+            "    </otherwise>" +
+            "</choose>" +
+            " group by guid" +
+            ") item on categoryTree.guid=item.guid" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getChildCategorysAndCount(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId,@Param("dbNames") List<String> dbNames);
 
     //递归找父节点,结果集不包含自己了
     @Select("<script>WITH RECURSIVE categoryTree AS" +
@@ -463,4 +562,78 @@ public interface UserGroupDAO {
              "</foreach>",
              "</script>"})
     public void deleteDataSourceByGroupId(@Param("groupId") String groupId, @Param("sourceIds") List<String> sourceIds);
+
+    @Select("<script>" +
+            " SELECT guid,name,description FROM category where tenantid=#{tenantId} and guid in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public List<CategoryExport> getCategoryByIds(@Param("ids") List<String> ids, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+
+    //递归找子节点
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category" +
+            "    where tenantid=#{tenantId} and parentCategoryGuid in" +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId}" +
+            ")" +
+            " SELECT guid,name,description,level,parentCategoryGuid," +
+            " lag(guid,1) over(partition by (case when parentcategoryguid='' then null else parentcategoryguid end) order by " +
+            "<choose>" +
+            "    <when test=\"sort=='name'\">" +
+            "        convert_to(name, 'GBK')" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        createtime ${order},name" +
+            "    </otherwise>" +
+            "</choose>" +
+            " ${order}) upbrothercategoryguid," +
+            " lead(guid,1) over(partition by (case when parentcategoryguid='' then null else parentcategoryguid end) order by " +
+            "<choose>" +
+            "    <when test=\"sort=='name'\">" +
+            "        convert_to(name, 'GBK')" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        createtime ${order},name" +
+            "    </otherwise>" +
+            "</choose>" +
+            " ${order}) downbrothercategoryguid " +
+            " FROM categoryTree</script>")
+    public List<RoleModulesCategories.Category> getChildCategorysAndSort(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("sort") String sort,@Param("order") String order,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select guid,name,description,level,parentCategoryGuid," +
+            " lag(guid,1) over(partition by (case when parentcategoryguid='' then null else parentcategoryguid end) order by " +
+            "<choose>" +
+            "    <when test=\"sort=='name'\">" +
+            "        convert_to(name, 'GBK')" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        createtime ${order},name" +
+            "    </otherwise>" +
+            "</choose>" +
+            " ${order}) upbrothercategoryguid," +
+            " lead(guid,1) over(partition by (case when parentcategoryguid='' then null else parentcategoryguid end) order by " +
+            "<choose>" +
+            "    <when test=\"sort=='name'\">" +
+            "        convert_to(name, 'GBK')" +
+            "    </when>" +
+            "    <otherwise>" +
+            "        createtime ${order},name " +
+            "    </otherwise>" +
+            "</choose>" +
+            " ${order}) downbrothercategoryguid " +
+            "from category where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            "</script>")
+    public List<RoleModulesCategories.Category> getAllCategorysAndSort(@Param("categoryType") int categoryType,@Param("sort") String sort,@Param("order") String order,@Param("tenantId")String tenantId);
+
 }

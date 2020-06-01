@@ -113,13 +113,6 @@ public abstract class BaseImpalaEvent {
     public String getUserName() { return context.getUserName(); }
 
     public String getTableNameFromVertex(LineageVertex vertex) {
-        /*if (vertex.getVertexType() == ImpalaVertexType.COLUMN) {
-            LineageVertexMetadata metadata = vertex.getMetadata();
-
-            if (metadata != null) {
-                return metadata.getTableName();
-            }
-        }*/
 
         return getTableNameFromColumn(vertex.getVertexId());
     }
@@ -605,13 +598,6 @@ public abstract class BaseImpalaEvent {
             return createTime;
         }
 
-        /*if (vertex.getVertexType() == ImpalaVertexType.COLUMN) {
-            LineageVertexMetadata metadata = vertex.getMetadata();
-
-            if (metadata != null) {
-                return metadata.getTableCreateTime();
-            }
-        }*/
 
         return System.currentTimeMillis() / MILLIS_CONVERT_FACTOR;
     }

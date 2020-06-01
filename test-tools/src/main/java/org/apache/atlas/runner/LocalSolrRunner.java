@@ -123,7 +123,6 @@ public class LocalSolrRunner {
         // Use explicit '/' separators (not File.separator) because even on Windows you want '/'
         String resName = "/solr/" + SOLR_XML;
         // Use the local classloader rather than the system classloader - i.e. avoid using
-        // Thread.currentThread().getContextClassLoader().getResourceAsStream(resName);
         InputStream inputStream = LocalSolrRunner.class.getResourceAsStream(resName);
 
         if (inputStream == null) {

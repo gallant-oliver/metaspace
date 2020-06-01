@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.DELETE;
+import javax.ws.rs.HeaderParam;
 
 /*
  * @description
@@ -44,8 +45,8 @@ import javax.ws.rs.DELETE;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid)" +
-            "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId})")
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime)" +
+            "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime})")
     public int add(@Param("category") CategoryEntityV2 category,@Param("tenantId") String tenantId);
 
     @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
@@ -207,11 +208,48 @@ public interface CategoryDAO {
     public String getCategoryNameByRelationId(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
     @Insert(" <script>" +
-            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,tenantid) VALUES " +
+            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,createtime,tenantid) VALUES " +
             "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
-            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.categoryType},#{category.level},#{category.safe},#{tenantId}"+
+            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId}"+
             "</foreach>" +
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys,@Param("tenantId") String tenantId);
+
+
+    @Select("select name from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    public List<String> getChildCategoryName(@Param("parentCategoryGuid")String guid,@Param("tenantId")String tenantId);
+
+    @Select("select guid from category where categorytype=#{type} and (downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='') and level=1 and tenantid=#{tenantId}")
+    public String queryLastCategory(@Param("type")int type,@Param("tenantId")String tenantId);
+
+    @Select("select name from category where categorytype=#{type} and level=1 and tenantid=#{tenantId}")
+    public List<String> getChildCategoryNameByType(@Param("type")int type,@Param("tenantId")String tenantId);
+
+    @Update(" <script>" +
+            "update category set upbrothercategoryguid=tmp.upbrothercategoryguid,downbrothercategoryguid=tmp.downbrothercategoryguid " +
+            " from (values" +
+            " <foreach item='category' index='index' collection='categories' separator='),(' open='(' close=')'>" +
+            " #{category.guid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid}" +
+            " </foreach>" +
+            " ) as tmp (guid,upbrothercategoryguid,downbrothercategoryguid) where category.guid=tmp.guid and tenantid=#{tenantId}" +
+            " </script>")
+    public int updateCategoryTree(@Param("categories")List<RoleModulesCategories.Category> categories,@Param("tenantId")String tenantId);
+
+    @Select("select guid,name,description,level from category where guid=#{guid} and tenantid=#{tenantId}")
+    public RoleModulesCategories.Category getCategoryByGuid(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId);
+
+    @Update(" <script>" +
+            "update category set upbrothercategoryguid=tmp.upbrothercategoryguid,downbrothercategoryguid=tmp.downbrothercategoryguid " +
+            " from (values" +
+            " <foreach item='category' index='index' collection='categories' separator='),(' open='(' close=')'>" +
+            " #{category.guid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid}" +
+            " </foreach>" +
+            " ) as tmp (guid,upbrothercategoryguid,downbrothercategoryguid) where category.guid=tmp.guid and tenantid=#{tenantId}; " +
+            " </script>")
+    public int updateCategoryEntityV2Tree(@Param("categories")List<CategoryEntityV2> categories,@Param("tenantId")String tenantId);
+
+    @Select(" select count(1) from category where name=#{name} " +
+            " and categorytype=#{type} and level=1 and tenantid=#{tenantId}")
+    public int querySameNameOne(@Param("name") String categoryName, @Param("type")int type, @Param("tenantId")String tenantId);
 
 }

@@ -305,14 +305,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     private String getLineageDepthQuery(String entityGuid, AtlasLineageInfo.LineageDirection direction) {
         String lineageQuery = null;
 
-        /*if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
-            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
-            lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
-
-        } else if (direction.equals(AtlasLineageInfo.LineageDirection.OUTPUT)) {
-            String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH);
-            lineageQuery = String.format(query, entityGuid, PROCESS_INPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE);
-        }*/
         if (direction.equals(AtlasLineageInfo.LineageDirection.INPUT)) {
             String query = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.LINEAGE_DEPTH_V2);
             lineageQuery = String.format(query, entityGuid, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE, PROCESS_OUTPUTS_EDGE, PROCESS_INPUTS_EDGE);
@@ -430,13 +422,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 String formatDateStr = sdf.format(createTime);
                 table.setCreateTime(formatDateStr);
                 table.setStatus(tableEntity.getStatus().name());
-                    /*
-                    String tableStatus = tableEntity.getStatus().name();
-                    String tableDescription = tableEntity.getAttribute("comment") == null ? "-" : tableEntity.getAttribute("comment").toString();
-                    setVirtualTable(table);
-                    table.setStatus(tableStatus);
-                    table.setDescription(tableDescription);
-                    */
 
 
 
@@ -511,7 +496,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             }
             tablePageResult.setLists(tables);
             tablePageResult.setCurrentSize(tables.size());
-            //tablePageResult.setOffset(offset);
             String countQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_TABLE_COUNT_BY_QUEERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_TABLE_COUNT_BY_QUEERY);
             List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, dbs,queryTable), false);
             tablePageResult.setTotalSize(counts.get(0));
@@ -538,7 +522,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             }
             tablePageResult.setLists(tables);
             tablePageResult.setCurrentSize(tables.size());
-            //tablePageResult.setOffset(offset);
             String countQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_COUNT_BY_QUEERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_COUNT_BY_QUEERY);
             List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable), false);
             tablePageResult.setTotalSize(counts.get(0));
@@ -569,7 +552,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         dbPageResult.setLists(dbs);
         dbPageResult.setCurrentSize(dbs.size());
-        //tablePageResult.setOffset(offset);
         String countQuery = active?gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_RDBMS_DB_COUNT_BY_QUERY):gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_COUNT_BY_QUERY);
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, queryTable,sourceType.toLowerCase()), false);
         dbPageResult.setTotalSize(counts.get(0));
@@ -587,7 +569,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
             db.setDatabaseId(dbEntity.getGuid());
             db.setDatabaseName(dbEntity.getAttribute("name").toString());
-            //setVirtualTable(table);
             db.setStatus(dbEntity.getStatus().name());
             db.setDatabaseDescription(dbEntity.getAttribute("comment") == null||dbEntity.getAttribute("comment").toString().length() == 0 ? "-" : dbEntity.getAttribute("comment").toString());
             Date createTime = dbEntity.getCreateTime();
@@ -626,7 +607,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         tablePageResult.setLists(tables);
         tablePageResult.setCurrentSize(tables.size());
-        //tablePageResult.setOffset(offset);
         String countQuery = active?gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_RDBMS_TABLE_COUNT_BY_QUERY):gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_TABLE_COUNT_BY_QUERY);
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery,sourceType.toLowerCase(), queryTable), false);
         tablePageResult.setTotalSize(counts.get(0));
@@ -688,7 +668,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         columnPageResult.setLists(columns);
         columnPageResult.setCurrentSize(columns.size());
-        //tablePageResult.setOffset(offset);
         String countQuery = gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_COLUMN_COUNT_BY_QUERY);
         List<Long> counts = (List) graph.executeGremlinScript(String.format(countQuery, sourceType.toLowerCase(),queryTable), false);
 
@@ -977,7 +956,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             lists.add(source);
         }
         databasePageResult.setCurrentSize(lists.size());
-        //databasePageResult.setOffset(offset);
         databasePageResult.setLists(lists);
         String gremlinQuery = active?gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_RDBMS_SOURCE_TOTAL_NUM_BY_QUERY):gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_SOURCE_TOTAL_NUM_BY_QUERY);
         String numQuery = String.format(gremlinQuery, sourceType.toLowerCase(),queryDb);

@@ -68,7 +68,6 @@ public class RuleTemplateService {
             PageResult pageResult = new PageResult<RuleTemplate>();
             List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters);
             updateRuleType(lists);
-            //long totalCount = ruleTemplateDAO.coutSearchRuleTemplate(parameters);
             long totalCount = 0;
             if (lists.size()!=0){
                 totalCount = lists.get(0).getTotal();

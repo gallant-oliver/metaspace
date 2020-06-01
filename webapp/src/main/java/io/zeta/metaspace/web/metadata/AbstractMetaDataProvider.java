@@ -128,16 +128,6 @@ public abstract class AbstractMetaDataProvider {
         optionsBuilder = SchemaCrawlerOptionsBuilder
                 .builder()
                 .withSchemaInfoLevel(SchemaInfoLevelBuilder.standard());
-//        String databaseToImport = tableSchema.getDatabase();
-//        String tableToImport = tableSchema.getTable();
-//        if (StringUtils.isNotEmpty(databaseToImport)) {
-//            //获取所有数据库
-//            optionsBuilder.includeSchemas(new RegularExpressionInclusionRule(databaseToImport));
-//        }
-//        if (StringUtils.isNotEmpty(tableToImport)) {
-//            //获取指定数据库指定表
-//            optionsBuilder.includeTables(new RegularExpressionInclusionRule(tableToImport));
-//        }
         skipSchemaTable();
         SchemaCrawlerOptions options = optionsBuilder.toOptions();
         catalog=null;
@@ -625,24 +615,6 @@ public abstract class AbstractMetaDataProvider {
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
-            //删除JanusGraph中已经不存在的database,以及database中的table
-//            if (isSource){
-//                String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_RDBMS_DB_BY_STATE), instanceGuid, AtlasEntity.Status.ACTIVE);
-//                List<AtlasVertex> dbVertices    = (List) graph.executeGremlinScript(databaseQuery, false);
-//                for (AtlasVertex vertex : dbVertices) {
-//                    if (Objects.nonNull(vertex)) {
-//                        List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
-//                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-//                        AtlasEntity                        dbEntity            = dbEntityWithExtInfo.getEntity();
-//                        String                             databaseInGraph     = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
-//                        if (databaseNames.stream().noneMatch(schema -> schema.getFullName().equalsIgnoreCase(databaseInGraph))) {
-//                            deleteTableEntity(instanceGuid, databaseInGraph, new ArrayList<>());
-//                            LOG.info("数据库{}已经在数据源删除，在metaspace中同样删除之", databaseInGraph);
-//                            deleteEntity(dbEntity);
-//                        }
-//                    }
-//                }
-//            }
             //导入table
             for (Schema database : databaseNames) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntity;
