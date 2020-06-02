@@ -667,12 +667,17 @@ public class TaskManageService {
             List<String> tableRuleSuggestion = new ArrayList<>();
             List<String> columnRuleSuggestion = new ArrayList<>();
             String suffix = "的结果不符合预期，请及时处理";
+            String noEnd = "未执行完毕，请稍候再次进行下载";
             List<TaskRuleExecutionRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId);
             for (TaskRuleExecutionRecord record : executeResult) {
-                if(0==record.getObjectType() && 1==record.getCheckStatus()) {
-                    tableRuleSuggestion.add(record.getDescription() + suffix);
+                if (0==record.getObjectType() &&record.getCheckStatus()==null){
+                    tableRuleSuggestion.add(record.getObjectName() + noEnd);
+                }else if (1==record.getObjectType() &&record.getCheckStatus()==null){
+                    columnRuleSuggestion.add(record.getObjectName() + noEnd);
+                }else if(0==record.getObjectType() && 1==record.getCheckStatus()) {
+                    tableRuleSuggestion.add(record.getObjectName() + suffix);
                 } else if(1==record.getObjectType() && 1==record.getCheckStatus()) {
-                    columnRuleSuggestion.add(record.getDescription() + suffix);
+                    columnRuleSuggestion.add(record.getObjectName() + suffix);
                 }
                 Integer sequence = taskManageDAO.getSubTaskSequence(record.getSubtaskId());
                 record.setSubTaskSequence(sequence);
