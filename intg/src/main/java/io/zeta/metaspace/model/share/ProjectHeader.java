@@ -11,35 +11,27 @@
 //
 // ======================================================================
 
-package io.zeta.metaspace.model.usergroup;
+package io.zeta.metaspace.model.share;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author lixiang03
- * @Data 2020/3/19 11:52
+ * @Data 2020/5/29 14:58
  */
-public class UserGroupIdAndName {
+public class ProjectHeader {
     @JsonIgnore
     private long totalSize;
-    private String id;
     private String name;
+    private String id;
     private String description;
 
-    public String getDescription() {
-        return description;
+    public long getTotalSize() {
+        return totalSize;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public void setTotalSize(long totalSize) {
+        this.totalSize = totalSize;
     }
 
     public String getName() {
@@ -50,11 +42,19 @@ public class UserGroupIdAndName {
         this.name = name;
     }
 
-    public long getTotalSize() {
-        return totalSize;
+    public String getId() {
+        return id;
     }
 
-    public void setTotalSize(long totalSize) {
-        this.totalSize = totalSize;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

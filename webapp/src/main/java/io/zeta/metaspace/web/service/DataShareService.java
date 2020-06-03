@@ -51,6 +51,8 @@ import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
+import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -69,6 +71,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.lang.reflect.Type;
@@ -1560,6 +1563,214 @@ public class DataShareService {
         } else {
             return pools.getHive();
         }
+    }
+
+    /**
+     * 新增项目
+     * @param tenantId
+     * @param projectInfo
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void insertProject(ProjectInfo projectInfo,String tenantId) throws AtlasBaseException {
+        String id=UUID.randomUUID().toString();
+        projectInfo.setId(id);
+        int count=shareDAO.sameProjectName(id,projectInfo.getName(),tenantId);
+        if (count!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目名已存在");
+        }
+        projectInfo.setCreateTime(DateUtils.currentTimestamp());
+        projectInfo.setCreator(AdminUtils.getUserData().getUserId());
+        shareDAO.insertProject(projectInfo,tenantId);
+        if (projectInfo.getUserGroups()!=null&&projectInfo.getUserGroups().size()!=0){
+            shareDAO.addProjectToUserGroup(projectInfo.getId(),projectInfo.getUserGroups());
+        }
+    }
+
+    /**
+     * 新增项目
+     * @param tenantId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<ProjectInfo> searchProject(Parameters parameters,String tenantId) throws AtlasBaseException {
+        PageResult<ProjectInfo> commonResult = new PageResult<>();
+
+        String query = parameters.getQuery();
+        if (query != null) {
+            parameters.setQuery(query.replaceAll("%", "/%").replaceAll("_", "/_"));
+        }
+
+        List<ProjectInfo> lists = shareDAO.searchProject(parameters,AdminUtils.getUserData().getUserId(),tenantId);
+        if (lists == null || lists.size() == 0) {
+            return commonResult;
+        }
+        String userId = AdminUtils.getUserData().getUserId();
+        for (ProjectInfo projectInfo:lists){
+            projectInfo.setEditManager(false);
+            if (projectInfo.getManagerId().equals(userId)){
+                projectInfo.setEditManager(true);
+            }
+        }
+        commonResult.setTotalSize(lists.get(0).getTotal());
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        return commonResult;
+    }
+
+    /**
+     * 编辑项目
+     * @param projectInfo
+     * @param tenantId
+     * @throws AtlasBaseException
+     */
+
+    public void updateProject(ProjectInfo projectInfo,String tenantId) throws AtlasBaseException {
+        String projectManager = shareDAO.getProjectManager(projectInfo.getId());
+        if (!projectManager.equals(AdminUtils.getUserData().getUserId())){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法编辑项目");
+        }
+        int count=shareDAO.sameProjectName(projectInfo.getId(),projectInfo.getName(),tenantId);
+        if (count!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目名已存在");
+        }
+        shareDAO.updateProject(projectInfo);
+    }
+
+    /**
+     * 新增权限用户组
+     * @param userGroups
+     * @param projectId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public void addUserGroups(List<String> userGroups,String projectId) throws AtlasBaseException {
+        String projectManager = shareDAO.getProjectManager(projectId);
+        if (!projectManager.equals(AdminUtils.getUserData().getUserId())){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法编辑项目权限");
+        }
+        int count=shareDAO.sameProjectToUserGroup(projectId,userGroups);
+        if (count!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目权限用户组中已经存在部分选中用户组，请刷新后重试添加");
+        }
+        if (userGroups!=null&&userGroups.size()!=0){
+            shareDAO.addProjectToUserGroup(projectId,userGroups);
+        }
+
+    }
+
+    /**
+     * 获取权限用户组列表
+     * @param isPrivilege
+     * @param projectId
+     * @param parameters
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<UserGroupIdAndName> getUserGroups(boolean isPrivilege,String projectId,Parameters parameters,String tenantId) throws AtlasBaseException {
+        PageResult pageResult = new PageResult();
+        List<UserGroupIdAndName> userGroups;
+        if (isPrivilege==false && projectId==null){
+            userGroups=shareDAO.getAllUserGroups(parameters,tenantId);
+        }else if (isPrivilege==false){
+            userGroups=shareDAO.getNoRelationUserGroups(projectId,parameters,tenantId);
+        }else {
+            userGroups=shareDAO.getRelationUserGroups(projectId,parameters,tenantId);
+        }
+        if (userGroups==null||userGroups.size()==0){
+            return pageResult;
+        }
+        pageResult.setCurrentSize(userGroups.size());
+        pageResult.setLists(userGroups);
+        pageResult.setTotalSize(userGroups.get(0).getTotalSize());
+        return pageResult;
+    }
+
+    /**
+     * 批量删除权限用户组
+     * @param userGroups
+     * @param projectId
+     * @throws AtlasBaseException
+     */
+    public void deleteUserGroups(List<String> userGroups,String projectId) throws AtlasBaseException {
+        String projectManager = shareDAO.getProjectManager(projectId);
+        if (!projectManager.equals(AdminUtils.getUserData().getUserId())){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法编辑项目权限");
+        }
+        if (userGroups!=null&&userGroups.size()!=0){
+            shareDAO.deleteProjectToUserGroup(projectId,userGroups);
+        }
+    }
+
+    /**
+     * 批量删除项目
+     * @param projectIds
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void deleteProject(List<String> projectIds) throws AtlasBaseException {
+
+        if (projectIds==null||projectIds.size()==0){
+            return;
+        }
+        List<String> projectManagers = shareDAO.getProjectsManager(projectIds);
+        String userId = AdminUtils.getUserData().getUserId();
+        if (projectManagers.size() != 1 || !projectManagers.get(0).equals(userId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法删除项目权限");
+        }
+        shareDAO.deleteProject(projectIds);
+        shareDAO.deleteProjectRelation(projectIds);
+        //删除项目下的api
+    }
+
+    /**
+     * 可成为管理者用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
+    public List<UserIdAndName> getManager(String tenantId) throws AtlasBaseException {
+        try {
+            SecuritySearch securitySearch = new SecuritySearch();
+            securitySearch.setTenantId(tenantId);
+            PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0,-1,securitySearch);
+            List<UserIdAndName> users = new ArrayList<>();
+            for (UserAndModule userAndModule:userAndModules.getLists()){
+                if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASHARE.getAlias().equalsIgnoreCase(module.getRoleName()))){
+                    continue;
+                }
+                UserIdAndName user = new UserIdAndName();
+                user.setUserName(userAndModule.getUserName());
+                user.setAccount(userAndModule.getEmail());
+                user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+                users.add(user);
+            }
+            return users;
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取项目详情
+     * @param id
+     * @return
+     */
+    public ProjectInfo getProjectInfoById(String id){
+        return shareDAO.getProjectInfoById(id);
+    }
+
+    /**
+     * 批量获取项目详情
+     * @param ids
+     * @return
+     */
+    public List<ProjectInfo> getProjectInfoByIds(List<String> ids){
+        return shareDAO.getProjectInfoByIds(ids);
     }
 }
 
