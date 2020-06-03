@@ -16,11 +16,14 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.ProjectInfo;
 import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -213,4 +216,158 @@ public interface DataShareDAO {
 
     @Select("select id,type,pkid from organization where pkid in (select pkid from table2owner where tableguid=(select tableguid from apiinfo where guid=#{apiGuid}))")
     public List<TableOwner.Owner> getOwnerList(@Param("apiGuid")String apiGuid);
+
+    @Select("select count(*) from project where id!=#{id} and name=#{name} and tenantid=#{tenantId} and valid=true")
+    public  int sameProjectName(@Param("id")String id,@Param("name")String name,@Param("tenantId")String tenantId);
+
+    @Insert(" insert into project(id,name,creator,description,createtime,manager,tenantid,valid) " +
+            " values(#{project.id},#{project.name},#{project.creator},#{project.description},#{project.createTime},#{project.manager},#{tenantId},true) ")
+    public int insertProject(@Param("project")ProjectInfo projectInfo,@Param("tenantId")String tenantId);
+
+    @Insert("<script>" +
+            " insert into project_group_relation(project_id,group_id) " +
+            " values" +
+            " <foreach item='userGroup' index='index' collection='userGroups' separator='),(' open='(' close=')'>" +
+            " #{id},#{userGroup}" +
+            " </foreach>" +
+            "</script>")
+    public int addProjectToUserGroup(@Param("id")String id,@Param("userGroups") List<String> userGroups);
+
+    @Select("<script>" +
+            " select count(*)over() total,p.*,uc.usercount from (" +
+            "select project.id,project.name,project.description,project.createtime,project.tenantid,project.valid,user1.username creator,user2.username manager,project.manager managerId from " +
+            "project join users user1 on project.creator=user1.userid join users user2 on project.manager=user2.userid  " +
+            ") p  join " +
+            " (select distinct project_group_relation.project_id from project_group_relation join " +
+            " (select user_group.id id from user_group_relation join user_group on user_group_relation.group_id=user_group.id " +
+            " where user_group_relation.user_id=#{userId} and user_group.tenant=#{tenantId}) ug " +
+            " on project_group_relation.group_id=ug.id " +
+            " union " +
+            " select id from project where manager=#{userId}) pi " +
+            " on p.id=pi.project_id  join " +
+            " (select count(distinct uc.user_id) usercount,project_id id from (" +
+            "  select g.user_id ,p.project_id from project_group_relation p join user_group_relation g on p.group_id=g.group_id\n" +
+            "  union " +
+            "  select manager user_id,id project_id from project " +
+            " ) uc group by project_id ) uc on p.id=uc.id " +
+            " where p.tenantId=#{tenantId} and p.valid=true " +
+            "<if test=\"parameters.query!=null and parameters.query!=''\">" +
+            " and p.name like '%${parameters.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='parameters.sortby!=null'>" +
+            " order by p.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            " ${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            " limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            " offset ${parameters.offset} " +
+            "</if>" +
+            "</script>")
+    public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,@Param("tenantId")String tenantId);
+
+    @Update("update project set name=#{name},description=#{description},manager=#{manager} where id=#{id}")
+    public int updateProject(ProjectInfo project);
+
+    @Select("select manager from project where id=#{id}")
+    public String getProjectManager(String id);
+
+    @Select("<script>" +
+            "select count(*)over() totalSize,g.id,g.name,g.description from project_group_relation p join user_group g on p.group_id=g.id where " +
+            "p.project_id=#{projectId} and g.tenant=#{tenantId} and g.valid=true " +
+            "<if test=\"param.query!=null and param.query!=''\">" +
+            " and g.name like '%${param.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='param.limit!=-1'>" +
+            " limit ${param.limit} " +
+            "</if>" +
+            "<if test='param.offset!=0'>" +
+            " offset ${param.offset} " +
+            "</if>" +
+            "</script>")
+    public List<UserGroupIdAndName> getRelationUserGroups(@Param("projectId")String projectId, @Param("param")Parameters parameters,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select count(*)over() totalSize,g.id,g.name,g.description from user_group g left join (" +
+            " select * from project_group_relation where project_id=#{projectId} ) p " +
+            " on p.group_id=g.id where g.tenant=#{tenantId} and p.group_id is null and g.valid=true " +
+            "<if test=\"param.query!=null and param.query!=''\">" +
+            " and g.name like '%${param.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='param.limit!=-1'>" +
+            " limit ${param.limit} " +
+            "</if>" +
+            "<if test='param.offset!=0'>" +
+            " offset ${param.offset} " +
+            "</if>" +
+            "</script>")
+    public List<UserGroupIdAndName> getNoRelationUserGroups(@Param("projectId")String projectId,@Param("param")Parameters parameters, @Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select count(*)over() totalSize,id,name,description from user_group where tenant=#{tenantId} and valid=true " +
+            "<if test=\"param.query!=null and param.query!=''\">" +
+            " and name like '%${param.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='param.limit!=-1'>" +
+            " limit ${param.limit} " +
+            "</if>" +
+            "<if test='param.offset!=0'>" +
+            " offset ${param.offset} " +
+            "</if>" +
+            "</script>")
+    public List<UserGroupIdAndName> getAllUserGroups(@Param("param")Parameters parameters,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select count(*) from project_group_relation where project_id=#{id} and group_id in " +
+            " <foreach item='userGroup' index='index' collection='userGroups' separator=',' open='(' close=')'>" +
+            " #{userGroup}" +
+            " </foreach>" +
+            "</script>")
+    public  int sameProjectToUserGroup(@Param("id")String id,@Param("userGroups")List<String> userGroups);
+
+    @Delete("<script>" +
+            " delete from project_group_relation where  project_id=#{id} and group_id in " +
+            " <foreach item='userGroup' index='index' collection='userGroups' separator=',' open='(' close=')'>" +
+            "#{userGroup}" +
+            " </foreach>" +
+            "</script>")
+    public int deleteProjectToUserGroup(@Param("id")String id,@Param("userGroups") List<String> userGroups);
+
+    @Update("<script>" +
+            " update project set valid=false where  id in " +
+            " <foreach item='project' index='index' collection='projects' separator=',' open='(' close=')'>" +
+            " #{project}" +
+            " </foreach>" +
+            "</script>")
+    public int deleteProject(@Param("projects") List<String> projects);
+
+    @Delete("<script>" +
+            " delete from project_group_relation where project_id in " +
+            " <foreach item='project' index='index' collection='projects' separator=',' open='(' close=')'>" +
+            " #{project}" +
+            " </foreach>" +
+            "</script>")
+    public int deleteProjectRelation(@Param("projects") List<String> projects);
+
+    @Select("<script>" +
+            "select manager from project where id in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getProjectsManager(@Param("ids")List<String> ids);
+
+    @Select("select * from project where id=#{id}")
+    public ProjectInfo getProjectInfoById(String id);
+
+    @Select("<script>" +
+            "select * from project where id in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<ProjectInfo> getProjectInfoByIds(@Param("ids")List<String> ids);
 }
