@@ -87,13 +87,14 @@ public class KafkaNotification extends AbstractNotification implements Service {
 
         properties    = ConfigurationConverter.getProperties(kafkaConf);
         pollTimeOutMs = kafkaConf.getLong("poll.timeout.ms", 1000);
+        String offsetReset = kafkaConf.getString("auto.offset.reset", "earliest");
 
         //Override default configs
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetReset);
 
         boolean oldApiCommitEnableFlag = kafkaConf.getBoolean("auto.commit.enable", false);
 

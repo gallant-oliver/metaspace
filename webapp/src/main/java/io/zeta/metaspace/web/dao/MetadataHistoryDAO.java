@@ -59,9 +59,14 @@ public interface MetadataHistoryDAO {
             " </script>"})
     public List<TableMetadata> getTableMetadataList(@Param("guid")String tableGuid, @Param("limit")int limit, @Param("offset") int offset);
 
-    @Insert({"insert into column_metadata_history(guid,name,type,table_guid,description,status,partition_field,creator,updater,create_time,update_time,version)values(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},#{metadata.description},#{metadata.status},#{metadata.partitionField},",
-            "#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},#{metadata.version})"})
-    public int addColumnMetadata(@Param("metadata")ColumnMetadata metadata);
+    @Insert({"<script>",
+            "insert into column_metadata_history(guid,name,type,table_guid,description,status,partition_field,creator,updater,create_time,update_time,version)values",
+            "<foreach collection='metadataList' item='metadata' index='index'  separator=','>",
+            "(#{metadata.guid},#{metadata.name},#{metadata.type},#{metadata.tableGuid},#{metadata.description},#{metadata.status},#{metadata.partitionField},",
+            "#{metadata.creator},#{metadata.updater},#{metadata.createTime},#{metadata.updateTime},#{metadata.version})",
+            "</foreach>",
+            "</script>"})
+    public int addColumnMetadata(@Param("metadataList")List<ColumnMetadata> metadataList);
 
     @Select({" <script>",
             " select guid,name,table_guid as tableGuid,type,description,version,status,partition_field as partitionField,",
