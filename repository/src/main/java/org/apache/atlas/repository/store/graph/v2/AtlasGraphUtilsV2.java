@@ -205,8 +205,7 @@ public class AtlasGraphUtilsV2 {
 
         Object existingValue = element.getProperty(propertyName, Object.class);
 
-        boolean bool = value instanceof Collection && ((Collection) value).isEmpty();
-        if (value == null || bool) {
+        if (value == null || (value instanceof Collection && ((Collection)value).isEmpty())) {
             if (existingValue != null) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Removing property {} from {}", propertyName, toString(element));
@@ -346,8 +345,6 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static AtlasVertex findByTypeAndPropertyName(String typeName, String propertyName, Object attrVal) {
-        //提交事务，以获取最新的数据
-        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
                 .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typeName)
                 .has(propertyName, attrVal)
@@ -361,8 +358,6 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static AtlasVertex findBySuperTypeAndPropertyName(String typeName, String propertyName, Object attrVal) {
-        //提交事务，以获取最新的数据
-        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
                 .has(Constants.SUPER_TYPES_PROPERTY_KEY, typeName)
                 .has(propertyName, attrVal)
@@ -376,8 +371,6 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static List<String> findEntityGUIDsByType(String typename, SortOrder sortOrder) {
-        //提交事务，以获取最新的数据
-        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance().query()
                 .has(Constants.ENTITY_TYPE_PROPERTY_KEY, typename);
         if (sortOrder != null) {
@@ -404,8 +397,6 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static boolean relationshipTypeHasInstanceEdges(String typeName) throws AtlasBaseException {
-        //提交事务，以获取最新的数据
-        AtlasGraphProvider.getGraphInstance().commit();
         AtlasGraphQuery query = AtlasGraphProvider.getGraphInstance()
                 .query()
                 .has(Constants.TYPE_NAME_PROPERTY_KEY, AtlasGraphQuery.ComparisionOperator.EQUAL, typeName);

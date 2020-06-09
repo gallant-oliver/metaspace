@@ -58,6 +58,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -331,7 +332,8 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         private final NotificationConsumer<HookNotification> consumer;
         private final AtomicBoolean                          shouldRun      = new AtomicBoolean(false);
         private final List<HookNotification>                 failedMessages = new ArrayList<>();
-        private final AdaptiveWaiter                         adaptiveWaiter = new AdaptiveWaiter(minWaitDuration, maxWaitDuration, minWaitDuration);
+        private final AdaptiveWaiter adaptiveWaiter = new AdaptiveWaiter(minWaitDuration, maxWaitDuration, minWaitDuration);
+        private StopWatch watch = new StopWatch();
 
         @VisibleForTesting
         final FailedCommitOffsetRecorder failedCommitOffsetRecorder;
@@ -359,7 +361,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                         List<AtlasKafkaMessage<HookNotification>> messages = consumer.receive();
 
                         for (AtlasKafkaMessage<HookNotification> msg : messages) {
+                            watch.start("处理元数据耗时");
                             handleMessage(msg);
+                            watch.stop();
+                            LOG.info("本次处理元数据耗时{}ms,处理元数据次数{}, 平均耗时{}ms", watch.getLastTaskTimeMillis(),watch.getTaskCount(), watch.getTotalTimeMillis() / watch.getTaskCount());
                         }
                     } catch (IllegalStateException ex) {
                         adaptiveWaiter.pause(ex);
@@ -580,7 +585,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                 }
 
                 commit(kafkaMsg);
-                refreshCache();
             } finally {
                 AtlasPerfTracer.log(perf);
 

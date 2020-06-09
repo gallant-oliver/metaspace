@@ -111,8 +111,8 @@ public class MetadataHistoryService {
                     metadataDAO.addTableMetadata(tableMetadata);
                     int version = metadataDAO.getTableVersion(tableGuid);
                     columnMetadataList.forEach(columnMetadata -> columnMetadata.setVersion(version));
-                    for (ColumnMetadata columnMetadata : columnMetadataList) {
-                        metadataDAO.addColumnMetadata(columnMetadata);
+                    if (columnMetadataList.size() > 0) {
+                        metadataDAO.addColumnMetadata(columnMetadataList);
                     }
                 }
             }

@@ -98,18 +98,10 @@ public class AtlasEntityChangeNotifier {
         List<AtlasEntityHeader> partiallyUpdatedEntities = entityMutationResponse.getPartialUpdatedEntities();
         List<AtlasEntityHeader> deletedEntities          = entityMutationResponse.getDeletedEntities();
 
-        // complete full text mapping before calling toReferenceables(), from notifyListners(), to
-        // include all vertex updates in the current graph-transaction
-//        doFullTextMapping(createdEntities);
-//        doFullTextMapping(updatedEntities);
-//        doFullTextMapping(partiallyUpdatedEntities);
-
         notifyListeners(createdEntities, EntityOperation.CREATE, isImport);
         notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport);
         notifyListeners(partiallyUpdatedEntities, EntityOperation.PARTIAL_UPDATE, isImport);
         notifyListeners(deletedEntities, EntityOperation.DELETE, isImport);
-
-        notifyPropagatedEntities();
     }
 
     public void onClassificationAddedToEntity(AtlasEntity entity, List<AtlasClassification> addedClassifications) throws AtlasBaseException {

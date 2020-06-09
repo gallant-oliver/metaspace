@@ -62,7 +62,6 @@ import static org.apache.atlas.model.audit.EntityAuditEventV2.EntityAuditActionV
 import static org.apache.atlas.model.audit.EntityAuditEventV2.EntityAuditActionV2.TERM_ADD;
 import static org.apache.atlas.model.audit.EntityAuditEventV2.EntityAuditActionV2.TERM_DELETE;
 
-@Component
 public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
     private static final Logger LOG = LoggerFactory.getLogger(EntityAuditListenerV2.class);
 

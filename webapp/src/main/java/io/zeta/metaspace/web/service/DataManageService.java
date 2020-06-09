@@ -1129,8 +1129,9 @@ public class DataManageService {
         return gson.fromJson(gson.toJson(paramMap),cls);
     }
 
-    @Transactional(rollbackFor=Exception.class)
-    public void addEntity(List<AtlasEntity> entities) throws AtlasBaseException {
+    @Transactional(rollbackFor = Exception.class)
+    public void addEntity(List<AtlasEntity> entities) {
+        List<Column> columnList = new ArrayList<>();
         try {
             //添加到tableinfo
             for (AtlasEntity entity : entities) {
@@ -1170,10 +1171,13 @@ public class DataManageService {
                     column.setType(type);
                     column.setStatus(status);
                     column.setDisplayNameUpdateTime(updateTime);
-                    List<Column> columnList = new ArrayList<>();
+
                     columnList.add(column);
-                    columnDAO.addColumnDisplayInfo(columnList);
+
                 }
+            }
+            if (columnList.size() > 0) {
+                columnDAO.addColumnDisplayInfo(columnList);
             }
             addFullRelation();
         } catch (Exception e) {

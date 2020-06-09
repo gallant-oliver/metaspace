@@ -141,7 +141,7 @@ public class TableREST {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             String fileFormat = ".sql";
             if(name.endsWith(fileFormat)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式需为.sql");
             }
             file = new File(name);
             FileUtils.copyInputStreamToFile(fileInputStream, file);
