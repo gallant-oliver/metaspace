@@ -17,13 +17,9 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.share.ProjectHeader;
-import io.zeta.metaspace.model.share.ProjectInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
@@ -327,7 +323,7 @@ public class UserGroupREST {
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDataSourceListAndSearch(
+    public Result getProjectListAndSearch(
             @PathParam("id") String groupId,
             @DefaultValue("0") @QueryParam("offset") int offset,
             @DefaultValue("10") @QueryParam("limit") int limit,
@@ -452,90 +448,5 @@ public class UserGroupREST {
             LOG.error("获取数据源权限列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取数据源权限列表失败");
         }
-    }
-
-    /**
-     * 添加项目
-     * @param groupId
-     * @param projectIds
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/{id}/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result addProjectByGroupId(@PathParam("id") String groupId, List<String> projectIds) throws AtlasBaseException {
-        try {
-            UserGroup userGroup = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "添加用户组项目权限："+userGroup.getName());
-            userGroupService.addProjectByGroupId(groupId, projectIds);
-            return ReturnUtil.success();
-        } catch (Exception e) {
-            LOG.error("用户组添加数据源失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
-        }
-    }
-
-    /**
-     * 获取项目
-     * @param isPrivilege
-     * @param groupId
-     * @param search
-     * @param limit
-     * @param offset
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getProject(@QueryParam("isPrivilege")boolean isPrivilege,@QueryParam("groupId")String groupId,
-                                @QueryParam("search")String search,
-                                @DefaultValue("-1")@QueryParam("limit")int limit,
-                                @DefaultValue("0")@QueryParam("offset")int offset,
-                                @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-
-        try {
-            Parameters parameters = new Parameters();
-            parameters.setOffset(offset);
-            parameters.setLimit(limit);
-            parameters.setQuery(search);
-            PageResult<ProjectHeader> userGroups = userGroupService.getProject(isPrivilege, groupId, parameters, tenantId);
-            return ReturnUtil.success(userGroups);
-        }catch (Exception e) {
-            LOG.error("用户组数据源列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组数据源列表及搜索失败");
-        }
-    }
-
-    /**
-     * 删除项目权限
-     * @param projects
-     * @param userGroupId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/{id}/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteProject(List<String> projects,@PathParam("id")String userGroupId) throws AtlasBaseException {
-        try{
-            UserGroup userGroup = userGroupService.getUserGroupByID(userGroupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组项目权限："+userGroup.getName());
-            userGroupService.deleteProject(projects,userGroupId);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("删除权限用户组权限失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("删除权限用户组权限失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除权限用户组权限失败");
-        }
-
     }
 }

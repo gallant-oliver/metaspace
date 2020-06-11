@@ -35,15 +35,11 @@ import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserIdAndName;
-import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +52,6 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
@@ -65,7 +60,6 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 @Service
 public class DataShareREST {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserGroupREST.class);
     @Autowired
     private DataShareGroupService groupService;
     @Autowired
@@ -624,234 +618,4 @@ public class DataShareREST {
         return ReturnUtil.success(pools);
     }
 
-    /**
-     * 新增项目
-     * @param tenantId
-     * @param projectInfo
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
-    public Result insertProject(@HeaderParam("tenantId")String tenantId,ProjectInfo projectInfo) throws AtlasBaseException {
-        try{
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "新增项目："+projectInfo.getName());
-            shareService.insertProject(projectInfo,tenantId);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("新建项目失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("新建项目失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "新建项目失败");
-        }
-
-    }
-
-    /**
-     * 查询项目
-     * @param tenantId
-     * @param offset
-     * @param limit
-     * @param sort
-     * @param order
-     * @param search
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result searchProject(@HeaderParam("tenantId") String tenantId,
-                                @DefaultValue("0") @QueryParam("offset") int offset,
-                                @DefaultValue("10") @QueryParam("limit") int limit,
-                                @DefaultValue("createTime")@QueryParam("sort") String sort,
-                                @DefaultValue("desc") @QueryParam("order") String order,
-                                @QueryParam("search") String search) throws AtlasBaseException {
-        try{
-            Parameters parameters = new Parameters();
-            parameters.setOffset(offset);
-            parameters.setLimit(limit);
-            parameters.setQuery(search);
-            parameters.setOrder(order);
-            parameters.setSortby(sort);
-            PageResult<ProjectInfo> projectInfoPageResult = shareService.searchProject(parameters, tenantId);
-            return ReturnUtil.success(projectInfoPageResult);
-        }catch (AtlasBaseException e){
-            LOG.error("获取项目列表失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取项目列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取项目列表失败");
-        }
-    }
-
-    /**
-     * 编辑项目
-     * @param projectInfo
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @PUT
-    @Path("/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
-    public Result updateProject(ProjectInfo projectInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        try{
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "更新项目："+projectInfo.getName());
-            shareService.updateProject(projectInfo,tenantId);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("编辑项目失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("编辑项目失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "编辑项目失败");
-        }
-
-    }
-
-    /**
-     * 新增权限用户组
-     * @param userGroups
-     * @param projectId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/project/{id}/userGroups")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
-    public Result addUserGroups(List<String> userGroups,@PathParam("id")String projectId) throws AtlasBaseException {
-        try{
-            ProjectInfo projectInfo = shareService.getProjectInfoById(projectId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "新增项目用户组权限："+projectInfo.getName());
-            shareService.addUserGroups(userGroups,projectId);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("新增权限用户组失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("新增权限用户组失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "新增权限用户组失败");
-        }
-
-    }
-
-    /**
-     * 获取权限用户组列表
-     * @param isPrivilege
-     * @param projectId
-     * @param search
-     * @param limit
-     * @param offset
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/project/userGroups")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
-    public Result getUserGroups(@QueryParam("isPrivilege")boolean isPrivilege,@QueryParam("projectId")String projectId,
-                                @QueryParam("search")String search,
-                                @DefaultValue("-1")@QueryParam("limit")int limit,
-                                @DefaultValue("0")@QueryParam("offset")int offset,
-                                @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        try{
-            Parameters parameters = new Parameters();
-            parameters.setOffset(offset);
-            parameters.setLimit(limit);
-            parameters.setQuery(search);
-            PageResult<UserGroupIdAndName> userGroups = shareService.getUserGroups(isPrivilege, projectId, parameters, tenantId);
-            return ReturnUtil.success(userGroups);
-        }catch (AtlasBaseException e){
-            LOG.error("获取用户组列表失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取用户组列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取用户组列表失败");
-        }
-
-    }
-
-    /**
-     * 批量删除权限用户组
-     * @param userGroups
-     * @param projectId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/project/{id}/userGroups")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
-    public Result deleteUserGroups(List<String> userGroups,@PathParam("id")String projectId) throws AtlasBaseException {
-        try{
-            ProjectInfo projectInfo = shareService.getProjectInfoById(projectId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "移除项目用户组权限："+projectInfo.getName());
-            shareService.deleteUserGroups(userGroups,projectId);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("删除权限用户组失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("删除权限用户组失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除权限用户组失败");
-        }
-
-    }
-
-    /**
-     * 批量删除项目
-     * @param projectIds
-     * @return
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/project")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
-    public Result deleteProject(List<String> projectIds) throws AtlasBaseException {
-        try{
-            List<String> projectNames = shareService.getProjectInfoByIds(projectIds).stream().map(projectInfo -> projectInfo.getName()).collect(Collectors.toList());
-            if (projectNames!=null){
-                HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除项目:[" + Joiner.on("、").join(projectNames) + "]");
-            }
-
-            shareService.deleteProject(projectIds);
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("删除项目失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("删除项目失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除项目失败");
-        }
-    }
-
-    /**
-     * 可成为管理者用户
-     * @param tenantId
-     * @return
-     * @throws Exception
-     */
-    @GET
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/project/manager")
-    public Result getManager(@HeaderParam("tenantId")String tenantId) throws Exception {
-        List<UserIdAndName> managers = shareService.getManager(tenantId);
-        return ReturnUtil.success(managers);
-    }
 }

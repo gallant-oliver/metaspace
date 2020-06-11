@@ -16,9 +16,6 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
-import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
-import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -26,7 +23,6 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
-import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
@@ -150,7 +146,6 @@ public class UserGroupService {
         userGroupDAO.deleteUserGroupRelationByID(id);
         userGroupDAO.deleteCategoryGroupRelationByID(id);
         userGroupDAO.deleteUserGroupDataSourceRelationByID(id);
-        userGroupDAO.deleteUserGroupProjectRelationByID(id);
     }
 
     /**
@@ -761,59 +756,5 @@ public class UserGroupService {
         }
 
         return false;
-    }
-
-    /**
-     * 添加项目
-     * @param groupId
-     * @param projectIds
-     * @return
-     * @throws AtlasBaseException
-     */
-    public void addProjectByGroupId(String groupId, List<String> projectIds) {
-        if (projectIds==null||projectIds.size()==0){
-            return;
-        }
-        userGroupDAO.addProjectByGroupId(groupId, projectIds);
-    }
-
-    /**
-     * 获取项目列表
-     * @param isPrivilege
-     * @param groupId
-     * @param parameters
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    public PageResult<ProjectHeader> getProject(boolean isPrivilege, String groupId, Parameters parameters, String tenantId) throws AtlasBaseException {
-        PageResult pageResult = new PageResult();
-        List<ProjectHeader> userGroups;
-        if (isPrivilege==false && groupId==null){
-            userGroups=userGroupDAO.getAllProject(parameters,tenantId);
-        }else if (isPrivilege==false){
-            userGroups=userGroupDAO.getNoRelationProject(groupId,parameters,tenantId);
-        }else {
-            userGroups=userGroupDAO.getRelationProject(groupId,parameters,tenantId);
-        }
-        if (userGroups==null||userGroups.size()==0){
-            return pageResult;
-        }
-        pageResult.setCurrentSize(userGroups.size());
-        pageResult.setLists(userGroups);
-        pageResult.setTotalSize(userGroups.get(0).getTotalSize());
-        return pageResult;
-    }
-
-    /**
-     * 批量删除权限项目
-     * @param projects
-     * @param userGroupId
-     * @throws AtlasBaseException
-     */
-    public void deleteProject(List<String> projects,String userGroupId) throws AtlasBaseException {
-        if (projects!=null&&projects.size()!=0){
-            userGroupDAO.deleteProjectToUserGroup(userGroupId,projects);
-        }
     }
 }
