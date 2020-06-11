@@ -22,7 +22,6 @@ import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -123,9 +122,6 @@ public interface UserGroupDAO {
 
     @Delete("delete from datasource_group_relation where group_id=#{id}")
     public void deleteUserGroupDataSourceRelationByID(String id);
-
-    @Delete("delete from project_group_relation where group_id=#{id}")
-    public void deleteUserGroupProjectRelationByID(String id);
 
 
     /**
@@ -640,64 +636,4 @@ public interface UserGroupDAO {
             "</script>")
     public List<RoleModulesCategories.Category> getAllCategorysAndSort(@Param("categoryType") int categoryType,@Param("sort") String sort,@Param("order") String order,@Param("tenantId")String tenantId);
 
-    @Insert({"<script>insert into project_group_relation (project_id,group_id) values ",
-             "<foreach item='item' index='index' collection='projectIds'",
-             "open='(' separator='),(' close=')'>",
-             "#{item},#{groupId}",
-             "</foreach>",
-             "</script>"})
-    public void addProjectByGroupId(@Param("groupId") String groupId, @Param("projectIds") List<String> projectIds);
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,p.id,p.name,p.description from project_group_relation r join project p on r.project_id=p.id where " +
-            "r.group_id=#{groupId} and p.tenantid=#{tenantId} and p.valid=true " +
-            "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
-            "</if>" +
-            "<if test='param.limit!=-1'>" +
-            " limit ${param.limit} " +
-            "</if>" +
-            "<if test='param.offset!=0'>" +
-            " offset ${param.offset} " +
-            "</if>" +
-            "</script>")
-    public List<ProjectHeader> getRelationProject(@Param("groupId")String groupId, @Param("param")Parameters parameters,@Param("tenantId")String tenantId);
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,p.id,p.name,p.description from project p left join (" +
-            " select * from project_group_relation where group_id=#{groupId} ) r " +
-            " on r.project_id=p.id where p.tenantid=#{tenantId} and r.group_id is null and p.valid=true " +
-            "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
-            "</if>" +
-            "<if test='param.limit!=-1'>" +
-            " limit ${param.limit} " +
-            "</if>" +
-            "<if test='param.offset!=0'>" +
-            " offset ${param.offset} " +
-            "</if>" +
-            "</script>")
-    public List<ProjectHeader> getNoRelationProject(@Param("groupId")String groupId,@Param("param")Parameters parameters, @Param("tenantId")String tenantId);
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,id,name,description from project where tenantid=#{tenantId} and valid=true " +
-            "<if test=\"param.query!=null and param.query!=''\">" +
-            " and name like '%${param.query}%' ESCAPE '/' " +
-            "</if>" +
-            "<if test='param.limit!=-1'>" +
-            " limit ${param.limit} " +
-            "</if>" +
-            "<if test='param.offset!=0'>" +
-            " offset ${param.offset} " +
-            "</if>" +
-            "</script>")
-    public List<ProjectHeader> getAllProject(@Param("param")Parameters parameters, @Param("tenantId")String tenantId);
-
-    @Delete("<script>" +
-            " delete from project_group_relation where  group_id=#{id} and project_id in " +
-            " <foreach item='project' index='index' collection='projects' separator=',' open='(' close=')'>" +
-            "#{project}" +
-            " </foreach>" +
-            "</script>")
-    public int deleteProjectToUserGroup(@Param("id")String id,@Param("projects") List<String> projects);
 }
