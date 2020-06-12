@@ -28,6 +28,7 @@ import java.util.List;
 public class AtlasBaseException extends Exception {
 
     private AtlasErrorCode atlasErrorCode;
+    private String detail;
 
     public AtlasBaseException(AtlasErrorCode errorCode, String ... params) {
         super(errorCode.getFormattedErrorMessage(params));
@@ -80,7 +81,23 @@ public class AtlasBaseException extends Exception {
         this.atlasErrorCode = errorCode;
     }
 
+    public AtlasBaseException(String detail,final AtlasErrorCode errorCode, String ... params) {
+        super(errorCode.getFormattedErrorMessage(params));
+        this.atlasErrorCode = errorCode;
+        this.detail=detail;
+    }
+
+    public AtlasBaseException(String detail,AtlasErrorCode errorCode, Throwable cause, String ... params) {
+        super(errorCode.getFormattedErrorMessage(params), cause);
+        this.atlasErrorCode = AtlasErrorCode.INTERNAL_ERROR;
+        this.detail=detail;
+    }
+
     public AtlasErrorCode getAtlasErrorCode() {
         return atlasErrorCode;
+    }
+
+    public String getDetail() {
+        return detail;
     }
 }

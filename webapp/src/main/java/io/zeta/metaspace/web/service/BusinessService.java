@@ -235,6 +235,8 @@ public class BusinessService {
             String departmentName = categoryDao.queryNameByGuid(categoryGuid,tenantId);
             info.setDepartmentName(departmentName);
             return info;
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error("获取业务对象信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象信息失败");
@@ -289,6 +291,8 @@ public class BusinessService {
             //businessId
             info.setBusinessId(businessId);
             return info;
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error("获取关联表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
