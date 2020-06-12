@@ -66,6 +66,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
@@ -178,7 +179,7 @@ public class DataManageService {
                 }
                 valueList = new ArrayList<>(valueMap.values());
             }
-
+            getCount(valueList,type,TenantService.defaultTenant);
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
@@ -227,12 +228,48 @@ public class DataManageService {
                     categoryPrivilege.getPrivilege().adminPrivilege(categoryPrivilege.getGuid());
                 }
             }
+            getCount(valueList,type,tenantId);
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (AtlasBaseException e) {
             throw e;
+        }
+    }
+
+    /**
+     * item累加
+     * @param valueList
+     * @param type
+     */
+    private void getCount(List<CategoryPrivilege> valueList,int type,String tenantId){
+        Map<String, Integer> guidAndCount = valueList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getCount, (key1, key2) -> key2));
+        List<CategoryPath> paths = categoryDao.getPath(type,tenantId);
+        Map<String ,Integer> countMap = new HashMap<>();
+        for (CategoryPath path:paths){
+            String guid = path.getGuid();
+            Integer count = guidAndCount.get(guid);
+            if (count==null||count==0){
+                continue;
+            }
+            String[] parentCategory = path.getPath().replace("{", "").replace("}", "").split(",");
+            for (int i=0;i<parentCategory.length;i++){
+                if (countMap.containsKey(parentCategory[i])){
+                    countMap.put(parentCategory[i],countMap.get(parentCategory[i])+count);
+                }else{
+                    countMap.put(parentCategory[i],count);
+                }
+            }
+        }
+        for (CategoryPrivilege categoryPrivilege : valueList) {
+            Integer count = countMap.get(categoryPrivilege.getGuid());
+            if (count==null){
+                categoryPrivilege.setCount(0);
+            }else{
+                categoryPrivilege.setCount(count);
+            }
+
         }
     }
     /**
@@ -552,20 +589,11 @@ public class DataManageService {
     @Transactional(rollbackFor=Exception.class)
     public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
         try {
-            long time = System.currentTimeMillis();
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String generateTime = format.format(time);
-            for (RelationEntityV2 relation : relations) {
-                //删除旧的
-                relationDao.deleteByTableGuid(relation.getTableGuid());
-                relation.setCategoryGuid(categoryGuid);
-                relation.setGenerateTime(generateTime);
-                if(relationDao.ifRelationExists(categoryGuid,relation.getTableGuid())==0) {
-                    addRelation(relation);
-                }
+            if (relations==null||relations.size()==0){
+                return;
             }
-        } catch (AtlasBaseException e) {
-            throw e;
+            Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+            relationDao.updateByTableGuids(relations,categoryGuid,timestamp);
         } catch (Exception e) {
             LOG.error("添加关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
