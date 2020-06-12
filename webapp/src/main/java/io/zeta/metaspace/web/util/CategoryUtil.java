@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.util;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
@@ -34,6 +36,8 @@ import javax.annotation.PostConstruct;
 public class CategoryUtil {
     @Autowired
     private CategoryDAO categoryDAO;
+    @Autowired
+    private DataShareDAO dataShareDAO;
     private static CategoryUtil utils;
 
     @PostConstruct
@@ -88,10 +92,16 @@ public class CategoryUtil {
         add("Standard-13");
         add("Standard-14");
     }};
+    public static final String apiCategoryName = "默认目录";
 
     public static void initCategorySql(List<Tenant> tenants){
         for (Tenant tenant: tenants){
             utils.categoryDAO.addAll(initCategory,tenant.getTenantId());
         }
+    }
+    public static void initApiCategory(String tenantId,String projectId){
+        Timestamp createTime = DateUtils.currentTimestamp();
+        String uuid = UUID.randomUUID().toString();
+        utils.dataShareDAO.add(new CategoryEntityV2(uuid,"默认目录","默认目录",null,null,null,2,1,"1",createTime),projectId,tenantId);
     }
 }

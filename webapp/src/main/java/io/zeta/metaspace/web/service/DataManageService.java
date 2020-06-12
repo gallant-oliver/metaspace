@@ -291,118 +291,15 @@ public class DataManageService {
                 }
 
                 if(categoryDao.ifExistCategory(type,tenantId) > 0) {
-                    int count = categoryDao.querySameNameOne(name, type,tenantId);
-                    if (count > 0)
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
-                    String lastCategoryId = categoryDao.queryLastCategory(type,tenantId);
-                    qualifiedName.append(name);
-                    entity.setQualifiedName(qualifiedName.toString());
-                    entity.setLevel(1);
-                    entity.setUpBrotherCategoryGuid(lastCategoryId);
-                    categoryDao.add(entity,tenantId);
-                    categoryDao.updateDownBrotherCategoryGuid(lastCategoryId,newCategoryGuid,tenantId);
-                    CategoryPrivilege returnEntity = new CategoryPrivilege();
-                    returnEntity.setGuid(newCategoryGuid);
-                    returnEntity.setName(name);
-                    returnEntity.setDescription(info.getDescription());
-                    returnEntity.setLevel(1);
-                    returnEntity.setParentCategoryGuid(null);
-                    returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
-                    returnEntity.setDownBrotherCategoryGuid(null);
-                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
-                    if(type==technicalType){
-                        privilege.setDeleteRelation(false);
-                    }
-                    returnEntity.setPrivilege(privilege);
-                    return returnEntity;
+                    return createOneLevelCategory(entity,type,tenantId);
+                }else{
+                    return createFirstCategory(entity,type,tenantId);
                 }
-                //qualifiedName
-                qualifiedName.append(name);
-                entity.setQualifiedName(qualifiedName.toString());
-                entity.setLevel(1);
-                categoryDao.add(entity,tenantId);
-                CategoryPrivilege returnEntity = new CategoryPrivilege();
-                returnEntity.setGuid(newCategoryGuid);
-                returnEntity.setName(name);
-                returnEntity.setDescription(info.getDescription());
-                returnEntity.setLevel(1);
-                returnEntity.setParentCategoryGuid(null);
-                returnEntity.setUpBrotherCategoryGuid(null);
-                returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
-                if (type==1){
-                    privilege.setAsh(true);
-                }
-                if(type==technicalType){
-                    privilege.setDeleteRelation(false);
-                }
-                returnEntity.setPrivilege(privilege);
-                return returnEntity;
             }
             if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid,tenantId))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
-
-            String newCategoryParentGuid = info.getParentCategoryGuid();
-            //获取当前catalog
-            CategoryEntityV2 currentEntity = categoryDao.queryByGuid(currentCategoryGuid,tenantId);
-            String parentQualifiedName = null;
-            String parentGuid = null;
-            int currentLevel = categoryDao.getCategoryLevel(currentCategoryGuid,tenantId);
-            //创建子目录
-            if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
-                parentGuid = currentCategoryGuid;
-                entity.setParentCategoryGuid(currentCategoryGuid);
-                parentQualifiedName = currentEntity.getQualifiedName();
-                entity.setLevel(currentLevel + 1);
-            } else {
-                //创建同级目录
-                parentGuid = currentEntity.getParentCategoryGuid();
-                entity.setLevel(currentLevel);
-                if (StringUtils.isNotEmpty(parentGuid)) {
-                    entity.setParentCategoryGuid(parentGuid);
-                    CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid,tenantId);
-                    parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
-                }
-            }
-            if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
-                qualifiedName.append(parentQualifiedName + ".");
-            qualifiedName.append(name);
-            int count = categoryDao.querySameNameNum(name, parentGuid, type,tenantId);
-            if (count > 0)
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
-            //qualifiedName
-            entity.setQualifiedName(qualifiedName.toString());
-
-            //子目录
-            if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
-                String lastChildGuid = categoryDao.queryLastChildCategory(currentCategoryGuid,tenantId);
-                if (StringUtils.isNotEmpty(lastChildGuid)) {
-                    entity.setUpBrotherCategoryGuid(lastChildGuid);
-                    categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid,tenantId);
-                }
-            } else {
-                //同级目录
-                String up = "up";
-                String down = "down";
-                if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), up)) {
-                    entity.setDownBrotherCategoryGuid(currentCategoryGuid);
-                    String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
-                    if (StringUtils.isNotEmpty(upBrotherGuid)) {
-                        entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                        categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid,tenantId);
-                    }
-                    categoryDao.updateUpBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid,tenantId);
-                } else if (StringUtils.isNotEmpty(currentCategoryGuid) && Strings.equals(info.getDirection(), down)) {
-                    entity.setUpBrotherCategoryGuid(info.getGuid());
-                    String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
-                    if (StringUtils.isNotEmpty(downBrotherGuid)) {
-                        entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                        categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid,tenantId);
-                    }
-                    categoryDao.updateDownBrotherCategoryGuid(currentCategoryGuid, newCategoryGuid,tenantId);
-                }
-            }
+            createOtherCategory(entity,type,info,tenantId);
             categoryDao.add(entity,tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid,tenantId);
             CategoryPrivilege.Privilege privilege =null;
@@ -436,6 +333,126 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建业务目录失败");
         }
     }
+
+    private CategoryPrivilege createOneLevelCategory(CategoryEntityV2 entity,int type,String tenantId) throws AtlasBaseException {
+        int count = categoryDao.querySameNameOne(entity.getName(), type,tenantId);
+        if (count > 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+        StringBuffer qualifiedName = new StringBuffer();
+        String lastCategoryId = categoryDao.queryLastCategory(type,tenantId);
+        qualifiedName.append(entity.getName());
+        entity.setQualifiedName(qualifiedName.toString());
+        entity.setLevel(1);
+        entity.setUpBrotherCategoryGuid(lastCategoryId);
+        categoryDao.add(entity,tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(lastCategoryId,entity.getGuid(),tenantId);
+        CategoryPrivilege returnEntity = new CategoryPrivilege();
+        returnEntity.setGuid(entity.getGuid());
+        returnEntity.setName(entity.getName());
+        returnEntity.setDescription(entity.getDescription());
+        returnEntity.setLevel(1);
+        returnEntity.setParentCategoryGuid(null);
+        returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
+        returnEntity.setDownBrotherCategoryGuid(null);
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+        if(type==technicalType){
+            privilege.setDeleteRelation(false);
+        }
+        returnEntity.setPrivilege(privilege);
+        return returnEntity;
+    }
+
+    private CategoryPrivilege createFirstCategory(CategoryEntityV2 entity,int type,String tenantId) throws AtlasBaseException {
+        StringBuffer qualifiedName = new StringBuffer();
+        //qualifiedName
+        qualifiedName.append(entity.getName());
+        entity.setQualifiedName(qualifiedName.toString());
+        entity.setLevel(1);
+        categoryDao.add(entity,tenantId);
+        CategoryPrivilege returnEntity = new CategoryPrivilege();
+        returnEntity.setGuid(entity.getGuid());
+        returnEntity.setName(entity.getName());
+        returnEntity.setDescription(entity.getDescription());
+        returnEntity.setLevel(1);
+        returnEntity.setParentCategoryGuid(null);
+        returnEntity.setUpBrotherCategoryGuid(null);
+        returnEntity.setDownBrotherCategoryGuid(null);
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+        if (type==1){
+            privilege.setAsh(true);
+        }
+        if(type==technicalType){
+            privilege.setDeleteRelation(false);
+        }
+        returnEntity.setPrivilege(privilege);
+        return returnEntity;
+    }
+
+    private void createOtherCategory(CategoryEntityV2 entity,int type,CategoryInfoV2 info,String tenantId) throws SQLException, AtlasBaseException {
+        StringBuffer qualifiedName = new StringBuffer();
+        String newCategoryGuid = UUID.randomUUID().toString();
+        String newCategoryParentGuid = info.getParentCategoryGuid();
+        //获取当前catalog
+        CategoryEntityV2 currentEntity = categoryDao.queryByGuid(info.getGuid(),tenantId);
+        String parentQualifiedName = null;
+        String parentGuid = null;
+        int currentLevel = categoryDao.getCategoryLevel(info.getGuid(),tenantId);
+        //创建子目录
+        if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
+            parentGuid = info.getGuid();
+            entity.setParentCategoryGuid(info.getGuid());
+            parentQualifiedName = currentEntity.getQualifiedName();
+            entity.setLevel(currentLevel + 1);
+        } else {
+            //创建同级目录
+            parentGuid = currentEntity.getParentCategoryGuid();
+            entity.setLevel(currentLevel);
+            if (StringUtils.isNotEmpty(parentGuid)) {
+                entity.setParentCategoryGuid(parentGuid);
+                CategoryEntityV2 currentCatalogParentEntity = categoryDao.queryByGuid(parentGuid,tenantId);
+                parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
+            }
+        }
+        if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
+            qualifiedName.append(parentQualifiedName + ".");
+        qualifiedName.append(entity.getName());
+        int count = categoryDao.querySameNameNum(entity.getName(), parentGuid, type,tenantId);
+        if (count > 0)
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+        //qualifiedName
+        entity.setQualifiedName(qualifiedName.toString());
+
+        //子目录
+        if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
+            String lastChildGuid = categoryDao.queryLastChildCategory(info.getGuid(),tenantId);
+            if (StringUtils.isNotEmpty(lastChildGuid)) {
+                entity.setUpBrotherCategoryGuid(lastChildGuid);
+                categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid,tenantId);
+            }
+        } else {
+            //同级目录
+            String up = "up";
+            String down = "down";
+            if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), up)) {
+                entity.setDownBrotherCategoryGuid(info.getGuid());
+                String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
+                if (StringUtils.isNotEmpty(upBrotherGuid)) {
+                    entity.setUpBrotherCategoryGuid(upBrotherGuid);
+                    categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid,tenantId);
+                }
+                categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid,tenantId);
+            } else if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), down)) {
+                entity.setUpBrotherCategoryGuid(info.getGuid());
+                String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
+                if (StringUtils.isNotEmpty(downBrotherGuid)) {
+                    entity.setDownBrotherCategoryGuid(downBrotherGuid);
+                    categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid,tenantId);
+                }
+                categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid,tenantId);
+            }
+        }
+    }
+
     /**
      * 获取目录信息
      * @param guid
