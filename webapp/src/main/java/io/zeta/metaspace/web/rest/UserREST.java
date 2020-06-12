@@ -70,6 +70,8 @@ public class UserREST {
     public Result getUserItems(@HeaderParam("tenantId")String tenantId, @PathParam("userId") String userId) throws AtlasBaseException {
         try {
             return ReturnUtil.success(TenantService.defaultTenant.equals(tenantId)? usersService.getUserInfoById(userId) : usersService.getUserInfoByIdV2(tenantId, userId));
+        } catch (AtlasBaseException e){
+            throw e;
         }catch (Exception e){
             LOG.warn("获取用户信息失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
@@ -85,6 +87,9 @@ public class UserREST {
             parameters.setLimit(limit);
             parameters.setOffset(offset);
             return ReturnUtil.success(usersService.getUserListV2(tenantId,parameters));
+        } catch (AtlasBaseException e){
+            LOG.warn("获取用户信息失败",e);
+            throw e;
         }catch (Exception e){
             LOG.warn("获取用户信息失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户信息失败");

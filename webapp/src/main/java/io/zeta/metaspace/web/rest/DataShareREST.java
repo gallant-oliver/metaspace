@@ -40,6 +40,8 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,7 +61,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 @Singleton
 @Service
 public class DataShareREST {
-
+    private static final Logger LOG = LoggerFactory.getLogger(DataShareREST.class);
     @Autowired
     private DataShareGroupService groupService;
     @Autowired
@@ -442,8 +444,9 @@ public class DataShareREST {
             shareService.publishAPI(apiGuidList,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
-        } catch (Exception e) {
-            throw e;
+        }  catch (Exception e) {
+            LOG.error("更新发布状态失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
         return Response.status(200).entity("success").build();
     }
@@ -474,6 +477,9 @@ public class DataShareREST {
             shareService.unpublishAPI(apiGuidList,tenantId);
         } catch (AtlasBaseException e) {
             throw e;
+        } catch (Exception e) {
+            LOG.error("更新发布状态失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
         return Response.status(200).entity("success").build();
     }

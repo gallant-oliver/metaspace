@@ -266,6 +266,8 @@ public class WarningGroupREST {
     public PageResult<User> userList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return TenantService.defaultTenant.equals(tenantId)?usersService.getUserList(parameters) : usersService.getUserListV2(tenantId, parameters);
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             throw e;
         }

@@ -393,6 +393,8 @@ public class DataStandardREST {
     public List<CategoryAndDataStandard> getCategoryAndStandard(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return dataStandardService.getCategoryAndStandard(tenantId);
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取所有目录和数据标准失败："+e.getMessage());
         }

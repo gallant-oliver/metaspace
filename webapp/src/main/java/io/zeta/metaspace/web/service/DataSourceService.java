@@ -499,6 +499,8 @@ public class DataSourceService {
             dataSourceAuthorizeUser.setUsers(noAuthorizeUsers);
             dataSourceAuthorizeUser.setTotalSize(noAuthorizeUsers.size());
             return dataSourceAuthorizeUser;
+        } catch (AtlasBaseException e){
+            throw e;
         }catch (Exception e){
             LOG.error("获取未授权用户失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取未授权用户失败\n"+e.getMessage());
@@ -985,6 +987,8 @@ public class DataSourceService {
                 }
                 return users;
             }
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"查询失败:" + e.getMessage());

@@ -968,7 +968,12 @@ public class DataManageService {
                 }
             }
             if(!"0.0".equals(errorId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败：" + errorReason);
+                StringBuffer detail = new StringBuffer();
+                detail.append("云平台返回错误码:");
+                detail.append(errorId);
+                detail.append("错误信息:");
+                detail.append(errorReason);
+                throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台修改表owner失败");
             }
         }
 
@@ -1043,48 +1048,63 @@ public class DataManageService {
     }
 
     public List getOrganization() throws AtlasBaseException {
-        try {
-            String organizationURL = SSOConfig.getOrganizationURL();
-            String organizationCountURL = SSOConfig.getOrganizationCountURL();
-            long currentTime = System.currentTimeMillis();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String endTime = sdf.format(currentTime);
+        String organizationURL = SSOConfig.getOrganizationURL();
+        String organizationCountURL = SSOConfig.getOrganizationCountURL();
+        long currentTime = System.currentTimeMillis();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String endTime = sdf.format(currentTime);
 
-            HashMap<String, String> header = new HashMap<>();
-            Gson gson = new Gson();
-            Map<String, String> queryCountParamMap = new HashMap<>();
-            queryCountParamMap.put("endTime", endTime);
-            List data = new ArrayList();
-            int retryCount = 0;
-            int retries = 3;
-            while(retryCount < retries) {
-                String countSession = OKHttpClient.doGet(organizationCountURL, queryCountParamMap, header);
-                if(Objects.isNull(countSession)) {
-                    retryCount++;
-                    continue;
-                }
-                Map countBody = gson.fromJson(countSession, Map.class);
-                Map countData = (Map) countBody.get("data");
-                double count = (Double) countData.get("count");
-
-                Map<String, String> queryDataParamMap = new HashMap<>();
-                queryDataParamMap.put("currentPage", "0");
-                queryDataParamMap.put("pageSize", String.valueOf((int)count));
-                queryDataParamMap.put("endTime", endTime);
-                String session = OKHttpClient.doGet(organizationURL, queryDataParamMap, header);
-                if(Objects.isNull(session)) {
-                    retryCount++;
-                    continue;
-                }
-                Map body = gson.fromJson(session, Map.class);
-                data = (List) body.get("data");
-                break;
+        HashMap<String, String> header = new HashMap<>();
+        Gson gson = new Gson();
+        Map<String, String> queryCountParamMap = new HashMap<>();
+        queryCountParamMap.put("endTime", endTime);
+        List data = new ArrayList();
+        int retryCount = 0;
+        int retries = 3;
+        String proper = "0.0";
+        String errorCode = null;
+        String message = null;
+        while(retryCount < retries) {
+            String countSession = OKHttpClient.doGet(organizationCountURL, queryCountParamMap, header);
+            if(Objects.isNull(countSession)) {
+                retryCount++;
+                continue;
             }
+            Map countBody = gson.fromJson(countSession, Map.class);
+            Map countData = (Map) countBody.get("data");
+            errorCode = Objects.toString(countBody.get("errorCode"));
+            if (!proper.equals(errorCode)){
+                message=Objects.toString(countBody.get("message"));
+                retryCount++;
+                continue;
+            }
+            double count = (Double) countData.get("count");
+
+            Map<String, String> queryDataParamMap = new HashMap<>();
+            queryDataParamMap.put("currentPage", "0");
+            queryDataParamMap.put("pageSize", String.valueOf((int)count));
+            queryDataParamMap.put("endTime", endTime);
+            String session = OKHttpClient.doGet(organizationURL, queryDataParamMap, header);
+            if(Objects.isNull(session)) {
+                retryCount++;
+                continue;
+            }
+            Map body = gson.fromJson(session, Map.class);
+            errorCode = Objects.toString(body.get("errorCode"));
+            if (!proper.equals(errorCode)){
+                message=Objects.toString(body.get("message"));
+                retryCount++;
+                continue;
+            }
+            data = (List) body.get("data");
             return data;
-        } catch (Exception e) {
-            LOG.error("获取组织架构失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取组织架构失败");
         }
+        StringBuffer detail = new StringBuffer();
+        detail.append("sso返回错误码:");
+        detail.append(errorCode);
+        detail.append("错误信息:");
+        detail.append(message);
+        throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "sso获取组织架构失败");
     }
 
     @Transactional(rollbackFor=Exception.class)
@@ -1109,6 +1129,9 @@ public class DataManageService {
             if(Objects.nonNull(insertList) && insertList.size()>0) {
                 organizationDAO.addOrganizations(insertList);
             }
+        } catch (AtlasBaseException e) {
+            LOG.error("更新组织架构失败", e);
+            throw e;
         } catch (Exception e) {
             LOG.error("更新组织架构失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新组织架构失败");
@@ -1739,7 +1762,7 @@ public class DataManageService {
         List<RoleModulesCategories.Category> childCategorys;
         if (sortCategory.getGuid()==null||sortCategory.getGuid().length()==0){
             List<Module> modules = tenantService.getModule(tenantId);
-            if (!modules.contains(ModuleEnum.AUTHORIZATION.getId())&&type==1){
+            if (!modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())&&type==1){
                 throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有变更所有目录的权限");
             }
             childCategorys=userGroupDAO.getAllCategorysAndSort(type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);
@@ -1761,7 +1784,7 @@ public class DataManageService {
         List<RoleModulesCategories.Category> childCategorys;
         if (sortCategory.getGuid()==null||sortCategory.getGuid().length()==0){
             List<Module> modules = tenantService.getModule(tenantId);
-            if (!modules.contains(ModuleEnum.AUTHORIZATION.getId())&&type==1){
+            if (!modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())&&type==1){
                 throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有变更所有目录的权限");
             }
             childCategorys=userGroupDAO.getAllCategorysAndSort(type,sortCategory.getSort(),sortCategory.getOrder(),tenantId);

@@ -54,6 +54,9 @@ public class AtlasBaseExceptionMapper implements ExceptionMapper<AtlasBaseExcept
         errorJsonMap.put("errorCode", errorCode.getErrorCode());
         errorJsonMap.put("errorMessage", baseException.getMessage());
 
+        if (baseException.getDetail() != null){
+            errorJsonMap.put("detail", baseException.getDetail());
+        }
         if (baseException.getCause() != null) {
             errorJsonMap.put("errorCause", baseException.getCause().getMessage());
         }
