@@ -47,7 +47,7 @@ public class HiveJdbcUtils {
 
     private static final String QUERY = "SELECT %s,count(*) over() as count FROM `%s`";
     private static final String WHERE = " WHERE ";
-    private static final String ORDER = " ORDER BY 1 ";
+    private static final String ORDER = " ORDER BY ";
     private static final String LIMIT = " LIMIT %d OFFSET %d ";
 
     static {
@@ -223,6 +223,7 @@ public class HiveJdbcUtils {
 
     public static ResultSet selectBySQLWithSystemCon(Connection conn, String sql) throws AtlasBaseException, IOException {
         try {
+            System.out.println(sql);
             ResultSet resultSet = conn.createStatement().executeQuery(sql);
             return resultSet;
         } catch (SQLException e) {
@@ -258,7 +259,7 @@ public class HiveJdbcUtils {
     }
 
 
-    public static String getQuerySql(String tableName, String queryFields, String filterFields, long limit, long offset) throws AtlasBaseException {
+    public static String getQuerySql(String tableName, String queryFields, String filterFields, String sortSql,long limit, long offset) throws AtlasBaseException {
         try {
             StringBuilder sqlBuilder = new StringBuilder();
             String queryStr = String.format(QUERY, queryFields, tableName);
@@ -266,6 +267,12 @@ public class HiveJdbcUtils {
             if (StringUtils.isNotEmpty(filterFields)) {
                 sqlBuilder.append(WHERE);
                 sqlBuilder.append(filterFields);
+            }
+            sqlBuilder.append(ORDER);
+            if (StringUtils.isNotEmpty(sortSql)) {
+                sqlBuilder.append(sortSql);
+            }else{
+                sqlBuilder.append(1);
             }
             String sql = buildSql(sqlBuilder.toString(), limit, offset);
             return sql;
@@ -281,7 +288,6 @@ public class HiveJdbcUtils {
         if(limit == -1) {
             return sqlBuilder.toString();
         }
-        sqlBuilder.append(ORDER);
         sqlBuilder.append(String.format(LIMIT, limit, offset));
         return sqlBuilder.toString();
     }

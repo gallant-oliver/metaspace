@@ -11,28 +11,16 @@
 //
 // ======================================================================
 
-package io.zeta.metaspace.model.usergroup;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+package io.zeta.metaspace.model.share;
 
 /**
  * @author lixiang03
- * @Data 2020/3/19 11:52
+ * @Data 2020/6/4 11:35
  */
-public class UserGroupIdAndName {
-    @JsonIgnore
-    private long totalSize;
+public class CategoryDelete {
     private String id;
-    private String name;
-    private String description;
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    private boolean deleteApi;
+    private String projectId;
 
     public String getId() {
         return id;
@@ -42,19 +30,19 @@ public class UserGroupIdAndName {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public boolean isDeleteApi() {
+        return deleteApi;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setDeleteApi(boolean deleteApi) {
+        this.deleteApi = deleteApi;
     }
 
-    public long getTotalSize() {
-        return totalSize;
+    public String getProjectId() {
+        return projectId;
     }
 
-    public void setTotalSize(long totalSize) {
-        this.totalSize = totalSize;
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 }

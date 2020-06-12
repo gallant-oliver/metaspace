@@ -204,8 +204,7 @@ public class HookService {
      */
     public long  kafkaCheck() throws AtlasBaseException {
         KafkaNotification kafkaNotification = NotificationProvider.get();
-        try{
-            KafkaConsumer kafkaConsumer = kafkaNotification.getNewKafkaConsumer(kafkaNotification.getConsumerProperties(NotificationInterface.NotificationType.HOOK), NotificationInterface.NotificationType.HOOK, false);
+        try(KafkaConsumer kafkaConsumer = kafkaNotification.getNewKafkaConsumer(kafkaNotification.getConsumerProperties(NotificationInterface.NotificationType.HOOK), NotificationInterface.NotificationType.HOOK, false);){
             //获取topic和分区
             Map<String, List<PartitionInfo>> topics = kafkaConsumer.listTopics();
             List<PartitionInfo> atlasHook = topics.get(KafkaNotification.ATLAS_HOOK_TOPIC);
@@ -221,12 +220,15 @@ public class HookService {
                 //消费的offset；
                 OffsetAndMetadata committed = kafkaConsumer.committed(topicPartition);
                 //最后消费的offset
-                long  readOffset = committed.offset();
+                long  readOffset=0;
+                if(committed!=null){
+                    readOffset = committed.offset();
+                }
+
                 sum+=partitionOffset;
                 sumOffset+=readOffset;
             }
             long lag = sum-sumOffset;
-            kafkaConsumer.close();
             return lag;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取kafka消费积压情况失败:"+e.getMessage());

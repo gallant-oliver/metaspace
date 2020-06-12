@@ -24,6 +24,7 @@ public class OracleJdbcUtils {
     private static final String PAGE_QUERY = "SELECT * FROM (%s) table_alias";
     private static final String COUNT = " COUNT(*) ";
     private static final String WHERE = " WHERE ";
+    private static final String ORDER = " ORDER BY";
     private static final String ROWNUM = " ROWNUM AS rn ";
     private static final String ROWNUM_LIMIT_RIGHT = " AND ROWNUM<=%d ";
     private static final String ROWNUM_LIMIT_LEFT = "  WHERE table_alias.rn >=%d ";
@@ -96,7 +97,7 @@ public class OracleJdbcUtils {
         }
     }
 
-    public static String getQuerySql(String dbName, String tableName, String queryFields, String filterFields, long limit, long offset) throws AtlasBaseException {
+    public static String getQuerySql(String dbName, String tableName, String queryFields, String filterFields,String sortSql, long limit, long offset) throws AtlasBaseException {
         try {
             StringBuilder sqlBuilder = new StringBuilder();
             String dbAndTableName = "\"" + dbName + "\"" + "." + "\"" + tableName + "\"";
@@ -110,6 +111,10 @@ public class OracleJdbcUtils {
             }
             if(limit != -1) {
                 sqlBuilder.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
+            }
+            if (StringUtils.isNotEmpty(filterFields)){
+                sqlBuilder.append(ORDER);
+                sqlBuilder.append(sortSql);
             }
             String sql = buildQuerySql(sqlBuilder.toString(), limit, offset);
             return sql;
