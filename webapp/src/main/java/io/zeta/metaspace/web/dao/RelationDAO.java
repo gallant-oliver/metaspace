@@ -23,6 +23,7 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
 /*
@@ -256,6 +257,14 @@ public interface RelationDAO {
 
     @Delete("delete from table_relation where tableguid=#{tableGuid}")
     public int deleteByTableGuid(@Param("tableGuid") String tableGuid);
+
+    @Update(" <script>" +
+            " update table_relation set categoryGuid=#{categoryGuid},generateTime=#{time} where tableguid in " +
+            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
+            " #{relation.tableGuid}" +
+            " </foreach>" +
+            " </script>")
+    public int updateByTableGuids(@Param("relations") List<RelationEntityV2> relations, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);

@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -28,14 +29,10 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
-import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.HeaderParam;
 
 /*
  * @description
@@ -251,5 +248,15 @@ public interface CategoryDAO {
     @Select(" select count(1) from category where name=#{name} " +
             " and categorytype=#{type} and level=1 and tenantid=#{tenantId}")
     public int querySameNameOne(@Param("name") String categoryName, @Param("type")int type, @Param("tenantId")String tenantId);
+
+    @Select(" WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
+            " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=0 and D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
+            " SELECT  guid,PATH path FROM T " +
+            " ORDER BY PATH")
+    public List<CategoryPath> getPath(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
 
 }

@@ -46,17 +46,10 @@ import java.util.UUID;
  * @date 2019/9/18 13:47
  */
 public class ExportDataPathUtils {
-    private static Configuration conf;
     public static String SEPARATOR = ",";
     public static String tmpFilePath;
     static {
-        try {
-            conf = ApplicationProperties.get();
-            tmpFilePath=conf.getString("metaspace.tmp.filepath","/tmp/metaspace");
-        } catch (AtlasException e) {
-            throw new RuntimeException(e);
-        }
-
+        tmpFilePath=System.getProperty("java.io.tmpdir")+"metaspace";
     }
     public static String fileFormat1 = ".xlsx";
     public static String fileFormat2 = ".xls";
