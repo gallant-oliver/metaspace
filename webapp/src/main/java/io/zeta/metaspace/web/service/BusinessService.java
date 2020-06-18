@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -51,17 +52,23 @@ import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 
+import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.postgresql.util.PGobject;
 
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
@@ -75,6 +82,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,8 +92,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
@@ -1196,4 +1208,269 @@ public class BusinessService {
         }
     }
 
+    public File exportExcelBusiness(List<String> ids,String categoryId,String tenantId) throws IOException {
+        List<BusinessInfo> data;
+        if (ids==null){
+            data = businessDao.getAllBusinessByCategory(categoryId, tenantId);
+        }else if (ids.size()==0){
+            data = new ArrayList<>();
+        }else{
+            data = businessDao.getBusinessByIds(ids,categoryId,tenantId);
+        }
+        String path=null;
+        String pathStr = categoryDao.queryPathByGuid(categoryId,tenantId);
+        if(pathStr!=null){
+            path = pathStr.substring(1, pathStr.length()-1).replace(",", "/").replace("\"", "");
+        }else{
+            path=categoryDao.getCategoryNameById(categoryId,tenantId);
+        }
+        Workbook workbook = data2workbook(data,path);
+        return workbook2file(workbook);
+    }
+
+    private Workbook data2workbook(List<BusinessInfo> list,String path) {
+        Workbook workbook = new XSSFWorkbook();
+        CellStyle cellStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        cellStyle.setFont(font);
+        AtomicInteger index=new AtomicInteger(1);
+        List<List<String>> dataList = list.stream().map(businessInfo -> {
+            List<String> data = Lists.newArrayList(String.valueOf(index.getAndIncrement()),businessInfo.getName(), businessInfo.getModule(),businessInfo.getDescription(),
+                                                   businessInfo.getOwner(),businessInfo.getManager(),businessInfo.getMaintainer(),businessInfo.getDataAssets(),businessInfo.getBusinessOperator(),
+                                                   businessInfo.getBusinessLastUpdate(),path);
+            return data;
+        }).collect(Collectors.toList());
+        ArrayList<String> attributes = Lists.newArrayList("","业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产","更新人","更新时间","目录");
+        PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList,cellStyle,12);
+        return workbook;
+    }
+
+        private File workbook2file(Workbook workbook) throws IOException {
+        File tmpFile = File.createTempFile("business", ".xlsx");
+        try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+            workbook.write(output);
+            output.flush();
+            output.close();
+        }
+        return tmpFile;
+    }
+
+    public Map<String, Object> uploadBusiness(File fileInputStream, String tenantId) throws Exception {
+        List<BusinessInfo> business ;
+        List<String> error = new ArrayList<>();
+        try {
+            business = file2Data(fileInputStream,new ArrayList<>(),error,tenantId);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"文件异常");
+        }
+        HashMap<String, Object> map;
+        if (error.size()==0){
+            String upload = ExportDataPathUtils.transferTo(fileInputStream);
+            map = new HashMap<String, Object>() {{
+                put("upload", upload);
+            }};
+        }else{
+            StringBuilder detail = new StringBuilder();
+            for (String err:error){
+                detail.append(err);
+                detail.append("\n");
+            }
+            String substring = detail.substring(0, detail.length() - 1);
+            throw new AtlasBaseException(substring,AtlasErrorCode.BAD_REQUEST,"文件异常");
+        }
+        return map;
+    }
+
+    /**
+     * 文件转化为目录
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    private List<BusinessInfo> file2Data(File file,List<CategoryEntityV2> systemCategory,List<String> error,String tenantId) throws Exception {
+        String cellFormat = "第%d页，第%d个业务对象错误，原因：%s";
+        String sheetFormat = "第%d页错误，原因：%s";
+        List<BusinessInfo> business = new ArrayList<>();
+        try(Workbook workbook = WorkbookFactory.create(file)){
+            int numberOfSheets = workbook.getNumberOfSheets();
+            List<String> fileNames = new ArrayList<>();
+            List<String> businessNames = businessDao.getBusinessNames(tenantId);
+            for (int i=0;i<numberOfSheets;i++){
+                Sheet sheet = workbook.getSheetAt(0);
+                int rowNum = sheet.getLastRowNum() + 1;
+                //文件格式校验
+                Row first = sheet.getRow(0);
+                ArrayList<String> strings = Lists.newArrayList("","业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
+                for(int j=0;j<strings.size();j++){
+                    Cell cell = first.getCell(j);
+                    if (!strings.get(j).equals(cell.getStringCellValue())){
+                        error.add(String.format(sheetFormat,i,"文件内容不正确"));
+                        break;
+                    }
+                }
+
+                for (int j = 1; j < rowNum; j++) {
+                    Row row = sheet.getRow(j);
+                    BusinessInfo businessInfo = new BusinessInfo();
+
+                    Cell nameCell = row.getCell(1);
+                    if(Objects.isNull(nameCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"业务名称不能为空"));
+                        continue;
+                    }
+                    String name = PoiExcelUtils.getCellValue(nameCell);
+                    if (fileNames.contains(name)) {
+                        error.add(String.format(cellFormat,i+1,j,"与文件内业务对象重名"));
+                        continue;
+                    }else if (businessNames.contains(name)){
+                        error.add(String.format(cellFormat,i+1,j,"与已有业务对象重名"));
+                        continue;
+                    }
+                    businessInfo.setName(name);
+
+                    Cell moduleCell = row.getCell(2);
+                    if(Objects.isNull(moduleCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"业务模块不能为空"));
+                        continue;
+                    }
+                    businessInfo.setModule(PoiExcelUtils.getCellValue(moduleCell));
+
+                    Cell discriptionCell = row.getCell(3);
+                    if(Objects.isNull(discriptionCell)) {
+                        businessInfo.setDescription("");
+                    } else {
+                        businessInfo.setDescription(PoiExcelUtils.getCellValue(discriptionCell));
+                    }
+
+                    Cell ownerCell = row.getCell(4);
+                    if(Objects.isNull(ownerCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"所有者不能为空"));
+                        continue;
+                    }
+                    businessInfo.setOwner(PoiExcelUtils.getCellValue(ownerCell));
+
+                    Cell mangerCell = row.getCell(5);
+                    if(Objects.isNull(mangerCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"管理者不能为空"));
+                        continue;
+                    }
+                    businessInfo.setManager(PoiExcelUtils.getCellValue(mangerCell));
+
+                    Cell maintainerCell = row.getCell(6);
+                    if(Objects.isNull(maintainerCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"维护者不能为空"));
+                        continue;
+                    }
+                    businessInfo.setMaintainer(PoiExcelUtils.getCellValue(maintainerCell));
+
+                    Cell dataAssetsCell = row.getCell(7);
+                    if(Objects.isNull(dataAssetsCell)) {
+                        error.add(String.format(cellFormat,i+1,j,"相关数据资产不能为空"));
+                        continue;
+                    }
+                    businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
+                    business.add(businessInfo);
+                    fileNames.add(name);
+                }
+            }
+            return business;
+        }
+    }
+
+    public List<String> getNamesByIds(List<String> ids,String tenantId){
+        List<String> businessNames = businessDao.getBusinessNamesByIds(ids,tenantId);
+        return businessNames;
+    }
+
+    @Transactional(rollbackFor=Exception.class)
+    public void importBusiness(File fileInputStream,String categoryId, String tenantId) throws Exception {
+        if (!fileInputStream.exists()){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        List<BusinessInfo> business ;
+        List<String> error = new ArrayList<>();
+        try {
+            business = file2Data(fileInputStream,new ArrayList<>(),error,tenantId);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"文件异常");
+        }
+        if (error.size()!=0){
+            throw new AtlasBaseException(error.toString(),AtlasErrorCode.BAD_REQUEST,"数据异常");
+        }
+        if (business==null||business.size()==0){
+            return;
+        }
+        insertBusinesses(business, categoryId, tenantId);
+    }
+
+    @Transactional(rollbackFor=Exception.class)
+    public void insertBusinesses(List<BusinessInfo> business,String categoryId,String tenantId) throws AtlasBaseException {
+        String userName = AdminUtils.getUserData().getUsername();
+        long timestamp = System.currentTimeMillis();
+        String time = DateUtils.getNow();
+        //level2CategoryId
+        String pathStr = categoryDao.queryGuidPathByGuid(categoryId,tenantId);
+        String path = pathStr.substring(1, pathStr.length()-1);
+        path = path.replace("\"", "");
+        String[] pathArr = path.split(",");
+        String level2CategoryId = "";
+        int length = 2;
+        if(pathArr.length >= length) {
+            level2CategoryId = pathArr[1];
+        }
+        List<BusinessRelationEntity> entitys = new ArrayList<>();
+        for(BusinessInfo info:business){
+            //departmentId(categoryId)
+            info.setDepartmentId(categoryId);
+            //submitter && businessOperator
+
+            info.setSubmitter(userName);
+            info.setBusinessOperator(userName);
+            //businessId
+            String businessId = UUID.randomUUID().toString();
+            info.setBusinessId(businessId);
+            //submissionTime && businessLastUpdate && ticketNumber
+
+            info.setSubmissionTime(time);
+            info.setBusinessLastUpdate(time);
+            info.setTicketNumber(String.valueOf(timestamp));
+
+            info.setLevel2CategoryId(level2CategoryId);
+
+            BusinessRelationEntity entity = new BusinessRelationEntity();
+            //relationshiGuid
+            String relationGuid = UUID.randomUUID().toString();
+            entity.setRelationshipGuid(relationGuid);
+
+            entity.setBusinessId(businessId);
+            entity.setCategoryGuid(categoryId);
+            entity.setGenerateTime(time);
+            entitys.add(entity);
+        }
+        businessDao.insertBusinessInfos(business,tenantId);
+        businessDao.addRelations(entitys);
+    }
+
+    @Transactional(rollbackFor=Exception.class)
+    public int deleteBusinesses(List<String> ids) throws AtlasBaseException {
+        try {
+            if (ids==null||ids.size()==0){
+                return 0;
+            }
+            int num = businessDao.deleteBusinessesByIds(ids);
+            businessDao.deleteRelationByBusinessIds(ids);
+            businessDao.deleteRelationByIds(ids);
+            return num;
+        } catch (Exception e) {
+            LOG.error("删除业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除业务对象失败");
+        }
+    }
 }
