@@ -449,7 +449,7 @@ public class TechnicalREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public Result exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
         File exportExcel;
         //全局导出
         String all = "all";
@@ -466,7 +466,6 @@ public class TechnicalREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            return ReturnUtil.success();
         } finally {
             exportExcel.delete();
         }
@@ -498,17 +497,7 @@ public class TechnicalREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(),  name);
-            String suffix1 = ".xlsx";
-            String suffix2 = ".xls";
-            if(!(name.endsWith(suffix1) || name.endsWith(suffix2))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-            }
-
-            file = new File(name);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            if(file.length() > MAX_EXCEL_FILE_SIZE) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-            }
+            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             String upload;
             if (all){
                 upload = dataManageService.uploadAllCategory(file,CATEGORY_TYPE,tenantId);
@@ -630,7 +619,7 @@ public class TechnicalREST {
     @GET
     @Path("/download/category/template")
     @Valid
-    public Result downloadCategoryTemplate() throws Exception {
+    public void downloadCategoryTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
         String filePath = homeDir + "/conf/category_template.xlsx";
         String fileName = filename(filePath);
@@ -638,6 +627,5 @@ public class TechnicalREST {
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-        return ReturnUtil.success();
     }
 }
