@@ -206,14 +206,12 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
             }
-            TableShow tableShow = searchService.getTableShow(guidCount);
+            TableShow tableShow = searchService.getTableShow(guidCount,false);
             return tableShow;
         } catch (AtlasBaseException e) {
             throw e;
-        } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-        }  catch (AtlasException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
+        }  catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
         }

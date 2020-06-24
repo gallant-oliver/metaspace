@@ -22,7 +22,7 @@ import org.apache.atlas.exception.AtlasBaseException;
  */
 public enum SqlEnum {
     MYSQL("MYSQL","com.mysql.jdbc.Driver","jdbc:mysql://%s:%s/%s"),
-    ORACLE_SERVICE_NAME("ORACLE SERVICE_NAME","oracle.jdbc.driver.OracleDriver","jdbc:oracle:thin:@%s:%s:%s"),
+    ORACLE_SERVICE_NAME("ORACLE SERVICE_NAME","oracle.jdbc.driver.OracleDriver","jdbc:oracle:thin:@//%s:%s/%s"),
     ORACLE_SID("ORACLE SID","oracle.jdbc.driver.OracleDriver","jdbc:oracle:thin:@%s:%s:%s"),
     SQL_SERVER("SQL SERVER","com.microsoft.sqlserver.jdbc.SQLServerDriver","jdbc:sqlserver://%s:%s;DatabaseName=%s"),
     HIVE("HIVE","org.apache.hive.jdbc.HiveDriver","jdbc:hive2://%s:%s/%s"),
@@ -73,7 +73,7 @@ public enum SqlEnum {
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型");
     }
-    public static String getUrlByName(String name,String ip,String serviceType,String port,String schema) throws AtlasBaseException {
+    public static String getUrlByName(String name,String serviceType,String ip,String port,String schema) throws AtlasBaseException {
         if (ORACLE_SID.getName().startsWith(name.toUpperCase())){
             name=name+" "+serviceType;
         }

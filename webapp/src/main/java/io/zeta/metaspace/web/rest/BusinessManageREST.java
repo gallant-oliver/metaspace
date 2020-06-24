@@ -30,12 +30,14 @@ import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnPrivilege;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
@@ -44,6 +46,7 @@ import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -57,6 +60,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -99,6 +103,8 @@ public class BusinessManageREST {
     MetaDataService metadataService;
     @Autowired
     DataShareService shareService;
+    @Autowired
+    private SearchService searchService;
 
     @GET
     @Path("/departments")
@@ -467,5 +473,33 @@ public class BusinessManageREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加失败");
         }
         return Response.status(200).entity("success").build();
+    }
+
+    /**
+     * 数据预览
+     *
+     * @return TableShow
+     */
+    @POST
+    @Path("/table/preview")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableShow selectData(GuidCount guidCount) throws AtlasBaseException, SQLException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
+            }
+            TableShow tableShow = searchService.getTableShow(guidCount,true);
+            return tableShow;
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("查询数据失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("查询数据失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
+        }finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 }
