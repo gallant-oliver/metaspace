@@ -109,7 +109,7 @@ public class DataSourceConnection {
     }
 
     public void setDriver() throws AtlasBaseException {
-        SqlEnum.getDriverByName(sourceType,serviceType);
+        this.driver=SqlEnum.getDriverByName(sourceType,serviceType);
     }
 
     public String getUrl() {
@@ -117,6 +117,6 @@ public class DataSourceConnection {
     }
 
     public void setUrl() throws AtlasBaseException {
-        SqlEnum.getUrlByName(sourceType,serviceType,ip,port,database);
+        this.url=SqlEnum.getUrlByName(sourceType,serviceType,ip,port,database);
     }
 }
