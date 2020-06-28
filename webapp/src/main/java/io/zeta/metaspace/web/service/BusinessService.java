@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.business.ColumnPrivilege;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -743,6 +744,7 @@ public class BusinessService {
             if (resultColumnInfoList.size()!=0){
                 totalCount=resultColumnInfoList.get(0).getTotal();
             }
+            resultColumnInfoList.get(0).setDescription("abc");
 
             resultColumnInfoList.forEach(column -> {
                 if(Objects.isNull(column.getDisplayName()) || "".equals(column.getColumnName().trim())) {
@@ -1382,6 +1384,9 @@ public class BusinessService {
     }
 
     public List<String> getNamesByIds(List<String> ids,String tenantId){
+        if (ids==null||ids.size()==0){
+            return new ArrayList<>();
+        }
         List<String> businessNames = businessDao.getBusinessNamesByIds(ids,tenantId);
         return businessNames;
     }
@@ -1471,6 +1476,18 @@ public class BusinessService {
         } catch (Exception e) {
             LOG.error("删除业务对象失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除业务对象失败");
+        }
+    }
+
+    @Transactional(rollbackFor=Exception.class)
+    public int moveBusinesses(CategoryItem categoryItem) throws AtlasBaseException {
+        try {
+            int num = businessDao.updateBusinessInfoCategory(categoryItem.getIds(),categoryItem.getCategoryId());
+            businessDao.updateBusinessRelation(categoryItem.getIds(),categoryItem.getCategoryId());
+            return num;
+        } catch (Exception e) {
+            LOG.error("迁移业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "迁移业务对象失败");
         }
     }
 }

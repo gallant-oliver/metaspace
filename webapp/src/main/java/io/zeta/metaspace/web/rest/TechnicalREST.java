@@ -7,6 +7,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
@@ -19,22 +20,25 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.ImportCategory;
+import org.apache.atlas.model.metadata.MigrateCategory;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -52,9 +56,10 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -78,6 +83,8 @@ public class TechnicalREST {
 
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    private MetaDataService metaDataService;
     private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
 
     @Context
@@ -186,7 +193,7 @@ public class TechnicalREST {
     @DELETE
     @Path("/category/{categoryGuid}")
     @OperateType(DELETE)
-    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
@@ -195,13 +202,13 @@ public class TechnicalREST {
             }
             CategoryEntityV2 category = dataManageService.getCategory(categoryGuid,tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
-            dataManageService.deleteCategory(categoryGuid,tenantId);
+            CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+            return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
-        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -252,8 +259,9 @@ public class TechnicalREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
             String categoryName = dataManageService.getCategoryNameById(categoryGuid,tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryName);
-            dataManageService.assignTablesToCategory(categoryGuid, relations);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:"+categoryName);
+            List<String> ids = relations.stream().map(relation -> relation.getTableGuid()).collect(Collectors.toList());
+            dataManageService.assignTablesToCategory(categoryGuid, ids);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -628,4 +636,86 @@ public class TechnicalREST {
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
+
+    @POST
+    @Path("/category/move")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Valid
+    public Result migrateCategory(MigrateCategory migrateCategory, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            CategoryEntityV2 category = dataManageService.getCategory(migrateCategory.getCategoryId(), tenantId);
+            CategoryEntityV2 parentCategory = dataManageService.getCategory(migrateCategory.getParentId(), tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移目录"+category.getName()+"到"+parentCategory.getName());
+            dataManageService.migrateCategory(migrateCategory.getCategoryId(),migrateCategory.getParentId(),tenantId);
+            return ReturnUtil.success();
+        }catch(AtlasBaseException e){
+            LOG.error("目录迁移失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("目录迁移失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录迁移失败");
+        }
+    }
+
+    /**
+     * 添加关联
+     *
+     * @param item
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("move")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result moveTableToCategory(CategoryItem item, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            if (item.getIds()==null||item.getIds().size()==0){
+                return ReturnUtil.success();
+            }
+            String path = CategoryRelationUtils.getPath(item.getCategoryId(), tenantId);
+            List<String> tableNames = metaDataService.getTableNames(item.getIds());
+            if (tableNames!=null||tableNames.size()!=0){
+                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到"+path);
+
+            }
+            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds());
+            return ReturnUtil.success();
+        }catch(AtlasBaseException e){
+            LOG.error("迁移表关联失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("迁移表关联失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"迁移表关联失败");
+        }
+    }
+
+    /**
+     * 获取目录迁移可迁移到的目录
+     * @param categoryId
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/category/move/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            List<CategoryPrivilege> migrateCategory = dataManageService.getMigrateCategory(categoryId, CATEGORY_TYPE, tenantId);
+            return ReturnUtil.success(migrateCategory);
+        }catch(AtlasBaseException e){
+            LOG.error("获取可以迁移到目录失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取可以迁移到目录失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取可以迁移到目录失败");
+        }
+    }
+
 }

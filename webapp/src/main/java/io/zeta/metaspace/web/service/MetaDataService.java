@@ -2347,4 +2347,11 @@ public class MetaDataService {
         Matcher m = p.matcher(str);
         return m.find();
     }
+
+    public List<String> getTableNames(List<String> tableIds){
+        if (tableIds==null||tableIds.size()==0){
+            return new ArrayList<>();
+        }
+        return tableDAO.getTableNames(tableIds);
+    }
 }

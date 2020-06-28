@@ -209,8 +209,24 @@ public interface RelationDAO {
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
+    @Update("<script>" +
+            "update table_relation set categoryGuid=#{newCategoryId} where categoryGuid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public int updateRelationByCategoryGuid(@Param("ids") List<String> categoryGuids,@Param("newCategoryId")String newCategoryId);
+
     @Select("select count(*) from business_relation where categoryGuid=#{categoryGuid}")
     public int queryBusinessRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
+
+    @Select("<script>" +
+            "select businessid from business_relation where categoryGuid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getBusinessIdsByCategoryGuid(@Param("ids") List<String> categoryGuids);
 
     //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
@@ -260,11 +276,11 @@ public interface RelationDAO {
 
     @Update(" <script>" +
             " update table_relation set categoryGuid=#{categoryGuid},generateTime=#{time} where tableguid in " +
-            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
-            " #{relation.tableGuid}" +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
             " </foreach>" +
             " </script>")
-    public int updateByTableGuids(@Param("relations") List<RelationEntityV2> relations, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
+    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);

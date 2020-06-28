@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
@@ -51,6 +52,8 @@ public class RuleService {
 
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    CategoryDAO categoryDAO;
 
     public int insert(Rule rule,String tenantId) throws AtlasBaseException {
         try {
@@ -262,7 +265,7 @@ public class RuleService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
             }
-            dataManageService.deleteCategory(categoryGuid,tenantId);
+            dataManageService.deleteCategory(categoryGuid,tenantId,4);
         } catch (Exception e) {
             LOG.error("删除目录失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");

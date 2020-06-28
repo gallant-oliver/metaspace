@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -71,6 +72,8 @@ public class DataStandardService {
     TableDAO tableDAO;
     @Autowired
     TenantService tenantService;
+    @Autowired
+    CategoryDAO categoryDAO;
 
     public int insert(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -375,7 +378,7 @@ public class DataStandardService {
             if(dataStandardDAO.countByByCatetoryId(categoryGuid,tenantId) > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
             }
-            dataManageService.deleteCategory(categoryGuid,tenantId);
+            dataManageService.deleteCategory(categoryGuid,tenantId,3);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
