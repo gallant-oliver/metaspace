@@ -316,4 +316,21 @@ public interface BusinessDAO {
             " </foreach>" +
             " </script>")
     public List<String> getBusinessNamesByIds(@Param("businessIds")List<String> businessIds,@Param("tenantId")String tenantId);
+
+    //更新业务信息
+    @Update("<script>" +
+            "update businessinfo set departmentid=#{newCategoryId} where businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int updateBusinessInfoCategory(@Param("businessIds") List<String> ids,@Param("newCategoryId")String newCategoryId);
+
+    @Update("<script>" +
+            "update business_relation set categoryGuid=#{newCategoryId} where businessid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public int updateBusinessRelation(@Param("ids") List<String> businessIds,@Param("newCategoryId")String newCategoryId);
 }

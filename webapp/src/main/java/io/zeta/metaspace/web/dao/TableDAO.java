@@ -88,4 +88,13 @@ public interface TableDAO {
             " offset #{offset}",
             " </script>"})
     public List<MetaDataRelatedAPI> getTableInfluenceWithAPI(@Param("tableGuid")String tableGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select dbname||'.'||tablename from tableinfo " +
+            " where tableguid in " +
+            " <foreach item='id' index='index' collection='tableIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public List<String> getTableNames(@Param("tableIds")List<String> tableIds);
 }

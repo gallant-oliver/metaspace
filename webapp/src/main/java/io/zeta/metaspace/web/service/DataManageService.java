@@ -64,6 +64,7 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
+import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.CategoryPath;
@@ -100,6 +101,8 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import io.zeta.metaspace.model.role.SystemRole;
 
 @Service
@@ -136,6 +139,8 @@ public class DataManageService {
     UserGroupDAO userGroupDAO;
     @Autowired
     TenantService tenantService;
+    @Autowired
+    BusinessDAO businessDAO;
 
     int technicalType=0;
     int dataStandType = 3;
@@ -346,7 +351,7 @@ public class DataManageService {
                     returnEntity.setParentCategoryGuid(null);
                     returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
                     returnEntity.setDownBrotherCategoryGuid(null);
-                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
                     if(type==technicalType){
                         privilege.setDeleteRelation(false);
                     }
@@ -366,7 +371,7 @@ public class DataManageService {
                 returnEntity.setParentCategoryGuid(null);
                 returnEntity.setUpBrotherCategoryGuid(null);
                 returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
                 if (type==1){
                     privilege.setAsh(true);
                 }
@@ -491,49 +496,49 @@ public class DataManageService {
      * @throws Exception
      */
     @Transactional(rollbackFor=Exception.class)
-    public int deleteCategory(String guid,String tenantId) throws Exception {
-        try {
-            int childrenNum = categoryDao.queryChildrenNum(guid,tenantId);
-            if (childrenNum > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
-            }
-            int relationNum = relationDao.queryRelationNumByCategoryGuid(guid);
-            int businessRelationNum = relationDao.queryBusinessRelationNumByCategoryGuid(guid);
-            if (relationNum > 0 || businessRelationNum > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在关联关系");
-            }
-            CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid,tenantId);
-            if (Objects.isNull(currentCatalog)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
-            }
-            String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
-            String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-                categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
-            }
-            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-                categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
-            }
-            if (TenantService.defaultTenant.equals(tenantId)){
-                User user = AdminUtils.getUserData();
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus()==0)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                }
-                roleDao.deleteRole2categoryByUserId(guid);
+    public CategoryDeleteReturn deleteCategory(String guid,String tenantId,int type) throws Exception {
+        List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid,tenantId);
+        categoryIds.add(guid);
+        int item=0;
+        if (type==0){
+            item = relationDao.updateRelationByCategoryGuid(categoryIds,"1");
+        }else if (type==1){
+            List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
+            if (businessIds==null||businessIds.size()==0){
+                item=0;
             }else{
-                userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
+                item = businessDAO.deleteBusinessesByIds(businessIds);
+                businessDAO.deleteRelationByBusinessIds(businessIds);
+                businessDAO.deleteRelationByIds(businessIds);
             }
-            return categoryDao.delete(guid,tenantId);
-        } catch (SQLException e) {
-            LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("删除目录失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除目录失败");
         }
+        CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid,tenantId);
+        if (Objects.isNull(currentCatalog)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
+        }
+        String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
+        String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
+        if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
+            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
+        }
+        if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
+            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
+        }
+        if (TenantService.defaultTenant.equals(tenantId)){
+            User user = AdminUtils.getUserData();
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if (roles.stream().allMatch(role -> role.getStatus()==0)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            }
+            roleDao.deleteRole2categoryByUserId(guid);
+        }else{
+            userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
+        }
+        int category = categoryDao.deleteCategoryByIds(categoryIds, tenantId);
+        CategoryDeleteReturn deleteReturn = new CategoryDeleteReturn();
+        deleteReturn.setCategory(category);
+        deleteReturn.setItem(item);
+        return deleteReturn;
     }
 
     /**
@@ -583,17 +588,17 @@ public class DataManageService {
      * 添加关联
      *
      * @param categoryGuid
-     * @param relations
+     * @param ids
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor=Exception.class)
-    public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations) throws AtlasBaseException {
+    public void assignTablesToCategory(String categoryGuid, List<String> ids) throws AtlasBaseException {
         try {
-            if (relations==null||relations.size()==0){
+            if (ids==null||ids.size()==0){
                 return;
             }
             Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
-            relationDao.updateByTableGuids(relations,categoryGuid,timestamp);
+            relationDao.updateByTableGuids(ids,categoryGuid,timestamp);
         } catch (Exception e) {
             LOG.error("添加关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
@@ -2014,5 +2019,53 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"文件异常："+e.getMessage());
         }
         return ExportDataPathUtils.transferTo(fileInputStream);
+    }
+
+    public void migrateCategory(String categoryId,String parentId,String tenantId) throws Exception{
+        CategoryEntityV2 category = categoryDao.queryByGuid(categoryId, tenantId);
+        if (category==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"目录不存在");
+        }
+        String upId = category.getUpBrotherCategoryGuid();
+        String downId = category.getDownBrotherCategoryGuid();
+        String lastChildGuid = categoryDao.queryLastChildCategory(parentId,tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(upId,downId,tenantId);
+        categoryDao.updateUpBrotherCategoryGuid(downId,upId,tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid,categoryId,tenantId);
+        categoryDao.updateParentCategoryGuid(categoryId,parentId,lastChildGuid,null,tenantId);
+    }
+
+    /**
+     * 获取目录迁移可迁移到的目录
+     * @param categoryId
+     * @param type
+     * @param tenantId
+     * @return
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    public List<CategoryPrivilege> getMigrateCategory(String categoryId,int type,String tenantId) throws SQLException, AtlasBaseException {
+        CategoryEntityV2 category = getCategory(categoryId, tenantId);
+        if (category==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"目录不存在");
+        }
+        if (category.getLevel()==1){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"一级目录无法迁移");
+        }
+        List<CategoryPrivilege> allCategory = getAllByUserGroup(type, tenantId);
+        List<CategoryPrivilege> categories = allCategory.stream()
+                .filter(cate -> cate.getLevel() == category.getLevel() - 1 && cate.getPrivilege().isAddChildren()&&!cate.getGuid().equals(category.getParentCategoryGuid()))
+                .collect(Collectors.toList());
+        if (categories.size()==0){
+            return categories;
+        }
+        List<String> categoryIds = categories.stream().map(cate -> cate.getGuid()).collect(Collectors.toList());
+        List<RoleModulesCategories.Category> parentCategories = userGroupDAO.getParentCategorys(categoryIds, type, tenantId);
+        List<CategoryPrivilege> categoryPrivileges = parentCategories.stream().map(cate -> {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(cate);
+            return categoryPrivilege;
+        }).collect(Collectors.toList());
+        categories.addAll(categoryPrivileges);
+        return categories;
     }
 }

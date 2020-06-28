@@ -90,6 +90,9 @@ public interface CategoryDAO {
     @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid,@Param("tenantId")String tenantId);
 
+    @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateParentCategoryGuid(@Param("guid")String guid, @Param("parentcategoryguid")String parentcategoryguid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid,@Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
+
     @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
 
@@ -98,6 +101,14 @@ public interface CategoryDAO {
 
     @Delete("delete from category where guid=#{guid} and tenantid=#{tenantId}")
     public int delete(@Param("guid")String guid,@Param("tenantId")String tenantId) throws SQLException;
+
+    @Delete("<script>" +
+            "delete from category where tenantid=#{tenantId} and guid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int deleteCategoryByIds(@Param("ids")List<String> ids,@Param("tenantId")String tenantId);
 
     @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType} and tenantid=#{tenantId}")
     public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType,@Param("tenantId") String tenantId) throws SQLException;
@@ -149,7 +160,7 @@ public interface CategoryDAO {
             "UNION " +
             "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid and category.tenantid=#{tenantId}) " +
             "SELECT guid FROM categoryTree")
-    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
+    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid,@Param("tenantId")String tenantId);
 
     @Delete({"<script>",
              "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
