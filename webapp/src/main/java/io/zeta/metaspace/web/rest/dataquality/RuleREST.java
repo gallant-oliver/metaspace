@@ -365,15 +365,15 @@ public class RuleREST {
         }
     }
 
-    @GET
-    @Path("{id}/used")
+    @POST
+    @Path("/used")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getRuleUsed(@PathParam("id") String id)
+    public Result getRuleUsed(List<String> ids)
             throws Exception
     {
         try {
-            List<DataTaskIdAndName> used = ruleService.getRuleUsed(id);
+            List<DataTaskIdAndName> used = ruleService.getRuleUsed(ids);
             return ReturnUtil.success(used);
         }catch (Exception e){
             LOG.error("获取使用规则任务失败",e);

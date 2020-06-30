@@ -507,6 +507,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelation(" + categoryGuid + ")");
             }
+
             return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery,tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -1052,7 +1053,6 @@ public class BusinessREST {
     @Path("/download/file/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(DELETE)
     public void downloadBusinessTemplate() throws AtlasBaseException {
         try {
             String homeDir = System.getProperty("atlas.home");

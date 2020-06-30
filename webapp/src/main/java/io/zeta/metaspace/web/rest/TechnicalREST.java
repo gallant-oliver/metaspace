@@ -360,7 +360,10 @@ public class TechnicalREST {
     @Path("/owner/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Response addOwners(TableOwner tableOwner,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        List<String> tableNames = metaDataService.getTableNames(tableOwner.getTables());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "修改表owner:[" + Joiner.on("、").join(tableNames) + "]");
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {

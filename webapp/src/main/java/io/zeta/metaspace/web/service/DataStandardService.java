@@ -378,6 +378,10 @@ public class DataStandardService {
             if(dataStandardDAO.countByByCatetoryId(categoryGuid,tenantId) > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
             }
+            int childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
+            if (childrenNum > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
+            }
             dataManageService.deleteCategory(categoryGuid,tenantId,3);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());

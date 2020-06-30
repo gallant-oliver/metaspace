@@ -26,10 +26,10 @@ public interface TableDAO {
     @Select("select businessinfo.name businessObject,category.name department,businessinfo.submitter businessLeader from business2table,businessinfo,category where businessinfo.businessid=business2table.businessid and businessinfo.departmentid=category.guid and business2table.tableguid=#{guid} and category.tenantid=#{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description})")
     public int addTable(@Param("table") TableInfo table);
 
-    @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName} where tableguid=#{table.tableGuid}")
+    @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
     @Select("select tableguid from tableinfo except select tableguid from table_relation")
@@ -97,4 +97,15 @@ public interface TableDAO {
             " </foreach>" +
             " </script>")
     public List<String> getTableNames(@Param("tableIds")List<String> tableIds);
+
+    @Select("<script>" +
+            " select count(1) from tableinfo where tablename=#{tableName} and dbname=#{dbName} and tableguid=#{tableGuid} " +
+            " <if test=\"description != null\">" +
+            "and description=#{description} " +
+            " </if>" +
+            " <if test=\"description == null\">" +
+            "and description is null " +
+            " </if>" +
+            " </script>")
+    public Integer ifTableInfo(TableInfo table);
 }

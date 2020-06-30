@@ -71,6 +71,7 @@ import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
@@ -220,6 +221,7 @@ public class DataManageService {
                         for (CategoryPrivilege categoryPrivilege:userGroupService.getUserCategory(userGroupId, type,modules,tenantId)){
                             if (valueMap.containsKey(categoryPrivilege.getGuid())&&valueMap.get(categoryPrivilege.getGuid())!=null){
                                 valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
+                                valueMap.get(categoryPrivilege.getGuid()).mergeCount(categoryPrivilege.getCount());
                             }else{
                                 valueMap.put(categoryPrivilege.getGuid(),categoryPrivilege);
                             }
@@ -258,7 +260,7 @@ public class DataManageService {
             if (count==null||count==0){
                 continue;
             }
-            String[] parentCategory = path.getPath().replace("{", "").replace("}", "").split(",");
+            String[] parentCategory = path.getPath().replace("\"","").replace("{", "").replace("}", "").split(",");
             for (int i=0;i<parentCategory.length;i++){
                 if (countMap.containsKey(parentCategory[i])){
                     countMap.put(parentCategory[i],countMap.get(parentCategory[i])+count);
@@ -1209,6 +1211,7 @@ public class DataManageService {
                             tableInfo.setDatabaseGuid(relatedDB.getGuid());
                             tableInfo.setDbName(relatedDB.getDisplayText());
                             tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+                            tableInfo.setDescription(getEntityAttribute(entity, "comment"));
                             tableDAO.addTable(tableInfo);
                         }
                     }
@@ -1283,6 +1286,7 @@ public class DataManageService {
                     tableInfo.setDatabaseGuid(list.getDatabaseId());
                     tableInfo.setDbName(list.getDatabaseName());
                     tableInfo.setDatabaseStatus(list.getDatabaseStatus());
+                    tableInfo.setDescription(list.getDescription());
                     tableDAO.addTable(tableInfo);
                 }
             }
@@ -1305,6 +1309,7 @@ public class DataManageService {
                         TableInfo tableInfo = new TableInfo();
                         tableInfo.setTableGuid(entity.getGuid());
                         tableInfo.setTableName(getEntityAttribute(entity, "name"));
+                        tableInfo.setDescription(getEntityAttribute(entity, "comment"));
                         AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
                         tableInfo.setDbName(relatedDB.getDisplayText());
                         tableDAO.updateTable(tableInfo);
@@ -2021,6 +2026,30 @@ public class DataManageService {
         return ExportDataPathUtils.transferTo(fileInputStream);
     }
 
+
+    @Transactional(rollbackFor=Exception.class)
+    public void updateTable() throws AtlasBaseException {
+        PageResult<Table> tableNameAndDbNameByQuery;
+        //判断独立部署和多租户
+        tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1);
+        List<Table> lists = tableNameAndDbNameByQuery.getLists();
+        for (Table list : lists) {
+            String tableId = list.getTableId();
+            TableInfo tableInfo = new TableInfo();
+            tableInfo.setTableGuid(tableId);
+            tableInfo.setTableName(list.getTableName());
+            tableInfo.setDbName(list.getDatabaseName());
+            String description = list.getDescription();
+            if (!description.equals("")){
+                tableInfo.setDescription(list.getDescription());
+            }
+            if (tableDAO.ifTableInfo(tableInfo) == 0) {
+                tableDAO.updateTable(tableInfo);
+            }
+        }
+
+    }
+
     public void migrateCategory(String categoryId,String parentId,String tenantId) throws Exception{
         CategoryEntityV2 category = categoryDao.queryByGuid(categoryId, tenantId);
         if (category==null){
@@ -2067,5 +2096,6 @@ public class DataManageService {
         }).collect(Collectors.toList());
         categories.addAll(categoryPrivileges);
         return categories;
+
     }
 }
