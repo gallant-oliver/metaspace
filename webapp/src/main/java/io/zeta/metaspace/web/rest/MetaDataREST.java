@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.*;
@@ -35,6 +36,7 @@ import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -1021,6 +1023,23 @@ public class MetaDataREST {
             return metadataService.getCheckingTableInfo(tableGuid);
         }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Path("update/supplementTable")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result updateTable() throws AtlasBaseException {
+        try {
+            dataManageService.updateTable();
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            PERF_LOG.error(e.getMessage(), e);
+            throw e;
+        }catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新表信息失败");
         }
     }
 

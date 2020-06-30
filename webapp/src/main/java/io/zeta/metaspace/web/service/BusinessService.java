@@ -279,27 +279,7 @@ public class BusinessService {
                 info.setEditTechnical(editTechnical);
             }
             //tables
-            List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
-            tables.forEach(table -> {
-                String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
-                if(Objects.nonNull(displayName)) {
-                    table.setDisplayName(displayName);
-                } else {
-                    table.setDisplayName(table.getTableName());
-                }
-            });
-
-            String trustTableGuid = businessDao.getTrustTableGuid(businessId);
-            if(Objects.nonNull(trustTableGuid)) {
-                TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
-                if(Objects.nonNull(trustTable)) {
-                    tables.remove(trustTable);
-                    trustTable.setTrust(true);
-                    tables.add(0, trustTable);
-                } else {
-                    tables.stream().findFirst().get().setTrust(true);
-                }
-            }
+            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId);
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -310,6 +290,31 @@ public class BusinessService {
             LOG.error("获取关联表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
         }
+    }
+
+    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId){
+        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+        tables.forEach(table -> {
+            String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
+            if(Objects.nonNull(displayName)) {
+                table.setDisplayName(displayName);
+            } else {
+                table.setDisplayName(table.getTableName());
+            }
+        });
+
+        String trustTableGuid = businessDao.getTrustTableGuid(businessId);
+        if(Objects.nonNull(trustTableGuid)) {
+            TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
+            if(Objects.nonNull(trustTable)) {
+                tables.remove(trustTable);
+                trustTable.setTrust(true);
+                tables.add(0, trustTable);
+            } else {
+                tables.stream().findFirst().get().setTrust(true);
+            }
+        }
+        return tables;
     }
 
     public PageResult<BusinessInfoHeader> getBusinessListByCategoryId(String categoryId, Parameters parameters,String tenantId) throws AtlasBaseException {
@@ -332,6 +337,8 @@ public class BusinessService {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                infoHeader.setTables(tables);
             }
             long totalSize = 0;
             if(list.size()!=0){
@@ -486,6 +493,8 @@ public class BusinessService {
                     int length = 2;
                     if (pathArr.length >= length)
                         infoHeader.setLevel2Category(pathArr[1]);
+                    List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                    infoHeader.setTables(tables);
                 }
                 pageResult.setLists(businessInfoList);
                 long totalsize = 0;

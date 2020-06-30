@@ -265,6 +265,10 @@ public class RuleService {
             if(count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
             }
+            int childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
+            if (childrenNum > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
+            }
             dataManageService.deleteCategory(categoryGuid,tenantId,4);
         } catch (Exception e) {
             LOG.error("删除目录失败", e);
@@ -280,7 +284,10 @@ public class RuleService {
         return ruleDAO.getNameById(id);
     }
 
-    public List<DataTaskIdAndName> getRuleUsed(String id){
-        return ruleDAO.getRuleUsed(id);
+    public List<DataTaskIdAndName> getRuleUsed(List<String> ids){
+        if (ids==null||ids.size()==0){
+            return new ArrayList<>();
+        }
+        return ruleDAO.getRuleUsed(ids);
     }
 }

@@ -70,7 +70,7 @@ public interface BusinessDAO {
     public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //添加目录/业务对象关联

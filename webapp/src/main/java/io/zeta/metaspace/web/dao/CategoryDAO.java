@@ -265,7 +265,7 @@ public interface CategoryDAO {
             " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId}" +
             " UNION ALL " +
             " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
-            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=0 and D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=#{categoryType} and D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
             " SELECT  guid,PATH path FROM T " +
             " ORDER BY PATH")
     public List<CategoryPath> getPath(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);

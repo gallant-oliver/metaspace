@@ -59,6 +59,12 @@ public class CategoryPrivilege {
         return level;
     }
 
+    public void mergeCount(int count){
+        if (count>this.count){
+            this.count=count;
+        }
+    }
+
     public void setLevel(int level) {
         this.level = level;
     }
