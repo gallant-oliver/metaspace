@@ -59,6 +59,12 @@ public class CategoryPrivilege {
         return level;
     }
 
+    public void mergeCount(int count){
+        if (count>this.count){
+            this.count=count;
+        }
+    }
+
     public void setLevel(int level) {
         this.level = level;
     }
@@ -166,6 +172,16 @@ public class CategoryPrivilege {
         private boolean deleteRelation;
         //添加owner
         private boolean addOwner;
+        //是否可以迁移
+        private boolean move;
+
+        public boolean isMove() {
+            return move;
+        }
+
+        public void setMove(boolean move) {
+            this.move = move;
+        }
 
         public boolean isEditSafe() {
             return editSafe;
@@ -262,6 +278,7 @@ public class CategoryPrivilege {
             this.addOwner = privilege.isAddOwner();
             this.edit=privilege.isEdit();
             this.editSafe=privilege.isEditSafe();
+            this.move=privilege.move;
         }
 
         public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner,boolean edit,boolean editSafe) {
@@ -275,6 +292,7 @@ public class CategoryPrivilege {
             this.createRelation = createRelation;
             this.deleteRelation = deleteRelation;
             this.addOwner = addOwner;
+            this.move=addSibling;
         }
         public void mergePrivilege(Privilege  privilege){
             this.ash=this.ash&&privilege.ash;
@@ -287,6 +305,7 @@ public class CategoryPrivilege {
             this.createRelation=this.createRelation||privilege.createRelation;
             this.deleteRelation=this.deleteRelation||privilege.deleteRelation;
             this.addOwner=this.addOwner||privilege.addOwner;
+            this.move=this.move||privilege.move;
 
         }
         public void adminPrivilege(String guid){

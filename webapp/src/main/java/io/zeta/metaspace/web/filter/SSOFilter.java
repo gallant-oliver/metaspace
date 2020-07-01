@@ -21,6 +21,7 @@ import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.FilterUtils;
 import io.zeta.metaspace.web.util.GuavaUtils;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.StringUtils;

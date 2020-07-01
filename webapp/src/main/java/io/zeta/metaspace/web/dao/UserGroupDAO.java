@@ -228,11 +228,15 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
-            "    <foreach item='item' index='index' collection='dbNames'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        <if test='dbNames!=null and dbNames.size()>0'>" +
+            "          or dbname in " +
+            "          <foreach item='item' index='index' collection='dbNames'" +
+            "          open='(' separator=',' close=')'>" +
+            "          #{item}" +
+            "          </foreach>" +
+            "        </if>" +
+            "        )" +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
@@ -262,11 +266,15 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
-            "    <foreach item='item' index='index' collection='dbNames'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        <if test='dbNames!=null and dbNames.size()>0'>" +
+            "          or dbname in " +
+            "          <foreach item='item' index='index' collection='dbNames'" +
+            "          open='(' separator=',' close=')'>" +
+            "          #{item}" +
+            "          </foreach>" +
+            "        </if>" +
+            "        )" +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
@@ -319,11 +327,15 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and dbname in " +
-            "    <foreach item='item' index='index' collection='dbNames'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        <if test='dbNames!=null and dbNames.size()>0'>" +
+            "          or dbname in " +
+            "          <foreach item='item' index='index' collection='dbNames'" +
+            "          open='(' separator=',' close=')'>" +
+            "          #{item}" +
+            "          </foreach>" +
+            "        </if>" +
+            "        )" +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +

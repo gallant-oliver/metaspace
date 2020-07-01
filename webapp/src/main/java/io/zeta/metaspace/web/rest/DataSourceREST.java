@@ -684,15 +684,15 @@ public class DataSourceREST {
 
     }
 
-    @GET
-    @Path("{id}/rely")
+    @POST
+    @Path("/rely")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getAPIRely(@PathParam("id") String id)
+    public Result getAPIRely(List<String> ids)
             throws Exception
     {
         try {
-            List<APIIdAndName> apiRely = dataSourceService.getAPIRely(id);
+            List<APIIdAndName> apiRely = dataSourceService.getAPIRely(ids);
             return ReturnUtil.success(apiRely);
         }catch (AtlasBaseException e){
             LOG.error("获取数据源依赖失败",e);

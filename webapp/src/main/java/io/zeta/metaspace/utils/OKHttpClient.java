@@ -91,9 +91,10 @@ public class OKHttpClient {
             }
             Request request = builder.build();
             return getResponse(request);
-        } catch (Exception e) {
-            LOG.error("请求失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+        } catch(AtlasBaseException e){
+            throw e;
+        }catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "请求失败"+e.getMessage());
         }
     }
 
@@ -107,9 +108,10 @@ public class OKHttpClient {
                     .post(body)
                     .build();
             return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
         } catch(Exception e) {
-            LOG.error("请求失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
         }
     }
 
@@ -129,8 +131,7 @@ public class OKHttpClient {
         }catch (AtlasBaseException e){
             throw e;
         }catch(Exception e) {
-            LOG.error("请求失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "请求失败"+e.getMessage());
         }
     }
 
@@ -164,9 +165,10 @@ public class OKHttpClient {
                     .put(body)
                     .build();
             return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
         } catch(Exception e) {
-            LOG.error("请求失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败"+e.getMessage());
         }
     }
 
@@ -187,9 +189,10 @@ public class OKHttpClient {
             }
             Request request = builder.delete().build();
             return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
-            LOG.error("请求失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"请求失败"+e.getMessage());
         }
     }
 
@@ -215,18 +218,14 @@ public class OKHttpClient {
             try {
                 Call call = client.newCall(request);
                 Response response = call.execute();
-                if (response.isSuccessful()) {
-                    InputStream in = response.body().byteStream();
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    byte[] buffer = new byte[1024];
-                    int len = 0;
-                    while ((len = in.read(buffer)) != -1) {
-                        baos.write(buffer, 0, len);
-                    }
-                    return URLDecoder.decode(baos.toString(), "UTF-8");
-                } else {
-                    throw new Exception("HTTP ERROR Status: " + response.code() + ":" + response.message());
+                InputStream in = response.body().byteStream();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = in.read(buffer)) != -1) {
+                    baos.write(buffer, 0, len);
                 }
+                return URLDecoder.decode(baos.toString(), "UTF-8");
             } catch (Exception e) {
                 if (count<size){
                     LOG.error("第"+count +"次请求失败：", e);
@@ -237,8 +236,7 @@ public class OKHttpClient {
                     count++;
                     continue;
                 }
-                LOG.error("请求失败", e);
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "请求失败"+e.getMessage());
             }
         }
     }

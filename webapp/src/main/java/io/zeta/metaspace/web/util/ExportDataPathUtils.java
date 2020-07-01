@@ -20,6 +20,9 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Joiner;
 import com.google.common.io.Files;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.DownloadUri;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.Atlas;
@@ -27,13 +30,18 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,20 +54,19 @@ import java.util.UUID;
  * @date 2019/9/18 13:47
  */
 public class ExportDataPathUtils {
-    private static Configuration conf;
     public static String SEPARATOR = ",";
     public static String tmpFilePath;
     static {
-        try {
-            conf = ApplicationProperties.get();
-            tmpFilePath=conf.getString("metaspace.tmp.filepath","/tmp/metaspace");
-        } catch (AtlasException e) {
-            throw new RuntimeException(e);
+        tmpFilePath=System.getProperty("java.io.tmpdir");
+        if (tmpFilePath.endsWith(String.valueOf(File.separatorChar))){
+            tmpFilePath=tmpFilePath +"metaspace";
+        }else{
+            tmpFilePath=tmpFilePath+File.separatorChar+"metaspace";
         }
-
     }
     public static String fileFormat1 = ".xlsx";
     public static String fileFormat2 = ".xls";
+    public static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
 
     public static DownloadUri generateURL(String address,List<String> ids) throws AtlasBaseException {
         String downloadId = UUID.randomUUID().toString();
@@ -128,5 +135,18 @@ public class ExportDataPathUtils {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
         return uploadId;
+    }
+
+    public static File fileCheck(String name, InputStream fileInputStream) throws AtlasBaseException, IOException {
+        if(!(name.endsWith(fileFormat1) || name.endsWith(fileFormat2))) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
+        }
+
+        File file = new File(name);
+        FileUtils.copyInputStreamToFile(fileInputStream, file);
+        if(file.length() > MAX_EXCEL_FILE_SIZE) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
+        }
+        return file;
     }
 }

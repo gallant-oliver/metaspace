@@ -19,6 +19,7 @@ public class FilterUtils {
         add("/api/metaspace/tenant");
         add("/api/metaspace/admin/version");
         add("/api/metaspace/cache");
+        add("api/metaspace/metadata/update/supplementTable");
     }};
 
     public static boolean isSkipUrl(String requestURL) {

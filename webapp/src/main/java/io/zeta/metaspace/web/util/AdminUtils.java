@@ -107,6 +107,8 @@ public class AdminUtils {
             user.setUsername(m.get("DisplayName").toString());
             userCache.put(cacheKey,user);
             return user;
+        }catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.SSO_CHECK_ERROE);
         }

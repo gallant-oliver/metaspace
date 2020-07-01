@@ -18,6 +18,8 @@ package io.zeta.metaspace.model.business;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.util.List;
+
 /*
  * @description
  * @author sunhaoning
@@ -35,8 +37,17 @@ public class BusinessInfoHeader {
     private String ticketNumber;
     private String categoryGuid;
     private String trustTable;
+    private List<TechnologyInfo.Table> tables;
     @JsonIgnore
     private int total;
+
+    public List<TechnologyInfo.Table> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<TechnologyInfo.Table> tables) {
+        this.tables = tables;
+    }
 
     public int getTotal() {
         return total;

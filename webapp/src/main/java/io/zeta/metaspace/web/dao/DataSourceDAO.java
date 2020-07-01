@@ -449,8 +449,13 @@ public interface DataSourceDAO {
     public String getIsApi(@Param("sourceId") String sourceId);
 
     //查询api数据源是否依赖
-    @Select("select guid,name from apiinfo where sourceId=#{sourceId}")
-    public List<APIIdAndName> getAPIRely(@Param("sourceId") String sourceId);
+    @Select("<script>" +
+            "select guid,name from apiinfo where sourceId in " +
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" +
+            "#{sourceId}"+
+            "</foreach>"+
+            "</script>")
+    public List<APIIdAndName> getAPIRely(@Param("sourceIds") List<String> sourceIds);
 
     @Select("select p.privilege_code from datasource_group_relation p join user_group_relation u on p.group_id=u.group_id " +
             "where p.source_id=#{sourceId} and u.user_id=#{userId}")

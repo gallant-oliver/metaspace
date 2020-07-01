@@ -41,8 +41,18 @@ public class TechnologyInfo {
         private boolean trust;
         private String databaseGuid;
         private String displayName;
+        private String description;
+
         @JsonIgnore
         private int total;
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
 
         public int getTotal() {
             return total;
