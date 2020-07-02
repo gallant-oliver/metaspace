@@ -238,12 +238,16 @@ public class MetaDataREST {
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
         } catch (AtlasBaseException e) {
+            LOG.error("查询建表语句失败",e);
             throw e;
         } catch (SQLException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
         } catch (IOException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
         } catch (AtlasException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
