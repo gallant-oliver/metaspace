@@ -353,7 +353,12 @@ public class DataManageService {
                     returnEntity.setParentCategoryGuid(null);
                     returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
                     returnEntity.setDownBrotherCategoryGuid(null);
-                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+                    CategoryPrivilege.Privilege privilege = null;
+                    if(type==0||type==1){
+                        privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+                    }else{
+                        privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+                    }
                     if(type==technicalType){
                         privilege.setDeleteRelation(false);
                     }
@@ -373,7 +378,12 @@ public class DataManageService {
                 returnEntity.setParentCategoryGuid(null);
                 returnEntity.setUpBrotherCategoryGuid(null);
                 returnEntity.setDownBrotherCategoryGuid(null);
-                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+                CategoryPrivilege.Privilege privilege = null;
+                if(type==0||type==1){
+                    privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+                }else{
+                    privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+                }
                 if (type==1){
                     privilege.setAsh(true);
                 }
@@ -2050,10 +2060,13 @@ public class DataManageService {
 
     }
 
-    public void migrateCategory(String categoryId,String parentId,String tenantId) throws Exception{
+    public void migrateCategory(String categoryId,String parentId,int type,String tenantId) throws Exception{
         CategoryEntityV2 category = categoryDao.queryByGuid(categoryId, tenantId);
         if (category==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"目录不存在");
+        }
+        if (categoryDao.querySameNameNum(category.getName(),parentId,type,tenantId)>0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"存在同名目录，请迁移到其他目录或修改目录名字");
         }
         String upId = category.getUpBrotherCategoryGuid();
         String downId = category.getDownBrotherCategoryGuid();
