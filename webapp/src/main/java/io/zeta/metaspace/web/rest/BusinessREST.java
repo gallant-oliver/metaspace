@@ -392,6 +392,8 @@ public class BusinessREST {
      */
     @DELETE
     @Path("/categories/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
@@ -1079,7 +1081,7 @@ public class BusinessREST {
             CategoryEntityV2 category = dataManageService.getCategory(migrateCategory.getCategoryId(), tenantId);
             CategoryEntityV2 parentCategory = dataManageService.getCategory(migrateCategory.getParentId(), tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "迁移目录" + category.getName() + "到" + parentCategory.getName());
-            dataManageService.migrateCategory(migrateCategory.getCategoryId(), migrateCategory.getParentId(), tenantId);
+            dataManageService.migrateCategory(migrateCategory.getCategoryId(), migrateCategory.getParentId(),CATEGORY_TYPE, tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
             PERF_LOG.error("目录迁移失败", e);
