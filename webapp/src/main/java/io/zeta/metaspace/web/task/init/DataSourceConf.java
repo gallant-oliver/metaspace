@@ -37,7 +37,6 @@ public class DataSourceConf {
     public int maximumPoolSize;
     public int idleTimeout;
     public long connectionTimeout;
-    public HikariDataSource dataSource;
     public DataSourceConf() throws AtlasBaseException {
         try{
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
@@ -49,16 +48,6 @@ public class DataSourceConf {
             maximumPoolSize=configuration.getInt("metaspace.database.maxPoolSize");
             idleTimeout=configuration.getInt("metaspace.database.maxIdleTime");
             connectionTimeout=configuration.getLong("metaspace.database.checkoutTimeout");
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setDriverClassName(driverClassName);
-            hikariConfig.setJdbcUrl(jdbcUrl);
-            hikariConfig.setUsername(username);
-            hikariConfig.setPassword(password);
-            hikariConfig.setMinimumIdle(minimumIdle);
-            hikariConfig.setMaximumPoolSize(maximumPoolSize);
-            hikariConfig.setIdleTimeout(idleTimeout);
-            hikariConfig.setConnectionTimeout(connectionTimeout);
-            dataSource = new HikariDataSource(hikariConfig);
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "初始化表失败：" + e.getMessage());
         }
