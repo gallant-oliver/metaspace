@@ -85,8 +85,8 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                     System.setProperty("app.id", id);
                     String cachedir = instance.getString("apollo.cacheDir");
                     System.setProperty("apollo.cacheDir", cachedir);
-                    Config appConfig = ConfigService.getConfig("ceshi");
-
+                    String namespace = instance.getString("apollo.bootstrap.namespaces");
+                    Config appConfig = ConfigService.getConfig(namespace);
                     //添加配置
                     Set<String> propertyNames = appConfig.getPropertyNames();
                     for (String key:propertyNames){
