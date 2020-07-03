@@ -192,6 +192,8 @@ public class TechnicalREST {
      */
     @DELETE
     @Path("/category/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
     public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
@@ -422,8 +424,11 @@ public class TechnicalREST {
         AtlasPerfTracer perf = null;
         try {
             if (!updating.getAndSet(true)) {
-                dataManageService.updateOrganization();
-                updating.set(false);
+                try{
+                    dataManageService.updateOrganization();
+                }finally {
+                    updating.set(false);
+                }
             } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "正在更新组织架构！");
             }
@@ -650,7 +655,7 @@ public class TechnicalREST {
             CategoryEntityV2 category = dataManageService.getCategory(migrateCategory.getCategoryId(), tenantId);
             CategoryEntityV2 parentCategory = dataManageService.getCategory(migrateCategory.getParentId(), tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移目录"+category.getName()+"到"+parentCategory.getName());
-            dataManageService.migrateCategory(migrateCategory.getCategoryId(),migrateCategory.getParentId(),tenantId);
+            dataManageService.migrateCategory(migrateCategory.getCategoryId(),migrateCategory.getParentId(),CATEGORY_TYPE,tenantId);
             return ReturnUtil.success();
         }catch(AtlasBaseException e){
             LOG.error("目录迁移失败",e);

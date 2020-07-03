@@ -353,6 +353,7 @@ public class SearchService {
             buildTableSql.setTableId(tableId);
             return buildTableSql;
         } catch (Exception e) {
+            LOG.error("获取hive连接失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }

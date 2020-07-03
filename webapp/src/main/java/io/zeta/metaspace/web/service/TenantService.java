@@ -506,6 +506,7 @@ public class TenantService {
             poolCache.invalidate(getCacheKey(tenant.getTenantId()));
             databaseCache.invalidate(getCacheKey(tenant.getTenantId()));
             databaseCache.invalidate(tenant);
+            databaseCache.invalidateAll();
             tenantsCache.invalidate(AdminUtils.getSSOTicket());
         }
     }

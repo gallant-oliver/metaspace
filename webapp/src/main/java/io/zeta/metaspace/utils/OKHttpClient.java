@@ -29,7 +29,8 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.io.ByteArrayOutputStream;
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OKHttpClient {
 
-    private static Logger LOG = Logger.getLogger(OKHttpClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OKHttpClient.class);
     private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
     private static int size;

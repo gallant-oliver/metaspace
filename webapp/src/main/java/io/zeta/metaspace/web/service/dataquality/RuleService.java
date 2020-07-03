@@ -259,21 +259,17 @@ public class RuleService {
         }
     }
 
-    public void deleteCategory(String categoryGuid,String tenantId) throws AtlasBaseException {
-        try {
-            int count = ruleDAO.getCategoryObjectCount(categoryGuid,tenantId);
-            if(count > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
-            }
-            int childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
-            if (childrenNum > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
-            }
-            dataManageService.deleteCategory(categoryGuid,tenantId,4);
-        } catch (Exception e) {
-            LOG.error("删除目录失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+    public void deleteCategory(String categoryGuid,String tenantId) throws Exception {
+        int count = ruleDAO.getCategoryObjectCount(categoryGuid,tenantId);
+        if(count > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
         }
+        int childrenNum;
+        childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
+        if (childrenNum > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
+        }
+        dataManageService.deleteCategory(categoryGuid,tenantId,4);
     }
 
     public String getCategoryName(String categoryGuid,String tenantId) {

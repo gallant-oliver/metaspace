@@ -1075,8 +1075,8 @@ public class BusinessService {
             valueCell = row.getCell(1);
             key = Objects.nonNull(keyCell)?keyCell.getStringCellValue():"";
             value = Objects.nonNull(valueCell)?valueCell.getStringCellValue():"";
-            String header1 = "显示名称";
-            String header2 = "字段名称";
+            String header1 = "字段名称";
+            String header2 = "显示名称";
             if(!header1.equals(key) || !header2.equals(value)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Excel表头错误，表头名称应为【字段名称】和【显示名称】");
             }

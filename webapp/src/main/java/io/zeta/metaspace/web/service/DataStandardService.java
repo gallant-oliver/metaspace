@@ -359,10 +359,15 @@ public class DataStandardService {
         for (CategoryPrivilege category : result) {
             String parentGuid = category.getParentCategoryGuid();
             CategoryPrivilege.Privilege privilege = null;
+            String parentPattern = "^Standard-([0-9])+$";
             if(parentGuid == null) {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false,false);
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true,false);
             } else {
                 privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
+            }
+            if (category.getGuid().matches(parentPattern)){
+                privilege.setEdit(false);
+                privilege.setDelete(false);
             }
             category.setPrivilege(privilege);
         }
