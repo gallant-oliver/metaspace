@@ -1072,6 +1072,9 @@ public class DataManageService {
             String firstPid = configuration.getString(ORGANIZATION_FIRST_PID);
             for(Organization organization : list) {
                 String pathStr = organizationDAO.getPathById(firstPid, organization.getId());
+                if (pathStr==null){
+                    pathStr="";
+                }
                 String path = pathStr.replace(",", ".").replace("\"", "").replace("{", "").replace("}", "");
                 organization.setPath(path);
             }
