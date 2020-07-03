@@ -74,7 +74,6 @@ public final class ApplicationProperties extends PropertiesConfiguration {
             synchronized (ApplicationProperties.class) {
                 if (instance == null) {
                     instance = get(APPLICATION_PROPERTIES);
-                    InMemoryJAASConfiguration.init(instance);
 
                     //获取配置中心配置
                     String meta = instance.getString("apollo.meta");
@@ -85,6 +84,10 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                     System.setProperty("app.id", id);
                     String cachedir = instance.getString("apollo.cacheDir");
                     System.setProperty("apollo.cacheDir", cachedir);
+                    String secret = instance.getString("apollo.accesskey.secret");
+                    if (secret!=null&&secret.length()!=0){
+                        System.setProperty("apollo.accesskey.secret",secret);
+                    }
                     String namespace = instance.getString("apollo.bootstrap.namespaces");
                     Config appConfig = ConfigService.getConfig(namespace);
                     //添加配置
@@ -93,6 +96,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                         String property = appConfig.getProperty(key, null);
                         instance.setProperty(key,property);
                     }
+                    InMemoryJAASConfiguration.init(instance);
                 }
             }
         }
