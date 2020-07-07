@@ -17,6 +17,10 @@
  */
 package org.apache.atlas;
 
+import com.ctrip.framework.apollo.Config;
+import com.ctrip.framework.apollo.ConfigService;
+import com.google.inject.Binder;
+import com.google.inject.Module;
 import org.apache.atlas.security.InMemoryJAASConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -32,6 +36,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Application properties used by Atlas.
@@ -69,6 +74,28 @@ public final class ApplicationProperties extends PropertiesConfiguration {
             synchronized (ApplicationProperties.class) {
                 if (instance == null) {
                     instance = get(APPLICATION_PROPERTIES);
+
+                    //获取配置中心配置
+                    String meta = instance.getString("apollo.meta");
+                    System.setProperty("apollo.meta", meta);
+                    String cluster = instance.getString("apollo.cluster");
+                    System.setProperty("apollo.cluster", cluster);
+                    String id = instance.getString("app.id");
+                    System.setProperty("app.id", id);
+                    String cachedir = instance.getString("apollo.cacheDir");
+                    System.setProperty("apollo.cacheDir", cachedir);
+                    String secret = instance.getString("apollo.accesskey.secret");
+                    if (secret!=null&&secret.length()!=0){
+                        System.setProperty("apollo.accesskey.secret",secret);
+                    }
+                    String namespace = instance.getString("apollo.bootstrap.namespaces");
+                    Config appConfig = ConfigService.getConfig(namespace);
+                    //添加配置
+                    Set<String> propertyNames = appConfig.getPropertyNames();
+                    for (String key:propertyNames){
+                        String property = appConfig.getProperty(key, null);
+                        instance.setProperty(key,property);
+                    }
                     InMemoryJAASConfiguration.init(instance);
                 }
             }
