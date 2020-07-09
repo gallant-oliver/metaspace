@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -94,6 +95,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                     Set<String> propertyNames = appConfig.getPropertyNames();
                     for (String key:propertyNames){
                         String property = appConfig.getProperty(key, null);
+                        property = ParseKeyword.parseStringValue(property,appConfig,new HashSet<>());
                         instance.setProperty(key,property);
                     }
                     InMemoryJAASConfiguration.init(instance);
