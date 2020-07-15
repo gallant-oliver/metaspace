@@ -72,7 +72,9 @@ import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
 import org.apache.poi.ss.usermodel.Cell;
@@ -1112,6 +1114,7 @@ public class DataManageService {
         String proper = "0.0";
         String errorCode = null;
         String message = null;
+        putHeader(header);
         while(retryCount < retries) {
             String countSession = OKHttpClient.doGet(organizationCountURL, queryCountParamMap, header);
             if(Objects.isNull(countSession)) {
@@ -1153,6 +1156,42 @@ public class DataManageService {
         detail.append("错误信息:");
         detail.append(message);
         throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "sso获取组织架构失败");
+    }
+
+    public void putHeader(Map<String,String> header) throws  AtlasBaseException {
+        Configuration configuration;
+        try {
+            configuration = ApplicationProperties.get();
+        }catch (AtlasException e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置失败");
+        }
+
+        boolean isEncryption = configuration.getBoolean("sso.encryption");
+        if (isEncryption){
+            String puk = configuration.getString("sso.encryption.public.key");
+            String prk = configuration.getString("sso.encryption.private.key");
+            StringBuffer buffer = new StringBuffer();
+            //私钥
+            buffer.append("&key=");
+            buffer.append(prk);
+
+            //时间
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            String date = sdf.format(System.currentTimeMillis());
+            buffer.append("&time=");
+            buffer.append(date);
+
+            //随机字符串
+            buffer.append("&nonce_str=");
+            String randomString = RandomStringUtils.randomAlphanumeric(10);
+            buffer.append(randomString);
+
+            //md5加密并转换成大写
+            String str = DigestUtils.md5Hex(buffer.toString()).toUpperCase();
+            String authentication = date + "_"+puk+"_" + str;
+            header.put("authentication",authentication);
+            header.put("nonce_str",randomString);
+        }
     }
 
     @Transactional(rollbackFor=Exception.class)
