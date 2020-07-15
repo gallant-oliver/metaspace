@@ -24,6 +24,7 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -54,11 +55,13 @@ public class OKHttpClient {
     private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
     private static int size;
+    private static int okHttpTimeout;
     static {
         client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
                 .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
         client.setConnectTimeout(5, TimeUnit.SECONDS);
-        client.setReadTimeout(30, TimeUnit.SECONDS);
+        okHttpTimeout = MetaspaceConfig.getOkHttpTimeout();
+        client.setReadTimeout(okHttpTimeout, TimeUnit.SECONDS);
         try {
             size = ApplicationProperties.get().getInt("okhttp.retries", 3);
         } catch (AtlasException e) {

@@ -27,6 +27,12 @@ public class MetaspaceConfig {
     }};
     private final static String hiveAdmin="metaspace";
 
+    private static int okHttpTimeout;
+
+    public static int getOkHttpTimeout() {
+        return okHttpTimeout;
+    }
+
     public static String getHiveJobQueueName() {
         return hiveJobQueueName;
     }
@@ -69,6 +75,7 @@ public class MetaspaceConfig {
             impalaUrl = conf.getString("metaspace.impala.url");
             hiveConfig = conf.getString("metaspace.hive.conf");
             metaspaceUrl = conf.getString("metaspace.request.address");
+            okHttpTimeout = conf.getInt("metaspace.okhttp.read.timeout",30);
             if (hiveUrlArr == null || hiveUrlArr.length==0) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.url未正确配置");
             }
