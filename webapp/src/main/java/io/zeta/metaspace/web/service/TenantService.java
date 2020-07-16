@@ -89,8 +89,6 @@ public class TenantService {
     static {
         try {
             conf = ApplicationProperties.get();
-            isStandalone = conf.getBoolean(METASPACE_STANDALONE,false);
-            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             USER_INFO_EXPIRE = conf.getInt(USER_CACHE_EXPIRE, 30);
             userModulesCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
             tenantsCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
@@ -102,6 +100,7 @@ public class TenantService {
         }
     }
     public static boolean isStandalone(){
+        isStandalone = conf.getBoolean(METASPACE_STANDALONE,false);
         return isStandalone;
     }
 
@@ -116,6 +115,7 @@ public class TenantService {
         Object status=null;
         Object msgDesc=null;
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             String cacheKey = getCacheKey(securitySearch.getTenantId());
             PageResult<UserAndModule> pageResult = userModulesCache.getIfPresent(cacheKey);
             if (pageResult!=null) {
@@ -201,6 +201,9 @@ public class TenantService {
         Object status=null;
         Object msgDesc=null;
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
+            //isStandalone = conf.getBoolean(METASPACE_STANDALONE,false);
+            isStandalone=false;
             if (isStandalone){
                 List<Tenant> tenants = new ArrayList<>();
                 Tenant tenant = new Tenant();
@@ -272,6 +275,7 @@ public class TenantService {
         hashMap.put("tenantId",tenantId);
         hashMap.put("toolName",toolName);
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             int retryCount = 0;
             int retries = 3;
             while(retryCount < retries) {
@@ -325,6 +329,7 @@ public class TenantService {
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenant-id",tenantId);
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             int retryCount = 0;
             int retries = 3;
             while(retryCount < retries) {
@@ -368,6 +373,7 @@ public class TenantService {
         hashMap.put("User-Agent","Chrome");
         hashMap.put("tenant-id",tenantId);
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             String string = OKHttpClient.doGet(SECURITY_HOST+TENANT_USER_DATABASE+userEmail,null,hashMap);
             int retryCount = 0;
             int retries = 3;
@@ -414,6 +420,7 @@ public class TenantService {
             int retryCount = 0;
             int retries = 3;
             while(retryCount < retries) {
+                SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
                 String string = OKHttpClient.doGet(SECURITY_HOST + TENANT_DATABASE, query, hashMap);
                 Map map = gson.fromJson(string, HashMap.class);
                 status = map.get("statusCode");
@@ -454,6 +461,7 @@ public class TenantService {
         hashMap.put("User-Agent","Chrome");
         HashMap<String,String> query = new HashMap<>();
         try {
+            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
             int retryCount = 0;
             int retries = 3;
             while(retryCount < retries) {

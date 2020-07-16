@@ -38,7 +38,6 @@ public class HiveJdbcUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveJdbcUtils.class);
     private static String hivedriverClassName = "org.apache.hive.jdbc.HiveDriver";
-    private static String[] hiveUrlArr ;
     private static String hivePrincipal = "";
     private static String hiveUrlPrefix = "jdbc:hive2://";
     private static String hiveJobQueuName;
@@ -53,29 +52,26 @@ public class HiveJdbcUtils {
     static {
         try {
             Class.forName(hivedriverClassName);
-            hiveUrlArr = MetaspaceConfig.getHiveUrl();
-            if(hiveUrlArr != null && hiveUrlArr.length > 0) {
-                hiveUrlQueue.addAll(Arrays.asList(hiveUrlArr));
-            }
-            hiveJobQueuName = MetaspaceConfig.getHiveJobQueueName()==null?"metaspce":MetaspaceConfig.getHiveJobQueueName();
-            hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Connection getConnection(String db, String user) throws AtlasBaseException {
+        hiveJobQueuName=MetaspaceConfig.getHiveJobQueueName();
         return getConnection(db,user,hiveJobQueuName);
     }
 
     public static Connection getConnection(String db, String user,String pool) throws AtlasBaseException {
         Connection connection = null;
         String jdbcUrl;
+        hiveUrlQueue=MetaspaceConfig.getHiveUrlQueue();
         if (hiveUrlQueue != null && hiveUrlQueue.size() > 0) {
             for (int i = 0; i < hiveUrlQueue.size(); i++) {
                 try {
                     String hiveUrl = hiveUrlQueue.peek();
                     if (KerberosConfig.isKerberosEnable()) {
+                        hivePrincipal = ";principal=" + KerberosConfig.getHivePrincipal();
                         jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + hivePrincipal + ";hive.server2.proxy.user=" + user;
                     } else {
                         jdbcUrl = hiveUrlPrefix + hiveUrl + "/" + db + ";hive.server2.proxy.user=" + user;
