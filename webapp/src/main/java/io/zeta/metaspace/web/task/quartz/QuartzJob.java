@@ -41,6 +41,7 @@ import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -78,12 +79,12 @@ public class QuartzJob implements Job {
 
     Map<String, Float> columnType2Result = new HashMap<>();
 
+    private static Configuration conf;
     private static String engine;
 
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            conf = ApplicationProperties.get();
         }  catch (Exception e) {
 
         }
@@ -169,6 +170,7 @@ public class QuartzJob implements Job {
 
 
     public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws Exception {
+        engine = conf.getString("metaspace.quality.engine");
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
         long startTime = System.currentTimeMillis();
@@ -329,6 +331,7 @@ public class QuartzJob implements Job {
         Float resultValue = null;
         Connection conn = null;
         try {
+            engine = conf.getString("metaspace.quality.engine");
             String dbName = task.getDbName();
             String tableName = task.getTableName();
             String columnName = null;
@@ -467,6 +470,7 @@ public class QuartzJob implements Job {
         String tableName = task.getTableName();
         try {
             //表数据量
+            engine = conf.getString("metaspace.quality.engine");
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 totalSize = ImpalaJdbcUtils.getTableSize(dbName, tableName,pool);
             } else {
@@ -531,6 +535,7 @@ public class QuartzJob implements Job {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         Connection conn = null;
+        engine = conf.getString("metaspace.quality.engine");
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
         } else {

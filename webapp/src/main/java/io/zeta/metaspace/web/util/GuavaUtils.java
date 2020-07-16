@@ -19,13 +19,14 @@ import java.util.concurrent.TimeUnit;
 
 public class GuavaUtils {
     private static Cache<String, Map> ticketCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(10, TimeUnit.SECONDS).build();
-    private static String infoURL = SSOConfig.getInfoURL();
+    private static String infoURL;
     public static Cache<String, Map> getTicketCache() {
         return ticketCache;
     }
     private static Logger LOG = Logger.getLogger(GuavaUtils.class);
 
     public static Map getUserInfo(String ticket) throws ExecutionException {
+        infoURL = SSOConfig.getInfoURL();
         Gson gson = new Gson();
         HashMap<String, String> header = new HashMap<>();
         header.put("ticket", ticket);

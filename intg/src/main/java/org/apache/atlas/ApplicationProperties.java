@@ -18,7 +18,10 @@
 package org.apache.atlas;
 
 import com.ctrip.framework.apollo.Config;
+import com.ctrip.framework.apollo.ConfigChangeListener;
 import com.ctrip.framework.apollo.ConfigService;
+import com.ctrip.framework.apollo.model.ConfigChange;
+import com.ctrip.framework.apollo.model.ConfigChangeEvent;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import org.apache.atlas.security.InMemoryJAASConfiguration;
@@ -37,6 +40,7 @@ import java.net.URL;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -90,13 +94,26 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                         if (secret!=null&&secret.length()!=0){
                             System.setProperty("apollo.accesskey.secret",secret);
                         }
-                        String namespace = instance.getString("apollo.bootstrap.namespaces");
-                        Config appConfig = ConfigService.getConfig(namespace);
-                        //添加配置
-                        Set<String> propertyNames = appConfig.getPropertyNames();
-                        for (String key:propertyNames){
-                            String property = appConfig.getProperty(key, null);
-                            instance.setProperty(key,property);
+                        String[] namespaces = instance.getStringArray("apollo.bootstrap.namespaces");
+                        //String namespace = instance.getString("apollo.bootstrap.namespaces");
+                        for(String namespace:namespaces){
+                            Config appConfig = ConfigService.getConfig(namespace);
+                            appConfig.addChangeListener(new ConfigChangeListener() {
+                                @Override
+                                public void onChange(ConfigChangeEvent changeEvent) {
+                                    for (String key : changeEvent.changedKeys()) {
+                                        ConfigChange change = changeEvent.getChange(key);
+                                        instance.setProperty(change.getPropertyName(),change.getNewValue());
+                                        LOG.info(String.format("Found change - key: %s, oldValue: %s, newValue: %s, changeType: %s", change.getPropertyName(), change.getOldValue(), change.getNewValue(), change.getChangeType()));
+                                    }
+                                }
+                            });
+                            //添加配置
+                            Set<String> propertyNames = appConfig.getPropertyNames();
+                            for (String key:propertyNames){
+                                String property = appConfig.getProperty(key, null);
+                                instance.setProperty(key,property);
+                            }
                         }
                     }
                     InMemoryJAASConfiguration.init(instance);

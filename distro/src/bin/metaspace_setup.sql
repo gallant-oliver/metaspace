@@ -1802,7 +1802,7 @@ CREATE TABLE "public"."data_quality_task_rule_execute" (
   "error_msg" varchar(255) COLLATE "pg_catalog"."default",
   "warning_status" int2,
   "error_status" int2,
-  "rule_id" varchar(32) COLLATE "pg_catalog"."default"
+  "rule_id" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."task_id" IS '所属任务id';

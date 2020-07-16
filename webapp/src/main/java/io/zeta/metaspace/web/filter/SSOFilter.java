@@ -45,7 +45,7 @@ import java.util.Map;
 public class SSOFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
-    private String loginURL = SSOConfig.getLoginURL();
+    private String loginURL;
     private static String TICKET_KEY = "X-SSO-FullticketId";
 
     @Override
@@ -56,7 +56,7 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
-
+        loginURL = SSOConfig.getLoginURL();
         Date date = new Date();
         Long startTime = System.currentTimeMillis();
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;

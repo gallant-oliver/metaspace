@@ -60,13 +60,6 @@ public class OKHttpClient {
         client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
                 .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
         client.setConnectTimeout(5, TimeUnit.SECONDS);
-        okHttpTimeout = MetaspaceConfig.getOkHttpTimeout();
-        client.setReadTimeout(okHttpTimeout, TimeUnit.SECONDS);
-        try {
-            size = ApplicationProperties.get().getInt("okhttp.retries", 3);
-        } catch (AtlasException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -214,10 +207,13 @@ public class OKHttpClient {
         }
     }
 
-    public static String getResponse(Request request) throws AtlasBaseException {
+    public static String getResponse(Request request) throws AtlasBaseException, AtlasException {
 
         int count=1;
         OkHttpClient client = OKHttpClient.client;
+        okHttpTimeout = MetaspaceConfig.getOkHttpTimeout();
+        client.setReadTimeout(okHttpTimeout, TimeUnit.SECONDS);
+        size = ApplicationProperties.get().getInt("okhttp.retries", 3);
         while(true){
             try {
                 Call call = client.newCall(request);

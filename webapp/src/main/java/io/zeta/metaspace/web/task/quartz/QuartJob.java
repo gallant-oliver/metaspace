@@ -29,6 +29,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 
 import org.quartz.Job;
@@ -58,7 +59,7 @@ public class QuartJob implements Job {
     private DataQualityDAO qualityDao;
     @Autowired
     QuartzManager quartzManager;
-
+    private static Configuration conf;
     private static String engine;
 
     @Autowired
@@ -71,8 +72,7 @@ public class QuartJob implements Job {
     Map<String, Double> columnType2Result = new HashMap<>();
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            conf = ApplicationProperties.get();
         }  catch (Exception e) {
 
         }
@@ -133,6 +133,7 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
+        engine = conf.getString("metaspace.quality.engine");
         LOG.info("query engine:" + engine);
 
         int totalStep = rules.size();
@@ -260,6 +261,7 @@ public class QuartJob implements Job {
         double resultValue = 0;
         Connection conn = null;
         try {
+            engine = conf.getString("metaspace.quality.engine");
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
             String[] sourceInfo = source.split(SEPARATOR);
@@ -478,6 +480,7 @@ public class QuartJob implements Job {
     }
 
     public void getProportion(UserRule rule) throws Exception {
+        engine = conf.getString("metaspace.quality.engine");
         double ratio = 0;
         String templateId = rule.getTemplateId();
         String source = qualityDao.querySourceByTemplateId(templateId);

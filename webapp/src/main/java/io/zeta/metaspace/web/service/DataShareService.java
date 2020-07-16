@@ -92,6 +92,7 @@ public class DataShareService {
 
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
     private static String engine;
+    private static Configuration conf;
 
     @Autowired
     DataShareDAO shareDAO;
@@ -118,8 +119,7 @@ public class DataShareService {
 
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            conf = ApplicationProperties.get();
         }  catch (Exception e) {
             LOG.error(e.toString());
         }
@@ -473,11 +473,10 @@ public class DataShareService {
     }
 
     public int publishAPI(List<String> guidList,String tenantId) throws Exception {
-        Configuration configuration = ApplicationProperties.get();
         APIContent content = generateAPIContent(guidList,tenantId);
         Gson gson = new Gson();
         String jsonStr = gson.toJson(content, APIContent.class);
-        String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
+        String mobiusURL = conf.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
         int retryCount = 0;
         String errorId = null;
         String errorReason = null;
@@ -547,8 +546,7 @@ public class DataShareService {
             }
         }
 
-        Configuration configuration = ApplicationProperties.get();
-        String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
+        String mobiusURL = conf.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
         Map param = new HashMap();
         param.put("api_id_list", apiGuidList);
         Gson gson = new Gson();
@@ -1088,6 +1086,7 @@ public class DataShareService {
         Connection conn = null;
         long count = 0;
         try {
+            String engine = conf.getString("metaspace.quality.engine");
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
             } else {
@@ -1555,6 +1554,7 @@ public class DataShareService {
     }
 
     public List<Queue> getPools(String tenantId) throws AtlasBaseException {
+        engine = conf.getString("metaspace.quality.engine");
         Pool pools = tenantService.getPools(tenantId);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             return pools.getImpala();
