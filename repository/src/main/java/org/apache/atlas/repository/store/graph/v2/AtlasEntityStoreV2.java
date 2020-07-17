@@ -871,17 +871,6 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
 
                     context.addUpdated(guid, entity, entityType, vertex);
                 } else {
-                    //判断重复添加
-                    try {
-                        AtlasEntityType storedEntityType = typeRegistry.getEntityTypeByName(entity.getTypeName());
-                        String storedEntityGuid = getGuidByUniqueAttributes(storedEntityType, entity.getAttributes());
-                        if (null != storedEntityGuid) {
-                            continue;
-                        }
-                    } catch (Exception e) {
-                        LOG.info("新的Entity，执行插入操作");
-                    }
-
                     graphDiscoverer.validateAndNormalize(entity);
 
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(entity.getTypeName());

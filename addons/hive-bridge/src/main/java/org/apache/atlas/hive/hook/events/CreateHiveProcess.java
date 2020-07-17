@@ -18,31 +18,28 @@
 
 package org.apache.atlas.hive.hook.events;
 
-import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.hive.hook.AtlasHiveHookContext;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV2;
+import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.hive.ql.hooks.*;
+import org.apache.hadoop.hive.ql.hooks.Entity;
+import org.apache.hadoop.hive.ql.hooks.LineageInfo;
 import org.apache.hadoop.hive.ql.hooks.LineageInfo.BaseColumnInfo;
 import org.apache.hadoop.hive.ql.hooks.LineageInfo.Dependency;
 import org.apache.hadoop.hive.ql.hooks.LineageInfo.DependencyKey;
+import org.apache.hadoop.hive.ql.hooks.ReadEntity;
+import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class CreateHiveProcess extends BaseHiveEvent {
@@ -80,12 +77,8 @@ public class CreateHiveProcess extends BaseHiveEvent {
             // skip insert into tbl_x values() statements
             if (CollectionUtils.isNotEmpty(readEntities) && readEntities.size() == 1) {
                 ReadEntity input = readEntities.iterator().next();
-                boolean bool = input.getType() == Entity.Type.TABLE && input.getTable().isTemporary();
-                if (bool || getContext().getHiveOperation() == HiveOperation.LOAD) {
-                    processOutputs(ret, outputs, processedNames, writeEntities);
-                    AtlasEntity process = getHiveProcessEntity(outputs);
-                    ret.addEntity(process);
-                    ret.compact();
+                if ((input.getType() == Entity.Type.TABLE && input.getTable().isTemporary()) || getContext().getHiveOperation() == HiveOperation.LOAD) {
+                    LOG.info("skip load or insert statements");
                     return ret;
                 }
             }

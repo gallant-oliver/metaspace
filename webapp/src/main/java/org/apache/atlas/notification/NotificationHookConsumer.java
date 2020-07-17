@@ -51,14 +51,12 @@ import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -333,7 +331,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         private final AtomicBoolean                          shouldRun      = new AtomicBoolean(false);
         private final List<HookNotification>                 failedMessages = new ArrayList<>();
         private final AdaptiveWaiter adaptiveWaiter = new AdaptiveWaiter(minWaitDuration, maxWaitDuration, minWaitDuration);
-        private StopWatch watch = new StopWatch();
 
         @VisibleForTesting
         final FailedCommitOffsetRecorder failedCommitOffsetRecorder;
@@ -354,24 +351,38 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             if (!serverAvailable(new NotificationHookConsumer.Timer())) {
                 return;
             }
-
+            //开始时间
+            long process_start = 0;
+            //处理次数
+            long process_time = 0;
+            //处理总耗时
+            long process_total_cost = 0;
+            //当前处理耗时
+            long current_cost = 0;
             try {
                 while (shouldRun.get()) {
+                    long start = 0;
                     try {
                         List<AtlasKafkaMessage<HookNotification>> messages = consumer.receive();
-
+                        start = System.currentTimeMillis();
                         for (AtlasKafkaMessage<HookNotification> msg : messages) {
-                            watch.start("处理元数据耗时");
+                            process_start = System.currentTimeMillis();
+                            LOG.info("offset:{},收到消息", msg.getOffset());
                             handleMessage(msg);
-                            watch.stop();
-                            LOG.info("本次处理元数据耗时{}ms,处理元数据次数{}, 平均耗时{}ms", watch.getLastTaskTimeMillis(),watch.getTaskCount(), watch.getTotalTimeMillis() / watch.getTaskCount());
+                            current_cost = System.currentTimeMillis() - process_start;
+                            process_total_cost += current_cost;
+                            process_time++;
+                            LOG.info("offset:{},本次处理元数据耗时{}ms, 处理元数据总次数{}, 平均耗时{}ms", msg.getOffset(), current_cost, process_time, process_total_cost / process_time);
+                        }
+                        int size = messages.size();
+                        if (size > 0) {
+                            LOG.info("接收数据条数为{}, 总耗时为{}ms", size, System.currentTimeMillis() - start);
                         }
                     } catch (IllegalStateException ex) {
                         adaptiveWaiter.pause(ex);
                     } catch (Exception e) {
                         if (shouldRun.get()) {
-                            LOG.warn("Exception in NotificationHookConsumer", e);
-
+                            LOG.warn("Exception in NotificationHookConsumer, 本次处理总耗时{}",System.currentTimeMillis()- start, e);
                             adaptiveWaiter.pause(e);
                         } else {
                             break;

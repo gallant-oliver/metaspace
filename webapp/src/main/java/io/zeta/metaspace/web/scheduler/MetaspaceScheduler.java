@@ -274,7 +274,6 @@ public class MetaspaceScheduler {
             Map<String, Long> lastDataVolumn = tableStatService.lastDataVolumn(tableId, date);
             tableStat.setDateType(DateType.DAY.getLiteral());
             long dayIncrement = tableStat.getDataVolumeBytes() - lastDataVolumn.get("day");
-            log.info(">>" + tableStat.getDataVolumeBytes() + "\t" + lastDataVolumn.get("day"));
             tableStat.setDataIncrementBytes(dayIncrement);
             tableStat.setDataIncrement(BytesUtils.humanReadableByteCount(dayIncrement));
             tableStat.setDate(date);
