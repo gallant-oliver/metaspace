@@ -35,14 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.apache.atlas.hive.hook.events.BaseHiveEvent.ATTRIBUTE_QUALIFIED_NAME;
@@ -163,9 +156,7 @@ public class HiveHook extends AbstractAtlasHook implements ExecuteWithHookContex
 
     @Override
     public void run(HookContext hookContext) throws Exception {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("==> HiveHook.run({})", hookContext.getOperationName());
-        }
+        LOG.info("==> HiveHook.run({})", hookContext.getOperationName());
 
         try {
             HiveOperation        oper    = OPERATION_MAP.get(hookContext.getOperationName());
@@ -244,9 +235,8 @@ public class HiveHook extends AbstractAtlasHook implements ExecuteWithHookContex
             LOG.error("HiveHook.run(): failed to process operation {}", hookContext.getOperationName(), t);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("<== HiveHook.run({})", hookContext.getOperationName());
-        }
+        LOG.info("<== HiveHook.run({})", hookContext.getOperationName());
+
     }
 
     public boolean isConvertHdfsPathToLowerCase() {
