@@ -87,10 +87,16 @@ public interface RuleDAO {
              " </script>"})
     public List<Rule> search(@Param("params") Parameters params,@Param("tenantId")String tenantId);
 
-    @Select("select t.id,t.name from data_quality_task t join " +
-            "(select s.task_id from data_quality_sub_task s join data_quality_sub_task_rule r on s.id=r.subtask_id where r.ruleId=#{id} and r.delete=false) r " +
-            " on r.task_id=t.id")
-    public List<DataTaskIdAndName> getRuleUsed(@Param("id") String guid);
+    @Select("<script>" +
+            "select t.id,t.name from data_quality_task t join " +
+            "(select s.task_id from data_quality_sub_task s join data_quality_sub_task_rule r on s.id=r.subtask_id where r.delete=false and r.ruleId in " +
+            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}"+
+            "</foreach>"+
+            ") r " +
+            " on r.task_id=t.id" +
+            "</script>")
+    public List<DataTaskIdAndName> getRuleUsed(@Param("ids") List<String> guids);
 
     @Update("update data_quality_rule set enable=#{status} where id=#{id}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);

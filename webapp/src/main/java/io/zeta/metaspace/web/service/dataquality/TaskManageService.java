@@ -62,6 +62,7 @@ import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,10 +87,10 @@ public class TaskManageService {
     public static String TRIGGER_NAME = "METASPACE_TRIGGER";
     public static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
     private static String engine;
+    private static Configuration conf;
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            conf = ApplicationProperties.get();
         }  catch (Exception e) {
             LOG.error(e.toString());
         }
@@ -759,6 +760,7 @@ public class TaskManageService {
     }
 
     public List<Queue> getPools(String tenantId) throws AtlasBaseException {
+        engine = conf.getString("metaspace.quality.engine");
         Pool pools = tenantService.getPools(tenantId);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             return pools.getImpala();

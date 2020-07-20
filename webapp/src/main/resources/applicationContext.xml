@@ -31,24 +31,23 @@
 
 
 
-        <context:property-placeholder location="file:#{systemProperties['atlas.conf']}/atlas-application.properties"/>
         <!--2 配置hikari数据源 -->
         <bean id="datasource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
                 <!--驱动类名 -->
-                <property name="driverClassName" value="${metaspace.database.driverClassName}" />
+                <property name="driverClassName" value="#{conf.driverClassName}" />
                 <!-- url -->
-                <property name="jdbcUrl" value="${metaspace.database.url}" />
+                <property name="jdbcUrl" value="#{conf.jdbcUrl}" />
                 <!-- 用户名 -->
-                <property name="username" value="${metaspace.database.username}" />
+                <property name="username" value="#{conf.username}" />
                 <!-- 密码 -->
-                <property name="password" value="${metaspace.database.password}" />
+                <property name="password" value="#{conf.password}" />
                 <!-- 连接池中连接最小个数 -->
-                <property name="minimumIdle" value="${metaspace.database.minPoolSize}" />
+                <property name="minimumIdle" value="#{conf.minimumIdle}" />
                 <!-- 连接池中连接最大个数 -->
-                <property name="maximumPoolSize" value="${metaspace.database.maxPoolSize}" />
+                <property name="maximumPoolSize" value="#{conf.maximumPoolSize}" />
                 <!--连接的最大空闲时间,秒-->
-                <property name="idleTimeout" value="${metaspace.database.maxIdleTime}" />
-                <property name="connectionTimeout" value="${metaspace.database.checkoutTimeout}" />
+                <property name="idleTimeout" value="#{conf.idleTimeout}" />
+                <property name="connectionTimeout" value="#{conf.connectionTimeout}" />
         </bean>
 
         <!--3 会话工厂bean sqlSessionFactoryBean -->

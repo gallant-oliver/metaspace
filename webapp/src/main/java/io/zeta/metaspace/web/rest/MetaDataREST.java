@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.*;
@@ -35,6 +36,7 @@ import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -206,14 +208,12 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
             }
-            TableShow tableShow = searchService.getTableShow(guidCount);
+            TableShow tableShow = searchService.getTableShow(guidCount,false);
             return tableShow;
         } catch (AtlasBaseException e) {
             throw e;
-        } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
-        }  catch (AtlasException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
+        }  catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
         }
@@ -238,12 +238,16 @@ public class MetaDataREST {
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
         } catch (AtlasBaseException e) {
+            LOG.error("查询建表语句失败",e);
             throw e;
         } catch (SQLException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
         } catch (IOException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
         } catch (AtlasException e) {
+            LOG.error("查询建表语句失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
@@ -1023,6 +1027,23 @@ public class MetaDataREST {
             return metadataService.getCheckingTableInfo(tableGuid);
         }  catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Path("update/supplementTable")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result updateTable() throws AtlasBaseException {
+        try {
+            dataManageService.updateTable();
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            PERF_LOG.error(e.getMessage(), e);
+            throw e;
+        }catch (Exception e) {
+            PERF_LOG.error(e.getMessage(), e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新表信息失败");
         }
     }
 

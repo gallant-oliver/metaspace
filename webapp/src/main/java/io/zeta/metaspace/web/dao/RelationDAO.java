@@ -23,6 +23,7 @@ import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
 /*
@@ -38,7 +39,7 @@ public interface RelationDAO {
     public int delete(@Param("relationshipGuid") String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -48,7 +49,7 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
              " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
              " and tableinfo.dbname in " ,
              " <foreach item='item' index='index' collection='databases'" ,
@@ -64,7 +65,7 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description",
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' order by tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -74,7 +75,7 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description",
              " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' ",
              " and tableinfo.dbname in " ,
              " <foreach item='item' index='index' collection='databases'" ,
@@ -208,8 +209,24 @@ public interface RelationDAO {
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
+    @Update("<script>" +
+            "update table_relation set categoryGuid=#{newCategoryId} where categoryGuid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public int updateRelationByCategoryGuid(@Param("ids") List<String> categoryGuids,@Param("newCategoryId")String newCategoryId);
+
     @Select("select count(*) from business_relation where categoryGuid=#{categoryGuid}")
     public int queryBusinessRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
+
+    @Select("<script>" +
+            "select businessid from business_relation where categoryGuid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getBusinessIdsByCategoryGuid(@Param("ids") List<String> categoryGuids);
 
     //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
@@ -256,6 +273,14 @@ public interface RelationDAO {
 
     @Delete("delete from table_relation where tableguid=#{tableGuid}")
     public int deleteByTableGuid(@Param("tableGuid") String tableGuid);
+
+    @Update(" <script>" +
+            " update table_relation set categoryGuid=#{categoryGuid},generateTime=#{time} where tableguid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            " </script>")
+    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);

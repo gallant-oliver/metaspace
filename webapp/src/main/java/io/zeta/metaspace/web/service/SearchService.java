@@ -276,13 +276,13 @@ public class SearchService {
         }
     }
 
-    public TableShow getTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException, AtlasException {
+    public TableShow getTableShow(GuidCount guidCount,boolean admin) throws AtlasBaseException, SQLException {
         TableShow tableShow = new TableShow();
         AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
         AtlasEntity entity = info.getEntity();
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         if (name.equals("")) {
-            System.out.println("该id不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
         AtlasEntity tableEntity = tableInfo.getEntity();
@@ -291,10 +291,8 @@ public class SearchService {
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from `" + name + "` limit " + guidCount.getCount();
 
-        Configuration conf = ApplicationProperties.get();
         String user = AdminUtils.getUserName();
-        String secure = conf.getString("metaspace.secureplus.enable");
-        try (Connection conn = secure.equals("false")?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        try (Connection conn = admin?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -315,8 +313,6 @@ public class SearchService {
             tableShow.setColumnNames(columns);
             tableShow.setLines(resultList);
             return tableShow;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据");
         }
 
 
@@ -357,6 +353,7 @@ public class SearchService {
             buildTableSql.setTableId(tableId);
             return buildTableSql;
         } catch (Exception e) {
+            LOG.error("获取hive连接失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
         }
     }

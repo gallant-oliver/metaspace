@@ -39,8 +39,17 @@ public class RelationEntityV2 {
     private String generateTime;
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
+    private String description;
     @JsonIgnore
     private int total;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public int getTotal() {
         return total;

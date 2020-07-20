@@ -7,6 +7,7 @@ variables:
 stages:
   - dev_deploy
   - test_deploy
+  - 10.202.40.82
   - sonarqube
 
 
@@ -37,6 +38,22 @@ test_deploy:
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
+  when: manual
+  artifacts:
+    name: metaspace_test
+    expire_in: 1 week
+    paths:
+      - webapp/target/atlas-webapp-*.war
+#部署测试环境
+10.202.40.82:
+  tags:
+    - java
+  stage: 10.202.40.82
+  script:
+    - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
   artifacts:
     name: metaspace_test

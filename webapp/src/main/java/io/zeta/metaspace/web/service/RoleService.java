@@ -706,35 +706,46 @@ public class RoleService {
                 user.setUpdateTime(updateTime);
                 roleDAO.updateUserInfo(user);
             }
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
     public User getUserInfo(String userId) throws AtlasBaseException {
-        try {
-            String userInfoURL = SSOConfig.getUserInfoURL();
-            HashMap<String, String> header = new HashMap<>();
-            Map<String, String> queryDataParamMap = new HashMap<>();
-            queryDataParamMap.put("id", userId);
-            String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
-            Gson gson = new Gson();
-            Map userBody = gson.fromJson(userSession, Map.class);
-            String data = "data";
-            if (StringUtils.isEmpty(userBody.get(data).toString())) {
-                return null;
-            }
-            Map userData = (Map) userBody.get(data);
-            String email = userData.get("loginEmail").toString();
-            String name = userData.get("displayName").toString();
-            User user = new User();
-            user.setUserId(userId);
-            user.setUsername(name);
-            user.setAccount(email);
-            return user;
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        String errorCode = null;
+        String message = null;
+        String proper = "0.0";
+        String userInfoURL = SSOConfig.getUserInfoURL();
+        HashMap<String, String> header = new HashMap<>();
+        Map<String, String> queryDataParamMap = new HashMap<>();
+        queryDataParamMap.put("id", userId);
+        String userSession = OKHttpClient.doGet(userInfoURL, queryDataParamMap, header);
+        Gson gson = new Gson();
+        Map userBody = gson.fromJson(userSession, Map.class);
+        String data = "data";
+        if (StringUtils.isEmpty(userBody.get(data).toString())) {
+            return null;
         }
+        errorCode = Objects.toString(userBody.get("errorCode"));
+        if (!proper.equals(errorCode)){
+            message=Objects.toString(userBody.get("message"));
+            StringBuffer detail = new StringBuffer();
+            detail.append("sso返回错误码:");
+            detail.append(errorCode);
+            detail.append("错误信息:");
+            detail.append(message);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "sso获取用户详情出错");
+        }
+        Map userData = (Map) userBody.get(data);
+        String email = userData.get("loginEmail").toString();
+        String name = userData.get("displayName").toString();
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername(name);
+        user.setAccount(email);
+        return user;
     }
 
 }

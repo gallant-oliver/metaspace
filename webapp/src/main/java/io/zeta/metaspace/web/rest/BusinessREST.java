@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.rest;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
+import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
@@ -33,7 +34,9 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnCheckMessage;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.Table;
@@ -43,22 +46,28 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.BusinessService;
+import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.model.metadata.ImportCategory;
+import org.apache.atlas.model.metadata.MigrateCategory;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
@@ -85,6 +94,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.inject.Singleton;
@@ -133,6 +143,9 @@ public class BusinessREST {
     private HttpServletRequest request;
 
     private static final int TECHNICAL_CATEGORY_TYPE = 0;
+
+    @Autowired
+    private SearchService searchService;
 
     /**
      * 添加业务对象
@@ -379,20 +392,22 @@ public class BusinessREST {
      */
     @DELETE
     @Path("/categories/{categoryGuid}")
-    public Response deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
             }
-            dataManageService.deleteCategory(categoryGuid,tenantId);
+            CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+            return ReturnUtil.success(deleteReturn);
         }  catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
         }
-        return Response.status(200).entity("success").build();
     }
 
     /**
@@ -494,6 +509,7 @@ public class BusinessREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelation(" + categoryGuid + ")");
             }
+
             return dataManageService.getRelationsByCategoryGuidFilter(categoryGuid, relationQuery,tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -625,15 +641,7 @@ public class BusinessREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件根式错误");
-            }
-
-            file = new File(name);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            if(file.length() > MAX_EXCEL_FILE_SIZE) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-            }
+            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             return businessService.importColumnWithDisplayText(tableGuid, file);
         } catch (AtlasBaseException e) {
             throw e;
@@ -699,7 +707,7 @@ public class BusinessREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public Result exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
         File exportExcel;
         //全局导出
         String all = "all";
@@ -716,7 +724,6 @@ public class BusinessREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            return ReturnUtil.success();
         } finally {
             exportExcel.delete();
         }
@@ -748,17 +755,7 @@ public class BusinessREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  name);
-            String suffix1 = ".xlsx";
-            String suffix2 = ".xls";
-            if(!(name.endsWith(suffix1) || name.endsWith(suffix2))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-            }
-
-            file = new File(name);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            if(file.length() > MAX_EXCEL_FILE_SIZE) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-            }
+            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             String upload;
             if (all){
                 upload = dataManageService.uploadAllCategory(file,CATEGORY_TYPE,tenantId);
@@ -880,7 +877,7 @@ public class BusinessREST {
     @GET
     @Path("/download/category/template")
     @Valid
-    public Result downloadCategoryTemplate() throws Exception {
+    public void downloadCategoryTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
         String filePath = homeDir + "/conf/category_template.xlsx";
         String fileName = filename(filePath);
@@ -888,6 +885,289 @@ public class BusinessREST {
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-        return ReturnUtil.success();
+    }
+
+    /**
+     * 导出业务对象
+     * @param ids
+     * @param categoryId
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("file/export/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getBusinessDownloadURL(List<String> ids,@PathParam("categoryId")String categoryId) throws Exception {
+        try{
+            //全局导出
+            if (ids==null||ids.size()==0){
+                DownloadUri uri = new DownloadUri();
+                String downURL = request.getRequestURL().toString() + "/" + "all";
+                uri.setDownloadUri(downURL);
+                return  ReturnUtil.success(uri);
+            }
+            DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+            return ReturnUtil.success(downloadUri);
+        }catch (Exception e){
+            PERF_LOG.error("导出业务对象失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出业务对象失败");
+        }
+
+    }
+
+    /**
+     * 导出业务对象
+     * @param downloadId
+     * @param categoryId
+     * @param tenantId
+     * @throws Exception
+     */
+    @GET
+    @Path("file/export/{categoryId}/{downloadId}")
+    @Valid
+    public void exportBusiness(@PathParam("downloadId") String downloadId,@PathParam("categoryId") String categoryId,@QueryParam("tenantId") String tenantId) throws Exception {
+        File exportExcel;
+        //全局导出
+        String all = "all";
+        if (all.equals(downloadId)){
+            exportExcel = businessService.exportExcelBusiness(null,categoryId,tenantId);
+        }else{
+            List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
+            exportExcel = businessService.exportExcelBusiness(ids, categoryId,tenantId);
+        }
+        try {
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }catch(Exception e){
+            PERF_LOG.error("导出业务对象失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出业务对象失败");
+        } finally {
+            exportExcel.delete();
+        }
+    }
+
+    /**
+     * 上传文件并校验
+     * @param tenantId
+     * @param fileInputStream
+     * @param contentDispositionHeader
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/file/upload")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result uploadBusiness(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
+                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+        File file = null;
+        try {
+            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
+            Map<String,Object> map = businessService.uploadBusiness(file, tenantId);
+            return ReturnUtil.success(map);
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("文件异常",e);
+            throw e;
+        }catch(Exception e){
+            PERF_LOG.error("文件异常",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"文件异常");
+        }  finally {
+            if(Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    /**
+     * 根据文件导入业务对象
+     * @param upload
+     * @param importCategory
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("file/import/{upload}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result importBusiness(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
+        File file = null;
+        try {
+            String categoryId = importCategory.getCategoryId();
+            CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "批量导入业务对象："+category.getName());
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            businessService.importBusiness(file,categoryId,tenantId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("导入失败",e);
+            throw e;
+        }catch(Exception e){
+            PERF_LOG.error("导入失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导入失败");
+        } finally {
+            if(Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    /**
+     * 批量删除业务对象
+     * @param businessId
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(DELETE)
+    public Result deleteBusinesses(List<String> businessId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        List<String> names = businessService.getNamesByIds(businessId,tenantId);
+        if (names!=null||names.size()!=0){
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量删除业务对象:[" + Joiner.on("、").join(names) + "]");
+        }
+        try {
+            businessService.deleteBusinesses(businessId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("批量删除失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("批量删除失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"批量删除失败");
+        }
+    }
+
+    /**
+     * 获取业务对象模板
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/download/file/template")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void downloadBusinessTemplate() throws AtlasBaseException {
+        try {
+            String homeDir = System.getProperty("atlas.home");
+            String filePath = homeDir + "/conf/business_template.xlsx";
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }catch (Exception e){
+            PERF_LOG.error("导出模板文件异常",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出模板文件异常");
+        }
+    }
+
+    @POST
+    @Path("/category/move")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    @Valid
+    public Result migrateCategory(MigrateCategory migrateCategory, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            CategoryEntityV2 category = dataManageService.getCategory(migrateCategory.getCategoryId(), tenantId);
+            CategoryEntityV2 parentCategory = dataManageService.getCategory(migrateCategory.getParentId(), tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "迁移目录" + category.getName() + "到" + parentCategory.getName());
+            dataManageService.migrateCategory(migrateCategory.getCategoryId(), migrateCategory.getParentId(),CATEGORY_TYPE, tenantId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("目录迁移失败", e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("目录迁移失败", e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
+        }
+    }
+
+    @POST
+    @Path("/move")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    @Valid
+    public Result moveBusiness(CategoryItem item, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            if (item.getIds()==null||item.getIds().size()==0){
+                return ReturnUtil.success();
+            }
+            List<String> namesByIds = businessService.getNamesByIds(item.getIds(),tenantId);
+            String path = CategoryRelationUtils.getPath(item.getCategoryId(), tenantId);
+            if(namesByIds!=null||namesByIds.size()!=0){
+                HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "迁移业务对象:[" + Joiner.on("、").join(namesByIds) + "]到"+path);
+            }
+            businessService.moveBusinesses(item);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("迁移业务对象失败", e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("迁移业务对象失败", e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "迁移业务对象失败");
+        }
+    }
+
+    /**
+     * 获取目录迁移可迁移到的目录
+     * @param categoryId
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/category/move/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            List<CategoryPrivilege> migrateCategory = dataManageService.getMigrateCategory(categoryId, CATEGORY_TYPE, tenantId);
+            return ReturnUtil.success(migrateCategory);
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("获取可以迁移到目录失败", e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("获取可以迁移到目录失败", e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取可以迁移到目录失败");
+        }
+    }
+
+    /**
+     * 数据预览
+     *
+     * @return TableShow
+     */
+    @POST
+    @Path("/table/preview")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TableShow selectData(GuidCount guidCount) throws AtlasBaseException, SQLException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
+            }
+            TableShow tableShow = searchService.getTableShow(guidCount,true);
+            return tableShow;
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("查询数据失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("查询数据失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
+        }finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 }

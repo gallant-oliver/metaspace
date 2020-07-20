@@ -105,6 +105,16 @@ CREATE TABLE "public"."apigroup" (
 )
 ;
 
+COMMENT ON COLUMN "public"."apigroup"."guid" IS '分组id';
+COMMENT ON COLUMN "public"."apigroup"."name" IS '分组名字';
+COMMENT ON COLUMN "public"."apigroup"."parentguid" IS '父目录id';
+COMMENT ON COLUMN "public"."apigroup"."description" IS '描述';
+COMMENT ON COLUMN "public"."apigroup"."generator" IS '创建者';
+COMMENT ON COLUMN "public"."apigroup"."generatetime" IS '创建时间';
+COMMENT ON COLUMN "public"."apigroup"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."apigroup"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."apigroup"."tenantid" IS '租户id';
+
 -- ----------------------------
 -- Table structure for apiinfo
 -- ----------------------------
@@ -141,6 +151,34 @@ CREATE TABLE "public"."apiinfo" (
   "pool" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
+
+COMMENT ON COLUMN "public"."apiinfo"."guid" IS 'apiid';
+COMMENT ON COLUMN "public"."apiinfo"."name" IS 'api名字';
+COMMENT ON COLUMN "public"."apiinfo"."tableguid" IS '表id';
+COMMENT ON COLUMN "public"."apiinfo"."dbguid" IS '库id';
+COMMENT ON COLUMN "public"."apiinfo"."keeper" IS '创建人';
+COMMENT ON COLUMN "public"."apiinfo"."maxrownumber" IS '最大行数';
+COMMENT ON COLUMN "public"."apiinfo"."fields" IS '返回的字段';
+COMMENT ON COLUMN "public"."apiinfo"."version" IS '版本';
+COMMENT ON COLUMN "public"."apiinfo"."description" IS '描述';
+COMMENT ON COLUMN "public"."apiinfo"."protocol" IS '请求类型';
+COMMENT ON COLUMN "public"."apiinfo"."requestmode" IS '请求方式';
+COMMENT ON COLUMN "public"."apiinfo"."returntype" IS '返回类型';
+COMMENT ON COLUMN "public"."apiinfo"."path" IS '地址';
+COMMENT ON COLUMN "public"."apiinfo"."generatetime" IS '创建时间';
+COMMENT ON COLUMN "public"."apiinfo"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."apiinfo"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."apiinfo"."groupguid" IS '分组id';
+COMMENT ON COLUMN "public"."apiinfo"."publish" IS '发布';
+COMMENT ON COLUMN "public"."apiinfo"."used_count" IS '使用count';
+COMMENT ON COLUMN "public"."apiinfo"."manager" IS '管理者';
+COMMENT ON COLUMN "public"."apiinfo"."sourcetype" IS '数据源类型';
+COMMENT ON COLUMN "public"."apiinfo"."schemaname" IS 'schema名字';
+COMMENT ON COLUMN "public"."apiinfo"."tablename" IS '表名字';
+COMMENT ON COLUMN "public"."apiinfo"."dbname" IS '库名字';
+COMMENT ON COLUMN "public"."apiinfo"."sourceid" IS '数据源id';
+COMMENT ON COLUMN "public"."apiinfo"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."apiinfo"."pool" IS '资源池';
 
 -- ----------------------------
 -- Table structure for business2table
@@ -193,6 +231,26 @@ CREATE TABLE "public"."businessinfo" (
 )
 ;
 
+COMMENT ON COLUMN "public"."businessinfo"."businessid" IS 'id';
+COMMENT ON COLUMN "public"."businessinfo"."departmentid" IS '目录id';
+COMMENT ON COLUMN "public"."businessinfo"."name" IS '名字';
+COMMENT ON COLUMN "public"."businessinfo"."module" IS '业务模块';
+COMMENT ON COLUMN "public"."businessinfo"."description" IS '描述';
+COMMENT ON COLUMN "public"."businessinfo"."owner" IS '所有者';
+COMMENT ON COLUMN "public"."businessinfo"."manager" IS '管理者';
+COMMENT ON COLUMN "public"."businessinfo"."maintainer" IS '维护者';
+COMMENT ON COLUMN "public"."businessinfo"."dataassets" IS '相关数据资产';
+COMMENT ON COLUMN "public"."businessinfo"."businesslastupdate" IS '更新人';
+COMMENT ON COLUMN "public"."businessinfo"."businessoperator" IS '更新时间';
+COMMENT ON COLUMN "public"."businessinfo"."technicallastupdate" IS '技术更新人';
+COMMENT ON COLUMN "public"."businessinfo"."technicaloperator" IS '更新时间';
+COMMENT ON COLUMN "public"."businessinfo"."technicalstatus" IS '技术状态';
+COMMENT ON COLUMN "public"."businessinfo"."businessstatus" IS '业务状态';
+COMMENT ON COLUMN "public"."businessinfo"."submitter" IS '创建人';
+COMMENT ON COLUMN "public"."businessinfo"."submissiontime" IS '创建时间';
+COMMENT ON COLUMN "public"."businessinfo"."level2categoryid" IS '二级目录';
+COMMENT ON COLUMN "public"."businessinfo"."tenantid" IS '租户id';
+
 -- ----------------------------
 -- Table structure for category
 -- ----------------------------
@@ -212,6 +270,17 @@ CREATE TABLE "public"."category" (
   "createtime" timestamptz(6)
 )
 ;
+
+COMMENT ON COLUMN "public"."category"."guid" IS '目录id';
+COMMENT ON COLUMN "public"."category"."description" IS '目录描述';
+COMMENT ON COLUMN "public"."category"."name" IS '目录名字';
+COMMENT ON COLUMN "public"."category"."upbrothercategoryguid" IS '同级上层目录';
+COMMENT ON COLUMN "public"."category"."downbrothercategoryguid" IS '统计下层目录';
+COMMENT ON COLUMN "public"."category"."parentcategoryguid" IS '父目录';
+COMMENT ON COLUMN "public"."category"."categorytype" IS '类型';
+COMMENT ON COLUMN "public"."category"."level" IS '级别';
+COMMENT ON COLUMN "public"."category"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."category"."createtime" IS '创建时间';
 
 -- ----------------------------
 -- Table structure for module
@@ -646,9 +715,26 @@ CREATE TABLE "public"."tableinfo" (
   "catalogadmin" varchar COLLATE "pg_catalog"."default",
   "display_name" varchar COLLATE "pg_catalog"."default",
   "display_updatetime" varchar COLLATE "pg_catalog"."default",
-  "display_operator" varchar COLLATE "pg_catalog"."default"
+  "display_operator" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default"
 )
 ;
+
+COMMENT ON COLUMN "public"."tableinfo"."tableguid" IS '表id';
+COMMENT ON COLUMN "public"."tableinfo"."tablename" IS '表名字';
+COMMENT ON COLUMN "public"."tableinfo"."dbname" IS '库名字';
+COMMENT ON COLUMN "public"."tableinfo"."status" IS '状态';
+COMMENT ON COLUMN "public"."tableinfo"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."tableinfo"."dataowner" IS 'owner';
+COMMENT ON COLUMN "public"."tableinfo"."databaseguid" IS '库id';
+COMMENT ON COLUMN "public"."tableinfo"."databasestatus" IS '库状态';
+COMMENT ON COLUMN "public"."tableinfo"."subordinatesystem" IS '所属系统';
+COMMENT ON COLUMN "public"."tableinfo"."subordinatedatabase" IS '所属数据库';
+COMMENT ON COLUMN "public"."tableinfo"."systemadmin" IS '源系统管理员';
+COMMENT ON COLUMN "public"."tableinfo"."datawarehouseadmin" IS '数仓管理员';
+COMMENT ON COLUMN "public"."tableinfo"."datawarehousedescription" IS '数仓描述';
+COMMENT ON COLUMN "public"."tableinfo"."catalogadmin" IS '目录管理员';
+COMMENT ON COLUMN "public"."tableinfo"."description" IS '表描述';
 
 -- ----------------------------
 -- Table structure for column_info
@@ -1412,6 +1498,17 @@ CREATE TABLE "public"."data_quality_rule_template" (
 )
 ;
 
+COMMENT ON COLUMN "public"."data_quality_rule_template"."name" IS '名字';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."scope" IS '作用域';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."unit" IS '返回值';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."description" IS '描述';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."delete" IS '状态';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."id" IS 'id';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."rule_type" IS '类型';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."type" IS '类型';
+
 -- ----------------------------
 -- Records of data_quality_rule_template
 -- ----------------------------
@@ -1705,7 +1802,7 @@ CREATE TABLE "public"."data_quality_task_rule_execute" (
   "error_msg" varchar(255) COLLATE "pg_catalog"."default",
   "warning_status" int2,
   "error_status" int2,
-  "rule_id" varchar(32) COLLATE "pg_catalog"."default"
+  "rule_id" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."task_id" IS '所属任务id';
@@ -2117,6 +2214,17 @@ CREATE TABLE "public"."user_group" (
   "authorize_time" timestamptz(6)
 )
 ;
+
+COMMENT ON COLUMN "public"."user_group"."id" IS 'id';
+COMMENT ON COLUMN "public"."user_group"."tenant" IS '租户';
+COMMENT ON COLUMN "public"."user_group"."name" IS '名字';
+COMMENT ON COLUMN "public"."user_group"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."user_group"."description" IS '描述';
+COMMENT ON COLUMN "public"."user_group"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."user_group"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."user_group"."valid" IS '状态';
+COMMENT ON COLUMN "public"."user_group"."authorize_user" IS '授权人';
+COMMENT ON COLUMN "public"."user_group"."authorize_time" IS '授权时间';
 
 -- ----------------------------
 -- Table structure for user_group_relation
