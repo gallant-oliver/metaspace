@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -28,14 +29,10 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
-import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.HeaderParam;
 
 /*
  * @description
@@ -93,6 +90,9 @@ public interface CategoryDAO {
     @Update("update category set upBrotherCategoryGuid=#{upBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateUpBrotherCategoryGuid(@Param("guid")String guid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid,@Param("tenantId")String tenantId);
 
+    @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateParentCategoryGuid(@Param("guid")String guid, @Param("parentcategoryguid")String parentcategoryguid, @Param("upBrotherCategoryGuid")String upBrothCatalogGuid,@Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
+
     @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
 
@@ -101,6 +101,14 @@ public interface CategoryDAO {
 
     @Delete("delete from category where guid=#{guid} and tenantid=#{tenantId}")
     public int delete(@Param("guid")String guid,@Param("tenantId")String tenantId) throws SQLException;
+
+    @Delete("<script>" +
+            "delete from category where tenantid=#{tenantId} and guid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int deleteCategoryByIds(@Param("ids")List<String> ids,@Param("tenantId")String tenantId);
 
     @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType} and tenantid=#{tenantId}")
     public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType,@Param("tenantId") String tenantId) throws SQLException;
@@ -152,7 +160,7 @@ public interface CategoryDAO {
             "UNION " +
             "SELECT category.* from categoryTree JOIN category on categoryTree.guid = category.parentCategoryGuid and category.tenantid=#{tenantId}) " +
             "SELECT guid FROM categoryTree")
-    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid);
+    public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid,@Param("tenantId")String tenantId);
 
     @Delete({"<script>",
              "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
@@ -251,5 +259,15 @@ public interface CategoryDAO {
     @Select(" select count(1) from category where name=#{name} " +
             " and categorytype=#{type} and level=1 and tenantid=#{tenantId}")
     public int querySameNameOne(@Param("name") String categoryName, @Param("type")int type, @Param("tenantId")String tenantId);
+
+    @Select(" WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
+            " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=#{categoryType} and D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
+            " SELECT  guid,PATH path FROM T " +
+            " ORDER BY PATH")
+    public List<CategoryPath> getPath(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
 
 }

@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -71,6 +72,8 @@ public class DataStandardService {
     TableDAO tableDAO;
     @Autowired
     TenantService tenantService;
+    @Autowired
+    CategoryDAO categoryDAO;
 
     public int insert(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
         String regexp = "^[A-Z0-9]+$";
@@ -356,10 +359,15 @@ public class DataStandardService {
         for (CategoryPrivilege category : result) {
             String parentGuid = category.getParentCategoryGuid();
             CategoryPrivilege.Privilege privilege = null;
+            String parentPattern = "^Standard-([0-9])+$";
             if(parentGuid == null) {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, false, true, true, false,false);
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true,false);
             } else {
                 privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
+            }
+            if (category.getGuid().matches(parentPattern)){
+                privilege.setEdit(false);
+                privilege.setDelete(false);
             }
             category.setPrivilege(privilege);
         }
@@ -375,7 +383,11 @@ public class DataStandardService {
             if(dataStandardDAO.countByByCatetoryId(categoryGuid,tenantId) > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
             }
-            dataManageService.deleteCategory(categoryGuid,tenantId);
+            int childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
+            if (childrenNum > 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
+            }
+            dataManageService.deleteCategory(categoryGuid,tenantId,3);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }

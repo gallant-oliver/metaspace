@@ -48,14 +48,13 @@ public class ImpalaJdbcUtils {
     static {
         try {
             Class.forName(driverClassName);
-            impalaUrl = MetaspaceConfig.getImpalaConf();
-            impalaResourcePool = MetaspaceConfig.getImpalaResourcePool()==null?"metaspace":MetaspaceConfig.getImpalaResourcePool();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Connection getConnection(String db) throws SQLException, IOException, AtlasBaseException {
+        impalaResourcePool = MetaspaceConfig.getImpalaResourcePool();
         String user = AdminUtils.getUserName();
         return getConnection(db,user,impalaResourcePool);
     }
@@ -64,6 +63,7 @@ public class ImpalaJdbcUtils {
 
         Connection connection = null;
         String jdbcUrl;
+        impalaUrl = MetaspaceConfig.getImpalaConf();
         Properties properties = new Properties();
         //单引号防止特殊字符
         if (pool==null||pool.length()==0)
@@ -86,10 +86,12 @@ public class ImpalaJdbcUtils {
      */
     static Connection connection;
     public static Connection getSystemConnection(String db) throws SQLException, AtlasBaseException {
+        impalaResourcePool = MetaspaceConfig.getImpalaResourcePool();
         return getSystemConnection(db,impalaResourcePool);
     }
 
     public static Connection getSystemConnection(String db,String pool) throws SQLException, AtlasBaseException {
+        impalaUrl = MetaspaceConfig.getImpalaConf();
         String user = MetaspaceConfig.getHiveAdmin();
         String jdbcUrl;
         Properties properties = new Properties();

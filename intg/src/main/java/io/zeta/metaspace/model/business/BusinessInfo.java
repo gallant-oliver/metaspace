@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.business;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 /*
@@ -42,7 +44,26 @@ public class BusinessInfo {
     private Boolean editBusiness;
     private String level2CategoryId;
     private String trustTable;
+    @JsonIgnore
+    private String categoryGuid;
+    @JsonIgnore
+    private String categoryName;
 
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getCategoryGuid() {
+        return categoryGuid;
+    }
+
+    public void setCategoryGuid(String categoryGuid) {
+        this.categoryGuid = categoryGuid;
+    }
 
     public String getBusinessId() {
         return businessId;

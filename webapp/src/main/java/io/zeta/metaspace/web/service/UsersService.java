@@ -399,6 +399,8 @@ public class UsersService {
             info.setBusinessCategory(userBusiCategoryList);
             info.setUserGroups(userDAO.getUserGroupNameByUserId(userId, tenantId));
             return info;
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error("获取用户信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
@@ -431,7 +433,9 @@ public class UsersService {
             userPageResult.setCurrentSize(users.size());
             userPageResult.setTotalSize(userTotalSize);
             return userPageResult;
-        } catch (Exception e) {
+        } catch (AtlasBaseException e){
+            throw e;
+        }catch (Exception e) {
             LOG.error("获取用户列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }

@@ -70,7 +70,7 @@ public interface BusinessDAO {
     public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //添加目录/业务对象关联
@@ -236,4 +236,101 @@ public interface BusinessDAO {
     @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
     public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
 
+    @Select("<script>" +
+            "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +
+            " from businessInfo join business_relation " +
+            " on businessInfo.businessId = business_relation.businessId " +
+            " where businessInfo.tenantid=#{tenantId} and " +
+            " business_relation.categoryGuid=#{categoryId} " +
+            " </script>")
+    public List<BusinessInfo> getAllBusinessByCategory(@Param("categoryId")String categoryId,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +
+            " from businessInfo join business_relation " +
+            " on businessInfo.businessId = business_relation.businessId " +
+            " where businessInfo.tenantid=#{tenantId} and " +
+            " business_relation.categoryGuid=#{categoryGuid} and " +
+            " businessInfo.businessid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            " </script>")
+    public List<BusinessInfo> getBusinessByIds(@Param("ids")List<String> ids,@Param("categoryGuid")String categoryGuid,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select name from businessInfo " +
+            " where businessInfo.tenantid=#{tenantId} " +
+            " </script>")
+    public List<String> getBusinessNames(@Param("tenantId")String tenantId);
+
+    //批量添加业务信息
+    @Insert("<script>" +
+            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus) " +
+            " values " +
+            " <foreach item='info' index='index' collection='infos' separator='),(' open='(' close=')'>" +
+            "#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId},1,0 " +
+            " </foreach>" +
+            " </script>")
+    public int insertBusinessInfos(@Param("infos") List<BusinessInfo> infos,@Param("tenantId")String tenantId);
+
+    //批量添加目录/业务对象关联
+    @Insert("<script>" +
+            " insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime) values " +
+            " <foreach item='entity' index='index' collection='entitys' separator='),(' open='(' close=')'>" +
+            " #{entity.relationshipGuid},#{entity.categoryGuid},#{entity.businessId},#{entity.generateTime} " +
+            " </foreach>" +
+            " </script>")
+    public int addRelations(@Param("entitys")List<BusinessRelationEntity> entitys);
+
+    @Delete("<script>" +
+            "delete from businessInfo where businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int deleteBusinessesByIds(@Param("businessIds")List<String> businessIds);
+
+    //删除业务信息与表的关联
+    @Delete("<script>" +
+            "delete from business2table where businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int deleteRelationByBusinessIds(@Param("businessIds")List<String> businessIds);
+
+    @Delete("<script>" +
+            "delete from business_relation where businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int deleteRelationByIds(@Param("businessIds")List<String> businessIds);
+
+    @Select("<script>" +
+            "select name from businessInfo " +
+            " where tenantid=#{tenantId} and businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public List<String> getBusinessNamesByIds(@Param("businessIds")List<String> businessIds,@Param("tenantId")String tenantId);
+
+    //更新业务信息
+    @Update("<script>" +
+            "update businessinfo set departmentid=#{newCategoryId} where businessId in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public int updateBusinessInfoCategory(@Param("businessIds") List<String> ids,@Param("newCategoryId")String newCategoryId);
+
+    @Update("<script>" +
+            "update business_relation set categoryGuid=#{newCategoryId} where businessid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public int updateBusinessRelation(@Param("ids") List<String> businessIds,@Param("newCategoryId")String newCategoryId);
 }

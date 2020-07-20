@@ -128,7 +128,7 @@ public class UserGroupREST {
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
             LOG.error("新建用户组失败", e);
-            return ReturnUtil.error(e);
+            throw e;
         } catch (Exception e) {
             LOG.error("新建用户组失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"新建用户组失败");
@@ -191,17 +191,17 @@ public class UserGroupREST {
             @PathParam("id") String groupId,
             @DefaultValue("0") @QueryParam("offset") int offset,
             @DefaultValue("-1") @QueryParam("limit") int limit,
-            @QueryParam("search") String search) {
+            @QueryParam("search") String search) throws AtlasBaseException {
         try {
             LOG.info("获取用户组添加成员列表及搜索时，您的租户ID为:" + tenantId + ",用户组ID为:" + groupId);
             PageResult<UserGroupMemberSearch> pageResult = userGroupService.getUserGroupMemberSearch(tenantId, groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
         } catch (AtlasBaseException e) {
             LOG.error("获取用户组添加成员列表及搜索失败", e);
-            return ReturnUtil.error(e);
+            throw e;
         } catch (Exception e) {
             LOG.error("获取用户组添加成员列表及搜索失败", e);
-            return ReturnUtil.error(AtlasErrorCode.BAD_REQUEST.getErrorCode(), "获取用户组添加成员列表及搜索失败，您的租户ID为:" + tenantId + ",用户组ID为:" + groupId + ",请检查好是否配置正确", e.getMessage());
+            throw new AtlasBaseException("获取用户组添加成员列表及搜索失败，您的租户ID为:" + tenantId + ",用户组ID为:" + groupId + ",请检查好是否配置正确"+e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组成员列表获取失败");
         }
     }
 

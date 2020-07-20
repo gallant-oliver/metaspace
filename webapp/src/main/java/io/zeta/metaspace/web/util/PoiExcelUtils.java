@@ -162,6 +162,18 @@ public class PoiExcelUtils {
         fillData(sheet, data, 1);
     }
 
+    public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data,CellStyle cellStyle,int column) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        sheet.setDefaultColumnWidth(column);
+        Row row0 = sheet.createRow(0);
+        for (int i = 0; i < attributes.size(); i++) {
+            Cell cell = row0.createCell(i);
+            cell.setCellStyle(cellStyle);
+            cell.setCellValue(attributes.get(i).trim());
+        }
+        fillData(sheet, data, 1);
+    }
+
     public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, Map<String,List<List<String>>> dataMap) {
         Sheet sheet = workbook.createSheet(sheetName);
         Row row0 = sheet.createRow(0);
@@ -261,7 +273,7 @@ public class PoiExcelUtils {
      * @param cell 列
      * @return 列值
      */
-    private static String getCellValue(Cell cell) {
+    public static String getCellValue(Cell cell) {
         String cellValue = "";
 
         if (cell == null) {

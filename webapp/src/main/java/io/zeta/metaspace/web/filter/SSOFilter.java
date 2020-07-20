@@ -21,6 +21,7 @@ import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.FilterUtils;
 import io.zeta.metaspace.web.util.GuavaUtils;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +45,7 @@ import java.util.Map;
 public class SSOFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(SSOFilter.class);
     private static final Logger AUDIT_LOG = LoggerFactory.getLogger("AUDIT");
-    private String loginURL = SSOConfig.getLoginURL();
+    private String loginURL;
     private static String TICKET_KEY = "X-SSO-FullticketId";
 
     @Override
@@ -55,7 +56,7 @@ public class SSOFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
             throws IOException, ServletException {
-
+        loginURL = SSOConfig.getLoginURL();
         Date date = new Date();
         Long startTime = System.currentTimeMillis();
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;

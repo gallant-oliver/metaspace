@@ -11,25 +11,26 @@ public class KerberosConfig {
     private static boolean kerberosEnable = false;
 //    private static String metaspaceAdmin;
 //    private static String metaspaceKeytab;
-    private static String hivePrincipal;
-    private static String impalaPrincipal;
-    private static String impalaJdbc;
 
     public static boolean isKerberosEnable() {
         return kerberosEnable;
     }
 
 
-    public static String getHivePrincipal() {
+    public static String getHivePrincipal() throws AtlasBaseException {
+        String hivePrincipal = conf.getString("metaspace.hive.principal");
+        if (hivePrincipal == null || hivePrincipal.equals("")) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.principal未正确配置");
+        }
         return hivePrincipal;
     }
 
     public static String getImpalaPrincipal() {
-        return impalaPrincipal;
+        return conf.getString("metaspace.impala.principal");
     }
 
     public static String getImpalaJdbc() {
-        return impalaJdbc;
+        return conf.getString("metaspace.impala.kerberos.jdbc");
     }
 
     static {
@@ -38,20 +39,6 @@ public class KerberosConfig {
             String enable = conf.getString("atlas.authentication.method.kerberos");
             //默认关闭
             kerberosEnable = enable != null && enable.equals("true");
-            if (kerberosEnable) {
-                hivePrincipal = conf.getString("metaspace.hive.principal");
-                impalaPrincipal = conf.getString("metaspace.impala.principal");
-                impalaJdbc = conf.getString("metaspace.impala.kerberos.jdbc");
-//                if (metaspaceAdmin == null || metaspaceAdmin.equals("")) {
-//                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.admin未正确配置");
-//                }
-//                if (metaspaceKeytab == null || metaspaceKeytab.equals("")) {
-//                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.kerberos.keytab未正确配置");
-//                }
-                if (hivePrincipal == null || hivePrincipal.equals("")) {
-                    throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.principal未正确配置");
-                }
-            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

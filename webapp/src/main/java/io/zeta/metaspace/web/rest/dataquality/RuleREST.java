@@ -365,15 +365,15 @@ public class RuleREST {
         }
     }
 
-    @GET
-    @Path("{id}/used")
+    @POST
+    @Path("/used")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getRuleUsed(@PathParam("id") String id)
+    public Result getRuleUsed(List<String> ids)
             throws Exception
     {
         try {
-            List<DataTaskIdAndName> used = ruleService.getRuleUsed(id);
+            List<DataTaskIdAndName> used = ruleService.getRuleUsed(ids);
             return ReturnUtil.success(used);
         }catch (Exception e){
             LOG.error("获取使用规则任务失败",e);
@@ -406,7 +406,7 @@ public class RuleREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public Result exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
         File exportExcel;
         //全局导出
         String all = "all";
@@ -423,7 +423,6 @@ public class RuleREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            return ReturnUtil.success();
         } finally {
             exportExcel.delete();
         }
@@ -454,18 +453,8 @@ public class RuleREST {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  name);
-            String suffix1 = ".xlsx";
-            String suffix2 = ".xls";
-            if(!(name.endsWith(suffix1) || name.endsWith(suffix2))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-            }
-
-            file = new File(name);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            if(file.length() > MAX_EXCEL_FILE_SIZE) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-            }
+            HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(),  name);
+            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             String upload;
             if (all){
                 upload = dataManageService.uploadAllCategory(file,CATEGORY_RULE,tenantId);
@@ -511,7 +500,7 @@ public class RuleREST {
                 name  = dataManageService.getCategoryNameById(categoryId,tenantId);
             }
 
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
+            HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_RULE,tenantId);
@@ -541,10 +530,10 @@ public class RuleREST {
     public Result moveCategory(MoveCategory moveCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             if(moveCategory.getGuid()==null){
-                HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "变更目录结构：all");
+                HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(), "变更目录结构：all");
             }else{
                 CategoryEntityV2 category = dataManageService.getCategory(moveCategory.getGuid(), tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "变更目录结构："+category.getName());
+                HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(), "变更目录结构："+category.getName());
             }
             dataManageService.moveCategories(moveCategory,CATEGORY_RULE,tenantId);
             return ReturnUtil.success();
@@ -587,7 +576,7 @@ public class RuleREST {
     @GET
     @Path("/download/category/template")
     @Valid
-    public Result downloadCategoryTemplate() throws Exception {
+    public void downloadCategoryTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
         String filePath = homeDir + "/conf/category_template.xlsx";
         String fileName = filename(filePath);
@@ -595,6 +584,5 @@ public class RuleREST {
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-        return ReturnUtil.success();
     }
 }

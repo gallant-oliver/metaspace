@@ -64,6 +64,7 @@ import oracle.jdbc.OracleBfile;
 import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -97,6 +98,7 @@ public class DataShareService {
 
     public static final String METASPACE_MOBIUS_ADDRESS = "metaspace.mobius.url";
     private static String engine;
+    private static Configuration conf;
 
     @Autowired
     DataShareDAO shareDAO;
@@ -123,8 +125,7 @@ public class DataShareService {
 
     static {
         try {
-            org.apache.commons.configuration.Configuration conf = ApplicationProperties.get();
-            engine = conf.getString("metaspace.quality.engine");
+            conf = ApplicationProperties.get();
         }  catch (Exception e) {
             LOG.error(e.toString());
         }
@@ -477,46 +478,43 @@ public class DataShareService {
         }
     }
 
-    public int publishAPI(List<String> guidList,String tenantId) throws AtlasBaseException {
-        try {
-            Configuration configuration = ApplicationProperties.get();
-            APIContent content = generateAPIContent(guidList,tenantId);
-            Gson gson = new Gson();
-            String jsonStr = gson.toJson(content, APIContent.class);
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
-            int retryCount = 0;
-            String errorId = null;
-            String errorReason = null;
-            int retries = 3;
-            String proper = "0.0";
-            while(retryCount < retries) {
-                String res = OKHttpClient.doPost(mobiusURL, jsonStr);
-                LOG.info(res);
-                if(Objects.nonNull(res)) {
-                    Map response = convertMobiusResponse(res);
-                    errorId = String.valueOf(response.get("error-id"));
-                    errorReason = String.valueOf(response.get("reason"));
-                    if (proper.equals(errorId)) {
-                        break;
-                    } else {
-                        retryCount++;
-                    }
+    public int publishAPI(List<String> guidList,String tenantId) throws Exception {
+        APIContent content = generateAPIContent(guidList,tenantId);
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(content, APIContent.class);
+        String mobiusURL = conf.getString(METASPACE_MOBIUS_ADDRESS) + "/svc/create";
+        int retryCount = 0;
+        String errorId = null;
+        String errorReason = null;
+        int retries = 3;
+        String proper = "0.0";
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
                 } else {
                     retryCount++;
                 }
+            } else {
+                retryCount++;
             }
-
-            if(!proper.equals(errorId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发布到云平台失败：" + errorReason);
-            }
-
-            return shareDAO.updatePublishStatus(guidList, true);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("更新发布状态失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
+
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "发布到云平台失败");
+        }
+
+        return shareDAO.updatePublishStatus(guidList, true);
     }
 
     public void checkTableStatus(String apiGuid) throws AtlasBaseException {
@@ -544,53 +542,50 @@ public class DataShareService {
         return response;
     }
 
-    public int unpublishAPI(List<String> apiGuidList,String tenantId) throws AtlasBaseException {
-        try {
-            for(String apiGuid : apiGuidList) {
-                APIInfo info = shareDAO.getAPIInfoByGuid(apiGuid);
-                APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
-                if(sourceType == APIInfo.SourceType.HIVE) {
-                    checkTableStatus(apiGuid);
-                    checkApiPermission(apiGuid,tenantId);
-                }
+    public int unpublishAPI(List<String> apiGuidList,String tenantId) throws AtlasBaseException, AtlasException {
+        for(String apiGuid : apiGuidList) {
+            APIInfo info = shareDAO.getAPIInfoByGuid(apiGuid);
+            APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(info.getSourceType());
+            if(sourceType == APIInfo.SourceType.HIVE) {
+                checkTableStatus(apiGuid);
+                checkApiPermission(apiGuid,tenantId);
             }
-
-            Configuration configuration = ApplicationProperties.get();
-            String mobiusURL = configuration.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
-            Map param = new HashMap();
-            param.put("api_id_list", apiGuidList);
-            Gson gson = new Gson();
-            String jsonStr = gson.toJson(param, Map.class);
-
-            int retryCount = 0;
-            String errorId = null;
-            String errorReason = null;
-            int retries = 3;
-            String proper = "0.0";
-            while(retryCount < retries) {
-                String res = OKHttpClient.doPut(mobiusURL, jsonStr);
-                LOG.info(res);
-                if(Objects.nonNull(res)) {
-                    Map response = convertMobiusResponse(res);
-                    errorId = String.valueOf(response.get("error-id"));
-                    errorReason = String.valueOf(response.get("reason"));
-                    if (proper.equals(errorId)) {
-                        break;
-                    } else {
-                        retryCount++;
-                    }
-                }
-            }
-            if(!proper.equals(errorId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败：" + errorReason);
-            }
-            return shareDAO.updatePublishStatus(apiGuidList, false);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("更新发布状态失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新发布状态失败");
         }
+
+        String mobiusURL = conf.getString(METASPACE_MOBIUS_ADDRESS)  + "/svc/delete";
+        Map param = new HashMap();
+        param.put("api_id_list", apiGuidList);
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(param, Map.class);
+
+        int retryCount = 0;
+        String errorId = null;
+        String errorReason = null;
+        int retries = 3;
+        String proper = "0.0";
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台撤销发布失败");
+        }
+        return shareDAO.updatePublishStatus(apiGuidList, false);
     }
 
     public APIContent generateAPIContent(List<String> guidList,String tenantId) throws Exception {
@@ -1097,6 +1092,7 @@ public class DataShareService {
         Connection conn = null;
         long count = 0;
         try {
+            String engine = conf.getString("metaspace.quality.engine");
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
             } else {
@@ -1424,6 +1420,8 @@ public class DataShareService {
             pageResult.setCurrentSize(userList.size());
             pageResult.setTotalSize(userList.size());
             return pageResult;
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error("获取用户列表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
@@ -1444,6 +1442,8 @@ public class DataShareService {
                 dataManageService.sendToMobius(apiList, tableOwners);
             }
             shareDAO.updateManager(apiGuid, userId);
+        } catch (AtlasBaseException e){
+            throw e;
         } catch (Exception e) {
             LOG.error("更新管理者失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新管理者失败");
@@ -1560,6 +1560,7 @@ public class DataShareService {
     }
 
     public List<Queue> getPools(String tenantId) throws AtlasBaseException {
+        engine = conf.getString("metaspace.quality.engine");
         Pool pools = tenantService.getPools(tenantId);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             return pools.getImpala();

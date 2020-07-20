@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
@@ -51,6 +52,8 @@ public class RuleService {
 
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    CategoryDAO categoryDAO;
 
     public int insert(Rule rule,String tenantId) throws AtlasBaseException {
         try {
@@ -256,17 +259,17 @@ public class RuleService {
         }
     }
 
-    public void deleteCategory(String categoryGuid,String tenantId) throws AtlasBaseException {
-        try {
-            int count = ruleDAO.getCategoryObjectCount(categoryGuid,tenantId);
-            if(count > 0) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
-            }
-            dataManageService.deleteCategory(categoryGuid,tenantId);
-        } catch (Exception e) {
-            LOG.error("删除目录失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+    public void deleteCategory(String categoryGuid,String tenantId) throws Exception {
+        int count = ruleDAO.getCategoryObjectCount(categoryGuid,tenantId);
+        if(count > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该分组下存在关联规则，不允许删除");
         }
+        int childrenNum;
+        childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
+        if (childrenNum > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录下存在子目录");
+        }
+        dataManageService.deleteCategory(categoryGuid,tenantId,4);
     }
 
     public String getCategoryName(String categoryGuid,String tenantId) {
@@ -277,7 +280,10 @@ public class RuleService {
         return ruleDAO.getNameById(id);
     }
 
-    public List<DataTaskIdAndName> getRuleUsed(String id){
-        return ruleDAO.getRuleUsed(id);
+    public List<DataTaskIdAndName> getRuleUsed(List<String> ids){
+        if (ids==null||ids.size()==0){
+            return new ArrayList<>();
+        }
+        return ruleDAO.getRuleUsed(ids);
     }
 }
