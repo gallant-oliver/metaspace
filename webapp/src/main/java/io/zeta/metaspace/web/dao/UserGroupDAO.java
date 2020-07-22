@@ -246,10 +246,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false" +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
@@ -284,10 +287,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false " +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
@@ -345,10 +351,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false " +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
