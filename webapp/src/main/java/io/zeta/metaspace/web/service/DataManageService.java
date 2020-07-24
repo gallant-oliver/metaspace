@@ -1290,6 +1290,7 @@ public class DataManageService {
                     String guid = entity.getGuid();
                     String name = entity.getAttribute("name").toString();
                     String type = entity.getAttribute("type").toString();
+                    Object comment = entity.getAttribute("comment");
                     String status = entity.getStatus().name();
                     String updateTime = DateUtils.date2String(entity.getUpdateTime());
                     Column column = new Column();
@@ -1299,6 +1300,9 @@ public class DataManageService {
                     column.setType(type);
                     column.setStatus(status);
                     column.setDisplayNameUpdateTime(updateTime);
+                    if (comment!=null){
+                        column.setDescription(column.toString());
+                    }
 
                     columnList.add(column);
 
@@ -1391,7 +1395,8 @@ public class DataManageService {
                     String name = entity.getAttribute("name").toString();
                     String type = entity.getAttribute("type").toString();
                     String status = entity.getStatus().name();
-                    columnDAO.updateColumnBasicInfo(guid, name, type, status);
+                    String description = entity.getAttribute("comment") ==null?null:entity.getAttribute("comment").toString();
+                    columnDAO.updateColumnBasicInfo(guid, name, type, status,description);
                 }
             }
         } catch (Exception e) {

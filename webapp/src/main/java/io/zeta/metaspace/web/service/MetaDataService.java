@@ -917,6 +917,7 @@ public class MetaDataService {
         } else {
             column.setType("");
         }
+
         String commentAttribute = "comment";
         if (attributes.containsKey(commentAttribute) && Objects.nonNull(attributes.get(commentAttribute))) {
             column.setDescription(attributes.get(commentAttribute).toString());
