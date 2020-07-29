@@ -1515,7 +1515,7 @@ public class BusinessService {
             parameter.setLimit(-1);
             parameter.setStatus("added");
             PageResult<BusinessInfoHeader> businessListByCondition = getBusinessListByCondition(parameter, tenantId);
-            if (businessListByCondition==null||businessListByCondition.getLists().size()==0){
+            if (businessListByCondition.getLists()==null||businessListByCondition.getLists().size()==0){
                 pageResult.setLists(new ArrayList<>());
                 return pageResult;
             }
