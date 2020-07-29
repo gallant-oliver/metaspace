@@ -252,7 +252,26 @@ public class HookService {
      */
     public HookCheck all() throws AtlasException, AtlasBaseException, IOException {
         HookCheck hookCheck = new HookCheck();
-        hookCheck.setKafkaCheck(kafkaCheck());
+        try{
+            hookCheck.setHookConfigCheck(hookConfigCheck());
+        }catch(Exception e){
+            LOG.error("检验hook配置情况失败", e);
+        }
+        try{
+            hookCheck.setConsumerThread(consumerThread());
+        }catch(Exception e){
+            LOG.error("检验消费者线程情况", e);
+        }
+        try{
+            hookCheck.setHookJar(hookJar());
+        }catch(Exception e){
+            LOG.error("检验hook的jar包加载情况", e);
+        }
+        try{
+            hookCheck.setKafkaCheck(kafkaCheck());
+        }catch(Exception e){
+            LOG.error("检验kafka消费积压情况", e);
+        }
         return hookCheck;
     }
 

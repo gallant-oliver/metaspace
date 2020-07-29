@@ -446,7 +446,7 @@ public class DataManageService {
 
     private void createOtherCategory(CategoryEntityV2 entity,int type,CategoryInfoV2 info,String tenantId) throws SQLException, AtlasBaseException {
         StringBuffer qualifiedName = new StringBuffer();
-        String newCategoryGuid = UUID.randomUUID().toString();
+        String newCategoryGuid = entity.getGuid();
         String newCategoryParentGuid = info.getParentCategoryGuid();
         //获取当前catalog
         CategoryEntityV2 currentEntity = categoryDao.queryByGuid(info.getGuid(),tenantId);

@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -39,6 +40,8 @@ import org.apache.ibatis.annotations.Update;
 
 import java.sql.Timestamp;
 import java.util.List;
+
+import javax.ws.rs.DELETE;
 
 /**
  * @author lixiang03
@@ -246,10 +249,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false" +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
@@ -284,10 +290,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false " +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
@@ -345,10 +354,13 @@ public interface UserGroupDAO {
             "        categoryguid as guid from business_relation " +
             "    </when>" +
             "    <when test=\"categoryType==3\">" +
-            "        categoryid as guid from data_standard where tenantid=#{tenantId}" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
             "    </when>" +
             "    <otherwise>" +
-            "        category_id as guid from data_quality_rule " +
+            "        category_id as guid from data_quality_rule where delete=false " +
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
@@ -712,4 +724,155 @@ public interface UserGroupDAO {
             " </foreach>" +
             "</script>")
     public int deleteProjectToUserGroup(@Param("id")String id,@Param("projects") List<String> projects);
+
+    //递归找子节点包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category " +
+            "    where tenantid=#{tenantId} and guid in " +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid' " +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item} " +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree " +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId} " +
+            ") " +
+            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            "</script>")
+    public List<CategoryPrivilegeV2> getChildCategoriesPrivileges(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
+    //递归找发生变化的子节点包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category " +
+            "    where tenantid=#{tenantId} and guid=#{category.guid} " +
+            "    and categoryType=#{categoryType} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree " +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId} " +
+            ") " +
+            "SELECT count(*)over() total,*,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            " where read!=#{category.read} or edit_category!=#{category.editCategory} or edit_item!=#{category.editItem} " +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<CategoryPrivilegeV2> getUpdateChildCategoriesPrivileges(@Param("category") CategoryPrivilegeV2 category, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType,
+                                                                        @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset);
+
+
+    @Update ("<script>" +
+            "update category_group_relation set " +
+             " read=true " +
+             "<if test='privilege.editCategory==true'>" +
+             " ,edit_category=true " +
+             "</if>" +
+             "<if test='privilege.editItem==true'>" +
+             " ,edit_item=true " +
+             "</if>" +
+             " where group_id=#{userGroupId} and category_id in " +
+             "    <foreach item='id' index='index' collection='categoryIds' " +
+             "    open='(' separator=',' close=')'>" +
+             "    #{id} " +
+             "    </foreach>" +
+             "</script>")
+    public void updateChildCategoryPrivileges(@Param("categoryIds") List<String> categoryIds,@Param("userGroupId")String userGroupId,@Param("privilege")CategoryPrivilegeV2 privilege);
+
+    @Update ("<script>" +
+             "update category_group_relation set " +
+             " read=#{privilege.read}, " +
+             " edit_category=#{privilege.editCategory}, " +
+             " edit_item=#{privilege.editItem} " +
+             " where group_id=#{userGroupId} and category_id in " +
+             "    <foreach item='id' index='index' collection='categoryIds' " +
+             "    open='(' separator=',' close=')'>" +
+             "    #{id} " +
+             "    </foreach>" +
+             "</script>")
+    public void updateCategoryPrivileges(@Param("categoryIds") List<String> categoryIds,@Param("userGroupId")String userGroupId,@Param("privilege")CategoryPrivilegeV2 privilege);
+
+    @Insert("<script>" +
+            "insert into category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='id' index='index' collection='categoryIds' " +
+            "    open='(' separator='),(' close=')'>" +
+            "    #{id},#{userGroupId},#{privilege.read},#{privilege.editCategory},#{privilege.editItem}" +
+            "    </foreach>" +
+            "</script>")
+    public int addCategoryPrivileges(@Param("categoryIds") List<String> categoryIds,@Param("userGroupId")String userGroupId,@Param("privilege")CategoryPrivilegeV2 privilege);
+
+
+    @Select("select category_id guid,read,edit_category editCategory,edit_item editItem  from category_group_relation where category_id=#{guid} and group_id=#{userGroupId}")
+    public CategoryPrivilegeV2 getCategoriesPrivileges(@Param("guid") String guid, @Param("userGroupId")String userGroupId);
+
+    @Select("select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id and g.group_id=#{userGroupId} where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}")
+    public List<CategoryPrivilegeV2> getUserGroupCategory(@Param("userGroupId")String userGroupId, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType);
+
+    //递归找父节点
+    @Select("<script>WITH RECURSIVE categoryTree AS" +
+            "(" +
+            "    SELECT * from category where tenantid=#{tenantId} and " +
+            "    guid in " +
+            "    <foreach item='item' index='index' collection='guid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid where category.tenantid=#{tenantId} " +
+            ")" +
+            "SELECT distinct * from categoryTree where guid not in(" +
+            "  select category_id from category_group_relation where group_id=#{userGroupId}" +
+            "  )" +
+            "</script>")
+    public List<CategoryPrivilegeV2> getParentCategoryNoPrivilege(@Param("guid") List<String> guid, @Param("categoryType") int categoryType,@Param("userGroupId")String userGroupId,@Param("tenantId") String tenantId);
+
+    @Select("<script> " +
+            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
+            " and g.group_id in " +
+            "    <foreach item='id' index='index' collection='userGroupIds'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType);
+
+    //递归找父节点
+    @Select("<script>WITH RECURSIVE categoryTree AS" +
+            "(" +
+            "    SELECT * from category where tenantid=#{tenantId} and " +
+            "    guid in " +
+            "    <foreach item='item' index='index' collection='guid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType}" +
+            "    UNION " +
+            "    SELECT category.* from categoryTree" +
+            "    JOIN category on categoryTree.parentCategoryGuid= category.guid where category.tenantid=#{tenantId} " +
+            ")" +
+            "SELECT distinct * from categoryTree where guid not in " +
+            "    <foreach item='item' index='index' collection='guid'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<CategoryPrivilegeV2> getParentCategory(@Param("guid") List<String> guid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+
+    @Delete("<script>" +
+            " delete from category_group_relation where group_id=#{userGroupId} and category_id in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public int deleteCategoryPrivilege(@Param("ids") List<String> ids,@Param("userGroupId")String userGroupId);
+
+    @Select("select *,true \"read\",true editItem,true editCategory from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
+    public List<CategoryPrivilegeV2> getAllCategoryPrivilege(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 }
