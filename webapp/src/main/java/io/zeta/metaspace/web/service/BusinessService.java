@@ -65,10 +65,12 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.postgresql.util.PGobject;
 
@@ -1022,11 +1024,13 @@ public class BusinessService {
             List<String> typeList = (List) obj.get("hive_column.type");
             List<String> stateList = (List) obj.get("__state");
             List<Long> modifyTimeList = (List)obj.get("__modificationTimestamp");
+            List<String> commonList = (List) obj.get("hive_column.comment");
             String guid = null;
             String name = null;
             String type = null;
             String state = null;
             String updateTime = null;
+            String description = null;
 
             if(Objects.nonNull(guidList) && guidList.size()>0) {
                 guid = guidList.get(0);
@@ -1044,6 +1048,9 @@ public class BusinessService {
                 Long time = modifyTimeList.get(0);
                 updateTime = DateUtils.date2String(new Date(time));
             }
+            if(Objects.nonNull(commonList) && commonList.size()>0) {
+                description = commonList.get(0);
+            }
 
             Column column = new Column();
             column.setTableId(tableGuid);
@@ -1052,6 +1059,7 @@ public class BusinessService {
             column.setType(type);
             column.setStatus(state);
             column.setDisplayNameUpdateTime(updateTime);
+            column.setDescription(description);
             columnInfoList.add(column);
         }
         return columnInfoList;
@@ -1297,7 +1305,7 @@ public class BusinessService {
     }
 
     /**
-     * 文件转化为目录
+     * 文件转化为业务对象
      * @param file
      * @return
      * @throws Exception
@@ -1497,6 +1505,158 @@ public class BusinessService {
         } catch (Exception e) {
             LOG.error("迁移业务对象失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "迁移业务对象失败");
+        }
+    }
+
+    public PageResult<Table> checkTable(String tenantId,int limit,int offset) throws AtlasBaseException {
+            PageResult<Table> pageResult = new PageResult<>();
+            BusinessQueryParameter parameter = new BusinessQueryParameter();
+            parameter.setOffset(0);
+            parameter.setLimit(-1);
+            parameter.setStatus("added");
+            PageResult<BusinessInfoHeader> businessListByCondition = getBusinessListByCondition(parameter, tenantId);
+            if (businessListByCondition.getLists()==null||businessListByCondition.getLists().size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+            List<Table> tables = businessDao.getTablesByBusiness(businessIds,limit,offset);
+            if (tables==null||tables.size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            pageResult.setLists(tables);
+            pageResult.setTotalSize(tables.get(0).getTotal());
+            pageResult.setCurrentSize(tables.size());
+            return pageResult;
+    }
+
+    public PageResult<Table> checkColumn(String tenantId,int limit,int offset) throws AtlasBaseException {
+            PageResult<Table> pageResult = new PageResult<>();
+            BusinessQueryParameter parameter = new BusinessQueryParameter();
+            parameter.setOffset(0);
+            parameter.setLimit(-1);
+            parameter.setStatus("added");
+            PageResult<BusinessInfoHeader> businessListByCondition = getBusinessListByCondition(parameter, tenantId);
+            if (businessListByCondition.getLists()==null||businessListByCondition.getLists().size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+            List<Table> tables = businessDao.getTablesByBusinessAndColumn(businessIds,limit,offset);
+            if (tables==null||tables.size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<Column> columns = columnDAO.checkDescriptionColumnByTableIds(tables);
+            Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(column -> column.getTableId()));
+            tables.stream().forEach(table -> table.setColumns(map.get(table.getTableId())));
+            pageResult.setLists(tables);
+            pageResult.setTotalSize(tables.get(0).getTotal());
+            pageResult.setCurrentSize(tables.size());
+            return pageResult;
+    }
+
+    /**
+     * 业务对象表描述空值检查下载
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     * @throws IOException
+     */
+    public File checkData2File(String tenantId) throws AtlasBaseException, IOException {
+        //获取检测数据
+        PageResult<Table> tablePageResult = checkTable(tenantId, -1, 0);
+        PageResult<Table> columnPageResult = checkColumn(tenantId, -1, 0);
+        Workbook workbook = new XSSFWorkbook();
+        //标题格式
+        CellStyle cellStyle = workbook.createCellStyle();
+        //表头格式
+        CellStyle cellStyle2 = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        cellStyle.setFont(font);
+        cellStyle2.setFont(font);
+        cellStyle.setAlignment(HorizontalAlignment.CENTER);
+        //合并单元格
+        CellRangeAddress tableRegion = new CellRangeAddress(0, 0, 0, 2);
+        Sheet sheet = workbook.createSheet("总览");
+        sheet.addMergedRegion(tableRegion);
+        //标题
+        Row tableRow = sheet.createRow(0);
+        Cell tableCell = tableRow.createCell(0);
+        tableCell.setCellStyle(cellStyle);
+        tableCell.setCellValue("表描述空值检查");
+        //表头
+        ArrayList<String> firstAttributes = Lists.newArrayList("表名称","库名称", "表状态");
+        setAttributeRow(sheet,firstAttributes,1,cellStyle2);
+        int startIndex = 2;
+        for (Table table:tablePageResult.getLists()){
+            Row row = sheet.createRow(startIndex++);
+            // 添加数据
+            row.createCell(0).setCellValue(table.getTableName());
+            row.createCell(1).setCellValue(table.getDatabaseName());
+            row.createCell(2).setCellValue(table.getStatus());
+        }
+        //合并单元格
+        CellRangeAddress columnRegion = new CellRangeAddress(startIndex, startIndex, 0, 2);
+        sheet.addMergedRegion(columnRegion);
+        Row columnRow = sheet.createRow(startIndex++);
+        Cell columnCell = columnRow.createCell(0);
+        //标题
+        columnCell.setCellStyle(cellStyle);
+        columnCell.setCellValue("列描述空值检查");
+        //表头
+        setAttributeRow(sheet,firstAttributes,startIndex++,cellStyle2);
+        //列描述空值详情
+        ArrayList<String> attributes = Lists.newArrayList("列名称","表名称", "库名称","列状态","列类型");
+        for (Table table:columnPageResult.getLists()){
+            Row row = sheet.createRow(startIndex++);
+            // 添加数据
+            row.createCell(0).setCellValue(table.getTableName());
+            row.createCell(1).setCellValue(table.getDatabaseName());
+            row.createCell(2).setCellValue(table.getStatus());
+
+            setColumnSheet(workbook,table,attributes,cellStyle2);
+        }
+        return workbook2file(workbook);
+    }
+
+    /**
+     * 列名描述sheet
+     * @param workbook
+     * @param table
+     * @param attributes
+     * @param cellStyle
+     */
+    public void setColumnSheet(Workbook workbook,Table table,List<String> attributes,CellStyle cellStyle){
+
+        Sheet columnSheet = workbook.createSheet(table.getTableName());
+        setAttributeRow(columnSheet,attributes,0,cellStyle);
+        int columnIndex=1;
+        for (Column column:table.getColumns()){
+            Row columnRow = columnSheet.createRow(columnIndex++);
+            columnRow.createCell(0).setCellValue(column.getColumnName());
+            columnRow.createCell(1).setCellValue(table.getTableName());
+            columnRow.createCell(2).setCellValue(table.getDatabaseName());
+            columnRow.createCell(3).setCellValue(table.getStatus());
+            columnRow.createCell(4).setCellValue(column.getType());
+        }
+    }
+
+    /**
+     * 插入表头
+     * @param sheet
+     * @param attributes
+     * @param index
+     * @param cellStyle
+     */
+    public void setAttributeRow(Sheet sheet,List<String> attributes,int index,CellStyle cellStyle){
+        Row columnFirstRow = sheet.createRow(index);
+        for (int i = 0; i < attributes.size(); i++) {
+            Cell cell = columnFirstRow.createCell(i);
+            cell.setCellStyle(cellStyle);
+            cell.setCellValue(attributes.get(i).trim());
         }
     }
 }

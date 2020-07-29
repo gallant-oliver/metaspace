@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -333,4 +334,39 @@ public interface BusinessDAO {
             " </foreach>" +
             "</script>")
     public int updateBusinessRelation(@Param("ids") List<String> businessIds,@Param("newCategoryId")String newCategoryId);
+
+    @Select("<script>" +
+            " select count(*)over() total,* from (" +
+            "select distinct t.tableguid tableId,t.tablename,t.status,t.databaseguid databaseId,t.dbname databaseName,t.databasestatus from business2table b " +
+            " join tableinfo t on b.tableGuid=t.tableguid where " +
+            " (t.description is null or t.description='') and " +
+            " b.businessid in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach> " +
+            ") ta " +
+            " <if test='limit!= -1'>" +
+            " limit #{limit}" +
+            " </if>" +
+            " offset #{offset} " +
+            "</script>")
+    public List<Table> getTablesByBusiness(@Param("businessIds")List<String> businessIds, @Param("limit")int limit, @Param("offset") int offset);
+
+    @Select("<script>" +
+            "select count(*)over() total,tableguid tableId,tablename,status,databaseguid databaseId,dbname databaseName,databasestatus from tableinfo where status='ACTIVE' and tableguid " +
+            " in (select c.table_guid " +
+            "   from column_info c join ( " +
+            "     select tableguid from business2table where businessid in " +
+            "     <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            "     #{id} " +
+            "     </foreach> " +
+            "   ) b on b.tableguid=c.table_guid where (c.description is null or c.description='') " +
+            "   group by table_guid " +
+            " ) " +
+            " <if test='limit!= -1'>" +
+            " limit #{limit} " +
+            " </if>" +
+            " offset #{offset} " +
+            "</script>")
+    public List<Table> getTablesByBusinessAndColumn(@Param("businessIds")List<String> businessIds, @Param("limit")int limit, @Param("offset") int offset);
 }
