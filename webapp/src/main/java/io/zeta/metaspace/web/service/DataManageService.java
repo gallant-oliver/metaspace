@@ -214,22 +214,7 @@ public class DataManageService {
                 if (isUserGroup && isAdmin){
                     valueList = userGroupService.getAdminCategory(type,tenantId);
                 }else{
-                    Map<String,CategoryPrivilege> valueMap = new HashMap<>();
-                    if (userGroups==null||userGroups.size()==0){
-                        return new ArrayList<>();
-                    }
-                    for (UserGroup userGroup:userGroups){
-                        String userGroupId = userGroup.getId();
-                        for (CategoryPrivilege categoryPrivilege:userGroupService.getUserCategory(userGroupId, type,modules,tenantId)){
-                            if (valueMap.containsKey(categoryPrivilege.getGuid())&&valueMap.get(categoryPrivilege.getGuid())!=null){
-                                valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
-                                valueMap.get(categoryPrivilege.getGuid()).mergeCount(categoryPrivilege.getCount());
-                            }else{
-                                valueMap.put(categoryPrivilege.getGuid(),categoryPrivilege);
-                            }
-                        }
-                    }
-                    valueList = new ArrayList<>(valueMap.values());
+                    valueList = userGroupService.getUserCategories(type,tenantId);
                 }
             }
             if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId()==module.getModuleId())){

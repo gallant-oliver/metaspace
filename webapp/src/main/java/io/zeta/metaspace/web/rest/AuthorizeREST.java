@@ -152,8 +152,11 @@ public class AuthorizeREST {
         try{
             UserGroup userGroup = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.AUTHORIZATION.getAlias(), "更新用户组："+userGroup.getName()+"目录权限");
-            userGroupService.updatePrivileges(category,id,type,tenantId);
+            userGroupService.updatePrivileges(category,id,type,tenantId,category.isChild());
             return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("更新用户组目录权限失败",e);
+            throw e;
         }catch (Exception e){
             LOG.error("更新用户组目录权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新用户组目录权限失败");
@@ -180,7 +183,7 @@ public class AuthorizeREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getUpdateCategory(@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,
                                     @PathParam("type")int type,@DefaultValue("-1")@QueryParam("limit")int limit,
-                                    @DefaultValue("0")@QueryParam("offset")int offset,@QueryParam("guid")String guid,
+                                    @DefaultValue("0")@QueryParam("offset")int offset,@QueryParam("guid")String guid,@DefaultValue("false")@QueryParam("child")boolean child,
                                     @QueryParam("read")boolean read,@QueryParam("editCategory")boolean editCategory,@QueryParam("editItem")boolean editItem) throws AtlasBaseException {
         try{
             CategoryPrivilegeV2 category = new CategoryPrivilegeV2();
@@ -188,8 +191,11 @@ public class AuthorizeREST {
             category.setRead(read);
             category.setEditCategory(editCategory);
             category.setEditItem(editItem);
-            PageResult<CategoryUpdate> updateCategory = userGroupService.getUpdateCategory(category, id, type, tenantId, limit, offset);
+            PageResult<CategoryUpdate> updateCategory = userGroupService.getUpdateCategory(category, id, type, tenantId, limit, offset,child);
             return ReturnUtil.success(updateCategory);
+        }catch (AtlasBaseException e){
+            LOG.error("获取权限变更影响范围失败",e);
+            throw e;
         }catch (Exception e){
             LOG.error("获取权限变更影响范围失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取权限变更影响范围失败");
@@ -245,6 +251,9 @@ public class AuthorizeREST {
             privilegeCategory = isAdd?userGroupService.getNoPrivilegeCategory(id,type,tenantId,true):userGroupService.getPrivilegeCategory(id, type, tenantId,true);
 
             return ReturnUtil.success(privilegeCategory);
+        }catch (AtlasBaseException e){
+            LOG.error("获取用户组目录权限列表失败",e);
+            throw e;
         }catch (Exception e){
             LOG.error("获取用户组目录权限列表失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
@@ -270,6 +279,9 @@ public class AuthorizeREST {
             HttpRequestContext.get().auditLog(ModuleEnum.AUTHORIZATION.getAlias(), "移除用户组："+userGroup.getName()+"目录权限");
             userGroupService.deleteCategoryPrivilege(ids,id,tenantId);
             return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("移除用户组目录权限失败",e);
+            throw e;
         }catch (Exception e){
             LOG.error("移除用户组目录权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "移除用户组目录权限失败");

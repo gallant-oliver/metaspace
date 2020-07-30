@@ -32,6 +32,9 @@ public class CategoryPrivilegeV2 {
     private Boolean editCategory;
     private Boolean editItem;
     @JsonIgnore
+    private boolean child;
+
+    @JsonIgnore
     private int total;
 
     public int getTotal() {
@@ -59,6 +62,14 @@ public class CategoryPrivilegeV2 {
         read=category.getRead();
         editCategory=category.getEditCategory();
         editItem=category.getEditItem();
+    }
+
+    public boolean isChild() {
+        return child;
+    }
+
+    public void setChild(boolean child) {
+        this.child = child;
     }
 
     public String getGuid() {

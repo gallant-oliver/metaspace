@@ -37,6 +37,17 @@ public class CategoryPrivilege {
     private Integer objectCount;
     private String safe;
 
+    public CategoryPrivilege(CategoryPrivilegeV2 category){
+        this.guid=category.getGuid();
+        this.name=category.getName();
+        this.parentCategoryGuid=category.getParentCategoryGuid();
+        this.upBrotherCategoryGuid=category.getUpBrotherCategoryGuid();
+        this.downBrotherCategoryGuid=category.getDownBrotherCategoryGuid();
+        this.description=category.getDescription();
+        this.level=category.getLevel();
+    };
+
+
     private int count;
 
     public int getCount() {

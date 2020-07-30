@@ -28,6 +28,7 @@ public class CategoryGroupAndUser {
 
     private boolean group;
     private boolean user;
+    private boolean delete;
     private CategoryPrivilegeV2 groupPrivilege;
     private CategoryPrivilegeV2 userPrivilege;
 
@@ -41,6 +42,15 @@ public class CategoryGroupAndUser {
         this.description = category.getDescription();
         this.level = category.getLevel();
     }
+
+    public boolean isDelete() {
+        return delete;
+    }
+
+    public void setDelete(boolean delete) {
+        this.delete = delete;
+    }
+
     public String getGuid() {
         return guid;
     }

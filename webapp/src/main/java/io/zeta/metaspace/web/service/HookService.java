@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.HookCheck;
 import io.zeta.metaspace.web.rest.HookREST;
 import org.apache.atlas.ApplicationProperties;
@@ -113,7 +114,7 @@ public class HookService {
 
         for (String hookPath:hookPaths){
             if (equalsChildFile(hookPath,metaspaceHook)){
-                return "hookJar包加载无误";
+                return "正常";
             }
         }
         return "hookJar包加载错误，可能hiveserver2不在本台机器或jar包文件未放置正确";
@@ -191,7 +192,7 @@ public class HookService {
             Boolean metaspace = applicationProperties.getBoolean(key,null);
             Boolean hook = configuration.getBoolean(key,null);
             if (!(Objects.equals(metaspace, hook))){
-                error.add(String.format(message,key,message,hook));
+                error.add(String.format(message,key,metaspace.toString(),hook.toString()));
             }
         }
         return error;
@@ -255,22 +256,27 @@ public class HookService {
         try{
             hookCheck.setHookConfigCheck(hookConfigCheck());
         }catch(Exception e){
+            hookCheck.setHookConfigCheck(Lists.newArrayList("检验hook配置情况失败："+e.getMessage()));
             LOG.error("检验hook配置情况失败", e);
         }
         try{
             hookCheck.setConsumerThread(consumerThread());
         }catch(Exception e){
-            LOG.error("检验消费者线程情况", e);
+            HashMap<String,Boolean> map = new HashMap<>();
+            map.put("检验消费者线程情况失败："+e.getMessage(),false);
+            LOG.error("检验消费者线程情况失败", e);
         }
         try{
             hookCheck.setHookJar(hookJar());
         }catch(Exception e){
-            LOG.error("检验hook的jar包加载情况", e);
+            hookCheck.setHookJar("检验jar包加载情况失败："+e.getMessage());
+            LOG.error("检验jar包加载情况失败", e);
         }
         try{
             hookCheck.setKafkaCheck(kafkaCheck());
         }catch(Exception e){
-            LOG.error("检验kafka消费积压情况", e);
+            hookCheck.setHookJar("检验kafka消费积压情况失败："+e.getMessage());
+            LOG.error("检验kafka消费积压情况失败", e);
         }
         return hookCheck;
     }
