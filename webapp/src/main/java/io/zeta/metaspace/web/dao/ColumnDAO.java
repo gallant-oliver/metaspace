@@ -40,9 +40,9 @@ public interface ColumnDAO {
 
 
     @Insert({"<script>",
-            "insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status)values",
+            "insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description)values",
             "<foreach collection='columnList' item='columnInfo' index='index'  separator=','>",
-            "(#{columnInfo.columnId},#{columnInfo.columnName},#{columnInfo.tableId},#{columnInfo.type},#{columnInfo.displayName},#{columnInfo.displayNameOperator},#{columnInfo.displayNameUpdateTime},#{columnInfo.status})",
+            "(#{columnInfo.columnId},#{columnInfo.columnName},#{columnInfo.tableId},#{columnInfo.type},#{columnInfo.displayName},#{columnInfo.displayNameOperator},#{columnInfo.displayNameUpdateTime},#{columnInfo.status},#{columnInfo.description})",
             "</foreach>",
             "</script>"})
     public int addColumnDisplayInfo(@Param("columnList")List<Column> columnList);
@@ -102,6 +102,14 @@ public interface ColumnDAO {
     @Update("update column_info set status=#{status} where column_guid=#{columnId}")
     public int updateColumnStatus(@Param("columnId") String columnId, @Param("status") String status);
 
-    @Update("update column_info set column_name=#{columnName},type=#{type},status=#{status} where column_guid=#{columnId}")
-    public int updateColumnBasicInfo(@Param("columnId")String columnId, @Param("columnName")String columnName, @Param("type")String type, @Param("status")String status);
+    @Update("update column_info set column_name=#{columnName},type=#{type},status=#{status},description=#{description} where column_guid=#{columnId}")
+    public int updateColumnBasicInfo(@Param("columnId")String columnId, @Param("columnName")String columnName, @Param("type")String type, @Param("status")String status, @Param("description")String description);
+
+    @Select("<script>" +
+            "select column_guid columnId,column_name columnName,type,table_guid tableId from column_info where (description is null or description='') and table_guid in " +
+            " <foreach item='table' index='index' collection='tables' separator=',' open='(' close=')'>" +
+            " #{table.tableId}" +
+            " </foreach>" +
+            "</script>")
+    public List<Column> checkDescriptionColumnByTableIds(@Param("tables")List<Table> tables);
 }

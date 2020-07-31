@@ -181,7 +181,7 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
 
 
             case COLUMN_INFO_MAP:
-                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name', '__state','hive_column.type', '__modificationTimestamp').toList()";
+                return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name', '__state','hive_column.type','hive_column.comment', '__modificationTimestamp').toList()";
 
             case COLUMN_INFO:
                 return "g.V().has('__guid', '%s').outE('__hive_table.columns').has('__state','ACTIVE').inV().valueMap('__guid', 'Asset.name').toList()";

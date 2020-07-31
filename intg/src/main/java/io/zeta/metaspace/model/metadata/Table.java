@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.table.Tag;
 
 import java.io.Serializable;
@@ -45,6 +46,16 @@ public class Table implements Serializable {
 
     private String dataWarehouseAdmin;
     private String dataWarehouseDescription;
+    @JsonIgnore
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getDatabaseStatus() {
         return databaseStatus;
