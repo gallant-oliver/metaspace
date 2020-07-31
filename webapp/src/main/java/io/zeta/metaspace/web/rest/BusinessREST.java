@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnCheckMessage;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
@@ -1168,6 +1169,83 @@ public class BusinessREST {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    /**
+     * 添加权限字段关联
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("check/description/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkTable(@HeaderParam("tenantId")String tenantId,
+                               @DefaultValue("-1")@QueryParam("limit") int limit,
+                               @DefaultValue("0")@QueryParam("offset") int offset) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = businessService.checkTable(tenantId, limit, offset);
+            return ReturnUtil.success(pageResult);
+        }  catch (AtlasBaseException e) {
+            PERF_LOG.error("表描述空值检测失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("表描述空值检测失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"表描述空值检测失败");
+        }
+    }
+
+    /**
+     * 添加权限字段关联
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("check/description/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkColumn(@HeaderParam("tenantId")String tenantId,
+                               @DefaultValue("-1")@QueryParam("limit") int limit,
+                               @DefaultValue("0")@QueryParam("offset") int offset) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = businessService.checkColumn(tenantId, limit, offset);
+            return ReturnUtil.success(pageResult);
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("列描述空值检测失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("列描述空值检测失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"列描述空值检测失败");
+        }
+    }
+
+    /**
+     * 业务对象表描述空值检查下载
+     * @param tenantId
+     * @throws Exception
+     */
+    @GET
+    @Path("/download/check/description")
+    @Valid
+    public void exportCheck(@HeaderParam("tenantId") String tenantId) throws Exception {
+        File exportExcel = null;
+        try {
+            exportExcel = businessService.checkData2File(tenantId);
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }catch(Exception e){
+            PERF_LOG.error("业务对象表描述空值检查下载失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"业务对象表描述空值检查下载失败");
+        } finally {
+            if (exportExcel!=null) {
+                exportExcel.delete();
+            }
         }
     }
 }
