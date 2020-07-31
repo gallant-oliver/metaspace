@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.HookCheck;
 import io.zeta.metaspace.web.rest.HookREST;
 import org.apache.atlas.ApplicationProperties;
@@ -221,7 +222,10 @@ public class HookService {
                 //消费的offset；
                 OffsetAndMetadata committed = kafkaConsumer.committed(topicPartition);
                 //最后消费的offset
-                long  readOffset = committed.offset();
+                long  readOffset=0;
+                if (committed!=null){
+                    readOffset = committed.offset();
+                }
                 sum+=partitionOffset;
                 sumOffset+=readOffset;
             }
@@ -248,9 +252,33 @@ public class HookService {
      * @throws AtlasBaseException
      * @throws IOException
      */
-    public HookCheck all() throws AtlasException, AtlasBaseException, IOException {
+    public HookCheck all() {
         HookCheck hookCheck = new HookCheck();
-        hookCheck.setKafkaCheck(kafkaCheck());
+        try{
+            hookCheck.setHookConfigCheck(hookConfigCheck());
+        }catch(Exception e){
+            hookCheck.setHookConfigCheck(Lists.newArrayList("检验hook配置情况失败：" + e.getMessage()));
+            LOG.error("检验hook配置情况失败", e);
+        }
+        try{
+            hookCheck.setConsumerThread(consumerThread());
+        }catch(Exception e){
+            HashMap<String,Boolean> map = new HashMap<>();
+            map.put("检验消费者线程情况失败："+e.getMessage(),false);
+            LOG.error("检验消费者线程情况失败", e);
+        }
+        try{
+            hookCheck.setHookJar(hookJar());
+        }catch(Exception e){
+            hookCheck.setHookJar("检验jar包加载情况失败："+e.getMessage());
+            LOG.error("检验jar包加载情况失败", e);
+        }
+        try{
+            hookCheck.setKafkaCheck(kafkaCheck());
+        }catch(Exception e){
+            hookCheck.setHookJar("检验kafka消费积压情况失败："+e.getMessage());
+            LOG.error("检验kafka消费积压情况失败", e);
+        }
         return hookCheck;
     }
 
