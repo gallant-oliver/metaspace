@@ -27,6 +27,7 @@
     <baseDirectory>metaspace-${project.version}</baseDirectory>
     <fileSets>
         <fileSet>
+            <lineEnding>unix</lineEnding>
             <directory>target/conf/</directory>
             <outputDirectory>conf</outputDirectory>
         </fileSet>
@@ -47,6 +48,7 @@
         </fileSet>
 
         <fileSet>
+            <lineEnding>unix</lineEnding>
             <directory>target/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <fileMode>0755</fileMode>
