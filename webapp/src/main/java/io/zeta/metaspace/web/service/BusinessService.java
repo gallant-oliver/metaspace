@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -1227,6 +1228,34 @@ public class BusinessService {
         }
     }
 
+    public File exportExcelColumn(String tableId) throws IOException, AtlasBaseException {
+        List<Column> data = getColumnByTable(tableId);
+        Workbook workbook = columnData2workbook(data);
+        return workbook2file(workbook,"column");
+    }
+
+    public List<Column> getColumnByTable(String guid) throws AtlasBaseException {
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(guid);
+        List<Column> columnInfoById = metaDataService.getColumnInfoById(columnQuery, true);
+        return columnInfoById;
+    }
+
+    private Workbook columnData2workbook(List<Column> list) {
+        Workbook workbook = new XSSFWorkbook();
+        CellStyle cellStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        cellStyle.setFont(font);
+        List<List<String>> dataList = list.stream().map(column -> {
+            List<String> data = Lists.newArrayList(column.getColumnName(),column.getType(),column.getDescription(),column.getTableName(),column.getDescription());
+            return data;
+        }).collect(Collectors.toList());
+        ArrayList<String> attributes = Lists.newArrayList("字段名称","字段类型", "字段描述", "表名称", "库名称");
+        PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList,cellStyle,12);
+        return workbook;
+    }
+
     public File exportExcelBusiness(List<String> ids,String categoryId,String tenantId) throws IOException {
         List<BusinessInfo> data;
         if (ids==null){
@@ -1244,7 +1273,7 @@ public class BusinessService {
             path=categoryDao.getCategoryNameById(categoryId,tenantId);
         }
         Workbook workbook = data2workbook(data,path);
-        return workbook2file(workbook);
+        return workbook2file(workbook,"business");
     }
 
     private Workbook data2workbook(List<BusinessInfo> list,String path) {
@@ -1265,8 +1294,8 @@ public class BusinessService {
         return workbook;
     }
 
-        private File workbook2file(Workbook workbook) throws IOException {
-        File tmpFile = File.createTempFile("business", ".xlsx");
+        private File workbook2file(Workbook workbook,String name) throws IOException {
+        File tmpFile = File.createTempFile(name, ".xlsx");
         try (FileOutputStream output = new FileOutputStream(tmpFile)) {
             workbook.write(output);
             output.flush();
@@ -1619,7 +1648,7 @@ public class BusinessService {
 
             setColumnSheet(workbook,table,attributes,cellStyle2);
         }
-        return workbook2file(workbook);
+        return workbook2file(workbook,"business");
     }
 
     /**

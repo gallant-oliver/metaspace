@@ -1248,4 +1248,31 @@ public class BusinessREST {
             }
         }
     }
+
+    /**
+     * 业务对象表描述空值检查下载
+     * @throws Exception
+     */
+    @GET
+    @Path("/download/column/{tableGuid}")
+    @Valid
+    public void exportColumn(@PathParam("tableGuid")String tableGuid) throws Exception {
+        File exportExcel = null;
+        try {
+            exportExcel = businessService.exportExcelColumn(tableGuid);
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }catch(Exception e){
+            PERF_LOG.error("业务对象表描述空值检查下载失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"业务对象表描述空值检查下载失败");
+        } finally {
+            if (exportExcel!=null) {
+                exportExcel.delete();
+            }
+        }
+    }
 }
