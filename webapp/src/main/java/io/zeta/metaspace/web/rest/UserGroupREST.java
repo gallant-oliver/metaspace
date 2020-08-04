@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryGroupAndUser;
+import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.CategoryUpdate;
 import io.zeta.metaspace.model.result.PageResult;
@@ -558,15 +559,13 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result updatePrivileges(CategoryPrivilegeV2 category,@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,@PathParam("type")int type) throws AtlasBaseException {
+    public Result updatePrivileges(CategoryGroupPrivilege category, @HeaderParam("tenantId")String tenantId, @PathParam("id")String id, @PathParam("type")int type) throws AtlasBaseException {
         try{
             UserGroup userGroup = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "更新用户组："+userGroup.getName()+"目录权限");
-            userGroupService.updatePrivileges(category,id,type,tenantId,category.isChild());
-            return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("更新用户组目录权限失败",e);
-            throw e;
+            CategoryPrivilegeV2 categoryPrivilegeV2 = new CategoryPrivilegeV2(category);
+            List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(categoryPrivilegeV2, id, type, tenantId, category.isChild());
+            return ReturnUtil.success(categoryPrivilegeV2s);
         }catch (Exception e){
             LOG.error("更新用户组目录权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新用户组目录权限失败");
@@ -593,7 +592,7 @@ public class UserGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getUpdateCategory(@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,
                                     @PathParam("type")int type,@DefaultValue("-1")@QueryParam("limit")int limit,
-                                    @DefaultValue("0")@QueryParam("offset")int offset,@QueryParam("guid")String guid,@DefaultValue("false")@QueryParam("child")boolean child,
+                                    @DefaultValue("0")@QueryParam("offset")int offset,@QueryParam("guid")String guid,@DefaultValue("true")@QueryParam("child")boolean child,
                                     @QueryParam("read")boolean read,@QueryParam("editCategory")boolean editCategory,@QueryParam("editItem")boolean editItem) throws AtlasBaseException {
         try{
             CategoryPrivilegeV2 category = new CategoryPrivilegeV2();
@@ -630,7 +629,7 @@ public class UserGroupREST {
             UserGroup userGroup = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新增用户组："+userGroup.getName()+"目录权限");
 
-            userGroupService.addPrivileges(category,id,0,tenantId);
+            userGroupService.addPrivileges(category,id,tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
             LOG.error("分配用户组权限失败",e);

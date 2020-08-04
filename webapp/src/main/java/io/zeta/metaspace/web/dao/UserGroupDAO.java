@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
+import io.zeta.metaspace.model.result.GroupPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -91,6 +92,18 @@ public interface UserGroupDAO {
      */
     @Select("select name,description from user_group where id=#{id}")
     public UserGroup getUserGroupByID(String id);
+
+    /**
+     * 二.用户组详情
+     */
+    @Select("<script>" +
+            " select name,description from user_group where id in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public List<UserGroup> getUserGroupByIDs(@Param("ids") List<String> ids);
 
 
     /**
@@ -778,10 +791,10 @@ public interface UserGroupDAO {
             "SELECT count(*)over() total,*,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
             " where " +
             " read!=true " +
-            "<if test='privilege.editCategory==true'>" +
+            "<if test='category.editCategory==true'>" +
             " or edit_category!=true " +
             "</if>" +
-            "<if test='privilege.editItem==true'>" +
+            "<if test='category.editItem==true'>" +
             " or edit_item!=true " +
             "</if>" +
             "<if test='limit!=-1'>" +
@@ -918,4 +931,59 @@ public interface UserGroupDAO {
 
     @Select("select *,true \"read\",true editItem,true editCategory from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<CategoryPrivilegeV2> getAllCategoryPrivilege(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
+
+    @Select("select c.group_id id,read,edit_category editCategory,edit_item editItem,category_id categoryId  from category_group_relation c " +
+            " join user_group u on c.group_id=u.id where c.category_id=#{guid} and u.tenant=#{tenantId}")
+    public List<GroupPrivilege> getCategoryGroupPrivileges(@Param("guid") String guid, @Param("tenantId")String tenantId);
+
+    @Insert("<script>" +
+            "insert into category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='groupPrivilege' index='index' collection='groupIds' " +
+            "    open='(' separator='),(' close=')'>" +
+            "    #{groupPrivilege.categoryId},#{groupPrivilege.id},#{groupPrivilege.read},#{groupPrivilege.editCategory},#{groupPrivilege.editItem}" +
+            "    </foreach>" +
+            "</script>")
+    public int addUserGroupPrivileges(@Param("groupIds") List<GroupPrivilege> groupIds);
+
+    @Update ("<script>" +
+             "update category_group_relation set read=tmp.read,edit_category=tmp.edit_category,edit_item=tmp.edit_item from (values " +
+             "    <foreach item='groupPrivilege' index='index' collection='groupPrivileges' " +
+             "    open='(' separator='),(' close=')'>" +
+             "    #{groupPrivilege.categoryId},#{groupPrivilege.id},#{groupPrivilege.read},#{groupPrivilege.editCategory},#{groupPrivilege.editItem}" +
+             "    </foreach>" +
+             " ) as tmp (category_id,group_id,read,edit_category,edit_item) " +
+             " where category_group_relation.category_id=tmp.category_id and category_group_relation.group_id=tmp.group_id " +
+             "</script>")
+    public int updateUserGroupPrivileges(@Param("groupPrivileges") List<GroupPrivilege> groupPrivileges);
+
+    @Delete("<script>" +
+            " delete from category_group_relation where group_id in " +
+            "    <foreach item='id' index='index' collection='userGroupIds'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            " and category_id in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public int deleteGroupPrivilege(@Param("ids") List<String> ids,@Param("userGroupIds")List<String> userGroupIds);
+
+    //实现用户组列表及搜索
+    @Select("<script>" +
+            "select count(*) over() totalSize,u.id,u.name,u.description,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime,c.read,c.edit_item editItem,c.edit_category editCategory " +
+            " from user_group u join " +
+            " category_group_relation c " +
+            " on u.id=c.group_id " +
+            " where u.tenant=#{tenantId} and u.valid=true and c.category_id=#{categoryId}" +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<GroupPrivilege> getUserGroupByCategory(@Param("categoryId") String categoryId,@Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset);
+
 }

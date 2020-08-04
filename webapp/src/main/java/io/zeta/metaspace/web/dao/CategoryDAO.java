@@ -272,16 +272,16 @@ public interface CategoryDAO {
 
     @Select(" <script>" +
             " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
-            " (SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
-            " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId} and guid in " +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId} " +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
+            " SELECT  guid,PATH path FROM T where guid in " +
             "    <foreach item='id' index='index' collection='ids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{id}" +
             "    </foreach>" +
-            " UNION ALL " +
-            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.guid, T.DEPTH + 1 AS DEPTH " +
-            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=#{categoryType} and D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
-            " SELECT  guid,PATH path FROM T " +
             " ORDER BY PATH" +
             " </script>")
     public List<CategoryPath> getPathByIds(@Param("ids")List<String> ids,@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);

@@ -13,20 +13,24 @@
 
 package io.zeta.metaspace.model.result;
 
-import java.util.List;
-
 /**
  * @author lixiang03
- * @Data 2020/7/28 16:21
+ * @Data 2020/7/31 10:36
  */
-public class UpdateCategory {
-    private List<String> guid;
-    private List<String> userGroupIds;
+public class CategoryGroupPrivilege {
+    private String guid;
     private boolean child;
-    private int type;
     private Boolean read;
     private Boolean editCategory;
     private Boolean editItem;
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
 
     public boolean isChild() {
         return child;
@@ -34,30 +38,6 @@ public class UpdateCategory {
 
     public void setChild(boolean child) {
         this.child = child;
-    }
-
-    public List<String> getUserGroupIds() {
-        return userGroupIds;
-    }
-
-    public void setUserGroupIds(List<String> userGroupIds) {
-        this.userGroupIds = userGroupIds;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-    }
-
-    public List<String> getGuid() {
-        return guid;
-    }
-
-    public void setGuid(List<String> guid) {
-        this.guid = guid;
     }
 
     public Boolean getRead() {
