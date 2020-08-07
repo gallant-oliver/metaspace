@@ -90,7 +90,7 @@ public class HookService {
      * @throws AtlasBaseException
      * @throws IOException
      */
-    public String hookJar() throws IOException, AtlasException, AtlasBaseException {
+    public boolean hookJar() throws IOException, AtlasException, AtlasBaseException {
         List<String> hookPaths = new ArrayList<>();
         String metaspaceHook = System.getProperty(ApplicationProperties.ATLAS_CONFIGURATION_DIRECTORY_PROPERTY) + "/../hook/hive";
         Configuration applicationProperties = ApplicationProperties.get();
@@ -113,11 +113,12 @@ public class HookService {
 
         for (String hookPath:hookPaths){
             if (equalsChildFile(hookPath,metaspaceHook)){
-                return "hookJar包加载无误";
+                return true;
             }
         }
-        return "hookJar包加载错误，可能hiveserver2不在本台机器或jar包文件未放置正确";
+        return false;
     }
+
     public boolean equalsChildFile(String path1,String path2){
         File file1 = new File(path1);
         File file2 = new File(path2);
@@ -135,6 +136,7 @@ public class HookService {
         }
         return true;
     }
+
     public Set<String> getChildFileName(File file){
         Set<String> childFileNames = new HashSet<>();
         if (!file.exists()){
@@ -250,9 +252,65 @@ public class HookService {
      * @throws AtlasBaseException
      * @throws IOException
      */
-    public HookCheck all() throws AtlasException, AtlasBaseException, IOException {
+    public HookCheck all() {
         HookCheck hookCheck = new HookCheck();
-        hookCheck.setKafkaCheck(kafkaCheck());
+        try{
+            List<String> list = hookConfigCheck();
+            if (list.size()==0){
+                hookCheck.setHookConfigCheck(true);
+            }else{
+                hookCheck.setHookConfigCheck(false);
+                StringBuffer stringBuffer = new StringBuffer();
+                for (String str:list){
+                    stringBuffer.append(str);
+                    stringBuffer.append("\n");
+                }
+                hookCheck.setHookConfigMessage(stringBuffer.toString());
+            }
+        }catch(Exception e){
+            hookCheck.setHookConfigMessage("检验hook配置情况失败："+e.getMessage());
+            LOG.error("检验hook配置情况失败", e);
+        }
+
+        try{
+            Map<String, Boolean> threadMap = consumerThread();
+            hookCheck.setConsumerThread(false);
+            hookCheck.setThreadMessage("消费者线程已结束");
+            if (threadMap.size()==0){
+                hookCheck.setThreadMessage("无消费者线程");
+            }
+            for (Boolean bool:threadMap.values()){
+                if (bool!=null&&bool){
+                    hookCheck.setConsumerThread(true);
+                }
+            }
+        }catch(Exception e){
+            hookCheck.setConsumerThread(false);
+            hookCheck.setThreadMessage("检验消费者线程情况失败："+e.getMessage());
+            LOG.error("检验消费者线程情况失败", e);
+        }
+
+        try{
+            boolean jar = hookJar();
+            hookCheck.setHookJar(jar);
+            if (!jar){
+                hookCheck.setHookJarMessage("hookJar包加载错误，可能hiveserver2不在本台机器或jar包文件未放置正确");
+            }
+        }catch(Exception e){
+            hookCheck.setHookJar(false);
+            hookCheck.setHookJarMessage("检验jar包加载情况失败："+e.getMessage());
+            LOG.error("检验jar包加载情况失败", e);
+        }
+
+        try{
+            long lag = kafkaCheck();
+            hookCheck.setKafkaCheck(true);
+            hookCheck.setKafkaNumber(lag);
+        }catch(Exception e){
+            hookCheck.setKafkaCheck(false);
+            hookCheck.setKafkaMessage("检验kafka消费积压情况失败："+e.getMessage());
+            LOG.error("检验kafka消费积压情况失败", e);
+        }
         return hookCheck;
     }
 

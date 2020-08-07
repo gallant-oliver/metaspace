@@ -97,7 +97,7 @@ public class HookREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result hookJar() throws AtlasBaseException {
         try {
-            String str = hookService.hookJar();
+            boolean str = hookService.hookJar();
             return ReturnUtil.success(str);
         }catch (Exception e) {
             LOG.error("获取hookjar加载情况失败", e);
