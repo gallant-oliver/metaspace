@@ -38,6 +38,7 @@ import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -141,6 +142,9 @@ public class BusinessService {
 
     @Autowired
     private ColumnDAO columnDAO;
+
+    @Autowired
+    UserGroupService userGroupService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -388,14 +392,13 @@ public class BusinessService {
                     }
                 }
             }else{
-                List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
-                for (UserGroup userGroup :userGroups){
-                    String userGroupId = userGroup.getId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, BUSINESS_TYPE,tenantId);
-                    for (String categoryId  : category){
-                        if (!categoryIds.contains(categoryId)){
-                            categoryIds.add(categoryId);
-                        }
+                Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
+                for (CategoryPrivilegeV2 category  : categories.values()){
+                    if (!category.getEditItem()){
+                        continue;
+                    }
+                    if (!categoryIds.contains(category.getGuid())){
+                        categoryIds.add(category.getGuid());
                     }
                 }
             }

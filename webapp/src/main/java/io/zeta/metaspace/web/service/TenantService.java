@@ -513,9 +513,8 @@ public class TenantService {
             modulesCache.invalidate(getCacheKey(tenant.getTenantId()));
             poolCache.invalidate(getCacheKey(tenant.getTenantId()));
             databaseCache.invalidate(getCacheKey(tenant.getTenantId()));
-            databaseCache.invalidate(tenant);
-            databaseCache.invalidateAll();
             tenantsCache.invalidate(AdminUtils.getSSOTicket());
         }
+        databaseCache.invalidateAll();
     }
 }
