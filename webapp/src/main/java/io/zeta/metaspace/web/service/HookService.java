@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.HookCheck;
 import io.zeta.metaspace.web.rest.HookREST;
 import org.apache.atlas.ApplicationProperties;
@@ -193,7 +194,7 @@ public class HookService {
             Boolean metaspace = applicationProperties.getBoolean(key,null);
             Boolean hook = configuration.getBoolean(key,null);
             if (!(Objects.equals(metaspace, hook))){
-                error.add(String.format(message,key,message,hook));
+                error.add(String.format(message,key,metaspace.toString(),hook.toString()));
             }
         }
         return error;
