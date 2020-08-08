@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.GroupPrivilege;
@@ -889,14 +890,44 @@ public interface UserGroupDAO {
     public List<CategoryPrivilegeV2> getParentCategoryNoPrivilege(@Param("guid") List<String> guid, @Param("categoryType") int categoryType,@Param("userGroupId")String userGroupId,@Param("tenantId") String tenantId);
 
     @Select("<script> " +
-            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
+            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem,item.count count from category_group_relation g join category c on c.guid=g.category_id " +
+            " left join ( " +
+            " select count(*) count," +
+            "<choose>" +
+            "    <when test=\"categoryType==0\">" +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        <if test='dbNames!=null and dbNames.size()>0'>" +
+            "          or dbname in " +
+            "          <foreach item='item' index='index' collection='dbNames'" +
+            "          open='(' separator=',' close=')'>" +
+            "          #{item}" +
+            "          </foreach>" +
+            "        </if>" +
+            "        )" +
+            "    </when>" +
+            "    <when test=\"categoryType==1\">" +
+            "        categoryguid as guid from business_relation " +
+            "    </when>" +
+            "    <when test=\"categoryType==3\">" +
+            "        guid from ( " +
+            "          select b.number,b.categoryid as guid from " +
+            "          (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} group by number) as a " +
+            "          inner join data_standard b on a.number=b.number and a.version=b.version ) ds  " +
+            "    </when>" +
+            "    <otherwise>" +
+            "        category_id as guid from data_quality_rule where delete=false" +
+            "    </otherwise>" +
+            "</choose>" +
+            " group by guid" +
+            ") item on c.guid=item.guid " +
+            " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
             " and g.group_id in " +
             "    <foreach item='id' index='index' collection='userGroupIds'" +
             "    open='(' separator=',' close=')'>" +
             "    #{id}" +
             "    </foreach>" +
             "</script>")
-    public List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType);
+    public List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
 
     //递归找父节点
     @Select("<script>WITH RECURSIVE categoryTree AS" +
@@ -976,14 +1007,41 @@ public interface UserGroupDAO {
             " from user_group u join " +
             " category_group_relation c " +
             " on u.id=c.group_id " +
-            " where u.tenant=#{tenantId} and u.valid=true and c.category_id=#{categoryId}" +
-            "<if test='limit!=-1'>" +
-            " limit ${limit} " +
+            " where u.tenant=#{tenantId} and u.valid=true and c.category_id=#{category.guid} " +
+            "<if test='category.read'>" +
+            " and c.read=true " +
             "</if>" +
-            "<if test='offset!=0'>" +
-            " offset ${offset} " +
+            "<if test='category.editCategory'>" +
+            " and c.edit_category=true " +
+            "</if>" +
+            "<if test='category.editItem'>" +
+            " and c.edit_item=true " +
+            "</if>" +
+            "<if test='parameters.query!=null'>" +
+            " and u.name like '%${parameters.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='parameters.sortBy!=null'>" +
+            " order by ${parameters.sortBy} " +
+            "<if test='parameters.order!=null '>" +
+            " ${parameters.order} " +
+            "</if>" +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            " limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            " offset ${parameters.offset} " +
             "</if>" +
             "</script>")
-    public List<GroupPrivilege> getUserGroupByCategory(@Param("categoryId") String categoryId,@Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset);
+    public List<GroupPrivilege> getUserGroupByCategory(@Param("category")CategoryGroupPrivilege category, @Param("parameters")Parameters parameters, @Param("tenantId")String tenantId);
 
+    //更新用户组
+    @Update("<script>" +
+            "update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            "</script>")
+    public int updateUserGroups(@Param("ids") List<String> ids, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 }

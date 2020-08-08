@@ -18,6 +18,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -246,10 +247,23 @@ public class AuthorizeREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getPrivilegeCategory(@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,
-                                       @DefaultValue("-1")@QueryParam("limit") int limit,
-                                       @DefaultValue("0")@QueryParam("offset") int offset) throws AtlasBaseException {
+                                       @DefaultValue("-1")@QueryParam("limit") int limit, @DefaultValue("0")@QueryParam("offset") int offset,
+                                       @QueryParam("search") String search,@DefaultValue("false")@QueryParam("read")boolean read,
+                                       @DefaultValue("false")@QueryParam("editCategory")boolean editCategory,@DefaultValue("false")@QueryParam("editItem")boolean editItem,
+                                       @QueryParam("sortBy") String sortBy, @QueryParam("order") String order) throws AtlasBaseException {
         try{
-            PageResult<GroupPrivilege> userGroupByCategory = userGroupService.getUserGroupByCategory(id, tenantId, limit, offset);
+            Parameters parameters = new Parameters();
+            parameters.setLimit(limit);
+            parameters.setOffset(offset);
+            parameters.setSortby(sortBy);
+            parameters.setOrder(order);
+            parameters.setQuery(search);
+            CategoryGroupPrivilege categoryGroupPrivilege = new CategoryGroupPrivilege();
+            categoryGroupPrivilege.setRead(read);
+            categoryGroupPrivilege.setEditCategory(editCategory);
+            categoryGroupPrivilege.setEditItem(editItem);
+            categoryGroupPrivilege.setGuid(id);
+            PageResult<GroupPrivilege> userGroupByCategory = userGroupService.getUserGroupByCategory(categoryGroupPrivilege,parameters, tenantId);
             return ReturnUtil.success(userGroupByCategory);
         }catch (Exception e){
             LOG.error("获取用户组目录权限列表失败",e);

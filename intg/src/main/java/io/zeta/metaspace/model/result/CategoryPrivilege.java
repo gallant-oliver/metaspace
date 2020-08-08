@@ -45,6 +45,7 @@ public class CategoryPrivilege {
         this.downBrotherCategoryGuid=category.getDownBrotherCategoryGuid();
         this.description=category.getDescription();
         this.level=category.getLevel();
+        this.count=category.getCount();
     };
 
 

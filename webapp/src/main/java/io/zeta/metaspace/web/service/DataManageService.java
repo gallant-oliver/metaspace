@@ -498,7 +498,9 @@ public class DataManageService {
         }
         List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(entity.getParentCategoryGuid(),tenantId);
         parentPrivilege.forEach(privilege -> privilege.setCategoryId(entity.getGuid()));
-        userGroupDAO.addUserGroupPrivileges(parentPrivilege);
+        if (parentPrivilege.size()!=0){
+            userGroupDAO.addUserGroupPrivileges(parentPrivilege);
+        }
     }
 
     /**

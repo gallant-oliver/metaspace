@@ -31,9 +31,18 @@ public class CategoryPrivilegeV2 {
     private Boolean read;
     private Boolean editCategory;
     private Boolean editItem;
+    private int count;
 
     @JsonIgnore
     private int total;
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
 
     public int getTotal() {
         return total;
