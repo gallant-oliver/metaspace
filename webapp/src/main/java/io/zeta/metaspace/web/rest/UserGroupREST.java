@@ -21,7 +21,12 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.model.result.CategoryGroupAndUser;
+import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
+import io.zeta.metaspace.model.result.CategoryUpdate;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.UpdateCategory;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.share.ProjectInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
@@ -42,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -537,5 +543,157 @@ public class UserGroupREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除权限用户组权限失败");
         }
 
+    }
+
+    /**
+     * 更新用户组目录权限
+     * @param category
+     * @param tenantId
+     * @param id
+     * @param type
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/{id}/{type}/update/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result updatePrivileges(CategoryGroupPrivilege category, @HeaderParam("tenantId")String tenantId, @PathParam("id")String id, @PathParam("type")int type) throws AtlasBaseException {
+        try{
+            UserGroup userGroup = userGroupService.getUserGroupByID(id);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "更新用户组："+userGroup.getName()+"目录权限");
+            CategoryPrivilegeV2 categoryPrivilegeV2 = new CategoryPrivilegeV2(category);
+            List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(categoryPrivilegeV2, id, type, tenantId, category.isChild());
+            return ReturnUtil.success(categoryPrivilegeV2s);
+        }catch (Exception e){
+            LOG.error("更新用户组目录权限失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新用户组目录权限失败");
+        }
+    }
+
+    /**
+     * 获取权限影响范围
+     * @param tenantId
+     * @param id
+     * @param type
+     * @param limit
+     * @param offset
+     * @param guid
+     * @param read
+     * @param editCategory
+     * @param editItem
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{id}/{type}/update/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getUpdateCategory(@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,
+                                    @PathParam("type")int type,@DefaultValue("-1")@QueryParam("limit")int limit,
+                                    @DefaultValue("0")@QueryParam("offset")int offset,@QueryParam("guid")String guid,@DefaultValue("true")@QueryParam("child")boolean child,
+                                    @QueryParam("read")boolean read,@QueryParam("editCategory")boolean editCategory,@QueryParam("editItem")boolean editItem) throws AtlasBaseException {
+        try{
+            CategoryPrivilegeV2 category = new CategoryPrivilegeV2();
+            category.setGuid(guid);
+            category.setRead(read);
+            category.setEditCategory(editCategory);
+            category.setEditItem(editItem);
+            PageResult<CategoryUpdate> updateCategory = userGroupService.getUpdateCategory(category, id, type, tenantId, limit, offset,child);
+            return ReturnUtil.success(updateCategory);
+        }catch (AtlasBaseException e){
+            LOG.error("获取权限变更影响范围失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取权限变更影响范围失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取权限变更影响范围失败");
+        }
+    }
+
+    /**
+     * 分配用户组权限
+     * @param category
+     * @param tenantId
+     * @param id
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/{id}/{type}/add/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result addPrivileges(UpdateCategory category, @HeaderParam("tenantId")String tenantId, @PathParam("id")String id) throws AtlasBaseException {
+        try{
+            UserGroup userGroup = userGroupService.getUserGroupByID(id);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新增用户组："+userGroup.getName()+"目录权限");
+
+            userGroupService.addPrivileges(category,id,tenantId);
+            return ReturnUtil.success();
+        }catch (Exception e){
+            LOG.error("分配用户组权限失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "分配用户组权限失败");
+        }
+
+    }
+
+    /**
+     * 获取用户组目录权限列表
+     * @param tenantId
+     * @param id
+     * @param type
+     * @param isAdd
+     * @param isAll
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{id}/privilege/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getPrivilegeCategory(@HeaderParam("tenantId")String tenantId,@PathParam("id")String id,@QueryParam("type") int type,
+                                       @DefaultValue("false")@QueryParam("isAdd")boolean isAdd,
+                                       @DefaultValue("false")@QueryParam("isAll")boolean isAll) throws AtlasBaseException {
+        try{
+            List<CategoryGroupAndUser> privilegeCategory=null;
+            privilegeCategory = isAdd?userGroupService.getNoPrivilegeCategory(id,type,tenantId,false):userGroupService.getPrivilegeCategory(id, type, tenantId,false);
+
+            return ReturnUtil.success(privilegeCategory);
+        }catch (AtlasBaseException e){
+            LOG.error("获取用户组目录权限列表失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("获取用户组目录权限列表失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
+        }
+    }
+
+    /**
+     * 移除用户组目录权限
+     * @param ids
+     * @param tenantId
+     * @param id
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/delete/category/{id}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result deleteCategoryPrivilege(List<String> ids,@HeaderParam("tenantId")String tenantId,@PathParam("id")String id) throws AtlasBaseException {
+        try{
+            UserGroup userGroup = userGroupService.getUserGroupByID(id);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "移除用户组："+userGroup.getName()+"目录权限");
+            userGroupService.deleteCategoryPrivilege(ids,id,tenantId);
+            return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("移除用户组目录权限失败",e);
+            throw e;
+        }catch (Exception e){
+            LOG.error("移除用户组目录权限失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "移除用户组目录权限失败");
+        }
     }
 }
