@@ -64,7 +64,7 @@ import javax.ws.rs.core.MediaType;
 
 @Singleton
 @Service
-@Path("/dataedit")
+@Path("/data")
 public class BusinessDataREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
     @Context

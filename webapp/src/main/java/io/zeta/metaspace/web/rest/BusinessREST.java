@@ -745,7 +745,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/upload")
+    @Path("/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
@@ -779,17 +779,17 @@ public class BusinessREST {
 
     /**
      * 根据文件导入目录
-     * @param upload
+     * @param path
      * @param importCategory
      * @return
      * @throws Exception
      */
     @POST
-    @Path("/import/{upload}")
+    @Path("/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importCategory(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result importCategory(@PathParam("path")String path, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
             String categoryId = importCategory.getCategoryId();
@@ -803,7 +803,7 @@ public class BusinessREST {
             }
 
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
-            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
             }else{
@@ -825,7 +825,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/move/category")
+    @Path("/place/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -876,7 +876,7 @@ public class BusinessREST {
     }
 
     @GET
-    @Path("/download/category/template")
+    @Path("/excel/category/template")
     @Valid
     public void downloadCategoryTemplate() throws Exception {
         String homeDir = System.getProperty("atlas.home");
@@ -961,7 +961,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/file/upload")
+    @Path("/file/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadBusiness(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
@@ -987,24 +987,24 @@ public class BusinessREST {
 
     /**
      * 根据文件导入业务对象
-     * @param upload
+     * @param path
      * @param importCategory
      * @param tenantId
      * @return
      * @throws Exception
      */
     @POST
-    @Path("file/import/{upload}")
+    @Path("file/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importBusiness(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result importBusiness(@PathParam("path")String path, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
             String categoryId = importCategory.getCategoryId();
             CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "批量导入业务对象："+category.getName());
-            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file,categoryId,tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
@@ -1053,7 +1053,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/download/file/template")
+    @Path("/excel/file/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void downloadBusinessTemplate() throws AtlasBaseException {
@@ -1072,7 +1072,7 @@ public class BusinessREST {
     }
 
     @POST
-    @Path("/category/move")
+    @Path("/category/place")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -1094,7 +1094,7 @@ public class BusinessREST {
     }
 
     @POST
-    @Path("/move")
+    @Path("/place")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -1128,7 +1128,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/category/move/{categoryId}")
+    @Path("/category/place/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
@@ -1174,12 +1174,12 @@ public class BusinessREST {
 
 
     /**
-     * 添加权限字段关联
+     * 表空值检查
      * @return
      * @throws AtlasBaseException
      */
     @GET
-    @Path("check/description/table")
+    @Path("description/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result checkTable(@HeaderParam("tenantId")String tenantId,
@@ -1203,7 +1203,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("check/description/column")
+    @Path("description/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result checkColumn(@HeaderParam("tenantId")String tenantId,
@@ -1227,7 +1227,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @GET
-    @Path("/download/check/description")
+    @Path("/excel/description")
     @Valid
     public void exportCheck(@HeaderParam("tenantId") String tenantId) throws Exception {
         File exportExcel = null;

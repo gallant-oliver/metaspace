@@ -42,7 +42,7 @@ import javax.ws.rs.core.Context;
  */
 @Singleton
 @Service
-@Path("/columndown")
+@Path("/columns")
 public class BusinessDownloadREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
 
