@@ -146,6 +146,8 @@ public class DataManageService {
     TenantService tenantService;
     @Autowired
     BusinessDAO businessDAO;
+    @Autowired
+    RelationDAO relationDAO;
 
     int technicalType=0;
     int dataStandType = 3;
@@ -1330,16 +1332,25 @@ public class DataManageService {
     public void supplementTable(String tenantId) throws AtlasBaseException {
         try {
             PageResult<Table> tableNameAndDbNameByQuery;
+            List<String> tableByDB;
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)){
                 tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1);
+                tableByDB = tableDAO.getTables();
             }else{
                 List<String> dbs = tenantService.getDatabase(tenantId);
                 String dbsToString = dbsToString(dbs);
                 tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1,dbsToString);
-
+                tableByDB = tableDAO.getTableByDB(dbs);
             }
             List<Table> lists = tableNameAndDbNameByQuery.getLists();
+            List<String> tableIds = lists.stream().map(table -> table.getTableId()).collect(Collectors.toList());
+            List<String> deleteIds = new ArrayList<>();
+            for (String table:tableByDB){
+                if (!tableIds.contains(table)){
+                    deleteIds.add(table);
+                }
+            }
             for (Table list : lists) {
                 String tableId = list.getTableId();
                 if (tableDAO.ifTableExists(tableId) == 0) {
@@ -1354,6 +1365,20 @@ public class DataManageService {
                     tableInfo.setDescription(list.getDescription());
                     tableDAO.addTable(tableInfo);
                 }
+            }
+            for (String tableGuid : deleteIds) {
+                //表详情
+                tableDAO.deleteTableInfo(tableGuid);
+                //owner
+                tableDAO.deleteTableRelatedOwner(tableGuid);
+                //关联关系
+                relationDAO.deleteByTableGuid(tableGuid);
+                //business2table
+                businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
+                //表标签
+                tableTagDAO.delAllTable2Tag(tableGuid);
+                //唯一信任数据
+                businessDAO.removeBusinessTrustTableByTableId(tableGuid);
             }
             addFullRelation();
         } catch (Exception e) {
