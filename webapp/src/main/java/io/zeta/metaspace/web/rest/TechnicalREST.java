@@ -20,12 +20,14 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -636,10 +638,8 @@ public class TechnicalREST {
     @Path("/download/category/template")
     @Valid
     public void downloadCategoryTemplate() throws Exception {
-        String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/category_template.xlsx";
-        String fileName = filename(filePath);
-        InputStream inputStream = new FileInputStream(filePath);
+        String fileName = TemplateEnum.CATEGORY_TEMPLATE.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.CATEGORY_TEMPLATE);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);

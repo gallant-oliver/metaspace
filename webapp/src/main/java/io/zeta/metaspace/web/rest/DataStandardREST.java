@@ -30,10 +30,12 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -68,7 +70,6 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
@@ -184,10 +185,8 @@ public class DataStandardREST {
     @Path("/download/template")
     @Valid
     public void downloadTemplate() throws Exception {
-        String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/data_standard_template.xlsx";
-        String fileName = filename(filePath);
-        InputStream inputStream = new FileInputStream(filePath);
+        String fileName = TemplateEnum.DATA_STANDARD_TEMPLATE.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.DATA_STANDARD_TEMPLATE);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
@@ -590,10 +589,8 @@ public class DataStandardREST {
     @Path("/download/category/template")
     @Valid
     public void downloadCategoryTemplate() throws Exception {
-        String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/category_template.xlsx";
-        String fileName = filename(filePath);
-        InputStream inputStream = new FileInputStream(filePath);
+        String fileName = TemplateEnum.CATEGORY_TEMPLATE.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.CATEGORY_TEMPLATE);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
