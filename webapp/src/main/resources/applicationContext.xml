@@ -56,6 +56,11 @@
                 <property name="dataSource" ref="datasource"></property>
 
                 <property name="typeAliasesPackage" value="io.zeta.metaspace.model.metadata"></property>
+                <property name="configuration">
+                        <bean class="org.apache.ibatis.session.Configuration">
+                                <property name="mapUnderscoreToCamelCase" value="true"/>
+                        </bean>
+                </property>
 
         </bean>
 

@@ -1892,6 +1892,38 @@ public class DataShareService {
         }
     }
 
+    /**
+     * 根据版本获取api详情
+     * @param id
+     * @return
+     * @throws AtlasBaseException
+     */
+    public ApiInfoV2 getApiInfoByVersion(String id,String version) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfo = shareDAO.getApiInfo(id, version);
+            APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(apiInfo.getSourceType());
+            if(sourceType == APIInfo.SourceType.ORACLE) {
+                apiInfo.setSourceName(dataSourceDAO.getSourceNameForSourceId(apiInfo.getSourceId()));
+            } else if(sourceType == APIInfo.SourceType.HIVE) {
+                String tableGuid = apiInfo.getTableGuid();
+                Table table = shareDAO.getTableByGuid(tableGuid);
+                apiInfo.setTableName(table.getTableName());
+                apiInfo.setDbName(table.getDatabaseName());
+            }
+            String creatorName = userDAO.getUserName(apiInfo.getCreator());
+            apiInfo.setCreator(creatorName);
+            String updaterName = userDAO.getUserName(apiInfo.getCreator());
+            apiInfo.setUpdater(updaterName);
+            String categoryName = shareDAO.getCategoryById(apiInfo.getCategoryGuid()).getName();
+            apiInfo.setCategoryName(categoryName);
+            getParam(id,apiInfo,version);
+            return apiInfo;
+        } catch (Exception e) {
+            LOG.error("创建API信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建API信息失败");
+        }
+    }
+
     public ApiInfoV2 getParam(String guid,ApiInfoV2 apiInfo,String version) throws AtlasBaseException {
         try {
             Gson gson = new Gson();
