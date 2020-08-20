@@ -1884,29 +1884,7 @@ CREATE TABLE "public"."api_module" (
 -- ----------------------------
 -- Records of api_module
 -- ----------------------------
-INSERT INTO "public"."api_module" VALUES ('/businesses/categories/{categoryGuid}', 'DELETE', 9, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'DELETE', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'GET', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/technical', 'GET', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/{apiGuid}', 'GET', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/categories', 'GET', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}', 'GET', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/excel/{tableGuid}/template', 'GET', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/category/{categoryId}', 'POST', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/relations', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/category/relations/{categoryId}', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/datashare', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/test/{randomName}', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/categories', 'POST', 9, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/tables', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}/columns', 'POST', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/excel/import/{guid}', 'POST', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}', 'PUT', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/datashare/test/{randomName}', 'PUT', 2, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/{businessId}/technical', 'PUT', 3, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/categories/{categoryId}', 'PUT', 9, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/table/{guid}/columns', 'PUT', 4, 'f');
-INSERT INTO "public"."api_module" VALUES ('/businesses/table', 'PUT', 4, 'f');
+INSERT INTO "public"."api_module" VALUES ('businesses', 'OPTION', 9, 'f');
 INSERT INTO "public"."api_module" VALUES ('datashare', 'OPTION', 10, 't');
 INSERT INTO "public"."api_module" VALUES ('role', 'OPTION', 6, 't');
 INSERT INTO "public"."api_module" VALUES ('/technical/category', 'GET', 1, 'f');

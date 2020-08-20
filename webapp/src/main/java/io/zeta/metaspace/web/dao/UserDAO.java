@@ -153,4 +153,13 @@ public interface UserDAO {
 
     @Insert("insert into users(userid,username,account,create_time,update_time,valid) values(#{userAndModule.accountGuid},#{userAndModule.userName},#{userAndModule.email},#{updateTime},#{updateTime},true)")
     public int insertUser(@Param("userAndModule") UserAndModule userAndModule, @Param("updateTime") Timestamp updateTime);
+
+    @Select("<script>" +
+            " select username from users where userid in " +
+            "<foreach item='item' index='index' collection='ids' " +
+            "open='(' separator=',' close=')'>" +
+            " #{item} " +
+            "</foreach>" +
+            "</script>")
+    public List<String> getUserNameByIds(@Param("ids") List ids);
 }
