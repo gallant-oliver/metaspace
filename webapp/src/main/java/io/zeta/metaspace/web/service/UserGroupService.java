@@ -201,6 +201,9 @@ public class UserGroupService {
 
         List<String> userNameList = userGroupId1.stream().filter(str -> !userGroupId2.stream().anyMatch(s -> s.equals(str))).collect(Collectors.toList());
 
+        if (userNameList.size()==0){
+            return commonResult;
+        }
         List<UserGroupMemberSearch> lists = userGroupDAO.getUserGroupMemberSearch(userNameList, offset, limit);
 
 
