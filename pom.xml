@@ -277,6 +277,7 @@
         <module>addons/impala-bridge</module>
 
         <module>distro</module>
+        <module>report</module>
     </modules>
 
     <distributionManagement>
@@ -1416,7 +1417,7 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>-Djava.awt.headless=true -Dproject.version=${project.version}
                         -Dhadoop.tmp.dir="${project.build.directory}/tmp-hadoop-${user.name}"
-                        -Xmx1024m -Djava.net.preferIPv4Stack=true ${atlas.surefire.options}
+                        -Xmx1024m -Djava.net.preferIPv4Stack=true ${atlas.surefire.options} ${argLine}
                     </argLine>
                     <skip>${skipUTs}</skip>
                 </configuration>
@@ -1443,7 +1444,7 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>-Djava.awt.headless=true -Dproject.version=${project.version}
                         -Dhadoop.tmp.dir="${project.build.directory}/tmp-hadoop-${user.name}"
-                        -Xmx1024m ${atlas.surefire.options}
+                        -Xmx1024m ${atlas.surefire.options} ${argLine}
                     </argLine>
                     <skip>${skipITs}</skip>
                     <reuseForks>false</reuseForks>
@@ -1565,6 +1566,20 @@
                 <configuration>
                     <skipAssembly>true</skipAssembly>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.5</version>
+                <executions>
+                    <execution>
+                        <id>pre-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

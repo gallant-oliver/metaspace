@@ -164,6 +164,14 @@ public class KafkaBridge {
         this.availableTopics = scala.collection.JavaConversions.seqAsJavaList(zkUtils.getAllTopics());
     }
 
+    @VisibleForTesting
+    public KafkaBridge(List<String> availableTopics, String clusterName, AtlasClientV2 atlasClientV2,ZkUtils zkUtils) {
+        this.availableTopics = availableTopics;
+        this.clusterName = clusterName;
+        this.atlasClientV2 = atlasClientV2;
+        this.zkUtils = zkUtils;
+    }
+
     public void importTopic(String topicToImport) throws Exception {
         List<String> topics = availableTopics;
 

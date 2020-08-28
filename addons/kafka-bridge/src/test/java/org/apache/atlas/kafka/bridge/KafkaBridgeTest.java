@@ -28,20 +28,19 @@ import org.apache.atlas.kafka.bridge.KafkaBridge;
 import org.apache.atlas.kafka.model.KafkaDataTypes;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.commons.configuration.Configuration;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import scala.Option;
+import scala.Some;
 import scala.collection.JavaConverters;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class KafkaBridgeTest {
 
@@ -67,7 +66,10 @@ public class KafkaBridgeTest {
     EntityMutationResponse entityMutationResponse;
 
     @Mock
-    KafkaBridge kafkaBridge;
+    Configuration atlasConf;
+
+    @Mock
+    ZkUtils zkUtils;
 
     @BeforeMethod
     public void initializeMocks() {
@@ -78,18 +80,21 @@ public class KafkaBridgeTest {
     @Test
     public void testImportTopic() throws Exception {
 
-        List<String> topics = setupTopic(zkClient, TEST_TOPIC_NAME);
+        List<String> topics = Collections.singletonList(TEST_TOPIC_NAME);
 
+        KafkaBridge kafkaBridge = spy(new KafkaBridge(topics, CLUSTER_NAME, atlasClientV2,zkUtils));
         AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = new AtlasEntity.AtlasEntityWithExtInfo(
                 getTopicEntityWithGuid("0dd466a4-3838-4537-8969-6abb8b9e9185"));
-        KafkaBridge kafkaBridge = mock(KafkaBridge.class);
-        when(kafkaBridge.createEntityInAtlas(atlasEntityWithExtInfo)).thenReturn(atlasEntityWithExtInfo);
+        when(atlasClientV2.getEntityByAttribute(anyString(),anyMap())).thenReturn(null);
+        when(zkUtils.getTopicPartitionCount(anyString())).thenReturn(new Some<>(0));
+        doReturn(atlasEntityWithExtInfo).when(kafkaBridge).createEntityInAtlas(any());
 
         try {
             kafkaBridge.importTopic(TEST_TOPIC_NAME);
         } catch (Exception e) {
             Assert.fail("KafkaBridge import failed ", e);
         }
+        verify(kafkaBridge,times(1)).createEntityInAtlas(any());
     }
 
     private void returnExistingTopic(String topicName, AtlasClientV2 atlasClientV2, String clusterName)
