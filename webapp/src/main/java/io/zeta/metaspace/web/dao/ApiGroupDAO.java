@@ -62,7 +62,7 @@ public interface ApiGroupDAO {
             " where " +
             " g.projectid=#{projectId} and g.tenantid=#{tenantId} " +
             "<if test=\"param.query != null and param.query!=''\">" +
-            " and g.name like #{param.query} " +
+            " and g.name like '%${param.query}%' " +
             "</if>" +
             "<if test=\"publish!=null\">" +
             " and g.publish=#{publish} " +
@@ -108,7 +108,7 @@ public interface ApiGroupDAO {
             " #{api.guid},#{api.version} " +
             "</foreach>" +
             ") as tmp (id,version) " +
-            " where apiid=tmp.id and groupid=#{groupId}" +
+            " where apiid=tmp.id and groupid=#{groupId} and update_status=true " +
             "</script>")
     public int updateApiRelationVersion(@Param("apis") List<ApiInfoV2> apis, @Param("groupId")String groupId);
 
@@ -150,9 +150,9 @@ public interface ApiGroupDAO {
     public void deleteRelationByApi(@Param("ids")List<String> ids);
 
     @Delete("<script>" +
-            "delete from api_relation where apiid =#{api.guid} and version=#{api.version} " +
+            "delete from api_relation where apiid =#{api.apiId} and version=#{api.version} " +
             "</script>")
-    public void deleteRelationByApiVersion(@Param("api")ApiInfoV2 api);
+    public void deleteRelationByApiVersion(@Param("api")ApiVersion api);
 
     @Delete("<script>" +
             "delete from api_relation where groupid=#{groupId} and apiid not in" +
@@ -221,6 +221,13 @@ public interface ApiGroupDAO {
     @Select("<script>" +
             " select count(1)over() total,api_group_log.time date,api_group_log.group_id,api_group_log.type,users.username creator from api_group_log join users on api_group_log.userid=users.userid " +
             " where api_group_log.group_id=#{groupId} " +
+            "<if test=\"param.query!=null and param.query!=''\">" +
+            " and (users.username like '%${param.query}%' ESCAPE '/' " +
+            "<if test=\"type!=null and type!=''\">" +
+            " or  api_group_log.type like '%${type}%' ESCAPE '/'" +
+            "</if>" +
+            ")" +
+            "</if>" +
             " order by api_group_log.time desc" +
             " <if test='param.limit != null and param.limit!=-1'>" +
             " limit #{param.limit}" +
@@ -229,7 +236,7 @@ public interface ApiGroupDAO {
             " offset #{param.offset}" +
             " </if>" +
             " </script>")
-    public List<ApiGroupLog> getApiLog(@Param("param") Parameters parameters,@Param("groupId") String groupId);
+    public List<ApiGroupLog> getApiLog(@Param("param") Parameters parameters,@Param("groupId") String groupId,@Param("type") String type);
 
     @Select("<script>" +
             " select api.guid apiId,api.name apiName,api_category.guid categoryId,api_category.name categoryName,api.version apiVersion,api.status from" +

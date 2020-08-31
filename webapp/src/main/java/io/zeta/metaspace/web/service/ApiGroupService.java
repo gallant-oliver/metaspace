@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
+import io.zeta.metaspace.model.share.ApiLogEnum;
 import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
@@ -163,7 +164,7 @@ public class ApiGroupService {
         Map<String,ApiCategory> apiCategoryMap = new HashMap<>();
         aPiByGroup.forEach(api -> {
             String status = api.getStatus();
-            if (ApiStatusEnum.UP.equals(status)){
+            if (ApiStatusEnum.UP.getName().equals(status)){
                 api.setApiStatus(true);
             }else{
                 api.setApiStatus(false);
@@ -214,7 +215,7 @@ public class ApiGroupService {
             return;
         }
         if (apiGroupV2.isUpdateStatus()){
-            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(updateId);
+            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getNoDraftApiInfoByIds(updateId);
             apiGroupDAO.updateApiRelationVersion(apiInfoByIds,groupId);
         }else{
             apiGroupDAO.unUpdateApiRelationVersion(updateId,groupId);
@@ -334,7 +335,13 @@ public class ApiGroupService {
 
     public PageResult<ApiGroupLog> getApiGroupLog(Parameters param,String groupId) throws AtlasBaseException {
         PageResult<ApiGroupLog> pageResult = new PageResult<>();
-        List<ApiGroupLog> apiLogs= apiGroupDAO.getApiLog(param, groupId);
+        String type=null;
+        if ("api".contains(param.getQuery())){
+            param.setQuery("");
+        }else{
+            type = ApiLogEnum.getName(param.getQuery());
+        }
+        List<ApiGroupLog> apiLogs= apiGroupDAO.getApiLog(param, groupId,type);
         for (ApiGroupLog log:apiLogs){
             String str = String.format(ApiGroupLogEnum.getStr(log.getType()),log.getCreator());
             log.setStr(str);

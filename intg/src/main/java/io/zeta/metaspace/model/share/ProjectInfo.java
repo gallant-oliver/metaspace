@@ -35,7 +35,6 @@ public class ProjectInfo {
     private int total;
     private List<String> userGroups;
     private boolean editManager;
-    @JsonIgnore
     private String managerId;
     private int userCount;
     private int apiCount;

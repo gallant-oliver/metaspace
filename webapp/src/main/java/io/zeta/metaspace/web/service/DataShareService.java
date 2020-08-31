@@ -1810,6 +1810,17 @@ public class DataShareService {
         if (!projectPrivateByProject(info.getProjectId())){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有project权限");
         }
+        //版本正则
+        String versionRegex = "^v[a-zA-Z0-9\\-\\.]{1,20}$";
+        //path正则
+        String pathRegex = "^[a-zA-Z0-9/\\{\\}\\*\\%\\-\\_\\.\\+]{1,255}$";
+        if (!info.getVersion().matches(versionRegex)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "版本格式不对");
+        }
+        if (!(info.getPath().matches(pathRegex)||info.getPath()==null||info.getPath().length()==0)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "path格式不对");
+        }
+
         String guid = UUID.randomUUID().toString();
         int i = shareDAO.queryApiSameName(info.getName(), tenantId, info.getProjectId(),guid);
         if(i!=0) {
@@ -1845,6 +1856,17 @@ public class DataShareService {
      */
     @Transactional(rollbackFor=Exception.class)
     public void updateAPIInfoV2(ApiInfoV2 info,String tenantId,boolean submit) throws AtlasBaseException {
+        //版本正则
+        String versionRegex = "^v[a-zA-Z0-9\\-\\.]{1,20}$";
+        //path正则
+        String pathRegex = "^[a-zA-Z0-9/\\{\\}\\*\\%\\-\\_\\.\\+]{1,255}$";
+        if (!(info.getVersion().matches(versionRegex)||info.getPath()==null||info.getPath().length()==0)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "版本格式不对");
+        }
+        if (!(info.getPath().matches(pathRegex)||info.getPath()==null||info.getPath().length()==0)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "path格式不对");
+        }
+
         if (!projectPrivateByApi(info.getGuid())){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有project权限");
         }
@@ -1852,7 +1874,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新 Api 的 guid 不能为空");
         }
         String maxVersion = shareDAO.getMaxVersion(info.getGuid());
-        ApiInfoV2 apiInfo = shareDAO.getApiInfo(info.getGuid(), maxVersion);
+        ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(info.getGuid(), maxVersion);
         if(apiInfo == null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新 Api 不存在");
         }
@@ -1879,7 +1901,7 @@ public class DataShareService {
         info.setStatus(ApiStatusEnum.DRAFT.getName());
 
         if (ApiStatusEnum.DRAFT==apiStatus){
-            shareDAO.updateApiInfoV2OnDraft(info,tenantId,apiInfo.getVersion());
+            shareDAO.updateApiInfoV2OnDraft(info,tenantId,apiInfo.getVersionNum());
         }else{
             shareDAO.updateAPIInfoV2(info,tenantId);
         }
@@ -1927,11 +1949,11 @@ public class DataShareService {
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor=Exception.class)
-    public void deleteApiVersion(ApiInfoV2 api,String tenantId) throws AtlasBaseException {
-        if (!projectPrivateByApi(api.getGuid())){
+    public void deleteApiVersion(ApiVersion api,String tenantId) throws AtlasBaseException {
+        if (!projectPrivateByApi(api.getApiId())){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有project权限");
         }
-        ApiInfoV2 apiInfo = shareDAO.getApiInfo(api.getGuid(), api.getVersion());
+        ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(api.getApiId(), api.getVersion());
         if (apiInfo==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "api不存在");
         }
@@ -1939,7 +1961,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在上架的api，无法删除");
         }
         if (ApiStatusEnum.AUDIT.getName().equals(apiInfo.getStatus())){
-            auditService.cancelApiAudit(tenantId,api.getGuid(),api.getVersion());
+            auditService.cancelApiAudit(tenantId,api.getApiId(),api.getVersion());
         }
         //todo 告知云平台删除
 
@@ -1957,7 +1979,7 @@ public class DataShareService {
     public ApiInfoV2 getApiInfoMaxVersion(String id) throws AtlasBaseException {
         try {
             String maxVersion = shareDAO.getMaxVersion(id);
-            ApiInfoV2 apiInfo = shareDAO.getApiInfo(id, maxVersion);
+            ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(id, maxVersion);
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(apiInfo.getSourceType());
             if(sourceType == APIInfo.SourceType.ORACLE) {
                 apiInfo.setSourceName(dataSourceDAO.getSourceNameForSourceId(apiInfo.getSourceId()));
@@ -1969,7 +1991,7 @@ public class DataShareService {
             }
             String creatorName = userDAO.getUserName(apiInfo.getCreator());
             apiInfo.setCreator(creatorName);
-            String updaterName = userDAO.getUserName(apiInfo.getCreator());
+            String updaterName = userDAO.getUserName(apiInfo.getUpdater());
             apiInfo.setUpdater(updaterName);
             String categoryName = shareDAO.getCategoryById(apiInfo.getCategoryGuid()).getName();
             apiInfo.setCategoryName(categoryName);
@@ -1989,7 +2011,7 @@ public class DataShareService {
      */
     public ApiInfoV2 getApiInfoByVersion(String id,String version) throws AtlasBaseException {
         try {
-            ApiInfoV2 apiInfo = shareDAO.getApiInfo(id, version);
+            ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(id, version);
             APIInfo.SourceType sourceType = APIInfo.SourceType.getSourceTypeByDesc(apiInfo.getSourceType());
             if(sourceType == APIInfo.SourceType.ORACLE) {
                 apiInfo.setSourceName(dataSourceDAO.getSourceNameForSourceId(apiInfo.getSourceId()));
@@ -2001,7 +2023,7 @@ public class DataShareService {
             }
             String creatorName = userDAO.getUserName(apiInfo.getCreator());
             apiInfo.setCreator(creatorName);
-            String updaterName = userDAO.getUserName(apiInfo.getCreator());
+            String updaterName = userDAO.getUserName(apiInfo.getUpdater());
             apiInfo.setUpdater(updaterName);
             String categoryName = shareDAO.getCategoryById(apiInfo.getCategoryGuid()).getName();
             apiInfo.setCategoryName(categoryName);
@@ -2010,8 +2032,8 @@ public class DataShareService {
             apiInfo.setApiGroup(apiGroupByApiVersion);
             return apiInfo;
         } catch (Exception e) {
-            LOG.error("创建API信息失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建API信息失败");
+            LOG.error("获取api版本详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取api版本详情失败");
         }
     }
 
@@ -2298,7 +2320,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有project权限");
         }
         Timestamp updateTime = DateUtils.currentTimestamp();
-        ApiInfoV2 apiInfo = shareDAO.getApiInfo(id, version);
+        ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(id, version);
         if (apiInfo==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "api或版本不存在");
         }
@@ -2306,7 +2328,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "对应api的版本已经提交，请勿重复提交");
         }
         shareDAO.updateApiVersionStatus(id,version, ApiStatusEnum.AUDIT.getName(), updateTime);
-        auditService.insertApiAudit(tenantId,id,version);
+        auditService.insertApiAudit(tenantId,id,version,apiInfo.getVersionNum());
         addApiLog(ApiLogEnum.SUBMIT,id,AdminUtils.getUserData().getUserId());
     }
 
@@ -2339,13 +2361,22 @@ public class DataShareService {
 
     public PageResult<ApiLog> getApiLog(Parameters param,String apiId) throws AtlasBaseException {
         PageResult<ApiLog> pageResult = new PageResult<>();
-        List<ApiLog> apiLogs= shareDAO.getApiLog(param,apiId);
+        String type=null;
+        if ("api".contains(param.getQuery())){
+            param.setQuery("");
+        }else{
+            type = ApiLogEnum.getName(param.getQuery());
+        }
+        if (type==null){
+            type="";
+        }
+        List<ApiLog> apiLogs= shareDAO.getApiLog(param,apiId,type);
         for (ApiLog log:apiLogs){
-            String str = String.format(ApiLogEnum.getStr(log.getType()),AdminUtils.getUserData().getUsername());
+            String str = String.format(ApiLogEnum.getStr(log.getType()),log.getCreator());
             log.setStr(str);
         }
         pageResult.setLists(apiLogs);
-        if (apiLogs==null&&apiLogs.size()==0){
+        if (apiLogs==null||apiLogs.size()==0){
             return pageResult;
         }
         pageResult.setCurrentSize(apiLogs.size());
@@ -2642,7 +2673,8 @@ public class DataShareService {
     }
 
     public boolean projectPrivateByApi(String apiId) throws AtlasBaseException {
-        ApiInfoV2 apiInfo = getApiInfoMaxVersion(apiId);
+        String maxVersion = shareDAO.getMaxVersion(apiId);
+        ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(apiId, maxVersion);
         if (apiInfo==null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API已删除或不存在");
         }
@@ -2652,6 +2684,9 @@ public class DataShareService {
     public boolean projectPrivateByProject(String projectId) throws AtlasBaseException {
         String userId = AdminUtils.getUserData().getUserId();
         ProjectInfo projectInfo = shareDAO.getProjectInfoById(projectId);
+        if(projectInfo==null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目不存在");
+        }
         if (userId.contains(projectInfo.getManager())){
             return true;
         }

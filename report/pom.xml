@@ -96,6 +96,7 @@
             <groupId>org.apache.atlas</groupId>
             <artifactId>atlas-webapp</artifactId>
             <version>${project.version}</version>
+            <type>war</type>
         </dependency>
 
 

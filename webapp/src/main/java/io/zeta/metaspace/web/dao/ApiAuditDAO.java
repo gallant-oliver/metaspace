@@ -20,11 +20,12 @@ public interface ApiAuditDAO {
      * @return
      */
     @Insert({"<script> " +
-            "INSERT INTO api_audit ( id,api_guid,api_version,applicant,applicant_name,status,reason,tenant_id )\n" +
+            "INSERT INTO api_audit ( id,api_guid,api_version,api_version_num,applicant,applicant_name,status,reason,tenant_id )\n" +
             "VALUES (" +
             "    #{audit.id},\n" +
             "    #{audit.apiGuid},\n" +
             "    #{audit.apiVersion},\n" +
+            "    #{audit.apiVersionNum},\n" +
             "    #{audit.applicant},\n" +
             "    #{audit.applicantName},\n" +
             "    #{audit.status},\n" +
@@ -58,7 +59,8 @@ public interface ApiAuditDAO {
 
 
     @Select({"<script> " +
-            "SELECT  count(1)over() total,audit.*,api.name as api_name\n" +
+            "SELECT  count(1)over() total,audit.*,api.name as api_name," +
+            "((not api.valid ) or (audit.api_version_num != api.version_num ) or (api.guid is null)) as obsolete " +
             "FROM api_audit as audit " +
             "LEFT JOIN api ON audit.api_guid = api.guid and audit.api_version = api.version " +
             "WHERE audit.tenant_id=#{tenantId} " +

@@ -2234,6 +2234,7 @@ create table "public"."api_audit"
 	id varchar(255) not null constraint api_audit_pk primary key,
 	api_guid varchar(255),
 	api_version varchar(255),
+	api_version_num int4,
 	applicant varchar(255),
 	applicant_name varchar(255),
 	status varchar(255),
@@ -2247,6 +2248,7 @@ create table "public"."api_audit"
 comment on column "public"."api_audit".id is '审核记录 id';
 comment on column "public"."api_audit".api_guid is 'Api Guid';
 comment on column "public"."api_audit".api_version is 'Api 版本号';
+comment on column "public"."api_audit".api_version_num is 'Api 版本号标识';
 comment on column "public"."api_audit".applicant is '申请人 Id';
 comment on column "public"."api_audit".create_time is '创建时间';
 comment on column "public"."api_audit".update_time is '更新时间';
