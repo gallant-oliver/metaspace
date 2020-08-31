@@ -25,8 +25,19 @@ public class ApiVersion {
     private String apiName;
     private String description;
     private String version;
-    private int count;
+    private String status;
     @JsonIgnore
+    private int count;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+
     public int getCount() {
         return count;
     }

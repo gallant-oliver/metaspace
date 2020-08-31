@@ -26,7 +26,7 @@ public class ApiHead {
     private String description;
     private String name;
     private boolean approve;
-    private boolean status;
+    private String status;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     private String creator;
@@ -74,11 +74,11 @@ public class ApiHead {
         this.approve = approve;
     }
 
-    public boolean isStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(boolean status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

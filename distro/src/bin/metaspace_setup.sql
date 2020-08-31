@@ -1921,6 +1921,7 @@ INSERT INTO "public"."api_module" VALUES ('authorization', 'OPTION', 19, 't');
 INSERT INTO "public"."api_module" VALUES ('/dataquality/taskManage', 'OPTION', 23, 't');
 INSERT INTO "public"."api_module" VALUES ('/dataquality/warning', 'OPTION', 22, 't');
 INSERT INTO "public"."api_module" VALUES ('/dataquality/rule', 'OPTION', 21, 't');
+INSERT INTO "public"."api_module" VALUES ('/audit', 'OPTION', 26, 't');
 
 -- ----------------------------
 -- Primary Key structure for table api_module
@@ -2223,3 +2224,34 @@ CREATE TABLE "public"."category_group_relation" (
   "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+
+-- ----------------------------
+-- Table structure for api_audit
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."api_audit";
+create table "public"."api_audit"
+(
+	id varchar(255) not null constraint api_audit_pk primary key,
+	api_guid varchar(255),
+	api_version varchar(255),
+	applicant varchar(255),
+	applicant_name varchar(255),
+	status varchar(255),
+	reason varchar,
+	updater varchar(255),
+	tenant_id varchar(255),
+	create_time timestamp(6) default now(),
+	update_time timestamp(6) default now()
+);
+
+comment on column "public"."api_audit".id is '审核记录 id';
+comment on column "public"."api_audit".api_guid is 'Api Guid';
+comment on column "public"."api_audit".api_version is 'Api 版本号';
+comment on column "public"."api_audit".applicant is '申请人 Id';
+comment on column "public"."api_audit".create_time is '创建时间';
+comment on column "public"."api_audit".update_time is '更新时间';
+comment on column "public"."api_audit".status is '审核状态';
+comment on column "public"."api_audit".reason is '驳回原因';
+comment on column "public"."api_audit".tenant_id is '租户id';
+comment on column "public"."api_audit".applicant_name is '申请人名称';
+comment on column "public"."api_audit".updater is '更新人 Id';

@@ -20,7 +20,6 @@ import io.zeta.metaspace.model.apigroup.ApiGroupV2;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.share.ApiInfoV2;
-import io.zeta.metaspace.model.share.ApiLog;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -57,21 +56,19 @@ public interface ApiGroupDAO {
     public Integer updateApiGroup(@Param("group") ApiGroupV2 group);
 
     @Select("<script>" +
-            " select count(*)over() count,s.updatetime updateTime,g.*,g.approve approveJson ,case when (s.groupid is null) then false else true end updatestatus from api_group g left join (" +
-            "  select groupid,max(update_time) updatetime from api_relation where update_status=true group by groupid) s on g.id=s.groupid " +
+            " select count(*)over() count,g.*,g.approve approveJson ,case when (s.groupid is null) then false else true end updatestatus from api_group g left join (" +
+            "  select distinct groupid from api_relation r join api on r.apiid=api.guid and r.version=api.version where r.update_status=true and api.status='up'" +
+            ") s on g.id=s.groupid " +
             " where " +
             " g.projectid=#{projectId} and g.tenantid=#{tenantId} " +
-            "<if test=\"param.query!=null and param.query!=''\">" +
-            " and g.name like '%${param.query}%' " +
+            "<if test=\"param.query != null and param.query!=''\">" +
+            " and g.name like #{param.query} " +
             "</if>" +
-            "<if test=\"publish!=null\">" +
-            " and g.publish=#{publish} " +
-            "</if>" +
-            "<if test=\"param.sortby!=null and param.sortby!='' \">" +
+            "<if test='param.sortby!=null'>" +
             "order by g.${param.sortby} " +
-            "<if test=\"param.order!='' and param.order!=null\">" +
-            "${param.order} " +
             "</if>" +
+            "<if test='param.order!=null and param.sortby!=null'>" +
+            "${param.order} " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             "limit ${param.limit} " +
@@ -80,17 +77,21 @@ public interface ApiGroupDAO {
             "offset ${param.offset}" +
             "</if>" +
             "</script>")
-    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId,@Param("publish")Boolean publish);
+    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId);
 
     @Update("update api_relation set update_status=false where update_status=true and update_time<#{time}")
     public int updateApiRelationStatusByTime(@Param("time")Timestamp timestamp);
 
+    @Update("update api_relation set update_status=false where update_status=true and update_time<#{time}")
+    public int updateApiRelationStatus(@Param("time")Timestamp timestamp);
+
     @Select("select *,approve approveJson from api_group where id=#{id}")
     public ApiGroupInfo getApiGroupInfo(@Param("id")String id);
 
-    @Select(" select api.guid apiId,api.name apiName,api_category.guid categoryId,api_category.name categoryName,api.version apiVersion,api.status apiStatus from api_relation join api on api_relation.apiid=api.guid and api_relation.version=api.version " +
+    @Select(" select api.guid apiId,api.name apiName,api_category.guid categoryId,api_category.name categoryName,api.version apiVersion,api.status " +
+            " from api_relation join api on api_relation.apiid=api.guid and api_relation.version=api.version " +
             " join api_category on api_category.guid=api.categoryguid " +
-            " where api_relation.groupid=#{groupId} and api.valid=true")
+            " where api_relation.groupid=#{groupId} and api.valid=true ")
     public List<ApiCategory.Api> getAPiByGroup(@Param("groupId")String groupId);
 
     @Select(" select apiid from api_relation  " +
@@ -107,6 +108,12 @@ public interface ApiGroupDAO {
             " where apiid=tmp.id and groupid=#{groupId}" +
             "</script>")
     public int updateApiRelationVersion(@Param("apis") List<ApiInfoV2> apis, @Param("groupId")String groupId);
+
+    @Update("<script>" +
+            "update api_relation set update_status=true,update_time=#{time} " +
+            " where apiid=#{id} " +
+            "</script>")
+    public int updateApiRelationByApi(@Param("id") String id,@Param("time")Timestamp time);
 
     @Update("<script>" +
             "update api_relation set update_status=false where apiid in " +
@@ -131,6 +138,20 @@ public interface ApiGroupDAO {
     public void deleteRelationByGroupIds(@Param("ids")List<String> ids);
 
     @Delete("<script>" +
+            "delete from api_relation where apiid in " +
+            "<foreach item='id' index='index' collection='ids' " +
+            "open='(' separator=',' close=')'>" +
+            " #{id} " +
+            "</foreach>" +
+            "</script>")
+    public void deleteRelationByApi(@Param("ids")List<String> ids);
+
+    @Delete("<script>" +
+            "delete from api_relation where apiid =#{api.guid} and version=#{api.version} " +
+            "</script>")
+    public void deleteRelationByApiVersion(@Param("api")ApiInfoV2 api);
+
+    @Delete("<script>" +
             "delete from api_relation where groupid=#{groupId} and apiid not in" +
             "<foreach item='id' index='index' collection='apiIds' " +
             "open='(' separator=',' close=')'>" +
@@ -149,6 +170,21 @@ public interface ApiGroupDAO {
             "</script>")
     public void deleteApiGroup(@Param("ids")List<String> ids);
 
+    @Delete("<script>" +
+            "select id from api_group where projectid in " +
+            "<foreach item='id' index='index' collection='ids' " +
+            "open='(' separator=',' close=')'>" +
+            " #{id} " +
+            "</foreach>" +
+            "</script>")
+    public List<String> getApiGroupIdByProject(@Param("ids")List<String> ids);
+
+    @Update("delete from api_relation where apiid in (select guid from api where categoryguid=#{categoryId})")
+    public int deleteRelationByCategory(@Param("categoryId")String categoryId);
+
+    @Update("update api set valid=false where categoryguid=#{categoryId}")
+    public int delete(@Param("categoryId")String categoryId);
+
     @Select("<script>" +
             "select name from api_group where id in " +
             "<foreach item='id' index='index' collection='ids' " +
@@ -161,12 +197,12 @@ public interface ApiGroupDAO {
 
     @Select("<script>" +
             "select count(*)over() count,api.name apiName,api.guid apiId,api.version,api.description from api_relation r join api on r.apiid=api.guid and r.version=api.version" +
-            " where r.groupid=#{groupId} and r.update_status=true " +
+            " where r.groupid=#{groupId} and r.update_status=true and api.status='up' " +
             "<if test='limit!=-1'>" +
-            "limit ${limit} " +
+            " limit ${limit} " +
             "</if>" +
             "<if test='offset!=0'>" +
-            "offset ${offset}" +
+            " offset ${offset} " +
             "</if>" +
             "</script>")
     public List<ApiVersion> getUpdateApi(@Param("groupId")String groupId,@Param("limit") int limit,@Param("offset") int offset);
@@ -196,7 +232,7 @@ public interface ApiGroupDAO {
             " select api.guid apiId,api.name apiName,api_category.guid categoryId,api_category.name categoryName,api.version apiVersion,api.status from" +
             " api join api_category on api_category.guid=api.categoryguid join " +
             " (select guid,max(version_num) version_num from api where " +
-            " valid=true and status=true and projectid=#{projectId} " +
+            " valid=true and status='up' and projectid=#{projectId} " +
             " group by guid) v on api.guid=v.guid and api.version_num=v.version_num " +
             " where api.valid=true and api.projectid=#{projectId}" +
             " <if test=\"search != null and search!=''\">" +
@@ -204,4 +240,8 @@ public interface ApiGroupDAO {
             " </if>" +
             " </script>")
     public List<ApiCategory.Api> getAllApi(@Param("search")String search,@Param("projectId")String projectId);
+
+    @Select(" select u.username creator,* from api_relation a join api_group g on a.groupid=g.id left join users u on u.userid=g.creator " +
+            " where a.version=#{version} and a.apiid=#{apiId}")
+    public List<ApiGroupInfo> getApiGroupByApiVersion(@Param("apiId")String apiId,@Param("version")String version);
 }

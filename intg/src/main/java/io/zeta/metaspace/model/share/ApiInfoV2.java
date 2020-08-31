@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.model.share;
 
+import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;
@@ -47,14 +48,23 @@ public class ApiInfoV2 {
     private String creator;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
-    private boolean status;
+    private String status;
     private boolean approve;
     private boolean log;
-    private String version_num;
+    private int versionNum;
     private List<FieldV2> param;
     private List<FieldV2> returnParam;
     private List<FieldV2> sortParam;
     private String projectId;
+    private List<ApiGroupInfo> apiGroup;
+
+    public List<ApiGroupInfo> getApiGroup() {
+        return apiGroup;
+    }
+
+    public void setApiGroup(List<ApiGroupInfo> apiGroup) {
+        this.apiGroup = apiGroup;
+    }
 
     public String getProjectId() {
         return projectId;
@@ -395,11 +405,11 @@ public class ApiInfoV2 {
         this.createTime = createTime;
     }
 
-    public boolean isStatus() {
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(boolean status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -419,12 +429,12 @@ public class ApiInfoV2 {
         this.log = log;
     }
 
-    public String getVersion_num() {
-        return version_num;
+    public int getVersionNum() {
+        return versionNum;
     }
 
-    public void setVersion_num(String version_num) {
-        this.version_num = version_num;
+    public void setVersionNum(int versionNum) {
+        this.versionNum = versionNum;
     }
 
     public List<FieldV2> getParam() {
