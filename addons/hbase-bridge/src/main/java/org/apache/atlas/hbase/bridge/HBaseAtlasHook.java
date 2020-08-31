@@ -54,7 +54,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
 
     public static final String HBASE_CLUSTER_NAME   = "atlas.cluster.name";
-    public static final String DEFAULT_CLUSTER_NAME = "primary";
+    public static final String DEFAULT_CLUSTER_NAME = "ms";
     public static final String ATTR_DESCRIPTION     = "description";
     public static final String ATTR_ATLAS_ENDPOINT  = "atlas.rest.address";
     public static final String ATTR_COMMENT         = "comment";

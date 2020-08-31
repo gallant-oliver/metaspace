@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,8 @@
 package org.apache.atlas;
 
 import org.apache.commons.configuration.Configuration;
+
+import java.util.function.Function;
 
 /**
  * Enum that encapsulated each property name and its default value.
@@ -31,7 +33,7 @@ public enum AtlasConfiguration {
     WEBSERVER_QUEUE_SIZE("atlas.webserver.queuesize", 100),
     WEBSERVER_REQUEST_BUFFER_SIZE("atlas.jetty.request.buffer.size", 16192),
 
-    QUERY_PARAM_MAX_LENGTH("atlas.query.param.max.length", 4*1024),
+    QUERY_PARAM_MAX_LENGTH("atlas.query.param.max.length", 4 * 1024),
 
     NOTIFICATION_MESSAGE_MAX_LENGTH_BYTES("atlas.notification.message.max.length.bytes", (1000 * 1000)),
     NOTIFICATION_MESSAGE_COMPRESSION_ENABLED("atlas.notification.message.compression.enabled", true),
@@ -40,7 +42,9 @@ public enum AtlasConfiguration {
 
     //search configuration
     SEARCH_MAX_LIMIT("atlas.search.maxlimit", 10000),
-    SEARCH_DEFAULT_LIMIT("atlas.search.defaultlimit", 100);
+    SEARCH_DEFAULT_LIMIT("atlas.search.defaultlimit", 100),
+
+    METASPACE_QUALITY_ENGINE("metaspace.quality.engine", "impala");
 
     private static final Configuration APPLICATION_PROPERTIES;
 
@@ -79,5 +83,17 @@ public enum AtlasConfiguration {
     public Object get() {
         Object value = APPLICATION_PROPERTIES.getProperty(propertyName);
         return value == null ? defaultValue : value;
+    }
+
+    public <T> T get(Configuration conf, Function<Object, T> valueOf) {
+        Object value = APPLICATION_PROPERTIES.getProperty(propertyName);
+
+        if(value == null){
+            if (defaultValue == null){
+                return null;
+            }
+            value = defaultValue;
+        }
+        return valueOf.apply(value);
     }
 }

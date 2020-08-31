@@ -36,9 +36,7 @@ public class KerberosConfig {
     static {
         try {
             conf = ApplicationProperties.get();
-            String enable = conf.getString("atlas.authentication.method.kerberos");
-            //默认关闭
-            kerberosEnable = enable != null && enable.equals("true");
+            kerberosEnable = conf.getBoolean("atlas.authentication.method.kerberos",true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

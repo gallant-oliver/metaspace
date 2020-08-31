@@ -40,7 +40,7 @@ public class MetaspaceConfig {
     }
 
     public static String getImpalaResourcePool() {
-        return conf.getString("metaspace.impala.resource.pool");
+        return conf.getString("metaspace.impala.resource.pool","metaspace");
     }
 
     public static String getHiveConfig() {

@@ -60,7 +60,7 @@ public abstract class AbstractAtlasHook {
     public static final String ATLAS_HOOK_FAILED_MESSAGES_LOG_DEFAULT_NAME        = "atlas_hook_failed_messages.log";
     public static final String CONF_METADATA_NAMESPACE                            = "atlas.metadata.namespace";
     public static final String CLUSTER_NAME_KEY                                   = "atlas.cluster.name";
-    public static final String DEFAULT_CLUSTER_NAME                               = "primary";
+    public static final String DEFAULT_CLUSTER_NAME                               = "ms";
 
     protected static Configuration         atlasProperties;
     protected static NotificationInterface notificationInterface;

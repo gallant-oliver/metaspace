@@ -66,7 +66,7 @@ public abstract class AbstractMetaDataProvider {
     private volatile     AtomicLong       startTime            = new AtomicLong(0);
     private volatile AtomicLong           endTime              = new AtomicLong(0);
     public static final String            CLUSTER_NAME         = "atlas.cluster.name";
-    public static final String            DEFAULT_CLUSTER_NAME = "primary";
+    public static final String            DEFAULT_CLUSTER_NAME = "ms";
     public String                         clusterName;
     @Inject
     AtlasGraph graph;

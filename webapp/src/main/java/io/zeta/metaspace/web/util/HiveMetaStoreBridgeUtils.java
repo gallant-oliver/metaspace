@@ -81,7 +81,7 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     public static final String CONF_PREFIX                     = "atlas.hook.hive.";
     public static final String HIVE_CLUSTER_NAME               = "atlas.cluster.name";
     public static final String HDFS_PATH_CONVERT_TO_LOWER_CASE = CONF_PREFIX + "hdfs_path.convert_to_lowercase";
-    public static final String DEFAULT_CLUSTER_NAME            = "primary";
+    public static final String DEFAULT_CLUSTER_NAME            = "ms";
     public static final String TEMP_TABLE_PREFIX               = "_temp-";
     public static final String SEP                             = ":".intern();
     public static final String HDFS_PATH                       = "hdfs_path";

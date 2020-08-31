@@ -63,6 +63,7 @@ import io.zeta.metaspace.web.util.*;
 import oracle.jdbc.OracleBfile;
 import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -1092,7 +1093,7 @@ public class DataShareService {
         Connection conn = null;
         long count = 0;
         try {
-            String engine = conf.getString("metaspace.quality.engine");
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
             } else {
@@ -1560,7 +1561,7 @@ public class DataShareService {
     }
 
     public List<Queue> getPools(String tenantId) throws AtlasBaseException {
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         Pool pools = tenantService.getPools(tenantId);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             return pools.getImpala();

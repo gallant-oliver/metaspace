@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 public class HiveMetaStoreBridgeTest {
     private static final String TEST_DB_NAME       = "default";
-    public  static final String METADATA_NAMESPACE = "primary";
+    public  static final String METADATA_NAMESPACE = "ms";
     public  static final String TEST_TABLE_NAME    = "test_table";
 
     @Mock

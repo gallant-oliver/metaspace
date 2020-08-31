@@ -172,7 +172,7 @@ public final class Atlas {
         assert configuration != null;
         appPort = StringUtils.isEmpty(enableTLSFlag) || "true".equals(enableTLSFlag) ?
             configuration.getInt(ATLAS_SERVER_HTTPS_PORT, 21443) :
-            configuration.getInt(ATLAS_SERVER_HTTP_PORT, 21000);
+            configuration.getInt(ATLAS_SERVER_HTTP_PORT, 21001);
         return appPort;
     }
 
