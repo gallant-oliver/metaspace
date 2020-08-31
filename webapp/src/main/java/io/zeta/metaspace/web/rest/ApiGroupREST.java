@@ -31,7 +31,6 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiLog;
-import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.service.ApiGroupService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -69,13 +68,6 @@ public class ApiGroupREST {
     @Autowired
     ApiGroupService apiGroupService;
 
-    /**
-     * 创建api分组
-     * @param apiGroup
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -94,14 +86,6 @@ public class ApiGroupREST {
         return ReturnUtil.success();
     }
 
-    /**
-     * 更新api分组
-     * @param apiGroup
-     * @param groupId
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
     @PUT
     @Path("{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -122,23 +106,11 @@ public class ApiGroupREST {
         return ReturnUtil.success();
     }
 
-    /**
-     * 查询api分组
-     * @param projectId
-     * @param search
-     * @param limit
-     * @param offset
-     * @param sortBy
-     * @param order
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
     @GET
     @Path("{projectId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result searchApiGroup(@PathParam("projectId")String projectId, @QueryParam("search")String search,@QueryParam("publish")String publish,
+    public Result searchApiGroup(@PathParam("projectId")String projectId, @QueryParam("search")String search,
                                  @DefaultValue("-1")@QueryParam("limit") int limit,@DefaultValue("0")@QueryParam("offset")int offset,
                                  @QueryParam("sortBy")String sortBy,@QueryParam("order")String order,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
@@ -148,25 +120,15 @@ public class ApiGroupREST {
             parameters.setOrder(order);
             parameters.setOffset(offset);
             parameters.setLimit(limit);
-            Boolean bool=null;
-            if (publish!=null&&publish.length()!=0){
-                bool = Boolean.valueOf(publish);
-            }
-            PageResult<ApiGroupV2> result = apiGroupService.searchApiGroup(parameters, projectId, tenantId,bool);
+            PageResult<ApiGroupV2> result = apiGroupService.searchApiGroup(parameters, projectId, tenantId);
             return ReturnUtil.success(result);
         }catch (Exception e){
-            LOG.error("查询api分组失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "查询api分组失败");
+            LOG.error("更新api分组失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
 
     }
 
-    /**
-     * 获取api分组详情
-     * @param groupId
-     * @return
-     * @throws AtlasBaseException
-     */
     @GET
     @Path("info/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -176,18 +138,11 @@ public class ApiGroupREST {
             ApiGroupInfo apiGroupInfo = apiGroupService.getApiGroupInfo(groupId);
             return ReturnUtil.success(apiGroupInfo);
         }catch (Exception e){
-            LOG.error("获取api分组详情失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取api分组详情失败");
+            LOG.error("更新api分组失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
     }
 
-    /**
-     * 升级api
-     * @param relation
-     * @param groupId
-     * @return
-     * @throws AtlasBaseException
-     */
     @POST
     @Path("version/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -200,40 +155,11 @@ public class ApiGroupREST {
             apiGroupService.updateApiRelationVersion(relation,groupId);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("升级api失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "升级api失败");
+            LOG.error("更新api分组失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
     }
 
-    /**
-     * 升级全部api
-     * @param apiGroupV2
-     * @return
-     * @throws AtlasBaseException
-     */
-    @PUT
-    @Path("version/all")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
-    public Result updateAllApiRelationVersion(ApiGroupV2 apiGroupV2) throws AtlasBaseException {
-        try {
-            ApiGroupInfo apiGroup = apiGroupService.getApiGroup(apiGroupV2.getId());
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "变更\""+apiGroup.getName()+"\"关联的api版本");
-            apiGroupService.updateAllApiRelationVersion(apiGroupV2);
-            return ReturnUtil.success();
-        }catch (Exception e){
-            LOG.error("升级api失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "升级api失败");
-        }
-    }
-
-    /**
-     * 变更api分组发布状态
-     * @param apiGroupV2
-     * @return
-     * @throws AtlasBaseException
-     */
     @POST
     @Path("status")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -246,17 +172,11 @@ public class ApiGroupREST {
             apiGroupService.updatePublish(apiGroupV2.getId(),apiGroupV2.isPublish());
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("变更api分组状态",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "变更api分组状态");
+            LOG.error("更新api分组失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
     }
 
-    /**
-     * 批量删除api分组
-     * @param ids
-     * @return
-     * @throws AtlasBaseException
-     */
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -273,14 +193,6 @@ public class ApiGroupREST {
         }
     }
 
-    /**
-     * 获取升级api列表
-     * @param apiGroupId
-     * @param limit
-     * @param offset
-     * @return
-     * @throws AtlasBaseException
-     */
     @GET
     @Path("status/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -291,19 +203,11 @@ public class ApiGroupREST {
             PageResult<ApiGroupStatusApi> updateApi = apiGroupService.getUpdateApi(apiGroupId, limit, offset);
             return ReturnUtil.success(updateApi);
         }catch (Exception e){
-            LOG.error("获取升级api列表失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取升级api列表失败");
+            LOG.error("更新api分组失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
     }
 
-    /**
-     * 获取api分组日志
-     * @param groupId
-     * @param offset
-     * @param limit
-     * @return
-     * @throws AtlasBaseException
-     */
     @GET
     @Path("/logs/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -318,21 +222,15 @@ public class ApiGroupREST {
             PageResult<ApiGroupLog> pageResult = apiGroupService.getApiGroupLog(param, groupId);
             return ReturnUtil.success(pageResult);
         } catch (AtlasBaseException e){
-            LOG.error("获取api分组日志失败",e);
+            LOG.error("获取api日志失败",e);
             throw e;
         }  catch (Exception e) {
-            LOG.error("获取api分组日志失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api分组日志失败:"+e.getMessage());
+            LOG.error("获取api日志失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api日志失败:"+e.getMessage());
         }
     }
 
-    /**
-     * 获取项目下全部api
-     * @param search
-     * @param projectId
-     * @return
-     * @throws AtlasBaseException
-     */
+
     @GET
     @Path("/all/api/{projectId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -342,28 +240,8 @@ public class ApiGroupREST {
             List<ApiCategory> allApi = apiGroupService.getAllApi(search,projectId);
             return ReturnUtil.success(allApi);
         } catch (Exception e) {
-            LOG.error("获取项目下全部api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取项目下全部api失败:"+e.getMessage());
-        }
-    }
-
-    /**
-     * 获取审批人列表
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/approve")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApprove(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        try {
-            List<UserIdAndName> approve = apiGroupService.getApprove(tenantId);
-            return ReturnUtil.success(approve);
-        } catch (Exception e) {
-            LOG.error("获取审批人列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取审批人列表失败:"+e.getMessage());
+            LOG.error("获取api日志失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api日志失败:"+e.getMessage());
         }
     }
 }

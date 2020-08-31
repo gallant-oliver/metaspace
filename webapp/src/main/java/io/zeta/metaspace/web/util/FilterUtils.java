@@ -30,4 +30,8 @@ public class FilterUtils {
         }
         return false;
     }
+
+    public static boolean isDataService(String requestURL){
+        return requestURL.contains("/api/metaspace/dataservice");
+    }
 }

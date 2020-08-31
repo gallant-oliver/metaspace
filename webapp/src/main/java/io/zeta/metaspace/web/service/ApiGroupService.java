@@ -24,14 +24,11 @@ import io.zeta.metaspace.model.apigroup.ApiGroupStatusApi;
 import io.zeta.metaspace.model.apigroup.ApiGroupV2;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.security.SecuritySearch;
-import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
+import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.ApiGroupDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
@@ -64,8 +61,6 @@ public class ApiGroupService {
     UserDAO userDAO;
     @Autowired
     DataShareDAO dataShareDAO;
-    @Autowired
-    TenantService tenantService;
 
     @Transactional(rollbackFor=Exception.class)
     public void insertApiGroup(ApiGroupV2 group,String tenantId) throws AtlasBaseException {
@@ -76,8 +71,8 @@ public class ApiGroupService {
         String id = UUID.randomUUID().toString();
         group.setId(id);
         User user = AdminUtils.getUserData();
-        group.setCreator(user.getUsername());
-        group.setUpdater(user.getUsername());
+        group.setCreator(user.getUserId());
+        group.setUpdater(user.getUserId());
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         group.setCreateTime(timestamp);
         group.setUpdateTime(timestamp);
@@ -85,7 +80,7 @@ public class ApiGroupService {
         apiGroupDAO.insertApiGroup(group,tenantId);
         List<String> apis = group.getApis();
         if (apis!=null&& apis.size()!=0){
-            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(apis);
+            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getNoDraftApiInfoByIds(apis);
             apiGroupDAO.insertApiRelation(apiInfoByIds,group.getId());
         }
         addApiGroupLogs(ApiGroupLogEnum.INSERT, Lists.newArrayList(id),AdminUtils.getUserData().getUserId());
@@ -97,7 +92,7 @@ public class ApiGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的api分组名称");
         }
         User user = AdminUtils.getUserData();
-        group.setUpdater(user.getUsername());
+        group.setUpdater(user.getUserId());
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         group.setUpdateTime(timestamp);
         group.setPublish(false);
@@ -116,7 +111,7 @@ public class ApiGroupService {
             }
         }
         if (insertIds.size()!=0){
-            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(insertIds);
+            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getNoDraftApiInfoByIds(insertIds);
             apiGroupDAO.insertApiRelation(apiInfoByIds,group.getId());
         }
         apiGroupDAO.updateRelation(apis,group.getId());
@@ -124,10 +119,10 @@ public class ApiGroupService {
 
     }
 
-    public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId,Boolean publish){
+    public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId){
         PageResult<ApiGroupV2> result = new PageResult<>();
         updateApiRelationStatus();
-        List<ApiGroupV2> groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId,publish);
+        List<ApiGroupV2> groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId);
         if (groups==null||groups.size()==0){
             result.setLists(new ArrayList<>());
             return result;
@@ -139,13 +134,17 @@ public class ApiGroupService {
     }
 
     public void updateApiRelationStatus(){
-        Date date = DateUtils.addDays(new Date(System.currentTimeMillis()), -3);
+        Date date = DateUtils.addDays(new Date(System.currentTimeMillis()), -90);
         Timestamp timestamp = new Timestamp(date.getTime());
         apiGroupDAO.updateApiRelationStatusByTime(timestamp);
     }
 
     public ApiGroupInfo getApiGroupInfo(String groupId){
         ApiGroupInfo apiGroupInfo = apiGroupDAO.getApiGroupInfo(groupId);
+        User user = userDAO.getUser(apiGroupInfo.getCreator());
+        if (user!=null){
+            apiGroupInfo.setCreator(user.getUsername());
+        }
         Gson gson = new Gson();
         String approveJson = apiGroupInfo.getApproveJson();
         List list = gson.fromJson(approveJson, List.class);
@@ -157,6 +156,12 @@ public class ApiGroupService {
         List<ApiCategory.Api> aPiByGroup = apiGroupDAO.getAPiByGroup(groupId);
         Map<String,ApiCategory> apiCategoryMap = new HashMap<>();
         aPiByGroup.forEach(api -> {
+            String status = api.getStatus();
+            if (ApiStatusEnum.UP.equals(status)){
+                api.setApiStatus(true);
+            }else{
+                api.setApiStatus(false);
+            }
             if (apiCategoryMap.containsKey(api.getCategoryId())){
                 apiCategoryMap.get(api.getCategoryId()).getApi().add(api);
             }else{
@@ -180,7 +185,7 @@ public class ApiGroupService {
     public void updateApiRelationVersion(ApiGroupRelation relation,String groupId) throws AtlasBaseException {
         List<String> updateId = relation.getUpdateId();
         if (updateId!=null&&updateId.size()!=0){
-            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(updateId);
+            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getNoDraftApiInfoByIds(updateId);
             apiGroupDAO.updateApiRelationVersion(apiInfoByIds,groupId);
         }
         List<String> ignoreId = relation.getIgnoreId();
@@ -189,23 +194,8 @@ public class ApiGroupService {
         }
         addApiGroupLogs(ApiGroupLogEnum.UPLEVEL, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
 
-    }
 
-    @Transactional(rollbackFor=Exception.class)
-    public void updateAllApiRelationVersion(ApiGroupV2 apiGroupV2) throws AtlasBaseException {
-        String groupId = apiGroupV2.getId();
-        List<ApiCategory.Api> aPiByGroup = apiGroupDAO.getAPiByGroup(groupId);
-        List<String> updateId = aPiByGroup.stream().map(api -> api.getApiId()).collect(Collectors.toList());
-        if (updateId==null||updateId.size()==0){
-            return;
-        }
-        if (apiGroupV2.isUpdateStatus()){
-            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(updateId);
-            apiGroupDAO.updateApiRelationVersion(apiInfoByIds,groupId);
-        }else{
-            apiGroupDAO.unUpdateApiRelationVersion(updateId,groupId);
-        }
-        addApiGroupLogs(ApiGroupLogEnum.UPLEVEL, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
+        //todo 通知云平台变更发布状态
 
     }
 
@@ -216,6 +206,9 @@ public class ApiGroupService {
             unPublish(groupId);
         }
         apiGroupDAO.updatePublish(groupId,publish);
+        //todo 通知云平台变更发布状态
+
+
     }
 
     /**
@@ -228,6 +221,8 @@ public class ApiGroupService {
             return;
         }
         addApiGroupLogs(ApiGroupLogEnum.PUBLISH, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
+        //todo 通知云平台变更发布状态
+
     }
 
     /**
@@ -252,6 +247,9 @@ public class ApiGroupService {
         apiGroupDAO.deleteRelationByGroupIds(apiGroupIds);
         apiGroupDAO.deleteApiGroup(apiGroupIds);
         addApiGroupLogs(ApiGroupLogEnum.UNPUBLISH, apiGroupIds,AdminUtils.getUserData().getUserId());
+
+        //todo 通知云平台
+
     }
 
     public List<String> getApiGroupNames(List<String> groupIds){
@@ -275,7 +273,8 @@ public class ApiGroupService {
         pageResult.setTotalSize(updateApi.get(0).getCount());
 
         List<String> apiIds = updateApi.stream().map(apiVersion -> apiVersion.getApiId()).collect(Collectors.toList());
-        List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(apiIds);
+        List<ApiInfoV2> apiInfoByIds = dataShareDAO.getNoDraftApiInfoByIds(apiIds);
+        List<String> updateApiIds = new ArrayList<>();
         Map<String,ApiInfoV2> apiMap = new HashMap<>();
         apiInfoByIds.forEach(api->{
             apiMap.put(api.getGuid(),api);
@@ -284,6 +283,10 @@ public class ApiGroupService {
             ApiGroupStatusApi apiGroupStatusApi = new ApiGroupStatusApi();
             ApiInfoV2 apiInfoV2 = apiMap.get(apiVersion.getApiId());
             ApiVersion newApiVersion = new ApiVersion(apiInfoV2);
+            if (apiVersion.getVersion().equals(apiInfoV2.getVersion())){
+                updateApiIds.add(apiVersion.getApiId());
+                continue;
+            }
             apiGroupStatusApi.setOldApi(apiVersion);
             apiGroupStatusApi.setNewApi(newApiVersion);
             list.add(apiGroupStatusApi);
@@ -325,6 +328,12 @@ public class ApiGroupService {
         List<ApiCategory.Api> aPiByGroup = apiGroupDAO.getAllApi(search,projectId);
         Map<String,ApiCategory> apiCategoryMap = new HashMap<>();
         aPiByGroup.forEach(api -> {
+            String status = api.getStatus();
+            if (ApiStatusEnum.UP.equals(status)){
+                api.setApiStatus(true);
+            }else{
+                api.setApiStatus(false);
+            }
             if (apiCategoryMap.containsKey(api.getCategoryId())){
                 apiCategoryMap.get(api.getCategoryId()).getApi().add(api);
             }else{
@@ -336,26 +345,5 @@ public class ApiGroupService {
             }
         });
         return new ArrayList<>(apiCategoryMap.values());
-    }
-
-    /**
-     * 可成为管理者用户
-     * @param tenantId
-     * @return
-     * @throws Exception
-     */
-    public List<UserIdAndName> getApprove(String tenantId) throws AtlasBaseException {
-        SecuritySearch securitySearch = new SecuritySearch();
-        securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-        List<UserIdAndName> users = new ArrayList<>();
-        for (UserAndModule userAndModule:userAndModules.getLists()){
-            UserIdAndName user = new UserIdAndName();
-            user.setUserName(userAndModule.getUserName());
-            user.setAccount(userAndModule.getEmail());
-            user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
-            users.add(user);
-        }
-        return users;
     }
 }

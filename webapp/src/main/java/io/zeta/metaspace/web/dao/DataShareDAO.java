@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -411,14 +412,31 @@ public interface DataShareDAO {
              " </script>"})
     public int updateAPIInfoV2(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId);
 
-    @Select("select version from api where guid=#{id} and version_num=(select max(version_num) from api where guid=#{id})")
+    @Update(" update api set name=#{info.name},sourcetype=#{info.sourceType},sourceid=#{info.sourceId},schemaname=#{info.schemaName},tablename=#{info.tableName}," +
+            " tableguid=#{info.tableGuid},dbguid=#{info.dbGuid},categoryguid=#{info.categoryGuid},version=#{info.version},description=#{info.description}," +
+            " protocol=#{info.protocol},requestmode=#{info.requestMode},path=#{info.path},updater=#{info.updater},updatetime=#{info.updateTime},pool=#{info.pool}," +
+            " status=#{info.status},approve=#{info.approve},log=#{info.log}," +
+            " param=#{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
+            " returnparam=#{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
+            " sortparam=#{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}" +
+            " where guid=#{info.guid} and version=#{version}")
+    public int updateApiInfoV2OnDraft(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId,@Param("version")String version);
+
+    @Select("select version from api where guid=#{id} and version_num=(select max(version_num) from api where guid=#{id} and valid=true)")
     public String getMaxVersion(@Param("id") String id);
 
-    @Select("select count(*) from api where guid=#{id} and version=#{version}")
+    @Select("select version from api where guid=#{id} and version_num=(select max(version_num) from api where guid=#{id} and status!='draft' and status!='audit' and valid=true)")
+    public String getMaxVersionNoDraft(@Param("id") String id);
+
+    @Select("select count(*) from api where guid=#{id} and version=#{version} and status!='draft'")
     public int queryApiSameVersion(@Param("id") String id,@Param("version")String version);
 
-    @Select("select * from api where guid=#{id} and version=#{version}")
+    @Select("select * from api where guid=#{id} and version=#{version} and valid=true")
     public ApiInfoV2 getApiInfo(@Param("id") String id, @Param("version")String version);
+
+
+    @Select("select guid apiId,name apiName,description,version,status from api where guid=#{id} and valid=true")
+    public List<ApiVersion> getApiVersion(@Param("id") String id);
 
     @Select("select count(1) from api where name=#{name} and tenantid=#{tenantId} and projectid=#{projectId} and guid!=#{guid} and valid=true")
     public int queryApiSameName(@Param("name")String name,@Param("tenantId")String tenantId,@Param("projectId")String projectId,@Param("guid")String guid);
@@ -450,7 +468,7 @@ public interface DataShareDAO {
     public int deleteCategory(@Param("guid")String guid,@Param("tenantId")String tenantId);
 
     @Select("select * from api_category left join(" +
-            "  select count(*) count,categoryguid from api group by categoryguid " +
+            "  select count(distinct guid) count,categoryguid from api group by categoryguid " +
             ") c on c.categoryguid=api_category.guid where api_category.projectid=#{projectId} and tenantid=#{tenantId}")
     public List<CategoryPrivilege> getCategoryByProject(@Param("projectId")String projectId,@Param("tenantId")String tenantId);
 
@@ -492,10 +510,10 @@ public interface DataShareDAO {
     public Object getSortParamByGuid(@Param("guid")String guid,@Param("version")String version);
 
     @Select({" <script>",
-             " select count(1)over() total,api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,users.username creator,ac.name categoryName",
+             " select count(1)over() total,api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,users.username creator,ac.name categoryName ",
              " from api join users on api.creator=users.userid join api_category ac on api.categoryguid=ac.guid join ",
-             "( select guid,max(version_num) max from api group by guid) v on v.guid=api.guid and v.max=api.version_num",
-             "where api.projectid=#{projectId} and  api.tenantid=#{tenantId} and api.valid=true",
+             "( select guid,max(version_num) max from api group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+             "where api.projectid=#{projectId} and  api.tenantid=#{tenantId} and api.valid=true ",
              " <if test=\"categoryId!=null and categoryId !='all'\">",
              " and api.categoryguid=#{categoryId}",
              " </if>",
@@ -519,7 +537,15 @@ public interface DataShareDAO {
              " </if>",
              " </script>"})
     public List<ApiHead> searchApi(@Param("param") Parameters parameters,@Param("projectId") String projectId,@Param("categoryId")String categoryId,
-                                   @Param("status")Boolean status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId);
+                                   @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            " select api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId from api join " +
+            " (select guid,max(version_num) version_num from api where guid=#{id} " +
+            " and valid=true and status!='draft' and status!='audit' " +
+            " group by guid) v on api.guid=v.guid and api.version_num=v.version_num " +
+            "</script>")
+    public ApiHead getSubmitApiHeadById(@Param("id")String id);
 
     @Update("<script>" +
             "update api set categoryguid=#{moveApi.newCategoryId} where categoryguid=#{moveApi.oldCategoryId} and guid in " +
@@ -532,8 +558,11 @@ public interface DataShareDAO {
     @Select("select distinct guid from api where categoryguid=#{categoryId}")
     public List<String> getApiIdByCategory(@Param("categoryId")String categoryId);
 
-    @Update("update api set status=#{status},updatetime=#{updateTime} where guid=#{guid}")
-    public int updateApiStatus(@Param("guid")String guid, @Param("status")boolean status, @Param("updateTime")Timestamp updateTime);
+    @Update("update api set status=#{status},updatetime=#{updateTime} where guid=#{guid}  and status!='draft' and status!='audit'")
+    public int updateApiStatus(@Param("guid")String guid, @Param("status")String status, @Param("updateTime")Timestamp updateTime);
+
+    @Update("update api set status=#{status},updatetime=#{updateTime} where guid=#{guid}  and version=#{version}")
+    public int updateApiVersionStatus(@Param("guid")String guid, @Param("version")String version,@Param("status")String status, @Param("updateTime")Timestamp updateTime);
 
     @Insert("insert into api_log(apiid,type,userid,time)values(#{apiLog.apiId},#{apiLog.type},#{apiLog.creator},#{apiLog.date})")
     public int addApiLog(@Param("apiLog")ApiLog apiLog);
@@ -571,11 +600,22 @@ public interface DataShareDAO {
     public List<ApiInfoV2> getApiInfoByIds(@Param("ids")List<String> ids);
 
     @Select("<script>" +
+            " select api.* from api join " +
+            " (select guid,max(version_num) version_num from api where guid in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            " and valid=true and status!='draft' and status!='audit'" +
+            " group by guid) v on api.guid=v.guid and api.version_num=v.version_num " +
+            "</script>")
+    public List<ApiInfoV2> getNoDraftApiInfoByIds(@Param("ids")List<String> ids);
+
+    @Select("<script>" +
             " select count(*) from api where guid in  " +
             " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
             " #{id}" +
             " </foreach>" +
-            " and valid=true and status=true " +
+            " and valid=true and status='up' " +
             "</script>")
     public int getStatusCountByIds(@Param("ids")List<String> ids);
 
@@ -586,4 +626,9 @@ public interface DataShareDAO {
             " </foreach>" +
             "</script>")
     public int deleteApiByIds(@Param("ids")List<String> ids);
+
+    @Update("<script>" +
+            " update api set valid=false where guid=#{api.guid} and api.version=#{api.version} " +
+            "</script>")
+    public int deleteApiVersion(@Param("api")ApiInfoV2 api);
 }

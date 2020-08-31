@@ -50,7 +50,7 @@ public class SSOFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-
+        System.out.println("321");
     }
 
     @Override
@@ -68,6 +68,11 @@ public class SSOFilter implements Filter {
         httpRequestContext.setIp(getIpAdress(httpServletRequest));
         try {
             if (FilterUtils.isSkipUrl(requestURL)) {
+
+                filterChain.doFilter(request, response);
+                return;
+            }
+            if (FilterUtils.isDataService(requestURL)){
                 filterChain.doFilter(request, response);
                 return;
             }

@@ -1,8 +1,15 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.Item;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.ApiAudit;
+import io.zeta.metaspace.model.share.AuditStatusEnum;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
+import io.zeta.metaspace.web.service.AuditService;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -16,15 +23,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 
 @Path("user")
@@ -38,6 +43,8 @@ public class AdminREST {
     private HttpServletResponse httpServletResponse;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private AuditService auditService;
 
     @GET
     @Path("/info")
@@ -88,6 +95,25 @@ public class AdminREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户菜单失败");
         }
 
+    }
+
+    @GET
+    @Path("/audit")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<ApiAudit> getPendingApiAudit(@HeaderParam("tenantId") String tenantId,
+                                                   @DefaultValue("0") @QueryParam("offset") int offset,
+                                                   @DefaultValue("10") @QueryParam("limit") int limit,
+                                                   @QueryParam("statuses") List<AuditStatusEnum> statuses) throws AtlasBaseException {
+        try {
+            Parameters parameters = new Parameters();
+            parameters.setLimit(limit);
+            parameters.setOffset(offset);
+
+            return auditService.getApiAuditList(parameters, tenantId, statuses, AdminUtils.getUserData().getUserId());
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
+        }
     }
 
 }

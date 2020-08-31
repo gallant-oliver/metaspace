@@ -60,8 +60,17 @@ public class ApiCategory {
         private String apiId;
         private String categoryId;
         private String categoryName;
+        private String status;
         private boolean apiStatus;
         private String apiVersion;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
 
         public boolean isApiStatus() {
             return apiStatus;

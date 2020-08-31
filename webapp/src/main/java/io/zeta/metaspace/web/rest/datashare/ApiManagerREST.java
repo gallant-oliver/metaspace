@@ -19,6 +19,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -33,6 +34,7 @@ import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.ApiHead;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
+import io.zeta.metaspace.model.share.ApiStatus;
 import io.zeta.metaspace.model.share.CategoryDelete;
 import io.zeta.metaspace.model.share.MoveApi;
 import io.zeta.metaspace.model.share.QueryParameter;
@@ -54,6 +56,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
@@ -73,7 +76,7 @@ import javax.ws.rs.core.Context;
 
 /**
  * @author lixiang03
- * @Data 2020/6/3 10:43
+ * @Data 2020/6/3 10:43N
  */
 @Path("datashare/api")
 @Singleton
@@ -101,13 +104,14 @@ public class ApiManagerREST {
      * @throws AtlasBaseException
      */
     @POST
+    @Path("{submit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result insertAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result insertAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "创建api:"+info.getName());
         try {
-            shareService.insertAPIInfoV2(info,tenantId);
+            shareService.insertAPIInfoV2(info,tenantId,submit);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
             LOG.error("创建api失败",e);
@@ -125,13 +129,15 @@ public class ApiManagerREST {
      * @throws AtlasBaseException
      */
     @PUT
+    @Path("{submit}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result updateAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result updateAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "更新api:"+info.getName());
+
         try {
-            shareService.updateAPIInfoV2(info,tenantId);
+            shareService.updateAPIInfoV2(info,tenantId,submit);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
             LOG.error("更新api失败",e);
@@ -143,6 +149,34 @@ public class ApiManagerREST {
     }
 
     /**
+     * 提交api
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/submit")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result submitApi(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(info.getGuid(), info.getVersion());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "提交api审核:"+apiInfoByVersion.getName());
+
+        try {
+            shareService.submitApi(info.getGuid(),info.getVersion(),tenantId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            LOG.error("更新api失败",e);
+            throw e;
+        } catch (Exception e) {
+            LOG.error("更新api失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "更新api失败:"+e.getMessage());
+        }
+    }
+
+
+    /**
      * 删除api
      * @param ids
      * @return
@@ -152,14 +186,40 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteApi(List<String> ids) throws AtlasBaseException {
+    public Result deleteApi(List<String> ids,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(apiInfoV2 -> apiInfoV2.getName()).collect(Collectors.toList());
         if (projectNames==null||projectNames.size()==0){
             return ReturnUtil.success();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
         try {
-            shareService.deleteApi(ids);
+            shareService.deleteApi(ids,tenantId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            LOG.error("删除api失败",e);
+            throw e;
+        } catch (Exception e) {
+            LOG.error("删除api失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除api失败:"+e.getMessage());
+        }
+    }
+
+    /**
+     * 删除api版本
+     * @param api
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("version")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result deleteApiVersion(ApiInfoV2 api,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(api.getGuid(), api.getVersion());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "删除api:" +apiInfoByVersion.getName());
+        try {
+            shareService.deleteApiVersion(api,tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
             LOG.error("删除api失败",e);
@@ -200,7 +260,7 @@ public class ApiManagerREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{apiId}/{version}}")
+    @Path("/apiinfo/{apiId}/{version}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getApiInfoByVersion(@PathParam("apiId")String apiId,@PathParam("version")String version) throws AtlasBaseException {
@@ -216,11 +276,31 @@ public class ApiManagerREST {
         }
     }
 
+    /**
+     * 获取api版本
+     * @param apiId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/version/{apiId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiVersion(@PathParam("apiId")String apiId) throws AtlasBaseException {
+        try {
+            List<ApiVersion> apiVersion = shareService.getApiVersion(apiId);
+            return ReturnUtil.success(apiVersion);
+        }catch (Exception e) {
+            LOG.error("获取api版本失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api版本失败:"+e.getMessage());
+        }
+    }
+
     @PUT
     @Path("/status")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateApiStatus(ApiInfoV2 apiInfo) throws AtlasBaseException {
+    public Result updateApiStatus(ApiStatus apiInfo, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             shareService.updateApiStatus(apiInfo.getGuid(),apiInfo.isStatus());
             return ReturnUtil.success();
@@ -713,8 +793,9 @@ public class ApiManagerREST {
     @Path("/test")
     public Result testApi(@HeaderParam("tenantId")String tenantId,ApiInfoV2 apiInfoV2) throws Exception {
         try {
-            List<LinkedHashMap> linkedHashMaps = shareService.testAPIV2(tenantId, apiInfoV2);
-            return ReturnUtil.success(linkedHashMaps);
+            Map resultMap = shareService.testAPIV2(tenantId, apiInfoV2,0,10);
+            List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
+            return ReturnUtil.success(result);
         }catch (AtlasBaseException e){
             LOG.error("测试api失败",e);
             throw e;
