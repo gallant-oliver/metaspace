@@ -131,6 +131,7 @@ public class HookService {
         }
         for (String childName : file1Child){
             if (!file2Child.contains(childName)){
+                LOG.warn("jar包名字:"+childName);
                 LOG.warn("jar包不同");
                 return false;
             }

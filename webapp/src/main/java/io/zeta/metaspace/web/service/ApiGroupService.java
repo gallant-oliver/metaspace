@@ -24,11 +24,15 @@ import io.zeta.metaspace.model.apigroup.ApiGroupStatusApi;
 import io.zeta.metaspace.model.apigroup.ApiGroupV2;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.security.SecuritySearch;
+import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
 import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.web.dao.ApiGroupDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
@@ -61,6 +65,8 @@ public class ApiGroupService {
     UserDAO userDAO;
     @Autowired
     DataShareDAO dataShareDAO;
+    @Autowired
+    TenantService tenantService;
 
     @Transactional(rollbackFor=Exception.class)
     public void insertApiGroup(ApiGroupV2 group,String tenantId) throws AtlasBaseException {
@@ -119,10 +125,10 @@ public class ApiGroupService {
 
     }
 
-    public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId){
+    public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId,Boolean publish){
         PageResult<ApiGroupV2> result = new PageResult<>();
         updateApiRelationStatus();
-        List<ApiGroupV2> groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId);
+        List<ApiGroupV2> groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId,publish);
         if (groups==null||groups.size()==0){
             result.setLists(new ArrayList<>());
             return result;
@@ -196,6 +202,24 @@ public class ApiGroupService {
 
 
         //todo 通知云平台变更发布状态
+
+    }
+
+    @Transactional(rollbackFor=Exception.class)
+    public void updateAllApiRelationVersion(ApiGroupV2 apiGroupV2) throws AtlasBaseException {
+        String groupId = apiGroupV2.getId();
+        List<ApiCategory.Api> aPiByGroup = apiGroupDAO.getAPiByGroup(groupId);
+        List<String> updateId = aPiByGroup.stream().map(api -> api.getApiId()).collect(Collectors.toList());
+        if (updateId==null||updateId.size()==0){
+            return;
+        }
+        if (apiGroupV2.isUpdateStatus()){
+            List<ApiInfoV2> apiInfoByIds = dataShareDAO.getApiInfoByIds(updateId);
+            apiGroupDAO.updateApiRelationVersion(apiInfoByIds,groupId);
+        }else{
+            apiGroupDAO.unUpdateApiRelationVersion(updateId,groupId);
+        }
+        addApiGroupLogs(ApiGroupLogEnum.UPLEVEL, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
 
     }
 
@@ -345,5 +369,26 @@ public class ApiGroupService {
             }
         });
         return new ArrayList<>(apiCategoryMap.values());
+    }
+
+    /**
+     * 可成为管理者用户
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
+    public List<UserIdAndName> getApprove(String tenantId) throws AtlasBaseException {
+        SecuritySearch securitySearch = new SecuritySearch();
+        securitySearch.setTenantId(tenantId);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        List<UserIdAndName> users = new ArrayList<>();
+        for (UserAndModule userAndModule:userAndModules.getLists()){
+            UserIdAndName user = new UserIdAndName();
+            user.setUserName(userAndModule.getUserName());
+            user.setAccount(userAndModule.getEmail());
+            user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+            users.add(user);
+        }
+        return users;
     }
 }

@@ -49,24 +49,32 @@ public interface ApiAuditDAO {
             "</script>"})
     int cancelApiAudit(@Param("updater") String updater, @Param("apiGuid") String apiGuid, @Param("apiVersion") String apiVersion, @Param("tenantId") String tenantId);
 
+    @Update({"<script>" +
+            "UPDATE api_audit " +
+            "SET  status='CANCEL',update_time=now(),updater=#{updater}  " +
+            "WHERE id =#{auditId} and tenant_id=#{tenantId} " +
+            "</script>"})
+    int cancelApiAuditById(@Param("updater") String updater, @Param("auditId") String auditId, @Param("tenantId") String tenantId);
+
 
     @Select({"<script> " +
-            "SELECT  count(1)over() total,*\n" +
-            "FROM api_audit " +
-            "WHERE tenant_id=#{tenantId} " +
+            "SELECT  count(1)over() total,audit.*,api.name as api_name\n" +
+            "FROM api_audit as audit " +
+            "LEFT JOIN api ON audit.api_guid = api.guid and audit.api_version = api.version " +
+            "WHERE audit.tenant_id=#{tenantId} " +
             "<if test='statuses !=null and statuses.size() > 0'> " +
-            "AND status In" +
+            "AND audit.status In" +
             "<foreach item='item' collection='statuses' separator=',' open='(' close=')'> " +
             "  #{item,typeHandler=org.apache.ibatis.type.EnumTypeHandler} " +
             "</foreach> " +
             "</if>" +
             " <if test='applicant != null'> " +
-            " AND applicant=#{applicant} " +
+            " AND audit.applicant=#{applicant} " +
             " </if>" +
             "<if test=\"param.query!=null and param.query!=''\"> " +
-            " AND  applicant_name like '%${param.query}%' ESCAPE '/' " +
+            " AND  audit.applicant_name like '%${param.query}%' ESCAPE '/' " +
             "</if>" +
-            "order by update_time desc " +
+            "order by audit.update_time desc " +
             "<if test='param.limit!=-1'> " +
             " limit ${param.limit} " +
             "</if>" +

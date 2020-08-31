@@ -13,8 +13,11 @@
 
 package io.zeta.metaspace.model.apigroup;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.share.ApiInfoV2;
+
+import java.sql.Timestamp;
 
 /**
  * @author lixiang03
@@ -26,6 +29,11 @@ public class ApiVersion {
     private String description;
     private String version;
     private String status;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
+    private String username;
+    private boolean used;
+
     @JsonIgnore
     private int count;
 
@@ -86,5 +94,29 @@ public class ApiVersion {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
     }
 }

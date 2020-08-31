@@ -34,14 +34,13 @@ import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.ApiHead;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
+import io.zeta.metaspace.model.share.ApiLogEnum;
 import io.zeta.metaspace.model.share.ApiStatus;
 import io.zeta.metaspace.model.share.CategoryDelete;
 import io.zeta.metaspace.model.share.MoveApi;
 import io.zeta.metaspace.model.share.QueryParameter;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataShareGroupService;
-import io.zeta.metaspace.web.service.DataShareService;
-import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -93,6 +92,8 @@ public class ApiManagerREST {
     private HttpServletRequest httpServletRequest;
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    private AuditService auditService;
 
     private static int CATEGORY_TYPE = 2;
 
@@ -175,6 +176,36 @@ public class ApiManagerREST {
         }
     }
 
+    /**
+     * 取消审核
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/revoke")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result revokeApiAudit(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(info.getGuid(), info.getVersion());
+        if(apiInfoByVersion == null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"Api 不存在");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "取消审核:"+apiInfoByVersion.getName());
+
+        try {
+            auditService.cancelApiAudit(tenantId,info.getGuid(),info.getVersion());
+            shareService.addApiLog(ApiLogEnum.UNSUBMIT, info.getGuid(), AdminUtils.getUserData().getUserId());
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            LOG.error("取消审核失败",e);
+            throw e;
+        } catch (Exception e) {
+            LOG.error("取消审核失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "取消审核失败:"+e.getMessage());
+        }
+    }
 
     /**
      * 删除api
@@ -575,6 +606,26 @@ public class ApiManagerREST {
     }
 
     /**
+     * 同版本校验
+     * @param info
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/same/version")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result querySameVersion(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            boolean bool = shareService.isApiSameVersion(info.getGuid(),info.getVersion());
+            return ReturnUtil.success(bool);
+        } catch (Exception e) {
+            LOG.error("查询失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "查询失败");
+        }
+    }
+
+    /**
      * 获取库列表
      * @param parameters
      * @return
@@ -790,10 +841,21 @@ public class ApiManagerREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/test")
-    public Result testApi(@HeaderParam("tenantId")String tenantId,ApiInfoV2 apiInfoV2) throws Exception {
+    @Path("/test/{randomName}")
+    public Result testApi(@HeaderParam("tenantId")String tenantId,ApiInfoV2 apiInfoV2,
+                          @DefaultValue("1")@QueryParam("page_num")Long pageNum,
+                          @DefaultValue("10")@QueryParam("page_size")Long pageSize,
+                          @PathParam("randomName") String randomName) throws Exception {
         try {
-            Map resultMap = shareService.testAPIV2(tenantId, apiInfoV2,0,10);
+            long limit = 10;
+            long offset = 0;
+            if (pageSize!=null){
+                limit=Long.valueOf(pageSize);
+            }
+            if (pageNum!=null&&Long.valueOf(pageNum)>0){
+                offset=(Long.valueOf(pageNum)-1)*limit;
+            }
+            Map resultMap = shareService.testAPIV2(randomName, apiInfoV2,limit,offset);
             List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
             return ReturnUtil.success(result);
         }catch (AtlasBaseException e){
@@ -802,6 +864,18 @@ public class ApiManagerREST {
         } catch (Exception e) {
             LOG.error("测试api失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "测试api失败:"+e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/test/{randomName}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
+        try {
+            shareService.cancelAPIThread(randomName);
+        } catch (AtlasBaseException e) {
+            throw e;
         }
     }
 }

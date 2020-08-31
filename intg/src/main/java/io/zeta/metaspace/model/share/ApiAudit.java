@@ -7,6 +7,7 @@ import java.util.Date;
 
 public class ApiAudit {
     private String id;
+    private String apiName;
     private String apiGuid;
     private String apiVersion;
     private String applicant;
@@ -108,5 +109,13 @@ public class ApiAudit {
 
     public void setApplicantName(String applicantName) {
         this.applicantName = applicantName;
+    }
+
+    public String getApiName() {
+        return apiName;
+    }
+
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
     }
 }

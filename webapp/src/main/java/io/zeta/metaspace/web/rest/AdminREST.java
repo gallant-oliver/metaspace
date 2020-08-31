@@ -1,15 +1,21 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.Item;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiAudit;
+import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.service.AuditService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -25,12 +31,15 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Path("user")
 @Singleton
@@ -87,12 +96,12 @@ public class AdminREST {
     @GET
     @Path("item")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Item getUserItems(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Item getUserItems(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return  usersService.getUserItems(tenantId);
-        }catch (Exception e){
-            LOG.warn("获取用户菜单失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户菜单失败");
+            return usersService.getUserItems(tenantId);
+        } catch (Exception e) {
+            LOG.warn("获取用户菜单失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户菜单失败");
         }
 
     }
@@ -104,15 +113,43 @@ public class AdminREST {
     public PageResult<ApiAudit> getPendingApiAudit(@HeaderParam("tenantId") String tenantId,
                                                    @DefaultValue("0") @QueryParam("offset") int offset,
                                                    @DefaultValue("10") @QueryParam("limit") int limit,
-                                                   @QueryParam("statuses") List<AuditStatusEnum> statuses) throws AtlasBaseException {
+                                                   @QueryParam("statuses") List<AuditStatusEnum> statuses,
+                                                   @QueryParam("non-statuses") List<AuditStatusEnum> nonStatuses) throws AtlasBaseException {
         try {
             Parameters parameters = new Parameters();
             parameters.setLimit(limit);
             parameters.setOffset(offset);
 
-            return auditService.getApiAuditList(parameters, tenantId, statuses, AdminUtils.getUserData().getUserId());
+            return auditService.getApiAuditList(parameters, tenantId, statuses, nonStatuses, AdminUtils.getUserData().getAccount());
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
+        }
+    }
+
+    /**
+     * 取消审核
+     */
+    @DELETE
+    @Path("/revoke/{auditId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result revokeApiAudit(@PathParam("auditId") String auditId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        ApiAudit apiAudit = auditService.getApiAuditById(auditId, tenantId);
+        if (Objects.isNull(apiAudit)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到审核记录");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "取消审核:" + apiAudit.getApiGuid() + " " + apiAudit.getApiVersion());
+
+        try {
+            auditService.cancelApiAudit(tenantId, auditId);
+            return ReturnUtil.success();
+        } catch (AtlasBaseException e) {
+            LOG.error("取消审核失败", e);
+            throw e;
+        } catch (Exception e) {
+            LOG.error("取消审核失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "取消审核失败:" + e.getMessage());
         }
     }
 

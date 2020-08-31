@@ -14,7 +14,7 @@
 package io.zeta.metaspace.model.share;
 
 import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
-import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;
 import java.util.List;

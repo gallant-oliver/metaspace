@@ -44,6 +44,7 @@ public class AuditREST {
                                                    @DefaultValue("10") @QueryParam("limit") int limit,
                                                    @QueryParam("search") String search,
                                                    @QueryParam("statuses") List<AuditStatusEnum> statuses,
+                                                   @QueryParam("non-statuses") List<AuditStatusEnum> nonStatuses,
                                                    @QueryParam("applicant") String applicant) throws AtlasBaseException {
         try {
             Parameters parameters = new Parameters();
@@ -51,7 +52,7 @@ public class AuditREST {
             parameters.setOffset(offset);
             parameters.setQuery(search);
 
-            return auditService.getApiAuditList(parameters, tenantId, statuses, applicant);
+            return auditService.getApiAuditList(parameters, tenantId, statuses,nonStatuses, applicant);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
         }

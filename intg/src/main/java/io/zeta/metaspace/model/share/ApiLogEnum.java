@@ -23,7 +23,9 @@ public enum  ApiLogEnum {
     MOVE("move","%s迁移了api"),
     DELETE("delete","%s删除了api"),
     UPSTATUS("upstatus","%s上架了api"),
-    DOWNSTATUS("downstatus","%s下架了api");
+    DOWNSTATUS("downstatus","%s下架了api"),
+    SUBMIT("submit","%s提交了api"),
+    UNSUBMIT("unsubmit","%s撤销提交api请求");
 
     private String name;
     private String str;

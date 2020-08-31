@@ -87,13 +87,6 @@ public class HookCheck {
         this.hookConfigMessage = hookConfigMessage;
     }
 
-    public boolean isConsumerThread() {
-        return consumerThread;
-    }
-
-    public void setConsumerThread(boolean consumerThread) {
-        this.consumerThread = consumerThread;
-    }
 
     public String getThreadMessage() {
         return threadMessage;
@@ -101,5 +94,13 @@ public class HookCheck {
 
     public void setThreadMessage(String threadMessage) {
         this.threadMessage = threadMessage;
+    }
+
+    public boolean isConsumerThread() {
+        return consumerThread;
+    }
+
+    public void setConsumerThread(boolean consumerThread) {
+        this.consumerThread = consumerThread;
     }
 }

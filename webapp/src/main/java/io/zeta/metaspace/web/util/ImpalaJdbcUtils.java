@@ -73,9 +73,11 @@ public class ImpalaJdbcUtils {
         if (KerberosConfig.isKerberosEnable()) {
             krbStr = KerberosConfig.getImpalaJdbc();
             jdbcUrl = impalaUrl + "/" + db +  ";" + krbStr + ";DelegationUID=" + user;
+            LOG.info("Impala Jdbc:" + jdbcUrl);
             connection = DriverManager.getConnection(jdbcUrl,properties);
         } else {
             jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
+            LOG.info("Impala Jdbc:" + jdbcUrl);
             connection = DriverManager.getConnection(jdbcUrl,properties);
         }
         return connection;
@@ -107,6 +109,7 @@ public class ImpalaJdbcUtils {
             connection = DriverManager.getConnection(jdbcUrl,properties);
         } else {
             jdbcUrl = impalaUrl + "/" + db + ";DelegationUID=" + user;
+            LOG.info("Impala Jdbc:" + jdbcUrl);
             connection = DriverManager.getConnection(jdbcUrl,properties);
         }
         return connection;
