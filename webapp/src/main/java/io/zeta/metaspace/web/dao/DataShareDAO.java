@@ -245,7 +245,7 @@ public interface DataShareDAO {
 
     @Select("<script>" +
             " select count(*)over() total,p.*,uc.usercount,ac.count apiCount from (" +
-            "select project.id,project.name,project.description,project.createtime,project.tenantid,project.valid,user1.username creator,user2.username manager,project.manager managerId from " +
+            "select project.id,project.name,project.description,project.createtime,project.tenantid,project.valid,user1.username creator,user2.username manager,manager managerId,project.manager managerId from " +
             "project join users user1 on project.creator=user1.userid join users user2 on project.manager=user2.userid  " +
             ") p  join " +
             " (select distinct project_group_relation.project_id from project_group_relation join " +
@@ -260,7 +260,7 @@ public interface DataShareDAO {
             "  union " +
             "  select manager user_id,id project_id from project " +
             " ) uc group by project_id ) uc on p.id=uc.id left join " +
-            "(select count(*) count,projectid from api where tenantid=#{tenantId} group by projectid) ac on ac.projectid=p.id" +
+            "(select count(distinct guid) count,projectid from api where tenantid=#{tenantId} group by projectid) ac on ac.projectid=p.id" +
             " where p.tenantId=#{tenantId} and p.valid=true " +
             "<if test=\"parameters.query!=null and parameters.query!=''\">" +
             " and p.name like '%${parameters.query}%' ESCAPE '/' " +
@@ -418,9 +418,10 @@ public interface DataShareDAO {
             " status=#{info.status},approve=#{info.approve},log=#{info.log}," +
             " param=#{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
             " returnparam=#{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
-            " sortparam=#{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}" +
-            " where guid=#{info.guid} and version=#{version}")
-    public int updateApiInfoV2OnDraft(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId,@Param("version")String version);
+            " sortparam=#{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}, " +
+            " version_num=(select COALESCE(max(cast(version_num as integer)) + 1, 1) from api where guid=#{info.guid}) from api where guid=#{info.guid}) " +
+            " where guid=#{info.guid} and version_num=#{versionNum}")
+    public int updateApiInfoV2OnDraft(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId,@Param("versionNum")int versionNum);
 
     @Select("select version from api where guid=#{id} and version_num=(select max(version_num) from api where guid=#{id} and valid=true)")
     public String getMaxVersion(@Param("id") String id);
@@ -428,11 +429,11 @@ public interface DataShareDAO {
     @Select("select version from api where guid=#{id} and version_num=(select max(version_num) from api where guid=#{id} and status!='draft' and status!='audit' and valid=true)")
     public String getMaxVersionNoDraft(@Param("id") String id);
 
-    @Select("select count(*) from api where guid=#{id} and version=#{version} and status!='draft'")
+    @Select("select count(*) from api where guid=#{id} and version=#{version} and status!='draft' and valid=true")
     public int queryApiSameVersion(@Param("id") String id,@Param("version")String version);
 
     @Select("select * from api where guid=#{id} and version=#{version} and valid=true")
-    public ApiInfoV2 getApiInfo(@Param("id") String id, @Param("version")String version);
+    public ApiInfoV2 getApiInfoByVersion(@Param("id") String id, @Param("version")String version);
 
 
     @Select("select guid apiId,name apiName,description,version,status,updateTime,u.username, " +
@@ -470,7 +471,7 @@ public interface DataShareDAO {
     public int deleteCategory(@Param("guid")String guid,@Param("tenantId")String tenantId);
 
     @Select("select * from api_category left join(" +
-            "  select count(distinct guid) count,categoryguid from api group by categoryguid " +
+            "  select count(distinct guid) count,categoryguid from api where valid=true group by categoryguid " +
             ") c on c.categoryguid=api_category.guid where api_category.projectid=#{projectId} and tenantid=#{tenantId}")
     public List<CategoryPrivilege> getCategoryByProject(@Param("projectId")String projectId,@Param("tenantId")String tenantId);
 
@@ -502,13 +503,13 @@ public interface DataShareDAO {
     @Select("select * from api_category where guid=#{id}")
     public CategoryEntityV2 getCategoryById(@Param("id")String id);
 
-    @Select("select param from api where guid=#{guid} and version=#{version}")
+    @Select("select param from api where guid=#{guid} and version=#{version} and valid=true")
     public Object getParamByGuid(@Param("guid")String guid,@Param("version")String version);
 
-    @Select("select returnparam from api where guid=#{guid} and version=#{version}")
+    @Select("select returnparam from api where guid=#{guid} and version=#{version} and valid=true")
     public Object getReturnParamByGuid(@Param("guid")String guid,@Param("version")String version);
 
-    @Select("select sortparam from api where guid=#{guid} and version=#{version}")
+    @Select("select sortparam from api where guid=#{guid} and version=#{version} and valid=true")
     public Object getSortParamByGuid(@Param("guid")String guid,@Param("version")String version);
 
     @Select({" <script>",
@@ -585,6 +586,13 @@ public interface DataShareDAO {
     @Select("<script>"+
             " select count(1)over() total,api_log.time date,api_log.apiid,api_log.type,users.username creator from api_log join users on api_log.userid=users.userid " +
             " where api_log.apiid=#{apiId} " +
+            "<if test=\"param.query!=null and param.query!=''\">" +
+            " and (users.username like '%${param.query}%' ESCAPE '/' " +
+            "<if test=\"type!=null and type!=''\">" +
+            " or  api_log.type like '%${type}%' ESCAPE '/'" +
+            "</if>" +
+            ")" +
+            "</if>" +
             " order by api_log.time desc" +
             " <if test='param.limit != null and param.limit!=-1'>" +
             " limit #{param.limit}" +
@@ -593,7 +601,7 @@ public interface DataShareDAO {
             " offset #{param.offset}" +
             " </if>" +
             " </script>")
-    public List<ApiLog> getApiLog(@Param("param") Parameters parameters,@Param("apiId") String apiId);
+    public List<ApiLog> getApiLog(@Param("param") Parameters parameters,@Param("apiId") String apiId,@Param("type") String type);
 
     @Select("<script>" +
             " select api.* from api join " +
@@ -635,9 +643,9 @@ public interface DataShareDAO {
     public int deleteApiByIds(@Param("ids")List<String> ids);
 
     @Update("<script>" +
-            " update api set valid=false where guid=#{api.guid} and api.version=#{api.version} " +
+            " update api set valid=false where guid=#{api.apiId} and api.version=#{api.version} " +
             "</script>")
-    public int deleteApiVersion(@Param("api")ApiInfoV2 api);
+    public int deleteApiVersion(@Param("api")ApiVersion api);
 
     @Select("select count(*) from user_group_relation u join project_group_relation p on u.group_id=p.group_id where u.user_id=#{userId} and p.project_id=#{projectId}")
     public int projectPrivateByProject(@Param("userId")String userId,@Param("projectId")String projectId);

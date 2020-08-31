@@ -59,6 +59,17 @@ public enum  ApiLogEnum {
         return null;
     }
 
+    public static String getName(String str){
+        if (str==null){
+            return null;
+        }
+        for (ApiLogEnum module : ApiLogEnum.values()) {
+            if(module.str.contains(str))
+                return module.getName();
+        }
+        return null;
+    }
+
     public static ApiLogEnum getApiLog(String name){
         for (ApiLogEnum module : ApiLogEnum.values()) {
             if(module.name.equals(name))

@@ -10,6 +10,7 @@ public class ApiAudit {
     private String apiName;
     private String apiGuid;
     private String apiVersion;
+    private int apiVersionNum;
     private String applicant;
     private String applicantName;
     private AuditStatusEnum status;
@@ -19,8 +20,25 @@ public class ApiAudit {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime;
     private String updater;
+    private boolean obsolete;
     @JsonIgnore
     private int total;
+
+    public boolean isObsolete() {
+        return obsolete;
+    }
+
+    public void setObsolete(boolean obsolete) {
+        this.obsolete = obsolete;
+    }
+
+    public int getApiVersionNum() {
+        return apiVersionNum;
+    }
+
+    public void setApiVersionNum(int apiVersionNum) {
+        this.apiVersionNum = apiVersionNum;
+    }
 
     public int getTotal() {
         return total;

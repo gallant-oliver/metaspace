@@ -25,9 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -51,13 +49,14 @@ public class AuditService {
         return apiAuditDAO.getApiAuditById(id, tenantId);
     }
 
-    public int insertApiAudit(String tenantId, String apiGuid, String apiVersion) throws AtlasBaseException {
+    public int insertApiAudit(String tenantId, String apiGuid, String apiVersion,int apiVersionNum) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
             ApiAudit apiAudit = new ApiAudit();
             apiAudit.setId(UUIDUtils.uuid());
             apiAudit.setApiGuid(apiGuid);
             apiAudit.setApiVersion(apiVersion);
+            apiAudit.setApiVersionNum(apiVersionNum);
             apiAudit.setApplicant(user.getAccount());
             apiAudit.setApplicantName(user.getUsername());
             apiAudit.setStatus(AuditStatusEnum.NEW);
@@ -79,7 +78,7 @@ public class AuditService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核已经处理");
             }
 
-            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfo(apiAudit.getApiGuid(), apiAudit.getApiVersion());
+            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfoByVersion(apiAudit.getApiGuid(), apiAudit.getApiVersion());
             if (apiInfoV2 != null && ApiStatusEnum.AUDIT.getName().equals(apiInfoV2.getStatus())) {
                 dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiInfoV2.getVersion(), ApiStatusEnum.DRAFT.getName(), DateUtils.currentTimestamp());
             }
@@ -102,7 +101,7 @@ public class AuditService {
 
     public int cancelApiAudit(String tenantId, String apiGuid, String apiVersion) throws AtlasBaseException {
         try {
-            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfo(apiGuid, apiVersion);
+            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfoByVersion(apiGuid, apiVersion);
             if (apiInfoV2 == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核 Api 不存在");
             }
@@ -136,7 +135,7 @@ public class AuditService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核状态参数错误");
             }
 
-            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfo(apiAudit.getApiGuid(), apiAudit.getApiVersion());
+            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfoByVersion(apiAudit.getApiGuid(), apiAudit.getApiVersion());
             if (apiInfoV2 == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核 Api 不存在");
             }

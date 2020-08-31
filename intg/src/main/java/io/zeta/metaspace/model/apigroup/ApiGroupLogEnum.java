@@ -64,4 +64,15 @@ public enum ApiGroupLogEnum {
         }
         return null;
     }
+
+    public static String getName(String str){
+        if (str==null){
+            return null;
+        }
+        for (ApiGroupLogEnum module : ApiGroupLogEnum.values()) {
+            if(module.str.contains(str))
+                return module.getName();
+        }
+        return null;
+    }
 }

@@ -189,7 +189,7 @@ public class ApiGroupREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("version/{groupId}")
+    @Path("api/version/{groupId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -310,11 +310,13 @@ public class ApiGroupREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getApiLog(@PathParam("groupId")String groupId,
                             @DefaultValue("0")@QueryParam("offset")int offset,
-                            @DefaultValue("-1")@QueryParam("limit") int limit) throws AtlasBaseException {
+                            @DefaultValue("-1")@QueryParam("limit") int limit,
+                            @QueryParam("search")String search) throws AtlasBaseException {
         try {
             Parameters param = new Parameters();
             param.setOffset(offset);
             param.setLimit(limit);
+            param.setQuery(search);
             PageResult<ApiGroupLog> pageResult = apiGroupService.getApiGroupLog(param, groupId);
             return ReturnUtil.success(pageResult);
         } catch (AtlasBaseException e){

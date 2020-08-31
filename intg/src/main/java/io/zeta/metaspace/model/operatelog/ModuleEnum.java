@@ -34,7 +34,8 @@ public enum ModuleEnum {
     TASKMANAGE(3,"数据质量","任务管理",23,"任务管理","taskmanage","taskmanage",1),
     DATAEDIT(2,"数据资产","数据管理",24,"数据管理","data","dataedit",1),
     COLUMNDOWN(2,"数据资产","下载管理",25,"下载管理","columns","columndown",1),
-    AUDITCENTER(8,"数据服务","审核中心",26,"审核中心","audit","audit",1),
+    APIMANAGE(8,"数据服务","api项目管理",26,"api项目管理","apimanage","apimanage",1),
+    AUDITCENTER(8,"数据服务","审核中心",27,"审核中心","audit","audit",1),
     ;
 
     private int id;

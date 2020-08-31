@@ -246,8 +246,8 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteApiVersion(ApiInfoV2 api,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(api.getGuid(), api.getVersion());
+    public Result deleteApiVersion(ApiVersion api,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(api.getApiId(), api.getVersion());
         HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "删除api:" +apiInfoByVersion.getName());
         try {
             shareService.deleteApiVersion(api,tenantId);
@@ -351,11 +351,13 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getApiLog(@PathParam("apiId")String apiId,
                             @DefaultValue("0")@QueryParam("offset")int offset,
-                            @DefaultValue("-1")@QueryParam("limit") int limit) throws AtlasBaseException {
+                            @DefaultValue("-1")@QueryParam("limit") int limit,
+                            @QueryParam("search")String search) throws AtlasBaseException {
         try {
             Parameters param = new Parameters();
             param.setOffset(offset);
             param.setLimit(limit);
+            param.setQuery(search);
             PageResult<ApiLog> pageResult = shareService.getApiLog(param,apiId);
             return ReturnUtil.success(pageResult);
         } catch (AtlasBaseException e){
