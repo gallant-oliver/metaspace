@@ -343,8 +343,8 @@ public class SearchService {
         String sql = "show create table " + name;
         String user = AdminUtils.getUserName();
         Configuration conf = ApplicationProperties.get();
-        String secure = conf.getString("metaspace.secureplus.enable");
-        try (Connection conn = secure.equals("false")?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        boolean secure = conf.getBoolean("metaspace.secureplus.enable",true);
+        try (Connection conn = !secure ? HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {

@@ -1177,7 +1177,7 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置失败");
         }
 
-        boolean isEncryption = configuration.getBoolean("sso.encryption");
+        boolean isEncryption = configuration.getBoolean("sso.encryption",false);
         if (isEncryption){
             String puk = configuration.getString("sso.encryption.public.key");
             String prk = configuration.getString("sso.encryption.private.key");

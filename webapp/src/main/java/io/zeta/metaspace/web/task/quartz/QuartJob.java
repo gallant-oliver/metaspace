@@ -26,6 +26,7 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -133,7 +134,7 @@ public class QuartJob implements Job {
         String source = qualityDao.querySourceByTemplateId(templateId);
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         LOG.info("query engine:" + engine);
 
         int totalStep = rules.size();
@@ -261,7 +262,7 @@ public class QuartJob implements Job {
         double resultValue = 0;
         Connection conn = null;
         try {
-            engine = conf.getString("metaspace.quality.engine");
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
             String[] sourceInfo = source.split(SEPARATOR);
@@ -480,7 +481,7 @@ public class QuartJob implements Job {
     }
 
     public void getProportion(UserRule rule) throws Exception {
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         double ratio = 0;
         String templateId = rule.getTemplateId();
         String source = qualityDao.querySourceByTemplateId(templateId);

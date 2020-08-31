@@ -60,6 +60,7 @@ import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
@@ -760,7 +761,7 @@ public class TaskManageService {
     }
 
     public List<Queue> getPools(String tenantId) throws AtlasBaseException {
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         Pool pools = tenantService.getPools(tenantId);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             return pools.getImpala();

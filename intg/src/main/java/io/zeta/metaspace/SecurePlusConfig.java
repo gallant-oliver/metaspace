@@ -13,8 +13,7 @@ public class SecurePlusConfig {
     private static String SecurePlusPrivilegeREST;
 
     public static boolean getSecurePlusEnable() {
-        String enable = conf.getString("metaspace.secureplus.enable");
-        SecurePlusEnable = enable != null && enable.equals("true");
+        SecurePlusEnable =  conf.getBoolean("metaspace.secureplus.enable",true);
         return SecurePlusEnable;
     }
 

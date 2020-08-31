@@ -39,6 +39,7 @@ import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
@@ -170,7 +171,7 @@ public class QuartzJob implements Job {
 
 
     public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws Exception {
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
         long startTime = System.currentTimeMillis();
@@ -331,7 +332,7 @@ public class QuartzJob implements Job {
         Float resultValue = null;
         Connection conn = null;
         try {
-            engine = conf.getString("metaspace.quality.engine");
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
             String dbName = task.getDbName();
             String tableName = task.getTableName();
             String columnName = null;
@@ -470,7 +471,7 @@ public class QuartzJob implements Job {
         String tableName = task.getTableName();
         try {
             //表数据量
-            engine = conf.getString("metaspace.quality.engine");
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
             if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 totalSize = ImpalaJdbcUtils.getTableSize(dbName, tableName,pool);
             } else {
@@ -535,7 +536,7 @@ public class QuartzJob implements Job {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         Connection conn = null;
-        engine = conf.getString("metaspace.quality.engine");
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
             conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
         } else {

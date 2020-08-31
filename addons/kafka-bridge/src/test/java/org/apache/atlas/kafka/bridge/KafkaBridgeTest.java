@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 public class KafkaBridgeTest {
 
     private static final String TEST_TOPIC_NAME = "test_topic";
-    public static final String CLUSTER_NAME = "primary";
+    public static final String CLUSTER_NAME = "ms";
 
     @Mock
     private ZkClient zkClient;

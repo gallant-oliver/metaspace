@@ -52,7 +52,7 @@ import static org.testng.Assert.fail;
 public class HBaseAtlasHookIT {
     private   static final Logger LOG          = LoggerFactory.getLogger(HBaseAtlasHookIT.class);
     protected static final String ATLAS_URL    = "http://localhost:31000/";
-    protected static final String CLUSTER_NAME = "primary";
+    protected static final String CLUSTER_NAME = "ms";
 
     private HBaseTestingUtility utility;
     private int                 port;
