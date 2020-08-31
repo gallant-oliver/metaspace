@@ -207,7 +207,10 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DataSourceInfo getDataSourceInfo(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
-        return dataSourceService.getDataSourceInfo(sourceId);
+        DataSourceInfo dataSourceInfo =  dataSourceService.getDataSourceInfo(sourceId);
+        dataSourceInfo.setPassword(null);
+        dataSourceInfo.setUserName(dataSourceService.processingUsername(dataSourceInfo.getUserName()));
+        return dataSourceInfo;
     }
 
     /**
@@ -221,8 +224,7 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public boolean testConnection1(@PathParam("sourceId") String sourceId) throws AtlasBaseException {
-        DataSourceConnection dataSourceConnection = dataSourceService.getDataSourceConnection(sourceId);
-        return dataSourceService.testConnection(dataSourceConnection);
+        return dataSourceService.testConnection(sourceId);
     }
 
     /**

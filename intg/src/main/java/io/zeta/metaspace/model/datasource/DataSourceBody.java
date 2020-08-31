@@ -34,6 +34,24 @@ public class DataSourceBody {
     private String oracleDb;
     private String manager;
     private String serviceType;
+    private boolean passwordChanged;
+    private boolean userNameChanged;
+
+    public boolean isPasswordChanged() {
+        return passwordChanged;
+    }
+
+    public void setPasswordChanged(boolean passwordChanged) {
+        this.passwordChanged = passwordChanged;
+    }
+
+    public boolean isUserNameChanged() {
+        return userNameChanged;
+    }
+
+    public void setUserNameChanged(boolean userNameChanged) {
+        this.userNameChanged = userNameChanged;
+    }
 
     public String getServiceType() {
         return serviceType;

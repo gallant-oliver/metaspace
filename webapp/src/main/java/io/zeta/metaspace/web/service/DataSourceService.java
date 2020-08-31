@@ -66,6 +66,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.*;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Properties;
@@ -153,15 +154,30 @@ public class DataSourceService {
             if (dataSourceDAO.isSourceId(dataSourceBody.getSourceId())==0){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
             }
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceBody.getSourceId());
+            if (Objects.isNull(dataSourceInfo)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不存在");
+            }
+
             String userId = AdminUtils.getUserData().getUserId();
             UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, dataSourceBody.getSourceId());
             if (!"w".equals(userPrivilegeDataSource.getPrivilege())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"没有编辑该数据源的权限");
             }
             dataSourceBody.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-            if (dataSourceBody.getPassword()!=null){
-                dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
+
+            if(!dataSourceBody.isUserNameChanged()){
+                dataSourceBody.setUserName(dataSourceInfo.getUserName());
             }
+
+            if(!dataSourceBody.isPasswordChanged()){
+                dataSourceBody.setPassword(dataSourceInfo.getPassword());
+            }else {
+                if (dataSourceBody.getPassword()!=null){
+                    dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
+                }
+            }
+
             return dataSourceDAO.updateNoRely(userId,dataSourceBody);
         }catch (AtlasBaseException e) {
             throw e;
@@ -268,6 +284,7 @@ public class DataSourceService {
      * @return
      */
     public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+        dataSourceConnection = resetDataSourceConnection(dataSourceConnection);
         try {
             Connection con = getConnection(dataSourceConnection);
             con.close();
@@ -277,10 +294,23 @@ public class DataSourceService {
             return false;
         }
     }
-    public Connection getConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
-        if (dataSourceConnection.getPassword()==null){
-            getPassword(dataSourceConnection);
+
+    public boolean testConnection(String sourceId) throws AtlasBaseException {
+        try {
+            Connection con = getConnection(sourceId);
+            con.close();
+            return true;
+        } catch (Exception e) {
+            LOG.error("连接异常", e);
+            return false;
         }
+    }
+
+    /**
+     * @param dataSourceConnection 需要信息已经重置，密码已经解密
+     */
+    public Connection getConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
+
         dataSourceConnection.setUrl();
         dataSourceConnection.setDriver();
 
@@ -310,27 +340,18 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源连接异常"+e.getMessage());
         }
     }
-    public void getPassword(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
-        if (dataSourceConnection.getAesPassword()!=null) {
-            String password = AESUtils.aesDecode(dataSourceConnection.getAesPassword());
-            dataSourceConnection.setPassword(password);
-        }else{
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源密码不能为空");
-        }
-    }
 
-    public DataSourceConnection getDataSourceConnection(String sourceId) throws AtlasBaseException {
+
+    public Connection getConnection(String sourceId) throws AtlasBaseException {
         DataSourceConnection dataSourceConnection = dataSourceDAO.getConnectionBySourceId(sourceId);
         if(null==dataSourceConnection){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
         }
-        return dataSourceConnection;
-    }
-    public Connection getConnection(String sourceId) throws AtlasBaseException {
-        DataSourceConnection dataSourceConnection = dataSourceService.getDataSourceConnection(sourceId);
-        if (Objects.isNull(dataSourceConnection)){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源id不存在");
+        if(dataSourceConnection.getPassword() != null){
+            String password = AESUtils.aesDecode(dataSourceConnection.getPassword());
+            dataSourceConnection.setPassword(password);
         }
+
         return dataSourceService.getConnection(dataSourceConnection);
     }
 
@@ -1007,6 +1028,7 @@ public class DataSourceService {
         ResultSet dataSet = null;
         ResultSet countSet = null;
         List<LinkedHashMap> result = null;
+        dataSourceConnection = resetDataSourceConnection(dataSourceConnection);
         try(Connection conn = getConnection(dataSourceConnection)){
             dataSet = OracleJdbcUtils.getSchemaList(conn, limit, offset);
             countSet = OracleJdbcUtils.getSchemaCount(conn);
@@ -1208,5 +1230,39 @@ public class DataSourceService {
     public Boolean isUserGroup(String sourceId,List<String> userGroups){
         return datasourceDAO.isUserGroup(sourceId, userGroups) == 0;
 
+    }
+
+    public DataSourceConnection resetDataSourceConnection(DataSourceConnection dataSourceConnection)  throws AtlasBaseException{
+        if(StringUtils.isNotEmpty(dataSourceConnection.getSourceId())){
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceConnection.getSourceId());
+            if (Objects.isNull(dataSourceInfo)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不存在");
+            }
+            if(!dataSourceConnection.isUserNameChanged()){
+                dataSourceConnection.setUserName(dataSourceInfo.getUserName());
+            }
+            if(!dataSourceConnection.isPasswordChanged()){
+                String password = AESUtils.aesDecode(dataSourceInfo.getPassword());
+                dataSourceConnection.setPassword(password);
+            }
+        }
+        return dataSourceConnection;
+    }
+
+    public String processingUsername(String userName) {
+        if (StringUtils.isEmpty(userName)) {
+            return userName;
+        }
+
+        int length = userName.length();
+        if (length <= 3) {
+            return userName;
+        }
+
+        int index = length / 3;
+
+        String prefix = userName.substring(0, index);
+        String suffix = userName.substring(length - index);
+        return MessageFormat.format("{0}***{1}", prefix, suffix);
     }
 }
