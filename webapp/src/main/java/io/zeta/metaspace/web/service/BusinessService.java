@@ -136,15 +136,14 @@ public class BusinessService {
     DataShareDAO shareDAO;
     @Autowired
     DataShareService shareService;
+    @Autowired
+    UserGroupService userGroupService;
 
     @Inject
     protected AtlasGraph graph;
 
     @Autowired
     private ColumnDAO columnDAO;
-
-    @Autowired
-    UserGroupService userGroupService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -281,9 +280,9 @@ public class BusinessService {
                 boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
                 info.setEditTechnical(editTechnical);
             }else{
-                List<Module> modules = tenantService.getModule(tenantId);
-                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
-                info.setEditTechnical(editTechnical);
+//                List<Module> modules = tenantService.getModule(tenantId);
+//                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
+                info.setEditTechnical(true);
             }
             //tables
             List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId);

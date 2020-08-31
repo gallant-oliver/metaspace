@@ -435,7 +435,9 @@ public interface DataShareDAO {
     public ApiInfoV2 getApiInfo(@Param("id") String id, @Param("version")String version);
 
 
-    @Select("select guid apiId,name apiName,description,version,status from api where guid=#{id} and valid=true")
+    @Select("select guid apiId,name apiName,description,version,status,updateTime,u.username, " +
+            "(select count(1) > 0 from api_relation where apiid = a.guid and version = a.version) as used " +
+            "from api a left join  users u on a.updater = u.userid where a.guid=#{id} and a.valid=true")
     public List<ApiVersion> getApiVersion(@Param("id") String id);
 
     @Select("select count(1) from api where name=#{name} and tenantid=#{tenantId} and projectid=#{projectId} and guid!=#{guid} and valid=true")
@@ -510,14 +512,19 @@ public interface DataShareDAO {
     public Object getSortParamByGuid(@Param("guid")String guid,@Param("version")String version);
 
     @Select({" <script>",
-             " select count(1)over() total,api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,users.username creator,ac.name categoryName ",
+             " select count(1)over() total,api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,api.version,users.username creator,ac.name categoryName ",
              " from api join users on api.creator=users.userid join api_category ac on api.categoryguid=ac.guid join ",
-             "( select guid,max(version_num) max from api group by guid) v on v.guid=api.guid and v.max=api.version_num ",
-             "where api.projectid=#{projectId} and  api.tenantid=#{tenantId} and api.valid=true ",
+             "( select guid,max(version_num) max from api where valid=true and ((status!='draft' and status!='audit' ) or " +
+             " guid in (select guid from api where valid=true group by guid having count(*)=1)" +
+             ") group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+             "where api.projectid=#{projectId} and  api.tenantid=#{tenantId} ",
+             "<if test=\"param.query!=null and param.query!=''\">" +
+             " and api.name like '%${param.query}%' ESCAPE '/' " +
+             "</if>" +
              " <if test=\"categoryId!=null and categoryId !='all'\">",
              " and api.categoryguid=#{categoryId}",
              " </if>",
-             " <if test='status != null'>",
+             " <if test=\"status!=null and status!=''\">",
              " and api.status=#{status}",
              " </if>",
              " <if test='approve != null'>",
@@ -540,7 +547,7 @@ public interface DataShareDAO {
                                    @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId);
 
     @Select("<script>" +
-            " select api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId from api join " +
+            " select api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,api.version from api join " +
             " (select guid,max(version_num) version_num from api where guid=#{id} " +
             " and valid=true and status!='draft' and status!='audit' " +
             " group by guid) v on api.guid=v.guid and api.version_num=v.version_num " +
@@ -631,4 +638,10 @@ public interface DataShareDAO {
             " update api set valid=false where guid=#{api.guid} and api.version=#{api.version} " +
             "</script>")
     public int deleteApiVersion(@Param("api")ApiInfoV2 api);
+
+    @Select("select count(*) from user_group_relation u join project_group_relation p on u.group_id=p.group_id where u.user_id=#{userId} and p.project_id=#{projectId}")
+    public int projectPrivateByProject(@Param("userId")String userId,@Param("projectId")String projectId);
+
+    @Select("select projectid from api_category where guid=#{id}")
+    public String getProjectIdByCategory(@Param("id")String id);
 }

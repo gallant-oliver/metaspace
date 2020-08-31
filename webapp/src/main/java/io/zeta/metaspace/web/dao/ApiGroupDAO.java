@@ -64,11 +64,14 @@ public interface ApiGroupDAO {
             "<if test=\"param.query != null and param.query!=''\">" +
             " and g.name like #{param.query} " +
             "</if>" +
-            "<if test='param.sortby!=null'>" +
-            "order by g.${param.sortby} " +
+            "<if test=\"publish!=null\">" +
+            " and g.publish=#{publish} " +
             "</if>" +
-            "<if test='param.order!=null and param.sortby!=null'>" +
+            "<if test=\"param.sortby!=null and param.sortby!='' \">" +
+            "order by g.${param.sortby} " +
+            "<if test=\"param.order!='' and param.order!=null\">" +
             "${param.order} " +
+            "</if>" +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             "limit ${param.limit} " +
@@ -77,7 +80,7 @@ public interface ApiGroupDAO {
             "offset ${param.offset}" +
             "</if>" +
             "</script>")
-    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId);
+    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId,@Param("publish")Boolean publish);
 
     @Update("update api_relation set update_status=false where update_status=true and update_time<#{time}")
     public int updateApiRelationStatusByTime(@Param("time")Timestamp timestamp);

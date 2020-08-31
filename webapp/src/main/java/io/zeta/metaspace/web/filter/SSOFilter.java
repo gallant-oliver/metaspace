@@ -50,7 +50,6 @@ public class SSOFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        System.out.println("321");
     }
 
     @Override

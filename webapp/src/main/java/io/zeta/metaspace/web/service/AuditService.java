@@ -6,6 +6,8 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiAudit;
 import io.zeta.metaspace.model.share.ApiHead;
 import io.zeta.metaspace.model.share.ApiInfoV2;
+import io.zeta.metaspace.model.share.ApiLog;
+import io.zeta.metaspace.model.share.ApiLogEnum;
 import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.model.user.User;
@@ -28,6 +30,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
@@ -65,6 +68,38 @@ public class AuditService {
         }
     }
 
+    public int cancelApiAudit(String tenantId, String auditId) throws AtlasBaseException {
+        try {
+            ApiAudit apiAudit = apiAuditDAO.getApiAuditById(auditId, tenantId);
+            if (Objects.isNull(apiAudit)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到审核记录");
+            }
+
+            if (!AuditStatusEnum.NEW.equals(apiAudit.getStatus())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核已经处理");
+            }
+
+            ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfo(apiAudit.getApiGuid(), apiAudit.getApiVersion());
+            if (apiInfoV2 != null && ApiStatusEnum.AUDIT.getName().equals(apiInfoV2.getStatus())) {
+                dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiInfoV2.getVersion(), ApiStatusEnum.DRAFT.getName(), DateUtils.currentTimestamp());
+            }
+
+            ApiLog apiLog = new ApiLog();
+            apiLog.setApiId(apiInfoV2.getGuid());
+            apiLog.setType(ApiLogEnum.UNSUBMIT.getName());
+            apiLog.setCreator( AdminUtils.getUserData().getUserId());
+            apiLog.setDate(DateUtils.currentTimestamp());
+            dataShareDAO.addApiLog(apiLog);
+
+            return apiAuditDAO.cancelApiAuditById(AdminUtils.getUserData().getAccount(), apiAudit.getId(), tenantId);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("取消审核失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消审核失败");
+        }
+    }
+
     public int cancelApiAudit(String tenantId, String apiGuid, String apiVersion) throws AtlasBaseException {
         try {
             ApiInfoV2 apiInfoV2 = dataShareDAO.getApiInfo(apiGuid, apiVersion);
@@ -76,7 +111,7 @@ public class AuditService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核 Api 不在是审核状态");
             }
             Timestamp updateTime = DateUtils.currentTimestamp();
-            dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(),apiVersion, ApiStatusEnum.DRAFT.getName(), updateTime);
+            dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiVersion, ApiStatusEnum.DRAFT.getName(), updateTime);
             return apiAuditDAO.cancelApiAudit(AdminUtils.getUserData().getAccount(), apiGuid, apiVersion, tenantId);
         } catch (AtlasBaseException e) {
             throw e;
@@ -117,16 +152,16 @@ public class AuditService {
             apiAuditDAO.updateApiAudit(apiAudit, tenantId);
 
             Timestamp updateTime = DateUtils.currentTimestamp();
-            if (AuditStatusEnum.AGREE.equals(status)){
+            if (AuditStatusEnum.AGREE.equals(status)) {
                 ApiHead apiHead = dataShareDAO.getSubmitApiHeadById(apiInfoV2.getGuid());
-                if (apiHead!=null){
-                    dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(),apiAudit.getApiVersion(), apiHead.getStatus(), updateTime);
-                }else{
-                    dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(),apiAudit.getApiVersion(), ApiStatusEnum.DOWN.getName(), updateTime);
+                if (apiHead != null) {
+                    dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), apiHead.getStatus(), updateTime);
+                } else {
+                    dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DOWN.getName(), updateTime);
                 }
-                apiGroupDAO.updateApiRelationByApi(apiInfoV2.getGuid(),updateTime);
-            }else{
-                dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(),apiAudit.getApiVersion(), ApiStatusEnum.DRAFT.getName(), updateTime);
+                apiGroupDAO.updateApiRelationByApi(apiInfoV2.getGuid(), updateTime);
+            } else {
+                dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DRAFT.getName(), updateTime);
 
             }
 
@@ -138,11 +173,18 @@ public class AuditService {
         }
     }
 
-    public PageResult<ApiAudit> getApiAuditList(Parameters parameters, String tenantId, List<AuditStatusEnum> statuses, String applicant) throws AtlasBaseException {
+    public PageResult<ApiAudit> getApiAuditList(Parameters parameters, String tenantId, List<AuditStatusEnum> statuses,  List<AuditStatusEnum> nonStatuses,String applicant) throws AtlasBaseException {
         try {
             if (Objects.nonNull(parameters.getQuery())) {
                 parameters.setQuery(parameters.getQuery().replaceAll("%", "/%").replaceAll("_", "/_"));
             }
+
+            if(nonStatuses != null && !nonStatuses.isEmpty()){
+                statuses = (statuses !=null && !statuses.isEmpty() ? statuses.stream() : Arrays.stream(AuditStatusEnum.values()))
+                        .filter(s->!nonStatuses.contains(s))
+                        .collect(Collectors.toList());
+            }
+
             List<ApiAudit> apiAuditList = apiAuditDAO.getApiAuditList(tenantId, parameters, statuses, applicant);
 
             PageResult<ApiAudit> pageResult = new PageResult<>();
