@@ -419,7 +419,7 @@ public interface DataShareDAO {
             " param=#{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
             " returnparam=#{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
             " sortparam=#{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}, " +
-            " version_num=(select COALESCE(max(cast(version_num as integer)) + 1, 1) from api where guid=#{info.guid}) from api where guid=#{info.guid}) " +
+            " version_num=(select COALESCE(max(cast(version_num as integer)) + 1, 1) from api where guid=#{info.guid}) " +
             " where guid=#{info.guid} and version_num=#{versionNum}")
     public int updateApiInfoV2OnDraft(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId,@Param("versionNum")int versionNum);
 
