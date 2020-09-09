@@ -210,19 +210,19 @@ public class MetaspaceScheduler {
                 Map params = (Map) parameters;
                 //表数据量
                 totalSizeObj = params.get("totalSize");
-                long totalSize = totalSizeObj != null ? Integer.valueOf(totalSizeObj.toString()) : 0;
-                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
+                long totalSize = totalSizeObj != null ? Long.parseLong(totalSizeObj.toString()) : 0;
+                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(totalSize));
                 tableStat.setDataVolumeBytes(totalSize);
                 //文件个数
                 numFilesObj = params.get("numFiles");
-                long numFiles = numFilesObj != null ? Integer.valueOf(numFilesObj.toString()) : 0;
+                long numFiles = numFilesObj != null ? Long.parseLong(numFilesObj.toString()) : 0;
                 tableStat.setFileNum(numFiles);
             }
             if(null == totalSizeObj || null == numFilesObj) {
                 TableMetadata metadata = HiveJdbcUtils.systemMetadata(dbAndtableName);
                 //表数据量
                 long totalSize = metadata.getTotalSize();
-                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
+                tableStat.setDataVolume(BytesUtils.humanReadableByteCount(totalSize));
                 tableStat.setDataVolumeBytes(totalSize);
                 //文件个数
                 long fieldNum = metadata.getNumFiles();
