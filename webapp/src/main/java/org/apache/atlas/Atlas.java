@@ -18,6 +18,7 @@
 
 package org.apache.atlas;
 
+import io.zeta.metaspace.utils.AdapterUtil;
 import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.security.SecurityProperties;
 import org.apache.atlas.web.service.EmbeddedServer;
@@ -128,6 +129,9 @@ public final class Atlas {
         configuration.setProperty(SecurityProperties.TLS_ENABLED, String.valueOf(enableTLS));
 
         showStartupInfo(buildConfiguration, enableTLS, appPort);
+
+        System.setProperty(AtlasConfiguration.METASPACE_ADAPTER_DIR.getPropertyName(),AtlasConfiguration.METASPACE_ADAPTER_DIR.getString());
+        AdapterUtil.findDatabaseAdapters();
 
         server = EmbeddedServer.newServer(appHost, appPort, appPath, enableTLS);
 //        installLogBridge();

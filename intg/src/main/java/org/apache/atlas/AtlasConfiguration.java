@@ -44,6 +44,9 @@ public enum AtlasConfiguration {
     SEARCH_MAX_LIMIT("atlas.search.maxlimit", 10000),
     SEARCH_DEFAULT_LIMIT("atlas.search.defaultlimit", 100),
 
+    ATLAS_CLUSTER_NAME("atlas.cluster.name", "ms"),
+    METASPACE_ADAPTER_DIR("metaspace.adapter.dir", "adapters"),
+
     METASPACE_QUALITY_ENGINE("metaspace.quality.engine", "impala");
 
     private static final Configuration APPLICATION_PROPERTIES;
@@ -62,6 +65,10 @@ public enum AtlasConfiguration {
     AtlasConfiguration(String propertyName, Object defaultValue) {
         this.propertyName = propertyName;
         this.defaultValue = defaultValue;
+    }
+
+    public String getPropertyName() {
+        return propertyName;
     }
 
     public int getInt() {

@@ -1,0 +1,10 @@
+{
+  "sourceType": "SQLSERVER",
+  "description": "",
+  "ip": "10.200.60.25",
+  "port": "1433",
+  "userName": "sa",
+  "password": "1qaz!QAZ",
+  "database": "",
+  "jdbcParameter": ""
+}

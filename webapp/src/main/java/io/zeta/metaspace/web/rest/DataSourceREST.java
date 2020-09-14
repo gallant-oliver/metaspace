@@ -39,7 +39,7 @@ import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;

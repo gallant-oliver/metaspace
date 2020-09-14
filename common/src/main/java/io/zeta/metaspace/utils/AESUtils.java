@@ -11,25 +11,16 @@
 //
 // ======================================================================
 
-package io.zeta.metaspace.web.util;
+package io.zeta.metaspace.utils;
 
-import org.junit.Test;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
 
 /**
  * @author lixiang03
@@ -42,60 +33,45 @@ public class AESUtils {
 
     /**
      * 加密
-     * @param password
-     * @return
-     * @throws NoSuchPaddingException
-     * @throws BadPaddingException
-     * @throws NoSuchAlgorithmException
-     * @throws IllegalBlockSizeException
-     * @throws UnsupportedEncodingException
-     * @throws InvalidKeyException
      */
     public static String aesEncode(String password) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
-            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
+            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
             secureRandom.setSeed(AESKey.getBytes(CHARACTER));
-            keygen.init(128,secureRandom);
+            keygen.init(128, secureRandom);
             SecretKey originalKey = keygen.generateKey();
             byte[] raw = originalKey.getEncoded();
-            SecretKey key = new SecretKeySpec(raw,AES);
+            SecretKey key = new SecretKeySpec(raw, AES);
             Cipher cipher = Cipher.getInstance(AES);
-            cipher.init(Cipher.ENCRYPT_MODE,key);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] byteEncode = password.getBytes(CHARACTER);
             byte[] byteAES = cipher.doFinal(byteEncode);
             return new String(new BASE64Encoder().encode(byteAES));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
+
     /**
      * 解密
-     * @param AesPassword
-     * @return
-     * @throws NoSuchPaddingException
-     * @throws BadPaddingException
-     * @throws NoSuchAlgorithmException
-     * @throws IllegalBlockSizeException
-     * @throws UnsupportedEncodingException
-     * @throws InvalidKeyException
      */
     public static String aesDecode(String aesPassword) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance(AES);
-            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG" );
+            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
             secureRandom.setSeed(AESKey.getBytes(CHARACTER));
-            keygen.init(128,secureRandom);
+            keygen.init(128, secureRandom);
             SecretKey originalKey = keygen.generateKey();
             byte[] raw = originalKey.getEncoded();
-            SecretKey key = new SecretKeySpec(raw,AES);
+            SecretKey key = new SecretKeySpec(raw, AES);
             Cipher cipher = Cipher.getInstance(AES);
-            cipher.init(Cipher.DECRYPT_MODE,key);
+            cipher.init(Cipher.DECRYPT_MODE, key);
             byte[] byteContent = new BASE64Decoder().decodeBuffer(aesPassword);
             byte[] byteDecode = cipher.doFinal(byteContent);
-            return new String(byteDecode,CHARACTER);
-        }catch (Exception e){
+            return new String(byteDecode, CHARACTER);
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
