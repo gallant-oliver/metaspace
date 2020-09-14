@@ -144,6 +144,8 @@ public class BusinessService {
 
     @Autowired
     private ColumnDAO columnDAO;
+    @Autowired
+    private CategoryDAO categoryDAO;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -161,9 +163,9 @@ public class BusinessService {
             //departmentId(categoryId)
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
-            String userName = AdminUtils.getUserData().getUsername();
-            info.setSubmitter(userName);
-            info.setBusinessOperator(userName);
+            String userId = AdminUtils.getUserData().getUserId();
+            info.setSubmitter(userId);
+            info.setBusinessOperator(userId);
             //businessId
             String businessId = UUID.randomUUID().toString();
             info.setBusinessId(businessId);
@@ -217,11 +219,11 @@ public class BusinessService {
             if(count > 0 && !currentInfo.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
             }
-            String userName = AdminUtils.getUserData().getUsername();
+            String userId = AdminUtils.getUserData().getUserId();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
-            info.setBusinessOperator(userName);
+            info.setBusinessOperator(userId);
             info.setBusinessLastUpdate(time);
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
@@ -246,9 +248,25 @@ public class BusinessService {
                 boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_OPERATE.getCode()) == 0 ? false : true;
                 info.setEditBusiness(editBusiness);
             }else{
-                List<Module> modules = tenantService.getModule(tenantId);
-                boolean editBusiness = modules.stream().anyMatch(module-> ModuleEnum.BUSINESSEDIT.getId()==module.getModuleId());
-                info.setEditBusiness(editBusiness);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByBusinessGuid(businessId,tenantId);
+                boolean edit = false;
+                if (categoryIds.size()>0){
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    if (count>0){
+                        edit=true;
+                    }
+                }
+
+
+                info.setEditBusiness(edit);
+            }
+            String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
+            String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
+            if (submitter!=null){
+                info.setSubmitter(submitter);
+            }
+            if (operator!=null){
+                info.setBusinessOperator(operator);
             }
             String categoryGuid = info.getDepartmentId();
             String departmentName = categoryDao.queryNameByGuid(categoryGuid,tenantId);
@@ -270,6 +288,12 @@ public class BusinessService {
             //editTechnical
             if(Objects.isNull(info))
                 info = new TechnologyInfo();
+
+            String operator = userGroupDAO.getUserNameById(info.getTechnicalOperator());
+            if (operator!=null){
+                info.setTechnicalOperator(operator);
+            }
+
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)){
                 User user = AdminUtils.getUserData();
@@ -492,6 +516,10 @@ public class BusinessService {
                 List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset,tenantId);
                 for (BusinessInfoHeader infoHeader : businessInfoList) {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
+                    String userName = userGroupDAO.getUserNameById(infoHeader.getSubmitter());
+                    if(userName!=null){
+                        infoHeader.setSubmitter(userName);
+                    }
                     String path = CategoryRelationUtils.getPath(categoryId,tenantId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
                     String[] pathArr = path.split("/");
@@ -523,11 +551,11 @@ public class BusinessService {
         List<String> list = tableIdList.getList();
         String trustTable = tableIdList.getTrust();
         try {
-            String userName = AdminUtils.getUserData().getUsername();
+            String userId = AdminUtils.getUserData().getUserId();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
-            businessDao.updateTechnicalInfo(businessId, userName, time);
+            businessDao.updateTechnicalInfo(businessId, userId, time);
             //更新technical编辑状态
             if(Objects.nonNull(list) && list.size() > 0) {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
@@ -1115,24 +1143,28 @@ public class BusinessService {
                 }
 
                 valueCell = row.getCell(1);
-                switch (valueCell.getCellTypeEnum()) {
-                    case NUMERIC:
-                        value = String.valueOf(valueCell.getNumericCellValue());
-                        break;
-                    case BOOLEAN:
-                        value = String.valueOf(valueCell.getBooleanCellValue());
-                        break;
-                    case STRING:
-                        value = valueCell.getStringCellValue();
-                        break;
-                    case BLANK:
-                        value = "";
-                        break;
-                    case FORMULA:
-                        value = valueCell.getCellFormula();
-                        break;
-                    default:
-                        value = "";
+                if (valueCell==null){
+                    value="";
+                }else{
+                    switch (valueCell.getCellTypeEnum()) {
+                        case NUMERIC:
+                            value = String.valueOf(valueCell.getNumericCellValue());
+                            break;
+                        case BOOLEAN:
+                            value = String.valueOf(valueCell.getBooleanCellValue());
+                            break;
+                        case STRING:
+                            value = valueCell.getStringCellValue();
+                            break;
+                        case BLANK:
+                            value = "";
+                            break;
+                        case FORMULA:
+                            value = valueCell.getCellFormula();
+                            break;
+                        default:
+                            value = "";
+                    }
                 }
                 column = new Column();
                 column.setColumnName(key);
@@ -1465,7 +1497,7 @@ public class BusinessService {
 
     @Transactional(rollbackFor=Exception.class)
     public void insertBusinesses(List<BusinessInfo> business,String categoryId,String tenantId) throws AtlasBaseException {
-        String userName = AdminUtils.getUserData().getUsername();
+        String userId = AdminUtils.getUserData().getUserId();
         long timestamp = System.currentTimeMillis();
         String time = DateUtils.getNow();
         //level2CategoryId
@@ -1484,8 +1516,8 @@ public class BusinessService {
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
 
-            info.setSubmitter(userName);
-            info.setBusinessOperator(userName);
+            info.setSubmitter(userId);
+            info.setBusinessOperator(userId);
             //businessId
             String businessId = UUID.randomUUID().toString();
             info.setBusinessId(businessId);

@@ -66,7 +66,11 @@ public class OperateLogInterceptor implements MethodInterceptor {
             if (null != module) {
                 operateLog.setModule(module.toString());
             } else {
-                String modulePath = request.getRequestURL().toString().replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
+                String path = request.getRequestURL().toString().replaceFirst(".*/api/metaspace/", "");
+                String modulePath = path.replaceAll("/.*", "");
+                if (modulePath.equals("datashare")&&path.contains("datashare/api")){
+                    modulePath="apimanage";
+                }
                 operateLog.setModule(modulePath.toLowerCase());
             }
             String tenantId = request.getHeader("tenantId");

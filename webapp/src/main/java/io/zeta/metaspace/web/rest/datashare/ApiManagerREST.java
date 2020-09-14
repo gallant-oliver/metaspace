@@ -110,7 +110,7 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Result insertAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "创建api:"+info.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建api:"+info.getName());
         try {
             shareService.insertAPIInfoV2(info,tenantId,submit);
             return ReturnUtil.success();
@@ -135,7 +135,7 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Result updateAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "更新api:"+info.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api:"+info.getName());
 
         try {
             shareService.updateAPIInfoV2(info,tenantId,submit);
@@ -162,7 +162,7 @@ public class ApiManagerREST {
     @OperateType(UPDATE)
     public Result submitApi(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(info.getGuid(), info.getVersion());
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "提交api审核:"+apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "提交api审核:"+apiInfoByVersion.getName());
 
         try {
             shareService.submitApi(info.getGuid(),info.getVersion(),tenantId);
@@ -192,7 +192,7 @@ public class ApiManagerREST {
         if(apiInfoByVersion == null){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"Api 不存在");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "取消审核:"+apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "取消审核:"+apiInfoByVersion.getName());
 
         try {
             auditService.cancelApiAudit(tenantId,info.getGuid(),info.getVersion());
@@ -222,7 +222,7 @@ public class ApiManagerREST {
         if (projectNames==null||projectNames.size()==0){
             return ReturnUtil.success();
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
         try {
             shareService.deleteApi(ids,tenantId);
             return ReturnUtil.success();
@@ -248,7 +248,7 @@ public class ApiManagerREST {
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteApiVersion(ApiVersion api,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(api.getApiId(), api.getVersion());
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "删除api:" +apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除api:" +apiInfoByVersion.getName());
         try {
             shareService.deleteApiVersion(api,tenantId);
             return ReturnUtil.success();
@@ -385,11 +385,10 @@ public class ApiManagerREST {
     public Result createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId,@PathParam("projectId")String projectId) throws Exception {
         AtlasPerfTracer perf = null;
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "创建目录:"+categoryInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建目录:"+categoryInfo.getName());
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.createCategory()");
             }
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), categoryInfo.getName());
             CategoryPrivilege category = shareService.createCategory(categoryInfo, projectId, tenantId);
             return ReturnUtil.success(category);
         } catch (AtlasBaseException e){
@@ -418,12 +417,11 @@ public class ApiManagerREST {
     @OperateType(UPDATE)
     public Result updateCategory(CategoryInfoV2 categoryInfo,@PathParam("projectId")String projectId,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "更新目录:"+categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新目录:"+categoryInfo.getName());
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.updateCategory()");
             }
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), categoryInfo.getName());
             shareService.updateCategory(categoryInfo, projectId,tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e){
@@ -454,12 +452,12 @@ public class ApiManagerREST {
         categoryDelete.setProjectId(projectId);
         Servlets.validateQueryParamLength("categoryGuid", categoryDelete.getId());
         AtlasPerfTracer perf = null;
+        CategoryEntityV2 category = shareService.getCategory(categoryDelete.getId(), tenantId);
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除目录:"+category.getName());
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.deleteCategory(" + categoryDelete.getId() + ")");
             }
-//            CategoryEntityV2 category = shareService.getCategory(categoryDelete.getId(), tenantId);
-//            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "删除目录:"+category.getName());
             shareService.deleteCategory(categoryDelete,tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e){
@@ -557,7 +555,7 @@ public class ApiManagerREST {
     @OperateType(UPDATE)
     public Result moveApi(MoveApi moveApi,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         CategoryEntityV2 category = shareService.getCategory(moveApi.getOldCategoryId(), tenantId);
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "迁移目录:"+category.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "迁移目录:"+category.getName());
 
         try {
             shareService.moveApi(moveApi);

@@ -13,6 +13,7 @@ import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.service.AuditService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -54,6 +55,8 @@ public class AdminREST {
     private UsersService usersService;
     @Autowired
     private AuditService auditService;
+    @Autowired
+    private DataShareService dataShareService;
 
     @GET
     @Path("/info")
@@ -114,12 +117,13 @@ public class AdminREST {
                                                    @DefaultValue("0") @QueryParam("offset") int offset,
                                                    @DefaultValue("10") @QueryParam("limit") int limit,
                                                    @QueryParam("statuses") List<AuditStatusEnum> statuses,
-                                                   @QueryParam("non-statuses") List<AuditStatusEnum> nonStatuses) throws AtlasBaseException {
+                                                   @QueryParam("non-statuses") List<AuditStatusEnum> nonStatuses,
+                                                   @QueryParam("search") String search) throws AtlasBaseException {
         try {
             Parameters parameters = new Parameters();
             parameters.setLimit(limit);
             parameters.setOffset(offset);
-
+            parameters.setQuery(search);
             return auditService.getApiAuditList(parameters, tenantId, statuses, nonStatuses, AdminUtils.getUserData().getAccount());
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
@@ -139,7 +143,7 @@ public class AdminREST {
         if (Objects.isNull(apiAudit)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到审核记录");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "取消审核:" + apiAudit.getApiGuid() + " " + apiAudit.getApiVersion());
+        HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), "取消审核:" + apiAudit.getApiGuid() + " " + apiAudit.getApiVersion());
 
         try {
             auditService.cancelApiAudit(tenantId, auditId);
@@ -150,6 +154,29 @@ public class AdminREST {
         } catch (Exception e) {
             LOG.error("取消审核失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "取消审核失败:" + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据版本获取api详情
+     * @param apiId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/apiinfo/{apiId}/{version}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiInfoByVersion(@PathParam("apiId")String apiId,@PathParam("version")String version) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId,version);
+            return ReturnUtil.success(apiInfo);
+        } catch (AtlasBaseException e) {
+            LOG.error("获取详情失败",e);
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取详情失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
         }
     }
 

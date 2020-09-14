@@ -112,7 +112,7 @@ public class OracleJdbcUtils {
             if(limit != -1) {
                 sqlBuilder.append(String.format(ROWNUM_LIMIT_RIGHT, limit + offset));
             }
-            if (StringUtils.isNotEmpty(filterFields)){
+            if (StringUtils.isNotEmpty(sortSql)){
                 sqlBuilder.append(ORDER);
                 sqlBuilder.append(sortSql);
             }

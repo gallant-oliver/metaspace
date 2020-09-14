@@ -61,7 +61,10 @@ public interface UserGroupDAO {
             " (select g.id id,count(*) member " +
             " from user_group  g " +
             " join user_group_relation r " +
-            " on g.id=r.group_id " +
+            " on g.id=r.group_id  where r.user_id in " +
+            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             " GROUP BY g.id) m " +
             " on u.id=m.id " +
             " where u.tenant=#{tenantId} and valid=true" +
@@ -81,7 +84,9 @@ public interface UserGroupDAO {
             " offset ${offset} " +
             "</if>" +
             "</script>")
-    public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,@Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search);
+    public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
+                                                                           @Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search,
+                                                                           @Param("ids")List<String> ids);
 
 
     @Select("select username from users where userid=#{userId}")
@@ -150,7 +155,10 @@ public interface UserGroupDAO {
      */
     @Select("<script>" +
             "select count(*)over() totalSize,u.userid,u.username,u.account from users u join user_group_relation g on u.userid=g.user_id " +
-            "where g.group_id=#{id} " +
+            "where g.group_id=#{id} and u.userid in " +
+            "<foreach collection='ids' item='userId' index='index' separator=',' open='(' close=')'>" +
+            "#{userId}" +
+            "</foreach>" +
             "<if test='search!=null'>" +
             " and u.username like '%${search}%' ESCAPE '/' " +
             "</if>" +
@@ -161,7 +169,8 @@ public interface UserGroupDAO {
             " offset ${offset} " +
             "</if>" +
             "</script>")
-    public List<MemberListAndSearchResult> getMemberListAndSearch(@Param("id")String id,@Param("offset") int offset, @Param("limit") int limit, @Param("search") String search);
+    public List<MemberListAndSearchResult> getMemberListAndSearch(@Param("id")String id,@Param("offset") int offset,
+                                                                  @Param("limit") int limit, @Param("search") String search,@Param("ids")List<String> ids);
 
 
     /**

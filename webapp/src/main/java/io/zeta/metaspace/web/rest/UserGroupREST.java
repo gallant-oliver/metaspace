@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.rest;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.HttpRequestContext;
@@ -127,9 +128,11 @@ public class UserGroupREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public Result addUserGroup(@HeaderParam("tenantId") String tenantId, UserGroup userGroup) throws AtlasBaseException {
         try {
             LOG.info("新建用户组时，您的租户ID为:" + tenantId + ",用户组名称为:" + userGroup.getName() + ",描述信息为：" + userGroup.getDescription());
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新建用户组："+userGroup.getName());
             userGroupService.addUserGroup(tenantId, userGroup);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
@@ -148,9 +151,12 @@ public class UserGroupREST {
     @Path("{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public Result deleteUserGroupByID(@PathParam("id") String id) throws AtlasBaseException {
         try {
             LOG.info("删除用户组信息时，您的用户组ID为:" + id);
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(id);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组："+userGroupByID.getName());
             userGroupService.deleteUserGroupByID(id);
             return ReturnUtil.success();
         }catch (Exception e) {
@@ -172,10 +178,10 @@ public class UserGroupREST {
             @PathParam("id") String id,
             @DefaultValue("0") @QueryParam("offset") int offset,
             @DefaultValue("10") @QueryParam("limit") int limit,
-            @QueryParam("search") String search) throws AtlasBaseException {
+            @QueryParam("search") String search,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             LOG.info("获取用户组成员列表及搜索");
-            PageResult<MemberListAndSearchResult> pageResult = userGroupService.getUserGroupMemberListAndSearch(id,offset, limit, search);
+            PageResult<MemberListAndSearchResult> pageResult = userGroupService.getUserGroupMemberListAndSearch(id,offset, limit, search,tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             LOG.error("获取用户组成员列表及搜索失败", e);
@@ -219,9 +225,12 @@ public class UserGroupREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result addUserByGroupId(
             @PathParam("id") String groupId,
             Map<String,List<String>> map) throws AtlasBaseException {
+        UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+        HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加成员："+userGroupByID.getName());
 
         try {
             List<String> userIds = map.get("userIds");
@@ -243,8 +252,11 @@ public class UserGroupREST {
     @Path("/{id}/users")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result deleteUserByGroupId(@PathParam("id") String groupId,Map<String,List<String>> map) throws AtlasBaseException {
         try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除成员："+userGroupByID.getName());
             List<String> userIds = map.get("userIds");
             LOG.info("用户组移除成员时，您的用户组ID为:" + groupId);
             userGroupService.deleteUserByGroupId(groupId, userIds);
@@ -292,7 +304,7 @@ public class UserGroupREST {
     public Result putPrivileges(@PathParam("uesrGroupId") String uesrGroupId, UserGroupCategories userGroupCategories) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(uesrGroupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), userGroupByID.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), userGroupByID.getName());
             userGroupService.putPrivileges(uesrGroupId,userGroupCategories);
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -309,11 +321,16 @@ public class UserGroupREST {
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateUserGroupInformation(@PathParam("id") String groupId, UserGroup userGroup) throws AtlasBaseException {
+    @OperateType(UPDATE)
+    public Result updateUserGroupInformation(@PathParam("id") String groupId, UserGroup userGroup,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "修改用户组信息"+userGroup.getName());
 
-            userGroupService.updateUserGroupInformation(groupId, userGroup);
+            userGroupService.updateUserGroupInformation(groupId, userGroup,tenantId);
             return ReturnUtil.success();
+        }catch (AtlasBaseException e){
+            LOG.error("修改用户组管理信息失败", e);
+            throw e;
         }catch (Exception e) {
             LOG.error("修改用户组管理信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"修改用户组管理信息失败");
@@ -389,8 +406,11 @@ public class UserGroupREST {
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result addDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
         try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加数据源权限："+userGroupByID.getName());
             userGroupService.addDataSourceByGroupId(groupId, privileges);
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -410,9 +430,12 @@ public class UserGroupREST {
     @Path("/{id}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result updateDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
 
         try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组修改项目权限："+userGroupByID.getName());
             userGroupService.updateDataSourceByGroupId(groupId, privileges);
             return ReturnUtil.success();
         }catch (Exception e) {
@@ -431,8 +454,11 @@ public class UserGroupREST {
     @Path("/{userGroupId}/datasource/delete")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result deleteDataSourceByGroupId(@PathParam("userGroupId") String groupId, List<String> sourceIds) throws AtlasBaseException {
         try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除数据源："+userGroupByID.getName());
             userGroupService.deleteDataSourceByGroupId(groupId, sourceIds);
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -471,6 +497,7 @@ public class UserGroupREST {
     @Path("/{id}/project")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result addProjectByGroupId(@PathParam("id") String groupId, List<String> projectIds) throws AtlasBaseException {
         try {
             UserGroup userGroup = userGroupService.getUserGroupByID(groupId);
