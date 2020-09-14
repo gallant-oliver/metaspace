@@ -17,8 +17,8 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -27,10 +27,8 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
-import io.zeta.metaspace.web.metadata.oracle.OracleMetaDataProvider;
-import io.zeta.metaspace.web.metadata.mysql.MysqlMetaDataProvider;
+import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.util.*;
@@ -44,17 +42,12 @@ import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.type.AtlasTypeRegistry;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -66,6 +59,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
@@ -77,13 +71,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.atlas.type.AtlasTypeRegistry;
 
-import org.apache.commons.beanutils.BeanUtils;
-
-import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_TABLE;
-import static io.zeta.metaspace.web.metadata.BaseFields.RDBMS_FOREIGN_KEY;
-import static io.zeta.metaspace.web.metadata.BaseFields.RMDB_INSTANCE;
+import static io.zeta.metaspace.web.metadata.BaseFields.*;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
@@ -125,17 +114,13 @@ public class MetaDataService {
     private String errorMessage = "";
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
-    @Autowired
-    private MysqlMetaDataProvider mysqlMetaDataProvider;
 
-    @Autowired
-    private OracleMetaDataProvider oracleMetaDataProvider;
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
     private Map<String, String> errorMap = new HashMap<>();
 
     private String tableAttribute = "table";
     private String temporaryAttribute = "temporary";
-    private String nameAttribute="name";
+    private String nameAttribute = "name";
     private String partitionKeysAttribute = "partitionKeys";
 
     @Autowired
@@ -159,7 +144,7 @@ public class MetaDataService {
     @Autowired
     private TenantService tenantService;
 
-    public Table getTableInfoById(String guid,String tenantId) throws AtlasBaseException {
+    public Table getTableInfoById(String guid, String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
@@ -173,7 +158,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            Table table = extractTableInfo(entity, guid,tenantId);
+            Table table = extractTableInfo(entity, guid, tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -196,12 +181,12 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
             }
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
         }
     }
 
-    public Table extractTableInfo(AtlasEntity entity, String guid,String tenantId) throws AtlasBaseException {
+    public Table extractTableInfo(AtlasEntity entity, String guid, String tenantId) throws AtlasBaseException {
         Table table = new Table();
         table.setTableId(guid);
         if (entity.getTypeName().contains(tableAttribute)) {
@@ -260,10 +245,10 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)){
+            if (TenantService.defaultTenant.equals(tenantId)) {
                 try {
                     List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                    if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))){
+                    if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
                         table.setEdit(true);
                     } else {
                         List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
@@ -279,14 +264,14 @@ public class MetaDataService {
                 } catch (Exception e) {
                     LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
-            }else {
+            } else {
                 try {
-                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid,tenantId);
+                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                     boolean edit = false;
-                    if (categoryIds.size()>0){
+                    if (categoryIds.size() > 0) {
                         int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
-                        if (count>0){
-                            edit=true;
+                        if (count > 0) {
+                            edit = true;
                         }
                     }
                     table.setEdit(edit);
@@ -334,7 +319,7 @@ public class MetaDataService {
             }
             try {
                 //表关联信息
-                List<String> relations = getRelationList(guid,tenantId);
+                List<String> relations = getRelationList(guid, tenantId);
                 table.setRelations(relations);
                 //目录管理员
                 //关联时间
@@ -344,7 +329,7 @@ public class MetaDataService {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
             try {
-                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid,tenantId);
+                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid, tenantId);
                 table.setBusinessObjects(businessObjectByTableguid);
             } catch (Exception e) {
                 LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
@@ -572,7 +557,7 @@ public class MetaDataService {
 
         for (String key : referredEntities.keySet()) {
             AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains(RDBMS_FOREIGN_KEY) && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE) && referredEntity.getAttribute(ATTRIBUTE_TABLE)!=null && entity.getGuid().equals(((AtlasObjectId)referredEntity.getAttribute(ATTRIBUTE_TABLE)).getGuid())) {
+            if (referredEntity.getTypeName().contains(RDBMS_FOREIGN_KEY) && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE) && referredEntity.getAttribute(ATTRIBUTE_TABLE) != null && entity.getGuid().equals(((AtlasObjectId) referredEntity.getAttribute(ATTRIBUTE_TABLE)).getGuid())) {
                 foreignKey = new RDBMSForeignKey();
                 //tableId
                 foreignKey.setTableId(guid);
@@ -699,7 +684,7 @@ public class MetaDataService {
     public void extractPartitionInfo(AtlasEntity entity, Table table) {
         if (entity.hasAttribute(partitionKeysAttribute) && entity.getAttribute(partitionKeysAttribute) != null) {
             List<AtlasObjectId> partitionKeys = toAtlasObjectIdList(entity.getAttribute(partitionKeysAttribute));
-            if(partitionKeys.isEmpty())
+            if (partitionKeys.isEmpty())
                 table.setPartitionTable(false);
             else
                 table.setPartitionTable(true);
@@ -819,10 +804,10 @@ public class MetaDataService {
         return objectId;
     }
 
-    public List<String> getRelationList(String guid,String tenantId) throws AtlasBaseException {
+    public List<String> getRelationList(String guid, String tenantId) throws AtlasBaseException {
         try {
             List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
-            dataManageService.getPath(relationEntities,tenantId);
+            dataManageService.getPath(relationEntities, tenantId);
             List<String> relations = new ArrayList<>();
             if (Objects.nonNull(relationEntities)) {
                 for (RelationEntityV2 entity : relationEntities)
@@ -1306,7 +1291,7 @@ public class MetaDataService {
         return max + 1;
     }
 
-    @Transactional(rollbackFor=Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public void updateTable(TableEdit tableEdit) throws AtlasBaseException {
         String guid = tableEdit.getGuid();
         String description = tableEdit.getDescription();
@@ -1358,8 +1343,8 @@ public class MetaDataService {
         LOG.info("关系型元数据管理缓存已被清除");
     }
 
-    @CacheEvict(value = {"RDBMSTableByDBCache","RDBMSTablePageCache"}, allEntries = true)
-    public void refreshRDBMSTableCache(){
+    @CacheEvict(value = {"RDBMSTableByDBCache", "RDBMSTablePageCache"}, allEntries = true)
+    public void refreshRDBMSTableCache() {
         LOG.info("关系型表元数据管理缓存已被清除");
     }
 
@@ -1383,10 +1368,10 @@ public class MetaDataService {
         try {
             metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity, tableSchema);
             metaDataProvider.importDatabases(tableSchema);
-        } catch (InterruptedException e){
-            errorMap.put(tableSchema.getInstance(),e.getMessage());
-        }catch (HiveException e) {
-            errorMap.put(tableSchema.getInstance(),"同步元数据出错，无法连接到hive");
+        } catch (InterruptedException e) {
+            errorMap.put(tableSchema.getInstance(), e.getMessage());
+        } catch (HiveException e) {
+            errorMap.put(tableSchema.getInstance(), "同步元数据出错，无法连接到hive");
             LOG.error("import metadata error,", e);
         } catch (Exception e) {
             errorMap.put(tableSchema.getInstance(), String.format("同步元数据出错，%s", e.getMessage()));
@@ -1395,32 +1380,33 @@ public class MetaDataService {
         if (null != metaDataProvider) {
             metaDataProvider.getEndTime().set(System.currentTimeMillis());
         }
-        if (metaDataProvider instanceof AbstractMetaDataProvider){
+        if (metaDataProvider instanceof AbstractMetaDataProvider) {
             ((AbstractMetaDataProvider) metaDataProvider).setThread(false);
         }
     }
-    public void stopSource(String sourceId,Thread thread) throws AtlasBaseException {
+
+    public void stopSource(String sourceId, Thread thread) throws AtlasBaseException {
         try {
-            if (metaDataProviderMap.get(sourceId)==null){
+            if (metaDataProviderMap.get(sourceId) == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未采集数据");
-            }else{
+            } else {
                 IMetaDataProvider metaDataProvider = metaDataProviderMap.get(sourceId);
-                if (metaDataProvider.getEndTime().get()!=0){
+                if (metaDataProvider.getEndTime().get() != 0) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
                 }
-                if (metaDataProvider.getTotalTables().get()!=0){
-                    if (!(metaDataProvider instanceof AbstractMetaDataProvider)){
+                if (metaDataProvider.getTotalTables().get() != 0) {
+                    if (!(metaDataProvider instanceof AbstractMetaDataProvider)) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
                     }
                     ((AbstractMetaDataProvider) metaDataProvider).setThread(true);
-                }else{
+                } else {
                     metaDataProvider.getEndTime().set(System.currentTimeMillis());
-                    errorMap.put(sourceId,"终止采集元数据");
+                    errorMap.put(sourceId, "终止采集元数据");
                     thread.stop();
                 }
             }
-        }catch (Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "停止失败:"+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "停止失败:" + e.getMessage());
         }
     }
 
@@ -1430,19 +1416,9 @@ public class MetaDataService {
             case HIVE:
                 return hiveMetaStoreBridgeUtils;
             case MYSQL:
-                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())||metaDataProviderMap.get(tableSchema.getInstance())==null) {
-                    MysqlMetaDataProvider mysqlMetaDataProvider = new MysqlMetaDataProvider();
-                    mysqlMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
-                    metaDataProvider = mysqlMetaDataProvider;
-                } else {
-                    metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
-                }
-                break;
             case ORACLE:
-                if (!metaDataProviderMap.containsKey(tableSchema.getInstance())||metaDataProviderMap.get(tableSchema.getInstance())==null) {
-                    OracleMetaDataProvider oracleMetaDataProvider = new OracleMetaDataProvider();
-                    oracleMetaDataProvider.set(entitiesStore, dataSourceService, atlasTypeRegistry, graph);
-                    metaDataProvider = oracleMetaDataProvider;
+                if (!metaDataProviderMap.containsKey(tableSchema.getInstance()) || metaDataProviderMap.get(tableSchema.getInstance()) == null) {
+                    metaDataProvider = new AbstractMetaDataProvider(entitiesStore, graph, atlasTypeRegistry, dataSourceService);
                 } else {
                     metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
                 }
@@ -1486,7 +1462,7 @@ public class MetaDataService {
                 break;
             case MYSQL:
             case ORACLE:
-                if (!metaDataProviderMap.containsKey(sourceId)||metaDataProviderMap.get(sourceId)==null){
+                if (!metaDataProviderMap.containsKey(sourceId) || metaDataProviderMap.get(sourceId) == null) {
                     if (metaDataProviderMap.get(sourceId) == null) {
                         errorMap.put(sourceId, String.format("该数据源未开始采集元数据"));
                         LOG.error(errorMap.get(sourceId));
@@ -1559,7 +1535,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional(rollbackFor=Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public EntityMutationResponse hardDeleteByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid);
@@ -1614,7 +1590,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional(rollbackFor=Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public EntityMutationResponse hardDeleteRDBMSByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
@@ -1634,7 +1610,7 @@ public class MetaDataService {
         }
     }
 
-    @Transactional(rollbackFor=Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public EntityMutationResponse hardDeleteRDBMSInstanceByGuid(String guid) throws AtlasBaseException {
         try {
             AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guid, true);
@@ -1666,7 +1642,7 @@ public class MetaDataService {
     }
 
 
-    @Transactional(rollbackFor=Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     public void updateTableInfo(String tableGuid, Table tableInfo) throws AtlasBaseException {
         try {
             tableDAO.updateTableInfo(tableGuid, tableInfo);
@@ -1676,7 +1652,7 @@ public class MetaDataService {
     }
 
 
-    public File exportExcel(List<String> dbGuidList,String tenantId) throws AtlasBaseException {
+    public File exportExcel(List<String> dbGuidList, String tenantId) throws AtlasBaseException {
         try {
             List<Table> tableList = new ArrayList<>();
             List<String> tableGuidList = new ArrayList<>();
@@ -1687,7 +1663,7 @@ public class MetaDataService {
                 }
             }
             for (String tableGuid : tableGuidList) {
-                Table table = getTableInfoById(tableGuid,tenantId);
+                Table table = getTableInfoById(tableGuid, tenantId);
                 tableList.add(table);
             }
             Workbook workbook = createMetaDataExcelFile(tableList, "xlsx");
@@ -1734,15 +1710,14 @@ public class MetaDataService {
             cellStyle.setBorderTop(CellStyle.BORDER_THIN);
             //右边框
             cellStyle.setBorderRight(CellStyle.BORDER_THIN);
-            for (int i=0; i<tableList.size(); i++) {
+            for (int i = 0; i < tableList.size(); i++) {
                 Table table = tableList.get(i);
-                createMetadataTableSheet(workbook, i+1, table, headerStyle, cellStyle);
-                createMetadataColumnSheet(workbook, i+1, table, headerStyle, cellStyle);
+                createMetadataTableSheet(workbook, i + 1, table, headerStyle, cellStyle);
+                createMetadataColumnSheet(workbook, i + 1, table, headerStyle, cellStyle);
             }
         }
         return workbook;
     }
-
 
 
     public void createMetadataTableSheet(Workbook workbook, int index, Table table, CellStyle headerStyle, CellStyle cellStyle) {
@@ -2200,7 +2175,7 @@ public class MetaDataService {
         return comparisonMetadata;
     }
 
-    @CacheEvict(value = {"RDBMSTableByDBCache","TableByDBCache"}, allEntries = true)
+    @CacheEvict(value = {"RDBMSTableByDBCache", "TableByDBCache"}, allEntries = true)
     public void addMetadataSubscription(String tableGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -2214,7 +2189,7 @@ public class MetaDataService {
     }
 
 
-    @CacheEvict(value = {"RDBMSTableByDBCache","TableByDBCache"}, allEntries = true)
+    @CacheEvict(value = {"RDBMSTableByDBCache", "TableByDBCache"}, allEntries = true)
     public void removeMetadataSubscription(String tableGuid) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -2225,9 +2200,9 @@ public class MetaDataService {
         }
     }
 
-    public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters,String tenantId) {
+    public PageResult<MetaDataRelatedAPI> getTableInfluenceWithAPI(String tableGuid, Parameters parameters, String tenantId) {
         PageResult pageResult = new PageResult();
-        List<MetaDataRelatedAPI> influenceAPIList = tableDAO.getTableInfluenceWithAPI(tableGuid, parameters.getLimit(), parameters.getOffset(),tenantId);
+        List<MetaDataRelatedAPI> influenceAPIList = tableDAO.getTableInfluenceWithAPI(tableGuid, parameters.getLimit(), parameters.getOffset(), tenantId);
         influenceAPIList.forEach(api -> {
             String version = api.getVersion();
             String path = api.getPath();
@@ -2280,18 +2255,18 @@ public class MetaDataService {
         CheckingInfo checkingInfo = new CheckingInfo();
         checkingInfo.setTableGuid(tableGuid);
         try {
-            Table tableInfo = getTableInfoById(tableGuid,null);
+            Table tableInfo = getTableInfoById(tableGuid, null);
             String tableName = tableInfo.getTableName();
             String namingConvention = "";
             boolean containChinese = isContainChinese(tableName);
             boolean contailSpecialChar = isSpecialChar(tableName);
-            if(containChinese) {
+            if (containChinese) {
                 namingConvention += "(包含中文)";
             }
-            if(contailSpecialChar) {
+            if (contailSpecialChar) {
                 namingConvention += "(包含特殊字符)";
             }
-            if(namingConvention.length() == 0) {
+            if (namingConvention.length() == 0) {
                 namingConvention = "符合规范";
             } else {
                 namingConvention = "不符合" + namingConvention;
@@ -2301,7 +2276,7 @@ public class MetaDataService {
             int ratio = checkBasicInfo(tableInfo);
             checkingInfo.setFillRate(ratio);
             int proper = 100;
-            if(ratio != proper) {
+            if (ratio != proper) {
                 checkingInfo.setMessageIntegrity("不完整");
             } else {
                 checkingInfo.setMessageIntegrity("完整");
@@ -2319,21 +2294,22 @@ public class MetaDataService {
     public int checkBasicInfo(Table tableInfo) throws Exception {
         int filledCount = 0;
         Field[] fileds = tableInfo.getClass().getDeclaredFields();
-        for(Field field : fileds) {
+        for (Field field : fileds) {
             field.setAccessible(true);
             Object obj = field.get(tableInfo);
-            if(obj != null && !obj.toString().trim().equals("")) {
+            if (obj != null && !obj.toString().trim().equals("")) {
                 filledCount++;
             }
         }
-        if(fileds.length == 0) {
+        if (fileds.length == 0) {
             return 0;
         } else {
-            return filledCount*100/fileds.length;
+            return filledCount * 100 / fileds.length;
         }
     }
 
     public static final String CHINES_REGEX = "[\u4e00-\u9fa5]";
+
     public static boolean isContainChinese(String str) {
         Pattern p = Pattern.compile(CHINES_REGEX);
         Matcher m = p.matcher(str);
@@ -2351,8 +2327,8 @@ public class MetaDataService {
         return m.find();
     }
 
-    public List<String> getTableNames(List<String> tableIds){
-        if (tableIds==null||tableIds.size()==0){
+    public List<String> getTableNames(List<String> tableIds) {
+        if (tableIds == null || tableIds.size() == 0) {
             return new ArrayList<>();
         }
         return tableDAO.getTableNames(tableIds);

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>metaspace-adapter</artifactId>
+        <groupId>org.apache.atlas</groupId>
+        <version>1.9.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>adapter-sqlserver</artifactId>
+
+    <properties>
+        <jdbc.mssql.version>6.1.0.jre8</jdbc.mssql.version>
+
+        <plugin.id>SQLSERVER</plugin.id>
+        <plugin.class>io.zeta.metaspace.adapter.sqlserver.SqlServerComponent</plugin.class>
+        <plugin.version>${project.version}</plugin.version>
+        <plugin.assembly.build>false</plugin.assembly.build>
+    </properties>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>com.microsoft.azure</artifactId>
+                    <groupId>azure-keyvault</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>gson</artifactId>
+                    <groupId>com.google.code.gson</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>nimbus-jose-jwt</artifactId>
+                    <groupId>com.nimbusds</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>mail</artifactId>
+                    <groupId>javax.mail</groupId>
+                </exclusion>
+            </exclusions>
+            <version>${jdbc.mssql.version}</version>
+        </dependency>
+    </dependencies>
+</project>

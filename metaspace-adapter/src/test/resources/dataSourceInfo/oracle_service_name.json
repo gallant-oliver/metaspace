@@ -1,0 +1,15 @@
+{
+  "sourceName": "1222",
+  "sourceType": "ORACLE",
+  "description": "",
+  "ip": "10.200.60.28",
+  "port": "1521",
+  "userName": "qa",
+  "password": "oracle",
+  "database": "orcl",
+  "jdbcParameter": "",
+  "oracleDb": "SPATIAL_WFS_ADMIN_USR",
+  "manager": "梁丽萍",
+  "managerId": "21",
+  "serviceType": "SERVICE_NAME"
+}
