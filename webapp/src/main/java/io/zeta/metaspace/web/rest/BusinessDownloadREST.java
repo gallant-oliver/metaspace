@@ -56,7 +56,7 @@ public class BusinessDownloadREST {
      * @throws Exception
      */
     @GET
-    @Path("/download/column/{tableGuid}")
+    @Path("/{tableGuid}")
     @Valid
     public void exportColumn(@PathParam("tableGuid")String tableGuid) throws Exception {
         File exportExcel = null;
@@ -69,8 +69,8 @@ public class BusinessDownloadREST {
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            PERF_LOG.error("业务对象表描述空值检查下载失败",e);
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "业务对象表描述空值检查下载失败");
+            PERF_LOG.error("业务对象字段下载失败",e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "业务对象字段下载失败");
         } finally {
             if (exportExcel!=null) {
                 exportExcel.delete();

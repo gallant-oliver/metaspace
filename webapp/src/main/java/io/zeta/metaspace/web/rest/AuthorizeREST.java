@@ -224,7 +224,7 @@ public class AuthorizeREST {
     @OperateType(UPDATE)
     public Result addPrivileges(UpdateCategory category, @HeaderParam("tenantId")String tenantId,@PathParam("type") int type) throws AtlasBaseException {
         try{
-
+            HttpRequestContext.get().auditLog(ModuleEnum.AUTHORIZATION.getAlias(), "分配权限");
             userGroupService.addUserGroupPrivilege(category,tenantId,type);
             return ReturnUtil.success();
         }catch (Exception e){

@@ -209,6 +209,9 @@ public interface CategoryDAO {
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid and tenantid=#{tenantId}")
     public List<String> getCategoryGuidByTableGuid(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
+    @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")
+    public List<String> getCategoryGuidByBusinessGuid(@Param("guid")String guid, @Param("tenantId")String tenantId);
+
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String getCategoryNameById(@Param("guid")String guid, @Param("tenantId")String tenantId);
 

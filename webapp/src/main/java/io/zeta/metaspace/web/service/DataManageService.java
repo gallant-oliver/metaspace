@@ -334,23 +334,9 @@ public class DataManageService {
             if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid,tenantId))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
-            createOtherCategory(entity,type,info,tenantId);
+            CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, info, tenantId);
             categoryDao.add(entity,tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid,tenantId);
-            CategoryPrivilege.Privilege privilege =null;
-            if(type==technicalType) {
-                if(modules.contains(ModuleEnum.TECHNICALEDIT.getId())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
-                }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
-                }
-            }else{
-                if(modules.contains(ModuleEnum.BUSINESSEDIT.getId())) {
-                    privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
-                }else{
-                    privilege =new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true,false);
-                }
-            }
             //有目录权限管理模块权限，可以随意建目录
             boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
             //无当前目录权限
@@ -433,7 +419,7 @@ public class DataManageService {
         return returnEntity;
     }
 
-    private void createOtherCategory(CategoryEntityV2 entity,int type,CategoryInfoV2 info,String tenantId) throws SQLException, AtlasBaseException {
+    private CategoryPrivilege.Privilege createOtherCategory(CategoryEntityV2 entity,int type,CategoryInfoV2 info,String tenantId) throws SQLException, AtlasBaseException {
         StringBuffer qualifiedName = new StringBuffer();
         String newCategoryGuid = entity.getGuid();
         String newCategoryParentGuid = info.getParentCategoryGuid();
@@ -501,6 +487,13 @@ public class DataManageService {
         if (parentPrivilege.size()!=0){
             userGroupDAO.addUserGroupPrivileges(parentPrivilege);
         }
+        List<CategoryPrivilege> userCategories = userGroupService.getUserCategories(type, tenantId);
+        for (CategoryPrivilege categoryPrivilege:userCategories){
+            if (categoryPrivilege.getGuid().equals(parentGuid)){
+                return categoryPrivilege.getPrivilege();
+            }
+        }
+        return null;
     }
 
     /**

@@ -39,6 +39,9 @@ public class QueryInfo {
     }
 
     public HashMap getFilters() {
+        if (filters==null){
+            filters=new HashMap();
+        }
         return filters;
     }
 
