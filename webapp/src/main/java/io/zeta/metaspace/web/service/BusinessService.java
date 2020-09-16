@@ -42,6 +42,8 @@ import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.ApiHead;
+import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
@@ -678,6 +680,40 @@ public class BusinessService {
             LOG.error("获取关联API失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联API失败");
         }
+    }
+
+    public PageResult<ApiHead> getBusinessTableRelatedDataServiceAPI(String businessGuid, Parameters parameters, boolean isNew, boolean up, boolean down, String tenantId) throws AtlasBaseException {
+        TechnologyInfo technologyInfo = getRelatedTableList(businessGuid,tenantId);
+        List<TechnologyInfo.Table> tableHeaderList = technologyInfo.getTables();
+        List<String> tableList = new ArrayList<>();
+        tableHeaderList.stream().forEach(table -> tableList.add(table.getTableGuid()));
+        Integer limit = parameters.getLimit();
+        Integer offset = parameters.getOffset();
+        List<ApiHead> apiList = new ArrayList<>();
+        PageResult<ApiHead> pageResult = new PageResult<>();
+        int totalSize = 0;
+        if(Objects.nonNull(tableList) && tableList.size()>0) {
+            apiList = shareDAO.getTableRelatedDataServiceAPI(tableList, limit, offset,tenantId,up,down,isNew);
+            for (ApiHead api : apiList) {
+                String displayName = api.getTableDisplayName();
+                if(Objects.isNull(displayName) || "".equals(displayName)) {
+                    api.setTableDisplayName(api.getTableName());
+                }
+                List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(api.getTableGuid());
+                List<String> dataOwnerName = new ArrayList<>();
+                if(Objects.nonNull(dataOwner) && dataOwner.size()>0) {
+                    dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                }
+                api.setDataOwner(dataOwnerName);
+            }
+            if (apiList.size()!=0) {
+                totalSize = apiList.get(0).getTotal();
+            }
+        }
+        pageResult.setTotalSize(totalSize);
+        pageResult.setLists(apiList);
+        pageResult.setCurrentSize(apiList.size());
+        return pageResult;
     }
 
     @Transactional(rollbackFor=Exception.class)

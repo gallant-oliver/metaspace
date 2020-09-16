@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -153,4 +154,16 @@ public class AdminREST {
         }
     }
 
+    @GET
+    @Path("/dataservice")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiStatus() throws AtlasBaseException {
+        try {
+            boolean dataService = MetaspaceConfig.getDataService();
+            return ReturnUtil.success(dataService);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
+        }
+    }
 }
