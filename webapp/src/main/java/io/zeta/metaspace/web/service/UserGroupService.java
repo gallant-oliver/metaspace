@@ -250,6 +250,9 @@ public class UserGroupService {
             return commonResult;
         }
 
+        if (userNameList.size()==0){
+            return commonResult;
+        }
         List<UserGroupMemberSearch> lists = userGroupDAO.getUserGroupMemberSearch(userNameList, offset, limit);
 
 

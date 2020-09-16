@@ -218,7 +218,9 @@ public class EntityGraphMapper {
 
                 resp.addEntity(CREATE, constructHeader(createdEntity, entityType, vertex));
                 addClassifications(context, guid, createdEntity.getClassifications());
-                LOG.info("created entity {}", createdEntity.toString());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("created entity {}", createdEntity.toString());
+                }
             }
         }
 
@@ -244,7 +246,9 @@ public class EntityGraphMapper {
                     deleteClassifications(guid);
                     addClassifications(context, guid, updatedEntity.getClassifications());
                 }
-                LOG.info("updated entity {}", updatedEntity.toString());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("updated entity {}", updatedEntity.toString());
+                }
             }
         }
 
