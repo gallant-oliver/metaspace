@@ -50,6 +50,8 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
+import io.zeta.metaspace.model.share.ApiHead;
+import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.model.TemplateEnum;
@@ -269,6 +271,62 @@ public class BusinessREST {
             return businessService.getBusinessTableRelatedAPI(businessId, parameters,tenantId);
         } catch (Exception e) {
             throw e;
+        }
+    }
+
+    /**
+     * 业务对象api展示列表
+     * @param businessId
+     * @param isNew
+     * @param up
+     * @param down
+     * @param limit
+     * @param offset
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{businessId}/dataservice")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getBusinessTableRelatedDataServiceAPI(@PathParam("businessId") String businessId,@DefaultValue("false")@QueryParam("new")boolean isNew,
+                                                                           @DefaultValue("true")@QueryParam("up")boolean up,@DefaultValue("true")@QueryParam("down")boolean down,
+                                                                           @DefaultValue("-1")@QueryParam("limit")int limit,@DefaultValue("0")@QueryParam("offset")int offset,
+                                                                           @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            Parameters parameters=new Parameters();
+            parameters.setLimit(limit);
+            parameters.setOffset(offset);
+            PageResult<ApiHead> pageResult = businessService.getBusinessTableRelatedDataServiceAPI(businessId, parameters, isNew, up, down, tenantId);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            PERF_LOG.error("获取api展示列表失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取api展示列表失败");
+        }
+    }
+
+    /**
+     * api详情
+     * @param guid
+     * @param version
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/dataservice/{apiGuid}/{version}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataServiceAPIInfo(@PathParam("apiGuid")String guid,@PathParam("version")String version) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(guid, version);
+            return ReturnUtil.success(apiInfo);
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("获取详情失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("获取详情失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
         }
     }
 
