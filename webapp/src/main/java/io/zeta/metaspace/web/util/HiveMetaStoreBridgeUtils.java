@@ -65,6 +65,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
 
@@ -169,65 +170,80 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         updatedTables.set(0);
         getStartTime().set(System.currentTimeMillis());
         getEndTime().set(0);
-        String databaseToImport = "";
+        List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
+        boolean allDatabase=false;
         if (null != tableSchema) {
-            databaseToImport = tableSchema.getDatabase();
+            databaseToImport = tableSchema.getDatabases();
             tableToImport = tableSchema.getTable();
+            allDatabase=tableSchema.isAllDatabase();
         }
         initHiveMetaStoreClient();
-        if (StringUtils.isEmpty(databaseToImport)) {
-            databaseNames = hiveMetaStoreClient.getAllDatabases();
-
+        List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
+        if (allDatabase||databaseToImport==null||databaseToImport.size()==0) {
+            databaseNames = allDatabaseName;
         } else {
-            databaseNames = hiveMetaStoreClient.getDatabasesByPattern(databaseToImport);
+            databaseNames = databaseToImport.stream().filter(name -> allDatabaseName.contains(name)).collect(Collectors.toList());
         }
-        int tables = 0;
+
+        //总同步元素数量
+        int totalSize = 0;
+
         Map<String, List<String>> database2Table = Maps.newHashMap();
-        if (StringUtils.isEmpty(tableToImport)) {
-            for (String databaseName : databaseNames) {
-                List<String> tablesInDB = database2Table.get(databaseName);
-                if (null == tablesInDB) {
-                    tablesInDB = Lists.newArrayList();
+        if (allDatabase){
+            totalSize=allDatabaseName.size();
+        }else{
+            if (StringUtils.isEmpty(tableToImport)) {
+                for (String databaseName : databaseNames) {
+                    List<String> tablesInDB = database2Table.get(databaseName);
+                    if (null == tablesInDB) {
+                        tablesInDB = Lists.newArrayList();
+                    }
+                    tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
+                    database2Table.put(databaseName, tablesInDB);
+                    totalSize += tablesInDB.size();
                 }
-                tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
-                database2Table.put(databaseName, tablesInDB);
-                tables += tablesInDB.size();
-            }
 
-        } else {
-            for (String databaseName : databaseNames) {
-                List<String> tablesInDB = database2Table.get(databaseName);
-                if (null == tablesInDB) {
-                    tablesInDB = Lists.newArrayList();
+            } else {
+                for (String databaseName : databaseNames) {
+                    List<String> tablesInDB = database2Table.get(databaseName);
+                    if (null == tablesInDB) {
+                        tablesInDB = Lists.newArrayList();
+                    }
+                    tablesInDB.addAll(hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport));
+                    database2Table.put(databaseName, tablesInDB);
+                    totalSize += tablesInDB.size();
                 }
-                tablesInDB.addAll(hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport));
-                database2Table.put(databaseName, tablesInDB);
-                tables += tablesInDB.size();
             }
         }
-        totalTables.set(tables);
+
+        totalTables.set(totalSize);
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
-            //删除JanusGraph中已经不存在的database,以及database中的table
-            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
-            List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
-            for (AtlasVertex vertex : dbVertices) {
-                if (Objects.nonNull(vertex)) {
-                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                    String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                    if (!databaseNames.contains(databaseInGraph)) {
-                        deleteTableEntity(databaseInGraph, new ArrayList<>());
-                        deleteEntity(dbEntity);
+            if (allDatabase){
+                //删除JanusGraph中已经不存在的database,以及database中的table
+                String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
+                List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
+                for (AtlasVertex vertex : dbVertices) {
+                    if (Objects.nonNull(vertex)) {
+                        List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                        AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                        String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                        if (!databaseNames.contains(databaseInGraph)) {
+                            deleteTableEntity(databaseInGraph, new ArrayList<>());
+                            deleteEntity(dbEntity);
+                        }
                     }
                 }
             }
             for (String databaseName : databaseNames) {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
-
+                if (allDatabase){
+                    updatedTables.incrementAndGet();
+                    continue;
+                }
                 if (dbEntity != null) {
                     importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false);
                 }

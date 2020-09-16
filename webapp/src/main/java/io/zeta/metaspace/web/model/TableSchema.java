@@ -2,6 +2,8 @@ package io.zeta.metaspace.web.model;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class TableSchema {
     /**
@@ -9,5 +11,7 @@ public class TableSchema {
      */
     String instance;
     String database;
+    List<String> databases;
     String table;
+    boolean allDatabase;
 }
