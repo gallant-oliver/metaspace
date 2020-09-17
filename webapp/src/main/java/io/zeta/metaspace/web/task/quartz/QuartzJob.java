@@ -17,26 +17,18 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
-import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
-import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
-
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
 import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.TaskType;
-import io.zeta.metaspace.model.dataquality2.AtomicTaskExecution;
-import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
-import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
-import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
-import io.zeta.metaspace.model.dataquality2.RuleExecuteStatus;
-import io.zeta.metaspace.model.dataquality2.WarningMessageStatus;
-import io.zeta.metaspace.model.dataquality2.WarningStatus;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -52,14 +44,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
+
+import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
+import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
 
 /*
  * @description
@@ -328,18 +317,19 @@ public class QuartzJob implements Job {
 
 
     //规则值计算
-    public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule,String pool) throws Exception {
+    public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule, String pool) throws Exception {
         Float resultValue = null;
-        Connection conn = null;
         try {
-            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
             String dbName = task.getDbName();
             String tableName = task.getTableName();
             String columnName = null;
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
+            String user = MetaspaceConfig.getHiveAdmin();
+            AdapterSource adapterSource;
+            if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                adapterSource = AdapterUtils.getImpalaAdapterSource();
             } else {
-                conn = HiveJdbcUtils.getSystemConnection(dbName,pool);
+                adapterSource = AdapterUtils.getHiveAdapterSource();
             }
 
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
@@ -387,21 +377,26 @@ public class QuartzJob implements Job {
             }
 
             LOG.info("query Sql: " + sql);
-            ResultSet resultSet = null;
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            }
-            if(Objects.nonNull(resultSet)) {
-                while (resultSet.next()) {
-                    Object object = resultSet.getObject(1);
-                    if(Objects.nonNull(object)) {
-                        resultValue = Float.valueOf(object.toString());
+
+            Connection connection = adapterSource.getConnection(user, dbName, pool);
+            resultValue = adapterSource.getNewAdapterExecutor().queryResult(connection, sql, resultSet -> {
+                try {
+                    Float value = null;
+                    if (Objects.nonNull(resultSet)) {
+                        while (resultSet.next()) {
+                            Object object = resultSet.getObject(1);
+                            if (Objects.nonNull(object)) {
+                                value = Float.valueOf(object.toString());
+                            }
+                        }
                     }
+                    return value;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
                 }
-            }
-            if(Objects.nonNull(resultValue)) {
+            });
+
+            if (Objects.nonNull(resultValue)) {
                 columnType2Result.put(columnTypeKey, resultValue);
             }
             return resultValue;
@@ -411,9 +406,6 @@ public class QuartzJob implements Job {
         } finally {
             if (record) {
                 checkResult(task,resultValue,resultValue);
-            }
-            if(Objects.nonNull(conn)) {
-                conn.close();
             }
         }
     }
@@ -471,11 +463,11 @@ public class QuartzJob implements Job {
         String tableName = task.getTableName();
         try {
             //表数据量
-            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                totalSize = ImpalaJdbcUtils.getTableSize(dbName, tableName,pool);
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
+            if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                totalSize = AdapterUtils.getImpalaAdapterSource().getNewAdapterExecutor().getTableSize(dbName, tableName, pool);
             } else {
-                totalSize = HiveJdbcUtils.getTableSize(dbName, tableName,pool);
+                totalSize = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(dbName, tableName, pool);
             }
             return totalSize;
         } catch (Exception e) {
@@ -535,34 +527,38 @@ public class QuartzJob implements Job {
         Float ratio = null;
         String dbName = task.getDbName();
         String tableName = task.getTableName();
-        Connection conn = null;
-        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
-        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-            conn = ImpalaJdbcUtils.getSystemConnection(dbName,pool);
+
+        AdapterSource adapterSource;
+        String user = MetaspaceConfig.getHiveAdmin();
+        engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
+        if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            adapterSource = AdapterUtils.getImpalaAdapterSource();
         } else {
-            conn = HiveJdbcUtils.getSystemConnection(dbName,pool);
+            adapterSource = AdapterUtils.getHiveAdapterSource();
         }
         try {
-            Float nowNum = ruleResultValue(task, false, true,pool);
-            Float totalNum = 0F;
+            Float nowNum = ruleResultValue(task, false, true, pool);
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
 
-            ResultSet resultSet = null;
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            }
+            Connection connection = adapterSource.getConnection(user, dbName, pool);
 
-            if(Objects.nonNull(resultSet)) {
-                while (resultSet.next()) {
-                    Object object = resultSet.getObject(1);
-                    if(Objects.nonNull(object)) {
-                        totalNum = Float.valueOf(object.toString());
+            Float totalNum = adapterSource.getNewAdapterExecutor().queryResult(connection, sql, resultSet -> {
+                try {
+                    Float num = 0F;
+                    if (Objects.nonNull(resultSet)) {
+                        while (resultSet.next()) {
+                            Object object = resultSet.getObject(1);
+                            if (Objects.nonNull(object)) {
+                                num = Float.valueOf(object.toString());
+                            }
+                        }
                     }
+                    return num;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
                 }
-            }
+            });
             if (totalNum != 0) {
                 ratio = nowNum / totalNum;
             }
@@ -570,9 +566,6 @@ public class QuartzJob implements Job {
             throw e;
         } finally {
             checkResult(task, ratio, ratio);
-            if(Objects.nonNull(conn)) {
-                conn.close();
-            }
         }
     }
 

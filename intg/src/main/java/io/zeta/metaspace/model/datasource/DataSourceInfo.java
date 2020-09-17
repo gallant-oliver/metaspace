@@ -31,4 +31,5 @@ public class DataSourceInfo {
     private String manager;
     private String managerId;
     private String serviceType;
+    private String pool;
 }

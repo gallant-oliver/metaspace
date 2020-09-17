@@ -14,10 +14,12 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.BuildTableSql;
@@ -26,8 +28,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.tag.Tag2Table;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.usergroup.UserGroup;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.model.Progress;
@@ -35,7 +36,6 @@ import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -59,7 +59,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -357,14 +356,15 @@ public class MetaDataREST {
     @Path("/databases")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<String> databases() throws AtlasBaseException {
-        return HiveJdbcUtils.databases();
+        return metadataService.getHiveSchemaList();
     }
 
     @GET
     @Path("/tableExists")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public boolean table(@QueryParam("database") String database, @QueryParam("tableName") String tableName) throws AtlasBaseException, SQLException, IOException {
-        return HiveJdbcUtils.tableExists(database, tableName);
+        AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+        return adapterSource.getNewAdapterExecutor().tableExists(AdminUtils.getUserName(),database,tableName);
     }
 
     @Autowired

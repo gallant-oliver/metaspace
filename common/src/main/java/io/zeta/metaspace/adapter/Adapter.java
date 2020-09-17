@@ -22,6 +22,8 @@ public interface Adapter {
      */
     AdapterSource getNewAdapterSource(DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool);
 
+    AdapterTransformer getAdapterTransformer();
+    
     /**
      * 获取元数据时排除的 schema 正则
      */

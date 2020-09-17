@@ -3,6 +3,7 @@ package io.zeta.metaspace.adapter.oracle;
 import io.zeta.metaspace.adapter.AbstractAdapter;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourcePool;
 import org.pf4j.PluginDescriptor;
@@ -19,6 +20,11 @@ public class OracleAdapter extends AbstractAdapter {
     @Override
     public AdapterSource getNewAdapterSource(DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool) {
         return new OracleAdapterSource(this, dataSourceInfo, dataSourcePool);
+    }
+
+    @Override
+    public AdapterTransformer getAdapterTransformer() {
+        return new OracleAdapterTransformer(this);
     }
 
     @Override

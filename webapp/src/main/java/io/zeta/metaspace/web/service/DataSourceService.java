@@ -14,6 +14,8 @@
 package io.zeta.metaspace.web.service;
 
 
+import io.zeta.metaspace.adapter.AdapterExecutor;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
 import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUserId;
 
@@ -38,17 +40,15 @@ import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.model.user.UserIdAndName;
-import io.zeta.metaspace.utils.AdapterUtil;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.OracleJdbcUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -72,7 +72,6 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.Properties;
 import java.util.UUID;
 
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
@@ -325,10 +324,14 @@ public class DataSourceService {
     }
 
     public Connection getConnection(DataSourceInfo dataSourceInfo) {
-        return AdapterUtil.getAdapterSource(dataSourceInfo).getConnection();
+        return AdapterUtils.getAdapterSource(dataSourceInfo).getConnection();
     }
 
-    public Connection getConnection(String sourceId){
+    public AdapterSource getAdapterSource(String sourceId) {
+        return AdapterUtils.getAdapterSource(getUnencryptedDataSourceInfo(sourceId));
+    }
+
+    public Connection getConnection(String sourceId) {
         return getConnection(getUnencryptedDataSourceInfo(sourceId));
     }
 
@@ -1012,26 +1015,9 @@ public class DataSourceService {
      * @throws AtlasBaseException
      */
     public PageResult getSchema(int limit, int offset, DataSourceConnection dataSourceConnection) throws AtlasBaseException {
-        PageResult pageResult = new PageResult();
-        ResultSet dataSet = null;
-        ResultSet countSet = null;
-        List<LinkedHashMap> result = null;
         dataSourceConnection = resetDataSourceConnection(dataSourceConnection);
-        try (Connection conn = getConnection(dataSourceConnection)) {
-            dataSet = OracleJdbcUtils.getSchemaList(conn, limit, offset);
-            countSet = OracleJdbcUtils.getSchemaCount(conn);
-            result = extractResultSetData(dataSet);
-            long totalSize = extractSizeData(countSet);
-            pageResult.setLists(result);
-            pageResult.setTotalSize(totalSize);
-            pageResult.setCurrentSize(result.size());
-            return pageResult;
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("查询失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败\n" + e.getMessage());
-        }
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceConnection);
+        return adapterExecutor.getSchemaPage(limit, offset);
     }
 
     public List<LinkedHashMap> extractResultSetData(ResultSet resultSet) throws AtlasBaseException {
