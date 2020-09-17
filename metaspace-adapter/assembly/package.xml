@@ -17,6 +17,13 @@
                 <exclude>org.apache.curator:*</exclude>
                 <exclude>org.apache.hadoop:*</exclude>
                 <exclude>org.slf4j:*</exclude>
+                <exclude>asm:asm</exclude>
+                <exclude>cglib:cglib</exclude>
+                <exclude>org.apache.logging*</exclude>
+                <exclude>org.apache.commons.lang*</exclude>
+                <exclude>commons-logging</exclude>
+                <exclude>commons-lang</exclude>
+                <exclude>com.healthmarketscience*</exclude>
             </excludes>
         </dependencySet>
         <dependencySet>

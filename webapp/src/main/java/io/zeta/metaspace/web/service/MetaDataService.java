@@ -16,6 +16,9 @@
  */
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterExecutor;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -26,12 +29,16 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
-import io.zeta.metaspace.web.util.*;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
+import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -63,6 +70,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
+import java.sql.Connection;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1305,7 +1313,8 @@ public class MetaDataService {
             AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
             String dbName = relatedObject.getDisplayText();
             String sql = String.format("alter table %s set tblproperties('comment'='%s')", tableName, description);
-            HiveJdbcUtils.execute(sql, dbName);
+            AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+            adapterSource.getNewAdapterExecutor().execute(adapterSource.getConnection(AdminUtils.getUserName(), dbName, MetaspaceConfig.getHiveJobQueueName()), sql);
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改表描述失败");
         }
@@ -1326,7 +1335,8 @@ public class MetaDataService {
                 String type = columnEdit.getType();
                 String description = columnEdit.getDescription();
                 String sql = String.format("alter table %s change column %s %s %s comment '%s'", tableName, columnName, columnName, type, description);
-                HiveJdbcUtils.execute(sql, dbName);
+                AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+                adapterSource.getNewAdapterExecutor().execute(adapterSource.getConnection(AdminUtils.getUserName(), dbName, MetaspaceConfig.getHiveJobQueueName()), sql);
             }
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改字段信息失败");
@@ -2332,5 +2342,22 @@ public class MetaDataService {
             return new ArrayList<>();
         }
         return tableDAO.getTableNames(tableIds);
+    }
+
+    public List<String> getHiveSchemaList() {
+        AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+        AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+        Connection connection = adapterSource.getConnection(AdminUtils.getUserName(), "", MetaspaceConfig.getHiveJobQueueName());
+        return adapterExecutor.queryResult(connection, "show databases", resultSet -> {
+            try {
+                List<String> ret = new ArrayList<>();
+                while (resultSet.next()) {
+                    ret.add(resultSet.getString(1));
+                }
+                return ret;
+            } catch (Exception e) {
+                throw new AtlasBaseException(e);
+            }
+        });
     }
 }

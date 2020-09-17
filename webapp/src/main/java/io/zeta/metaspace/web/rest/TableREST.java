@@ -20,15 +20,16 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
-import io.zeta.metaspace.web.service.TableService;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.table.Table;
 import io.zeta.metaspace.model.table.TableForm;
 import io.zeta.metaspace.model.table.TableSql;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import org.apache.atlas.web.util.Servlets;
+import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.web.service.TableService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.TableSqlUtils;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,11 +70,11 @@ public class TableREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table formCreate(TableForm request) throws Exception {
         String sql = TableSqlUtils.format(request);
-        if (HiveJdbcUtils.tableExists(request.getDatabase(), request.getTableName())) {
+        if (AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().tableExists(AdminUtils.getUserName(), request.getDatabase(), request.getTableName())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + request.getDatabase() + "." + request.getTableName() + " 已存在");
         }
-        HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
-        HiveJdbcUtils.execute(sql);
+        tableService.execute("CREATE DATABASE IF NOT EXISTS " + request.getDatabase());
+        tableService.execute(sql);
         String tablId = metaspaceGremlinService.getGuidByDBAndTableName(request.getDatabase(), request.getTableName());
         Table ret = new Table(tablId);
         return ret;
@@ -87,22 +88,22 @@ public class TableREST {
         try {
             String[] split = tableService.databaseAndTable(sql.getSql()).split("\\.");
             int length = 2;
-            if(split.length < length) {
+            if (split.length < length) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库名和表名不能为空");
             }
             String database = split[0];
             String tableName = split[1];
-            if (HiveJdbcUtils.tableExists(database, tableName)) {
+            if (AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().tableExists(AdminUtils.getUserName(), database, tableName)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表 " + database + "." + tableName + " 已存在");
             }
-            HiveJdbcUtils.execute("CREATE DATABASE IF NOT EXISTS " + database);
-            HiveJdbcUtils.execute(sql.getSql());
+            tableService.execute("CREATE DATABASE IF NOT EXISTS " + database);
+            tableService.execute(sql.getSql());
             String tableId = metaspaceGremlinService.getGuidByDBAndTableName(database, tableName);
             Table ret = new Table(tableId);
             return ret;
         } catch (AtlasBaseException e) {
             throw e;
-        }catch (Exception e) {
+        } catch (Exception e) {
             LOG.error("创建离线表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建离线表失败");
         }

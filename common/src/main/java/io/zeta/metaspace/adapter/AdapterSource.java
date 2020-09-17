@@ -14,7 +14,7 @@ public interface AdapterSource {
 
     Connection getConnectionForDriver();
 
-    default Connection getConnection(String proxyUser) {
+    default Connection getConnection(String proxyUser, String schema, String pool) {
         return getConnection();
     }
 

@@ -9,7 +9,7 @@ import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
-import io.zeta.metaspace.utils.AdapterUtil;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -96,7 +96,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
      */
     protected void init(TableSchema tableSchema) {
         dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(tableSchema.getInstance());
-        adapterExecutor = AdapterUtil.getAdapterExecutor(dataSourceInfo);
+        adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         metaDataInfo = adapterExecutor.getMeteDataInfo();
     }
 

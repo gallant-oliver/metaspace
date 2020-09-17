@@ -67,7 +67,7 @@ public class SqlServerAdapterSource extends AbstractAdapterSource {
      * https://docs.microsoft.com/en-us/sql/connect/jdbc/building-the-connection-url
      */
     @Override
-    public String getJdbcUrl(String proxyUser) {
+    public String getJdbcUrl(String proxyUser, String schema) {
         StringBuilder jdbcUrlBuilder = new StringBuilder()
                 .append(JDBC_PREFIX)
                 .append(getDataSourceInfo().getIp());
@@ -123,7 +123,7 @@ public class SqlServerAdapterSource extends AbstractAdapterSource {
     @Override
     public Connection getConnectionForDriver() {
         try {
-            return DriverManager.getConnection(getJdbcUrl(null), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
+            return DriverManager.getConnection(getJdbcUrl(), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
         } catch (SQLException e) {
             throw new AtlasBaseException(e);
         }

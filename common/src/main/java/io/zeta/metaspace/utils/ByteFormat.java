@@ -11,7 +11,7 @@
 //
 // ======================================================================
 
-package io.zeta.metaspace.web.util;
+package io.zeta.metaspace.utils;
 
 import java.text.FieldPosition;
 import java.text.NumberFormat;

@@ -1,8 +1,11 @@
 package io.zeta.metaspace.adapter.oracle;
 
+import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
@@ -10,22 +13,29 @@ import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.StringUtils;
 import schemacrawler.schema.Catalog;
 import schemacrawler.schema.IndexType;
-import schemacrawler.schema.Table;
-import schemacrawler.schemacrawler.*;
+import schemacrawler.schemacrawler.InfoLevel;
+import schemacrawler.schemacrawler.SchemaCrawlerOptions;
+import schemacrawler.schemacrawler.SchemaCrawlerOptionsBuilder;
+import schemacrawler.schemacrawler.SchemaInfoLevelBuilder;
 import schemacrawler.utility.SchemaCrawlerUtility;
 import sf.util.Utility;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
 public class OracleAdapterExecutor extends AbstractAdapterExecutor {
+
+    public static final Map<String, String> BRACKETS = new HashMap<String, String>() {{
+        put("[", "]");
+        put("{", "}");
+        put("<", ">");
+        put("(", ")");
+    }};
 
     public OracleAdapterExecutor(AdapterSource adapterSource) {
         super(adapterSource);
@@ -314,5 +324,66 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
             throw new AtlasBaseException(e);
         }
         return null;
+    }
+
+    @Override
+    public boolean isIgnoreColumn(String columnName) {
+        return super.isIgnoreColumn(columnName) || AdapterTransformer.TEMP_COLUMN_RNUM.equalsIgnoreCase(columnName);
+    }
+
+    @Override
+    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(long limit, long offset) {
+        SelectQuery query = new SelectQuery()
+                .addCustomColumns(new AliasedObject(new CustomSql("USERNAME"), "\"schemaName\""))
+                .addCustomFromTable(new CustomSql("ALL_USERS"));
+        query = getAdapter().getAdapterTransformer().addTotalCount(query);
+        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        log.info("schema sql:" + query.toString());
+        return queryResult(query.toString(), this::extractResultSetToPageResult);
+    }
+
+    @Override
+    public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, long limit, long offset) {
+        schemaName = addAlternativeQuoting(schemaName);
+        SelectQuery query = new SelectQuery()
+                .addCustomColumns(new AliasedObject(new CustomSql("TABLE_NAME"), "\"tableName\""))
+                .addCustomFromTable(new CustomSql("ALL_TABLES"))
+                .addCondition(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)));
+        query = getAdapter().getAdapterTransformer().addTotalCount(query);
+        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        log.info("table sql:" + query.toString());
+        return queryResult(query.toString(), this::extractResultSetToPageResult);
+    }
+
+    @Override
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, long limit, long offset) {
+        schemaName = addAlternativeQuoting(schemaName);
+        tableName = addAlternativeQuoting(tableName);
+        SelectQuery query = new SelectQuery()
+                .addCustomColumns(new AliasedObject(new CustomSql("COLUMN_NAME"), "\"columnName\""))
+                .addCustomColumns(new AliasedObject(new CustomSql("DATA_TYPE"), "\"type\""))
+                .addCustomFromTable(new CustomSql("ALL_TAB_COLS"))
+                .addCondition(ComboCondition.and().addConditions(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)), BinaryCondition.equalTo(new CustomSql("TABLE_NAME"), new CustomSql(tableName))));
+        query = getAdapter().getAdapterTransformer().addTotalCount(query);
+        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        log.info("column sql:" + query.toString());
+        return queryResult(query.toString(), this::extractResultSetToPageResult);
+    }
+
+    /**
+     * 处理包含单引号的表名库名
+     * https://livesql.oracle.com/apex/livesql/file/content_CIREYU9EA54EOKQ7LAMZKRF6P.html
+     * 注意 jdbc 不支持执行 q'(str))'
+     */
+    private String addAlternativeQuoting(String str) {
+        if (StringUtils.isNotEmpty(str) && str.contains("'")) {
+            Map.Entry<String, String> entry = BRACKETS.entrySet().stream().filter(e ->
+                    (!str.contains(e.getKey()) && !str.contains(e.getValue()) || (!str.contains(e.getKey() + "'") && !str.contains(e.getValue() + "'") && !str.endsWith(e.getValue())))
+            ).findAny().orElse(null);
+            if (entry != null) {
+                return "q'" + entry.getKey() + str + entry.getValue() + "'";
+            }
+        }
+        return "'" + str + "'";
     }
 }

@@ -18,15 +18,11 @@
 
 package org.apache.atlas;
 
-import io.zeta.metaspace.utils.AdapterUtil;
+import io.zeta.metaspace.utils.AdapterUtils;
 import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.security.SecurityProperties;
 import org.apache.atlas.web.service.EmbeddedServer;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -131,7 +127,7 @@ public final class Atlas {
         showStartupInfo(buildConfiguration, enableTLS, appPort);
 
         System.setProperty(AtlasConfiguration.METASPACE_ADAPTER_DIR.getPropertyName(),AtlasConfiguration.METASPACE_ADAPTER_DIR.getString());
-        AdapterUtil.findDatabaseAdapters();
+        AdapterUtils.findDatabaseAdapters();
 
         server = EmbeddedServer.newServer(appHost, appPort, appPath, enableTLS);
 //        installLogBridge();

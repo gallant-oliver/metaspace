@@ -13,33 +13,35 @@
 
 package io.zeta.metaspace.web.scheduler;
 
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.DateType;
+import io.zeta.metaspace.model.table.Table;
+import io.zeta.metaspace.model.table.TableMetadata;
+import io.zeta.metaspace.model.table.TableStat;
+import io.zeta.metaspace.repository.tablestat.TableStatService;
+import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.BytesUtils;
+import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.util.BaseHiveEvent;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasDiscoveryService;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
-import io.zeta.metaspace.model.DateType;
 import org.apache.atlas.model.discovery.AtlasSearchResult;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import io.zeta.metaspace.model.table.Table;
-import io.zeta.metaspace.model.table.TableMetadata;
-import io.zeta.metaspace.model.table.TableStat;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
-import io.zeta.metaspace.repository.tablestat.TableStatService;
-import io.zeta.metaspace.utils.BytesUtils;
-import io.zeta.metaspace.utils.DateUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +49,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
 
 @EnableScheduling
 @Component
@@ -218,8 +218,8 @@ public class MetaspaceScheduler {
                 long numFiles = numFilesObj != null ? Integer.valueOf(numFilesObj.toString()) : 0;
                 tableStat.setFileNum(numFiles);
             }
-            if(null == totalSizeObj || null == numFilesObj) {
-                TableMetadata metadata = HiveJdbcUtils.systemMetadata(dbAndtableName);
+            if (null == totalSizeObj || null == numFilesObj) {
+                TableMetadata metadata = systemMetadata(dbAndtableName);
                 //表数据量
                 long totalSize = metadata.getTotalSize();
                 tableStat.setDataVolume(BytesUtils.humanReadableByteCount(Long.valueOf(totalSize)));
@@ -303,6 +303,38 @@ public class MetaspaceScheduler {
             log.error("手动生成统计信息失败",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    public TableMetadata systemMetadata(String dbAndtableName) {
+        TableMetadata metadata = null;
+        try {
+            String[] split = dbAndtableName.split("\\.");
+            String db = split[0];
+            String tableName = split[1];
+            String sql = "describe formatted " + dbAndtableName;
+            log.debug("Running: " + sql);
+            AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+            Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), db, MetaspaceConfig.getHiveJobQueueName());
+            metadata = adapterSource.getNewAdapterExecutor().queryResult(connection, sql, resultSet -> {
+                try {
+                    TableMetadata tableMetadata = new TableMetadata();
+                    while (resultSet.next()) {
+                        String string = resultSet.getString(2);
+                        if (string != null && string.contains("numFiles"))
+                            tableMetadata.setNumFiles(Long.parseLong(resultSet.getString(3).replaceAll(" ", "")));
+                        if (string != null && string.contains("totalSize"))
+                            tableMetadata.setTotalSize(Long.parseLong(resultSet.getString(3).replaceAll(" ", "")));
+                    }
+                    return tableMetadata;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
+                }
+            });
+        } catch (Exception e) {
+            log.error("从hive获取表统计异常", e);
+        }
+        return metadata;
+
     }
 
 }

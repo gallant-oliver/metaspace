@@ -16,6 +16,8 @@
         <module>adapter-sqlserver</module>
         <module>adapter-oracle</module>
         <module>adapter-mysql</module>
+        <module>adapter-hive</module>
+        <module>adapter-impala</module>
     </modules>
 
     <properties>

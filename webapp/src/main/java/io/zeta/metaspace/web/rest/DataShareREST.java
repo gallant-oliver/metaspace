@@ -34,7 +34,6 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.service.*;
@@ -518,7 +517,7 @@ public class DataShareREST {
     @Path("/test/oracle/{randomName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, OracleQueryParameter parameter) throws Exception {
+    public List<LinkedHashMap> testAPI(@PathParam("randomName") String randomName, RelationalQueryParameter parameter) throws Exception {
         try {
             List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
             return result;

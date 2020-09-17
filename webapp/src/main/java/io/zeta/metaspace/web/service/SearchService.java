@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
@@ -14,12 +16,9 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.utils.AdapterUtil;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import oracle.jdbc.OracleBfile;
-import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -65,7 +64,7 @@ public class SearchService {
     @Autowired
     RelationDAO relationDAO;
     @Autowired
-    DataSourceService  dataSourceService;
+    DataSourceService dataSourceService;
     @Autowired
     MetadataSubscribeDAO subscribeDAO;
     @Autowired
@@ -278,8 +277,8 @@ public class SearchService {
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from `" + name + "` limit " + guidCount.getCount();
 
-        String user = AdminUtils.getUserName();
-        try (Connection conn = admin?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -326,10 +325,10 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        String user = AdminUtils.getUserName();
         Configuration conf = ApplicationProperties.get();
-        boolean secure = conf.getBoolean("metaspace.secureplus.enable",true);
-        try (Connection conn = !secure ? HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
+        String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
@@ -399,6 +398,7 @@ public class SearchService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
         }
 
+        AdapterTransformer adapterTransformer = AdapterUtils.getAdapter(dataSourceInfo.getSourceType()).getAdapterTransformer();
         try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,null);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -431,14 +431,8 @@ public class SearchService {
                             s = object.toString();
                         }
 
-                    }else if(object instanceof Blob){
-                        s = "BLOB数据不支持预览";
-                    }else if(object instanceof OracleBfile){
-                        s = "BFile数据不支持预览";
-                    }else if(object instanceof Datum){
-                        s = ((Datum)object).stringValue(conn);
-                    }else{
-                        s = object.toString();
+                    }else {
+                        s = adapterTransformer.convertColumnValue(object).toString();
                     }
                     map.put(column, s);
                 }
@@ -538,9 +532,9 @@ public class SearchService {
         }
     }
 
-    public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo,String dbName) throws AtlasBaseException {
+    public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo, String dbName) throws AtlasBaseException {
         dataSourceInfo.setDatabase(dbName);
-        return AdapterUtil.getAdapterSource(dataSourceInfo).getConnection();
+        return AdapterUtils.getAdapterSource(dataSourceInfo).getConnection();
     }
 
 

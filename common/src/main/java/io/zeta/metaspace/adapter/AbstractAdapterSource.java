@@ -40,10 +40,10 @@ public abstract class AbstractAdapterSource implements AdapterSource {
      */
     public abstract DataSource initDataSource();
 
-    public abstract String getJdbcUrl(String proxyUser);
+    public abstract String getJdbcUrl(String proxyUser, String schema);
 
     public String getJdbcUrl() {
-        return getJdbcUrl(null);
+        return getJdbcUrl(null, null);
     }
 
     /**
@@ -66,7 +66,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
             }
             return getConnectionForDriver();
         } catch (Exception e) {
-            log.info("getConnection for " + getJdbcUrl(null) + "," + getDataSourceInfo().getUserName() + "," + getDataSourceInfo().getPassword() + " error:" + e.getMessage(), e);
+            log.info("getConnection for " + getJdbcUrl() + "," + getDataSourceInfo().getUserName() + "," + getDataSourceInfo().getPassword() + " error:" + e.getMessage(), e);
             throw new AtlasBaseException(e);
         }
     }

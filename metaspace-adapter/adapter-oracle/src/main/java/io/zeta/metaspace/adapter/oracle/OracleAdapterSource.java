@@ -78,7 +78,7 @@ public class OracleAdapterSource extends AbstractAdapterSource {
     }
 
     @Override
-    public String getJdbcUrl(String proxyUser) {
+    public String getJdbcUrl(String proxyUser, String schema) {
         StringBuilder jdbcUrlBuilder = new StringBuilder(JDBC_PREFIX);
 
         if (!SID.equalsIgnoreCase(getDataSourceInfo().getServiceType())) {
@@ -128,7 +128,7 @@ public class OracleAdapterSource extends AbstractAdapterSource {
     @Override
     public Connection getConnectionForDriver() {
         try {
-            return DriverManager.getConnection(getJdbcUrl(null), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
+            return DriverManager.getConnection(getJdbcUrl(), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
         } catch (SQLException e) {
             throw new AtlasBaseException(e);
         }
