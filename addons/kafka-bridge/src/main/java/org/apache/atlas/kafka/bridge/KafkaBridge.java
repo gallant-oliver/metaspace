@@ -62,7 +62,7 @@ public class KafkaBridge {
     private static final String ATLAS_ENDPOINT           = "atlas.rest.address";
     private static final String DEFAULT_ATLAS_URL        = "http://localhost:21000/";
     private static final String KAFKA_CLUSTER_NAME       = "atlas.cluster.name";
-    private static final String DEFAULT_CLUSTER_NAME     = "primary";
+    private static final String DEFAULT_CLUSTER_NAME     = "ms";
     private static final String ATTRIBUTE_QUALIFIED_NAME = "qualifiedName";
     private static final String DESCRIPTION_ATTR         = "description";
     private static final String PARTITION_COUNT          = "partitionCount";
@@ -162,6 +162,14 @@ public class KafkaBridge {
         this.clusterName     = atlasConf.getString(KAFKA_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
         this.zkUtils         = new ZkUtils(zkClient, new ZkConnection(zookeeperConnect), JaasUtils.isZkSecurityEnabled());
         this.availableTopics = scala.collection.JavaConversions.seqAsJavaList(zkUtils.getAllTopics());
+    }
+
+    @VisibleForTesting
+    public KafkaBridge(List<String> availableTopics, String clusterName, AtlasClientV2 atlasClientV2,ZkUtils zkUtils) {
+        this.availableTopics = availableTopics;
+        this.clusterName = clusterName;
+        this.atlasClientV2 = atlasClientV2;
+        this.zkUtils = zkUtils;
     }
 
     public void importTopic(String topicToImport) throws Exception {

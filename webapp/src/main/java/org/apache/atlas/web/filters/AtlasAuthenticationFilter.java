@@ -215,16 +215,14 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
 
         Properties config = new Properties();
 
-        String kerberosAuthEnabled = configuration != null ? configuration.getString("atlas.authentication.method.kerberos") : null;
+        boolean kerberosAuthEnabled =configuration.getBoolean("atlas.authentication.method.kerberos",true);
         // getString may return null, and would like to log the nature of the default setting
         String authMethod = "";
-        String aFalse = "false";
-        String aTrue = "true";
-        if (kerberosAuthEnabled == null || kerberosAuthEnabled.equalsIgnoreCase(aFalse)) {
+        if (kerberosAuthEnabled) {
+            authMethod = "kerberos";
+        } else {
             LOG.info("No authentication method configured.  Defaulting to simple authentication");
             authMethod = "simple";
-        } else if (kerberosAuthEnabled.equalsIgnoreCase(aTrue)) {
-            authMethod = "kerberos";
         }
 
         String key1 = "atlas.authentication.method.kerberos.name.rules";

@@ -142,6 +142,9 @@ public class MetaDataService {
     private ColumnDAO columnDAO;
 
     @Autowired
+    private CategoryDAO categoryDAO;
+
+    @Autowired
     private MetadataHistoryDAO metadataHistoryDAO;
     @Autowired
     private DataSourceService dataSourceService;
@@ -278,15 +281,15 @@ public class MetaDataService {
                 }
             }else {
                 try {
-                    List<Module> modules = tenantService.getModule(tenantId);
-                    for (Module module : modules) {
-                        if (module.getModuleId() == ModuleEnum.TECHNICALEDIT.getId()) {
-                            if (table.getTablePermission().isWrite()) {
-                                table.setEdit(true);
-                                break;
-                            }
+                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid,tenantId);
+                    boolean edit = false;
+                    if (categoryIds.size()>0){
+                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                        if (count>0){
+                            edit=true;
                         }
                     }
+                    table.setEdit(edit);
                 } catch (Exception e) {
                     LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
@@ -917,6 +920,7 @@ public class MetaDataService {
         } else {
             column.setType("");
         }
+
         String commentAttribute = "comment";
         if (attributes.containsKey(commentAttribute) && Objects.nonNull(attributes.get(commentAttribute))) {
             column.setDescription(attributes.get(commentAttribute).toString());
@@ -997,7 +1001,6 @@ public class MetaDataService {
             }
             info.setEntities(lineageEntities);
             info.setRelations(lineageRelations);
-            System.out.println();
             return info;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");

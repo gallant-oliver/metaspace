@@ -422,7 +422,7 @@ public class UsersService {
             for (UserAndModule userAndModule:userAndModules.getLists()){
                 User user = userDAO.getUserByName(userAndModule.getUserName(), userAndModule.getEmail());
                 if (user==null){
-                    continue;
+                    break;
                 }
                 List<UserGroupIdAndName> userGroupName = userDAO.getUserGroupNameByUserId(user.getUserId(), tenantId);
                 user.setUserGroups(userGroupName);

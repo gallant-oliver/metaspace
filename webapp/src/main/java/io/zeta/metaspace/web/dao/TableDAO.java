@@ -108,4 +108,17 @@ public interface TableDAO {
             " </if>" +
             " </script>")
     public Integer ifTableInfo(TableInfo table);
+
+    @Select({"<script>",
+             "select tableguid from tableinfo where dbname in ",
+             "<foreach item='name' index='index' collection='dbNames' separator=',' open='(' close=')'>" ,
+             "#{name}",
+             "</foreach>",
+             "</script>"})
+    public List<String> getTableByDB(@Param("dbNames")List<String> dbNames);
+
+    @Select({"<script>",
+             "select tableguid from tableinfo " +
+             "</script>"})
+    public List<String> getTables();
 }

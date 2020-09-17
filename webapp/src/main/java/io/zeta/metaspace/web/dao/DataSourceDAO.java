@@ -287,7 +287,7 @@ public interface DataSourceDAO {
 
 
     //获取测试连接参数
-    @Select("select source_type sourceType,ip,port,username userName,password as AESPassword,database,jdbc_parameter jdbcParameter,servicetype " +
+    @Select("select source_type sourceType,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,servicetype " +
             "from data_source where source_id=#{sourceId};")
     public DataSourceConnection getConnectionBySourceId(@Param("sourceId") String sourceId);
 

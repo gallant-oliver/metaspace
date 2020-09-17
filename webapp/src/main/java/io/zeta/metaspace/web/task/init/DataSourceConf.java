@@ -40,14 +40,14 @@ public class DataSourceConf {
     public DataSourceConf() throws AtlasBaseException {
         try{
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            driverClassName=configuration.getString("metaspace.database.driverClassName");
+            driverClassName=configuration.getString("metaspace.database.driverClassName","org.postgresql.Driver");
             jdbcUrl=configuration.getString("metaspace.database.url");
             username=configuration.getString("metaspace.database.username");
             password=configuration.getString("metaspace.database.password");
-            minimumIdle=configuration.getInt("metaspace.database.minPoolSize");
-            maximumPoolSize=configuration.getInt("metaspace.database.maxPoolSize");
-            idleTimeout=configuration.getInt("metaspace.database.maxIdleTime");
-            connectionTimeout=configuration.getLong("metaspace.database.checkoutTimeout");
+            minimumIdle=configuration.getInt("metaspace.database.minPoolSize",5);
+            maximumPoolSize=configuration.getInt("metaspace.database.maxPoolSize",20);
+            idleTimeout=configuration.getInt("metaspace.database.maxIdleTime",60);
+            connectionTimeout=configuration.getLong("metaspace.database.checkoutTimeout",20000);
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "初始化表失败：" + e.getMessage());
         }

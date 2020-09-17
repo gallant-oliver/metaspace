@@ -43,7 +43,7 @@ import com.google.common.collect.Collections2;
 /**
  * Tests for AtlasJanusGraphQuery.
  */
-@Test(enabled = false)
+@Test
 public class GraphQueryTest extends AbstractGraphDatabaseTest {
 
     public <V, E> void testQueryThatCannotRunInMemory() throws AtlasException {

@@ -67,7 +67,7 @@ public class HBaseBridge {
     private static final String  ATLAS_ENDPOINT        = "atlas.rest.address";
     private static final String  DEFAULT_ATLAS_URL     = "http://localhost:21000/";
     private static final String  HBASE_CLUSTER_NAME    = "atlas.cluster.name";
-    private static final String  DEFAULT_CLUSTER_NAME  = "primary";
+    private static final String  DEFAULT_CLUSTER_NAME  = "ms";
     private static final String  QUALIFIED_NAME        = "qualifiedName";
     private static final String  NAME                  = "name";
     private static final String  URI                   = "uri";

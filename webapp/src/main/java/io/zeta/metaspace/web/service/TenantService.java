@@ -116,7 +116,7 @@ public class TenantService {
         Object msgDesc=null;
         try {
             SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
-            String cacheKey = getCacheKey(securitySearch.getTenantId());
+            String cacheKey = getCacheKey(securitySearch.getTenantId())+limit+offset+securitySearch.toString();
             PageResult<UserAndModule> pageResult = userModulesCache.getIfPresent(cacheKey);
             if (pageResult!=null) {
                 return pageResult;
@@ -221,6 +221,11 @@ public class TenantService {
             HashMap<String,String> hashMap = new HashMap<>();
             hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
             hashMap.put("User-Agent","Chrome");
+            User user = AdminUtils.getUserData();
+            String userName = userDAO.getUserName(user.getUserId());
+            if (userName==null){
+                userDAO.addUser(user);
+            }
             int retryCount = 0;
             int retries = 3;
             while(retryCount < retries) {
@@ -509,13 +514,12 @@ public class TenantService {
             return;
         }
         for (Tenant tenant:tenants){
-            userModulesCache.invalidate(getCacheKey(tenant.getTenantId()));
             modulesCache.invalidate(getCacheKey(tenant.getTenantId()));
             poolCache.invalidate(getCacheKey(tenant.getTenantId()));
             databaseCache.invalidate(getCacheKey(tenant.getTenantId()));
-            databaseCache.invalidate(tenant);
-            databaseCache.invalidateAll();
             tenantsCache.invalidate(AdminUtils.getSSOTicket());
         }
+        userModulesCache.invalidateAll();
+        databaseCache.invalidateAll();
     }
 }

@@ -32,6 +32,10 @@ public enum ModuleEnum {
     RULEMANAGE(3,"数据质量","规则管理",21,"规则管理","rulemanage","rulemanage",1),
     WARNINGGROUP(3,"数据质量","告警管理",22,"告警管理","warninggroup","warninggroup",1),
     TASKMANAGE(3,"数据质量","任务管理",23,"任务管理","taskmanage","taskmanage",1),
+    DATAEDIT(2,"数据资产","数据管理",24,"数据管理","data","dataedit",1),
+    COLUMNDOWN(2,"数据资产","下载管理",25,"下载管理","columns","columndown",1),
+    AUDIT(8,"数据服务","审核中心",26,"审核中心","audit","audit",1),
+    APIMANAGE(8,"数据服务","api项目管理",27,"api项目管理","apimanage","apimanage",1),
     ;
 
     private int id;

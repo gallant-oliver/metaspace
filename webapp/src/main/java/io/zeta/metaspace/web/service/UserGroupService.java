@@ -14,15 +14,24 @@
 package io.zeta.metaspace.web.service;
 
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.result.CategoryGroupAndUser;
+import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
+import io.zeta.metaspace.model.result.CategoryUpdate;
+import io.zeta.metaspace.model.result.GroupPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.UpdateCategory;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
+import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
@@ -31,14 +40,18 @@ import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.CategoryPath;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,14 +78,23 @@ public class UserGroupService {
     UserGroupDAO userGroupDAO;
     @Autowired
     TenantService tenantService;
-    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) {
+    @Autowired
+    CategoryDAO categoryDAO;
+
+    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
 
         if (query != null) {
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
-        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query);
+        //校验租户先是否有用户
+        SecuritySearch securitySearch = new SecuritySearch();
+        securitySearch.setTenantId(tenantId);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
+
+        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query,userIds);
 
 
         if (lists == null || lists.size() == 0) {
@@ -81,6 +103,9 @@ public class UserGroupService {
 
 
         for (UserGroupListAndSearchResult searchResult : lists) {
+            if (userIds == null || userIds.size() == 0) {
+                searchResult.setMember("0");
+            }
             String userName = userGroupDAO.getUserNameById(searchResult.getCreator());
             searchResult.setCreator(userName);
             String authorize = userGroupDAO.getUserNameById(searchResult.getAuthorize());
@@ -104,6 +129,17 @@ public class UserGroupService {
         String userName = userGroupDAO.getUserNameById(userGroupMapperDetail.getCreator());
         userGroupMapperDetail.setCreator(userName);
         return userGroupMapperDetail;
+    }
+
+    /**
+     * 二.用户组详情
+     */
+    public List<String> getUserGroupByIDs(List<String> ids) {
+        if (ids==null||ids.size()==0){
+            return new ArrayList<>();
+        }
+        List<UserGroup> userGroupMapperDetail = userGroupDAO.getUserGroupByIDs(ids);
+        return userGroupMapperDetail.stream().map(userGroup -> userGroup.getName()).collect(Collectors.toList());
     }
 
 
@@ -146,13 +182,14 @@ public class UserGroupService {
         userGroupDAO.deleteUserGroupRelationByID(id);
         userGroupDAO.deleteCategoryGroupRelationByID(id);
         userGroupDAO.deleteUserGroupDataSourceRelationByID(id);
+        userGroupDAO.deleteUserGroupProjectRelationByID(id);
     }
 
     /**
      * 五.用户组成员列表及搜索
      */
 
-    public PageResult<MemberListAndSearchResult> getUserGroupMemberListAndSearch(String id,int offset, int limit, String search) {
+    public PageResult<MemberListAndSearchResult> getUserGroupMemberListAndSearch(String id,int offset, int limit, String search,String tenantId) throws AtlasBaseException {
 
         PageResult<MemberListAndSearchResult> commonResult = new PageResult<>();
 
@@ -160,8 +197,17 @@ public class UserGroupService {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
+        //校验租户先是否有用户
+        SecuritySearch securitySearch = new SecuritySearch();
+        securitySearch.setUserName(search);
+        securitySearch.setTenantId(tenantId);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
+        if (userIds == null || userIds.size() == 0) {
+            return commonResult;
+        }
 
-        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,offset, limit, search);
+        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,0, -1, null,userIds);
 
         if (lists == null || lists.size() == 0) {
             return commonResult;
@@ -200,6 +246,9 @@ public class UserGroupService {
         List<String> userGroupId2 = userGroupDAO.getUserNameByGroupId(tenantId, groupId);
 
         List<String> userNameList = userGroupId1.stream().filter(str -> !userGroupId2.stream().anyMatch(s -> s.equals(str))).collect(Collectors.toList());
+        if (userNameList == null || userNameList.size() == 0) {
+            return commonResult;
+        }
 
         if (userNameList.size()==0){
             return commonResult;
@@ -250,11 +299,14 @@ public class UserGroupService {
      * 十五.修改用户组管理信息
      */
 
-    public void updateUserGroupInformation(String groupId, UserGroup userGroup) throws AtlasBaseException {
+    public void updateUserGroupInformation(String groupId, UserGroup userGroup,String tenantId) throws AtlasBaseException {
 
         //规定：用户组名称长度范围必须是大于0且小于等于64，描述的长度范围必须是大于等于0且小于等于256
         if (!existGroupId(groupId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "您的用户组id:" + groupId + "不存在，无法修改用户组管理信息，请确保您的用户组id输入正确!");
+        }
+        if (isNameById(tenantId, userGroup.getName(), userGroup.getId())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户组名称" + userGroup.getName() + "已存在");
         }
         long currentTimeMillis = System.currentTimeMillis();
         Timestamp updateTime = new Timestamp(currentTimeMillis);
@@ -467,9 +519,9 @@ public class UserGroupService {
         for (Module module : modulesByUser) {
             modules.add(module.getModuleId());
         }
-        int roleType=4;
+        int ruleType=4;
         int dateStanderType=3;
-        if (dateStanderType == categorytype||roleType == categorytype) {
+        if (dateStanderType == categorytype||ruleType == categorytype) {
             List<RoleModulesCategories.Category> allCategorys;
             if (categorytype==0){
                 List<String> dbNames = tenantService.getDatabase(tenantId);
@@ -569,6 +621,14 @@ public class UserGroupService {
         CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true,false);
         addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         return userCategorys;
+    }
+
+    public List<CategoryPrivilege> getAdminCategoryView(int categoryType,String tenantId) throws AtlasBaseException {
+        List<CategoryPrivilege> userCategories = getAdminCategory(categoryType,tenantId);
+        for (CategoryPrivilege category:userCategories){
+            category.getPrivilege().setAsh(false);
+        }
+        return userCategories;
     }
 
     private void addPrivilege(List<CategoryPrivilege> userCategorys, List<RoleModulesCategories.Category> allCategorys, CategoryPrivilege.Privilege privilege, int categorytype) {
@@ -759,5 +819,742 @@ public class UserGroupService {
         }
 
         return false;
+    }
+
+    /**
+     * 添加项目
+     * @param groupId
+     * @param projectIds
+     * @return
+     * @throws AtlasBaseException
+     */
+    public void addProjectByGroupId(String groupId, List<String> projectIds) {
+        if (projectIds==null||projectIds.size()==0){
+            return;
+        }
+        userGroupDAO.addProjectByGroupId(groupId, projectIds);
+    }
+
+    /**
+     * 获取项目列表
+     * @param isPrivilege
+     * @param groupId
+     * @param parameters
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<ProjectHeader> getProject(boolean isPrivilege, String groupId, Parameters parameters, String tenantId) throws AtlasBaseException {
+        PageResult pageResult = new PageResult();
+        List<ProjectHeader> userGroups;
+        if (isPrivilege==false && groupId==null){
+            userGroups=userGroupDAO.getAllProject(parameters,tenantId);
+        }else if (isPrivilege==false){
+            userGroups=userGroupDAO.getNoRelationProject(groupId,parameters,tenantId);
+        }else {
+            userGroups=userGroupDAO.getRelationProject(groupId,parameters,tenantId);
+        }
+        if (userGroups==null||userGroups.size()==0){
+            return pageResult;
+        }
+        pageResult.setCurrentSize(userGroups.size());
+        pageResult.setLists(userGroups);
+        pageResult.setTotalSize(userGroups.get(0).getTotalSize());
+        return pageResult;
+    }
+
+    /**
+     * 批量删除权限项目
+     * @param projects
+     * @param userGroupId
+     * @throws AtlasBaseException
+     */
+    public void deleteProject(List<String> projects,String userGroupId) throws AtlasBaseException {
+        if (projects!=null&&projects.size()!=0){
+            userGroupDAO.deleteProjectToUserGroup(userGroupId,projects);
+        }
+    }
+
+    /**
+     * 变更目录权限
+     * @param category
+     * @param userGroupId
+     * @param categoryType
+     * @param tenantId
+     * @throws SQLException
+     */
+    public List<CategoryPrivilegeV2> updatePrivileges(CategoryPrivilegeV2 category,String userGroupId,int categoryType,String tenantId,boolean isChild) throws AtlasBaseException, SQLException {
+        return updatePrivileges(category,userGroupId,categoryType,tenantId,isChild,new ArrayList<>());
+    }
+
+    /**
+     * 变更目录权限
+     * @param category
+     * @param userGroupId
+     * @param categoryType
+     * @param tenantId
+     * @param isChild
+     * @param updateIds
+     * @return
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public List<CategoryPrivilegeV2> updatePrivileges(CategoryPrivilegeV2 category,String userGroupId,int categoryType,String tenantId,boolean isChild,List<String> updateIds) throws SQLException, AtlasBaseException {
+        CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(category.getGuid(), tenantId);
+
+        //权限校验
+        privilegeCheck(category,categoryByGuid.getParentCategoryGuid(),userGroupId);
+
+        ArrayList<String> categoryList = Lists.newArrayList(category.getGuid());
+        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categoryList,userGroupId, categoryType, tenantId);
+        List<String> childIds = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        for (String updateId:updateIds){
+            if (childIds.contains(updateId)){
+                categoryList.add(updateId);
+            }
+        }
+        if (!category.getRead()){
+            if (isChild){
+                for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
+                    childCategory.setRead(false);
+                    childCategory.setEditCategory(false);
+                    childCategory.setEditItem(false);
+                }
+                userGroupDAO.deleteCategoryPrivilege(childIds,userGroupId);
+                return childCategoriesPrivileges;
+            }else{
+                userGroupDAO.deleteCategoryPrivilege(categoryList,userGroupId);
+                return Lists.newArrayList(category);
+            }
+        }
+        List<String> updateCategory = new ArrayList<>();
+        List<String> insertCategory = new ArrayList<>();
+        for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
+            if (childCategory.getRead()==null){
+                insertCategory.add(childCategory.getGuid());
+                childCategory.setRead(true);
+                childCategory.setEditCategory(category.getEditCategory());
+                childCategory.setEditItem(category.getEditItem());
+            }else if(isChild){
+                updateCategory.add(childCategory.getGuid());
+                childCategory.setRead(true);
+                childCategory.setEditCategory(category.getEditCategory());
+                childCategory.setEditItem(category.getEditItem());
+            }else{
+                updateCategory.add(childCategory.getGuid());
+                childCategory.setRead(true);
+                childCategory.setEditCategory(category.getEditCategory()||childCategory.getEditCategory());
+                childCategory.setEditItem(category.getEditItem()||childCategory.getEditItem());
+            }
+            if (childCategory.getGuid().equals(category.getGuid())){
+                childCategory.setRead(true);
+                childCategory.setEditCategory(category.getEditCategory());
+                childCategory.setEditItem(category.getEditItem());
+            }
+        }
+
+        if (updateCategory.size()!=0){
+            if (isChild){
+                userGroupDAO.updateMandatoryChildCategoryPrivileges(updateCategory,userGroupId,category);
+            }else{
+                userGroupDAO.updateChildCategoryPrivileges(updateCategory,userGroupId,category);
+            }
+        }
+        if (insertCategory.size()!=0){
+            userGroupDAO.addCategoryPrivileges(insertCategory,userGroupId,category);
+        }
+        userGroupDAO.updateCategoryPrivileges(categoryList,userGroupId,category);
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
+        return childCategoriesPrivileges;
+    }
+
+    /**
+     * 分配目录权限
+     * @param category
+     * @param userGroupId
+     * @param tenantId
+     * @throws SQLException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void addPrivileges(UpdateCategory category, String userGroupId, String tenantId) throws  AtlasBaseException {
+        //权限校验
+        if (category.getRead()==null||!category.getRead()){
+            return;
+        }
+
+        ArrayList<String> categorList = Lists.newArrayList(category.getGuid());
+        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categorList,userGroupId, category.getType(), tenantId);
+        List<String> updateCategory = new ArrayList<>();
+        List<String> insertCategory = new ArrayList<>();
+        for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
+            if (childCategory.getRead()==null){
+                insertCategory.add(childCategory.getGuid());
+            }else{
+                updateCategory.add(childCategory.getGuid());
+            }
+        }
+        CategoryPrivilegeV2 categoryPrivilege = new CategoryPrivilegeV2(category);
+        if (updateCategory.size()!=0){
+            userGroupDAO.updateChildCategoryPrivileges(updateCategory,userGroupId,categoryPrivilege);
+        }
+        if (insertCategory.size()!=0){
+            userGroupDAO.addCategoryPrivileges(insertCategory,userGroupId,categoryPrivilege);
+        }
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
+        userGroupDAO.updateCategoryPrivileges(categorList,userGroupId,categoryPrivilege);
+    }
+
+    /**
+     * 父目录权限校验
+     * @param category
+     * @param parentCategoryGuid
+     * @param userGroupId
+     */
+    public void privilegeCheck(CategoryPrivilegeV2 category,String parentCategoryGuid,String userGroupId){
+        if (parentCategoryGuid==null||parentCategoryGuid.length()==0){
+            return;
+        }
+        CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
+        if (parentCategory==null||parentCategory.getRead()==null){
+            return;
+        }
+        if (parentCategory.getRead()&&!category.getRead()){
+            category.setRead(true);
+        }
+        if (parentCategory.getEditCategory()&&!category.getEditCategory()){
+            category.setEditCategory(true);
+        }
+        if (parentCategory.getEditItem()&&!category.getEditItem()){
+            category.setEditItem(true);
+        }
+
+    }
+
+    /**
+     * 获取变更
+     * @param category
+     * @param userGroupId
+     * @param categoryType
+     * @param tenantId
+     * @param limit
+     * @param offset
+     * @param isChild
+     * @return
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    public PageResult<CategoryUpdate> getUpdateCategory(CategoryPrivilegeV2 category,String userGroupId,int categoryType,String tenantId,int limit,int offset,boolean isChild) throws SQLException, AtlasBaseException {
+        PageResult<CategoryUpdate> pageResult = new PageResult<>();
+        List<CategoryUpdate> categoryUpdates = new ArrayList<>();
+        CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(category.getGuid(), tenantId);
+        //权限校验
+        privilegeCheck(category,categoryByGuid.getParentCategoryGuid(),userGroupId);
+
+        if (!category.getRead()&&isChild){
+            CategoryPrivilegeV2 oldCategory = userGroupDAO.getCategoriesPrivileges(category.getGuid(), userGroupId);
+            if (oldCategory==null){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限目录，请先分配权限");
+            }
+            CategoryUpdate categoryUpdate = new CategoryUpdate(oldCategory);
+            categoryUpdate.setOldPrivilege(oldCategory);
+            categoryUpdate.setNewPrivilege(category);
+            categoryUpdates.add(categoryUpdate);
+            pageResult.setCurrentSize(categoryUpdates.size());
+            pageResult.setLists(categoryUpdates);
+            pageResult.setTotalSize(1);
+            return pageResult;
+        }
+
+        List<CategoryPrivilegeV2> updateCategory = isChild?userGroupDAO.getMandatoryUpdateChildCategoriesPrivileges(category,userGroupId, categoryType, tenantId,limit,offset):
+                                                   userGroupDAO.getUpdateChildCategoriesPrivileges(category,userGroupId, categoryType, tenantId,limit,offset);
+        if (updateCategory==null||updateCategory.size()==0){
+            pageResult.setLists(new ArrayList<>());
+            return pageResult;
+        }
+
+        List<String> categoryIds = updateCategory.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        List<CategoryPath> paths = categoryDAO.getPathByIds(categoryIds,categoryType, tenantId);
+        Map<String,String> pathMap = new HashMap<>();
+        paths.forEach(path->{
+            String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
+            pathMap.put(path.getGuid(),categoryPath);
+        });
+
+        for (CategoryPrivilegeV2 categoryPrivilegeV2:updateCategory){
+            CategoryUpdate categoryUpdate = new CategoryUpdate(categoryPrivilegeV2);
+            categoryUpdate.setOldPrivilege(categoryPrivilegeV2);
+            CategoryPrivilegeV2 newPrivilege = new CategoryPrivilegeV2();
+            if (isChild){
+                newPrivilege=category;
+            }else{
+                if (category.getRead()&&!categoryPrivilegeV2.getRead()){
+                    newPrivilege.setRead(true);
+                }else{
+                    newPrivilege.setRead(categoryPrivilegeV2.getRead());
+                }
+                if (category.getEditCategory()&&!categoryPrivilegeV2.getEditCategory()){
+                    newPrivilege.setEditCategory(true);
+                }else{
+                    newPrivilege.setEditCategory(categoryPrivilegeV2.getEditCategory());
+                }
+                if (category.getEditItem()&&!categoryPrivilegeV2.getEditItem()){
+                    newPrivilege.setEditItem(true);
+                }else{
+                    newPrivilege.setEditItem(categoryPrivilegeV2.getEditItem());
+                }
+            }
+            categoryUpdate.setNewPrivilege(newPrivilege);
+            categoryUpdate.setPath(pathMap.get(category.getGuid()));
+            categoryUpdates.add(categoryUpdate);
+        }
+        pageResult.setCurrentSize(categoryUpdates.size());
+        pageResult.setLists(categoryUpdates);
+        pageResult.setTotalSize(updateCategory.get(0).getTotal());
+        return pageResult;
+    }
+
+    /**
+     * 用户组目录权限展示获取
+     * @param groupId
+     * @param type
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<CategoryGroupAndUser> getPrivilegeCategory(String groupId,int type,String tenantId,boolean isAll) throws AtlasBaseException {
+        List<CategoryGroupAndUser> categories = new ArrayList<>();
+        List<CategoryPrivilegeV2> userGroupCategory = Lists.newArrayList(getUserGroupPrivilegeCategory(groupId,tenantId,type).values());
+
+
+        Map<String,CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId,type,isAll);
+
+        //合并用户组和用户目录权限
+        for (CategoryPrivilegeV2 category:userGroupCategory){
+            boolean delete = true;
+            CategoryGroupAndUser groupAndUser = new CategoryGroupAndUser(category);
+            if (category.getRead()){
+                groupAndUser.setGroup(true);
+            }
+            groupAndUser.setGroupPrivilege(category);
+            CategoryPrivilegeV2 userCategory = userMap.get(category.getGuid());
+            groupAndUser.setUser(true);
+            if (userCategory==null){
+                groupAndUser.setUser(false);
+                userCategory=new CategoryPrivilegeV2(category);
+            }
+            if (userCategory.getRead()==null||!userCategory.getRead()){
+                groupAndUser.setUser(false);
+                userCategory.setRead(false);
+                userCategory.setEditItem(false);
+                userCategory.setEditCategory(false);
+            }
+
+            //判断是否可以移除
+            delete=isDeleteCategory(Lists.newArrayList(category.getGuid()),userMap,groupId,type,tenantId);
+
+            groupAndUser.setDelete(delete);
+            groupAndUser.setUserPrivilege(userCategory);
+            categories.add(groupAndUser);
+        }
+
+        return categories;
+    }
+
+    public boolean isDeleteCategory(List<String> categoryIds,Map<String,CategoryPrivilegeV2> categoryPrivilege,String userGroupId,int type,String tenantId){
+        if (categoryIds==null||categoryIds.size()==0){
+            return true;
+        }
+        List<CategoryPrivilegeV2> childCategories = userGroupDAO.getChildCategoriesPrivileges(categoryIds,userGroupId, type, tenantId);
+        for (CategoryPrivilegeV2 category : childCategories) {
+            CategoryPrivilegeV2 userCategory = categoryPrivilege.get(category.getGuid());
+            if (userCategory==null){
+                return false;
+            }
+            if (category.getRead()==null||!category.getRead()){
+                continue;
+            }
+            if (category.getRead()&&!(userCategory.getRead())){
+                return false;
+            }
+            if (category.getEditCategory()&&!userCategory.getEditCategory()){
+                return false;
+            }
+            if (category.getEditItem()&&!userCategory.getEditItem()){
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * 用户组权限分配展示列表获取
+     * @param groupId
+     * @param type
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<CategoryGroupAndUser> getNoPrivilegeCategory(String groupId,int type,String tenantId,boolean isAll) throws AtlasBaseException {
+        List<CategoryGroupAndUser> categories = new ArrayList<>();
+        //获取用户权限目录
+        List<CategoryPrivilegeV2> userCategory = Lists.newArrayList(getUserPrivilegeCategory(tenantId,type,isAll).values());
+
+        //获取用户组权限目录
+        Map<String,CategoryPrivilegeV2> userGroupMap = getUserGroupPrivilegeCategory(groupId,tenantId,type);
+
+        //合并用户和用户组目录权限，以用户为主
+        for (CategoryPrivilegeV2 category:userCategory){
+            CategoryGroupAndUser groupAndUser = new CategoryGroupAndUser(category);
+            if (category.getRead()){
+                groupAndUser.setUser(true);
+            }
+            groupAndUser.setUserPrivilege(category);
+            CategoryPrivilegeV2 userGroupCategory = userGroupMap.get(category.getGuid());
+
+            groupAndUser.setGroup(true);
+            if (userGroupCategory==null){
+                groupAndUser.setGroup(false);
+                userGroupCategory=new CategoryPrivilegeV2(category);
+            }
+            if (userGroupCategory.getRead()==null||!userGroupCategory.getRead()){
+                groupAndUser.setGroup(false);
+                userGroupCategory.setRead(false);
+                userGroupCategory.setEditItem(false);
+                userGroupCategory.setEditCategory(false);
+
+            }
+            groupAndUser.setGroupPrivilege(userGroupCategory);
+            categories.add(groupAndUser);
+        }
+
+        return categories;
+    }
+
+    /**
+     * 获取用户组目录权限列表
+     * @param groupId
+     * @param tenantId
+     * @param type
+     * @return
+     */
+    public Map<String,CategoryPrivilegeV2> getUserGroupPrivilegeCategory(String groupId,String tenantId,int type){
+        Map<String,CategoryPrivilegeV2> groupMap = new HashMap<>();
+
+        //获取用户组权限
+        List<CategoryPrivilegeV2> parentCategoryNoPrivilege;
+        List<CategoryPrivilegeV2> userGroupCategory = userGroupDAO.getUserGroupCategory(groupId, tenantId, type);
+        if (userGroupCategory==null||userGroupCategory.size()==0){
+            return new HashMap<>();
+        }else{
+            List<String> categoryIds = userGroupCategory.stream().map(category->category.getGuid()).collect(Collectors.toList());
+
+            //获取父目录权限
+            parentCategoryNoPrivilege = userGroupDAO.getParentCategory(categoryIds, type, tenantId);
+        }
+        parentCategoryNoPrivilege.forEach(categoryPrivilegeV2 -> {
+            categoryPrivilegeV2.setRead(false);
+            categoryPrivilegeV2.setEditItem(false);
+            categoryPrivilegeV2.setEditCategory(false);
+        });
+        userGroupCategory.addAll(parentCategoryNoPrivilege);
+
+        //遍历并合并目录权限
+        for (CategoryPrivilegeV2 userCategory:userGroupCategory){
+            if (groupMap.containsKey(userCategory.getGuid())){
+                CategoryPrivilegeV2 categoryPrivilegeV2 = groupMap.get(userCategory.getGuid());
+                if (userCategory.getRead()!=null&&userCategory.getRead()){
+                    categoryPrivilegeV2.setRead(true);
+                }
+                if (userCategory.getEditCategory()!=null&&userCategory.getEditCategory()){
+                    categoryPrivilegeV2.setEditCategory(true);
+                }
+                if (userCategory.getEditItem()!=null&&userCategory.getEditItem()){
+                    categoryPrivilegeV2.setEditItem(true);
+                }
+            }else{
+                groupMap.put(userCategory.getGuid(),userCategory);
+            }
+        }
+        return groupMap;
+    }
+
+
+
+    /**
+     * 获取用户权限目录列表
+     * @param tenantId
+     * @param type
+     * @return
+     * @throws AtlasBaseException
+     */
+    public Map<String,CategoryPrivilegeV2> getUserPrivilegeCategory(String tenantId,int type,boolean isAll) throws AtlasBaseException {
+        List<CategoryPrivilegeV2> userCategories=null;
+        Map<String,CategoryPrivilegeV2> userMap = new HashMap<>();
+        if (isAll){
+            userCategories=userGroupDAO.getAllCategoryPrivilege(type,tenantId);
+        }else{
+            User user = AdminUtils.getUserData();
+            //获取用户组
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            if (userGroupIds==null||userGroupIds.size()==0){
+                return userMap;
+            }
+            //获取用户组对应的权限目录
+            List<String> dbNames;
+            if (type==0) {
+                dbNames = tenantService.getDatabase(tenantId);
+            }else{
+                dbNames=new ArrayList<>();
+            }
+            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
+            List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
+
+            if (categoryIds==null||categoryIds.size()==0){
+                return userMap;
+            }
+
+            //获取父目录并配置权限
+            List<CategoryPrivilegeV2> parentCategory = userGroupDAO.getParentCategory(categoryIds, type, tenantId);
+            parentCategory.forEach(categoryPrivilegeV2 -> {
+                categoryPrivilegeV2.setRead(false);
+                categoryPrivilegeV2.setEditItem(false);
+                categoryPrivilegeV2.setEditCategory(false);
+            });
+            userCategories.addAll(parentCategory);
+        }
+        //遍历并合并目录权限
+        for (CategoryPrivilegeV2 userCategory:userCategories){
+            if (userMap.containsKey(userCategory.getGuid())){
+                CategoryPrivilegeV2 categoryPrivilegeV2 = userMap.get(userCategory.getGuid());
+                if (userCategory.getRead()!=null&&userCategory.getRead()){
+                    categoryPrivilegeV2.setRead(true);
+                }
+                if (userCategory.getEditCategory()!=null&&userCategory.getEditCategory()){
+                    categoryPrivilegeV2.setEditCategory(true);
+                }
+                if (userCategory.getEditItem()!=null&&userCategory.getEditItem()){
+                    categoryPrivilegeV2.setEditItem(true);
+                }
+            }else{
+                userMap.put(userCategory.getGuid(),userCategory);
+            }
+        }
+        return userMap;
+    }
+
+    /**
+     * 移除用户组
+     * @param categoryIds
+     * @param userGroupId
+     * @param tenantId
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void deleteCategoryPrivilege(List<String> categoryIds,String userGroupId,String tenantId) throws SQLException, AtlasBaseException {
+        if (categoryIds==null||categoryIds.size()==0){
+            return;
+        }
+        CategoryEntityV2 firstCategory = categoryDAO.queryByGuid(categoryIds.get(0), tenantId);
+        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, firstCategory.getCategoryType(), false);
+        if (!isDeleteCategory(categoryIds,userMap,userGroupId,firstCategory.getCategoryType(),tenantId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "权限不足，无法移除，请检查对用户对当前目录或子目录的权限");
+        }
+        for (String categoryId:categoryIds){
+            CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(categoryId, tenantId);
+            String parentCategoryGuid = categoryByGuid.getParentCategoryGuid();
+            if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
+                CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
+                if (parentCategory!=null&&parentCategory.getRead()!=null&&parentCategory.getRead()){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录有权限，无法移除");
+                }
+            }
+
+            ArrayList<String> categorList = Lists.newArrayList(categoryId);
+            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categorList,userGroupId, categoryByGuid.getCategoryType(), tenantId);
+
+            List<String> ids = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+            userGroupDAO.deleteCategoryPrivilege(ids,userGroupId);
+        }
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
+    }
+
+    /**
+     * 获取用户目录权限
+     * @param categoryType
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<CategoryPrivilege> getUserCategories(int categoryType,String tenantId) throws AtlasBaseException {
+        Map<String, CategoryPrivilegeV2> userCategoryMap;
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        if (categoryType==3||categoryType==4){
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, true);
+        }else{
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, false);
+        }
+        for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+            if (category.getRead()){
+                privilege.setHide(false);
+                privilege.setAsh(false);
+            }else{
+                privilege.setHide(false);
+                privilege.setAsh(true);
+            }
+            CategoryPrivilegeV2 parentCategory = userCategoryMap.get(category.getParentCategoryGuid());
+            if (parentCategory!=null&&parentCategory.getEditCategory()){
+                privilege.setAddSibling(true);
+                privilege.setDelete(true);
+                privilege.setMove(true);
+            }else{
+                privilege.setAddSibling(false);
+                privilege.setDelete(false);
+                privilege.setMove(false);
+            }
+            if (category.getEditCategory()){
+                privilege.setAddChildren(true);
+                privilege.setEdit(true);
+            }else{
+                privilege.setAddChildren(false);
+                privilege.setEdit(false);
+            }
+            if (category.getEditItem()){
+                privilege.setCreateRelation(true);
+                privilege.setDeleteRelation(true);
+                privilege.setAddOwner(true);
+            }else{
+                privilege.setCreateRelation(false);
+                privilege.setDeleteRelation(false);
+                privilege.setAddOwner(false);
+            }
+            if (systemCategory.contains(category.getGuid())) {
+                privilege.setDelete(false);
+                if (privilege.isEdit()){
+                    privilege.setEditSafe(true);
+                }
+                privilege.setEdit(false);
+            }
+            //技术目录一级目录不允许删关联
+            if (categoryType == 0 && category.getLevel() == 1) {
+                privilege.setDeleteRelation(false);
+            }
+            categoryPrivilege.setPrivilege(privilege);
+            userCategorys.add(categoryPrivilege);
+        }
+        addOtherCategory(categoryType, userCategorys,tenantId);
+        return userCategorys;
+    }
+
+    public boolean isSmaller(CategoryPrivilegeV2 category,String userGroupId){
+        CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(category.getGuid(), userGroupId);
+        if (parentCategory==null||parentCategory.getRead()==null||!parentCategory.getRead()){
+            return false;
+        }
+        if (!category.getEditItem()&&parentCategory.getEditItem()){
+            return true;
+        }
+        if (!category.getEditCategory()&&parentCategory.getEditCategory()){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 新增用户组目录权限
+     * @param category
+     * @param tenantId
+     * @param type
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    public void addUserGroupPrivilege(UpdateCategory category,String tenantId,int type) throws SQLException, AtlasBaseException {
+        List<String> removeCategoryId = new ArrayList<>();
+        List<String> categoryIds = category.getGuid();
+        for (String guid:categoryIds){
+            CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(guid, tenantId);
+            if (categoryIds.contains(categoryByGuid.getParentCategoryGuid())){
+                removeCategoryId.add(guid);
+            }
+        }
+        categoryIds.removeAll(removeCategoryId);
+        for (String groupId:category.getUserGroupIds()){
+            for (String guid:categoryIds){
+                CategoryPrivilegeV2 categoryPrivilegeV2 = new CategoryPrivilegeV2(category);
+                categoryPrivilegeV2.setGuid(guid);
+                updatePrivileges(categoryPrivilegeV2,groupId,type,tenantId,category.isChild(),removeCategoryId);
+            }
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            userGroupDAO.updateCategory(groupId, currentTime,AdminUtils.getUserData().getUserId());
+        }
+    }
+
+    /**
+     * 移除用户组
+     * @param groupIds
+     * @param categoryId
+     * @param tenantId
+     * @throws SQLException
+     * @throws AtlasBaseException
+     */
+    public void deleteGroupPrivilege(List<String> groupIds,String categoryId,String tenantId) throws SQLException, AtlasBaseException {
+        if (groupIds==null){
+            return;
+        }
+
+        ArrayList<String> categoryList = Lists.newArrayList(categoryId);
+        CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(categoryId, tenantId);
+        String parentCategoryGuid = categoryByGuid.getParentCategoryGuid();
+        List<RoleModulesCategories.Category> childCategoriesPrivileges = userGroupDAO.getChildCategorys(categoryList, categoryByGuid.getCategoryType(), tenantId);
+        List<String> ids = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        ids.addAll(categoryList);
+
+        if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
+            for (String userGroupId:groupIds){
+
+                if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
+                    CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
+                    if (parentCategory!=null&&parentCategory.getRead()!=null&&parentCategory.getRead()){
+                        UserGroup userGroup = userGroupDAO.getUserGroupByID(userGroupId);
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录对用户组："+userGroup.getName()+"有权限，无法移除");
+                    }
+                }
+            }
+        }
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateUserGroups(groupIds, currentTime,AdminUtils.getUserData().getUserId());
+        userGroupDAO.deleteGroupPrivilege(ids,groupIds);
+    }
+
+    /**
+     * 获取对目录有权限的用户组
+     * @param category
+     * @param parameters
+     * @param tenantId
+     * @return
+     */
+    public PageResult<GroupPrivilege> getUserGroupByCategory(CategoryGroupPrivilege category, Parameters parameters, String tenantId){
+        if ("authorizeTime".equals(parameters.getQuery())){
+            parameters.setSortby("authorize_time");
+        }
+        PageResult<GroupPrivilege> pageResult=new PageResult<>();
+        List<GroupPrivilege> userGroupByCategory = userGroupDAO.getUserGroupByCategory(category, parameters,tenantId);
+        if (userGroupByCategory==null||userGroupByCategory.size()==0){
+            pageResult.setLists(new ArrayList<>());
+            return pageResult;
+        }
+        for (GroupPrivilege groupPrivilege:userGroupByCategory){
+            String userName = userGroupDAO.getUserNameById(groupPrivilege.getAuthorize());
+            groupPrivilege.setAuthorize(userName);
+        }
+        pageResult.setLists(userGroupByCategory);
+        pageResult.setCurrentSize(userGroupByCategory.size());
+        pageResult.setTotalSize(userGroupByCategory.get(0).getTotalSize());
+        return pageResult;
     }
 }

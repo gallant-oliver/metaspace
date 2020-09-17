@@ -86,8 +86,8 @@ public class LocalSolrRunner {
         }
         System.clearProperty("solr.solrxml.location");
         System.clearProperty("zkHost");
-        FileUtils.deleteDirectory(temp);
         miniSolrCloudCluster.shutdown();
+        FileUtils.deleteDirectory(temp);
     }
 
     public static String getZookeeperUrls() {
@@ -112,7 +112,7 @@ public class LocalSolrRunner {
             InputStream inputStream = LocalSolrRunner.class.getResourceAsStream(resName);
             InputStreamReader isr = new InputStreamReader(inputStream);
             BufferedReader buffer = new BufferedReader(isr);
-            return pattern.split(buffer.lines().collect(Collectors.joining("\n")));
+            return Pattern.compile("\\s+").split(buffer.lines().collect(Collectors.joining("\n")));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read collections file", e);
         }

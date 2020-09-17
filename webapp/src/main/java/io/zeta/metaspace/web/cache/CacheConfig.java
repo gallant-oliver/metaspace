@@ -44,12 +44,12 @@ public class CacheConfig extends CachingConfigurerSupport {
     static {
         try {
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            engine = configuration.getString("metaspace.cache.type");
-            hostName = configuration.getString("metaspace.cache.redis.host");
-            port = configuration.getInt("metaspace.cache.redis.port");
-            expiration = configuration.getInt("metaspace.cache.redis.expiration");
+            engine = configuration.getString("metaspace.cache.type",CACHE_ON_REDIS);
+            hostName = configuration.getString("metaspace.cache.redis.host","127.0.0.1");
+            port = configuration.getInt("metaspace.cache.redis.port",6379);
+            expiration = configuration.getInt("metaspace.cache.redis.expiration",300);
             password = configuration.getString("metaspace.cache.redis.password");
-            maxClient = configuration.getInt("metaspace.cache.redis.client.max");
+            maxClient = configuration.getInt("metaspace.cache.redis.client.max",128);
         } catch (Exception e) {
             e.printStackTrace();
         }

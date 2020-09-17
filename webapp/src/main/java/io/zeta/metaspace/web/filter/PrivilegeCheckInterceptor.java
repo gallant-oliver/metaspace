@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.ApiModuleDAO;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.OperateLogService;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.RoleService;
@@ -79,15 +80,18 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     private UserGroupService userGroupService;
     @Autowired
     private TenantService tenantService;
+    @Autowired
+    private DataShareService dataShareService;
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String requestURL = request.getRequestURL().toString();
+        String type = request.getMethod();
         if (FilterUtils.isSkipUrl(requestURL)) {
             return invocation.proceed();
-        } else {
+        } else{
             String prefix = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
             String userId = "";
             String username = "";

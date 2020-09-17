@@ -209,6 +209,9 @@ public interface CategoryDAO {
     @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid and tenantid=#{tenantId}")
     public List<String> getCategoryGuidByTableGuid(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
+    @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")
+    public List<String> getCategoryGuidByBusinessGuid(@Param("guid")String guid, @Param("tenantId")String tenantId);
+
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String getCategoryNameById(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
@@ -269,5 +272,21 @@ public interface CategoryDAO {
             " SELECT  guid,PATH path FROM T " +
             " ORDER BY PATH")
     public List<CategoryPath> getPath(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
+
+    @Select(" <script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            " FROM category WHERE (parentCategoryGuid IS NULL OR parentCategoryGuid='') and categorytype=#{categoryType} and tenantid=#{tenantId} " +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid where D.categorytype=#{categoryType} and D.tenantid=#{tenantId}) " +
+            " SELECT  guid,PATH path FROM T where guid in " +
+            "    <foreach item='id' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            "    </foreach>" +
+            " ORDER BY PATH" +
+            " </script>")
+    public List<CategoryPath> getPathByIds(@Param("ids")List<String> ids,@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
 
 }

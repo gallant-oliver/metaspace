@@ -51,7 +51,7 @@ public final class AuthenticationUtil {
     }
 
     public static boolean isKerberosAuthenticationEnabled(Configuration atlasConf) {
-        return isKerberosAuthenticationEnabled(atlasConf, false);
+        return isKerberosAuthenticationEnabled(atlasConf, true);
     }
 
     public static boolean isKerberosAuthenticationEnabled(Configuration atlasConf, boolean defaultValue) {

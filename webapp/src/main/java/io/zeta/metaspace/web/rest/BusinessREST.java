@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.BusinessTableList;
 import io.zeta.metaspace.model.business.ColumnCheckMessage;
+import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
@@ -51,6 +52,7 @@ import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -59,6 +61,7 @@ import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -123,7 +126,6 @@ import javax.ws.rs.core.Response;
 public class BusinessREST {
     private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
     private static final int CATEGORY_TYPE = 1;
-    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -728,6 +730,7 @@ public class BusinessREST {
             exportExcel.delete();
         }
     }
+
     public static String filename(String filePath) throws UnsupportedEncodingException {
         String filename = filePath.substring(filePath.lastIndexOf(File.separatorChar) + 1);
         filename = URLEncoder.encode(filename, "UTF-8");
@@ -744,7 +747,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/upload")
+    @Path("/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
@@ -778,17 +781,17 @@ public class BusinessREST {
 
     /**
      * 根据文件导入目录
-     * @param upload
+     * @param path
      * @param importCategory
      * @return
      * @throws Exception
      */
     @POST
-    @Path("/import/{upload}")
+    @Path("/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importCategory(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result importCategory(@PathParam("path")String path, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
             String categoryId = importCategory.getCategoryId();
@@ -802,7 +805,7 @@ public class BusinessREST {
             }
 
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
-            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
             }else{
@@ -818,13 +821,14 @@ public class BusinessREST {
             }
         }
     }
+
     /**
      * 变更目录结构
      * @param moveCategory
      * @throws Exception
      */
     @POST
-    @Path("/move/category")
+    @Path("/place/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -875,13 +879,11 @@ public class BusinessREST {
     }
 
     @GET
-    @Path("/download/category/template")
+    @Path("/excel/category/template")
     @Valid
     public void downloadCategoryTemplate() throws Exception {
-        String homeDir = System.getProperty("atlas.home");
-        String filePath = homeDir + "/conf/category_template.xlsx";
-        String fileName = filename(filePath);
-        InputStream inputStream = new FileInputStream(filePath);
+        String fileName = TemplateEnum.CATEGORY_TEMPLATE.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.CATEGORY_TEMPLATE);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
@@ -960,7 +962,7 @@ public class BusinessREST {
      * @throws Exception
      */
     @POST
-    @Path("/file/upload")
+    @Path("/file/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadBusiness(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
@@ -986,24 +988,24 @@ public class BusinessREST {
 
     /**
      * 根据文件导入业务对象
-     * @param upload
+     * @param path
      * @param importCategory
      * @param tenantId
      * @return
      * @throws Exception
      */
     @POST
-    @Path("file/import/{upload}")
+    @Path("file/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importBusiness(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result importBusiness(@PathParam("path")String path, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
             String categoryId = importCategory.getCategoryId();
             CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(),  "批量导入业务对象："+category.getName());
-            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file,categoryId,tenantId);
             return ReturnUtil.success();
         } catch (AtlasBaseException e) {
@@ -1052,15 +1054,13 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/download/file/template")
+    @Path("/excel/file/template")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void downloadBusinessTemplate() throws AtlasBaseException {
         try {
-            String homeDir = System.getProperty("atlas.home");
-            String filePath = homeDir + "/conf/business_template.xlsx";
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
+            String fileName = TemplateEnum.BUSINESS_TEMPLATE.getFileName();
+            InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.BUSINESS_TEMPLATE);
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
@@ -1071,7 +1071,7 @@ public class BusinessREST {
     }
 
     @POST
-    @Path("/category/move")
+    @Path("/category/place")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -1093,7 +1093,7 @@ public class BusinessREST {
     }
 
     @POST
-    @Path("/move")
+    @Path("/place")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
@@ -1127,7 +1127,7 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/category/move/{categoryId}")
+    @Path("/category/place/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
@@ -1168,6 +1168,83 @@ public class BusinessREST {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+    /**
+     * 表空值检查
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("description/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkTable(@HeaderParam("tenantId")String tenantId,
+                               @DefaultValue("-1")@QueryParam("limit") int limit,
+                               @DefaultValue("0")@QueryParam("offset") int offset) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = businessService.checkTable(tenantId, limit, offset);
+            return ReturnUtil.success(pageResult);
+        }  catch (AtlasBaseException e) {
+            PERF_LOG.error("表描述空值检测失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("表描述空值检测失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"表描述空值检测失败");
+        }
+    }
+
+    /**
+     * 添加权限字段关联
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("description/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkColumn(@HeaderParam("tenantId")String tenantId,
+                               @DefaultValue("-1")@QueryParam("limit") int limit,
+                               @DefaultValue("0")@QueryParam("offset") int offset) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = businessService.checkColumn(tenantId, limit, offset);
+            return ReturnUtil.success(pageResult);
+        } catch (AtlasBaseException e) {
+            PERF_LOG.error("列描述空值检测失败",e);
+            throw e;
+        } catch (Exception e) {
+            PERF_LOG.error("列描述空值检测失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"列描述空值检测失败");
+        }
+    }
+
+    /**
+     * 业务对象表描述空值检查下载
+     * @param tenantId
+     * @throws Exception
+     */
+    @GET
+    @Path("/excel/description")
+    @Valid
+    public void exportCheck(@HeaderParam("tenantId") String tenantId) throws Exception {
+        File exportExcel = null;
+        try {
+            exportExcel = businessService.checkData2File(tenantId);
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }catch(Exception e){
+            PERF_LOG.error("业务对象表描述空值检查下载失败",e);
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"业务对象表描述空值检查下载失败");
+        } finally {
+            if (exportExcel!=null) {
+                exportExcel.delete();
+            }
         }
     }
 }

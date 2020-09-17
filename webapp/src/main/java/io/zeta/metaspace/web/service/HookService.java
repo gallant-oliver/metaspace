@@ -91,7 +91,7 @@ public class HookService {
      * @throws AtlasBaseException
      * @throws IOException
      */
-    public String hookJar() throws IOException, AtlasException, AtlasBaseException {
+    public boolean hookJar() throws IOException, AtlasException, AtlasBaseException {
         List<String> hookPaths = new ArrayList<>();
         String metaspaceHook = System.getProperty(ApplicationProperties.ATLAS_CONFIGURATION_DIRECTORY_PROPERTY) + "/../hook/hive";
         Configuration applicationProperties = ApplicationProperties.get();
@@ -114,11 +114,12 @@ public class HookService {
 
         for (String hookPath:hookPaths){
             if (equalsChildFile(hookPath,metaspaceHook)){
-                return "hookJar包加载无误";
+                return true;
             }
         }
-        return "hookJar包加载错误，可能hiveserver2不在本台机器或jar包文件未放置正确";
+        return false;
     }
+
     public boolean equalsChildFile(String path1,String path2){
         File file1 = new File(path1);
         File file2 = new File(path2);
@@ -130,12 +131,14 @@ public class HookService {
         }
         for (String childName : file1Child){
             if (!file2Child.contains(childName)){
+                LOG.warn("jar包名字:"+childName);
                 LOG.warn("jar包不同");
                 return false;
             }
         }
         return true;
     }
+
     public Set<String> getChildFileName(File file){
         Set<String> childFileNames = new HashSet<>();
         if (!file.exists()){
@@ -192,7 +195,7 @@ public class HookService {
             Boolean metaspace = applicationProperties.getBoolean(key,null);
             Boolean hook = configuration.getBoolean(key,null);
             if (!(Objects.equals(metaspace, hook))){
-                error.add(String.format(message,key,message,hook));
+                error.add(String.format(message,key,metaspace.toString(),hook.toString()));
             }
         }
         return error;
@@ -205,8 +208,7 @@ public class HookService {
      */
     public long  kafkaCheck() throws AtlasBaseException {
         KafkaNotification kafkaNotification = NotificationProvider.get();
-        try{
-            KafkaConsumer kafkaConsumer = kafkaNotification.getNewKafkaConsumer(kafkaNotification.getConsumerProperties(NotificationInterface.NotificationType.HOOK), NotificationInterface.NotificationType.HOOK, false);
+        try(KafkaConsumer kafkaConsumer = kafkaNotification.getNewKafkaConsumer(kafkaNotification.getConsumerProperties(NotificationInterface.NotificationType.HOOK), NotificationInterface.NotificationType.HOOK, false);){
             //获取topic和分区
             Map<String, List<PartitionInfo>> topics = kafkaConsumer.listTopics();
             List<PartitionInfo> atlasHook = topics.get(KafkaNotification.ATLAS_HOOK_TOPIC);
@@ -223,14 +225,14 @@ public class HookService {
                 OffsetAndMetadata committed = kafkaConsumer.committed(topicPartition);
                 //最后消费的offset
                 long  readOffset=0;
-                if (committed!=null){
+                if(committed!=null){
                     readOffset = committed.offset();
                 }
+
                 sum+=partitionOffset;
                 sumOffset+=readOffset;
             }
             long lag = sum-sumOffset;
-            kafkaConsumer.close();
             return lag;
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取kafka消费积压情况失败:"+e.getMessage());
@@ -255,28 +257,60 @@ public class HookService {
     public HookCheck all() {
         HookCheck hookCheck = new HookCheck();
         try{
-            hookCheck.setHookConfigCheck(hookConfigCheck());
+            List<String> list = hookConfigCheck();
+            if (list.size()==0){
+                hookCheck.setHookConfigCheck(true);
+            }else{
+                hookCheck.setHookConfigCheck(false);
+                StringBuffer stringBuffer = new StringBuffer();
+                for (String str:list){
+                    stringBuffer.append(str);
+                    stringBuffer.append("\n");
+                }
+                hookCheck.setHookConfigMessage(stringBuffer.toString());
+            }
         }catch(Exception e){
-            hookCheck.setHookConfigCheck(Lists.newArrayList("检验hook配置情况失败：" + e.getMessage()));
+            hookCheck.setHookConfigMessage("检验hook配置情况失败："+e.getMessage());
             LOG.error("检验hook配置情况失败", e);
         }
+
         try{
-            hookCheck.setConsumerThread(consumerThread());
+            Map<String, Boolean> threadMap = consumerThread();
+            hookCheck.setConsumerThread(false);
+            hookCheck.setThreadMessage("消费者线程已结束");
+            if (threadMap.size()==0){
+                hookCheck.setThreadMessage("无消费者线程");
+            }
+            for (Boolean bool:threadMap.values()){
+                if (bool!=null&&bool){
+                    hookCheck.setConsumerThread(true);
+                }
+            }
         }catch(Exception e){
-            HashMap<String,Boolean> map = new HashMap<>();
-            map.put("检验消费者线程情况失败："+e.getMessage(),false);
+            hookCheck.setConsumerThread(false);
+            hookCheck.setThreadMessage("检验消费者线程情况失败："+e.getMessage());
             LOG.error("检验消费者线程情况失败", e);
         }
+
         try{
-            hookCheck.setHookJar(hookJar());
+            boolean jar = hookJar();
+            hookCheck.setHookJar(jar);
+            if (!jar){
+                hookCheck.setHookJarMessage("hookJar包加载错误，可能hiveserver2不在本台机器或jar包文件未放置正确");
+            }
         }catch(Exception e){
-            hookCheck.setHookJar("检验jar包加载情况失败："+e.getMessage());
+            hookCheck.setHookJar(false);
+            hookCheck.setHookJarMessage("检验jar包加载情况失败："+e.getMessage());
             LOG.error("检验jar包加载情况失败", e);
         }
+
         try{
-            hookCheck.setKafkaCheck(kafkaCheck());
+            long lag = kafkaCheck();
+            hookCheck.setKafkaCheck(true);
+            hookCheck.setKafkaNumber(lag);
         }catch(Exception e){
-            hookCheck.setHookJar("检验kafka消费积压情况失败："+e.getMessage());
+            hookCheck.setKafkaCheck(false);
+            hookCheck.setKafkaMessage("检验kafka消费积压情况失败："+e.getMessage());
             LOG.error("检验kafka消费积压情况失败", e);
         }
         return hookCheck;

@@ -100,7 +100,7 @@ public class HBaseBasedAuditRepository extends AbstractStorageBasedAuditReposito
     private static final Logger LOG = LoggerFactory.getLogger(HBaseBasedAuditRepository.class);
 
     public static final String CONFIG_TABLE_NAME  = CONFIG_PREFIX + ".hbase.tablename";
-    public static final String DEFAULT_TABLE_NAME = "ATLAS_ENTITY_AUDIT_EVENTS";
+    public static final String DEFAULT_TABLE_NAME = "METASPACE_ENTITY_AUDIT_EVENTS";
     public static final byte[] COLUMN_FAMILY      = Bytes.toBytes("dt");
     public static final byte[] COLUMN_ACTION      = Bytes.toBytes("a");
     public static final byte[] COLUMN_DETAIL      = Bytes.toBytes("d");

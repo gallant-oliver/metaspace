@@ -14,7 +14,6 @@
 package io.zeta.metaspace.model.datasource;
 
 import io.zeta.metaspace.SqlEnum;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
 public class DataSourceConnection {
@@ -27,8 +26,34 @@ public class DataSourceConnection {
     private String jdbcParameter;
     private String driver;
     private String url;
-    private String aesPassword;
     private String serviceType;
+    private String sourceId;
+    private boolean passwordChanged;
+    private boolean userNameChanged;
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public boolean isPasswordChanged() {
+        return passwordChanged;
+    }
+
+    public void setPasswordChanged(boolean passwordChanged) {
+        this.passwordChanged = passwordChanged;
+    }
+
+    public boolean isUserNameChanged() {
+        return userNameChanged;
+    }
+
+    public void setUserNameChanged(boolean userNameChanged) {
+        this.userNameChanged = userNameChanged;
+    }
 
     public String getServiceType() {
         return serviceType;
@@ -37,15 +62,6 @@ public class DataSourceConnection {
     public void setServiceType(String serviceType) {
         this.serviceType = serviceType;
     }
-
-    public String getAesPassword() {
-        return aesPassword;
-    }
-
-    public void setAesPassword(String aesPassword) {
-        this.aesPassword = aesPassword;
-    }
-
 
 
     public String getSourceType() {

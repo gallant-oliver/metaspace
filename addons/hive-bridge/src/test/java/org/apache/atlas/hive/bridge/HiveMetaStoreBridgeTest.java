@@ -24,6 +24,7 @@ import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.EntityMutationResponse;
+import org.apache.atlas.model.instance.EntityMutations;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -55,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 public class HiveMetaStoreBridgeTest {
     private static final String TEST_DB_NAME       = "default";
-    public  static final String METADATA_NAMESPACE = "primary";
+    public  static final String METADATA_NAMESPACE = "ms";
     public  static final String TEST_TABLE_NAME    = "test_table";
 
     @Mock
@@ -173,7 +174,11 @@ public class HiveMetaStoreBridgeTest {
                 new Database(databaseName, "Default database", "/user/hive/default", null));
     }
 
+    /**
+     * 分区字段是否存在，没有影响数据导入
+     */
     @Test
+    @Deprecated
     public void testImportWhenPartitionKeysAreNull() throws Exception {
         setupDB(hiveClient, TEST_DB_NAME);
         List<Table> hiveTables = setupTables(hiveClient, TEST_DB_NAME, TEST_TABLE_NAME);
@@ -214,6 +219,9 @@ public class HiveMetaStoreBridgeTest {
         }
     }
 
+    /**
+     * 测试 importHiveMetadata(String databaseToImport, String tableToImport, boolean failOnError) 中 failOnError 参数
+     */
     @Test
     public void testImportContinuesWhenTableRegistrationFails() throws Exception {
         setupDB(hiveClient, TEST_DB_NAME);
@@ -241,12 +249,17 @@ public class HiveMetaStoreBridgeTest {
                 .thenReturn(new AtlasEntity.AtlasEntityWithExtInfo(
                         getEntity(HiveDataTypes.HIVE_PROCESS.getName(), AtlasClient.GUID, "82e06b34-9151-4023-aa9d-b82103a50e77")));
 
+        EntityMutationResponse  response = mock(EntityMutationResponse.class);
+        when(atlasClientV2.createEntity(anyObject())).thenReturn(response);
+        when(response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE)).thenReturn(new ArrayList<>());
+
         HiveMetaStoreBridge bridge = new HiveMetaStoreBridge(METADATA_NAMESPACE, hiveClient, atlasClientV2);
         try {
             bridge.importHiveMetadata(null, null, false);
         } catch (Exception e) {
             Assert.fail("Table registration failed with exception", e);
         }
+        verify(atlasClientV2,times(1)).createEntity(anyObject());
     }
 
     @Test

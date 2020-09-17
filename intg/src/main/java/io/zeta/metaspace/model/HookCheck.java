@@ -21,40 +21,86 @@ import java.util.Map;
  * @Data 2020/4/14 10:42
  */
 public class HookCheck {
-    private long kafkaCheck;
-    private String hookJar;
-    private List<String> hookConfigCheck;
-    private Map<String,Boolean> consumerThread;
+    private boolean kafkaCheck;
+    private String kafkaMessage;
+    private long kafkaNumber;
+    private boolean hookJar;
+    private String hookJarMessage;
+    private boolean hookConfigCheck;
+    private String hookConfigMessage;
+    private boolean consumerThread;
+    private String threadMessage;
 
-    public long getKafkaCheck() {
+    public boolean isKafkaCheck() {
         return kafkaCheck;
     }
 
-    public void setKafkaCheck(long kafkaCheck) {
+    public void setKafkaCheck(boolean kafkaCheck) {
         this.kafkaCheck = kafkaCheck;
     }
 
-    public String getHookJar() {
+    public String getKafkaMessage() {
+        return kafkaMessage;
+    }
+
+    public void setKafkaMessage(String kafkaMessage) {
+        this.kafkaMessage = kafkaMessage;
+    }
+
+    public long getKafkaNumber() {
+        return kafkaNumber;
+    }
+
+    public void setKafkaNumber(long kafkaNumber) {
+        this.kafkaNumber = kafkaNumber;
+    }
+
+    public boolean isHookJar() {
         return hookJar;
     }
 
-    public void setHookJar(String hookJar) {
+    public void setHookJar(boolean hookJar) {
         this.hookJar = hookJar;
     }
 
-    public List<String> getHookConfigCheck() {
+    public String getHookJarMessage() {
+        return hookJarMessage;
+    }
+
+    public void setHookJarMessage(String hookJarMessage) {
+        this.hookJarMessage = hookJarMessage;
+    }
+
+    public boolean isHookConfigCheck() {
         return hookConfigCheck;
     }
 
-    public void setHookConfigCheck(List<String> hookConfigCheck) {
+    public void setHookConfigCheck(boolean hookConfigCheck) {
         this.hookConfigCheck = hookConfigCheck;
     }
 
-    public Map<String, Boolean> getConsumerThread() {
+    public String getHookConfigMessage() {
+        return hookConfigMessage;
+    }
+
+    public void setHookConfigMessage(String hookConfigMessage) {
+        this.hookConfigMessage = hookConfigMessage;
+    }
+
+
+    public String getThreadMessage() {
+        return threadMessage;
+    }
+
+    public void setThreadMessage(String threadMessage) {
+        this.threadMessage = threadMessage;
+    }
+
+    public boolean isConsumerThread() {
         return consumerThread;
     }
 
-    public void setConsumerThread(Map<String, Boolean> consumerThread) {
+    public void setConsumerThread(boolean consumerThread) {
         this.consumerThread = consumerThread;
     }
 }

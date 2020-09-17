@@ -19,7 +19,12 @@ package io.zeta.metaspace.web.util;
 import io.zeta.metaspace.model.dataquality.ExcelReport;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.web.model.TemplateEnum;
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasException;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -43,6 +48,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -358,4 +367,44 @@ public class PoiExcelUtils {
             throw new IOException(fileName + "不是excel文件");
         }
     }
+
+    public static InputStream getTemplateInputStream(TemplateEnum templateEnum) throws AtlasBaseException, AtlasException, IOException {
+        if (templateEnum == null) {
+            throw new AtlasBaseException("无效模板");
+        }
+
+        Configuration configuration = ApplicationProperties.get();
+        String tmpDir = configuration.getString("metaspace.tmp.filepath");
+
+        if (tmpDir == null || tmpDir.isEmpty()) {
+            tmpDir = System.getProperty("java.io.tmpdir");
+        }
+
+        Path template = Paths.get(tmpDir, templateEnum.getFileName());
+        if (Files.notExists(template)) {
+            if(Files.notExists(Paths.get(tmpDir))){
+                Files.createDirectories(Paths.get(tmpDir));
+            }
+            Files.createFile(template);
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet();
+            String[][] content = templateEnum.getContent();
+
+            for (int i = 0; i < content.length; i++) {
+                Row row = sheet.createRow(i);
+                for (int j = 0; j < content[i].length; j++) {
+                    row.createCell(j).setCellValue(content[i][j]);
+                }
+            }
+
+            try (OutputStream outputStream = Files.newOutputStream(template)) {
+                workbook.write(outputStream);
+                outputStream.flush();
+            }
+        }
+        return Files.newInputStream(template);
+    }
+
+
 }

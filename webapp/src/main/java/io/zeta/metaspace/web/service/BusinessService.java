@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnQuery;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -37,6 +38,7 @@ import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
@@ -65,10 +67,12 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.postgresql.util.PGobject;
 
@@ -132,12 +136,16 @@ public class BusinessService {
     DataShareDAO shareDAO;
     @Autowired
     DataShareService shareService;
+    @Autowired
+    UserGroupService userGroupService;
 
     @Inject
     protected AtlasGraph graph;
 
     @Autowired
     private ColumnDAO columnDAO;
+    @Autowired
+    private CategoryDAO categoryDAO;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -155,9 +163,9 @@ public class BusinessService {
             //departmentId(categoryId)
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
-            String userName = AdminUtils.getUserData().getUsername();
-            info.setSubmitter(userName);
-            info.setBusinessOperator(userName);
+            String userId = AdminUtils.getUserData().getUserId();
+            info.setSubmitter(userId);
+            info.setBusinessOperator(userId);
             //businessId
             String businessId = UUID.randomUUID().toString();
             info.setBusinessId(businessId);
@@ -211,11 +219,11 @@ public class BusinessService {
             if(count > 0 && !currentInfo.getName().equals(info.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同的业务对象名称");
             }
-            String userName = AdminUtils.getUserData().getUsername();
+            String userId = AdminUtils.getUserData().getUserId();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
-            info.setBusinessOperator(userName);
+            info.setBusinessOperator(userId);
             info.setBusinessLastUpdate(time);
             info.setBusinessId(businessId);
             return businessDao.updateBusinessInfo(info);
@@ -240,9 +248,25 @@ public class BusinessService {
                 boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_OPERATE.getCode()) == 0 ? false : true;
                 info.setEditBusiness(editBusiness);
             }else{
-                List<Module> modules = tenantService.getModule(tenantId);
-                boolean editBusiness = modules.stream().anyMatch(module-> ModuleEnum.BUSINESSEDIT.getId()==module.getModuleId());
-                info.setEditBusiness(editBusiness);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByBusinessGuid(businessId,tenantId);
+                boolean edit = false;
+                if (categoryIds.size()>0){
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    if (count>0){
+                        edit=true;
+                    }
+                }
+
+
+                info.setEditBusiness(edit);
+            }
+            String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
+            String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
+            if (submitter!=null){
+                info.setSubmitter(submitter);
+            }
+            if (operator!=null){
+                info.setBusinessOperator(operator);
             }
             String categoryGuid = info.getDepartmentId();
             String departmentName = categoryDao.queryNameByGuid(categoryGuid,tenantId);
@@ -264,6 +288,12 @@ public class BusinessService {
             //editTechnical
             if(Objects.isNull(info))
                 info = new TechnologyInfo();
+
+            String operator = userGroupDAO.getUserNameById(info.getTechnicalOperator());
+            if (operator!=null){
+                info.setTechnicalOperator(operator);
+            }
+
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)){
                 User user = AdminUtils.getUserData();
@@ -274,9 +304,9 @@ public class BusinessService {
                 boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
                 info.setEditTechnical(editTechnical);
             }else{
-                List<Module> modules = tenantService.getModule(tenantId);
-                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
-                info.setEditTechnical(editTechnical);
+//                List<Module> modules = tenantService.getModule(tenantId);
+//                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
+                info.setEditTechnical(true);
             }
             //tables
             List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId);
@@ -385,14 +415,13 @@ public class BusinessService {
                     }
                 }
             }else{
-                List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
-                for (UserGroup userGroup :userGroups){
-                    String userGroupId = userGroup.getId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, BUSINESS_TYPE,tenantId);
-                    for (String categoryId  : category){
-                        if (!categoryIds.contains(categoryId)){
-                            categoryIds.add(categoryId);
-                        }
+                Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
+                for (CategoryPrivilegeV2 category  : categories.values()){
+                    if (!category.getEditItem()){
+                        continue;
+                    }
+                    if (!categoryIds.contains(category.getGuid())){
+                        categoryIds.add(category.getGuid());
                     }
                 }
             }
@@ -487,6 +516,10 @@ public class BusinessService {
                 List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset,tenantId);
                 for (BusinessInfoHeader infoHeader : businessInfoList) {
                     String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
+                    String userName = userGroupDAO.getUserNameById(infoHeader.getSubmitter());
+                    if(userName!=null){
+                        infoHeader.setSubmitter(userName);
+                    }
                     String path = CategoryRelationUtils.getPath(categoryId,tenantId);
                     infoHeader.setPath(path + "." + infoHeader.getName());
                     String[] pathArr = path.split("/");
@@ -518,11 +551,11 @@ public class BusinessService {
         List<String> list = tableIdList.getList();
         String trustTable = tableIdList.getTrust();
         try {
-            String userName = AdminUtils.getUserData().getUsername();
+            String userId = AdminUtils.getUserData().getUserId();
             long timestamp = System.currentTimeMillis();
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String time = format.format(timestamp);
-            businessDao.updateTechnicalInfo(businessId, userName, time);
+            businessDao.updateTechnicalInfo(businessId, userId, time);
             //更新technical编辑状态
             if(Objects.nonNull(list) && list.size() > 0) {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
@@ -1022,11 +1055,13 @@ public class BusinessService {
             List<String> typeList = (List) obj.get("hive_column.type");
             List<String> stateList = (List) obj.get("__state");
             List<Long> modifyTimeList = (List)obj.get("__modificationTimestamp");
+            List<String> commonList = (List) obj.get("hive_column.comment");
             String guid = null;
             String name = null;
             String type = null;
             String state = null;
             String updateTime = null;
+            String description = null;
 
             if(Objects.nonNull(guidList) && guidList.size()>0) {
                 guid = guidList.get(0);
@@ -1044,6 +1079,9 @@ public class BusinessService {
                 Long time = modifyTimeList.get(0);
                 updateTime = DateUtils.date2String(new Date(time));
             }
+            if(Objects.nonNull(commonList) && commonList.size()>0) {
+                description = commonList.get(0);
+            }
 
             Column column = new Column();
             column.setTableId(tableGuid);
@@ -1052,6 +1090,7 @@ public class BusinessService {
             column.setType(type);
             column.setStatus(state);
             column.setDisplayNameUpdateTime(updateTime);
+            column.setDescription(description);
             columnInfoList.add(column);
         }
         return columnInfoList;
@@ -1104,24 +1143,28 @@ public class BusinessService {
                 }
 
                 valueCell = row.getCell(1);
-                switch (valueCell.getCellTypeEnum()) {
-                    case NUMERIC:
-                        value = String.valueOf(valueCell.getNumericCellValue());
-                        break;
-                    case BOOLEAN:
-                        value = String.valueOf(valueCell.getBooleanCellValue());
-                        break;
-                    case STRING:
-                        value = valueCell.getStringCellValue();
-                        break;
-                    case BLANK:
-                        value = "";
-                        break;
-                    case FORMULA:
-                        value = valueCell.getCellFormula();
-                        break;
-                    default:
-                        value = "";
+                if (valueCell==null){
+                    value="";
+                }else{
+                    switch (valueCell.getCellTypeEnum()) {
+                        case NUMERIC:
+                            value = String.valueOf(valueCell.getNumericCellValue());
+                            break;
+                        case BOOLEAN:
+                            value = String.valueOf(valueCell.getBooleanCellValue());
+                            break;
+                        case STRING:
+                            value = valueCell.getStringCellValue();
+                            break;
+                        case BLANK:
+                            value = "";
+                            break;
+                        case FORMULA:
+                            value = valueCell.getCellFormula();
+                            break;
+                        default:
+                            value = "";
+                    }
                 }
                 column = new Column();
                 column.setColumnName(key);
@@ -1219,6 +1262,34 @@ public class BusinessService {
         }
     }
 
+    public File exportExcelColumn(String tableId) throws IOException, AtlasBaseException {
+        List<Column> data = getColumnByTable(tableId);
+        Workbook workbook = columnData2workbook(data);
+        return workbook2file(workbook,"column");
+    }
+
+    public List<Column> getColumnByTable(String guid) throws AtlasBaseException {
+        ColumnQuery columnQuery = new ColumnQuery();
+        columnQuery.setGuid(guid);
+        List<Column> columnInfoById = metaDataService.getColumnInfoById(columnQuery, true);
+        return columnInfoById;
+    }
+
+    private Workbook columnData2workbook(List<Column> list) {
+        Workbook workbook = new XSSFWorkbook();
+        CellStyle cellStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        cellStyle.setFont(font);
+        List<List<String>> dataList = list.stream().map(column -> {
+            List<String> data = Lists.newArrayList(column.getColumnName(),column.getType(),column.getDescription(),column.getTableName(),column.getDescription());
+            return data;
+        }).collect(Collectors.toList());
+        ArrayList<String> attributes = Lists.newArrayList("字段名称","字段类型", "字段描述", "表名称", "库名称");
+        PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList,cellStyle,12);
+        return workbook;
+    }
+
     public File exportExcelBusiness(List<String> ids,String categoryId,String tenantId) throws IOException {
         List<BusinessInfo> data;
         if (ids==null){
@@ -1236,7 +1307,7 @@ public class BusinessService {
             path=categoryDao.getCategoryNameById(categoryId,tenantId);
         }
         Workbook workbook = data2workbook(data,path);
-        return workbook2file(workbook);
+        return workbook2file(workbook,"business");
     }
 
     private Workbook data2workbook(List<BusinessInfo> list,String path) {
@@ -1257,8 +1328,8 @@ public class BusinessService {
         return workbook;
     }
 
-        private File workbook2file(Workbook workbook) throws IOException {
-        File tmpFile = File.createTempFile("business", ".xlsx");
+        private File workbook2file(Workbook workbook,String name) throws IOException {
+        File tmpFile = File.createTempFile(name, ".xlsx");
         try (FileOutputStream output = new FileOutputStream(tmpFile)) {
             workbook.write(output);
             output.flush();
@@ -1297,7 +1368,7 @@ public class BusinessService {
     }
 
     /**
-     * 文件转化为目录
+     * 文件转化为业务对象
      * @param file
      * @return
      * @throws Exception
@@ -1426,7 +1497,7 @@ public class BusinessService {
 
     @Transactional(rollbackFor=Exception.class)
     public void insertBusinesses(List<BusinessInfo> business,String categoryId,String tenantId) throws AtlasBaseException {
-        String userName = AdminUtils.getUserData().getUsername();
+        String userId = AdminUtils.getUserData().getUserId();
         long timestamp = System.currentTimeMillis();
         String time = DateUtils.getNow();
         //level2CategoryId
@@ -1445,8 +1516,8 @@ public class BusinessService {
             info.setDepartmentId(categoryId);
             //submitter && businessOperator
 
-            info.setSubmitter(userName);
-            info.setBusinessOperator(userName);
+            info.setSubmitter(userId);
+            info.setBusinessOperator(userId);
             //businessId
             String businessId = UUID.randomUUID().toString();
             info.setBusinessId(businessId);
@@ -1497,6 +1568,158 @@ public class BusinessService {
         } catch (Exception e) {
             LOG.error("迁移业务对象失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "迁移业务对象失败");
+        }
+    }
+
+    public PageResult<Table> checkTable(String tenantId,int limit,int offset) throws AtlasBaseException {
+            PageResult<Table> pageResult = new PageResult<>();
+            BusinessQueryParameter parameter = new BusinessQueryParameter();
+            parameter.setOffset(0);
+            parameter.setLimit(-1);
+            parameter.setStatus("added");
+            PageResult<BusinessInfoHeader> businessListByCondition = getBusinessListByCondition(parameter, tenantId);
+            if (businessListByCondition.getLists()==null||businessListByCondition.getLists().size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+            List<Table> tables = businessDao.getTablesByBusiness(businessIds,limit,offset);
+            if (tables==null||tables.size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            pageResult.setLists(tables);
+            pageResult.setTotalSize(tables.get(0).getTotal());
+            pageResult.setCurrentSize(tables.size());
+            return pageResult;
+    }
+
+    public PageResult<Table> checkColumn(String tenantId,int limit,int offset) throws AtlasBaseException {
+            PageResult<Table> pageResult = new PageResult<>();
+            BusinessQueryParameter parameter = new BusinessQueryParameter();
+            parameter.setOffset(0);
+            parameter.setLimit(-1);
+            parameter.setStatus("added");
+            PageResult<BusinessInfoHeader> businessListByCondition = getBusinessListByCondition(parameter, tenantId);
+            if (businessListByCondition.getLists()==null||businessListByCondition.getLists().size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+            List<Table> tables = businessDao.getTablesByBusinessAndColumn(businessIds,limit,offset);
+            if (tables==null||tables.size()==0){
+                pageResult.setLists(new ArrayList<>());
+                return pageResult;
+            }
+            List<Column> columns = columnDAO.checkDescriptionColumnByTableIds(tables);
+            Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(column -> column.getTableId()));
+            tables.stream().forEach(table -> table.setColumns(map.get(table.getTableId())));
+            pageResult.setLists(tables);
+            pageResult.setTotalSize(tables.get(0).getTotal());
+            pageResult.setCurrentSize(tables.size());
+            return pageResult;
+    }
+
+    /**
+     * 业务对象表描述空值检查下载
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     * @throws IOException
+     */
+    public File checkData2File(String tenantId) throws AtlasBaseException, IOException {
+        //获取检测数据
+        PageResult<Table> tablePageResult = checkTable(tenantId, -1, 0);
+        PageResult<Table> columnPageResult = checkColumn(tenantId, -1, 0);
+        Workbook workbook = new XSSFWorkbook();
+        //标题格式
+        CellStyle cellStyle = workbook.createCellStyle();
+        //表头格式
+        CellStyle cellStyle2 = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        cellStyle.setFont(font);
+        cellStyle2.setFont(font);
+        cellStyle.setAlignment(HorizontalAlignment.CENTER);
+        //合并单元格
+        CellRangeAddress tableRegion = new CellRangeAddress(0, 0, 0, 2);
+        Sheet sheet = workbook.createSheet("总览");
+        sheet.addMergedRegion(tableRegion);
+        //标题
+        Row tableRow = sheet.createRow(0);
+        Cell tableCell = tableRow.createCell(0);
+        tableCell.setCellStyle(cellStyle);
+        tableCell.setCellValue("表描述空值检查");
+        //表头
+        ArrayList<String> firstAttributes = Lists.newArrayList("表名称","库名称", "表状态");
+        setAttributeRow(sheet,firstAttributes,1,cellStyle2);
+        int startIndex = 2;
+        for (Table table:tablePageResult.getLists()){
+            Row row = sheet.createRow(startIndex++);
+            // 添加数据
+            row.createCell(0).setCellValue(table.getTableName());
+            row.createCell(1).setCellValue(table.getDatabaseName());
+            row.createCell(2).setCellValue(table.getStatus());
+        }
+        //合并单元格
+        CellRangeAddress columnRegion = new CellRangeAddress(startIndex, startIndex, 0, 2);
+        sheet.addMergedRegion(columnRegion);
+        Row columnRow = sheet.createRow(startIndex++);
+        Cell columnCell = columnRow.createCell(0);
+        //标题
+        columnCell.setCellStyle(cellStyle);
+        columnCell.setCellValue("列描述空值检查");
+        //表头
+        setAttributeRow(sheet,firstAttributes,startIndex++,cellStyle2);
+        //列描述空值详情
+        ArrayList<String> attributes = Lists.newArrayList("列名称","表名称", "库名称","列状态","列类型");
+        for (Table table:columnPageResult.getLists()){
+            Row row = sheet.createRow(startIndex++);
+            // 添加数据
+            row.createCell(0).setCellValue(table.getTableName());
+            row.createCell(1).setCellValue(table.getDatabaseName());
+            row.createCell(2).setCellValue(table.getStatus());
+
+            setColumnSheet(workbook,table,attributes,cellStyle2);
+        }
+        return workbook2file(workbook,"business");
+    }
+
+    /**
+     * 列名描述sheet
+     * @param workbook
+     * @param table
+     * @param attributes
+     * @param cellStyle
+     */
+    public void setColumnSheet(Workbook workbook,Table table,List<String> attributes,CellStyle cellStyle){
+
+        Sheet columnSheet = workbook.createSheet(table.getTableName());
+        setAttributeRow(columnSheet,attributes,0,cellStyle);
+        int columnIndex=1;
+        for (Column column:table.getColumns()){
+            Row columnRow = columnSheet.createRow(columnIndex++);
+            columnRow.createCell(0).setCellValue(column.getColumnName());
+            columnRow.createCell(1).setCellValue(table.getTableName());
+            columnRow.createCell(2).setCellValue(table.getDatabaseName());
+            columnRow.createCell(3).setCellValue(table.getStatus());
+            columnRow.createCell(4).setCellValue(column.getType());
+        }
+    }
+
+    /**
+     * 插入表头
+     * @param sheet
+     * @param attributes
+     * @param index
+     * @param cellStyle
+     */
+    public void setAttributeRow(Sheet sheet,List<String> attributes,int index,CellStyle cellStyle){
+        Row columnFirstRow = sheet.createRow(index);
+        for (int i = 0; i < attributes.size(); i++) {
+            Cell cell = columnFirstRow.createCell(i);
+            cell.setCellStyle(cellStyle);
+            cell.setCellValue(attributes.get(i).trim());
         }
     }
 }
