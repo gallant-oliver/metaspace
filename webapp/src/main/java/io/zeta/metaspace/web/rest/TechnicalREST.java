@@ -563,12 +563,13 @@ public class TechnicalREST {
 
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            List<CategoryPrivilege> categoryPrivileges=null;
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
             }else{
-                dataManageService.importCategory(categoryId,importCategory.getDirection(), file,CATEGORY_TYPE,tenantId);
+                categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
             }
-            return ReturnUtil.success();
+            return ReturnUtil.success(categoryPrivileges);
         } catch (AtlasBaseException e) {
             LOG.error("导入失败",e);
             throw e;

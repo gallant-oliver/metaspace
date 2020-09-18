@@ -17,8 +17,6 @@ package io.zeta.metaspace.web.service;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
-import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
-import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
@@ -83,14 +81,20 @@ public class UserGroupService {
     @Autowired
     CategoryDAO categoryDAO;
 
-    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) {
+    public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
 
         if (query != null) {
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
-        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query);
+        //校验租户先是否有用户
+        SecuritySearch securitySearch = new SecuritySearch();
+        securitySearch.setTenantId(tenantId);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
+
+        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query,userIds);
 
 
         if (lists == null || lists.size() == 0) {
@@ -99,6 +103,9 @@ public class UserGroupService {
 
 
         for (UserGroupListAndSearchResult searchResult : lists) {
+            if (userIds == null || userIds.size() == 0) {
+                searchResult.setMember("0");
+            }
             String userName = userGroupDAO.getUserNameById(searchResult.getCreator());
             searchResult.setCreator(userName);
             String authorize = userGroupDAO.getUserNameById(searchResult.getAuthorize());
@@ -182,7 +189,7 @@ public class UserGroupService {
      * 五.用户组成员列表及搜索
      */
 
-    public PageResult<MemberListAndSearchResult> getUserGroupMemberListAndSearch(String id,int offset, int limit, String search) {
+    public PageResult<MemberListAndSearchResult> getUserGroupMemberListAndSearch(String id,int offset, int limit, String search,String tenantId) throws AtlasBaseException {
 
         PageResult<MemberListAndSearchResult> commonResult = new PageResult<>();
 
@@ -190,8 +197,17 @@ public class UserGroupService {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
+        //校验租户先是否有用户
+        SecuritySearch securitySearch = new SecuritySearch();
+        securitySearch.setUserName(search);
+        securitySearch.setTenantId(tenantId);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
+        if (userIds == null || userIds.size() == 0) {
+            return commonResult;
+        }
 
-        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,offset, limit, search);
+        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,0, -1, null,userIds);
 
         if (lists == null || lists.size() == 0) {
             return commonResult;
@@ -230,6 +246,9 @@ public class UserGroupService {
         List<String> userGroupId2 = userGroupDAO.getUserNameByGroupId(tenantId, groupId);
 
         List<String> userNameList = userGroupId1.stream().filter(str -> !userGroupId2.stream().anyMatch(s -> s.equals(str))).collect(Collectors.toList());
+        if (userNameList == null || userNameList.size() == 0) {
+            return commonResult;
+        }
 
         List<UserGroupMemberSearch> lists = userGroupDAO.getUserGroupMemberSearch(userNameList, offset, limit);
 
@@ -277,11 +296,14 @@ public class UserGroupService {
      * 十五.修改用户组管理信息
      */
 
-    public void updateUserGroupInformation(String groupId, UserGroup userGroup) throws AtlasBaseException {
+    public void updateUserGroupInformation(String groupId, UserGroup userGroup,String tenantId) throws AtlasBaseException {
 
         //规定：用户组名称长度范围必须是大于0且小于等于64，描述的长度范围必须是大于等于0且小于等于256
         if (!existGroupId(groupId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "您的用户组id:" + groupId + "不存在，无法修改用户组管理信息，请确保您的用户组id输入正确!");
+        }
+        if (isNameById(tenantId, userGroup.getName(), userGroup.getId())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户组名称" + userGroup.getName() + "已存在");
         }
         long currentTimeMillis = System.currentTimeMillis();
         Timestamp updateTime = new Timestamp(currentTimeMillis);
@@ -1030,6 +1052,9 @@ public class UserGroupService {
 
         if (!category.getRead()&&isChild){
             CategoryPrivilegeV2 oldCategory = userGroupDAO.getCategoriesPrivileges(category.getGuid(), userGroupId);
+            if (oldCategory==null){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限目录，请先分配权限");
+            }
             CategoryUpdate categoryUpdate = new CategoryUpdate(oldCategory);
             categoryUpdate.setOldPrivilege(oldCategory);
             categoryUpdate.setNewPrivilege(category);
@@ -1519,6 +1544,10 @@ public class UserGroupService {
         if (userGroupByCategory==null||userGroupByCategory.size()==0){
             pageResult.setLists(new ArrayList<>());
             return pageResult;
+        }
+        for (GroupPrivilege groupPrivilege:userGroupByCategory){
+            String userName = userGroupDAO.getUserNameById(groupPrivilege.getAuthorize());
+            groupPrivilege.setAuthorize(userName);
         }
         pageResult.setLists(userGroupByCategory);
         pageResult.setCurrentSize(userGroupByCategory.size());

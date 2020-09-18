@@ -61,7 +61,10 @@ public interface UserGroupDAO {
             " (select g.id id,count(*) member " +
             " from user_group  g " +
             " join user_group_relation r " +
-            " on g.id=r.group_id " +
+            " on g.id=r.group_id  where r.user_id in " +
+            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             " GROUP BY g.id) m " +
             " on u.id=m.id " +
             " where u.tenant=#{tenantId} and valid=true" +
@@ -81,7 +84,9 @@ public interface UserGroupDAO {
             " offset ${offset} " +
             "</if>" +
             "</script>")
-    public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,@Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search);
+    public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
+                                                                           @Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search,
+                                                                           @Param("ids")List<String> ids);
 
 
     @Select("select username from users where userid=#{userId}")
@@ -150,7 +155,10 @@ public interface UserGroupDAO {
      */
     @Select("<script>" +
             "select count(*)over() totalSize,u.userid,u.username,u.account from users u join user_group_relation g on u.userid=g.user_id " +
-            "where g.group_id=#{id} " +
+            "where g.group_id=#{id} and u.userid in " +
+            "<foreach collection='ids' item='userId' index='index' separator=',' open='(' close=')'>" +
+            "#{userId}" +
+            "</foreach>" +
             "<if test='search!=null'>" +
             " and u.username like '%${search}%' ESCAPE '/' " +
             "</if>" +
@@ -161,7 +169,8 @@ public interface UserGroupDAO {
             " offset ${offset} " +
             "</if>" +
             "</script>")
-    public List<MemberListAndSearchResult> getMemberListAndSearch(@Param("id")String id,@Param("offset") int offset, @Param("limit") int limit, @Param("search") String search);
+    public List<MemberListAndSearchResult> getMemberListAndSearch(@Param("id")String id,@Param("offset") int offset,
+                                                                  @Param("limit") int limit, @Param("search") String search,@Param("ids")List<String> ids);
 
 
     /**
@@ -975,6 +984,19 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "</script>")
     public int addUserGroupPrivileges(@Param("groupIds") List<GroupPrivilege> groupIds);
+
+    @Insert("<script>" +
+            "insert into category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='groupPrivilege' index='index' collection='groupIds' " +
+            "    open='' separator=',' close=''>" +
+            "       <foreach item='category' index='index' collection='categoryIds' " +
+            "       open='' separator=',' close=''>" +
+            "       (#{category.guid},#{groupPrivilege.id},#{groupPrivilege.read},#{groupPrivilege.editCategory},#{groupPrivilege.editItem}) " +
+            "       </foreach>" +
+            "    </foreach>" +
+            "</script>")
+    public int addUserGroupCategoryPrivileges(@Param("groupIds") List<GroupPrivilege> groupIds,@Param("categoryIds") List<CategoryEntityV2> categoryIds);
+
 
     @Update ("<script>" +
              "update category_group_relation set read=tmp.read,edit_category=tmp.edit_category,edit_item=tmp.edit_item from (values " +

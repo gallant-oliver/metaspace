@@ -22,7 +22,6 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.APIInfo;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.ApiHead;
@@ -30,7 +29,6 @@ import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
 import io.zeta.metaspace.model.share.MoveApi;
 import io.zeta.metaspace.model.share.ProjectInfo;
-import io.zeta.metaspace.model.share.QueryParameter;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.Delete;
@@ -41,7 +39,6 @@ import org.apache.ibatis.annotations.Update;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 
 public interface DataShareDAO {
 
@@ -289,8 +286,12 @@ public interface DataShareDAO {
             "  select g.user_id ,p.project_id from project_group_relation p join user_group_relation g on p.group_id=g.group_id\n" +
             "  union " +
             "  select manager user_id,id project_id from project " +
-            " ) uc group by project_id ) uc on p.id=uc.id left join " +
-            "(select count(distinct guid) count,projectid from api where tenantid=#{tenantId} group by projectid) ac on ac.projectid=p.id" +
+            " ) uc where uc.user_id in " +
+            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "group by project_id ) uc on p.id=uc.id left join " +
+            "(select count(distinct guid) count,projectid from api where tenantid=#{tenantId} and valid=true group by projectid) ac on ac.projectid=p.id" +
             " where p.tenantId=#{tenantId} and p.valid=true " +
             "<if test=\"parameters.query!=null and parameters.query!=''\">" +
             " and p.name like '%${parameters.query}%' ESCAPE '/' " +
@@ -308,7 +309,8 @@ public interface DataShareDAO {
             " offset ${parameters.offset} " +
             "</if>" +
             "</script>")
-    public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,@Param("tenantId")String tenantId);
+    public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,
+                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids);
 
     @Update("update project set name=#{name},description=#{description},manager=#{manager} where id=#{id}")
     public int updateProject(ProjectInfo project);
@@ -468,7 +470,7 @@ public interface DataShareDAO {
 
     @Select("select guid apiId,name apiName,description,version,status,updateTime,u.username, " +
             "(select count(1) > 0 from api_relation where apiid = a.guid and version = a.version) as used " +
-            "from api a left join  users u on a.updater = u.userid where a.guid=#{id} and a.valid=true")
+            "from api a left join  users u on a.updater = u.userid where a.guid=#{id} and a.valid=true order by version_num desc")
     public List<ApiVersion> getApiVersion(@Param("id") String id);
 
     @Select("select count(1) from api where name=#{name} and tenantid=#{tenantId} and projectid=#{projectId} and guid!=#{guid} and valid=true")

@@ -1,6 +1,7 @@
 package io.zeta.metaspace.model.result;
 
 import io.zeta.metaspace.MetaspaceConfig;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 
 import java.security.PublicKey;
 
@@ -47,6 +48,16 @@ public class CategoryPrivilege {
         this.level=category.getLevel();
         this.count=category.getCount();
     };
+    public CategoryPrivilege(CategoryEntityV2 categoryEntityV2){
+        this.guid = categoryEntityV2.getGuid();
+        this.name=categoryEntityV2.getName();
+        this.parentCategoryGuid = categoryEntityV2.getParentCategoryGuid();
+        this.upBrotherCategoryGuid=categoryEntityV2.getUpBrotherCategoryGuid();
+        this.downBrotherCategoryGuid=categoryEntityV2.getDownBrotherCategoryGuid();
+        this.description=categoryEntityV2.getDescription();
+        this.level=categoryEntityV2.getLevel();
+        this.objectCount=0;
+    }
 
 
     private int count;

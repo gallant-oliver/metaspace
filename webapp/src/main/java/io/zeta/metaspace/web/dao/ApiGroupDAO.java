@@ -56,8 +56,8 @@ public interface ApiGroupDAO {
     public Integer updateApiGroup(@Param("group") ApiGroupV2 group);
 
     @Select("<script>" +
-            " select count(*)over() count,g.*,g.approve approveJson ,case when (s.groupid is null) then false else true end updatestatus from api_group g left join (" +
-            "  select distinct groupid from api_relation r join api on r.apiid=api.guid and r.version=api.version where r.update_status=true and api.status='up'" +
+            " select count(*)over() count,s.update_time updateTime,g.*,g.approve approveJson ,case when (s.groupid is null) then false else true end updatestatus from api_group g left join (" +
+            "  select  groupid,max(update_time) update_time from api_relation r join api on r.apiid=api.guid and r.version=api.version where r.update_status=true and api.status='up' group by groupid" +
             ") s on g.id=s.groupid " +
             " where " +
             " g.projectid=#{projectId} and g.tenantid=#{tenantId} " +
@@ -173,7 +173,7 @@ public interface ApiGroupDAO {
             "</script>")
     public void deleteApiGroup(@Param("ids")List<String> ids);
 
-    @Delete("<script>" +
+    @Select("<script>" +
             "select id from api_group where projectid in " +
             "<foreach item='id' index='index' collection='ids' " +
             "open='(' separator=',' close=')'>" +

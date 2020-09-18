@@ -98,7 +98,7 @@ public class QuartzJob implements Job {
             taskExecute.setErrorStatus(0);
             taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
             Integer counter = taskManageDAO.getMaxCounter(taskId);
-            taskExecute.setCounter(Objects.isNull(counter)?0:++counter);
+            taskExecute.setCounter(Objects.isNull(counter)?1:++counter);
             taskManageDAO.initTaskExecuteInfo(taskExecute);
             taskManageDAO.updateTaskExecutionCount(taskId);
             taskManageDAO.updateTaskExecuteStatus(taskId, 1);

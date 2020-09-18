@@ -21,6 +21,15 @@ public class ImportCategory {
     private String categoryId;
     private boolean all;
     private String direction;
+    private boolean authorized;
+
+    public boolean isAuthorized() {
+        return authorized;
+    }
+
+    public void setAuthorized(boolean authorized) {
+        this.authorized = authorized;
+    }
 
     public String getCategoryId() {
         return categoryId;
