@@ -20,6 +20,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -1364,19 +1365,21 @@ public class MetaDataService {
      * @return
      */
     public void synchronizeMetaData(String databaseType, TableSchema tableSchema) {
-        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
-        if (databaseTypeEntity == DatabaseType.HIVE) {
-            tableSchema.setInstance("hive");
-        }
-        if (null == databaseTypeEntity) {
-            errorMap.put(tableSchema.getInstance(), String.format("not support database type %s", databaseType));
-            LOG.error(errorMap.get(tableSchema.getInstance()));
+        DataSourceType dataSourceType = null;
+        try {
+            dataSourceType = DataSourceType.getType(databaseType);
+        } catch (Exception e) {
+            errorMap.put(tableSchema.getInstance(), String.format("not support database type %s", dataSourceType));
+            LOG.error(errorMap.get(tableSchema.getInstance()),e);
             return;
+        }
+        if (DataSourceType.HIVE.equals(databaseType)) {
+            tableSchema.setInstance("hive");
         }
         IMetaDataProvider metaDataProvider = null;
         errorMap.put(tableSchema.getInstance(), "");
         try {
-            metaDataProvider = getMetaDataProviderFactory(databaseTypeEntity, tableSchema);
+            metaDataProvider = getMetaDataProviderFactory(dataSourceType, tableSchema);
             metaDataProvider.importDatabases(tableSchema);
         } catch (InterruptedException e) {
             errorMap.put(tableSchema.getInstance(), e.getMessage());
@@ -1420,48 +1423,38 @@ public class MetaDataService {
         }
     }
 
-    IMetaDataProvider getMetaDataProviderFactory(DatabaseType databaseTypeEntity, TableSchema tableSchema) throws Exception {
-        IMetaDataProvider metaDataProvider;
-        switch (databaseTypeEntity) {
-            case HIVE:
+    IMetaDataProvider getMetaDataProviderFactory(DataSourceType dataSourceType, TableSchema tableSchema) throws Exception {
+        if (dataSourceType.isSupportMetaDataSync()) {
+            if (DataSourceType.HIVE.equals(dataSourceType)) {
                 return hiveMetaStoreBridgeUtils;
-            case MYSQL:
-            case ORACLE:
+            } else {
+                IMetaDataProvider metaDataProvider;
                 if (!metaDataProviderMap.containsKey(tableSchema.getInstance()) || metaDataProviderMap.get(tableSchema.getInstance()) == null) {
                     metaDataProvider = new AbstractMetaDataProvider(entitiesStore, graph, atlasTypeRegistry, dataSourceService);
                 } else {
                     metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
                 }
-                break;
-            default:
-                throw new Exception("不支持的数据源类型" + databaseTypeEntity.getName());
-        }
-        metaDataProviderMap.put(tableSchema.getInstance(), metaDataProvider);
-        return metaDataProvider;
-    }
-
-    private DatabaseType getDatabaseType(String databaseType) {
-        DatabaseType databaseTypeEntity = null;
-        for (DatabaseType databaseType2 : DatabaseType.values()) {
-            if (org.apache.commons.lang.StringUtils.isNotEmpty(databaseType) && databaseType.toLowerCase().equals(databaseType2.getName())) {
-                databaseTypeEntity = databaseType2;
-                break;
+                metaDataProviderMap.put(tableSchema.getInstance(), metaDataProvider);
+                return metaDataProvider;
             }
         }
-        return databaseTypeEntity;
+        throw new Exception("不支持元数据同步的数据源类型" + dataSourceType.getName());
     }
 
+
     public Progress importProgress(String databaseType, String sourceId) throws Exception {
-        DatabaseType databaseTypeEntity = getDatabaseType(databaseType);
         Progress progress = new Progress(0, 0, "");
-        if (null == databaseTypeEntity) {
+        DataSourceType dataSourceType = null;
+        try {
+            dataSourceType = DataSourceType.getType(databaseType);
+        } catch (Exception e) {
             errorMap.put(sourceId, String.format("not support database type %s", databaseType));
-            LOG.error(errorMap.get(sourceId));
+            LOG.error(errorMap.get(sourceId),e);
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
-        switch (databaseTypeEntity) {
-            case HIVE:
+        if (dataSourceType.isSupportMetaDataSync()) {
+            if (DataSourceType.HIVE.equals(databaseType)) {
                 if (hiveMetaStoreBridgeUtils == null) {
                     errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
                     LOG.error(errorMap.get(sourceId));
@@ -1469,9 +1462,7 @@ public class MetaDataService {
                     return progress;
                 }
                 progress = getProgress(hiveMetaStoreBridgeUtils, sourceId);
-                break;
-            case MYSQL:
-            case ORACLE:
+            } else {
                 if (!metaDataProviderMap.containsKey(sourceId) || metaDataProviderMap.get(sourceId) == null) {
                     if (metaDataProviderMap.get(sourceId) == null) {
                         errorMap.put(sourceId, String.format("该数据源未开始采集元数据"));
@@ -1481,10 +1472,9 @@ public class MetaDataService {
                     }
                 }
                 progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
-                break;
-            default:
-                progress.setError(String.format("不支持的数据源类型 %s", databaseType));
-                break;
+            }
+        } else {
+            progress.setError(String.format("不支持的数据源类型 %s", databaseType));
         }
         return progress;
     }
