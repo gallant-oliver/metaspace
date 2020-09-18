@@ -36,4 +36,8 @@ public enum DataSourceType {
     public boolean isBuildIn() {
         return HIVE.equals(this);
     }
+
+    public boolean isSupportMetaDataSync() {
+        return Arrays.asList(MYSQL, ORACLE, SQLSERVER, HIVE).contains(this);
+    }
 }
