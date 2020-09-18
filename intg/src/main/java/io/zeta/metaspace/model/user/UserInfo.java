@@ -17,6 +17,7 @@
 package io.zeta.metaspace.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.security.RoleResource;
 
@@ -31,8 +32,8 @@ public class UserInfo {
     private User user;
     private List<Role> roles;
     private List<Module> modules;
-    private List<TechnicalCategory> technicalCategory;
-    private List<BusinessCategory> businessCategory;
+    private List<Category> technicalCategory;
+    private List<Category> businessCategory;
 
     public User getUser() {
         return user;
@@ -58,19 +59,19 @@ public class UserInfo {
         this.modules = modules;
     }
 
-    public List<TechnicalCategory> getTechnicalCategory() {
+    public List<Category> getTechnicalCategory() {
         return technicalCategory;
     }
 
-    public void setTechnicalCategory(List<TechnicalCategory> technicalCategory) {
+    public void setTechnicalCategory(List<Category> technicalCategory) {
         this.technicalCategory = technicalCategory;
     }
 
-    public List<BusinessCategory> getBusinessCategory() {
+    public List<Category> getBusinessCategory() {
         return businessCategory;
     }
 
-    public void setBusinessCategory(List<BusinessCategory> businessCategory) {
+    public void setBusinessCategory(List<Category> businessCategory) {
         this.businessCategory = businessCategory;
     }
 
@@ -184,65 +185,63 @@ public class UserInfo {
         }
     }
 
-    public static class TechnicalCategory {
+    public static class Category {
         private String guid;
         private String categoryName;
         private int level;
         private String level2Category;
+        private String path;
+        private boolean read;
+        private boolean editCategory;
+        private boolean editItem;
 
-        public TechnicalCategory() { }
+        public Category() { }
+        public Category(CategoryPrivilegeV2 category) {
+            this.guid = category.getGuid();
+            this.categoryName = category.getName();
+            this.level=category.getLevel();
+            this.read=category.getRead();
+            this.editCategory=category.getEditCategory();
+            this.editItem=category.getEditItem();
+        }
 
-        public TechnicalCategory(String guid, String categoryName, int level, String level2Category) {
+        public Category(String guid, String categoryName, int level, String level2Category) {
             this.guid = guid;
             this.categoryName = categoryName;
             this.level = level;
             this.level2Category = level2Category;
         }
 
-        public String getCategoryName() {
-            return categoryName;
+        public String getPath() {
+            return path;
         }
 
-        public void setCategoryName(String categoryName) {
-            this.categoryName = categoryName;
+        public void setPath(String path) {
+            this.path = path;
         }
 
-        public String getGuid() {
-            return guid;
+        public boolean isRead() {
+            return read;
         }
 
-        public void setGuid(String guid) {
-            this.guid = guid;
+        public void setRead(boolean read) {
+            this.read = read;
         }
 
-        public int getLevel() {
-            return level;
+        public boolean isEditCategory() {
+            return editCategory;
         }
 
-        public void setLevel(int level) {
-            this.level = level;
+        public void setEditCategory(boolean editCategory) {
+            this.editCategory = editCategory;
         }
 
-        public String getLevel2Category() {
-            return level2Category;
+        public boolean isEditItem() {
+            return editItem;
         }
 
-        public void setLevel2Category(String level2Category) {
-            this.level2Category = level2Category;
-        }
-    }
-
-    public static class BusinessCategory {
-        private String guid;
-        private String categoryName;
-        private int level;
-        private String level2Category;
-
-        public BusinessCategory(String guid, String categoryName, int level, String level2Category) {
-            this.guid = guid;
-            this.categoryName = categoryName;
-            this.level = level;
-            this.level2Category = level2Category;
+        public void setEditItem(boolean editItem) {
+            this.editItem = editItem;
         }
 
         public String getCategoryName() {

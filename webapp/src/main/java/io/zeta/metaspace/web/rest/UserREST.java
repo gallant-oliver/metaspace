@@ -99,10 +99,10 @@ public class UserREST {
     @PUT
     @Path("{userId}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateGroupByUser(@PathParam("userId") String userId, Map<String,List<String>> map) throws AtlasBaseException {
+    public Result updateGroupByUser(@PathParam("userId") String userId, Map<String,List<String>> map,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             List<String> userGroups=map.get("userGroups");
-            usersService.updateGroupByUser(userId,userGroups);
+            usersService.updateGroupByUser(userId,userGroups,tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
             LOG.warn("获取用户信息失败",e);

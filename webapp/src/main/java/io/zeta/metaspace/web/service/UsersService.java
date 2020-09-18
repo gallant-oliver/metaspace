@@ -1,8 +1,10 @@
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.Item;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -24,6 +26,7 @@ import kafka.security.auth.Alter;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.CategoryPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +50,8 @@ public class UsersService {
     private UserDAO userDAO;
     @Autowired
     private UsersService usersService;
+    @Autowired
+    private UserGroupService userGroupService;
     @Autowired
     private CategoryDAO categoryDAO;
     @Autowired
@@ -116,8 +121,8 @@ public class UsersService {
             info.setRoles(roles);
             List<String> technicalChildCategorys = new ArrayList<>();
             List<String> businessChildCategorys = new ArrayList<>();
-            List<UserInfo.BusinessCategory> userBusiCategoryList = new ArrayList<>();
-            List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
+            List<UserInfo.Category> userBusiCategoryList = new ArrayList<>();
+            List<UserInfo.Category> userTechCategoryList = new ArrayList<>();
             List<UserInfo.Module> modules = new ArrayList<>();
             for (UserInfo.Role role:roles){
                 String roleId = role.getRoleId();
@@ -193,10 +198,10 @@ public class UsersService {
             level2Category = pathArr[1];
         }
         if (categoryType==0){
-            UserInfo.TechnicalCategory category = new UserInfo.TechnicalCategory(guid, name, level, level2Category);
+            UserInfo.Category category = new UserInfo.Category(guid, name, level, level2Category);
             list.add(category);
         }else if (categoryType==1){
-            UserInfo.BusinessCategory category = new UserInfo.BusinessCategory(guid, name, level, level2Category);
+            UserInfo.Category category = new UserInfo.Category(guid, name, level, level2Category);
             list.add(category);
         }
     }
@@ -316,51 +321,42 @@ public class UsersService {
             user.setAccount(userTmp.getAccount());
             info.setUser(user);
             //userGroups
-            List<String> userGroupIds = userDAO.getUserGroupIdByUser(userId,tenantId);
-            List<String> technicalChildCategorys = new ArrayList<>();
-            List<String> businessChildCategorys = new ArrayList<>();
-            List<UserInfo.BusinessCategory> userBusiCategoryList = new ArrayList<>();
-            List<UserInfo.TechnicalCategory> userTechCategoryList = new ArrayList<>();
-            for (String userGroupId:userGroupIds){
-                //technicalCategory
-                List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByUserGroup(userGroupId,tenantId);
-                for (CategoryEntityV2 entity : technicalCategoryList) {
-                    if (userTechCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
-                        continue;
-                    }
-                    if (technicalChildCategorys.contains(entity.getGuid())){
-                        continue;
-                    }
-                    addUserCategory(userTechCategoryList,entity,0,tenantId);
-                }
-                if (technicalCategoryList!=null&&technicalCategoryList.size()!=0){
-                    List<RoleModulesCategories.Category> techChildCategorys = userGroupDAO.getChildCategorys(technicalCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 0,tenantId);
-                    for (RoleModulesCategories.Category category:techChildCategorys){
-                        if (!technicalChildCategorys.contains(category.getGuid())){
-                            technicalChildCategorys.add(category.getGuid());
-                        }
-                    }
-                }
-                //businessCategory
-                List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByUserGroup(userGroupId,tenantId);
-                for (CategoryEntityV2 entity : businessCategoryList) {
-                    if (userBusiCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
-                        continue;
-                    }
-                    if (businessChildCategorys.contains(entity.getGuid())){
-                        continue;
-                    }
-                    addUserCategory(userBusiCategoryList,entity,1,tenantId);
-                }
-                if (businessCategoryList!=null&&businessCategoryList.size()!=0){
-                    List<RoleModulesCategories.Category> busiChildCategorys = userGroupDAO.getChildCategorys(businessCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 1,tenantId);
-                    for (RoleModulesCategories.Category category:busiChildCategorys){
-                        if (!businessChildCategorys.contains(category.getGuid())){
-                            businessChildCategorys.add(category.getGuid());
-                        }
-                    }
+            Map<String, CategoryPrivilegeV2> technicalCategories = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+            List<UserInfo.Category> technicals = new ArrayList<>();
+            if (technicalCategories.size()!=0){
+                List<CategoryPath> technicalPaths = categoryDAO.getPathByIds(Lists.newArrayList(technicalCategories.keySet()), 0, tenantId);
+                Map<String,String> technicalPathMap = new HashMap<>();
+                technicalPaths.forEach(path->{
+                    String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
+                    technicalPathMap.put(path.getGuid(),categoryPath);
+                });
+                for (CategoryPrivilegeV2 category:technicalCategories.values()){
+                    UserInfo.Category technicalCategory = new UserInfo.Category(category);
+                    String path=technicalPathMap.get(category.getGuid());
+                    technicalCategory.setPath(path);
+                    technicals.add(technicalCategory);
                 }
             }
+            info.setTechnicalCategory(technicals);
+
+            Map<String, CategoryPrivilegeV2> businessCategories = userGroupService.getUserPrivilegeCategory(tenantId, 1, false);
+            List<UserInfo.Category> business = new ArrayList<>();
+            if (businessCategories.size()!=0){
+                List<CategoryPath> businessPaths = categoryDAO.getPathByIds(Lists.newArrayList(businessCategories.keySet()), 1, tenantId);
+                Map<String,String> businessPathMap = new HashMap<>();
+                businessPaths.forEach(path->{
+                    String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
+                    businessPathMap.put(path.getGuid(),categoryPath);
+                });
+                for (CategoryPrivilegeV2 category:businessCategories.values()){
+                    UserInfo.Category technicalCategory = new UserInfo.Category(category);
+                    String path=businessPathMap.get(category.getGuid());
+                    technicalCategory.setPath(path);
+                    business.add(technicalCategory);
+                }
+            }
+            info.setBusinessCategory(business);
+
             SecuritySearch search = new SecuritySearch();
             search.setUserName(user.getUsername());
             List<String> list = new ArrayList<>();
@@ -393,10 +389,6 @@ public class UsersService {
             }
 
             info.setModules(new ArrayList<>(modules.values()));
-            userTechCategoryList = userTechCategoryList.stream().filter(category->!technicalChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
-            userBusiCategoryList = userBusiCategoryList.stream().filter(category->!businessChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
-            info.setTechnicalCategory(userTechCategoryList);
-            info.setBusinessCategory(userBusiCategoryList);
             info.setUserGroups(userDAO.getUserGroupNameByUserId(userId, tenantId));
             return info;
         } catch (AtlasBaseException e){
@@ -443,8 +435,8 @@ public class UsersService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }
-    public void updateGroupByUser(String userId,List<String> userGroups) throws AtlasBaseException {
-        userDAO.deleteGroupByUser(userId);
+    public void updateGroupByUser(String userId,List<String> userGroups,String tenantId) throws AtlasBaseException {
+        userDAO.deleteGroupByUser(userId,tenantId);
         if (userGroups==null||userGroups.size()==0){
             return;
         }
