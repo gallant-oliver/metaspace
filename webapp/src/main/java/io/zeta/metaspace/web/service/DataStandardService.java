@@ -304,6 +304,12 @@ public class DataStandardService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空");
         }
         List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
+        List<String> sameList = new ArrayList<>();
+        for (String number: numberList){
+            if (sameList.contains(number)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号为: "+ number +"在文件中重复，请修改后上传。");
+            }
+        }
         List<String> existDataStandard = queryByNumberList(numberList,tenantId).stream().map(DataStandard::getNumber).collect(Collectors.toList());
         if (!existDataStandard.isEmpty()) {
             List<String> showList = existDataStandard.subList(0, Math.min(existDataStandard.size(), 5));

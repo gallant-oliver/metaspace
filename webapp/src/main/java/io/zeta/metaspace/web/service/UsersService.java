@@ -421,6 +421,9 @@ public class UsersService {
             PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(offset, limit, search);
             for (UserAndModule userAndModule:userAndModules.getLists()){
                 User user = userDAO.getUserByName(userAndModule.getUserName(), userAndModule.getEmail());
+                if (user==null){
+                    break;
+                }
                 List<UserGroupIdAndName> userGroupName = userDAO.getUserGroupNameByUserId(user.getUserId(), tenantId);
                 user.setUserGroups(userGroupName);
                 users.add(user);
@@ -446,5 +449,9 @@ public class UsersService {
             return;
         }
         userDAO.addGroupByUser(userId,userGroups);
+    }
+
+    public void getCategoryPrivilege(String categeoryId){
+
     }
 }

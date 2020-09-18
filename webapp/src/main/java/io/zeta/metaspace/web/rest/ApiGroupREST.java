@@ -82,7 +82,7 @@ public class ApiGroupREST {
     @OperateType(INSERT)
     public Result insertApiGroup(ApiGroupV2 apiGroup, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), apiGroup.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), apiGroup.getName());
             apiGroupService.insertApiGroup(apiGroup,tenantId);
         }catch (AtlasBaseException e){
             LOG.error("新建api分组失败",e);
@@ -109,7 +109,7 @@ public class ApiGroupREST {
     @OperateType(UPDATE)
     public Result updateApiGroup(ApiGroupV2 apiGroup, @PathParam ("groupId")String groupId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), apiGroup.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), apiGroup.getName());
             apiGroup.setId(groupId);
             apiGroupService.updateApiGroup(apiGroup,tenantId);
         }catch (AtlasBaseException e){
@@ -196,7 +196,7 @@ public class ApiGroupREST {
     public Result updateApiRelationVersion(ApiGroupRelation relation,@PathParam ("groupId")String groupId) throws AtlasBaseException {
         try {
             ApiGroupInfo apiGroup = apiGroupService.getApiGroup(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "变更\""+apiGroup.getName()+"\"关联的api版本");
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "变更\""+apiGroup.getName()+"\"关联的api版本");
             apiGroupService.updateApiRelationVersion(relation,groupId);
             return ReturnUtil.success();
         }catch (Exception e){
@@ -219,7 +219,7 @@ public class ApiGroupREST {
     public Result updateAllApiRelationVersion(ApiGroupV2 apiGroupV2) throws AtlasBaseException {
         try {
             ApiGroupInfo apiGroup = apiGroupService.getApiGroup(apiGroupV2.getId());
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "变更\""+apiGroup.getName()+"\"关联的api版本");
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "变更\""+apiGroup.getName()+"\"关联的api版本");
             apiGroupService.updateAllApiRelationVersion(apiGroupV2);
             return ReturnUtil.success();
         }catch (Exception e){
@@ -242,7 +242,7 @@ public class ApiGroupREST {
     public Result updatePublish(ApiGroupV2 apiGroupV2) throws AtlasBaseException {
         try {
             ApiGroupInfo apiGroup = apiGroupService.getApiGroup(apiGroupV2.getId());
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "将\""+apiGroup.getName()+"\"的发布状态变为："+apiGroupV2.isPublish());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "将\""+apiGroup.getName()+"\"的发布状态变为："+apiGroupV2.isPublish());
             apiGroupService.updatePublish(apiGroupV2.getId(),apiGroupV2.isPublish());
             return ReturnUtil.success();
         }catch (Exception e){
@@ -264,7 +264,7 @@ public class ApiGroupREST {
     public Result deleteApiGroup(List<String> ids) throws AtlasBaseException {
         try {
             List<String> names = apiGroupService.getApiGroupNames(ids);
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量删除apiGroup:[" + Joiner.on("、").join(names) + "]");
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除apiGroup:[" + Joiner.on("、").join(names) + "]");
             apiGroupService.deleteApiGroup(ids);
             return ReturnUtil.success();
         }catch (Exception e){

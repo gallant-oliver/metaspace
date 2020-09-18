@@ -640,7 +640,7 @@ public class DataShareREST {
     @OperateType(INSERT)
     public Result insertProject(@HeaderParam("tenantId")String tenantId,ProjectInfo projectInfo) throws AtlasBaseException {
         try{
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "新增项目："+projectInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "新增项目："+projectInfo.getName());
             shareService.insertProject(projectInfo,tenantId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
@@ -706,7 +706,7 @@ public class DataShareREST {
     @OperateType(UPDATE)
     public Result updateProject(ProjectInfo projectInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try{
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "更新项目："+projectInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新项目："+projectInfo.getName());
             shareService.updateProject(projectInfo,tenantId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
@@ -734,7 +734,7 @@ public class DataShareREST {
     public Result addUserGroups(List<String> userGroups,@PathParam("id")String projectId) throws AtlasBaseException {
         try{
             ProjectInfo projectInfo = shareService.getProjectInfoById(projectId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "新增项目用户组权限："+projectInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "新增项目用户组权限："+projectInfo.getName());
             shareService.addUserGroups(userGroups,projectId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
@@ -762,7 +762,6 @@ public class DataShareREST {
     @Path("/project/userGroups")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
     public Result getUserGroups(@QueryParam("isPrivilege")boolean isPrivilege,@QueryParam("projectId")String projectId,
                                 @QueryParam("search")String search,
                                 @DefaultValue("-1")@QueryParam("limit")int limit,
@@ -800,7 +799,7 @@ public class DataShareREST {
     public Result deleteUserGroups(List<String> userGroups,@PathParam("id")String projectId) throws AtlasBaseException {
         try{
             ProjectInfo projectInfo = shareService.getProjectInfoById(projectId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), "移除项目用户组权限："+projectInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "移除项目用户组权限："+projectInfo.getName());
             shareService.deleteUserGroups(userGroups,projectId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
@@ -828,7 +827,7 @@ public class DataShareREST {
         try{
             List<String> projectNames = shareService.getProjectInfoByIds(projectIds).stream().map(projectInfo -> projectInfo.getName()).collect(Collectors.toList());
             if (projectNames!=null){
-                HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除项目:[" + Joiner.on("、").join(projectNames) + "]");
+                HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除项目:[" + Joiner.on("、").join(projectNames) + "]");
             }
 
             shareService.deleteProject(projectIds);

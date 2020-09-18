@@ -27,9 +27,12 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.util.ShutdownHookManager;
+import org.apache.poi.util.DefaultTempFileCreationStrategy;
+import org.apache.poi.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -104,6 +107,9 @@ public final class Atlas {
         if (cmd.hasOption(APP_PATH)) {
             appPath = cmd.getOptionValue(APP_PATH);
         }
+        String tmpFile = System.getProperty("java.io.tmpdir");
+        File tmp = new File(tmpFile,"metaspace");
+        TempFile.setTempFileCreationStrategy(new DefaultTempFileCreationStrategy(tmp));
 
         setApplicationHome();
         Configuration configuration = ApplicationProperties.get();

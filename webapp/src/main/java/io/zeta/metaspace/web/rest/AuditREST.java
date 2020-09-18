@@ -69,7 +69,7 @@ public class AuditREST {
                                  ApiAudit apiAudit) throws AtlasBaseException {
         try {
             ApiAudit oldApiAudit = auditService.getApiAuditById(auditId, tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASHARE.getAlias(), MessageFormat.format("审核 Api : {0} {1}", oldApiAudit.getApiGuid(), oldApiAudit.getApiVersion()));
+            HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), MessageFormat.format("审核 Api : {0} {1}", oldApiAudit.getApiGuid(), oldApiAudit.getApiVersion()));
 
             auditService.updateApiAudit(tenantId, auditId, apiAudit.getStatus(), apiAudit.getReason());
         } catch (AtlasBaseException e) {

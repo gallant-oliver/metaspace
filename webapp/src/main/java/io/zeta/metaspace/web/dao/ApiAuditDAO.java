@@ -74,7 +74,7 @@ public interface ApiAuditDAO {
             " AND audit.applicant=#{applicant} " +
             " </if>" +
             "<if test=\"param.query!=null and param.query!=''\"> " +
-            " AND  audit.applicant_name like '%${param.query}%' ESCAPE '/' " +
+            " AND  api.name like '%${param.query}%' ESCAPE '/' " +
             "</if>" +
             "order by audit.update_time desc " +
             "<if test='param.limit!=-1'> " +
