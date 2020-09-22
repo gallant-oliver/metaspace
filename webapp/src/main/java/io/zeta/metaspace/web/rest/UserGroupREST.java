@@ -73,7 +73,6 @@ import javax.ws.rs.QueryParam;
 @Singleton
 @Service
 public class UserGroupREST {
-    private static final Logger LOG = LoggerFactory.getLogger(UserGroupREST.class);
     @Autowired
     UserGroupService userGroupService;
     /**
@@ -91,12 +90,10 @@ public class UserGroupREST {
             @DefaultValue("desc") @QueryParam("order") String order,
             @QueryParam("search") String search) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组列表及搜索时，租户ID为:" + tenantId);
             PageResult<UserGroupListAndSearchResult> pageResult = userGroupService.getUserGroupListAndSearch(tenantId, offset, limit, sortBy, order, search);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("用户组列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
         }
     }
 
@@ -111,12 +108,10 @@ public class UserGroupREST {
     public Result getUserGroupByID(@PathParam("id") String id) throws AtlasBaseException {
 
         try {
-            LOG.info("获取用户组详情时，用户组ID为:" + id);
             UserGroup pageResult = userGroupService.getUserGroupByID(id);
             return ReturnUtil.success(pageResult);
         }catch (Exception e) {
-            LOG.error("获取用户组详情失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取用户组详情失败，您的用户组ID为:" + id + ",请检查好是否配置正确");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取用户组详情失败，您的用户组ID为:" + id + ",请检查好是否配置正确");
         }
     }
 
@@ -131,16 +126,11 @@ public class UserGroupREST {
     @OperateType(INSERT)
     public Result addUserGroup(@HeaderParam("tenantId") String tenantId, UserGroup userGroup) throws AtlasBaseException {
         try {
-            LOG.info("新建用户组时，您的租户ID为:" + tenantId + ",用户组名称为:" + userGroup.getName() + ",描述信息为：" + userGroup.getDescription());
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新建用户组："+userGroup.getName());
             userGroupService.addUserGroup(tenantId, userGroup);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("新建用户组失败", e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("新建用户组失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"新建用户组失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"新建用户组失败");
         }
     }
 
@@ -154,14 +144,12 @@ public class UserGroupREST {
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteUserGroupByID(@PathParam("id") String id) throws AtlasBaseException {
         try {
-            LOG.info("删除用户组信息时，您的用户组ID为:" + id);
             UserGroup userGroupByID = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组："+userGroupByID.getName());
             userGroupService.deleteUserGroupByID(id);
             return ReturnUtil.success();
-        }catch (Exception e) {
-            LOG.error("删除用户组信息失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"删除用户组信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"删除用户组信息失败");
         }
     }
 
@@ -180,12 +168,10 @@ public class UserGroupREST {
             @DefaultValue("10") @QueryParam("limit") int limit,
             @QueryParam("search") String search,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组成员列表及搜索");
             PageResult<MemberListAndSearchResult> pageResult = userGroupService.getUserGroupMemberListAndSearch(id,offset, limit, search,tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("获取用户组成员列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组成员列表获取失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组成员列表获取失败");
         }
     }
 
@@ -205,16 +191,12 @@ public class UserGroupREST {
             @DefaultValue("-1") @QueryParam("limit") int limit,
             @QueryParam("search") String search) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组添加成员列表及搜索时，您的租户ID为:" + tenantId + ",用户组ID为:" + groupId);
             PageResult<UserGroupMemberSearch> pageResult = userGroupService.getUserGroupMemberSearch(tenantId, groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取用户组添加成员列表及搜索失败", e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取用户组添加成员列表及搜索失败", e);
             throw new AtlasBaseException("获取用户组添加成员列表及搜索失败，您的租户ID为:" + tenantId + ",用户组ID为:" + groupId + ",请检查好是否配置正确"+e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组成员列表获取失败");
         }
+
     }
 
 
@@ -234,12 +216,10 @@ public class UserGroupREST {
 
         try {
             List<String> userIds = map.get("userIds");
-            LOG.info("用户组添加成员时，您的用户组ID为:" + groupId);
             userGroupService.addUserGroupByID(groupId, userIds);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组添加成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组添加成员失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组添加成员失败");
         }
     }
 
@@ -258,12 +238,10 @@ public class UserGroupREST {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除成员："+userGroupByID.getName());
             List<String> userIds = map.get("userIds");
-            LOG.info("用户组移除成员时，您的用户组ID为:" + groupId);
             userGroupService.deleteUserByGroupId(groupId, userIds);
             return ReturnUtil.success();
         }catch (Exception e) {
-            LOG.error("用户组移除成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组移除成员失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组移除成员失败");
         }
     }
 
@@ -280,15 +258,10 @@ public class UserGroupREST {
         try {
             UserGroupCategories privileges = userGroupService.getPrivileges(userGroupId,tenant,all);
             return ReturnUtil.success(privileges);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组授权范围失败");
         }
-        catch(AtlasBaseException e){
-            LOG.error("获取角色方案及授权范围失败", e);
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("获取角色方案及授权范围失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户组授权范围失败");
-        }
+
     }
 
     /**
@@ -308,8 +281,7 @@ public class UserGroupREST {
             userGroupService.putPrivileges(uesrGroupId,userGroupCategories);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("修改角色方案及授权范围失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改用户组授权范围失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"修改用户组授权范围失败");
         }
     }
 
@@ -328,12 +300,8 @@ public class UserGroupREST {
 
             userGroupService.updateUserGroupInformation(groupId, userGroup,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("修改用户组管理信息失败", e);
-            throw e;
-        }catch (Exception e) {
-            LOG.error("修改用户组管理信息失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"修改用户组管理信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"修改用户组管理信息失败");
         }
     }
 
@@ -359,9 +327,8 @@ public class UserGroupREST {
         try {
             PageResult<SourceAndPrivilege> pageResult = userGroupService.getSourceBySearch(groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
-        }catch (Exception e) {
-            LOG.error("用户组数据源列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组数据源列表及搜索失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组数据源列表及搜索失败");
         }
     }
 
@@ -390,8 +357,7 @@ public class UserGroupREST {
             PageResult<DataSourceIdAndName> pageResult = userGroupService.getNoSourceBySearch(tenantId, groupId, offset, limit, search);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("获取用户组添加数据源列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取用户组添加数据源列表及搜索失败: ");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组添加数据源列表及搜索失败");
         }
     }
 
@@ -414,8 +380,7 @@ public class UserGroupREST {
             userGroupService.addDataSourceByGroupId(groupId, privileges);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组添加数据源失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
         }
     }
 
@@ -439,8 +404,7 @@ public class UserGroupREST {
             userGroupService.updateDataSourceByGroupId(groupId, privileges);
             return ReturnUtil.success();
         }catch (Exception e) {
-            LOG.error("用户组修改项目权限失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组修改项目权限失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组修改项目权限失败");
         }
     }
 
@@ -462,8 +426,7 @@ public class UserGroupREST {
             userGroupService.deleteDataSourceByGroupId(groupId, sourceIds);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组移除数据源失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据源失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据源失败");
         }
     }
 
@@ -481,8 +444,7 @@ public class UserGroupREST {
             List<Map<String, String>> pageResult = userGroupService.getDataSourcePrivileges();
             return ReturnUtil.success(pageResult);
         }catch (Exception e) {
-            LOG.error("获取数据源权限列表失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取数据源权限列表失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源权限列表失败");
         }
     }
 
@@ -505,8 +467,7 @@ public class UserGroupREST {
             userGroupService.addProjectByGroupId(groupId, projectIds);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("用户组添加数据源失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
         }
     }
 
@@ -539,8 +500,7 @@ public class UserGroupREST {
             PageResult<ProjectHeader> userGroups = userGroupService.getProject(isPrivilege, groupId, parameters, tenantId);
             return ReturnUtil.success(userGroups);
         }catch (Exception e) {
-            LOG.error("用户组数据源列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组数据源列表及搜索失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组数据源列表及搜索失败");
         }
     }
 
@@ -562,12 +522,8 @@ public class UserGroupREST {
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组项目权限："+userGroup.getName());
             userGroupService.deleteProject(projects,userGroupId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("删除权限用户组权限失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("删除权限用户组权限失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除权限用户组权限失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"删除权限用户组权限失败");
         }
 
     }
@@ -594,8 +550,7 @@ public class UserGroupREST {
             List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(categoryPrivilegeV2, id, type, tenantId, category.isChild());
             return ReturnUtil.success(categoryPrivilegeV2s);
         }catch (Exception e){
-            LOG.error("更新用户组目录权限失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新用户组目录权限失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"更新用户组目录权限失败");
         }
     }
 
@@ -629,12 +584,8 @@ public class UserGroupREST {
             category.setEditItem(editItem);
             PageResult<CategoryUpdate> updateCategory = userGroupService.getUpdateCategory(category, id, type, tenantId, limit, offset,child);
             return ReturnUtil.success(updateCategory);
-        }catch (AtlasBaseException e){
-            LOG.error("获取权限变更影响范围失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("获取权限变更影响范围失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取权限变更影响范围失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取权限变更影响范围失败");
         }
     }
 
@@ -659,8 +610,7 @@ public class UserGroupREST {
             userGroupService.addPrivileges(category,id,tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("分配用户组权限失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "分配用户组权限失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"分配用户组权限失败");
         }
 
     }
@@ -687,12 +637,8 @@ public class UserGroupREST {
             privilegeCategory = isAdd?userGroupService.getNoPrivilegeCategory(id,type,tenantId,false):userGroupService.getPrivilegeCategory(id, type, tenantId,false);
 
             return ReturnUtil.success(privilegeCategory);
-        }catch (AtlasBaseException e){
-            LOG.error("获取用户组目录权限列表失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("获取用户组目录权限列表失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组目录权限列表失败");
         }
     }
 
@@ -715,12 +661,8 @@ public class UserGroupREST {
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "移除用户组："+userGroup.getName()+"目录权限");
             userGroupService.deleteCategoryPrivilege(ids,id,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("移除用户组目录权限失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("移除用户组目录权限失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "移除用户组目录权限失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组目录权限列表失败");
         }
     }
 }

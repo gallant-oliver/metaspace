@@ -60,7 +60,6 @@ import java.util.UUID;
 @Singleton
 @Service
 public class DataQualityREST {
-    private static final Logger LOG = LoggerFactory.getLogger(DataQualityREST.class);
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -82,12 +81,8 @@ public class DataQualityREST {
         try {
             dataQualityService.addTemplate(template,tenantId);
             return Response.status(200).entity("success").build();
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"添加模板异常");
         }
     }
 
@@ -106,12 +101,8 @@ public class DataQualityREST {
         try {
             dataQualityService.deleteTemplate(templateId);
             return Response.status(200).entity("success").build();
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"删除模板异常");
         }
     }
 
@@ -129,12 +120,8 @@ public class DataQualityREST {
         try {
             dataQualityService.updateTemplate(templateId, template);
             return Response.status(200).entity("success").build();
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"修改模板异常");
         }
     }
 
@@ -150,12 +137,8 @@ public class DataQualityREST {
     public Template getTemplate(@PathParam("templateId") String templateId) throws AtlasBaseException {
         try {
             return dataQualityService.viewTemplate(templateId);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加模板异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取模板详情异常");
         }
     }
 
@@ -171,7 +154,7 @@ public class DataQualityREST {
         try {
             dataQualityService.startTemplate(templateId, templateStatus);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动模板失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"启动模板失败");
         }
         return Response.status(200).entity("success").build();
     }
@@ -189,10 +172,8 @@ public class DataQualityREST {
         try {
             dataQualityService.stopTemplate(templateId);
             return Response.status(200).entity("success").build();
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "暂停模板失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"暂停模板失败");
         }
     }
 
@@ -204,7 +185,7 @@ public class DataQualityREST {
         try {
             return dataQualityService.getTemplateStatus(templateId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模板状态失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取模板状态失败");
         }
     }
 
@@ -221,7 +202,7 @@ public class DataQualityREST {
         try {
             return dataQualityService.getTemplates(tableId,tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模板统计信息列表失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取模板统计信息列表失败");
         }
     }
 
@@ -234,7 +215,7 @@ public class DataQualityREST {
             PageResult pageResult = dataQualityService.getReports(tableGuid, templateId, parameters,tenantId);
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取模块报表失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取模块报表失败");
         }
     }
 
@@ -251,10 +232,8 @@ public class DataQualityREST {
         try {
             Report report = dataQualityService.getReport(reportId);
             return report;
-        } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"sql异常");
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取报表详情失败");
         }
     }
 
@@ -271,10 +250,8 @@ public class DataQualityREST {
         try {
             TableColumnRules rules = dataQualityService.getRules(tableId, buildType);
             return rules;
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取计算规则失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取计算规则失败");
         }
     }
 
@@ -291,7 +268,7 @@ public class DataQualityREST {
         try {
             return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), reportIds);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取下载报表url失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取下载报表url失败");
         }
     }
 
@@ -313,8 +290,8 @@ public class DataQualityREST {
             os.write(FileUtils.readFileToByteArray(zipFile));
             os.close();
             zipFile.delete();
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"下载报告失败");
         }
     }
 
@@ -325,7 +302,7 @@ public class DataQualityREST {
         try {
             dataQualityService.updateAlertStatus(reportId, status);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修改报告告警状态失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"修改报告告警状态失败");
         }
     }
     
@@ -337,7 +314,7 @@ public class DataQualityREST {
         try {
             return dataQualityService.getLastReportError(templateId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报表规则完成进度失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取报表规则完成进度失败");
         }
     }
 

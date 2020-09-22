@@ -55,7 +55,6 @@ import java.util.Objects;
 @Service
 public class TableREST {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TableREST.class);
 
     @Autowired
     private TableService tableService;
@@ -101,11 +100,8 @@ public class TableREST {
             String tableId = metaspaceGremlinService.getGuidByDBAndTableName(database, tableName);
             Table ret = new Table(tableId);
             return ret;
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("创建离线表失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建离线表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建离线表失败");
         }
     }
 
@@ -150,10 +146,8 @@ public class TableREST {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过1M");
             }
             return tableService.importSql(file);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建离线表失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();

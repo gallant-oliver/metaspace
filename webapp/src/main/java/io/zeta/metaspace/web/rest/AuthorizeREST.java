@@ -68,7 +68,6 @@ import javax.ws.rs.QueryParam;
 @Singleton
 @Service
 public class AuthorizeREST {
-    private static final Logger LOG = LoggerFactory.getLogger(UserGroupREST.class);
     @Autowired
     UserGroupService userGroupService;
 
@@ -89,11 +88,9 @@ public class AuthorizeREST {
             @DefaultValue("desc") @QueryParam("order") String order,
             @QueryParam("query") String query) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组列表及搜索时，租户ID为:" + tenantId);
             PageResult<UserGroupListAndSearchResult> pageResult = userGroupService.getUserGroupListAndSearch(tenantId, offset, limit, sortBy, order, query);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("用户组列表及搜索失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
         }
     }
@@ -111,14 +108,8 @@ public class AuthorizeREST {
         try {
             UserGroupCategories privileges = userGroupService.getPrivileges(userGroupId, tenant, all);
             return ReturnUtil.success(privileges);
-        }
-        catch(AtlasBaseException e){
-            LOG.error("获取角色方案及授权范围失败", e);
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("获取角色方案及授权范围失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户组授权范围失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组授权范围失败");
         }
     }
 
@@ -139,7 +130,6 @@ public class AuthorizeREST {
             userGroupService.putPrivileges(uesrGroupId,userGroupCategories);
             return ReturnUtil.success();
         } catch (Exception e) {
-            LOG.error("修改角色方案及授权范围失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改用户组授权范围失败");
         }
     }
@@ -166,7 +156,6 @@ public class AuthorizeREST {
             List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(categoryPrivilegeV2, id, type, tenantId, category.isChild());
             return ReturnUtil.success(categoryPrivilegeV2s);
         }catch (Exception e){
-            LOG.error("更新用户组目录权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新用户组目录权限失败");
         }
     }
@@ -201,11 +190,7 @@ public class AuthorizeREST {
             category.setEditItem(editItem);
             PageResult<CategoryUpdate> updateCategory = userGroupService.getUpdateCategory(category, id, type, tenantId, limit, offset,child);
             return ReturnUtil.success(updateCategory);
-        }catch (AtlasBaseException e){
-            LOG.error("获取权限变更影响范围失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("获取权限变更影响范围失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取权限变更影响范围失败");
         }
     }
@@ -228,7 +213,6 @@ public class AuthorizeREST {
             userGroupService.addUserGroupPrivilege(category,tenantId,type);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("分配用户组权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "分配用户组权限失败");
         }
 
@@ -266,7 +250,6 @@ public class AuthorizeREST {
             PageResult<GroupPrivilege> userGroupByCategory = userGroupService.getUserGroupByCategory(categoryGroupPrivilege,parameters, tenantId);
             return ReturnUtil.success(userGroupByCategory);
         }catch (Exception e){
-            LOG.error("获取用户组目录权限列表失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
         }
     }
@@ -293,11 +276,7 @@ public class AuthorizeREST {
             }
             userGroupService.deleteGroupPrivilege(ids,id,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("移除用户组目录权限失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("移除用户组目录权限失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "移除用户组目录权限失败");
         }
     }
@@ -317,11 +296,7 @@ public class AuthorizeREST {
         try{
             List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryView(type, tenantId);
             return ReturnUtil.success(adminCategory);
-        }catch (AtlasBaseException e){
-            LOG.error("获取用户组目录权限列表失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("获取用户组目录权限列表失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
         }
     }

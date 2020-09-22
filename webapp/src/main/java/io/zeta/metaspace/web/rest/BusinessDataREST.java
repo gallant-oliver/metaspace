@@ -125,8 +125,8 @@ public class BusinessDataREST {
     public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters, @DefaultValue("columnName") @QueryParam("sortAttribute") final String sortAttribute, @DefaultValue("asc") @QueryParam("sort") final String sort) throws AtlasBaseException {
         try {
             return businessService.getTableColumnList(tableGuid, parameters, sortAttribute, sort);
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取表字段列表");
         }
     }
 
@@ -138,8 +138,8 @@ public class BusinessDataREST {
         try {
             businessService.editSingleColumnDisplayName(tableGuid, column);
             return "success";
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "编辑字段别名失败");
         }
     }
 
@@ -157,8 +157,8 @@ public class BusinessDataREST {
         try {
             businessService.editTableDisplayName(tableHeader);
             return "success";
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "编辑表别名失败");
         }
     }
 
@@ -181,10 +181,8 @@ public class BusinessDataREST {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             return businessService.importColumnWithDisplayText(tableGuid, file);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.toString());
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();

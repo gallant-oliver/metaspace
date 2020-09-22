@@ -37,8 +37,11 @@ import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.service.PrivilegeService;
 import io.zeta.metaspace.web.service.UsersService;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +64,7 @@ import javax.ws.rs.core.Response;
 @Singleton
 @Service
 public class PrivilegeREST {
+
 
     @Autowired
     private PrivilegeService privilegeService;
@@ -85,7 +89,7 @@ public class PrivilegeREST {
         try {
             return usersService.getUserInfoById(userId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取API信息失败");
         }
     }
 
@@ -103,7 +107,7 @@ public class PrivilegeREST {
         try {
             return usersService.getUserList(parameters);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取用户列表失败");
         }
     }
 
@@ -124,7 +128,7 @@ public class PrivilegeREST {
             privilegeService.addPrivilege(privilege);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "新增权限方案失败");
         }
     }
 
@@ -141,7 +145,7 @@ public class PrivilegeREST {
         try {
             return privilegeService.getAllModule();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取权限模块失败");
         }
     }
 
@@ -161,7 +165,7 @@ public class PrivilegeREST {
         try {
             privilegeService.delPrivilege(privilegeId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除权限方案失败");
         }
     }
 
@@ -184,7 +188,7 @@ public class PrivilegeREST {
             privilegeService.updatePrivilege(privilegeId, privilege);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "修改权限方案失败");
         }
     }
 
@@ -202,7 +206,7 @@ public class PrivilegeREST {
         try {
             return privilegeService.getPrivilegeList(parameters);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取权限方案列表失败");
         }
     }
 
@@ -220,7 +224,7 @@ public class PrivilegeREST {
         try {
             return privilegeService.getPrivilegeInfo(privilegeId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取权限方案详情失败");
         }
     }
 
@@ -232,7 +236,7 @@ public class PrivilegeREST {
         try {
             return privilegeService.getAllPermissionRole(parameters);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色列表失败");
         }
     }
 

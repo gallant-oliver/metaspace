@@ -134,7 +134,7 @@ public interface BusinessDAO {
     //多条件查询业务信息列表
     @Select({"<script>",
              " select count(*)over() total,businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
-             " join business_relation on businessInfo.businessId = business_relation.businessId",
+             " join business_relation on businessInfo.businessId = business_relation.businessId join users on users.userid=businessInfo.submitter",
              " where businessInfo.tenantid=#{tenantId} and categoryGuid in(",
              " select guid from category where guid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -144,7 +144,9 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and submitter like '%${submitter}%' ESCAPE '/' order by businessInfo.businessLastUpdate desc",
+             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and " +
+             " users.username like '%${submitter}%' ESCAPE '/' " +
+             " order by businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
