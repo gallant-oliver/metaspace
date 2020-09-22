@@ -34,7 +34,6 @@ public class AuditREST {
 
     @Autowired
     private AuditService auditService;
-    private static final Logger LOG = LoggerFactory.getLogger(AuditREST.class);
 
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -72,10 +71,8 @@ public class AuditREST {
             HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), MessageFormat.format("审核 Api : {0} {1}", oldApiAudit.getApiGuid(), oldApiAudit.getApiVersion()));
 
             auditService.updateApiAudit(tenantId, auditId, apiAudit.getStatus(), apiAudit.getReason());
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "处理审核失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "处理审核失败");
         }
         return Response.status(200).entity("success").build();
     }

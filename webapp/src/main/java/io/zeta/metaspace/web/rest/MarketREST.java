@@ -114,10 +114,8 @@ public class MarketREST {
     public PageResult<BusinessInfoHeader> getBusinessListWithCondition(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return businessService.getBusinessListByCategoryId(categoryId, parameters,tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取业务对象列表失败");
         }
     }
 
@@ -135,7 +133,7 @@ public class MarketREST {
         try {
             return marketService.getBusinessListByName(parameters,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"搜索业务对象失败");
         }
     }
 
@@ -153,7 +151,7 @@ public class MarketREST {
         try {
             return marketService.getBusinessInfo(businessId,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取业务对象详情失败");
         }
     }
 
@@ -172,7 +170,7 @@ public class MarketREST {
         try {
             return marketService.getBusinessTableRelatedAPI(businessId, parameters,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取API信息列表失败");
         }
     }
 
@@ -190,7 +188,7 @@ public class MarketREST {
         try {
             return marketService.getRelatedTableList(businessId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取业务对象关联技术信息列表失败");
         }
     }
 
@@ -217,7 +215,7 @@ public class MarketREST {
         try {
             return marketService.getAPIInfo(guid);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取API信息失败");
         }
     }
 

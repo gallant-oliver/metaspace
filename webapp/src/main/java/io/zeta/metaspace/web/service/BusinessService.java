@@ -463,89 +463,82 @@ public class BusinessService {
     }
 
     public PageResult<BusinessInfoHeader> getBusinessListByCondition(BusinessQueryParameter parameter,String tenantId) throws AtlasBaseException {
-        try {
-            User user = AdminUtils.getUserData();
-            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
-            String status = parameter.getStatus();
-            String ticketNumber = parameter.getTicketNumber();
-            ticketNumber = (ticketNumber==null ? "":ticketNumber);
-            String businessName = parameter.getName();
-            businessName = (businessName==null ? "":businessName);
-            String level2CategoryId = parameter.getLevel2CategoryId();
-            String  submitter = parameter.getSubmitter();
-            submitter = (submitter==null ? "":submitter);
-            int limit = parameter.getLimit();
-            int offset = parameter.getOffset();
-            Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
-            List<String> categoryIds = new ArrayList<>();
+        User user = AdminUtils.getUserData();
+        PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+        String status = parameter.getStatus();
+        String ticketNumber = parameter.getTicketNumber();
+        ticketNumber = (ticketNumber==null ? "":ticketNumber);
+        String businessName = parameter.getName();
+        businessName = (businessName==null ? "":businessName);
+        String level2CategoryId = parameter.getLevel2CategoryId();
+        String  submitter = parameter.getSubmitter();
+        submitter = (submitter==null ? "":submitter);
+        int limit = parameter.getLimit();
+        int offset = parameter.getOffset();
+        Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
+        List<String> categoryIds = new ArrayList<>();
 
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)){
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if(roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                for (Role role:roles){
-                    if (role.getStatus() == 0){
-                        continue;
-                    }
-                    String roleId = role.getRoleId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-                    for (String categoryId  : category){
-                        if (!categoryIds.contains(categoryId)){
-                            categoryIds.add(categoryId);
-                        }
-                    }
+        //判断独立部署和多租户
+        if (TenantService.defaultTenant.equals(tenantId)){
+            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+            if(roles.stream().allMatch(role -> role.getStatus() == 0))
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+            for (Role role:roles){
+                if (role.getStatus() == 0){
+                    continue;
                 }
-            }else{
-                List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
-                for (UserGroup userGroup :userGroups){
-                    String userGroupId = userGroup.getId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, BUSINESS_TYPE,tenantId);
-                    for (String categoryId  : category){
-                        if (!categoryIds.contains(categoryId)){
-                            categoryIds.add(categoryId);
-                        }
+                String roleId = role.getRoleId();
+                List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+                for (String categoryId  : category){
+                    if (!categoryIds.contains(categoryId)){
+                        categoryIds.add(categoryId);
                     }
                 }
             }
-            if(Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
-                if(Objects.nonNull(businessName))
-                    businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
-                if(Objects.nonNull(ticketNumber))
-                    ticketNumber = ticketNumber.replaceAll("%", "/%").replaceAll("_", "/_");
-                if(Objects.nonNull(submitter))
-                    submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
-                List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset,tenantId);
-                for (BusinessInfoHeader infoHeader : businessInfoList) {
-                    String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
-                    String userName = userGroupDAO.getUserNameById(infoHeader.getSubmitter());
-                    if(userName!=null){
-                        infoHeader.setSubmitter(userName);
+        }else{
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
+            for (UserGroup userGroup :userGroups){
+                String userGroupId = userGroup.getId();
+                List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, BUSINESS_TYPE,tenantId);
+                for (String categoryId  : category){
+                    if (!categoryIds.contains(categoryId)){
+                        categoryIds.add(categoryId);
                     }
-                    String path = CategoryRelationUtils.getPath(categoryId,tenantId);
-                    infoHeader.setPath(path + "." + infoHeader.getName());
-                    String[] pathArr = path.split("/");
-                    int length = 2;
-                    if (pathArr.length >= length)
-                        infoHeader.setLevel2Category(pathArr[1]);
-                    List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
-                    infoHeader.setTables(tables);
                 }
-                pageResult.setLists(businessInfoList);
-                long totalsize = 0;
-                if(businessInfoList.size()!=0){
-                    totalsize = businessInfoList.get(0).getTotal();
-                }
-                pageResult.setTotalSize(totalsize);
-                pageResult.setCurrentSize(businessInfoList.size());
             }
-            return pageResult;
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("搜索业务对象失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索业务对象失败");
         }
+        if(Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
+            if(Objects.nonNull(businessName))
+                businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(ticketNumber))
+                ticketNumber = ticketNumber.replaceAll("%", "/%").replaceAll("_", "/_");
+            if(Objects.nonNull(submitter))
+                submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
+            List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset,tenantId);
+            for (BusinessInfoHeader infoHeader : businessInfoList) {
+                String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
+                String userName = userGroupDAO.getUserNameById(infoHeader.getSubmitter());
+                if(userName!=null){
+                    infoHeader.setSubmitter(userName);
+                }
+                String path = CategoryRelationUtils.getPath(categoryId,tenantId);
+                infoHeader.setPath(path + "." + infoHeader.getName());
+                String[] pathArr = path.split("/");
+                int length = 2;
+                if (pathArr.length >= length)
+                    infoHeader.setLevel2Category(pathArr[1]);
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                infoHeader.setTables(tables);
+            }
+            pageResult.setLists(businessInfoList);
+            long totalsize = 0;
+            if(businessInfoList.size()!=0){
+                totalsize = businessInfoList.get(0).getTotal();
+            }
+            pageResult.setTotalSize(totalsize);
+            pageResult.setCurrentSize(businessInfoList.size());
+        }
+        return pageResult;
     }
 
     @Transactional(rollbackFor=Exception.class)
@@ -1076,8 +1069,6 @@ public class BusinessService {
                 columnInfoList = convertMapToColumnInfoList(tableGuid, columnMapList);
             }
             return checkColumnName(tableGuid, columnInfoList, columnAndDisplayMap, existOnPg);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         }

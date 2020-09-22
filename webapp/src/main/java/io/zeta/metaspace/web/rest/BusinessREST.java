@@ -169,7 +169,7 @@ public class BusinessREST {
             businessService.addBusiness(categoryId, business,tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "添加业务对象失败");
         }
     }
 
@@ -191,7 +191,7 @@ public class BusinessREST {
             businessService.updateBusiness(businessId, business,tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "更新业务对象信息失败");
         }
     }
 
@@ -203,7 +203,7 @@ public class BusinessREST {
         try {
             return businessService.getBusinessListByName(parameters,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "搜索业务对象失败");
         }
     }
 
@@ -222,7 +222,7 @@ public class BusinessREST {
         try {
             return businessService.getBusinessListByCategoryId(categoryId, parameters,tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
         }
     }
 
@@ -240,7 +240,7 @@ public class BusinessREST {
         try {
             return businessService.getBusinessInfo(businessId,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
         }
     }
 
@@ -258,7 +258,7 @@ public class BusinessREST {
         try {
             return businessService.getRelatedTableList(businessId,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "业务对象关联技术信息详情失败");
         }
     }
 
@@ -270,7 +270,7 @@ public class BusinessREST {
         try {
             return businessService.getBusinessTableRelatedAPI(businessId, parameters,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "获取关联API失败");
         }
     }
 
@@ -301,7 +301,6 @@ public class BusinessREST {
             PageResult<ApiHead> pageResult = businessService.getBusinessTableRelatedDataServiceAPI(businessId, parameters, isNew, up, down, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            PERF_LOG.error("获取api展示列表失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取api展示列表失败");
         }
     }
@@ -321,12 +320,8 @@ public class BusinessREST {
         try {
             ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(guid, version);
             return ReturnUtil.success(apiInfo);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("获取详情失败",e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("获取详情失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:");
         }
     }
 
@@ -338,7 +333,7 @@ public class BusinessREST {
         try {
             return shareService.getAPIInfo(guid);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询失败:");
         }
     }
 
@@ -357,8 +352,8 @@ public class BusinessREST {
         try {
             List<LinkedHashMap> result = shareService.testAPI(randomName, parameter);
             return result;
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"测试API失败:");
         }
     }
 
@@ -369,8 +364,8 @@ public class BusinessREST {
     public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
         try {
             shareService.cancelAPIThread(randomName);
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"停止测试失败:");
         }
     }
 
@@ -390,7 +385,7 @@ public class BusinessREST {
             businessService.addBusinessAndTableRelation(businessId, tableIdList);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"更新技术失败:");
         }
     }
 
@@ -508,7 +503,11 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Table getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return businessService.getTableInfoById(guid,tenantId);
+        try {
+            return businessService.getTableInfoById(guid,tenantId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取表详情失败");
+        }
     }
 
 
@@ -525,7 +524,7 @@ public class BusinessREST {
         try {
             return TenantService.defaultTenant.equals(tenantId) ?dataManageService.getAll(TECHNICAL_CATEGORY_TYPE):dataManageService.getAllByUserGroup(TECHNICAL_CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取技术目录失败");
         }
     }
 
@@ -547,7 +546,7 @@ public class BusinessREST {
             }
             return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"业务对象查询表关联失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -589,10 +588,8 @@ public class BusinessREST {
         try {
             businessService.deleteBusiness(businessId);
             return Response.status(200).entity("success").build();
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"删除失败");
         }
     }
 
@@ -635,8 +632,8 @@ public class BusinessREST {
     public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters, @DefaultValue("columnName") @QueryParam("sortAttribute") final String sortAttribute, @DefaultValue("asc") @QueryParam("sort") final String sort) throws AtlasBaseException {
         try {
             return businessService.getTableColumnList(tableGuid, parameters, sortAttribute, sort);
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取表字段列表失败");
         }
     }
 
@@ -648,8 +645,8 @@ public class BusinessREST {
         try {
             businessService.editSingleColumnDisplayName(tableGuid, column);
             return "success";
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"编辑字段别名失败");
         }
     }
 
@@ -667,8 +664,8 @@ public class BusinessREST {
         try {
             businessService.editTableDisplayName(tableHeader);
             return "success";
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"编辑表显示名称失败");
         }
     }
 
@@ -703,8 +700,6 @@ public class BusinessREST {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             return businessService.importColumnWithDisplayText(tableGuid, file);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.toString());
         } finally {
@@ -738,7 +733,7 @@ public class BusinessREST {
             os.close();
             xlsxFile.delete();
         }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "下载报告失败");
         }
     }
 
@@ -827,9 +822,8 @@ public class BusinessREST {
                 put("upload", upload);
             }};
             return ReturnUtil.success(map);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("导入失败",e);
-            throw e;
+        }  catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -871,10 +865,9 @@ public class BusinessREST {
                 categoryPrivileges  = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
             }
             return ReturnUtil.success(categoryPrivileges);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("导入失败",e);
-            throw e;
-        } finally {
+        }  catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "导入失败");
+        }finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
             }
@@ -901,12 +894,8 @@ public class BusinessREST {
             }
             dataManageService.moveCategories(moveCategory,CATEGORY_TYPE,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            PERF_LOG.error("变更目录结构失败",e);
-            throw e;
         }catch (Exception e){
-            PERF_LOG.error("变更目录结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
         }
     }
 
@@ -932,8 +921,7 @@ public class BusinessREST {
             List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         }catch (Exception e){
-            PERF_LOG.error("目录排序并变更结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
         }
     }
 
@@ -971,7 +959,6 @@ public class BusinessREST {
             DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
             return ReturnUtil.success(downloadUri);
         }catch (Exception e){
-            PERF_LOG.error("导出业务对象失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出业务对象失败");
         }
 
@@ -1005,7 +992,6 @@ public class BusinessREST {
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            PERF_LOG.error("导出业务对象失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出业务对象失败");
         } finally {
             exportExcel.delete();
@@ -1032,11 +1018,7 @@ public class BusinessREST {
             file = ExportDataPathUtils.fileCheck(name,fileInputStream);
             Map<String,Object> map = businessService.uploadBusiness(file, tenantId);
             return ReturnUtil.success(map);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("文件异常",e);
-            throw e;
         }catch(Exception e){
-            PERF_LOG.error("文件异常",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"文件异常");
         }  finally {
             if(Objects.nonNull(file) && file.exists()) {
@@ -1067,11 +1049,7 @@ public class BusinessREST {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file,categoryId,tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("导入失败",e);
-            throw e;
         }catch(Exception e){
-            PERF_LOG.error("导入失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
@@ -1099,11 +1077,7 @@ public class BusinessREST {
         try {
             businessService.deleteBusinesses(businessId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("批量删除失败",e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("批量删除失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"批量删除失败");
         }
     }
@@ -1124,7 +1098,6 @@ public class BusinessREST {
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch (Exception e){
-            PERF_LOG.error("导出模板文件异常",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出模板文件异常");
         }
     }
@@ -1142,11 +1115,7 @@ public class BusinessREST {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "迁移目录" + category.getName() + "到" + parentCategory.getName());
             dataManageService.migrateCategory(migrateCategory.getCategoryId(), migrateCategory.getParentId(),CATEGORY_TYPE, tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("目录迁移失败", e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("目录迁移失败", e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
         }
     }
@@ -1169,11 +1138,7 @@ public class BusinessREST {
             }
             businessService.moveBusinesses(item);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("迁移业务对象失败", e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("迁移业务对象失败", e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "迁移业务对象失败");
         }
     }
@@ -1193,11 +1158,7 @@ public class BusinessREST {
         try {
             List<CategoryPrivilege> migrateCategory = dataManageService.getMigrateCategory(categoryId, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(migrateCategory);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("获取可以迁移到目录失败", e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("获取可以迁移到目录失败", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取可以迁移到目录失败");
         }
     }
@@ -1219,11 +1180,7 @@ public class BusinessREST {
             }
             TableShow tableShow = searchService.getTableShow(guidCount,true);
             return tableShow;
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("查询数据失败",e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("查询数据失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
@@ -1246,11 +1203,7 @@ public class BusinessREST {
         try {
             PageResult<Table> pageResult = businessService.checkTable(tenantId, limit, offset);
             return ReturnUtil.success(pageResult);
-        }  catch (AtlasBaseException e) {
-            PERF_LOG.error("表描述空值检测失败",e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("表描述空值检测失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"表描述空值检测失败");
         }
     }
@@ -1270,11 +1223,7 @@ public class BusinessREST {
         try {
             PageResult<Table> pageResult = businessService.checkColumn(tenantId, limit, offset);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e) {
-            PERF_LOG.error("列描述空值检测失败",e);
-            throw e;
         } catch (Exception e) {
-            PERF_LOG.error("列描述空值检测失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"列描述空值检测失败");
         }
     }
@@ -1298,7 +1247,6 @@ public class BusinessREST {
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            PERF_LOG.error("业务对象表描述空值检查下载失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"业务对象表描述空值检查下载失败");
         } finally {
             if (exportExcel!=null) {

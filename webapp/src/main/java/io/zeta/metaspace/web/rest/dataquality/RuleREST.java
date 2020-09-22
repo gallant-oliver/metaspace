@@ -113,7 +113,6 @@ public class RuleREST {
 
     private static final Integer CATEGORY_RULE = 4;
 
-    private static final Logger LOG = LoggerFactory.getLogger(RuleREST.class);
 
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
 
@@ -345,7 +344,7 @@ public class RuleREST {
             dataStandardService.assignRuleToStandard(dataStandAndTable,ruleName,tenantId);
             return true;
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新依赖标准失败");
         }
     }
 
@@ -363,7 +362,7 @@ public class RuleREST {
         try {
             return dataStandardService.getDataStandardByRule(ruleId,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取规则依赖标准失败");
         }
     }
 
@@ -378,8 +377,7 @@ public class RuleREST {
             List<DataTaskIdAndName> used = ruleService.getRuleUsed(ids);
             return ReturnUtil.success(used);
         }catch (Exception e){
-            LOG.error("获取使用规则任务失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取使用规则任务失败："+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取使用规则任务失败");
         }
     }
 
@@ -467,9 +465,8 @@ public class RuleREST {
                 put("upload", upload);
             }};
             return ReturnUtil.success(map);
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -511,9 +508,8 @@ public class RuleREST {
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_RULE,tenantId);
             }
             return ReturnUtil.success(categoryPrivileges);
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -540,12 +536,8 @@ public class RuleREST {
             }
             dataManageService.moveCategories(moveCategory,CATEGORY_RULE,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("变更目录结构失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("变更目录结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "变更目录结构失败");
         }
     }
 
@@ -571,8 +563,7 @@ public class RuleREST {
             List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_RULE, tenantId);
             return ReturnUtil.success(categories);
         }catch (Exception e){
-            LOG.error("目录排序并变更结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");
         }
     }
 

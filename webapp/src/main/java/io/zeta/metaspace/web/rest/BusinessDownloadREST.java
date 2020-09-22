@@ -44,7 +44,6 @@ import javax.ws.rs.core.Context;
 @Service
 @Path("/columns")
 public class BusinessDownloadREST {
-    private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
 
     @Autowired
     private BusinessService businessService;
@@ -69,7 +68,6 @@ public class BusinessDownloadREST {
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            PERF_LOG.error("业务对象字段下载失败",e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "业务对象字段下载失败");
         } finally {
             if (exportExcel!=null) {

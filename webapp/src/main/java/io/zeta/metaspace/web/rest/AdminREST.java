@@ -104,7 +104,6 @@ public class AdminREST {
         try {
             return usersService.getUserItems(tenantId);
         } catch (Exception e) {
-            LOG.warn("获取用户菜单失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户菜单失败");
         }
 
@@ -149,12 +148,21 @@ public class AdminREST {
         try {
             auditService.cancelApiAudit(tenantId, auditId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("取消审核失败", e);
-            throw e;
+        }catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "取消审核失败:" + e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/dataservice")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiStatus() throws AtlasBaseException {
+        try {
+            boolean dataService = MetaspaceConfig.getDataService();
+            return ReturnUtil.success(dataService);
         } catch (Exception e) {
-            LOG.error("取消审核失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "取消审核失败:" + e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
         }
     }
 
@@ -172,25 +180,9 @@ public class AdminREST {
         try {
             ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId,version);
             return ReturnUtil.success(apiInfo);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取详情失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取详情失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
         }
     }
 
-    @GET
-    @Path("/dataservice")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiStatus() throws AtlasBaseException {
-        try {
-            boolean dataService = MetaspaceConfig.getDataService();
-            return ReturnUtil.success(dataService);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
-        }
-    }
 }

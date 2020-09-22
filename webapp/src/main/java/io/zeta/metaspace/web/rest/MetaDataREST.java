@@ -73,7 +73,6 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 @Singleton
 @Service
 public class MetaDataREST {
-    private static final Logger LOG = LoggerFactory.getLogger(MetaDataREST.class);
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.MetaDataREST");
     @Autowired
     private SearchService searchService;
@@ -209,10 +208,8 @@ public class MetaDataREST {
             }
             TableShow tableShow = searchService.getTableShow(guidCount,false);
             return tableShow;
-        } catch (AtlasBaseException e) {
-            throw e;
-        }  catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"查询数据失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"查询数据失败");
         }finally {
             AtlasPerfTracer.log(perf);
         }
@@ -236,18 +233,8 @@ public class MetaDataREST {
             }
             BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
             return buildTableSql;
-        } catch (AtlasBaseException e) {
-            LOG.error("查询建表语句失败",e);
-            throw e;
-        } catch (SQLException e) {
-            LOG.error("查询建表语句失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
-        } catch (IOException e) {
-            LOG.error("查询建表语句失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
-        } catch (AtlasException e) {
-            LOG.error("查询建表语句失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取配置文件异常"+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"查询建表语句失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -347,7 +334,7 @@ public class MetaDataREST {
         try {
             metadataService.refreshCache();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "刷新失败");
         }
         return Response.status(200).entity("success").build();
     }
@@ -377,10 +364,8 @@ public class MetaDataREST {
         try {
             String s = tableTagService.addTag(tag.getTagName(),tenantId);
             return s;
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建标签失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建标签失败");
         }
 
     }
@@ -394,8 +379,7 @@ public class MetaDataREST {
             List<Tag> tags = tableTagService.getTags(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(),tenantId);
             return tags;
         } catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标签失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
         }
     }
 
@@ -407,8 +391,7 @@ public class MetaDataREST {
             tableTagService.addTable2Tag(tag2Table.getTable(), tag2Table.getTags());
             return "success";
         } catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加标签失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加标签失败");
         }
     }
 
@@ -421,8 +404,7 @@ public class MetaDataREST {
             tableTagService.deleteTag(tagId);
             return "success";
         } catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除标签失败");
         }
     }
 
@@ -434,8 +416,7 @@ public class MetaDataREST {
             tableTagService.deleteTable2Tag(tableguId, tagId);
             return "success";
         } catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除标签失败");
         }
     }
 
@@ -446,8 +427,7 @@ public class MetaDataREST {
             dataManageService.supplementTable(tenantId);
             return "success";
         } catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "补充贴源层失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "补充贴源层失败");
         }
     }
 
@@ -485,7 +465,7 @@ public class MetaDataREST {
             businessService.updateBusinessTrustTable(tenantId);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新唯一信任数据失败");
         }
     }
 
@@ -497,9 +477,8 @@ public class MetaDataREST {
         try {
             metadataService.deleteTableOwner(tableGuid, ownerList);
             return "success";
-        }  catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除标签失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除标签失败");
         }
     }
 
@@ -541,7 +520,7 @@ public class MetaDataREST {
             metadataService.updateTableInfo(guid, tableInfo);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新表信息失败");
         }
     }
 
@@ -552,8 +531,8 @@ public class MetaDataREST {
     public DownloadUri downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
         try {
             return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), tableGuidList);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "下载报告失败");
         }
     }
 
@@ -585,8 +564,8 @@ public class MetaDataREST {
     public PageResult getHistoryList(@PathParam("tableGuid") String tableGuid, Parameters parameters) throws AtlasBaseException {
         try {
             return metadataService.getTableHistoryList(tableGuid, parameters);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表历史信息失败");
         }
     }
 
@@ -597,8 +576,8 @@ public class MetaDataREST {
     public TableMetadata getTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
         try {
             return metadataService.getTableMetadata(tableGuid, version);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表信息失败");
         }
     }
 
@@ -610,8 +589,8 @@ public class MetaDataREST {
     public List<ColumnMetadata> getColumnHistoryList(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version, ColumnQuery query) throws AtlasBaseException {
         try {
             return metadataService.getColumnHistoryInfo(tableGuid, version, query);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取列历史信息失败");
         }
     }
 
@@ -622,8 +601,8 @@ public class MetaDataREST {
     public ComparisonMetadata getComparisionTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
         try {
             return metadataService.getComparisionTableMetadata(tableGuid, version);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取对比信息失败");
         }
     }
 
@@ -634,8 +613,8 @@ public class MetaDataREST {
     public ComparisonColumnMetadata getComparisionColumnTableMetadata(@PathParam("tableGuid") String tableGuid, @PathParam("version") Integer version) throws AtlasBaseException {
         try {
             return metadataService.getComparisionColumnMetadata(tableGuid, version);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取对比信息失败");
         }
     }
 
@@ -659,7 +638,7 @@ public class MetaDataREST {
             dataStandardService.assignTableToStandard(dataStandAndTable,tableName,tenantId);
             return true;
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新依赖标准失败");
         }
     }
 
@@ -813,14 +792,8 @@ public class MetaDataREST {
             }
             BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId);
             return buildTableSql;
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (SQLException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hive查询异常");
-        } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "图数据查询异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取建表语句失败");
         }
     }
 
@@ -880,10 +853,8 @@ public class MetaDataREST {
             }
             TableShow tableShow = searchService.getRDBMSTableShow(guidCount);
             return tableShow;
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无权限访问");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "数据预览失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -947,7 +918,7 @@ public class MetaDataREST {
         try {
             metadataService.refreshRDBMSCache();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "刷新失败");
         }
         return Response.status(200).entity("success").build();
     }
@@ -961,7 +932,7 @@ public class MetaDataREST {
             metadataService.addMetadataSubscription(tableGuid);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加订阅元数据变更失败");
         }
     }
 
@@ -972,8 +943,8 @@ public class MetaDataREST {
     public PageResult getTableInfluenceWithAPI( @PathParam("tableGuid") String tableGuid, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return metadataService.getTableInfluenceWithAPI(tableGuid, parameters,tenantId);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表关联api失败");
         }
     }
 
@@ -986,7 +957,7 @@ public class MetaDataREST {
             metadataService.removeMetadataSubscription(tableGuid);
             return Response.status(200).entity("success").build();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加订阅元数据变更失败");
         }
     }
     @GET
@@ -996,8 +967,8 @@ public class MetaDataREST {
     public List<TableHeader> getTableInfluenceWithDbAndTable( @PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
         try {
             return metadataService.getTableInfluenceWithDbAndTable(tableGuid);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取库表影响失败");
         }
     }
 
@@ -1015,7 +986,7 @@ public class MetaDataREST {
         try {
            return dataStandardService.getDataStandardByTable(tableGuid,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表的依赖数据标准失败");
         }
     }
     @GET
@@ -1025,8 +996,8 @@ public class MetaDataREST {
     public CheckingInfo getCheckingTableInfo( @PathParam("tableGuid") String tableGuid) throws AtlasBaseException {
         try {
             return metadataService.getCheckingTableInfo(tableGuid);
-        }  catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "元数据稽核失败");
         }
     }
 
@@ -1038,12 +1009,8 @@ public class MetaDataREST {
         try {
             dataManageService.updateTable();
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            PERF_LOG.error(e.getMessage(), e);
-            throw e;
-        }catch (Exception e) {
-            PERF_LOG.error(e.getMessage(), e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "更新表信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新表信息失败");
         }
     }
 

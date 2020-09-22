@@ -46,7 +46,6 @@ public class HookREST {
     HookService hookService;
 
 
-    private static final Logger LOG = LoggerFactory.getLogger(HookREST.class);
 
     /**
      * 获取kafka消费积压情况
@@ -61,9 +60,8 @@ public class HookREST {
         try {
             long b = hookService.kafkaCheck();
             return ReturnUtil.success(b);
-        }catch (Exception e) {
-            LOG.error("获取kafka消费积压情况失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "获取kafka消费积压情况失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取kafka消费积压情况失败");
         }
     }
 
@@ -80,9 +78,8 @@ public class HookREST {
         try {
             List<String> map = hookService.hookConfigCheck();
             return ReturnUtil.success(map);
-        }catch (Exception e) {
-            LOG.error("获取hook配置情况失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取hook配置情况失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取hook配置情况失败");
         }
     }
 
@@ -99,9 +96,8 @@ public class HookREST {
         try {
             boolean str = hookService.hookJar();
             return ReturnUtil.success(str);
-        }catch (Exception e) {
-            LOG.error("获取hookjar加载情况失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取hookjar加载情况失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取hookjar加载情况失败");
         }
     }
 
@@ -118,9 +114,8 @@ public class HookREST {
         try {
             Map<String, Boolean> alive = hookService.consumerThread();
             return ReturnUtil.success(alive);
-        }catch (Exception e) {
-            LOG.error("获取消费者线程情况失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取消费者线程情况失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取消费者线程情况失败");
         }
     }
 
@@ -137,9 +132,8 @@ public class HookREST {
         try {
             HookCheck all = hookService.all();
             return ReturnUtil.success(all);
-        }catch (Exception e) {
-            LOG.error("获取所有检验失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取所有检验失败:"+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取所有检验失败");
         }
     }
 }
