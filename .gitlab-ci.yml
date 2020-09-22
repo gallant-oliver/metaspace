@@ -5,11 +5,22 @@ variables:
 
 # 定义 stages
 stages:
+  - test
   - dev_deploy
   - test_deploy
   - 10.202.40.82
   - sonarqube
 
+# 单元测试
+test:
+  tags:
+    - java
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS clean test
+    - cat report/target/site/jacoco-aggregate/index.html
+  only:
+    - dev
 
 #部署开发环境
 dev_deploy:
