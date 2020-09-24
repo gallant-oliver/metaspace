@@ -1,0 +1,2 @@
+[![pipeline status](https://gitlab.gridsum.com/zeta/dev/datastudio/xfinder/badges/develop/pipeline.svg)](https://gitlab.gridsum.com/zeta/dev/datastudio/xfinder/-/commits/develop)
+[![coverage report](https://gitlab.gridsum.com/zeta/dev/datastudio/xfinder/badges/develop/coverage.svg)](https://gitlab.gridsum.com/zeta/dev/datastudio/xfinder/-/commits/develop)
