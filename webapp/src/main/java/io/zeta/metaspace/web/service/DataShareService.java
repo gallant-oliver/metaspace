@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -30,6 +31,7 @@ import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -2226,8 +2228,8 @@ public class DataShareService {
             List<ApiInfoV2.FieldV2> filterColumns = apiInfo.getParam();
             List<ApiInfoV2.FieldV2> returnParam = apiInfo.getReturnParam();
             List<ApiInfoV2.FieldV2> sortParam = apiInfo.getSortParam();
-            String querySql = returnParam.stream().filter(column -> column.getColumnName() != null).map(column -> transformer.caseSensitive(column.getColumnName()) + "as" + transformer.caseSensitive(column.getName())).collect(Collectors.joining(","));
-            String filterSql = getFilterSqlV2(filterColumns, sourceType);
+            String querySql = returnParam.stream().filter(column -> column.getColumnName() != null).map(column -> transformer.caseSensitive(column.getColumnName()) + " as " + transformer.caseSensitive(column.getName())).collect(Collectors.joining(","));
+            String filterSql = getFilterSqlV2(filterColumns, transformer);
             String sortSql = getSortSqlV2(sortParam, returnParam, sourceType);
             String sql = SqlBuilderUtils.buildQuerySql(transformer, dbName, tableName, querySql, filterSql, sortSql, limit, offset);
 
@@ -2271,7 +2273,7 @@ public class DataShareService {
         }
     }
 
-    public String getFilterSqlV2(List<ApiInfoV2.FieldV2> queryColumns, DataSourceType sourceType) throws AtlasBaseException {
+    public String getFilterSqlV2(List<ApiInfoV2.FieldV2> queryColumns, AdapterTransformer transformer) throws AtlasBaseException {
         if (queryColumns == null) {
             return null;
         }
@@ -2279,7 +2281,6 @@ public class DataShareService {
         StringJoiner filterJoiner = new StringJoiner(" and ");
         List<ApiInfoV2.FieldV2> filterColumns = queryColumns.stream().filter(column -> column.getColumnName()!=null).collect(Collectors.toList());
         for(ApiInfoV2.FieldV2 field : filterColumns) {
-            StringBuffer filterBuffer = new StringBuffer();
             columnName = field.getColumnName();
             int minSize = Integer.valueOf(field.getMinSize());
             int maxSize = Integer.valueOf(field.getMaxSize());
@@ -2304,17 +2305,8 @@ public class DataShareService {
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
             String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
-            if (sourceType == DataSourceType.ORACLE) {
-                if (DataType.CLOB == dataType) {
-                    String clobTypeQueryTemplate = "dbms_lob.instr(\"%s\",%s,1,1)<>0";
-                    filterBuffer.append(String.format(clobTypeQueryTemplate, columnName, str));
-                } else {
-                    filterBuffer.append("\"").append(columnName).append("\"").append(field.getExpressionType()).append(str);
-                }
-            } else if (sourceType == DataSourceType.HIVE) {
-                filterBuffer.append("`" + columnName + "`").append(field.getExpressionType()).append(str);
-            }
-            filterJoiner.add(filterBuffer.toString());
+            String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, Lists.newArrayList(str));
+            filterJoiner.add(filterStr);
         }
         return filterJoiner.toString();
     }

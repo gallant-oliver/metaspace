@@ -38,6 +38,6 @@ public enum DataSourceType {
     }
 
     public boolean isSupportMetaDataSync() {
-        return Arrays.asList(MYSQL, ORACLE, SQLSERVER, HIVE).contains(this);
+        return Arrays.asList(MYSQL, ORACLE, SQLSERVER, HIVE,POSTGRESQL).contains(this);
     }
 }

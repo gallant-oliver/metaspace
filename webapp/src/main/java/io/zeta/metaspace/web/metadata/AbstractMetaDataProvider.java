@@ -65,9 +65,10 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         this.atlasTypeRegistry = atlasTypeRegistry;
         this.atlasEntityStore = entitiesStore;
         this.dataSourceService = dataSourceService;
+        entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
     }
 
-    private EntityGraphRetriever entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
+    private EntityGraphRetriever entityRetriever;
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
     protected MetaDataContext metaDataContext = new MetaDataContext();
 

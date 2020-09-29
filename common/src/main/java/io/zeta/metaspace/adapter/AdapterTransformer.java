@@ -22,7 +22,13 @@ public interface AdapterTransformer {
      * 默认使用 LIMIT OFFSET 方式分页
      */
     default SelectQuery addLimit(SelectQuery originSQL, long limit, long offset) {
-        return originSQL.addCustomization(new PgLimitClause(limit)).addCustomization(new PgOffsetClause(offset));
+        if (limit>-1){
+            originSQL = originSQL.addCustomization(new PgLimitClause(limit));
+        }
+        if (offset>0){
+            originSQL = originSQL.addCustomization(new PgOffsetClause(offset));
+        }
+        return originSQL;
     }
 
     default SelectQuery addOrderBy(SelectQuery originSQL, String sortSql) {
