@@ -495,6 +495,9 @@ public class DataManageService {
                 categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid,tenantId);
             }
         }
+        if (parentGuid==null){
+            return new CategoryPrivilege.Privilege(false,true,true,true,false,true,false,false,true,false);
+        }
         List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(entity.getParentCategoryGuid(),tenantId);
         parentPrivilege.forEach(privilege -> privilege.setCategoryId(entity.getGuid()));
         if (parentPrivilege.size()!=0){
