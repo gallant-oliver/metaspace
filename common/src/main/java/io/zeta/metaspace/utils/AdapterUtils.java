@@ -4,15 +4,13 @@ import io.zeta.metaspace.DataSourcePoolConfig;
 import io.zeta.metaspace.KerberosConfig;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.*;
-import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.plugin.UnitTestPluginRepository;
+import io.zeta.metaspace.plugin.UnitTestPomPluginDescriptorFinder;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.pf4j.DefaultPluginManager;
-import org.pf4j.PluginDescriptor;
-import org.pf4j.PluginManager;
-import org.pf4j.PluginWrapper;
+import org.pf4j.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class AdapterUtils {
@@ -30,7 +27,7 @@ public class AdapterUtils {
     private static CopyOnWriteArrayList<Adapter> ADAPTERS;
     private static final Map<String, AdapterSource> adapterSourceMap = new ConcurrentHashMap<>();
 
-    private static synchronized PluginManager getPluginManager() {
+    private static synchronized PluginManager getPluginManager(boolean isUnitTest) {
         if (pluginManagerInstance == null) {
             PluginManager pluginManager = new DefaultPluginManager() {
                 protected Path createPluginsRoot() {
@@ -39,6 +36,23 @@ public class AdapterUtils {
                         pluginsDir = "adapters";
                     }
                     return Paths.get(pluginsDir);
+                }
+
+                @Override
+                protected PluginDescriptorFinder createPluginDescriptorFinder() {
+                    if (isUnitTest) {
+                        return new CompoundPluginDescriptorFinder().add(new UnitTestPomPluginDescriptorFinder());
+                    }
+                    return super.createPluginDescriptorFinder();
+                }
+
+                @Override
+                protected PluginRepository createPluginRepository() {
+                    if (isUnitTest) {
+                        return new CompoundPluginRepository()
+                                .add(new UnitTestPluginRepository(getPluginsRoot()));
+                    }
+                    return super.createPluginRepository();
                 }
             };
             log.info("Loading plugin from dir[" + pluginManager.getPluginsRoot().toAbsolutePath() + "]...");
@@ -56,15 +70,19 @@ public class AdapterUtils {
         return pluginManagerInstance;
     }
 
+    public static Collection<Adapter> findDatabaseAdapters() {
+        return findDatabaseAdapters(false);
+    }
+
     /**
      * 找到支持的组件，并且启动组件
      */
-    public static Collection<Adapter> findDatabaseAdapters() {
+    public static Collection<Adapter> findDatabaseAdapters(boolean isUnitTest) {
         if (ADAPTERS == null || ADAPTERS.size() == 0) {
             synchronized (AdapterUtils.class) {
                 if (ADAPTERS == null || ADAPTERS.size() == 0) {
                     ADAPTERS = new CopyOnWriteArrayList<>();
-                    PluginManager pluginManager = getPluginManager();
+                    PluginManager pluginManager = getPluginManager(isUnitTest);
                     List<PluginWrapper> plugins = pluginManager.getPlugins();
                     for (PluginWrapper plugin : plugins) {
                         List<AdapterExtensionPoint> extensions = pluginManager.getExtensions(AdapterExtensionPoint.class, plugin.getPluginId());
