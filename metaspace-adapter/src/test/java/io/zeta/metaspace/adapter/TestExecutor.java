@@ -1,8 +1,8 @@
 package io.zeta.metaspace.adapter;
 
 import io.zeta.metaspace.MetaspaceConfig;
-import io.zeta.metaspace.adapter.utils.KerberosTestUtils;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.UnitTestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.testng.annotations.Test;
@@ -15,9 +15,9 @@ public class TestExecutor extends AdapterTestConfig {
     private static final String TestDb = "kylin";
     private static final String TestTable = "kylin_country";
 
-    @Test(enabled = ENABLE_TEST)
+    @Test
     public void testHiveExecutor() {
-        KerberosTestUtils.login();
+        UnitTestUtils.login("metaspace@PANEL.COM","src/test/resources/metaspace.keytab");
         AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         boolean isExist = adapterExecutor.tableExists(TestUser, TestDb, TestTable);
@@ -26,7 +26,7 @@ public class TestExecutor extends AdapterTestConfig {
         }
     }
 
-    @Test(enabled = ENABLE_TEST)
+    @Test
     public void testImpalaExecutor() {
         try {
             UserGroupInformation.getLoginUser().logoutUserFromKeytab();

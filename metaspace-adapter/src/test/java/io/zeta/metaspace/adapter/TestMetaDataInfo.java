@@ -1,9 +1,9 @@
 package io.zeta.metaspace.adapter;
 
-import io.zeta.metaspace.adapter.utils.JsonFileUtil;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.UnitTestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.annotations.Test;
 
@@ -13,14 +13,14 @@ import java.util.LinkedHashMap;
  * 元数据获取测试
  */
 @Slf4j
+@Test(enabled = false)
 public class TestMetaDataInfo extends AdapterTestConfig {
 
     /**
      * 测试 oracle 获取元数据，并手动获取列信息等
      */
-    @Test(enabled = ENABLE_TEST)
     public void testOracleMetaDataInfo() {
-        AdapterSource adapterSource = AdapterUtils.getAdapterSource(JsonFileUtil.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
         log.info("表总数：" + metaDataInfo.getIncompleteTables().size());
@@ -31,9 +31,8 @@ public class TestMetaDataInfo extends AdapterTestConfig {
         });
     }
 
-    @Test(enabled = ENABLE_TEST)
     public void testMysqlMetaDataInfo() {
-        AdapterSource adapterSource = AdapterUtils.getAdapterSource(JsonFileUtil.readDataSourceInfoJson("src/test/resources/dataSourceInfo/mysql.json"));
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/mysql.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
@@ -41,9 +40,8 @@ public class TestMetaDataInfo extends AdapterTestConfig {
         });
     }
 
-    @Test(enabled = ENABLE_TEST)
     public void testSqlServerMetaDataInfo() {
-        AdapterSource adapterSource = AdapterUtils.getAdapterSource(JsonFileUtil.readDataSourceInfoJson("src/test/resources/dataSourceInfo/sqlserver.json"));
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/sqlserver.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
@@ -54,9 +52,8 @@ public class TestMetaDataInfo extends AdapterTestConfig {
     /**
      * 测试 oracle 获取 schema table  column 等用于创建 Api 的接口
      */
-    @Test(enabled = ENABLE_TEST)
     public void testOraclePageResultInfo() {
-        AdapterSource adapterSource = AdapterUtils.getAdapterSource(JsonFileUtil.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         long limit = -1;
         long offset = 0;
