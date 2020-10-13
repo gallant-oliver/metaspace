@@ -7,6 +7,8 @@ import org.pf4j.PluginDescriptor;
 import schemacrawler.schemacrawler.IncludeAll;
 import schemacrawler.schemacrawler.InclusionRule;
 
+import java.util.Arrays;
+
 public interface Adapter {
     PluginDescriptor getDescriptor();
 
@@ -23,7 +25,7 @@ public interface Adapter {
     AdapterSource getNewAdapterSource(DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool);
 
     AdapterTransformer getAdapterTransformer();
-    
+
     /**
      * 获取元数据时排除的 schema 正则
      */
@@ -36,5 +38,12 @@ public interface Adapter {
      */
     default InclusionRule getTableRegularExpressionRule() {
         return null;
+    }
+
+    /**
+     * 是否支持元数据同步
+     */
+    default boolean isSupportMetaDataSync() {
+        return true;
     }
 }

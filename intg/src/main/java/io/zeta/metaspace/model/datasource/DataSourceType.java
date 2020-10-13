@@ -10,6 +10,7 @@ public enum DataSourceType {
     HIVE("HIVE"),
     IMPALA("IMPALA"),
     ORACLE("ORACLE"),
+    DB2("DB2"),
     SQLSERVER("SQLSERVER");
 
     private final String name;
@@ -35,9 +36,5 @@ public enum DataSourceType {
      */
     public boolean isBuildIn() {
         return HIVE.equals(this);
-    }
-
-    public boolean isSupportMetaDataSync() {
-        return Arrays.asList(MYSQL, ORACLE, SQLSERVER, HIVE,POSTGRESQL).contains(this);
     }
 }

@@ -5,7 +5,6 @@ import io.zeta.metaspace.model.datasource.DataSourcePool;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
