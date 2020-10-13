@@ -5,6 +5,7 @@ import io.zeta.metaspace.KerberosConfig;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.*;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.plugin.UnitTestPluginRepository;
 import io.zeta.metaspace.plugin.UnitTestPomPluginDescriptorFinder;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
@@ -101,6 +102,9 @@ public class AdapterUtils {
         return ADAPTERS;
     }
 
+    public static Adapter getAdapter(DataSourceType dataSourceType) {
+        return getAdapter(dataSourceType.getName());
+    }
     public static Adapter getAdapter(String engine) {
         return ADAPTERS.stream()
                 .filter(adapter -> adapter.getName().equalsIgnoreCase(engine))

@@ -1,4 +1,4 @@
-package io.zeta.metaspace.adapter.impala;
+package io.zeta.metaspace.adapter.db2;
 
 import io.zeta.metaspace.adapter.AbstractAdapter;
 import io.zeta.metaspace.adapter.AdapterSource;
@@ -7,23 +7,19 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourcePool;
 import org.pf4j.PluginDescriptor;
 
-public class ImpalaAdapter extends AbstractAdapter {
-    public ImpalaAdapter(PluginDescriptor descriptor) {
+public class Db2Adapter extends AbstractAdapter {
+
+    public Db2Adapter(PluginDescriptor descriptor) {
         super(descriptor);
     }
 
     @Override
     public AdapterSource getNewAdapterSource(DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool) {
-        return new ImpalaAdapterSource(this, dataSourceInfo, dataSourcePool);
+        return new Db2AdapterSource(this, dataSourceInfo, dataSourcePool);
     }
 
     @Override
     public AdapterTransformer getAdapterTransformer() {
-        return new ImpalaAdapterTransformer(this);
-    }
-
-    @Override
-    public boolean isSupportMetaDataSync() {
-        return false;
+        return new Db2AdapterTransformer(this);
     }
 }

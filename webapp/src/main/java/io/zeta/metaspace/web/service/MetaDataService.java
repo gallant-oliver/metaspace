@@ -1424,7 +1424,7 @@ public class MetaDataService {
     }
 
     IMetaDataProvider getMetaDataProviderFactory(DataSourceType dataSourceType, TableSchema tableSchema) throws Exception {
-        if (dataSourceType.isSupportMetaDataSync()) {
+        if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
             if (DataSourceType.HIVE.equals(dataSourceType)) {
                 return hiveMetaStoreBridgeUtils;
             } else {
@@ -1453,7 +1453,7 @@ public class MetaDataService {
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
-        if (dataSourceType.isSupportMetaDataSync()) {
+        if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
             if (DataSourceType.HIVE.equals(databaseType)) {
                 if (hiveMetaStoreBridgeUtils == null) {
                     errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
