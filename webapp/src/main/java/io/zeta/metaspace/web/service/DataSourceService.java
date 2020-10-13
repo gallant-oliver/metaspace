@@ -23,6 +23,8 @@ import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME
 import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 import io.zeta.metaspace.model.datasource.DataSourcePrivileges;
+import io.zeta.metaspace.model.datasource.DataSourceType;
+import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -70,6 +72,7 @@ import java.io.FileOutputStream;
 import java.sql.*;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.UUID;
@@ -79,6 +82,7 @@ import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class DataSourceService {
@@ -376,7 +380,6 @@ public class DataSourceService {
 
             parameters.setSortby(sortby);
             parameters.setOrder(order);
-            String abc = "abc";
             if (Objects.nonNull(dataSourceSearch.getSourceName()))
                 dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
             if (Objects.nonNull(dataSourceSearch.getSourceType()))
@@ -1017,7 +1020,10 @@ public class DataSourceService {
     public PageResult getSchema(int limit, int offset, DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         dataSourceConnection = resetDataSourceConnection(dataSourceConnection);
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceConnection);
-        return adapterExecutor.getSchemaPage(limit, offset);
+        Parameters parameters = new Parameters();
+        parameters.setOffset(offset);
+        parameters.setLimit(limit);
+        return adapterExecutor.getSchemaPage(parameters);
     }
 
     public List<LinkedHashMap> extractResultSetData(ResultSet resultSet) throws AtlasBaseException {
@@ -1246,5 +1252,10 @@ public class DataSourceService {
         String prefix = userName.substring(0, index);
         String suffix = userName.substring(length - index);
         return MessageFormat.format("{0}***{1}", prefix, suffix);
+    }
+
+    public List<DataSourceTypeInfo> getDataSourceType(){
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->!type.isBuildIn()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        return typeNames;
     }
 }

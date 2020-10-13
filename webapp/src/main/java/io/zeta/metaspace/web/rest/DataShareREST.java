@@ -556,12 +556,12 @@ public class DataShareREST {
     }
 
     @POST
-    @Path("/oracle/datasource")
+    @Path("/{type}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId,@PathParam("type")String type) throws AtlasBaseException {
         try {
-            return shareService.getOracleDataSourceList(parameters,tenantId);
+            return shareService.getDataSourceList(parameters,type,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源列表失败");
         }

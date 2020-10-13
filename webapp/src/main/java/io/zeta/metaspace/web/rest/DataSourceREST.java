@@ -37,6 +37,7 @@ import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.utils.AESUtils;
@@ -675,4 +676,12 @@ public class DataSourceREST {
         }
     }
 
+    @GET
+    @Path("/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourceType(){
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType();
+        return ReturnUtil.success(dataSourceType);
+    }
 }

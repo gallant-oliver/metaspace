@@ -5,6 +5,7 @@ import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
@@ -332,40 +333,52 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(long limit, long offset) {
+    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters) {
+        if (parameters.getQuery()==null){
+            parameters.setQuery("");
+        }
         SelectQuery query = new SelectQuery()
                 .addCustomColumns(new AliasedObject(new CustomSql("USERNAME"), "\"schemaName\""))
-                .addCustomFromTable(new CustomSql("ALL_USERS"));
+                .addCustomFromTable(new CustomSql("ALL_USERS"))
+                .addCondition(BinaryCondition.like(new CustomSql("USERNAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
         log.info("schema sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, long limit, long offset) {
+    public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
         schemaName = addAlternativeQuoting(schemaName);
+        if (parameters.getQuery()==null){
+            parameters.setQuery("");
+        }
         SelectQuery query = new SelectQuery()
                 .addCustomColumns(new AliasedObject(new CustomSql("TABLE_NAME"), "\"tableName\""))
                 .addCustomFromTable(new CustomSql("ALL_TABLES"))
-                .addCondition(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)));
+                .addCondition(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)))
+                .addCondition(BinaryCondition.like(new CustomSql("TABLE_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
         log.info("table sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, long limit, long offset) {
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
         schemaName = addAlternativeQuoting(schemaName);
         tableName = addAlternativeQuoting(tableName);
+        if (parameters.getQuery()==null){
+            parameters.setQuery("");
+        }
         SelectQuery query = new SelectQuery()
                 .addCustomColumns(new AliasedObject(new CustomSql("COLUMN_NAME"), "\"columnName\""))
                 .addCustomColumns(new AliasedObject(new CustomSql("DATA_TYPE"), "\"type\""))
                 .addCustomFromTable(new CustomSql("ALL_TAB_COLS"))
+                .addCondition(BinaryCondition.like(new CustomSql("COLUMN_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")))
                 .addCondition(ComboCondition.and().addConditions(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)), BinaryCondition.equalTo(new CustomSql("TABLE_NAME"), new CustomSql(tableName))));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, limit, offset);
+        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
         log.info("column sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }

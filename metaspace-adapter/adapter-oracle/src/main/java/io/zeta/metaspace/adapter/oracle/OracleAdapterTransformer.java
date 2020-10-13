@@ -38,7 +38,7 @@ public class OracleAdapterTransformer extends AbstractAdapterTransformer {
                                 .addCustomFromTable(new Subquery(originSQL) + " t1")
                                 .addCondition(BinaryCondition.lessThanOrEq(new CustomSql("ROWNUM"), limit + offset - (offset == 0 ? 0 : 1))))
                 )
-                .addCondition(BinaryCondition.greaterThanOrEq(new CustomSql(TEMP_COLUMN_RNUM), offset));
+                .addCondition(BinaryCondition.greaterThan(new CustomSql(TEMP_COLUMN_RNUM), offset));
     }
 
     @Override
