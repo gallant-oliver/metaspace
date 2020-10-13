@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourceType;
+import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
@@ -1350,8 +1351,8 @@ public class DataShareService {
         }
     }
 
-    public PageResult getOracleDataSourceList(Parameters parameters,String tenantId) throws AtlasBaseException {
-        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,null,null,null,null,null,true,tenantId);
+    public PageResult getDataSourceList(Parameters parameters,String type,String tenantId) throws AtlasBaseException {
+        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,parameters.getQuery(),type.toUpperCase(),null,null,null,true,tenantId);
     }
 
     public PageResult getDataList(SEARCH_TYPE searchType, Parameters parameters, String sourceId, String... ids) throws AtlasBaseException {
@@ -1359,16 +1360,16 @@ public class DataShareService {
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         switch (searchType) {
             case SCHEMA: {
-                return adapterExecutor.getSchemaPage(parameters.getLimit(), parameters.getOffset());
+                return adapterExecutor.getSchemaPage(parameters);
             }
             case TABLE: {
                 String schemaName = ids[0];
-                return adapterExecutor.getTablePage(schemaName, parameters.getLimit(), parameters.getOffset());
+                return adapterExecutor.getTablePage(schemaName, parameters);
             }
             case COLUMN: {
                 String schemaName = ids[0];
                 String tableName = ids[1];
-                return adapterExecutor.getColumnPage(schemaName, tableName, parameters.getLimit(), parameters.getOffset());
+                return adapterExecutor.getColumnPage(schemaName, tableName, parameters);
             }
             default:
                 break;
@@ -2201,6 +2202,10 @@ public class DataShareService {
         String dbName = null;
 
         DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
+        if (!sourceType.isBuildIn()){
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(apiInfo.getSourceId());
+            sourceType=DataSourceType.getType(dataSourceInfo.getSourceType());
+        }
         AdapterSource adapterSource = null;
         AdapterTransformer transformer = AdapterUtils.getAdapter(sourceType.getName()).getAdapterTransformer();
         try {
@@ -2213,8 +2218,7 @@ public class DataShareService {
                 if (deletedStatus.equals(tableStatus)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
                 }
-                engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
-                if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                if (DataSourceType.IMPALA.equals(sourceType)) {
                     adapterSource = AdapterUtils.getImpalaAdapterSource();
                 } else {
                     adapterSource = AdapterUtils.getHiveAdapterSource();
@@ -2394,7 +2398,7 @@ public class DataShareService {
         String id = split[0];
         String version = split[1];
         ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
-        if (!apiInfoByVersion.getProtocol().equals(request.getProtocol())){
+        if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
         }
         Map<String,String> queryMap = new HashMap<>();
@@ -2505,6 +2509,11 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不存在");
         }
         return projectPrivateByProject(projectId);
+    }
+
+    public List<DataSourceTypeInfo> getDataSourceType(){
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.isBuildIn())).collect(Collectors.toList());
+        return typeNames;
     }
 }
 

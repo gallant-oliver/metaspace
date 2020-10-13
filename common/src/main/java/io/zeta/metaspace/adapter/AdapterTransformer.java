@@ -13,7 +13,7 @@ public interface AdapterTransformer {
 
 
     String TOTAL_FUNCTION = "count(*) over()";
-    String TOTAL_COLUMN_ALIAS = "total_rows__";
+    String TOTAL_COLUMN_ALIAS = "TOTAL_ROWS__";
     String TEMP_COLUMN_RNUM = "TEMP_COLUMN_RNUM";
 
     Adapter getAdapter();

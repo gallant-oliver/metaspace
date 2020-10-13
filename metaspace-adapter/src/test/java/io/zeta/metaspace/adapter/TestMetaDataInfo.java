@@ -1,6 +1,7 @@
 package io.zeta.metaspace.adapter;
 
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.UnitTestUtils;
@@ -55,18 +56,21 @@ public class TestMetaDataInfo extends AdapterTestConfig {
     public void testOraclePageResultInfo() {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        long limit = -1;
-        long offset = 0;
-        PageResult<LinkedHashMap<String, Object>> schemePageResult = adapterExecutor.getSchemaPage(limit, offset);
+        int limit = -1;
+        int offset = 0;
+        Parameters parameters = new Parameters();
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+        PageResult<LinkedHashMap<String, Object>> schemePageResult = adapterExecutor.getSchemaPage(parameters);
         log.info("schema : " + schemePageResult.getTotalSize() + "  " + schemePageResult.getLists().toString());
 
         schemePageResult.getLists().stream().parallel().map(m -> m.get("schemaName").toString()).forEach(schemaName -> {
-            PageResult<LinkedHashMap<String, Object>> tablePageResult = adapterExecutor.getTablePage(schemaName, limit, offset);
+            PageResult<LinkedHashMap<String, Object>> tablePageResult = adapterExecutor.getTablePage(schemaName, parameters);
             log.info("table : " + tablePageResult.getTotalSize() + "  " + tablePageResult.getLists().toString());
 
             tablePageResult.getLists().stream().parallel().map(m -> m.get("tableName").toString()).forEach(tableName -> {
                 try {
-                    PageResult<LinkedHashMap<String, Object>> columnPageResult = adapterExecutor.getColumnPage(schemaName, tableName, limit, offset);
+                    PageResult<LinkedHashMap<String, Object>> columnPageResult = adapterExecutor.getColumnPage(schemaName, tableName, parameters);
                     log.info("column : " + columnPageResult.getTotalSize() + "  " + columnPageResult.getLists().toString());
                 } catch (Exception e) {
                     log.info(e.getMessage() + " " + tableName);

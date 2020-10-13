@@ -1,6 +1,7 @@
 package io.zeta.metaspace.adapter;
 
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
@@ -60,15 +61,15 @@ public interface AdapterExecutor {
     /**
      * 分页获取库表列，当前支持 oracle
      */
-    default PageResult<LinkedHashMap<String, Object>> getSchemaPage(long limit, long offset) {
+    default PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters) {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 
-    default PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, long limit, long offset) {
+    default PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 
-    default PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, long limit, long offset) {
+    default PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 

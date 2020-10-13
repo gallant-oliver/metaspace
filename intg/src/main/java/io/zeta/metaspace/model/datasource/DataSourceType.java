@@ -5,22 +5,28 @@ import org.apache.atlas.exception.AtlasBaseException;
 import java.util.Arrays;
 
 public enum DataSourceType {
-    MYSQL("MYSQL"),
-    POSTGRESQL("POSTGRESQL"),
-    HIVE("HIVE"),
-    IMPALA("IMPALA"),
-    ORACLE("ORACLE"),
-    DB2("DB2"),
-    SQLSERVER("SQLSERVER");
+    MYSQL("MYSQL",3306),
+    POSTGRESQL("POSTGRESQL",5432),
+    HIVE("HIVE",10000),
+    IMPALA("IMPALA",21050),
+    ORACLE("ORACLE",1521),
+    DB2("DB2",50000),
+    SQLSERVER("SQLSERVER",1433);
 
     private final String name;
+    private final int defaultPort;
 
-    DataSourceType(String name) {
+    DataSourceType(String name,int defaultPort) {
         this.name = name;
+        this.defaultPort=defaultPort;
     }
 
     public String getName() {
         return name;
+    }
+
+    public int getDefaultPort(){
+        return defaultPort;
     }
 
     public boolean equals(String typeName) {
@@ -35,6 +41,6 @@ public enum DataSourceType {
      * 区分 hive 和其他数据源
      */
     public boolean isBuildIn() {
-        return HIVE.equals(this);
+        return HIVE.equals(this)||IMPALA.equals(this);
     }
 }

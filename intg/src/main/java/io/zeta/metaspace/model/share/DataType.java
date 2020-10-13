@@ -128,6 +128,7 @@ public enum DataType {
             case "INTEGER":
             case "SMALLINT":
             case "TINYINT":
+            case "INT UNSIGNED":
                 typeGroup = DataType.INT;
                 break;
             case "DECIMAL":

@@ -20,6 +20,8 @@ import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.datasource.DataSourceType;
+import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -644,13 +646,13 @@ public class ApiManagerREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/oracle/datasource")
+    @Path("/{type}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId,@PathParam("type")String type) throws AtlasBaseException {
         try {
-            PageResult oracleDataSourceList = shareService.getOracleDataSourceList(parameters, tenantId);
-            return ReturnUtil.success(oracleDataSourceList);
+            PageResult oracleDataSourceList = shareService.getDataSourceList(parameters,type, tenantId);
+            return oracleDataSourceList;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据源失败");
         }
@@ -773,5 +775,14 @@ public class ApiManagerREST {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "任务取消失败");
         }
+    }
+
+    @GET
+    @Path("/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourceType(){
+        List<DataSourceTypeInfo> dataSourceType = shareService.getDataSourceType();
+        return ReturnUtil.success(dataSourceType);
     }
 }

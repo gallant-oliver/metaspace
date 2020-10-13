@@ -31,6 +31,6 @@ public class MysqlAdapterTransformer extends AbstractAdapterTransformer {
         totalSelectQuery.addCustomColumns(new CustomSql("COUNT(*)"));
         totalSelectQuery.addCustomFromTable(new CustomSql("(" + originSQL.toString() + ") TOTAL_COLUMN_SQL"));
         originSQL.addAliasedColumn(new CustomSql("(" + totalSelectQuery.toString() + ")"), TOTAL_COLUMN_ALIAS);
-        return totalSelectQuery;
+        return originSQL;
     }
 }
