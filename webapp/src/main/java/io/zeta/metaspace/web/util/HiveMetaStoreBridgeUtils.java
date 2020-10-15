@@ -24,7 +24,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
 import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;

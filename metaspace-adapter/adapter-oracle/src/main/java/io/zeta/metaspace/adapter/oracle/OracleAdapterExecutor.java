@@ -4,6 +4,7 @@ import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -47,11 +48,9 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
      * 所以 oracle 获取元数据的时候不获取列、索引和外键
      */
     @Override
-    public MetaDataInfo getMeteDataInfo() {
+    public MetaDataInfo getMeteDataInfo(TableSchema tableSchema) {
         MetaDataInfo metaDataInfo = new MetaDataInfo();
-        SchemaCrawlerOptions options = SchemaCrawlerOptionsBuilder.builder()
-                .withSchemaInfoLevel(SchemaInfoLevelBuilder.builder().withInfoLevel(InfoLevel.minimum).setRetrieveRoutines(false).toOptions())
-                .toOptions();
+        SchemaCrawlerOptions options = getAdapter().getSchemaCrawlerOptions(tableSchema);
         try (Connection connection = getAdapterSource().getConnection()) {
             Catalog catalog = SchemaCrawlerUtility.getCatalog(connection, options);
             metaDataInfo.getIncompleteTables().addAll(catalog.getTables());
@@ -378,7 +377,8 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 .addCondition(BinaryCondition.like(new CustomSql("COLUMN_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")))
                 .addCondition(ComboCondition.and().addConditions(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)), BinaryCondition.equalTo(new CustomSql("TABLE_NAME"), new CustomSql(tableName))));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
+        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset())
+                .addCondition(BinaryCondition.like(new CustomSql("COLUMN_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
         log.info("column sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }

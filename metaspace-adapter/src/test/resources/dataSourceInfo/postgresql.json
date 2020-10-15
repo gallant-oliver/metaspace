@@ -1,0 +1,10 @@
+{
+  "sourceType": "POSTGRESQL",
+  "description": "",
+  "ip": "10.200.64.116",
+  "port": "5432",
+  "userName": "metaspace",
+  "password": "metaspace",
+  "database": "metaspace",
+  "jdbcParameter": ""
+}

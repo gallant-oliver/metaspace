@@ -1,6 +1,6 @@
 package io.zeta.metaspace.web.metadata;
 
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;

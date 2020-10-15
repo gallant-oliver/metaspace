@@ -1,5 +1,6 @@
 package io.zeta.metaspace.adapter;
 
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -25,7 +26,7 @@ public interface AdapterExecutor {
     /**
      * 获取元数据, 除 oracle 仅获取到表外其他数据源获取到列、索引、外键
      */
-    MetaDataInfo getMeteDataInfo();
+    MetaDataInfo getMeteDataInfo(TableSchema tableSchema);
 
 
     /**

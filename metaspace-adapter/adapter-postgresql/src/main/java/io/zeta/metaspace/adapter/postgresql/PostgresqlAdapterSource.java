@@ -78,6 +78,7 @@ public class PostgresqlAdapterSource extends AbstractAdapterSource {
             jdbcUrlBuilder.append("/").append(getDataSourceInfo().getDatabase());
         }
 
+
         if (StringUtils.isNotEmpty(defaultJdbcParameter)){
             jdbcUrlBuilder.append("?").append(defaultJdbcParameter);
         }
