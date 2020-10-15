@@ -1,5 +1,6 @@
 package io.zeta.metaspace.adapter;
 
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -23,7 +24,9 @@ public class TestMetaDataInfo extends AdapterTestConfig {
     public void testOracleMetaDataInfo() {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/oracle.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setAll(true);
+        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         log.info("表总数：" + metaDataInfo.getIncompleteTables().size());
         metaDataInfo.getIncompleteTables().forEach(table -> {
             log.info(table.getFullName());
@@ -35,7 +38,9 @@ public class TestMetaDataInfo extends AdapterTestConfig {
     public void testMysqlMetaDataInfo() {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/mysql.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setAll(true);
+        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
             adapterExecutor.getTableCreateTime(table.getSchema().getName(), table.getName());
         });
@@ -44,7 +49,23 @@ public class TestMetaDataInfo extends AdapterTestConfig {
     public void testSqlServerMetaDataInfo() {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/sqlserver.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setAll(true);
+        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
+        metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
+            adapterExecutor.getTableCreateTime(table.getSchema().getName(), table.getName());
+        });
+    }
+
+    /**
+     * 测试 postgresql 手动同步元数据
+     */
+    public void testPostgresqlMetaDataInfo() {
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("src/test/resources/dataSourceInfo/postgresql.json"));
+        AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setAll(true);
+        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
             adapterExecutor.getTableCreateTime(table.getSchema().getName(), table.getName());
         });

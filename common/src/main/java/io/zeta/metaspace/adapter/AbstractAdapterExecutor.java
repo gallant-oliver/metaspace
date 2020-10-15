@@ -1,5 +1,6 @@
 package io.zeta.metaspace.adapter;
 
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -40,13 +41,9 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
      * 使用 SchemaCrawler 获取元数据信息
      */
     @Override
-    public MetaDataInfo getMeteDataInfo() {
+    public MetaDataInfo getMeteDataInfo(TableSchema tableSchema) {
         MetaDataInfo metaDataInfo = new MetaDataInfo();
-        SchemaCrawlerOptions options = SchemaCrawlerOptionsBuilder.builder()
-                .withSchemaInfoLevel(SchemaInfoLevelBuilder.builder().withInfoLevel(InfoLevel.standard).setRetrieveRoutines(false).toOptions())
-                .includeSchemas(getAdapter().getSchemaRegularExpressionRule())
-                .includeTables(getAdapter().getTableRegularExpressionRule())
-                .toOptions();
+        SchemaCrawlerOptions options = getAdapter().getSchemaCrawlerOptions(tableSchema);
         try (Connection connection = getAdapterSource().getConnection()) {
             Catalog catalog = SchemaCrawlerUtility.getCatalog(connection, options);
             metaDataInfo.setJdbcUrl(catalog.getJdbcDriverInfo().getConnectionUrl());

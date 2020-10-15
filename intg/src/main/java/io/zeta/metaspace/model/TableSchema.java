@@ -1,4 +1,4 @@
-package io.zeta.metaspace.web.model;
+package io.zeta.metaspace.model;
 
 import lombok.Data;
 
@@ -14,4 +14,5 @@ public class TableSchema {
     List<String> databases;
     String table;
     boolean allDatabase;
+    boolean all=false;
 }

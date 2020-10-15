@@ -35,7 +35,7 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.model.Progress;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;

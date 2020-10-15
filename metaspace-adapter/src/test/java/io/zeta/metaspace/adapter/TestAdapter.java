@@ -36,6 +36,11 @@ public class TestAdapter extends AdapterTestConfig {
         UnitTestUtils.checkConnection("src/test/resources/dataSourceInfo/sqlserver.json");
     }
 
+    @Test()
+    public void testPostgresql() {
+        checkConnection("src/test/resources/dataSourceInfo/postgresql.json");
+    }
+
     /**
      * 使用 UGI 方式过 kerberos 认证
      */

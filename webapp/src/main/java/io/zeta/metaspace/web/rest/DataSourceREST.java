@@ -36,7 +36,7 @@ import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.web.model.Progress;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
@@ -48,8 +48,6 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.io.File;
@@ -414,8 +412,7 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}/{sourceId}")
-    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
-        TableSchema  tableSchema = new TableSchema();
+    public Response synchronizeMetaData(TableSchema tableSchema,@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
         tableSchema.setInstance(sourceId);
         UserPrivilegeDataSource userPrivilegeDataSource = dataSourceService.getUserPrivilegesDataSource(AdminUtils.getUserData().getUserId(), sourceId);
         if (UserPrivilegeDataSource.READ.getPrivilege().equals(userPrivilegeDataSource.getPrivilege())) {

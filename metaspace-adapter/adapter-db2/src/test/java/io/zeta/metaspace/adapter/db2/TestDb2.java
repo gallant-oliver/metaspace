@@ -9,6 +9,7 @@ import io.zeta.metaspace.utils.UnitTestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import io.zeta.metaspace.model.TableSchema;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -41,7 +42,9 @@ public class TestDb2 {
     public void testDb2MetaDataInfo() {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(UnitTestUtils.readDataSourceInfoJson("../src/test/resources/dataSourceInfo/db2.json"));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo();
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setAll(true);
+        MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
             LocalDateTime dateTime = adapterExecutor.getTableCreateTime(table.getSchema().getName(), table.getName());
             log.info(table.getFullName() + " " + dateTime.toString());

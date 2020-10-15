@@ -11,7 +11,7 @@ import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.web.service.DataSourceService;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -98,7 +98,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
     protected void init(TableSchema tableSchema) {
         dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(tableSchema.getInstance());
         adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
-        metaDataInfo = adapterExecutor.getMeteDataInfo();
+        metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
     }
 
 
@@ -115,10 +115,10 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         String instanceId = tableSchema.getInstance();
 
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId);
-
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId,tableSchema.isAllDatabase());
+        updatedTables.incrementAndGet();
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
-        if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas())) {
+        if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas())&&!tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", metaDataInfo.getSchemas().size());
 
             //导入table
@@ -143,11 +143,11 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
 
     @Override
     public AtomicInteger getTotalTables() {
-        return new AtomicInteger(metaDataInfo == null ? 0 : metaDataInfo.getTables().size());
+        return new AtomicInteger(metaDataInfo == null ? 0 : metaDataInfo.getTables().size()+1);
     }
 
 
-    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId,boolean allDatabase) throws Exception {
         AtlasEntity.AtlasEntityWithExtInfo ret;
         String instanceQualifiedName = getInstanceQualifiedName(instanceId);
         if (metaDataContext.isKownEntity(instanceQualifiedName)) {
@@ -159,12 +159,12 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         }
         AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
         if (ret == null) {
-            instanceEntity = toInstanceEntity(null, instanceId);
+            instanceEntity = toInstanceEntity(null, instanceId,allDatabase);
             ret = registerEntity(instanceEntity);
             isSource = false;
         } else {
             LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, ret.getEntity().getGuid());
-            ret = toInstanceEntity(ret, instanceId);
+            ret = toInstanceEntity(ret, instanceId,allDatabase);
             createOrUpdateEntity(ret);
             isSource = true;
         }
@@ -172,7 +172,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         return ret;
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId,boolean allDatabase) {
         if (instanceEntity == null) {
             instanceEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getInstanceTypeName()));
         }
@@ -198,7 +198,22 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
             dbEntities.add(dbEntity.getEntity());
             instanceEntity.addReferredEntity(dbEntity.getEntity());
         }
-        entity.setAttribute(ATTRIBUTE_DATABASES, getObjectIds(dbEntities));
+        List<AtlasObjectId> objectIds = getObjectIds(dbEntities);
+        if (!allDatabase){
+            List<AtlasObjectId> attributes = (List<AtlasObjectId>)entity.getAttribute(ATTRIBUTE_DATABASES);
+            for (AtlasObjectId atlasObjectId:attributes){
+                AtlasEntity referredEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
+                if (referredEntity.getStatus()==null){
+                    deleteEntity(referredEntity);
+                }
+
+                if (!objectIds.contains(atlasObjectId)&&(referredEntity==null||!"DELETED".equals(referredEntity.getStatus().toString()))){
+                    objectIds.add(atlasObjectId);
+                }
+            }
+        }
+
+        entity.setAttribute(ATTRIBUTE_DATABASES, objectIds);
 
         return instanceEntity;
     }

@@ -1351,6 +1351,7 @@ public class DataShareService {
         }
     }
 
+
     public PageResult getDataSourceList(Parameters parameters,String type,String tenantId) throws AtlasBaseException {
         return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,parameters.getQuery(),type.toUpperCase(),null,null,null,true,tenantId);
     }
@@ -2309,6 +2310,7 @@ public class DataShareService {
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
             String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
+
             String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, Lists.newArrayList(str));
             filterJoiner.add(filterStr);
         }
