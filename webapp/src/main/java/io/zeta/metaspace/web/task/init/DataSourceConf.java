@@ -23,6 +23,8 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.sql.DataSource;
+
 /**
  * @author lixiang03
  * @Data 2020/7/2 10:43
@@ -40,8 +42,8 @@ public class DataSourceConf {
     public DataSourceConf() throws AtlasBaseException {
         try{
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            driverClassName=configuration.getString("metaspace.database.driverClassName","org.postgresql.Driver");
-            jdbcUrl=configuration.getString("metaspace.database.url");
+            driverClassName="net.bull.javamelody.JdbcDriver";
+            jdbcUrl=configuration.getString("metaspace.database.url")+"&driver=org.postgresql.Driver";
             username=configuration.getString("metaspace.database.username");
             password=configuration.getString("metaspace.database.password");
             minimumIdle=configuration.getInt("metaspace.database.minPoolSize",5);

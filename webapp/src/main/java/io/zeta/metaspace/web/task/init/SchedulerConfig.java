@@ -38,6 +38,7 @@ public class SchedulerConfig {
         SchedulerFactoryBean factory = new SchedulerFactoryBean();
         factory.setQuartzProperties(quartzProperties());
         factory.setJobFactory(springBeanJobFactory());
+        factory.setExposeSchedulerInRepository(true);
         return factory;
     }
 
