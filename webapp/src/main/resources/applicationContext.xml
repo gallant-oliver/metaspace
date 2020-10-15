@@ -29,7 +29,13 @@
 	http://www.springframework.org/schema/tx/spring-tx.xsd">
 
 
-
+        <bean id="facadeMonitoringAdvisor" class="net.bull.javamelody.MonitoringSpringAdvisor">
+                <property name="pointcut">
+                        <bean class="org.springframework.aop.support.JdkRegexpMethodPointcut">
+                                <property name="pattern" value="io.zeta.metaspace.web.service.*" />
+                        </bean>
+                </property>
+        </bean>
 
         <!--2 配置hikari数据源 -->
         <bean id="datasource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">

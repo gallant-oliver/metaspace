@@ -171,6 +171,7 @@
         <fastutil.version>6.5.16</fastutil.version>
         <guice.version>4.1.0</guice.version>
         <spring.version>4.3.17.RELEASE</spring.version>
+        <javamelody.version>1.86.0</javamelody.version>
         <spring.security.version>4.2.6.RELEASE</spring.security.version>
 
         <javax.servlet.version>3.1.0</javax.servlet.version>
@@ -780,6 +781,13 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-webmvc</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+
+            <!-- javamelody-core -->
+            <dependency>
+                <groupId>net.bull.javamelody</groupId>
+                <artifactId>javamelody-core</artifactId>
+                <version>${javamelody.version}</version>
             </dependency>
 
             <dependency>

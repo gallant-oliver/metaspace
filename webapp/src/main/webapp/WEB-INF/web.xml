@@ -22,111 +22,127 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
 	      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
          version="3.0">
-  <display-name>Apache Atlas</display-name>
-  <description>Metadata Management and Data Governance Platform over Hadoop</description>
+    <display-name>Apache Atlas</display-name>
+    <description>Metadata Management and Data Governance Platform over Hadoop</description>
 
-  <context-param>
+    <filter>
+        <filter-name>javamelody</filter-name>
+        <filter-class>net.bull.javamelody.MonitoringFilter</filter-class>
+        <async-supported>true</async-supported>
+        <init-param>
+            <param-name>quartz-default-listener-disabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>javamelody</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>ASYNC</dispatcher>
+    </filter-mapping>
+    <listener>
+        <listener-class>net.bull.javamelody.SessionListener</listener-class>
+    </listener>
 
-  <param-name>contextConfigLocation</param-name>
+    <servlet>
+        <servlet-name>jersey-servlet</servlet-name>
+        <servlet-class>
+            com.sun.jersey.spi.spring.container.servlet.SpringServlet
+        </servlet-class>
+        <init-param>
+            <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
-  <param-value>classpath:applicationContext.xml</param-value>
+    <context-param>
 
-  </context-param>
+        <param-name>contextConfigLocation</param-name>
 
-  <servlet>
-    <servlet-name>jersey-servlet</servlet-name>
-    <servlet-class>
-      com.sun.jersey.spi.spring.container.servlet.SpringServlet
-    </servlet-class>
-    <init-param>
-      <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
-      <param-value>true</param-value>
-    </init-param>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
+        <param-value>
+            classpath:net/bull/javamelody/monitoring-spring-aop.xml
+            classpath:applicationContext.xml
+        </param-value>
 
-  <context-param>
+    </context-param>
 
-    <param-name>contextConfigLocation</param-name>
+    <context-param>
+        <param-name>log4jConfiguration</param-name>
+        <param-value>log4j2.xml</param-value>
+    </context-param>
 
-    <param-value>classpath:applicationContext.xml</param-value>
+    <servlet-mapping>
+        <servlet-name>jersey-servlet</servlet-name>
+        <url-pattern>/api/metaspace/*</url-pattern>
+    </servlet-mapping>
 
-  </context-param>
-  
-  <context-param>
-    <param-name>log4jConfiguration</param-name>
-    <param-value>log4j2.xml</param-value>
-  </context-param>
+    <filter>
+        <description>跨域过滤器</description>
+        <filter-name>CORS</filter-name>
+        <filter-class>com.thetransactioncompany.cors.CORSFilter</filter-class>
+        <init-param>
+            <param-name>cors.allowOrigin</param-name>
+            <param-value>*</param-value>
+        </init-param>
+        <init-param>
+            <param-name>cors.supportedMethods</param-name>
+            <param-value>GET, POST, HEAD, PUT, DELETE,OPTIONS</param-value>
+        </init-param>
+        <init-param>
+            <param-name>cors.supportedHeaders</param-name>
+            <param-value>Accept, Origin, X-Requested-With, Content-Type, Last-Modified,X-SSO-FullticketId,tenantId
+            </param-value>
+        </init-param>
+        <init-param>
+            <param-name>cors.maxAge</param-name>
+            <param-value>3600</param-value>
+        </init-param>
+    </filter>
 
-  <servlet-mapping>
-    <servlet-name>jersey-servlet</servlet-name>
-    <url-pattern>/api/metaspace/*</url-pattern>
-  </servlet-mapping>
+    <filter-mapping>
+        <filter-name>CORS</filter-name>
+        <url-pattern>/api/metaspace/*</url-pattern>
+    </filter-mapping>
 
-  <filter>
-    <description>跨域过滤器</description>
-    <filter-name>CORS</filter-name>
-    <filter-class>com.thetransactioncompany.cors.CORSFilter</filter-class>
-    <init-param>
-      <param-name>cors.allowOrigin</param-name>
-      <param-value>*</param-value>
-    </init-param>
-    <init-param>
-      <param-name>cors.supportedMethods</param-name>
-      <param-value>GET, POST, HEAD, PUT, DELETE,OPTIONS</param-value>
-    </init-param>
-    <init-param>
-      <param-name>cors.supportedHeaders</param-name>
-      <param-value>Accept, Origin, X-Requested-With, Content-Type, Last-Modified,X-SSO-FullticketId,tenantId</param-value>
-    </init-param>
-    <init-param>
-      <param-name>cors.maxAge</param-name>
-      <param-value>3600</param-value>
-    </init-param>
-  </filter>
-
-  <filter-mapping>
-    <filter-name>CORS</filter-name>
-    <url-pattern>/api/metaspace/*</url-pattern>
-  </filter-mapping>
-
-  <filter>
-    <filter-name>SSOFilter</filter-name>
-    <filter-class>io.zeta.metaspace.web.filter.SSOFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>SSOFilter</filter-name>
-    <url-pattern>/api/metaspace/*</url-pattern>
-  </filter-mapping>
-
-  <filter>
-    <filter-name>dataServiceFilter</filter-name>
-    <filter-class>io.zeta.metaspace.web.filter.DataServiceFilter</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>dataServiceFilter</filter-name>
-    <url-pattern>/api/metaspace/*</url-pattern>
-  </filter-mapping>
-
-  <listener>
-    <listener-class>org.apache.logging.log4j.web.Log4jServletContextListener</listener-class>
-  </listener>
-  <listener>
-    <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
-  </listener>
-
-  <listener>
-    <listener-class>io.zeta.metaspace.web.listeners.KerberosReloginListener</listener-class>
-  </listener>
+    <filter>
+        <filter-name>SSOFilter</filter-name>
+        <filter-class>io.zeta.metaspace.web.filter.SSOFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>SSOFilter</filter-name>
+        <url-pattern>/api/metaspace/*</url-pattern>
+    </filter-mapping>
 
 
-  <session-config>
-    <session-timeout>60</session-timeout>
-    <tracking-mode>COOKIE</tracking-mode>
-    <cookie-config>
-      <name>METASPACESSESSIONID</name>
-      <http-only>true</http-only>
-    </cookie-config>
-  </session-config>
+    <filter>
+        <filter-name>dataServiceFilter</filter-name>
+        <filter-class>io.zeta.metaspace.web.filter.DataServiceFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>dataServiceFilter</filter-name>
+        <url-pattern>/api/metaspace/*</url-pattern>
+    </filter-mapping>
+
+    <listener>
+        <listener-class>org.apache.logging.log4j.web.Log4jServletContextListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+    </listener>
+
+    <listener>
+        <listener-class>io.zeta.metaspace.web.listeners.KerberosReloginListener</listener-class>
+    </listener>
+
+
+    <session-config>
+        <session-timeout>60</session-timeout>
+        <tracking-mode>COOKIE</tracking-mode>
+        <cookie-config>
+            <name>METASPACESSESSIONID</name>
+            <http-only>true</http-only>
+        </cookie-config>
+    </session-config>
 
 </web-app>
