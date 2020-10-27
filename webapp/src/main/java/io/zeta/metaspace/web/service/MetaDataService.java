@@ -38,6 +38,7 @@ import io.zeta.metaspace.web.model.Progress;
 import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.HbaseMetaStoreBridgeUtils;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -123,6 +124,8 @@ public class MetaDataService {
     private String errorMessage = "";
     @Autowired
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
+    @Autowired
+    private HbaseMetaStoreBridgeUtils hbaseMetaStoreBridgeUtils;
 
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
     private Map<String, String> errorMap = new HashMap<>();
@@ -1424,10 +1427,15 @@ public class MetaDataService {
     }
 
     IMetaDataProvider getMetaDataProviderFactory(DataSourceType dataSourceType, TableSchema tableSchema) throws Exception {
+        if (!dataSourceType.isAdapter()){
+            if (DataSourceType.HBASE.equals(dataSourceType)){
+                return hbaseMetaStoreBridgeUtils;
+            }
+        }
         if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
             if (DataSourceType.HIVE.equals(dataSourceType)) {
                 return hiveMetaStoreBridgeUtils;
-            } else {
+            }else {
                 IMetaDataProvider metaDataProvider;
                 if (!metaDataProviderMap.containsKey(tableSchema.getInstance()) || metaDataProviderMap.get(tableSchema.getInstance()) == null) {
                     metaDataProvider = new AbstractMetaDataProvider(entitiesStore, graph, atlasTypeRegistry, dataSourceService);
@@ -1453,6 +1461,17 @@ public class MetaDataService {
             progress.setError(errorMap.get(sourceId));
             return progress;
         }
+        if (!dataSourceType.isAdapter()){
+            if (DataSourceType.HBASE.equals(dataSourceType)){
+                if (hbaseMetaStoreBridgeUtils == null) {
+                    errorMap.put(sourceId, String.format("get hbaseMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
+                    LOG.error(errorMap.get(sourceId));
+                    progress.setError(errorMap.get(sourceId));
+                    return progress;
+                }
+                return getProgress(hbaseMetaStoreBridgeUtils, sourceId);
+            }
+        }
         if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
             if (DataSourceType.HIVE.equals(databaseType)) {
                 if (hiveMetaStoreBridgeUtils == null) {
@@ -1462,7 +1481,7 @@ public class MetaDataService {
                     return progress;
                 }
                 progress = getProgress(hiveMetaStoreBridgeUtils, sourceId);
-            } else {
+            }else {
                 if (!metaDataProviderMap.containsKey(sourceId) || metaDataProviderMap.get(sourceId) == null) {
                     if (metaDataProviderMap.get(sourceId) == null) {
                         errorMap.put(sourceId, String.format("该数据源未开始采集元数据"));
