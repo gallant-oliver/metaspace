@@ -11,7 +11,8 @@ public enum DataSourceType {
     IMPALA("IMPALA",21050),
     ORACLE("ORACLE",1521),
     DB2("DB2",50000),
-    SQLSERVER("SQLSERVER",1433);
+    SQLSERVER("SQLSERVER",1433),
+    HBASE("HBASE",2181);
 
     private final String name;
     private final int defaultPort;
@@ -42,5 +43,11 @@ public enum DataSourceType {
      */
     public boolean isBuildIn() {
         return HIVE.equals(this)||IMPALA.equals(this);
+    }
+    /**
+     * 区分hbase和kafka数据源
+     */
+    public boolean isAdapter(){
+        return !HBASE.equals(this);
     }
 }
