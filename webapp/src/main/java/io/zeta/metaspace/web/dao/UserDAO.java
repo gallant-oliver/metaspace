@@ -162,4 +162,13 @@ public interface UserDAO {
             "</foreach>" +
             "</script>")
     public List<String> getUserNameByIds(@Param("ids") List ids);
+
+    @Select("<script>" +
+            "select account from users where userid in " +
+            "    <foreach item='item' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<String> getUsersEmailByIds(@Param("ids")List<String> ids);
 }

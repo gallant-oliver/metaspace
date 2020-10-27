@@ -254,4 +254,29 @@ public interface ApiGroupDAO {
     @Select(" select u.username creator,* from api_relation a join api_group g on a.groupid=g.id left join users u on u.userid=g.creator " +
             " where a.version=#{version} and a.apiid=#{apiId}")
     public List<ApiGroupInfo> getApiGroupByApiVersion(@Param("apiId")String apiId,@Param("version")String version);
+
+    @Update("update api_group set mobius_id=#{mobiusId} where id=#{guid}")
+    public int updateApiMobiusId(@Param("guid")String guid,@Param("mobiusId")String mobiusId);
+
+    @Select("select mobius_id from api_group where id=#{id} ")
+    public String getApiGroupMobiusId(@Param("id")String id);
+
+    @Select("<script>" +
+            "select mobius_id from api where valid=true and id in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getApiMobiusIdsByIds(@Param("ids")List<String> ids);
+
+    @Select("select api.mobius_id from api_relation join api on api.guid=api_relation.apiid and api.version=api_relation.version where groupid=#{id} ")
+    public List<String> getGroupRelationMobiusId(@Param("id")String id);
+
+    @Select("<script>" +
+            "select mobius_id from api_group where projectid in " +
+            " <foreach item='id' index='index' collection='projectIds' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getMobiusByProjects(@Param("projectIds")List<String> projectIds);
 }

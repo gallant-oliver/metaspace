@@ -15,7 +15,10 @@ package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.web.service.DataShareService;
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +34,15 @@ public class DataServiceUtil {
     @Autowired
     public DataShareService dataShareService;
     private static DataServiceUtil utils;
+    public static String mobiusUrl;
+    static{
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            mobiusUrl=configuration.getString("metaspace.mobius.url");
+        } catch (AtlasException e) {
+            e.printStackTrace();
+        }
+    }
 
     @PostConstruct
     public void init() {

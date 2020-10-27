@@ -38,7 +38,7 @@ public class TestAdapter extends AdapterTestConfig {
 
     @Test()
     public void testPostgresql() {
-        checkConnection("src/test/resources/dataSourceInfo/postgresql.json");
+        UnitTestUtils.checkConnection("src/test/resources/dataSourceInfo/postgresql.json");
     }
 
     /**

@@ -35,6 +35,9 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.moebius.MoebiusApi;
+import io.zeta.metaspace.model.moebius.MoebiusApiData;
+import io.zeta.metaspace.model.moebius.MoebiusApiParam;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -55,6 +58,7 @@ import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.CategoryUtil;
+import io.zeta.metaspace.web.util.DataServiceUtil;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -122,6 +126,8 @@ public class DataShareService {
     private TenantService tenantService;
     @Autowired
     private AuditService auditService;
+    @Autowired
+    private ApiGroupService apiGroupService;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -1565,6 +1571,11 @@ public class DataShareService {
         shareDAO.deleteCategoryByProject(projectIds);
         List<String> groupIds = apiGroupDAO.getApiGroupIdByProject(projectIds);
         groupService.deleteApiGroup(groupIds);
+        // todo
+        List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
+        apiMobiusByProjects.forEach(this::deleteApiMobius);
+        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
+        mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
     }
 
     /**
@@ -1747,12 +1758,15 @@ public class DataShareService {
                 auditService.cancelApiAudit(tenantId,apiInfoV2.getGuid(),apiInfoV2.getVersion());
             }
         }
-        //todo 告知云平台删除
-
-
+        List<String> apiMobiusIds = shareDAO.getApiMobiusIdsByIds(ids);
         shareDAO.deleteApiByIds(ids);
         apiGroupDAO.deleteRelationByApi(ids);
         addApiLogs(ApiLogEnum.DELETE,ids,AdminUtils.getUserData().getUserId());
+        for(String apiMobiuId:apiMobiusIds){
+            if (StringUtils.isNotEmpty(apiMobiuId)){
+                deleteApiMobius(apiMobiuId);
+            }
+        }
     }
 
     /**
@@ -1776,11 +1790,47 @@ public class DataShareService {
         if (ApiStatusEnum.AUDIT.getName().equals(apiInfo.getStatus())){
             auditService.cancelApiAudit(tenantId,api.getApiId(),api.getVersion());
         }
-        //todo 告知云平台删除
-
-
         shareDAO.deleteApiVersion(api);
         apiGroupDAO.deleteRelationByApiVersion(api);
+        String apiMobiusId = shareDAO.getApiMobiusIdByVersion(api.getApiId(), api.getVersion());
+        deleteApiMobius(apiMobiusId);
+    }
+
+    public void deleteApiMobius(String id){
+        Map<String,String> map = new HashMap<>();
+        String ticket = AdminUtils.getSSOTicket();
+        map.put("X-SSO-FullticketId",ticket);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/api";
+        mobiusURL=mobiusURL+"?id="+id;
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        while(retryCount < retries) {
+            String res = OKHttpClient.doDelete(mobiusURL, map);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台无法删除api");
+        }
     }
 
     /**
@@ -1808,7 +1858,7 @@ public class DataShareService {
             apiInfo.setUpdater(updaterName);
             String categoryName = shareDAO.getCategoryById(apiInfo.getCategoryGuid()).getName();
             apiInfo.setCategoryName(categoryName);
-            getParam(id,apiInfo,maxVersion);
+            auditService.getParam(id,apiInfo,maxVersion);
             return apiInfo;
         } catch (Exception e) {
             LOG.error("获取api信息", e);
@@ -1840,7 +1890,7 @@ public class DataShareService {
             apiInfo.setUpdater(updaterName);
             String categoryName = shareDAO.getCategoryById(apiInfo.getCategoryGuid()).getName();
             apiInfo.setCategoryName(categoryName);
-            getParam(id,apiInfo,version);
+            auditService.getParam(id,apiInfo,version);
             List<ApiGroupInfo> apiGroupByApiVersion = apiGroupDAO.getApiGroupByApiVersion(id, version);
             apiInfo.setApiGroup(apiGroupByApiVersion);
             return apiInfo;
@@ -1856,33 +1906,6 @@ public class DataShareService {
         }
         List<ApiVersion> apiVersions = shareDAO.getApiVersion(apiId);
         return apiVersions;
-    }
-
-    public ApiInfoV2 getParam(String guid,ApiInfoV2 apiInfo,String version) throws AtlasBaseException {
-        try {
-            Gson gson = new Gson();
-            Object param = shareDAO.getParamByGuid(guid,version);
-            Object returnParam = shareDAO.getReturnParamByGuid(guid,version);
-            Object sortParam = shareDAO.getSortParamByGuid(guid,version);
-
-            PGobject paramPg = (PGobject)param;
-            PGobject returnParamPg = (PGobject)returnParam;
-            PGobject sortParamPg = (PGobject)sortParam;
-            String paramValue = paramPg.getValue();
-            String returnParamValue = returnParamPg.getValue();
-            String sortParamValue = sortParamPg.getValue();
-            Type type = new  TypeToken<List<ApiInfoV2.FieldV2>>(){}.getType();
-            List<ApiInfoV2.FieldV2> params = gson.fromJson(paramValue, type);
-            List<ApiInfoV2.FieldV2> returnParams = gson.fromJson(returnParamValue, type);
-            List<ApiInfoV2.FieldV2> sortParams = gson.fromJson(sortParamValue, type);
-            apiInfo.setParam(params);
-            apiInfo.setReturnParam(returnParams);
-            apiInfo.setSortParam(sortParams);
-            return apiInfo;
-        } catch (Exception e) {
-            LOG.error("获取数据失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
-        }
     }
 
     /**
@@ -2019,9 +2042,10 @@ public class DataShareService {
                 List<String> apiIds = shareDAO.getApiIdByCategory(categoryDelete.getId());
                 if (apiIds!=null&&apiIds.size()!=0){
                     addApiLogs(ApiLogEnum.DELETE,apiIds,AdminUtils.getUserData().getUserId());
-                    //todo 通知云平台删除
                     shareDAO.deleteApiByCategory(categoryDelete.getId());
                     apiGroupDAO.deleteRelationByCategory(categoryDelete.getId());
+                    List<String> apiMobiusByCategory = shareDAO.getApiMobiusByCategory(categoryDelete.getId());
+                    apiMobiusByCategory.forEach(this::deleteApiMobius);
                 }
             }else{
                 CategoryEntityV2 initCategory = shareDAO.getCategoryByName(CategoryUtil.apiCategoryName, categoryDelete.getProjectId(), tenantId);
@@ -2118,6 +2142,7 @@ public class DataShareService {
         }else{
             downStatus(guid);
         }
+        updateMobiusApiStatus(guid,status);
     }
 
     @Transactional(rollbackFor=Exception.class)
@@ -2149,6 +2174,53 @@ public class DataShareService {
         Timestamp updateTime = DateUtils.currentTimestamp();
         addApiLog(ApiLogEnum.DOWNSTATUS,guid,AdminUtils.getUserData().getUserId());
         shareDAO.updateApiStatus(guid, ApiStatusEnum.DOWN.getName(), updateTime);
+    }
+
+    public void updateMobiusApiStatus(String guid,boolean status){
+        {
+            Map<String,String> map = new HashMap<>();
+            List<String> apiMobiusIds = shareDAO.getApiMobiusIds(guid);
+            if (status){
+                map.put("status","release");
+            }else{
+                map.put("status","draft");
+            }
+            for (String apiMobiusId:apiMobiusIds){
+                map.put("id",apiMobiusId);
+                Gson gson = new Gson();
+                String jsonStr = gson.toJson(map);
+                int retries = 3;
+                int retryCount = 0;
+                String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/api/status";
+                String errorId = null;
+                String errorReason = null;
+                String proper = "0.0";
+                while(retryCount < retries) {
+                    String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+                    LOG.info(res);
+                    if(Objects.nonNull(res)) {
+                        Map response = convertMobiusResponse(res);
+                        errorId = String.valueOf(response.get("error-id"));
+                        errorReason = String.valueOf(response.get("reason"));
+                        if (proper.equals(errorId)) {
+                            break;
+                        } else {
+                            retryCount++;
+                        }
+                    } else {
+                        retryCount++;
+                    }
+                }
+                if(!proper.equals(errorId)) {
+                    StringBuffer detail = new StringBuffer();
+                    detail.append("云平台返回错误码:");
+                    detail.append(errorId);
+                    detail.append("错误信息:");
+                    detail.append(errorReason);
+                    throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "更新云平台api状态失败");
+                }
+            }
+        }
     }
 
     public void addApiLog(ApiLogEnum apiLogEnum,String apiId,String userId){

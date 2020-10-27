@@ -684,4 +684,32 @@ public interface DataShareDAO {
 
     @Select("select projectid from api_category where guid=#{id}")
     public String getProjectIdByCategory(@Param("id")String id);
+
+    @Update("update api set mobius_id=#{mobiusId} where guid=#{guid}  and version=#{version}")
+    public int updateApiMobiusId(@Param("guid")String guid, @Param("version")String version,@Param("mobiusId")String mobiusId);
+
+    @Select("select mobius_id from api where guid=#{id} and valid=true")
+    public List<String> getApiMobiusIds(@Param("id")String id);
+
+    @Select("select mobius_id from api where guid=#{id} and version={version}}")
+    public String getApiMobiusIdByVersion(@Param("id")String id,@Param("version")String version);
+
+    @Select("<script>" +
+            "select mobius_id from api where valid=true and guid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getApiMobiusIdsByIds(@Param("ids")List<String> ids);
+
+    @Select("select mobius_id from api where categoryguid=#{categoryId}")
+    public List<String> getApiMobiusByCategory(@Param("categoryId")String categoryId);
+
+    @Select("<script>" +
+            "select mobius_id from api where projectid in " +
+            " <foreach item='id' index='index' collection='projectIds' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getApiMobiusByProjects(@Param("projectIds")List<String> projectIds);
 }
