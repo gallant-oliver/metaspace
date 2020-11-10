@@ -16,6 +16,7 @@ import io.zeta.metaspace.model.dataquality2.Report2RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -40,14 +41,14 @@ public class RuleTemplateService {
     @Autowired
     private RuleTemplateDAO ruleTemplateDAO;
 
-    public long countByCategoryId(Integer categoryId) {
-        return ruleTemplateDAO.countByCategoryId(categoryId);
+    public long countByCategoryId(String categoryId,String tenantId) {
+        return ruleTemplateDAO.countByCategoryId(categoryId,tenantId);
     }
 
-    public PageResult<RuleTemplate> getRuleTemplate(Integer ruleType, Parameters parameters) throws AtlasBaseException {
+    public PageResult<RuleTemplate> getRuleTemplate(String ruleType, RuleParameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult pageResult = new PageResult();
-            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters);
+            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters,tenantId);
             updateRuleType(ruleTemplateList);
             pageResult.setLists(ruleTemplateList);
             pageResult.setCurrentSize(ruleTemplateList.size());
@@ -63,10 +64,10 @@ public class RuleTemplateService {
         }
     }
 
-    public PageResult<RuleTemplate> search(Parameters parameters) throws AtlasBaseException {
+    public PageResult<RuleTemplate> search(RuleParameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult pageResult = new PageResult<RuleTemplate>();
-            List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters);
+            List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters,tenantId);
             updateRuleType(lists);
             long totalCount = 0;
             if (lists.size()!=0){
@@ -84,7 +85,7 @@ public class RuleTemplateService {
 
     public void updateRuleType(List<RuleTemplate> lists) throws AtlasBaseException {
         try {
-            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
                 ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });

@@ -14,10 +14,11 @@ package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
 
 import java.sql.Timestamp;
 
-
+@Data
 public class Rule {
 
     private String id;
@@ -43,174 +44,6 @@ public class Rule {
     @JsonIgnore
     private int total;
 
-    public int getTotal() {
-        return total;
-    }
-
-    public void setTotal(int total) {
-        this.total = total;
-    }
     private Integer ruleType;
     private String ruleTypeName;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-
-    public String getRuleTemplateId() {
-        return ruleTemplateId;
-    }
-
-    public void setRuleTemplateId(String ruleTemplateId) {
-        this.ruleTemplateId = ruleTemplateId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public Integer getScope() {
-        return scope;
-    }
-
-    public void setScope(Integer scope) {
-        this.scope = scope;
-    }
-
-    public String getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(boolean enable) {
-        this.enable = enable;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Integer getCheckType() {
-        return checkType;
-    }
-
-    public void setCheckType(Integer checkType) {
-        this.checkType = checkType;
-    }
-
-    public Integer getCheckExpressionType() {
-        return checkExpressionType;
-    }
-
-    public void setCheckExpressionType(Integer checkExpressionType) {
-        this.checkExpressionType = checkExpressionType;
-    }
-
-    public Float getCheckThresholdMinValue() {
-        return checkThresholdMinValue;
-    }
-
-    public void setCheckThresholdMinValue(Float checkThresholdMinValue) {
-        this.checkThresholdMinValue = checkThresholdMinValue;
-    }
-
-    public Float getCheckThresholdMaxValue() {
-        return checkThresholdMaxValue;
-    }
-
-    public void setCheckThresholdMaxValue(Float checkThresholdMaxValue) {
-        this.checkThresholdMaxValue = checkThresholdMaxValue;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Timestamp createTime) {
-        this.createTime = createTime;
-    }
-
-    public Timestamp getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Timestamp updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public boolean isDelete() {
-        return delete;
-    }
-
-    public void setDelete(boolean delete) {
-        this.delete = delete;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public Integer getRuleType() {
-        return ruleType;
-    }
-
-    public void setRuleType(Integer ruleType) {
-        this.ruleType = ruleType;
-    }
-
-    public String getRuleTypeName() {
-        return ruleTypeName;
-    }
-
-    public void setRuleTypeName(String ruleTypeName) {
-        this.ruleTypeName = ruleTypeName;
-    }
 }
