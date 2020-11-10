@@ -161,15 +161,13 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({"<script>",
-             " select data_quality_rule.id, data_quality_rule.name, data_quality_rule.rule_template_id as ruleTemplateId, data_quality_rule_template.scope",
-             " from data_quality_rule, data_quality_rule_template",
-             " where data_quality_rule.category_id=#{categoryId}",
-             " and data_quality_rule.rule_template_id=data_quality_rule_template.id",
-             " and data_quality_rule.delete=false",
-             " and data_quality_rule.enable=true " +
-             " and data_quality_rule.tenantid=#{tenantId} ",
+             " select id, name,scope",
+             " from data_quality_rule_template",
+             " where rule_type=#{categoryId}",
+             " and delete=false",
+             " and tenantid=#{tenantId} ",
              " <if test='scope!=null'>",
-             " and data_quality_rule.scope=#{scope}",
+             " and scope=#{scope}",
              " </if>",
              " </script>"})
     public List<RuleHeader> getRuleListByCategoryId(@Param("categoryId")String categoryId, @Param("scope")Integer scope,@Param("tenantId") String tenantId);
@@ -191,8 +189,8 @@ public interface TaskManageDAO {
      * 获取数值类型的规则
      * @return
      */
-    @Select("select id from data_quality_rule_template where rule_type=5")
-    public List<String> getNumericTypeTemplateRuleId();
+    @Select("select id from data_quality_rule_template where rule_type=5 and tenantid=#{tenantid}")
+    public List<String> getNumericTypeTemplateRuleId(@Param("tenantId")String tenantId);
 
     /**
      * 根据分组信息获取告警组
@@ -256,15 +254,15 @@ public interface TaskManageDAO {
              " values(#{rule.id},#{rule.subTaskId},#{rule.ruleId},#{rule.checkType},#{rule.checkExpression},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.orangeCheckType},#{rule.orangeCheckExpression},#{rule.orangeThresholdMinValue},#{rule.orangeThresholdMaxValue},#{rule.redCheckType},#{rule.redCheckExpression},#{rule.redThresholdMinValue},#{rule.redThresholdMaxValue},#{rule.sequence},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.checkThresholdUnit})"})
     public int addDataQualitySubTaskRule(@Param("rule")DataQualitySubTaskRule taskRule);
 
-    @Select("select check_threshold_unit from data_quality_rule where id=#{ruleId}")
-    public String getTaskRuleUnit(@Param("ruleId")String ruleId);
+    @Select("select unit from data_quality_rule_template where id=#{ruleId} and tenantid=#{tenantId}")
+    public String getTaskRuleUnit(@Param("ruleId")String ruleId,@Param("tenantId")String tenantId);
 
     /**
      * 任务详情-任务信息
      * @param taskId
      * @return
      */
-    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression,pool from data_quality_task where id=#{taskId}")
+    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression,pool,tenantid from data_quality_task where id=#{taskId}")
     public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
 
     /**
@@ -288,15 +286,15 @@ public interface TaskManageDAO {
      * @param subTaskId
      * @return
      */
-    @Select({"select data_quality_rule.name as ruleName,data_quality_rule.id as ruleId,category_id as categoryId,",
+    @Select({"select data_quality_rule_template.name as ruleName,data_quality_rule_template.id as ruleId,rule_type as categoryId,",
              " data_quality_sub_task_rule.id as subTaskRuleId,data_quality_sub_task_rule.check_type as checkType,data_quality_sub_task_rule.check_expression_type as checkExpression,",
              " data_quality_sub_task_rule.check_threshold_min_value as checkThresholdMinValue,data_quality_sub_task_rule.check_threshold_max_value as checkThresholdMaxValue,",
              " orange_check_type as orangeWarningCheckType,orange_check_expression_type as orangeWarningCheckExpression,orange_threshold_min_value as orangeWarningCheckThresholdMinValue,",
              " orange_threshold_max_value as orangeWarningCheckThresholdMaxValue,red_check_type as redWarningCheckType,red_check_expression_type as redWarningCheckExpression,",
              " red_threshold_min_value as redWarningCheckThresholdMinValue,red_threshold_max_value as redWarningCheckThresholdMaxValue",
-             " from data_quality_sub_task_rule join data_quality_rule on data_quality_rule.id=data_quality_sub_task_rule.ruleId where data_quality_sub_task_rule.subtask_id=#{subTaskId}",
+             " from data_quality_sub_task_rule join data_quality_rule_template on data_quality_rule_template.id=data_quality_sub_task_rule.ruleId where data_quality_sub_task_rule.subtask_id=#{subTaskId} and data_quality_rule_template.tenantid=#{tenantId}",
     })
-    public List<EditionTaskInfo.SubTaskRule> getSubTaskRule(@Param("subTaskId")String subTaskId);
+    public List<EditionTaskInfo.SubTaskRule> getSubTaskRule(@Param("subTaskId")String subTaskId,@Param("tenantId")String tenantId);
 
     /**
      * 任务详情-告警组信息
@@ -356,20 +354,20 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.ruleid,",
-             " data_quality_rule_template.type as taskType,data_quality_rule_template.scope from data_quality_rule_template",
+             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.columns,relation.tables,relation.ruleid,",
+             " data_quality_rule_template.type as taskType,data_quality_rule_template.scope,data_quality_rule_template.sql as sql from data_quality_rule_template ",
              " join",
-             " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,template_rule.subTaskRuleId from" ,
-             " (select sub_rule.*,data_quality_rule.rule_template_id from data_quality_rule join",
-             " (select id as subTaskRuleId,ruleid,subtask_id from data_quality_sub_task_rule where subtask_id in ",
-             " (select id from data_quality_sub_task where task_id=#{taskId})) sub_rule on sub_rule.ruleid=data_quality_rule.id) template_rule",
+             " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,obj.columns,obj.tables,template_rule.subTaskRuleId from" ,
+             " (select id as subTaskRuleId,subtask_id,ruleid,ruleid as rule_template_id from data_quality_sub_task_rule where subtask_id in ",
+             " (select id from data_quality_sub_task where task_id=#{taskId})) template_rule",
              " join",
-             " (select object_id,subtask_id from data_quality_sub_task_object where subtask_id in",
+             " (select object_id,subtask_id,columns,tables from data_quality_sub_task_object where subtask_id in",
              " (select id from data_quality_sub_task where task_id=#{taskId})) obj",
              " on template_rule.subtask_id=obj.subtask_id) relation",
-             " on relation.rule_template_id=data_quality_rule_template.id",
+             " on relation.rule_template_id=data_quality_rule_template.id " +
+             " where data_quality_rule_template.tenantid=#{tenantId}",
              " </script>"})
-    public List<AtomicTaskExecution> getObjectWithRuleRelation(@Param("taskId")String taskId);
+    public List<AtomicTaskExecution> getObjectWithRuleRelation(@Param("taskId")String taskId,@Param("tenantId")String tenantId);
 
     /**
      * 根据qrtzName获取任务Id
@@ -449,27 +447,12 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select check_threshold_min_value as checkThresholdMinValue,check_threshold_max_value as checkThresholdMaxValue,orange_check_type as orangeCheckType,orange_check_expression_type as orangeCheckExpression,orange_threshold_min_value as orangeThresholdMinValue,orange_threshold_max_value as orangeThresholdMaxValue,",
+             " select check_type as checkType,check_expression_type as checkExpression,check_threshold_min_value as checkThresholdMinValue,check_threshold_max_value as checkThresholdMaxValue,orange_check_type as orangeCheckType,orange_check_expression_type as orangeCheckExpression,orange_threshold_min_value as orangeThresholdMinValue,orange_threshold_max_value as orangeThresholdMaxValue,",
              " red_check_type as redCheckType,red_check_expression_type as redCheckExpression,red_threshold_min_value as redThresholdMinValue,red_threshold_max_value as redThresholdMaxValue",
              " from data_quality_sub_task_rule where id=#{subTaskRuleId}",
              " </script>"})
     public DataQualitySubTaskRule getSubTaskRuleInfo(@Param("subTaskRuleId") String subTaskRuleId);
 
-    /**
-     * 获取规则类型
-     * @param subTaskRuleId
-     * @return
-     */
-    @Select("select check_type from data_quality_rule where id=(select ruleId from data_quality_sub_task_rule where id=#{subTaskRuleId})")
-    public Integer getRuleCheckType(@Param("subTaskRuleId") String subTaskRuleId);
-
-    /**
-     * 获取规则校验表达式
-     * @param subTaskRuleId
-     * @return
-     */
-    @Select("select check_expression_type from data_quality_rule where id=(select ruleId from data_quality_sub_task_rule where id=#{subTaskRuleId})")
-    public Integer getRuleCheckExpression(@Param("subTaskRuleId") String subTaskRuleId);
 
     /**
      * 更新任务执行告警信息
@@ -580,17 +563,13 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select max(create_time) as lastExecuteTime,b.* from data_quality_task_rule_execute",
+             " select max(data_quality_task_rule_execute.create_time) as lastExecuteTime,b.* from data_quality_task_rule_execute",
              " join",
-             " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
-             " join",
-             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
-             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id",
-             " where data_quality_rule.delete=false and data_quality_rule.enable=true) a",
+             " (select data_quality_sub_task_rule.id as subtaskruleid,a.id as ruleid,a.code,a.description from data_quality_sub_task_rule " +
+             " join data_quality_rule_template a on data_quality_sub_task_rule.ruleid = a.id where a.tenantid=#{tenantId}) b",
              " on",
-             " data_quality_sub_task_rule.ruleid = a.ruleid) b",
-             " on",
-             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id=#{taskId} group by b.subtaskruleid,b.ruleid,b.code,b.description",
+             " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id=#{taskId} " +
+             " group by b.subtaskruleid,b.ruleid,b.code,b.description",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",
@@ -598,7 +577,7 @@ public interface TaskManageDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskRuleHeader> getRuleList(@Param("taskId")String id, @Param("params") Parameters params);
+    public List<TaskRuleHeader> getRuleList(@Param("taskId")String id, @Param("params") Parameters params,@Param("tenantId")String tenantId);
 
     /**
      * 统计任务规则列表
@@ -607,27 +586,22 @@ public interface TaskManageDAO {
      */
     @Select({" <script>",
              " select count(*) from",
-             " (select max(create_time) as lastExecuteTime,b.subtaskruleid from data_quality_task_rule_execute",
+             " (select max(data_quality_task_rule_execute.create_time) as lastExecuteTime,b.subtaskruleid from data_quality_task_rule_execute",
              " join",
-             " (select data_quality_sub_task_rule.id as subtaskruleid,a.* from data_quality_sub_task_rule",
-             " join",
-             " (select data_quality_rule.id as ruleid,data_quality_rule.code,data_quality_rule.description",
-             " from data_quality_rule join data_quality_rule_template on data_quality_rule.rule_template_id=data_quality_rule_template.id",
-             " where data_quality_rule.delete=false and data_quality_rule.enable=true) a",
-             " on",
-             " data_quality_sub_task_rule.ruleid = a.ruleid) b",
+             " (select data_quality_sub_task_rule.id as subtaskruleid,a.id as ruleid,a.code,a.description from data_quality_sub_task_rule " +
+             " join data_quality_rule_template a on data_quality_sub_task_rule.ruleid = a.id where a.tenantid=#{tenantId}) b",
              " on",
              " data_quality_task_rule_execute.subtask_rule_id = b.subtaskruleid where data_quality_task_rule_execute.task_id=#{taskId} group by b.subtaskruleid) c",
              " </script>"})
-    public long countRuleList(@Param("taskId")String id);
+    public long countRuleList(@Param("taskId")String id,@Param("tenantId")String tenantId);
 
     /**
      * 获取规则分类Id
      * @param id
      * @return
      */
-    @Select("select rule_type from data_quality_rule_template where id=(select rule_template_id from data_quality_rule where id=#{ruleId})")
-    public Integer getRuleTypeCodeByRuleId(@Param("ruleId")String id);
+    @Select("select rule_type from data_quality_rule_template where id=#{ruleId} and tenantid=#{tenantId}")
+    public String getRuleTypeCodeByRuleId(@Param("ruleId")String id,@Param("tenantId")String tenantId);
 
     @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
@@ -642,10 +616,10 @@ public interface TaskManageDAO {
     public ExecutionReportData.TaskBasicInfo getTaskExecutionBasicInfo(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId);
 
     @Select({" <script>",
-             " select count(*) from data_quality_task_rule_execute join data_quality_rule on data_quality_rule.id=data_quality_task_rule_execute.rule_id",
-             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=#{checkStatus} and data_quality_rule.scope=#{dataSourceType}",
+             " select count(*) from data_quality_task_rule_execute join data_quality_rule_template on data_quality_rule_template.id=data_quality_task_rule_execute.rule_id",
+             " where task_id=#{taskId} and task_execute_id=#{taskExecuteId} and check_status=#{checkStatus} and data_quality_rule_template.scope=#{dataSourceType} and data_quality_rule_template.tenantid=#{tenantId}",
              " </script>"})
-    public Long countTaskRuleExecution(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId, @Param("dataSourceType")Integer dataSourceType, @Param("checkStatus")Integer checkStatus);
+    public Long countTaskRuleExecution(@Param("taskId")String taskId,@Param("taskExecuteId")String taskExecuteId, @Param("dataSourceType")Integer dataSourceType, @Param("checkStatus")Integer checkStatus,@Param("tenantID")String tenantId);
 
     @Select({" <script>",
              " select ",
@@ -731,13 +705,13 @@ public interface TaskManageDAO {
              " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
              " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}) c",
              " join",
-             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule.name,data_quality_rule.description,data_quality_rule.scope from data_quality_sub_task_rule join data_quality_rule on data_quality_sub_task_rule.ruleid=data_quality_rule.id) a",
+             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule_template.name,data_quality_rule_template.description,data_quality_rule_template.scope from data_quality_sub_task_rule join data_quality_rule_template on data_quality_sub_task_rule.ruleid=data_quality_rule_template.id where data_quality_rule_template.tenantid=#{tenantId}) a",
              " join",
              " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
              " on a.subtask_id = b.subtask_id) d",
              " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
              " </script>"})
-    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId);
+    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId,@Param("tenantId")String tenantId);
 
     @Select("select sequence from data_quality_sub_task where id=#{subTaskId}")
     Integer getSubTaskSequence(@Param("subTaskId")String subTaskId);
@@ -747,8 +721,8 @@ public interface TaskManageDAO {
      * @param subTaskRuleId
      * @return
      */
-    @Select("select name from data_quality_rule where id=(select ruleId from data_quality_sub_task_rule where id=#{subTaskRuleId})")
-    public String getRuleCheckName(@Param("subTaskRuleId")String subTaskRuleId);
+    @Select("select name from data_quality_rule_template where id=(select ruleId from data_quality_sub_task_rule where id=#{subTaskRuleId} and data_quality_rule_template.tenantId=#{tenantId})")
+    public String getRuleCheckName(@Param("subTaskRuleId")String subTaskRuleId,@Param("tenantId")String tenantId);
 
     /**
      * 获取当前任务最大检验次数

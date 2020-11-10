@@ -18,6 +18,7 @@ package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
 
 import java.sql.Timestamp;
 
@@ -26,6 +27,7 @@ import java.sql.Timestamp;
  * @author sunhaoning
  * @date 2019/7/30 14:06
  */
+@Data
 public class RuleTemplate {
 
     private String id;
@@ -34,90 +36,11 @@ public class RuleTemplate {
     private String unit;
     private String description;
     private Boolean delete;
-    private Integer ruleType;
+    private String ruleType;
     private String ruleTypeName;
     @JsonIgnore
     private Integer total;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getScope() {
-        return scope;
-    }
-
-    public void setScope(Integer scope) {
-        this.scope = scope;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Boolean getDelete() {
-        return delete;
-    }
-
-    public void setDelete(Boolean delete) {
-        this.delete = delete;
-    }
-
-    public Integer getRuleType() {
-        return ruleType;
-    }
-
-    public void setRuleType(Integer ruleType) {
-        this.ruleType = ruleType;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Timestamp createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getRuleTypeName() {
-        return ruleTypeName;
-    }
-
-    public void setRuleTypeName(String ruleTypeName) {
-        this.ruleTypeName = ruleTypeName;
-    }
-
-    public Integer getTotal() {
-        return total;
-    }
-
-    public void setTotal(Integer total) {
-        this.total = total;
-    }
+    private String code;
 }

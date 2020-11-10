@@ -115,7 +115,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         String instanceId = tableSchema.getInstance();
 
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId,tableSchema.isAllDatabase());
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId,tableSchema.isAllDatabase()||tableSchema.isAll());
         updatedTables.incrementAndGet();
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas())&&!tableSchema.isAllDatabase()) {
@@ -201,14 +201,16 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         List<AtlasObjectId> objectIds = getObjectIds(dbEntities);
         if (!allDatabase){
             List<AtlasObjectId> attributes = (List<AtlasObjectId>)entity.getAttribute(ATTRIBUTE_DATABASES);
-            for (AtlasObjectId atlasObjectId:attributes){
-                AtlasEntity referredEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
-                if (referredEntity.getStatus()==null){
-                    deleteEntity(referredEntity);
-                }
+            if (attributes!=null){
+                for (AtlasObjectId atlasObjectId:attributes){
+                    AtlasEntity referredEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
+                    if (referredEntity.getStatus()==null){
+                        deleteEntity(referredEntity);
+                    }
 
-                if (!objectIds.contains(atlasObjectId)&&(referredEntity==null||!"DELETED".equals(referredEntity.getStatus().toString()))){
-                    objectIds.add(atlasObjectId);
+                    if (!objectIds.contains(atlasObjectId)&&(referredEntity==null||!"DELETED".equals(referredEntity.getStatus().toString()))){
+                        objectIds.add(atlasObjectId);
+                    }
                 }
             }
         }

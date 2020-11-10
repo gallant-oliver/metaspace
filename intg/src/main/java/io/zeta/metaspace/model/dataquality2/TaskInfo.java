@@ -17,9 +17,11 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 /*
  * @description
@@ -121,34 +123,11 @@ public class TaskInfo {
         this.executionWarningNotificationIdList = executionWarningNotificationIdList;
     }
 
+    @Data
     public static class SubTask {
         private Integer dataSourceType;
         private List<String> objectIdList;
         private List<SubTaskRule> subTaskRuleList;
-
-        public Integer getDataSourceType() {
-            return dataSourceType;
-        }
-
-        public void setDataSourceType(Integer dataSourceType) {
-            this.dataSourceType = dataSourceType;
-        }
-
-        public List<String> getObjectIdList() {
-            return objectIdList;
-        }
-
-        public void setObjectIdList(List<String> objectIdList) {
-            this.objectIdList = objectIdList;
-        }
-
-        public List<SubTaskRule> getSubTaskRuleList() {
-            return subTaskRuleList;
-        }
-
-        public void setSubTaskRuleList(List<SubTaskRule> subTaskRuleList) {
-            this.subTaskRuleList = subTaskRuleList;
-        }
     }
 
     public static class SubTaskRule {

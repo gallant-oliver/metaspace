@@ -17,6 +17,8 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
@@ -113,9 +115,11 @@ public class QuartzJob implements Job {
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
+            EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
+            String tenantId = taskInfo.getTenantId();
             String taskExecuteId = initExecuteInfo(taskId);
-            //获取原子任务列表
-            List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId);
+            //获取原子任务列表，包含子任务关联对象，子任务使用规则，子任务使用规则模板
+            List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId, tenantId);
             if (Objects.isNull(taskList)) {
                 quartzManager.handleNullErrorTask(key);
                 LOG.warn("任务名为" + key.getName() + "所属任务已被删除,无法继续执行任务");
@@ -124,9 +128,9 @@ public class QuartzJob implements Job {
             //补全数据
             completeTaskInformation(taskId, taskExecuteId, taskList);
 
-            executeAtomicTaskList(taskId, taskExecuteId, taskList);
+            executeAtomicTaskList(taskId, taskExecuteId, taskList,tenantId);
         } catch (Exception e) {
-            LOG.error(e.toString());
+            LOG.error(e.toString(),e);
         }
     }
 
@@ -159,7 +163,7 @@ public class QuartzJob implements Job {
     }
 
 
-    public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws Exception {
+    public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList,String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
@@ -205,7 +209,7 @@ public class QuartzJob implements Job {
                         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
                     }
                 } finally {
-                    recordExecutionInfo(task, errorMsg);
+                    recordExecutionInfo(task, errorMsg,tenantId);
                 }
             } while (retryCount < RETRY);
         }
@@ -220,7 +224,7 @@ public class QuartzJob implements Job {
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime-startTime);
     }
 
-    public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg) {
+    public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg,String tenantId) {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         String objectName = task.getObjectName();
@@ -228,7 +232,7 @@ public class QuartzJob implements Job {
         if(Objects.nonNull(objectName) && !objectName.equals(tableName)) {
             source += "." + objectName;
         }
-        String checkMsg = taskManageDAO.getRuleCheckName(task.getSubTaskRuleId());
+        String checkMsg = taskManageDAO.getRuleCheckName(task.getSubTaskRuleId(),tenantId);
         String currentTime = DateUtils.getNow();
 
         String logInfoStatus = null;
@@ -580,8 +584,8 @@ public class QuartzJob implements Job {
         RuleExecuteStatus checkStatus = null;
         try {
             DataQualitySubTaskRule subTaskRule = taskManageDAO.getSubTaskRuleInfo(task.getSubTaskRuleId());
-            Integer ruleCheckTypeCode = taskManageDAO.getRuleCheckType(task.getSubTaskRuleId());
-            Integer checkExpressionCode = taskManageDAO.getRuleCheckExpression(task.getSubTaskRuleId());
+            Integer ruleCheckTypeCode = subTaskRule.getCheckType();
+            Integer checkExpressionCode = subTaskRule.getCheckExpression();
             RuleCheckType ruleCheckType = RuleCheckType.getRuleCheckTypeByCode(ruleCheckTypeCode);
 
             CheckExpression checkExpression = null;
