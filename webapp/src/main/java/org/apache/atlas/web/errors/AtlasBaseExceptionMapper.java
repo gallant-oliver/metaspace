@@ -42,9 +42,7 @@ public class AtlasBaseExceptionMapper implements ExceptionMapper<AtlasBaseExcept
         final long id = ThreadLocalRandom.current().nextLong();
 
         // Only log the exception is there's an internal error
-        if (exception.getAtlasErrorCode().getHttpCode() == Response.Status.INTERNAL_SERVER_ERROR) {
-            ExceptionMapperUtil.logException(id, exception);
-        }
+        ExceptionMapperUtil.logException(id, exception);
         return buildAtlasBaseExceptionResponse(exception);
     }
 

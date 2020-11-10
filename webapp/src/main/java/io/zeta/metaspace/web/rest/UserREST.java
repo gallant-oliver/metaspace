@@ -54,7 +54,6 @@ import javax.ws.rs.core.Context;
 @Singleton
 @Service
 public class UserREST {
-    private static final Logger LOG = LoggerFactory.getLogger(UserREST.class);
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -70,11 +69,8 @@ public class UserREST {
     public Result getUserItems(@HeaderParam("tenantId")String tenantId, @PathParam("userId") String userId) throws AtlasBaseException {
         try {
             return ReturnUtil.success(TenantService.defaultTenant.equals(tenantId)? usersService.getUserInfoById(userId) : usersService.getUserInfoByIdV2(tenantId, userId));
-        } catch (AtlasBaseException e){
-            throw e;
-        }catch (Exception e){
-            LOG.warn("获取用户信息失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取用户信息失败");
         }
     }
 
@@ -87,26 +83,21 @@ public class UserREST {
             parameters.setLimit(limit);
             parameters.setOffset(offset);
             return ReturnUtil.success(usersService.getUserListV2(tenantId,parameters));
-        } catch (AtlasBaseException e){
-            LOG.warn("获取用户信息失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.warn("获取用户信息失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取用户信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取用户列表失败");
         }
     }
 
     @PUT
     @Path("{userId}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateGroupByUser(@PathParam("userId") String userId, Map<String,List<String>> map) throws AtlasBaseException {
+    public Result updateGroupByUser(@PathParam("userId") String userId, Map<String,List<String>> map,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             List<String> userGroups=map.get("userGroups");
-            usersService.updateGroupByUser(userId,userGroups);
+            usersService.updateGroupByUser(userId,userGroups,tenantId);
             return ReturnUtil.success();
-        }catch (Exception e){
-            LOG.warn("获取用户信息失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户信息失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新用户组失败");
         }
     }
     /**
@@ -125,12 +116,10 @@ public class UserREST {
             @DefaultValue("desc") @QueryParam("order") String order,
             @QueryParam("search") String search) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组列表及搜索时，租户ID为:" + tenantId);
             PageResult<UserGroupListAndSearchResult> pageResult = userGroupService.getUserGroupListAndSearch(tenantId, offset, limit, sortBy, order, search);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("用户组列表及搜索失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组列表及搜索失败");
         }
     }
 

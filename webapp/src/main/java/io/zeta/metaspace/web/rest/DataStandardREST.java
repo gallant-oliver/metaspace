@@ -101,7 +101,6 @@ public class DataStandardREST {
 
     private  static final int CATEGORY_TYPE=3;
 
-    private static final Logger LOG = LoggerFactory.getLogger(DataStandardREST.class);
 
 
     @POST
@@ -252,22 +251,22 @@ public class DataStandardREST {
                                        @FormDataParam("file") InputStream fileInputStream,
                                        @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,@HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
-        try {
-            String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
-            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-            }
+        String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
+        if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
+        }
 
-            file = new File(name);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            if(file.length() > MAX_EXCEL_FILE_SIZE) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-            }
+        file = new File(name);
+        FileUtils.copyInputStreamToFile(fileInputStream, file);
+        if(file.length() > MAX_EXCEL_FILE_SIZE) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
+        }
+        try {
             dataStandardService.importDataStandard(categoryId, file,tenantId);
             return Response.ok().build();
-        } catch (AtlasBaseException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入文件错误");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -360,7 +359,7 @@ public class DataStandardREST {
             return dataStandardService.getTableByNumber(number,parameters,tenantId);
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取元数据关联失败"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取元数据关联失败");
         }
     }
 
@@ -379,7 +378,7 @@ public class DataStandardREST {
         try {
             return dataStandardService.getRuleByNumber(number,parameters,tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据质量关联失败"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据质量关联失败");
         }
     }
 
@@ -392,10 +391,8 @@ public class DataStandardREST {
     public List<CategoryAndDataStandard> getCategoryAndStandard(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return dataStandardService.getCategoryAndStandard(tenantId);
-        } catch (AtlasBaseException e){
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取所有目录和数据标准失败："+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取所有目录和数据标准失败");
         }
     }
 
@@ -477,9 +474,8 @@ public class DataStandardREST {
                 put("upload", upload);
             }};
             return ReturnUtil.success(map);
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -514,15 +510,15 @@ public class DataStandardREST {
 
             HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            List<CategoryPrivilege> categoryPrivileges=null;
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
             }else{
-                dataManageService.importCategory(categoryId,importCategory.getDirection(), file,CATEGORY_TYPE,tenantId);
+                categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
             }
-            return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+            return ReturnUtil.success(categoryPrivileges);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -549,12 +545,8 @@ public class DataStandardREST {
             }
             dataManageService.moveCategories(moveCategory,CATEGORY_TYPE,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("变更目录结构失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("变更目录结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
         }
     }
 
@@ -579,9 +571,8 @@ public class DataStandardREST {
             sortCategory.setGuid(guid);
             List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
-        }catch (Exception e){
-            LOG.error("目录排序并变更结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
         }
     }
 

@@ -24,8 +24,8 @@ import java.util.List;
 public class UserInfoGroup {
     private UserInfo.User user;
     private List<Group> modules;
-    private List<UserInfo.TechnicalCategory> technicalCategory;
-    private List<UserInfo.BusinessCategory> businessCategory;
+    private List<UserInfo.Category> technicalCategory;
+    private List<UserInfo.Category> businessCategory;
     private List<UserGroupIdAndName> userGroups;
 
     public List<UserGroupIdAndName> getUserGroups() {
@@ -52,19 +52,19 @@ public class UserInfoGroup {
         this.modules = modules;
     }
 
-    public List<UserInfo.TechnicalCategory> getTechnicalCategory() {
+    public List<UserInfo.Category> getTechnicalCategory() {
         return technicalCategory;
     }
 
-    public void setTechnicalCategory(List<UserInfo.TechnicalCategory> technicalCategory) {
+    public void setTechnicalCategory(List<UserInfo.Category> technicalCategory) {
         this.technicalCategory = technicalCategory;
     }
 
-    public List<UserInfo.BusinessCategory> getBusinessCategory() {
+    public List<UserInfo.Category> getBusinessCategory() {
         return businessCategory;
     }
 
-    public void setBusinessCategory(List<UserInfo.BusinessCategory> businessCategory) {
+    public void setBusinessCategory(List<UserInfo.Category> businessCategory) {
         this.businessCategory = businessCategory;
     }
     public static class Group{

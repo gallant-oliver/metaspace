@@ -298,6 +298,7 @@ public class APIInfo {
     public void setManager(String manager) {
         this.manager = manager;
     }
+
     public Integer getUsedCount() {
         return usedCount;
     }
@@ -407,32 +408,6 @@ public class APIInfo {
             this.setUseDefaultValue(field.getUseDefaultValue());
             this.setColumnName(field.getColumnName());
             this.setSensitive(field.getSensitive());
-        }
-    }
-
-    public static enum SourceType {
-        HIVE("HIVE") , ORACLE("ORACLE");
-        public String desc;
-        SourceType(String desc) {
-            this.desc = desc;
-        }
-
-        public String getDesc() {
-            return desc;
-        }
-
-        public void setDesc(String desc) {
-            this.desc = desc;
-        }
-
-        public static SourceType getSourceTypeByDesc(String desc) {
-            SourceType defaultRuleType = SourceType.HIVE;
-            for(SourceType st : SourceType.values()) {
-                if(st.desc.equals(desc.toUpperCase()))
-                    return st;
-
-            }
-            return defaultRuleType;
         }
     }
 }

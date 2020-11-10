@@ -127,8 +127,8 @@ public interface UserDAO {
     @Select("select *,create_time as createTime,update_time as updateTime from users where username=#{userName} and account=#{account} and valid=true")
     public User getUserByName(@Param("userName") String userName,@Param("account")String account);
 
-    @Delete("delete from user_group_relation where user_id=#{userId}")
-    public void deleteGroupByUser(@Param("userId") String userId);
+    @Delete("delete from user_group_relation where where user_id=#{userId} and  group_id in (select * from user_group where tenant=#{tenantId})")
+    public void deleteGroupByUser(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
     @Insert({"<script>insert into user_group_relation (group_id,user_id) values ",
              "<foreach item='item' index='index' collection='groupIds'",
@@ -162,4 +162,13 @@ public interface UserDAO {
             "</foreach>" +
             "</script>")
     public List<String> getUserNameByIds(@Param("ids") List ids);
+
+    @Select("<script>" +
+            "select account from users where userid in " +
+            "    <foreach item='item' index='index' collection='ids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "</script>")
+    public List<String> getUsersEmailByIds(@Param("ids")List<String> ids);
 }

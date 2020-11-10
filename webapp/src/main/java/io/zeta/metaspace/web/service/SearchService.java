@@ -1,11 +1,12 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.SqlEnum;
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -15,17 +16,9 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.metadata.RMDBEnum;
-import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-import oracle.jdbc.OracleBfile;
-import oracle.sql.Datum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -36,28 +29,19 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
-import schemacrawler.tools.databaseconnector.DatabaseConnectionSource;
-import schemacrawler.tools.databaseconnector.SingleUseUserCredentials;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.HeaderParam;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.sql.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @AtlasService
 public class SearchService {
@@ -80,7 +64,7 @@ public class SearchService {
     @Autowired
     RelationDAO relationDAO;
     @Autowired
-    DataSourceService  dataSourceService;
+    DataSourceService dataSourceService;
     @Autowired
     MetadataSubscribeDAO subscribeDAO;
     @Autowired
@@ -293,8 +277,8 @@ public class SearchService {
         String dbDisplayText = db.getDisplayText();
         String sql = "select * from `" + name + "` limit " + guidCount.getCount();
 
-        String user = AdminUtils.getUserName();
-        try (Connection conn = admin?HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -341,10 +325,10 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        String user = AdminUtils.getUserName();
         Configuration conf = ApplicationProperties.get();
-        boolean secure = conf.getBoolean("metaspace.secureplus.enable",true);
-        try (Connection conn = !secure ? HiveJdbcUtils.getSystemConnection(dbDisplayText):HiveJdbcUtils.getConnection(dbDisplayText, user);
+        boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
+        String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
@@ -404,16 +388,17 @@ public class SearchService {
         }
 
         String sql = "";
-        if (dataSourceInfo.getSourceType().toUpperCase().equals(SqlEnum.MYSQL.getName())){
+        if (DataSourceType.MYSQL.equals(dataSourceInfo.getSourceType())){
             db.replace("`","``");
             table.replace("`","``");
             sql = "select * from `"+ db +"`.`"+ table +"` limit " + guidCount.getCount();
-        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(dataSourceInfo.getSourceType().toUpperCase())){
+        }else if (DataSourceType.ORACLE.equals(dataSourceInfo.getSourceType())){
             sql = "select * from \""+ db +"\".\""+ table +"\" where rownum <" + guidCount.getCount();
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
         }
 
+        AdapterTransformer adapterTransformer = AdapterUtils.getAdapter(dataSourceInfo.getSourceType()).getAdapterTransformer();
         try (Connection conn = getConnectionByDataSourceInfo(dataSourceInfo,null);
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -446,14 +431,8 @@ public class SearchService {
                             s = object.toString();
                         }
 
-                    }else if(object instanceof Blob){
-                        s = "BLOB数据不支持预览";
-                    }else if(object instanceof OracleBfile){
-                        s = "BFile数据不支持预览";
-                    }else if(object instanceof Datum){
-                        s = ((Datum)object).stringValue(conn);
-                    }else{
-                        s = object.toString();
+                    }else {
+                        s = adapterTransformer.convertColumnValue(object).toString();
                     }
                     map.put(column, s);
                 }
@@ -517,11 +496,11 @@ public class SearchService {
         DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
 
         String sql = "";
-        if (dataSourceInfo.getSourceType().toUpperCase().equals(SqlEnum.MYSQL.getName())){
+        if (DataSourceType.MYSQL.equals(dataSourceInfo.getSourceType())){
             db.replace("`","``");
             table.replace("`","``");
             sql = "SHOW CREATE TABLE `" + table+"`";
-        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(dataSourceInfo.getSourceType().toUpperCase())){
+        }else if (DataSourceType.ORACLE.equals(dataSourceInfo.getSourceType())){
             db.replace("'","''");
             table.replace("'","''");
             sql = "select dbms_metadata.get_ddl('TABLE','"+ table +"','"+ db +"') from dual";
@@ -544,45 +523,18 @@ public class SearchService {
     }
 
     public int getSqlPlace(String sourceType) throws AtlasBaseException {
-        if (sourceType.toUpperCase().equals(SqlEnum.MYSQL.getName())){
+        if (DataSourceType.MYSQL.equals(sourceType)){
             return 2;
-        }else if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(sourceType.toUpperCase())){
+        }else if (DataSourceType.ORACLE.equals(sourceType)){
             return 1;
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+sourceType);
         }
     }
 
-    public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo,String dbName) throws AtlasBaseException {
-        String           ip             = dataSourceInfo.getIp();
-        String           port           = dataSourceInfo.getPort();
-        String           sourceType     = dataSourceInfo.getSourceType();
-        String           jdbcParameter  = dataSourceInfo.getJdbcParameter();
-        String           userName       = dataSourceInfo.getUserName();
-        String           password       = AESUtils.aesDecode(dataSourceInfo.getPassword());
-        String connectUrl = RMDBEnum.of(sourceType).getConnectUrl();
-        String connectionUrl = "";
-        if (SqlEnum.ORACLE_SERVICE_NAME.getName().startsWith(sourceType.toUpperCase())){
-            connectionUrl = String.format(connectUrl, ip, port, dataSourceInfo.getDatabase());
-        } else if (sourceType.toUpperCase().equals(SqlEnum.MYSQL.getName())){
-            connectionUrl = String.format(connectUrl, ip, port, dbName);
-        }else{
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持数据源类型"+dataSourceInfo.getSourceType());
-        }
-        Map<String,String> map = new HashMap<>();
-        if (StringUtils.isNotEmpty(jdbcParameter)) {
-            String regex = "&";
-            for (String str :jdbcParameter.split(regex)){
-                String[] strings = str.split("=");
-                if (strings.length==2){
-                    map.put(strings[0],strings[1]);
-                }
-            }
-        }
-
-        DatabaseConnectionSource dataSource = new DatabaseConnectionSource(connectionUrl, map);
-        dataSource.setUserCredentials(new SingleUseUserCredentials(userName, password));
-        return dataSource.get();
+    public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo, String dbName) throws AtlasBaseException {
+        dataSourceInfo.setDatabase(dbName);
+        return AdapterUtils.getAdapterSource(dataSourceInfo).getConnection();
     }
 
 

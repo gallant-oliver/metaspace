@@ -41,7 +41,6 @@ import javax.ws.rs.core.MediaType;
 @Singleton
 @Service
 public class TenantREST {
-    private static final Logger LOG = LoggerFactory.getLogger(TenantREST.class);
     @Autowired
     TenantService tenantService;
     @Autowired
@@ -60,12 +59,8 @@ public class TenantREST {
     {
         try {
             return ReturnUtil.success(tenantService.getTenants());
-        }catch (AtlasBaseException e){
-            LOG.error("获取租户列表失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取租户列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "获取租户列表失败,请检查好是否配置正确");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取租户列表失败");
         }
     }
 
@@ -84,13 +79,8 @@ public class TenantREST {
     {
         try {
             return ReturnUtil.success(usersService.getUserItems(tenantId).getModules());
-        }catch (AtlasBaseException e){
-            LOG.error("获取用户详情失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("用户详情获取识别，请查看是否配置正确",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"用户详情获取识别，请查看是否配置正确，错误信息：" + e.getMessage());
-
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户详情获取识别");
         }
 
     }
@@ -109,13 +99,8 @@ public class TenantREST {
             throws Exception {
         try {
             return ReturnUtil.success(tenantService.getPools(tenantId));
-        } catch (AtlasBaseException e) {
-            LOG.error("获取资源池失败", e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取资源池失败，请查看是否配置正确", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "获取资源池失败，请查看是否配置正确，错误信息：" + e.getMessage());
-
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取资源池失败，请查看是否配置正确");
         }
 
     }

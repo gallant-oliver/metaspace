@@ -24,7 +24,8 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
+import io.zeta.metaspace.model.TableSchema;
 import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;
@@ -65,6 +66,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
 
@@ -75,7 +77,7 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  */
 @Singleton
 @Component
-public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
+public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
 
     public static final String CONF_PREFIX                     = "atlas.hook.hive.";
@@ -86,21 +88,11 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
     public static final String SEP                             = ":".intern();
     public static final String HDFS_PATH                       = "hdfs_path";
 
-    private volatile AtomicInteger totalTables = new AtomicInteger(0);
-    private volatile AtomicInteger updatedTables = new AtomicInteger(0);
-    private volatile AtomicLong startTime = new AtomicLong(0);
-    private volatile AtomicLong endTime = new AtomicLong(0);
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-    private final String                  clusterName;
     private Hive hiveMetaStoreClient = null;
     private Configuration atlasConf        = null;
     private final boolean convertHdfsPathToLowerCase;
-    private final AtlasGraph graph;
-    private final AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider;
-    private final EntityGraphRetriever entityRetriever;
-    private final AtlasTypeRegistry atlasTypeRegistry;
-    private final AtlasEntityStore     atlasEntityStore;
     private static final List<Pattern> hiveTablesToIgnore = new ArrayList<>();
     public static final String HOOK_HIVE_TABLE_IGNORE_PATTERN = CONF_PREFIX + "hive_table.ignore.pattern";;
 
@@ -169,65 +161,80 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         updatedTables.set(0);
         getStartTime().set(System.currentTimeMillis());
         getEndTime().set(0);
-        String databaseToImport = "";
+        List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
+        boolean allDatabase=false;
         if (null != tableSchema) {
-            databaseToImport = tableSchema.getDatabase();
+            databaseToImport = tableSchema.getDatabases();
             tableToImport = tableSchema.getTable();
+            allDatabase=tableSchema.isAllDatabase();
         }
         initHiveMetaStoreClient();
-        if (StringUtils.isEmpty(databaseToImport)) {
-            databaseNames = hiveMetaStoreClient.getAllDatabases();
-
+        List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
+        if (allDatabase||databaseToImport==null||databaseToImport.size()==0) {
+            databaseNames = allDatabaseName;
         } else {
-            databaseNames = hiveMetaStoreClient.getDatabasesByPattern(databaseToImport);
+            databaseNames = databaseToImport.stream().filter(name -> allDatabaseName.contains(name)).collect(Collectors.toList());
         }
-        int tables = 0;
+
+        //总同步元素数量
+        int totalSize = 0;
+
         Map<String, List<String>> database2Table = Maps.newHashMap();
-        if (StringUtils.isEmpty(tableToImport)) {
-            for (String databaseName : databaseNames) {
-                List<String> tablesInDB = database2Table.get(databaseName);
-                if (null == tablesInDB) {
-                    tablesInDB = Lists.newArrayList();
+        if (allDatabase){
+            totalSize=allDatabaseName.size();
+        }else{
+            if (StringUtils.isEmpty(tableToImport)) {
+                for (String databaseName : databaseNames) {
+                    List<String> tablesInDB = database2Table.get(databaseName);
+                    if (null == tablesInDB) {
+                        tablesInDB = Lists.newArrayList();
+                    }
+                    tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
+                    database2Table.put(databaseName, tablesInDB);
+                    totalSize += tablesInDB.size();
                 }
-                tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
-                database2Table.put(databaseName, tablesInDB);
-                tables += tablesInDB.size();
-            }
 
-        } else {
-            for (String databaseName : databaseNames) {
-                List<String> tablesInDB = database2Table.get(databaseName);
-                if (null == tablesInDB) {
-                    tablesInDB = Lists.newArrayList();
+            } else {
+                for (String databaseName : databaseNames) {
+                    List<String> tablesInDB = database2Table.get(databaseName);
+                    if (null == tablesInDB) {
+                        tablesInDB = Lists.newArrayList();
+                    }
+                    tablesInDB.addAll(hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport));
+                    database2Table.put(databaseName, tablesInDB);
+                    totalSize += tablesInDB.size();
                 }
-                tablesInDB.addAll(hiveMetaStoreClient.getTablesByPattern(databaseName, tableToImport));
-                database2Table.put(databaseName, tablesInDB);
-                tables += tablesInDB.size();
             }
         }
-        totalTables.set(tables);
+
+        totalTables.set(totalSize);
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
-            //删除JanusGraph中已经不存在的database,以及database中的table
-            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
-            List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
-            for (AtlasVertex vertex : dbVertices) {
-                if (Objects.nonNull(vertex)) {
-                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
-                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                    String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                    if (!databaseNames.contains(databaseInGraph)) {
-                        deleteTableEntity(databaseInGraph, new ArrayList<>());
-                        deleteEntity(dbEntity);
+            if (allDatabase){
+                //删除JanusGraph中已经不存在的database,以及database中的table
+                String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
+                List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
+                for (AtlasVertex vertex : dbVertices) {
+                    if (Objects.nonNull(vertex)) {
+                        List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                        AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                        String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                        if (!databaseNames.contains(databaseInGraph)) {
+                            deleteTableEntity(databaseInGraph, new ArrayList<>());
+                            deleteEntity(dbEntity);
+                        }
                     }
                 }
             }
             for (String databaseName : databaseNames) {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
-
+                if (allDatabase){
+                    updatedTables.incrementAndGet();
+                    continue;
+                }
                 if (dbEntity != null) {
                     importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false);
                 }
@@ -302,12 +309,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
                 }
             }
         }
-    }
-
-    private void deleteEntity(AtlasEntity tableEntity) throws AtlasBaseException {
-        AtlasEntityType type = (AtlasEntityType) atlasTypeRegistry.getType(tableEntity.getTypeName());
-        final AtlasObjectId objectId = getObjectId(tableEntity);
-        atlasEntityStore.deleteByUniqueAttributes(type, objectId.getUniqueAttributes());
     }
 
     public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError) throws Exception {
@@ -424,48 +425,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
 
     /**
      * Registers an entity in atlas
-     * @param entity
-     * @return
-     * @throws Exception
-     */
-    private AtlasEntityWithExtInfo registerInstance(AtlasEntityWithExtInfo entity) throws Exception {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("creating {} entity: {}", entity.getEntity().getTypeName(), entity);
-        }
-
-        AtlasEntityWithExtInfo  ret             = null;
-        EntityMutationResponse  response        = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
-        List<AtlasEntityHeader> createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
-
-        if (CollectionUtils.isNotEmpty(createdEntities)) {
-            for (AtlasEntityHeader createdEntity : createdEntities) {
-                if (ret == null) {
-                    ret = atlasEntityStore.getById(createdEntity.getGuid());
-
-                    LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
-                } else if (ret.getEntity(createdEntity.getGuid()) == null) {
-                    AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
-
-                    ret.addReferredEntity(newEntity.getEntity());
-
-                    if (MapUtils.isNotEmpty(newEntity.getReferredEntities())) {
-                        for (Map.Entry<String, AtlasEntity> entry : newEntity.getReferredEntities().entrySet()) {
-                            ret.addReferredEntity(entry.getKey(), entry.getValue());
-                        }
-                    }
-
-                    LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
-                }
-            }
-        }
-
-        clearRelationshipAttributes(ret);
-
-        return ret;
-    }
-
-    /**
-     * Registers an entity in atlas
      * @param entities
      * @return
      * @throws Exception
@@ -500,13 +459,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         clearRelationshipAttributes(ret);
 
         return ret;
-    }
-
-    private void updateInstance(AtlasEntityWithExtInfo entity) throws AtlasBaseException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("updating {} entity: {}", entity.getEntity().getTypeName(), entity);
-        }
-        atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
     }
 
     /**
@@ -773,17 +725,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         return findEntity(typeName, qualifiedName);
     }
 
-    private AtlasEntityWithExtInfo findEntity(final String typeName, final String qualifiedName){
-        AtlasEntityWithExtInfo ret = null;
-        try {
-            ret = atlasEntityStore.getByUniqueAttributes(atlasTypeRegistry.getEntityTypeByName(typeName), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, qualifiedName));
-            clearRelationshipAttributes(ret);
-        } catch (AtlasBaseException e) {
-            LOG.warn("{}是新的元数据，保存元数据", qualifiedName);
-        }
-        return ret;
-    }
-
     private String getCreateTableString(Table table, String location){
         String            colString = "";
         List<FieldSchema> colList   = table.getAllCols();
@@ -907,29 +848,6 @@ public class HiveMetaStoreBridgeUtils implements IMetaDataProvider {
         }
     }
 
-    private void clearRelationshipAttributes(AtlasEntityWithExtInfo entity) {
-        if (entity != null) {
-            clearRelationshipAttributes(entity.getEntity());
-
-            if (entity.getReferredEntities() != null) {
-                clearRelationshipAttributes(entity.getReferredEntities().values());
-            }
-        }
-    }
-
-    private void clearRelationshipAttributes(Collection<AtlasEntity> entities) {
-        if (entities != null) {
-            for (AtlasEntity entity : entities) {
-                clearRelationshipAttributes(entity);
-            }
-        }
-    }
-
-    private void clearRelationshipAttributes(AtlasEntity entity) {
-        if (entity != null && entity.getRelationshipAttributes() != null) {
-            entity.getRelationshipAttributes().clear();
-        }
-    }
 
     private boolean isTableWithDatabaseName(String tableName) {
         boolean ret = false;

@@ -16,23 +16,19 @@
  */
 package io.zeta.metaspace.web.task.quartz;
 
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.dataquality.*;
-import io.zeta.metaspace.model.table.TableMetadata;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.DataQualityDAO;
 import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
-
-import io.zeta.metaspace.web.util.ImpalaJdbcUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
-
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -42,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -259,10 +254,9 @@ public class QuartJob implements Job {
 
     //规则值计算
     public double ruleResultValue(UserRule rule, boolean record, boolean columnRule) throws Exception {
-        double resultValue = 0;
-        Connection conn = null;
+        double resultValue = 0.0;
         try {
-            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf,String::valueOf);
+            engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
             String templateId = rule.getTemplateId();
             String source = qualityDao.querySourceByTemplateId(templateId);
             String[] sourceInfo = source.split(SEPARATOR);
@@ -271,10 +265,15 @@ public class QuartJob implements Job {
 
             String columnName = null;
 
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+            AdapterSource adapterSource;
+            String pool;
+            String user = MetaspaceConfig.getHiveAdmin();
+            if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+                adapterSource = AdapterUtils.getImpalaAdapterSource();
+                pool = MetaspaceConfig.getImpalaResourcePool();
             } else {
-                conn = HiveJdbcUtils.getSystemConnection(dbName);
+                adapterSource = AdapterUtils.getHiveAdapterSource();
+                pool = MetaspaceConfig.getHiveJobQueueName();
             }
 
             TaskType jobType = TaskType.getTaskByCode(rule.getSystemRuleId());
@@ -327,22 +326,24 @@ public class QuartJob implements Job {
             }
 
 
-
             LOG.info("query Sql: " + sql);
-            ResultSet resultSet = null;
 
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            }
-            if(Objects.nonNull(resultSet)) {
-                while (resultSet.next()) {
-                    Object object = resultSet.getObject(1);
-                    if(Objects.nonNull(object))
-                        resultValue = Double.valueOf(object.toString());
+            Connection connection = adapterSource.getConnection(user, dbName, pool);
+            resultValue = adapterSource.getNewAdapterExecutor().queryResult(connection, sql, resultSet -> {
+                try {
+                    double value = 0;
+                    if (Objects.nonNull(resultSet)) {
+                        while (resultSet.next()) {
+                            Object object = resultSet.getObject(1);
+                            if (Objects.nonNull(object))
+                                value = Double.valueOf(object.toString());
+                        }
+                    }
+                    return value;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
                 }
-            }
+            });
             columnType2Result.put(columnTypeKey, resultValue);
             return resultValue;
         } catch (Exception e) {
@@ -351,9 +352,6 @@ public class QuartJob implements Job {
         } finally {
             if (record) {
                 recordDataMap(rule, resultValue, resultValue);
-            }
-            if(Objects.nonNull(conn)) {
-                conn.close();
             }
         }
     }
@@ -424,7 +422,7 @@ public class QuartJob implements Job {
 
 
             //表数据量
-            totalSize = HiveJdbcUtils.getTableSize(dbName, tableName,"metaspace");
+            totalSize = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(dbName, tableName, "metaspace");
             return totalSize;
         } catch (Exception e) {
             throw e;
@@ -488,33 +486,37 @@ public class QuartJob implements Job {
         String[] sourceInfo = source.split(SEPARATOR);
         String dbName = sourceInfo[0];
         String tableName = sourceInfo[1];
-        Connection conn = null;
-        if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-            conn = ImpalaJdbcUtils.getSystemConnection(dbName);
+        AdapterSource adapterSource = null;
+        String pool;
+        if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
+            adapterSource = AdapterUtils.getImpalaAdapterSource();
+            pool = MetaspaceConfig.getImpalaResourcePool();
         } else {
-            conn = HiveJdbcUtils.getSystemConnection(dbName);
+            adapterSource = AdapterUtils.getHiveAdapterSource();
+            pool = MetaspaceConfig.getHiveJobQueueName();
         }
         try {
             double nowNum = ruleResultValue(rule, false, true);
-            Double totalNum = 0.0;
             String query = "select count(*) from %s";
             String sql = String.format(query, tableName);
 
-            ResultSet resultSet = null;
-            if(Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
-                resultSet = ImpalaJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            } else {
-                resultSet = HiveJdbcUtils.selectBySQLWithSystemCon(conn, sql);
-            }
-
-            if(Objects.nonNull(resultSet)) {
-                while (resultSet.next()) {
-                    Object object = resultSet.getObject(1);
-                    if(Objects.nonNull(object)) {
-                        totalNum = Double.valueOf(object.toString());
+            Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), dbName, pool);
+            Double totalNum = adapterSource.getNewAdapterExecutor().queryResult(connection, sql, resultSet -> {
+                try {
+                    double num = 0.0;
+                    if (Objects.nonNull(resultSet)) {
+                        while (resultSet.next()) {
+                            Object object = resultSet.getObject(1);
+                            if (Objects.nonNull(object)) {
+                                num = Double.parseDouble(object.toString());
+                            }
+                        }
                     }
+                    return num;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
                 }
-            }
+            });
             if (totalNum != 0) {
                 ratio = nowNum / totalNum;
             }
@@ -522,8 +524,6 @@ public class QuartJob implements Job {
             throw e;
         } finally {
             recordDataMap(rule, ratio, ratio);
-            if(Objects.nonNull(conn))
-                conn.close();
         }
     }
 

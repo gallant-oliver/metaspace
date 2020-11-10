@@ -1,0 +1,10 @@
+{
+  "sourceType": "MYSQL",
+  "description": "",
+  "ip": "10.200.64.109",
+  "port": "3306",
+  "userName": "root",
+  "password": "12345",
+  "database": "",
+  "jdbcParameter": ""
+}

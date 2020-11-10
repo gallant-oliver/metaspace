@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>metaspace-adapter</artifactId>
+        <groupId>org.apache.atlas</groupId>
+        <version>1.9.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>adapter-impala</artifactId>
+
+
+    <properties>
+        <impala.version>2.5.34-cdh5.7.2</impala.version>
+
+        <plugin.id>IMPALA</plugin.id>
+        <plugin.class>io.zeta.metaspace.adapter.impala.ImpalaComponent</plugin.class>
+        <plugin.version>${project.version}</plugin.version>
+        <plugin.assembly.build>false</plugin.assembly.build>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.cloudera.impala</groupId>
+            <artifactId>impala-jdbc</artifactId>
+            <version>${impala.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+</project>

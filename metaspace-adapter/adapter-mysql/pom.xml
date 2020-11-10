@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>metaspace-adapter</artifactId>
+        <groupId>org.apache.atlas</groupId>
+        <version>1.9.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>adapter-mysql</artifactId>
+
+    <properties>
+        <jdbc.mysql.version>5.1.48</jdbc.mysql.version>
+
+        <plugin.id>MYSQL</plugin.id>
+        <plugin.class>io.zeta.metaspace.adapter.mysql.MysqlComponent</plugin.class>
+        <plugin.version>${project.version}</plugin.version>
+        <plugin.assembly.build>false</plugin.assembly.build>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${jdbc.mysql.version}</version>
+        </dependency>
+    </dependencies>
+</project>

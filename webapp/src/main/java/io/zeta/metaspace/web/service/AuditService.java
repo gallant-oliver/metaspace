@@ -1,7 +1,14 @@
 package io.zeta.metaspace.web.service;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.moebius.MoebiusApi;
+import io.zeta.metaspace.model.moebius.MoebiusApiData;
+import io.zeta.metaspace.model.moebius.MoebiusApiParam;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiAudit;
 import io.zeta.metaspace.model.share.ApiHead;
@@ -12,21 +19,28 @@ import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.ApiAuditDAO;
 import io.zeta.metaspace.web.dao.ApiGroupDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DataServiceUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Type;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -43,6 +57,8 @@ public class AuditService {
     private DataShareDAO dataShareDAO;
     @Autowired
     private ApiGroupDAO apiGroupDAO;
+    @Autowired
+    DataShareDAO shareDAO;
 
 
     public ApiAudit getApiAuditById(String id, String tenantId) {
@@ -120,6 +136,7 @@ public class AuditService {
         }
     }
 
+    @Transactional(rollbackFor=Exception.class)
     public void updateApiAudit(String tenantId, String auditId, AuditStatusEnum status, String reason) throws AtlasBaseException {
         try {
             ApiAudit apiAudit = apiAuditDAO.getApiAuditById(auditId, tenantId);
@@ -154,11 +171,15 @@ public class AuditService {
             if (AuditStatusEnum.AGREE.equals(status)) {
                 ApiHead apiHead = dataShareDAO.getSubmitApiHeadById(apiInfoV2.getGuid());
                 if (apiHead != null) {
+                    apiInfoV2.setStatus(apiHead.getStatus());
                     dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), apiHead.getStatus(), updateTime);
                 } else {
+                    apiInfoV2.setStatus(ApiStatusEnum.DOWN.getName());
                     dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DOWN.getName(), updateTime);
                 }
                 apiGroupDAO.updateApiRelationByApi(apiInfoV2.getGuid(), updateTime);
+                String apiId = mobiusCreateApi(apiInfoV2);
+                dataShareDAO.updateApiMobiusId(apiInfoV2.getGuid(), apiAudit.getApiVersion(),apiId);
             } else {
                 dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DRAFT.getName(), updateTime);
 
@@ -194,6 +215,141 @@ public class AuditService {
         } catch (Exception e) {
             LOG.error("查询审核记录失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询审核记录失败");
+        }
+    }
+
+    public String mobiusCreateApi(ApiInfoV2 apiInfoV2){
+        MoebiusApi api = new MoebiusApi();
+        MoebiusApiData data = new MoebiusApiData(apiInfoV2);
+        MoebiusApiParam param = getMoebiusApiParam(apiInfoV2);
+        data.setUpstream(apiInfoV2.getProtocol().toLowerCase()+"://"+getMetaspaceHost());
+        api.setApi_param(param);
+        api.setMeta_data(data);
+        if (ApiStatusEnum.DOWN.getName().equalsIgnoreCase(apiInfoV2.getStatus())){
+            api.setStatus("draft");
+        }else{
+            api.setStatus("release");
+        }
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(api, MoebiusApi.class);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL=DataServiceUtil.mobiusUrl + "/v3/open/metaspace/api";
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        String apiId = null;
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    apiId=String.valueOf(response.get("id"));
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "审核api失败，云平台无法创建该api");
+        }
+        return apiId;
+    }
+
+    public static String getMetaspaceHost() {
+        String url = MetaspaceConfig.getMetaspaceUrl();
+        return url.substring(url.indexOf("://") + 3, url.length());
+    }
+
+    public Map convertMobiusResponse(String message) {
+        Gson gson = new Gson();
+        Map response = gson.fromJson(message, Map.class);
+        return response;
+    }
+
+    public MoebiusApiParam getMoebiusApiParam(ApiInfoV2 apiInfoV2){
+        MoebiusApiParam moebiusApiParam = new MoebiusApiParam();
+        getParam(apiInfoV2.getGuid(),apiInfoV2,apiInfoV2.getVersion());
+        List<ApiInfoV2.FieldV2> params = apiInfoV2.getParam();
+        List<MoebiusApiParam.HeaderParam> headerParamList = new ArrayList<>();
+        List<MoebiusApiParam.BodyParam> returnParamList = new ArrayList<>();
+        List<MoebiusApiParam.QueryParam> queryParamList = new ArrayList<>();
+        params.forEach(param->{
+            String place = param.getPlace();
+            if ("HEADER".equalsIgnoreCase(place)){
+                MoebiusApiParam.HeaderParam headerParam = new MoebiusApiParam.HeaderParam();
+                headerParam.setHeaderName(param.getName());
+                headerParam.setDescription(param.getDescription());
+                headerParam.setHeaderType(param.getType());
+                headerParam.setHeaderValue(param.getExample());
+                headerParam.setIsrequired(param.isFill()?1:0);
+                headerParamList.add(headerParam);
+            }else if ("QUERY".equalsIgnoreCase(place)){
+                MoebiusApiParam.QueryParam queryParam = new MoebiusApiParam.QueryParam();
+                queryParam.setQueryName(param.getName());
+                queryParam.setDescription(param.getDescription());
+                queryParam.setQueryType(param.getType());
+                queryParam.setQueryExample(param.getExample());
+                queryParam.setIsrequired(param.isFill()?1:0);
+                queryParamList.add(queryParam);
+            }
+        });
+        apiInfoV2.getReturnParam().forEach(param->{
+            MoebiusApiParam.BodyParam bodyParam = new MoebiusApiParam.BodyParam();
+            bodyParam.setType(param.getType());
+            bodyParam.setDescription(param.getDescription());
+            returnParamList.add(bodyParam);
+        });
+
+        Gson gson = new Gson();
+        String queryString = gson.toJson(queryParamList);
+        String headerString = gson.toJson(headerParamList);
+        Map<String,Object> map = new HashMap<>();
+        map.put("type","object");
+        map.put("title","empty object");
+        map.put("properties",returnParamList);
+        String returnString = gson.toJson(map);
+        moebiusApiParam.setResBody(returnString);
+        moebiusApiParam.setParamQuery(queryString);
+        moebiusApiParam.setParamHeaders(headerString);
+        return moebiusApiParam;
+    }
+
+    public ApiInfoV2 getParam(String guid,ApiInfoV2 apiInfo,String version) throws AtlasBaseException {
+        try {
+            Gson gson = new Gson();
+            Object param = shareDAO.getParamByGuid(guid,version);
+            Object returnParam = shareDAO.getReturnParamByGuid(guid,version);
+            Object sortParam = shareDAO.getSortParamByGuid(guid,version);
+
+            PGobject paramPg = (PGobject)param;
+            PGobject returnParamPg = (PGobject)returnParam;
+            PGobject sortParamPg = (PGobject)sortParam;
+            String paramValue = paramPg.getValue();
+            String returnParamValue = returnParamPg.getValue();
+            String sortParamValue = sortParamPg.getValue();
+            Type type = new  TypeToken<List<ApiInfoV2.FieldV2>>(){}.getType();
+            List<ApiInfoV2.FieldV2> params = gson.fromJson(paramValue, type);
+            List<ApiInfoV2.FieldV2> returnParams = gson.fromJson(returnParamValue, type);
+            List<ApiInfoV2.FieldV2> sortParams = gson.fromJson(sortParamValue, type);
+            apiInfo.setParam(params);
+            apiInfo.setReturnParam(returnParams);
+            apiInfo.setSortParam(sortParams);
+            return apiInfo;
+        } catch (Exception e) {
+            LOG.error("获取数据失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
         }
     }
 }

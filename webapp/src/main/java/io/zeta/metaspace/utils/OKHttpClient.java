@@ -30,6 +30,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,17 +175,29 @@ public class OKHttpClient {
      * @return
      */
     public static String doDelete(String url, Map<String,String> map) throws AtlasBaseException {
+        return doDelete(url,map,null);
+    }
+
+    /**
+     * delete
+     * @return
+     */
+    public static String doDelete(String url, Map<String,String> map,String bodyJson) throws AtlasBaseException {
         try {
             Request.Builder builder = new Request.Builder()
                     .url(url);
-
+            map.put("Content-Type","application/json");
+            if (StringUtils.isNotEmpty(bodyJson)){
+                RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyJson);
+                builder.delete(body);
+            }
             if(Objects.nonNull(map)) {
                 Set<Map.Entry<String, String>> headerEntries = map.entrySet();
                 for (Map.Entry<String, String> entry : headerEntries) {
                     builder.addHeader(entry.getKey(), entry.getValue());
                 }
             }
-            Request request = builder.delete().build();
+            Request request = builder.build();
             return getResponse(request);
         } catch(AtlasBaseException e){
             throw e;

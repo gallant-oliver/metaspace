@@ -985,6 +985,19 @@ public interface UserGroupDAO {
             "</script>")
     public int addUserGroupPrivileges(@Param("groupIds") List<GroupPrivilege> groupIds);
 
+    @Insert("<script>" +
+            "insert into category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='groupPrivilege' index='index' collection='groupIds' " +
+            "    open='' separator=',' close=''>" +
+            "       <foreach item='category' index='index' collection='categoryIds' " +
+            "       open='' separator=',' close=''>" +
+            "       (#{category.guid},#{groupPrivilege.id},#{groupPrivilege.read},#{groupPrivilege.editCategory},#{groupPrivilege.editItem}) " +
+            "       </foreach>" +
+            "    </foreach>" +
+            "</script>")
+    public int addUserGroupCategoryPrivileges(@Param("groupIds") List<GroupPrivilege> groupIds,@Param("categoryIds") List<CategoryEntityV2> categoryIds);
+
+
     @Update ("<script>" +
              "update category_group_relation set read=tmp.read,edit_category=tmp.edit_category,edit_item=tmp.edit_item from (values " +
              "    <foreach item='groupPrivilege' index='index' collection='groupPrivileges' " +

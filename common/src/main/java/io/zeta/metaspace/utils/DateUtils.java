@@ -14,12 +14,7 @@
 package io.zeta.metaspace.utils;
 
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
@@ -94,7 +89,6 @@ public class DateUtils {
     }
 
     /**
-     *
      * @param yyyy-MM
      * @return
      */
@@ -105,7 +99,6 @@ public class DateUtils {
     }
 
     /**
-     *
      * @param yyyy
      * @return
      */
@@ -130,6 +123,11 @@ public class DateUtils {
 
     public static String lastYear() {
         return YEAR.format(LocalDate.now().minusMonths(1));
+    }
+
+
+    public static LocalDateTime parseDateTime(String dateString) {
+        return LocalDateTime.parse(dateString, DATE_TIME);
     }
 
     public static LocalDate parseLocalDate(String dateString) {

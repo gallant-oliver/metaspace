@@ -1,9 +1,12 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.repository.tablestat.TableStatService;
-import io.zeta.metaspace.web.util.HiveJdbcUtils;
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +26,7 @@ import java.util.regex.Pattern;
 public class TableService {
     private static final Logger LOG = LoggerFactory.getLogger(TableService.class);
     public static final String SQL_REGEX = "CREATE[\\s\\S]*TABLE[\\s|\\sIF\\sNOT\\sEXISTS\\s]*([\\S]*\\.[\\S]*)";
+
     public String databaseAndTable(String sql) throws Exception {
         Pattern pattern = Pattern.compile(SQL_REGEX);
         Matcher matcher = pattern.matcher(sql);
@@ -39,10 +44,12 @@ public class TableService {
         String sqlStr = null;
         try {
             reader = new BufferedReader(new FileReader(file));
-            while((sqlStr = reader.readLine()) != null) {
+            while ((sqlStr = reader.readLine()) != null) {
                 sqlList.add(sqlStr);
             }
-            HiveJdbcUtils.execute(sqlList);
+            AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+            Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), "", MetaspaceConfig.getHiveJobQueueName());
+            adapterSource.getNewAdapterExecutor().execute(connection, sqlList);
             resultMap.put("errorCode", 0);
             resultMap.put("errorMsg", "执行成功");
             return resultMap;
@@ -56,6 +63,23 @@ public class TableService {
             } catch (Exception e) {
                 LOG.warn("关闭文件失败");
             }
+        }
+    }
+
+    public void execute(String sql) {
+        String user = AdminUtils.getUserName();
+        String pool = MetaspaceConfig.getHiveJobQueueName();
+        AdapterSource adapterSource = AdapterUtils.getHiveAdapterSource();
+        Connection connection = adapterSource.getConnection(user, "", pool);
+        try {
+            adapterSource.getNewAdapterExecutor().execute(connection, sql);
+        } catch (Exception e) {
+            String stackTrace = ExceptionUtils.getStackTrace(e);
+            String message = "Permission denied: user=" + user + ", access=WRITE";
+            if (stackTrace.contains(message))
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败," + user + "用户没有权限在此路径新建离线表");
+            else
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建离线表失败,请检查表单信息和hive服务");
         }
     }
 }

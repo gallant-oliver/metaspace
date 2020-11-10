@@ -52,7 +52,6 @@ import javax.ws.rs.core.Context;
 @Singleton
 @Service
 public class RoleREST {
-    private static final Logger LOG = LoggerFactory.getLogger(RoleREST.class);
     @Autowired
     private RoleService roleService;
     @Autowired
@@ -74,11 +73,8 @@ public class RoleREST {
         HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
         try {
             return roleService.addRole(role);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("新增角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新增角色失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "新增角色失败");
         }
     }
 
@@ -95,16 +91,13 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
             return roleService.updateRoleStatus(roleId, status);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
             String s = "";
             if (status == 0)
                 s = "禁用角色失败";
             else
                 s = "启用角色失败";
-            LOG.error(s, e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, s);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, s);
         }
     }
 
@@ -121,11 +114,8 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.ROLE.getAlias(), role.getRoleName());
             return roleService.deleteRole(roleId);
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("删除角色失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除角色失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除角色失败");
         }
     }
 
@@ -141,13 +131,8 @@ public class RoleREST {
     public PageResult<User> getUsers(@PathParam("roleId") String roleId, Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getUsers(roleId, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("搜索成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索成员失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索成员失败");
         }
     }
 
@@ -163,13 +148,8 @@ public class RoleREST {
     public PageResult<Role> getRoles(Parameters parameters) throws AtlasBaseException {
         try {
             return roleService.getRoles(parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), true);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("搜索角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索角色失败");
         }
     }
 
@@ -187,13 +167,8 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",添加用户:[" + Joiner.on("、").join(users)+"]");
             return roleService.addUsers(roleId,users) ;
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("添加成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加成员失败");
         }
     }
 
@@ -210,13 +185,8 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "角色:" + role.getRoleName() + ",移除用户:[" + Joiner.on("、").join(users)+"]");
             return roleService.removeUser(roleId,users);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("移除成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"移除成员失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "移除成员失败");
         }
     }
 
@@ -231,13 +201,8 @@ public class RoleREST {
     public RoleModulesCategories getPrivileges(@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.getPrivileges(roleId);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("获取角色方案及授权范围失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色方案及授权范围失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色方案及授权范围失败");
         }
     }
     /**
@@ -254,12 +219,8 @@ public class RoleREST {
             Role role = roleService.getRoleById(roleId);
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.putPrivileges(roleId,roleModulesCategories);
-        } catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("修改角色方案及授权范围失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"修改角色方案及授权范围失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "修改角色方案及授权范围失败");
         }
     }
     /**
@@ -274,13 +235,8 @@ public class RoleREST {
     public PageResult<PrivilegeInfo> getPrivilege(Parameters parameters) throws AtlasBaseException {
         try {
             return privilegeService.getPrivilegeList(parameters);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("搜索技术方案失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索技术方案失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索技术方案失败");
         }
     }
     /**
@@ -295,13 +251,8 @@ public class RoleREST {
     public PageResult<User> getAllUsers(Parameters parameters,@PathParam("roleId") String roleId) throws AtlasBaseException {
         try {
             return roleService.getAllUsers(parameters,roleId);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("获取全部用户失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取全部用户失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取全部用户失败");
         }
     }
 
@@ -316,13 +267,8 @@ public class RoleREST {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), role.getRoleName());
             return roleService.editRole(role);
-        }
-        catch(AtlasBaseException e){
-            throw e;
-        }
-        catch (Exception e) {
-            LOG.error("编辑角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"编辑角色失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "编辑角色失败");
         }
     }
 
@@ -333,11 +279,8 @@ public class RoleREST {
     public PageResult<Role> getRoles(@QueryParam("query") @DefaultValue("")String query, @QueryParam("offset") @DefaultValue("0")Long offset, @QueryParam("limit") @DefaultValue("-1")Long limit) throws AtlasBaseException {
         try {
             return roleService.getRoles(query, offset, limit, false);
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("搜索角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"搜索角色失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索角色失败");
         }
     }
 
@@ -357,11 +300,8 @@ public class RoleREST {
             result.put("errorCode", "200");
             result.put("message", "Success");
             return result;
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("添加成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"添加成员失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加成员失败");
         }
     }
 
@@ -381,11 +321,8 @@ public class RoleREST {
             result.put("errorCode","200");
             result.put("message","Success");
             return result;
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("删除成员失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"删除成员失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除成员失败");
         }
     }
 
@@ -402,11 +339,8 @@ public class RoleREST {
             String queryTime = df.format(System.currentTimeMillis());
             result.put("queryTime", queryTime);
             return result;
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取角色失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色失败");
         }
     }
 
@@ -417,10 +351,8 @@ public class RoleREST {
     public void updateUserInfo() throws AtlasBaseException {
         try {
             roleService.updateUserInfo();
-        } catch(AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取角色失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色失败");
         }
     }
 }
