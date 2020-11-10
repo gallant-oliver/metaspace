@@ -149,6 +149,11 @@ public abstract class AbstractMetaspaceGremlinQueryProvider {
 
         FULL_RDBMS_COLUMN_TABLE_DB_SOURCE,
         RDBMS_COLUMN_TABLE_DB_SOURCE_BY_QUERY,
-        RDBMS_COLUMN_COUNT_BY_QUERY
+        RDBMS_COLUMN_COUNT_BY_QUERY,
+
+        FULL_HBASE_NS_BY_STATE,
+        NAMESPACE_TABLE_BY_STATE,
+        HBASE_TABLE_BY_STATE,
+        HBASE_NS_TABLE_COLUMN_FAMILY
     }
 }

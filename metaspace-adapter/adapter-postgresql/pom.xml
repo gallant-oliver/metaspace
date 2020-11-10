@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>metaspace-adapter</artifactId>
+    <groupId>org.apache.atlas</groupId>
+    <version>1.9.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>adapter-postgresql</artifactId>
+  <packaging>jar</packaging>
+
+  <properties>
+    <jdbc.postgresql.version>42.1.4</jdbc.postgresql.version>
+
+    <plugin.id>POSTGRESQL</plugin.id>
+<!--    <plugin.class>io.zeta.metaspace.adapter.oracle.OracleComponent</plugin.class>-->
+    <plugin.version>${project.version}</plugin.version>
+    <plugin.assembly.build>false</plugin.assembly.build>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${jdbc.postgresql.version}</version>
+    </dependency>
+  </dependencies>
+
+
+</project>

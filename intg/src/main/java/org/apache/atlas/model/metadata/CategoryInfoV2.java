@@ -30,6 +30,15 @@ public class CategoryInfoV2 {
     private String parentCategoryGuid;
     private Integer categoryType;
     private String safe;
+    private boolean authorized;
+
+    public boolean isAuthorized() {
+        return authorized;
+    }
+
+    public void setAuthorized(boolean authorized) {
+        this.authorized = authorized;
+    }
 
     public String getSafe() {
         return safe;

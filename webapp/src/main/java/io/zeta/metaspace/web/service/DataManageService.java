@@ -282,6 +282,7 @@ public class DataManageService {
     public CategoryPrivilege createCategory(CategoryInfoV2 info, Integer type,String tenantId) throws Exception {
         try {
             String currentCategoryGuid = info.getGuid();
+            boolean authorized = info.isAuthorized();
             CategoryEntityV2 entity = new CategoryEntityV2();
             StringBuffer qualifiedName = new StringBuffer();
             String newCategoryGuid = UUID.randomUUID().toString();
@@ -324,12 +325,17 @@ public class DataManageService {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级目录");
                     }
                 }
-
+                CategoryPrivilege oneLevelCategory=null;
                 if(categoryDao.ifExistCategory(type,tenantId) > 0) {
-                    return createOneLevelCategory(entity,type,tenantId);
+                    oneLevelCategory = createOneLevelCategory(entity, type, tenantId);
                 }else{
-                    return createFirstCategory(entity,type,tenantId);
+                    oneLevelCategory = createFirstCategory(entity, type, tenantId);
                 }
+                if (authorized){
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+                    oneLevelCategory.setPrivilege(privilege);
+                }
+                return oneLevelCategory;
             }
             if(Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid,tenantId))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
@@ -338,12 +344,19 @@ public class DataManageService {
             categoryDao.add(entity,tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid,tenantId);
             //有目录权限管理模块权限，可以随意建目录
-            boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
-            //无当前目录权限
-            boolean isPrivilege = !userGroupService.isPrivilegeCategory(user.getUserId(), newCategoryGuid, tenantId, type);
-            boolean typeBoolean = type == 1 || type == 0;
-            if (typeBoolean && isAdmin && isPrivilege){
-                privilege.setAsh(true);
+            if (authorized){
+                privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+            }else{
+                boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
+                //无当前目录权限
+                boolean isPrivilege = !userGroupService.isPrivilegeCategory(user.getUserId(), newCategoryGuid, tenantId, type);
+                boolean typeBoolean = type == 1 || type == 0;
+                if (isAdmin){
+                    privilege.adminPrivilege(returnEntity.getGuid());
+                }
+                if (typeBoolean && isAdmin && isPrivilege){
+                    privilege.setAsh(true);
+                }
             }
             returnEntity.setPrivilege(privilege);
             return returnEntity;
@@ -481,6 +494,9 @@ public class DataManageService {
                 }
                 categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid,tenantId);
             }
+        }
+        if (parentGuid==null){
+            return new CategoryPrivilege.Privilege(false,true,true,true,false,true,false,false,true,false);
         }
         List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(entity.getParentCategoryGuid(),tenantId);
         parentPrivilege.forEach(privilege -> privilege.setCategoryId(entity.getGuid()));
@@ -1635,7 +1651,7 @@ public class DataManageService {
      * @throws Exception
      */
     @Transactional(rollbackFor=Exception.class)
-    public void importCategory(String categoryId,String direction, File fileInputStream,int type,String tenantId) throws Exception {
+    public List<CategoryPrivilege> importCategory(String categoryId,String direction, File fileInputStream,boolean authorized,int type,String tenantId) throws Exception {
         if (!fileInputStream.exists()){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
         }
@@ -1738,8 +1754,83 @@ public class DataManageService {
         if (downGuid!=null){
             categoryDao.updateUpBrotherCategoryGuid(downGuid,upId,tenantId);
         }
-        categoryDao.addAll(new ArrayList<>(newCategorys.values()),tenantId);
-        fileInputStream.delete();
+
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+        ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
+        List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(parentCategoryGuid,tenantId);
+        if (parentPrivilege.size()!=0&&categoryEntityV2s!=null){
+            userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege,categoryEntityV2s);
+        }
+        categoryDao.addAll(categoryEntityV2s,tenantId);
+        if (type==3||type==4){
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
+        } else if (level!=0||!authorized){
+            fileInputStream.delete();
+            GroupPrivilege groupPrivilege = new GroupPrivilege();
+            groupPrivilege.setRead(false);
+            groupPrivilege.setEditCategory(false);
+            groupPrivilege.setEditItem(false);
+            parentPrivilege.forEach(category ->{
+                groupPrivilege.setRead(category.getRead()||groupPrivilege.getRead());
+                groupPrivilege.setEditCategory(category.getEditCategory()||groupPrivilege.getEditCategory());
+                groupPrivilege.setEditItem(category.getEditItem()||groupPrivilege.getEditItem());
+            });
+            privilege=getCategoryPrivilege(groupPrivilege.getRead(),groupPrivilege.getEditItem(),groupPrivilege.getEditCategory());
+        }else if(authorized){
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
+        }else{
+            privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
+        }
+        List<CategoryPrivilege> categoryPrivileges = new ArrayList<>();
+        for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(categoryEntityV2);
+            categoryPrivilege.setPrivilege(privilege);
+            categoryPrivileges.add(categoryPrivilege);
+        }
+        return categoryPrivileges;
+
+
+        //技术目录一级目录不允许删关联
+//        if (type == 0 && category.getLevel() == 1) {
+//            privilege.setDeleteRelation(false);
+//        }
+    }
+
+    public CategoryPrivilege.Privilege getCategoryPrivilege(boolean read,boolean editItem,boolean editCategory){
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+        if (read){
+            privilege.setHide(false);
+            privilege.setAsh(false);
+        }else{
+            privilege.setHide(false);
+            privilege.setAsh(true);
+        }
+        if (editCategory){
+            privilege.setAddSibling(true);
+            privilege.setDelete(true);
+            privilege.setMove(true);
+        }else{
+            privilege.setAddSibling(false);
+            privilege.setDelete(false);
+            privilege.setMove(false);
+        }
+        if (editCategory){
+            privilege.setAddChildren(true);
+            privilege.setEdit(true);
+        }else{
+            privilege.setAddChildren(false);
+            privilege.setEdit(false);
+        }
+        if (editItem){
+            privilege.setCreateRelation(true);
+            privilege.setDeleteRelation(true);
+            privilege.setAddOwner(true);
+        }else{
+            privilege.setCreateRelation(false);
+            privilege.setDeleteRelation(false);
+            privilege.setAddOwner(false);
+        }
+        return privilege;
     }
 
     /**

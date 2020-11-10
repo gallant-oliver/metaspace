@@ -65,7 +65,6 @@ import javax.ws.rs.QueryParam;
 @Singleton
 @Service
 public class ApiGroupREST {
-    private static final Logger LOG = LoggerFactory.getLogger(ApiGroupREST.class);
     @Autowired
     ApiGroupService apiGroupService;
 
@@ -84,11 +83,7 @@ public class ApiGroupREST {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), apiGroup.getName());
             apiGroupService.insertApiGroup(apiGroup,tenantId);
-        }catch (AtlasBaseException e){
-            LOG.error("新建api分组失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("新建api分组失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
         return ReturnUtil.success();
@@ -112,11 +107,7 @@ public class ApiGroupREST {
             HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), apiGroup.getName());
             apiGroup.setId(groupId);
             apiGroupService.updateApiGroup(apiGroup,tenantId);
-        }catch (AtlasBaseException e){
-            LOG.error("更新api分组失败",e);
-            throw e;
         }catch (Exception e){
-            LOG.error("更新api分组失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
         return ReturnUtil.success();
@@ -155,7 +146,6 @@ public class ApiGroupREST {
             PageResult<ApiGroupV2> result = apiGroupService.searchApiGroup(parameters, projectId, tenantId,bool);
             return ReturnUtil.success(result);
         }catch (Exception e){
-            LOG.error("查询api分组失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "查询api分组失败");
         }
 
@@ -176,7 +166,6 @@ public class ApiGroupREST {
             ApiGroupInfo apiGroupInfo = apiGroupService.getApiGroupInfo(groupId);
             return ReturnUtil.success(apiGroupInfo);
         }catch (Exception e){
-            LOG.error("获取api分组详情失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取api分组详情失败");
         }
     }
@@ -200,7 +189,6 @@ public class ApiGroupREST {
             apiGroupService.updateApiRelationVersion(relation,groupId);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("升级api失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "升级api失败");
         }
     }
@@ -223,7 +211,6 @@ public class ApiGroupREST {
             apiGroupService.updateAllApiRelationVersion(apiGroupV2);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("升级api失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "升级api失败");
         }
     }
@@ -246,7 +233,6 @@ public class ApiGroupREST {
             apiGroupService.updatePublish(apiGroupV2.getId(),apiGroupV2.isPublish());
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("变更api分组状态",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "变更api分组状态");
         }
     }
@@ -268,7 +254,6 @@ public class ApiGroupREST {
             apiGroupService.deleteApiGroup(ids);
             return ReturnUtil.success();
         }catch (Exception e){
-            LOG.error("更新api分组失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "新建api分组失败");
         }
     }
@@ -291,7 +276,6 @@ public class ApiGroupREST {
             PageResult<ApiGroupStatusApi> updateApi = apiGroupService.getUpdateApi(apiGroupId, limit, offset);
             return ReturnUtil.success(updateApi);
         }catch (Exception e){
-            LOG.error("获取升级api列表失败",e);
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取升级api列表失败");
         }
     }
@@ -319,12 +303,8 @@ public class ApiGroupREST {
             param.setQuery(search);
             PageResult<ApiGroupLog> pageResult = apiGroupService.getApiGroupLog(param, groupId);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e){
-            LOG.error("获取api分组日志失败",e);
-            throw e;
         }  catch (Exception e) {
-            LOG.error("获取api分组日志失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api分组日志失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取api分组日志失败:"+e.getMessage());
         }
     }
 
@@ -344,8 +324,7 @@ public class ApiGroupREST {
             List<ApiCategory> allApi = apiGroupService.getAllApi(search,projectId);
             return ReturnUtil.success(allApi);
         } catch (Exception e) {
-            LOG.error("获取项目下全部api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取项目下全部api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取项目下全部api失败:"+e.getMessage());
         }
     }
 
@@ -364,8 +343,7 @@ public class ApiGroupREST {
             List<UserIdAndName> approve = apiGroupService.getApprove(tenantId);
             return ReturnUtil.success(approve);
         } catch (Exception e) {
-            LOG.error("获取审批人列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取审批人列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取审批人列表失败:"+e.getMessage());
         }
     }
 }

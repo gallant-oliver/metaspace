@@ -13,9 +13,11 @@
 
 package io.zeta.metaspace.model.share;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * @author lixiang03
@@ -32,8 +34,45 @@ public class ApiHead {
     private String creator;
     private String categoryId;
     private String categoryName;
+    @JsonIgnore
     private int total;
     private String version;
+    private String tableGuid;
+    private String tableName;
+    private String tableDisplayName;
+    private List<String> dataOwner;
+
+    public String getTableGuid() {
+        return tableGuid;
+    }
+
+    public void setTableGuid(String tableGuid) {
+        this.tableGuid = tableGuid;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getTableDisplayName() {
+        return tableDisplayName;
+    }
+
+    public void setTableDisplayName(String tableDisplayName) {
+        this.tableDisplayName = tableDisplayName;
+    }
+
+    public List<String> getDataOwner() {
+        return dataOwner;
+    }
+
+    public void setDataOwner(List<String> dataOwner) {
+        this.dataOwner = dataOwner;
+    }
 
     public String getVersion() {
         return version;

@@ -20,6 +20,8 @@ import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.datasource.DataSourceType;
+import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -114,12 +116,8 @@ public class ApiManagerREST {
         try {
             shareService.insertAPIInfoV2(info,tenantId,submit);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("创建api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("创建api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"创建api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建api失败");
         }
     }
 
@@ -140,12 +138,8 @@ public class ApiManagerREST {
         try {
             shareService.updateAPIInfoV2(info,tenantId,submit);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("更新api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("更新api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "更新api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api失败");
         }
     }
 
@@ -167,12 +161,8 @@ public class ApiManagerREST {
         try {
             shareService.submitApi(info.getGuid(),info.getVersion(),tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("更新api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("更新api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "更新api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "提交api失败");
         }
     }
 
@@ -198,12 +188,8 @@ public class ApiManagerREST {
             auditService.cancelApiAudit(tenantId,info.getGuid(),info.getVersion());
             shareService.addApiLog(ApiLogEnum.UNSUBMIT, info.getGuid(), AdminUtils.getUserData().getUserId());
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("取消审核失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("取消审核失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "取消审核失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "取消审核失败");
         }
     }
 
@@ -226,12 +212,8 @@ public class ApiManagerREST {
         try {
             shareService.deleteApi(ids,tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("删除api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("删除api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除api失败");
         }
     }
 
@@ -252,12 +234,8 @@ public class ApiManagerREST {
         try {
             shareService.deleteApiVersion(api,tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("删除api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("删除api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除api失败");
         }
     }
 
@@ -275,12 +253,8 @@ public class ApiManagerREST {
         try {
             ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoMaxVersion(apiId);
             return ReturnUtil.success(apiInfoMaxVersion);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取详情失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取详情失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
         }
     }
 
@@ -298,12 +272,8 @@ public class ApiManagerREST {
         try {
             ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(apiId,version);
             return ReturnUtil.success(apiInfo);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取详情失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取详情失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
         }
     }
 
@@ -322,8 +292,7 @@ public class ApiManagerREST {
             List<ApiVersion> apiVersion = shareService.getApiVersion(apiId);
             return ReturnUtil.success(apiVersion);
         }catch (Exception e) {
-            LOG.error("获取api版本失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api版本失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api版本失败");
         }
     }
 
@@ -335,12 +304,8 @@ public class ApiManagerREST {
         try {
             shareService.updateApiStatus(apiInfo.getGuid(),apiInfo.isStatus());
             return ReturnUtil.success();
-        } catch (AtlasBaseException e){
-            LOG.error("更新api上下架状态异常",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("更新api上下架状态异常",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"更新api上下架状态异常:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api上下架状态异常");
         }
 
     }
@@ -360,12 +325,8 @@ public class ApiManagerREST {
             param.setQuery(search);
             PageResult<ApiLog> pageResult = shareService.getApiLog(param,apiId);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e){
-            LOG.error("获取api日志失败",e);
-            throw e;
         }  catch (Exception e) {
-            LOG.error("获取api日志失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取api日志失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api日志失败");
         }
     }
 
@@ -391,12 +352,8 @@ public class ApiManagerREST {
             }
             CategoryPrivilege category = shareService.createCategory(categoryInfo, projectId, tenantId);
             return ReturnUtil.success(category);
-        } catch (AtlasBaseException e){
-            LOG.error("创建目录失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("创建目录失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"创建目录失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建目录失败");
         }finally {
             AtlasPerfTracer.log(perf);
         }
@@ -424,12 +381,8 @@ public class ApiManagerREST {
             }
             shareService.updateCategory(categoryInfo, projectId,tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e){
-            LOG.error("更新目录失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("更新目录失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"更新目录失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新目录失败");
         }finally {
             AtlasPerfTracer.log(perf);
         }
@@ -460,12 +413,8 @@ public class ApiManagerREST {
             }
             shareService.deleteCategory(categoryDelete,tenantId);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e){
-            LOG.error("删除目录失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("删除目录失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"删除目录失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除目录失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -490,12 +439,8 @@ public class ApiManagerREST {
             }
             List<CategoryPrivilege> categoryByProject = shareService.getCategoryByProject(projectId, tenantId);
             return ReturnUtil.success(categoryByProject);
-        } catch (AtlasBaseException e){
-            LOG.error("获取目录失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取目录失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取目录失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取目录失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -536,8 +481,7 @@ public class ApiManagerREST {
             PageResult<ApiHead> pageResult = shareService.searchApi(parameters, projectId, categoryId, status, approve, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            LOG.error("查询api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"查询api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询api失败");
         }
     }
 
@@ -560,12 +504,8 @@ public class ApiManagerREST {
         try {
             shareService.moveApi(moveApi);
             return ReturnUtil.success();
-        } catch (AtlasBaseException e){
-            LOG.error("目录迁移失败",e);
-            throw e;
         }catch (Exception e) {
-            LOG.error("目录迁移失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"目录迁移失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
         }
     }
 
@@ -600,8 +540,7 @@ public class ApiManagerREST {
             boolean bool = shareService.querySameNameV2(name, tenantId,info.getProjectId());
             return ReturnUtil.success(bool);
         } catch (Exception e) {
-            LOG.error("查询失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "查询失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
         }
     }
 
@@ -620,8 +559,7 @@ public class ApiManagerREST {
             boolean bool = shareService.isApiSameVersion(info.getGuid(),info.getVersion());
             return ReturnUtil.success(bool);
         } catch (Exception e) {
-            LOG.error("查询失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "查询失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
         }
     }
 
@@ -639,12 +577,8 @@ public class ApiManagerREST {
         try {
             PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取库列表失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取库列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取库列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取库列表失败");
         }
     }
 
@@ -662,12 +596,8 @@ public class ApiManagerREST {
         try {
             PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
             return ReturnUtil.success(pageResult);
-        } catch (AtlasBaseException e) {
-            LOG.error("搜索库列表失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("搜索库列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "搜索库列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索库列表失败");
         }
     }
 
@@ -684,12 +614,8 @@ public class ApiManagerREST {
         try {
             PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters,tenantId);
             return ReturnUtil.success(pageResult);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取表列表失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取表列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取表列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
         }
     }
 
@@ -707,12 +633,8 @@ public class ApiManagerREST {
         try {
             List<Column> tableColumnList = shareService.getTableColumnList(tableGuid, tenantId);
             return ReturnUtil.success(tableColumnList);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取表字段失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取表字段失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取表字段失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表字段失败");
         }
     }
 
@@ -724,19 +646,15 @@ public class ApiManagerREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/oracle/datasource")
+    @Path("/{type}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId,@PathParam("type")String type) throws AtlasBaseException {
         try {
-            PageResult oracleDataSourceList = shareService.getOracleDataSourceList(parameters, tenantId);
-            return ReturnUtil.success(oracleDataSourceList);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取数据源失败",e);
-            throw e;
+            PageResult oracleDataSourceList = shareService.getDataSourceList(parameters,type, tenantId);
+            return oracleDataSourceList;
         } catch (Exception e) {
-            LOG.error("获取数据源失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取数据源失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据源失败");
         }
     }
 
@@ -755,12 +673,8 @@ public class ApiManagerREST {
         try {
             PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters, sourceId);
             return ReturnUtil.success(dataList);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取schema列表失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取schema列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取schema列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取schema列表失败");
         }
     }
 
@@ -780,12 +694,8 @@ public class ApiManagerREST {
         try {
             PageResult tableList = shareService.getDataList(DataShareService.SEARCH_TYPE.TABLE, parameters, sourceId, schemaName);
             return ReturnUtil.success(tableList);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取表列表失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取表列表失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取表列表失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
         }
     }
 
@@ -806,12 +716,8 @@ public class ApiManagerREST {
         try {
             PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.COLUMN, parameters, sourceId, schemaName, tableName);
             return ReturnUtil.success(dataList);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取表字段失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取表字段失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取表字段失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表字段失败");
         }
     }
 
@@ -829,12 +735,8 @@ public class ApiManagerREST {
         try {
             List<Queue> pools = shareService.getPools(tenantId);
             return ReturnUtil.success(pools);
-        }catch (AtlasBaseException e) {
-            LOG.error("获取资源池失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("获取资源池失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取资源池失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取资源池失败");
         }
     }
 
@@ -858,12 +760,8 @@ public class ApiManagerREST {
             Map resultMap = shareService.testAPIV2(randomName, apiInfoV2,limit,offset);
             List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
             return ReturnUtil.success(result);
-        }catch (AtlasBaseException e){
-            LOG.error("测试api失败",e);
-            throw e;
         } catch (Exception e) {
-            LOG.error("测试api失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "测试api失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "测试api失败");
         }
     }
 
@@ -874,8 +772,17 @@ public class ApiManagerREST {
     public void stopTestAPI(@PathParam("randomName") String randomName) throws Exception {
         try {
             shareService.cancelAPIThread(randomName);
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "任务取消失败");
         }
+    }
+
+    @GET
+    @Path("/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourceType(){
+        List<DataSourceTypeInfo> dataSourceType = shareService.getDataSourceType();
+        return ReturnUtil.success(dataSourceType);
     }
 }

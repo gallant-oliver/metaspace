@@ -195,6 +195,14 @@
             <directory>../addons/kakfa-bridge/target/dependency/hook</directory>
             <outputDirectory>hook</outputDirectory>
         </fileSet>
+
+        <fileSet>
+            <directory>../metaspace-adapter/target/pluginZip</directory>
+            <includes>
+                <include>*.zip</include>
+            </includes>
+            <outputDirectory>adapter</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <files>

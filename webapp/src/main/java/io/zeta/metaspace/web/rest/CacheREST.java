@@ -17,6 +17,7 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,6 @@ import javax.ws.rs.core.MediaType;
 public class CacheREST {
     @Autowired
     TenantService tenantService;
-    private static final Logger LOG = LoggerFactory.getLogger(CacheREST.class);
     @DELETE
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
@@ -49,10 +49,10 @@ public class CacheREST {
             tenantService.cleanCache();
             AdminUtils.cleanCache();
             return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("清除缓存失败",e);
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "清除缓存失败");
         }
+
 
     }
 }

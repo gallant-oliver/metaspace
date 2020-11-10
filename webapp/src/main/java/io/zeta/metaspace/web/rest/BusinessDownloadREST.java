@@ -44,7 +44,6 @@ import javax.ws.rs.core.Context;
 @Service
 @Path("/columns")
 public class BusinessDownloadREST {
-    private static final Logger PERF_LOG = LoggerFactory.getLogger(BusinessREST.class);
 
     @Autowired
     private BusinessService businessService;

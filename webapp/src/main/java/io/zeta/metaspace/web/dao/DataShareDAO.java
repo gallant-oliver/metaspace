@@ -184,7 +184,37 @@ public interface DataShareDAO {
              " </if>",
              " </script>"})
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
-    
+
+    @Select({" <script>",
+             " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
+             " tableInfo.tableName, tableInfo.display_name as tableDisplayName,api.version ",
+             " from api join tableInfo on api.tableGuid=tableInfo.tableGuid join users on users.userId=api.creator ",
+             " <if test='isNew'>",
+             " join ( select guid,max(version_num) max from api where valid=true and status!='draft' and status!='audit' ",
+             " group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+             " </if>",
+             " where ",
+             " api.tableGuid in ",
+             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+             " #{tableGuid}",
+             " </foreach>",
+             " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' ",
+             " <if test='!up'>",
+             " and api.status!='up'",
+             " </if>",
+             " <if test='!down'>",
+             " and api.status!='down'",
+             " </if>",
+             " order by api.createtime desc",
+             " <if test='limit != null and limit!=-1'>",
+             " limit #{limit}",
+             " </if>",
+             " <if test='offset != null'>",
+             " offset #{offset}",
+             " </if>",
+             " </script>"})
+    public List<ApiHead> getTableRelatedDataServiceAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId,
+                                                       @Param("up")boolean up,@Param("down")boolean down,@Param("isNew")boolean isNew);
 
     @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
     public int countUserAPI(@Param("manager")String keeper, @Param("guid")String apiGuid);
@@ -654,4 +684,35 @@ public interface DataShareDAO {
 
     @Select("select projectid from api_category where guid=#{id}")
     public String getProjectIdByCategory(@Param("id")String id);
+
+    @Update("update api set mobius_id=#{mobiusId} where guid=#{guid}  and version=#{version}")
+    public int updateApiMobiusId(@Param("guid")String guid, @Param("version")String version,@Param("mobiusId")String mobiusId);
+
+    @Select("select mobius_id from api where guid=#{id} and valid=true")
+    public List<String> getApiMobiusIds(@Param("id")String id);
+
+    @Select("select mobius_id from api where guid=#{id} and version={version}}")
+    public String getApiMobiusIdByVersion(@Param("id")String id,@Param("version")String version);
+
+    @Select("<script>" +
+            "select mobius_id from api where valid=true and guid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getApiMobiusIdsByIds(@Param("ids")List<String> ids);
+
+    @Select("select mobius_id from api where categoryguid=#{categoryId}")
+    public List<String> getApiMobiusByCategory(@Param("categoryId")String categoryId);
+
+    @Select("<script>" +
+            "select mobius_id from api where projectid in " +
+            " <foreach item='id' index='index' collection='projectIds' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> getApiMobiusByProjects(@Param("projectIds")List<String> projectIds);
+
+    @Select("select api_group.mobius_id from api join api_relation on api.guid=api_relation.apiid and api.version=api_relation.version join api_group on api_relation.groupid=api_group.id where api.mobius_id=#{id}")
+    public List<String> getMobiusApiGroupIds(@Param("id")String id);
 }

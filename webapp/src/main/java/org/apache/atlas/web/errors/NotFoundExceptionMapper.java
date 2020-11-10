@@ -31,6 +31,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     @Override
     public Response toResponse(NotFoundException e) {
         final long id = ThreadLocalRandom.current().nextLong();
+        ExceptionMapperUtil.logException(id, e);
         return Response
                 .status(Response.Status.NOT_FOUND)
                 .entity(ExceptionMapperUtil.formatErrorMessage(id, e))

@@ -87,7 +87,6 @@ public class TechnicalREST {
     private DataManageService dataManageService;
     @Autowired
     private MetaDataService metaDataService;
-    private static final Logger LOG = LoggerFactory.getLogger(TechnicalREST.class);
 
     @Context
     private HttpServletResponse response;
@@ -354,7 +353,7 @@ public class TechnicalREST {
             }
             return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索关联表失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -375,7 +374,7 @@ public class TechnicalREST {
             }
             dataManageService.addTableOwner(tableOwner,tenantId);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加组织架构失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -394,7 +393,7 @@ public class TechnicalREST {
             }
             return dataManageService.getOrganizationByPid(pId, parameters);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -412,7 +411,7 @@ public class TechnicalREST {
             }
             return dataManageService.getOrganizationByName(parameters);
         } catch (Exception e) {
-            throw e;
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -435,8 +434,8 @@ public class TechnicalREST {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "正在更新组织架构！");
             }
             return Response.status(200).entity("更新成功！").build();
-        } catch (AtlasBaseException e) {
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新组织架构失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -526,9 +525,8 @@ public class TechnicalREST {
                 put("upload", upload);
             }};
             return ReturnUtil.success(map);
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -563,15 +561,15 @@ public class TechnicalREST {
 
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            List<CategoryPrivilege> categoryPrivileges=null;
             if (importCategory.isAll()){
                 dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
             }else{
-                dataManageService.importCategory(categoryId,importCategory.getDirection(), file,CATEGORY_TYPE,tenantId);
+                categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
             }
-            return ReturnUtil.success();
-        } catch (AtlasBaseException e) {
-            LOG.error("导入失败",e);
-            throw e;
+            return ReturnUtil.success(categoryPrivileges);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -598,12 +596,8 @@ public class TechnicalREST {
             }
             dataManageService.moveCategories(moveCategory,CATEGORY_TYPE,tenantId);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("变更目录结构失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("变更目录结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"变更目录结构失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "变更目录结构失败");
         }
     }
 
@@ -628,9 +622,8 @@ public class TechnicalREST {
             sortCategory.setGuid(guid);
             List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
-        }catch (Exception e){
-            LOG.error("目录排序并变更结构失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");
         }
     }
 
@@ -657,12 +650,8 @@ public class TechnicalREST {
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移目录"+category.getName()+"到"+parentCategory.getName());
             dataManageService.migrateCategory(migrateCategory.getCategoryId(),migrateCategory.getParentId(),CATEGORY_TYPE,tenantId);
             return ReturnUtil.success();
-        }catch(AtlasBaseException e){
-            LOG.error("目录迁移失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("目录迁移失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录迁移失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
         }
     }
 
@@ -692,12 +681,8 @@ public class TechnicalREST {
             }
             dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds());
             return ReturnUtil.success();
-        }catch(AtlasBaseException e){
-            LOG.error("迁移表关联失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("迁移表关联失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"迁移表关联失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "迁移表关联失败");
         }
     }
 
@@ -717,12 +702,8 @@ public class TechnicalREST {
         try {
             List<CategoryPrivilege> migrateCategory = dataManageService.getMigrateCategory(categoryId, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(migrateCategory);
-        }catch(AtlasBaseException e){
-            LOG.error("获取可以迁移到目录失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取可以迁移到目录失败",e);
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取可以迁移到目录失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取可以迁移到目录失败");
         }
     }
 

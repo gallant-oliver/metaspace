@@ -59,10 +59,8 @@ public class ApiREST {
         try {
             String acceptHeader = httpServletRequest.getHeader("Accept");
             return shareService.queryAPIData(url, info, acceptHeader);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 }

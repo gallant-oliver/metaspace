@@ -22,6 +22,8 @@ import io.zeta.metaspace.web.service.HomePageService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,7 @@ import java.util.List;
 @Singleton
 @Service
 public class HomePageREST {
+
 
     @Autowired
     private HomePageService homePageService;
@@ -53,10 +56,8 @@ public class HomePageREST {
     public PageResult<TableUseInfo> getTableUsedInfo(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return homePageService.getTableRelatedInfo(parameters,tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
         }
     }
 
@@ -73,10 +74,8 @@ public class HomePageREST {
     public List<DataDistribution> getDataDistribution(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return homePageService.getDataDistribution(tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
         }
     }
 
@@ -155,10 +154,8 @@ public class HomePageREST {
     public PageResult<CategoryDBInfo> getCategoryRelatedDB(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return homePageService.getCategoryRelatedDB(parameters,tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
         }
     }
 
@@ -177,10 +174,8 @@ public class HomePageREST {
     public PageResult<CategoryDBInfo> getChildCategoryRelatedDB(@PathParam("systemId") String categoryGuid, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             return homePageService.getChildCategoryRelatedDB(categoryGuid, parameters,tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
         }
     }
 
@@ -191,7 +186,7 @@ public class HomePageREST {
         try {
             homePageService.refreshCache();
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "刷新失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
         }
         return Response.status(200).entity("success").build();
     }

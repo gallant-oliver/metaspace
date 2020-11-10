@@ -13,7 +13,11 @@
 
 package io.zeta.metaspace.model.datasource;
 
+import lombok.Data;
+
+@Data
 public class DataSourceInfo {
+    private String sourceId;
     private String sourceName;
     private String sourceType;
     private String description;
@@ -27,123 +31,5 @@ public class DataSourceInfo {
     private String manager;
     private String managerId;
     private String serviceType;
-
-    public String getServiceType() {
-        return serviceType;
-    }
-
-    public void setServiceType(String serviceType) {
-        this.serviceType = serviceType;
-    }
-
-    public String getManagerId() {
-        return managerId;
-    }
-
-    public void setManagerId(String managerId) {
-        this.managerId = managerId;
-    }
-
-    public String getManager() {
-        return manager;
-    }
-
-    public void setManager(String manager) {
-        this.manager = manager;
-    }
-
-    public String getOracleDb() {
-        return oracleDb;
-    }
-
-    public void setOracleDb(String oracleDb) {
-        this.oracleDb = oracleDb;
-    }
-
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    public void setSourceName(String sourceName) {
-        this.sourceName = sourceName;
-    }
-
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public void setDatabase(String database) {
-        this.database = database;
-    }
-
-    public String getJdbcParameter() {
-        return jdbcParameter;
-    }
-
-    public void setJdbcParameter(String jdbcParameter) {
-        this.jdbcParameter = jdbcParameter;
-    }
-
-    @Override
-    public String toString() {
-        return "DataSourceInfo{" +
-               "sourceName='" + sourceName + '\'' +
-               ", sourceType='" + sourceType + '\'' +
-               ", description='" + description + '\'' +
-               ", ip='" + ip + '\'' +
-               ", port='" + port + '\'' +
-               ", userName='" + userName + '\'' +
-               ", password='" + password + '\'' +
-               ", database='" + database + '\'' +
-               ", jdbcParameter='" + jdbcParameter + '\'' +
-               '}';
-    }
+    private String pool;
 }

@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Base Exception class for Atlas API.
  */
-public class AtlasBaseException extends Exception {
+public class AtlasBaseException extends RuntimeException {
 
     private AtlasErrorCode atlasErrorCode;
     private String detail;

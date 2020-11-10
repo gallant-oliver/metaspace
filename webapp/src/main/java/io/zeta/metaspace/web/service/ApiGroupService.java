@@ -24,23 +24,29 @@ import io.zeta.metaspace.model.apigroup.ApiGroupStatusApi;
 import io.zeta.metaspace.model.apigroup.ApiGroupV2;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.moebius.MoebiusApiGroup;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
+import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.ApiLog;
 import io.zeta.metaspace.model.share.ApiLogEnum;
 import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.ApiGroupDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DataServiceUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +57,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,6 +67,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ApiGroupService {
+    private static final Logger LOG = LoggerFactory.getLogger(ApiGroupService.class);
     @Autowired
     ApiGroupDAO apiGroupDAO;
     @Autowired
@@ -91,6 +99,59 @@ public class ApiGroupService {
             apiGroupDAO.insertApiRelation(apiInfoByIds,group.getId());
         }
         addApiGroupLogs(ApiGroupLogEnum.INSERT, Lists.newArrayList(id),AdminUtils.getUserData().getUserId());
+        List<String> apiMobiusId = apiGroupDAO.getGroupRelationMobiusId(group.getId());
+        String groupMobiusIds = createGroupMobius(group,apiMobiusId);
+        apiGroupDAO.updateApiMobiusId(id,groupMobiusIds);
+    }
+
+    public String createGroupMobius(ApiGroupV2 group,List<String> apiIds){
+        MoebiusApiGroup moebiusApiGroup = new MoebiusApiGroup();
+        List<String> usersEmailByIds = userDAO.getUsersEmailByIds(group.getApprove());
+        moebiusApiGroup.setName(group.getName());
+        moebiusApiGroup.setAuditor(usersEmailByIds);
+        moebiusApiGroup.setDesc(group.getDescription());
+        moebiusApiGroup.setApi_ids(apiIds);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity";
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(moebiusApiGroup, MoebiusApiGroup.class);
+        String groupId=null;
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    groupId=String.valueOf(response.get("id"));
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台创建能力失败");
+        }
+        return groupId;
+    }
+
+    public Map convertMobiusResponse(String message) {
+        Gson gson = new Gson();
+        Map response = gson.fromJson(message, Map.class);
+        return response;
     }
 
     public void updateApiGroup(ApiGroupV2 group,String tenantId) throws AtlasBaseException {
@@ -123,7 +184,89 @@ public class ApiGroupService {
         }
         apiGroupDAO.updateRelation(apis,group.getId());
         addApiGroupLogs(ApiGroupLogEnum.UPDATE, Lists.newArrayList(group.getId()),AdminUtils.getUserData().getUserId());
+        List<String> apiMobiusId = apiGroupDAO.getGroupRelationMobiusId(group.getId());
+        updateGroupMobius(group,apiMobiusId);
+    }
 
+    public void updateGroupMobius(ApiGroupV2 group,List<String> apiMobiusIds){
+        MoebiusApiGroup moebiusApiGroup = new MoebiusApiGroup();
+        List<String> usersEmailByIds = userDAO.getUsersEmailByIds(group.getApprove());
+        moebiusApiGroup.setName(group.getName());
+        moebiusApiGroup.setAuditor(usersEmailByIds);
+        moebiusApiGroup.setApi_ids(apiMobiusIds);
+        String apiMobiusId = apiGroupDAO.getApiGroupMobiusId(group.getId());
+        moebiusApiGroup.setId(apiMobiusId);
+        moebiusApiGroup.setDesc(group.getDescription());
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity";
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(moebiusApiGroup, MoebiusApiGroup.class);
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台更新能力失败");
+        }
+    }
+
+    public void updateMobiusApiRelation(String mobiusGroupId,List<String> moebiusApiIds){
+        Map<String,Object> map = new HashMap<>();
+        map.put("capacity_id",mobiusGroupId);
+        map.put("api_ids",moebiusApiIds);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity/api";
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(map);
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台能力关联api失败");
+        }
     }
 
     public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId,Boolean publish){
@@ -200,9 +343,9 @@ public class ApiGroupService {
             apiGroupDAO.unUpdateApiRelationVersion(ignoreId,groupId);
         }
         addApiGroupLogs(ApiGroupLogEnum.UPLEVEL, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
-
-
-        //todo 通知云平台变更发布状态
+        String groupMobiusId = apiGroupDAO.getApiGroupMobiusId(groupId);
+        List<String> apiMobiusId = apiGroupDAO.getGroupRelationMobiusId(groupId);
+        updateMobiusApiRelation(groupMobiusId,apiMobiusId);
 
     }
 
@@ -221,17 +364,23 @@ public class ApiGroupService {
             apiGroupDAO.unUpdateApiRelationVersion(updateId,groupId);
         }
         addApiGroupLogs(ApiGroupLogEnum.UPLEVEL, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
-
+        String groupMobiusId = apiGroupDAO.getApiGroupMobiusId(groupId);
+        List<String> apiMobiusId = apiGroupDAO.getGroupRelationMobiusId(groupId);
+        updateMobiusApiRelation(groupMobiusId,apiMobiusId);
     }
 
     public void updatePublish(String groupId,boolean publish) throws AtlasBaseException {
+        String status;
         if (publish){
             publish(groupId);
+            status="release";
         }else{
             unPublish(groupId);
+            status="draft";
         }
         apiGroupDAO.updatePublish(groupId,publish);
-        //todo 通知云平台变更发布状态
+        String apiGroupMobiusId = apiGroupDAO.getApiGroupMobiusId(groupId);
+        updateMobiusGroupStatus(apiGroupMobiusId,status);
 
 
     }
@@ -246,7 +395,6 @@ public class ApiGroupService {
             return;
         }
         addApiGroupLogs(ApiGroupLogEnum.PUBLISH, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
-        //todo 通知云平台变更发布状态
 
     }
 
@@ -262,6 +410,44 @@ public class ApiGroupService {
         addApiGroupLogs(ApiGroupLogEnum.UNPUBLISH, Lists.newArrayList(groupId),AdminUtils.getUserData().getUserId());
     }
 
+    public void updateMobiusGroupStatus(String mobiusGroupId,String status){
+        Map<String,Object> map = new HashMap<>();
+        map.put("id",mobiusGroupId);
+        map.put("status",status);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity/status";
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        Gson gson = new Gson();
+        String jsonStr = gson.toJson(map);
+        while(retryCount < retries) {
+            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "更新云平台能力失败");
+        }
+    }
+
     public void deleteApiGroup(List<String> apiGroupIds) throws AtlasBaseException {
         if (apiGroupIds==null||apiGroupIds.size()==0){
             return;
@@ -272,9 +458,49 @@ public class ApiGroupService {
         apiGroupDAO.deleteRelationByGroupIds(apiGroupIds);
         apiGroupDAO.deleteApiGroup(apiGroupIds);
         addApiGroupLogs(ApiGroupLogEnum.UNPUBLISH, apiGroupIds,AdminUtils.getUserData().getUserId());
+        List<String> apiMobiusIdsByIds = apiGroupDAO.getApiMobiusIdsByIds(apiGroupIds);
+        for (String mobiusGroupId:apiMobiusIdsByIds){
+            deleteMobiusGroup(mobiusGroupId);
+        }
 
-        //todo 通知云平台
+    }
 
+
+    public void deleteMobiusGroup(String mobiusGroupId){
+        Map<String,String> map = new HashMap<>();
+        String ticket = AdminUtils.getSSOTicket();
+        map.put("X-SSO-FullticketId",ticket);
+        int retries = 3;
+        int retryCount = 0;
+        String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity";
+        mobiusURL=mobiusURL+"?id="+mobiusGroupId;
+        String errorId = null;
+        String errorReason = null;
+        String proper = "0.0";
+        while(retryCount < retries) {
+            String res = OKHttpClient.doDelete(mobiusURL, map);
+            LOG.info(res);
+            if(Objects.nonNull(res)) {
+                Map response = convertMobiusResponse(res);
+                errorId = String.valueOf(response.get("error-id"));
+                errorReason = String.valueOf(response.get("reason"));
+                if (proper.equals(errorId)) {
+                    break;
+                } else {
+                    retryCount++;
+                }
+            } else {
+                retryCount++;
+            }
+        }
+        if(!proper.equals(errorId)) {
+            StringBuffer detail = new StringBuffer();
+            detail.append("云平台返回错误码:");
+            detail.append(errorId);
+            detail.append("错误信息:");
+            detail.append(errorReason);
+            throw new AtlasBaseException(detail.toString(),AtlasErrorCode.BAD_REQUEST, "云平台能力删除失败");
+        }
     }
 
     public List<String> getApiGroupNames(List<String> groupIds){

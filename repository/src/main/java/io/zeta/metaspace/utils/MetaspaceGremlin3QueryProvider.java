@@ -270,6 +270,16 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').as('instance').inE().outV().has('__typeName','rdbms_db').as('db').inE().outV().has('__typeName','rdbms_table').as('table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().as('column').select('column','table','db','instance').range(%s,%s).toList()";
             case RDBMS_COLUMN_COUNT_BY_QUERY:
                 return "g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').inE().outV().has('__typeName','rdbms_db').inE().outV().has('__typeName','rdbms_table').inE().outV().has('__typeName','rdbms_column').has('Asset.name',org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().count().toList()";
+
+            case FULL_HBASE_NS_BY_STATE:
+                return "g.tx().commit();g.V().has('__typeName','hbase_namespace').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+            case NAMESPACE_TABLE_BY_STATE:
+                return "g.tx().commit();g.V().has('__typeName','hbase_namespace').has('Asset.name', '%s').inE().outV().has('__typeName','hbase_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+            case HBASE_TABLE_BY_STATE:
+                return "g.tx().commit();g.V().has('__typeName','hbase_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+            case HBASE_NS_TABLE_COLUMN_FAMILY:
+                return "g.tx().commit();g.V().has('__typeName','hbase_namespace').has('Asset.name', '%s').inE().outV().has('__typeName','hbase_table').has('Asset.name', '%s').inE().outV().has('__typeName','hbase_column_family').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+
             default:
                 return null;
         }

@@ -17,6 +17,7 @@ public class MetaspaceConfig {
     private static String hbaseConf;
     private static String hiveConfig;
     private static String metaspaceUrl;
+    private static boolean dataService;
     public static List<String> systemCategory = new ArrayList<String>(){{
         add("1");
         add("2");
@@ -38,6 +39,7 @@ public class MetaspaceConfig {
     public static String getHiveAdmin(){
         return hiveAdmin;
     }
+    public static boolean getDataService(){return dataService;}
 
     public static String getImpalaResourcePool() {
         return conf.getString("metaspace.impala.resource.pool","metaspace");
@@ -91,6 +93,7 @@ public class MetaspaceConfig {
             if (StringUtils.isEmpty(metaspaceUrl)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.request.address未正确配置");
             }
+            dataService=conf.getBoolean("metaspace.dataservice",false);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

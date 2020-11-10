@@ -36,10 +36,11 @@ import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.web.model.Progress;
-import io.zeta.metaspace.web.model.TableSchema;
+import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.util.AESUtils;
+import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -47,8 +48,6 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.io.File;
@@ -86,7 +85,6 @@ import javax.ws.rs.core.Response;
 @Singleton
 @Service
 public class DataSourceREST {
-    private static final Logger LOG = LoggerFactory.getLogger(DataSourceREST.class);
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -321,9 +319,8 @@ public class DataSourceREST {
             os.write(FileUtils.readFileToByteArray(xlsxFile));
             os.close();
             xlsxFile.delete();
-        }  catch (Exception e) {
-            e.printStackTrace();
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "下载报告失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"下载报告失败");
         }
     }
 
@@ -353,10 +350,8 @@ public class DataSourceREST {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
             }
             return dataSourceService.importDataSource(file,tenantId);
-        } catch (AtlasBaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件上传失败\n"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"文件上传失败");
        } finally {
             if(Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -417,8 +412,7 @@ public class DataSourceREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/import/{databaseType}/{sourceId}")
-    public Response synchronizeMetaData(@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
-        TableSchema  tableSchema = new TableSchema();
+    public Response synchronizeMetaData(TableSchema tableSchema,@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
         tableSchema.setInstance(sourceId);
         UserPrivilegeDataSource userPrivilegeDataSource = dataSourceService.getUserPrivilegesDataSource(AdminUtils.getUserData().getUserId(), sourceId);
         if (UserPrivilegeDataSource.READ.getPrivilege().equals(userPrivilegeDataSource.getPrivilege())) {
@@ -459,7 +453,6 @@ public class DataSourceREST {
             metadataService.stopSource(sourceId,threadMap.get(sourceId));
             importings.remove(sourceId);
             threadMap.remove(sourceId);
-            LOG.info("采集数据源正在停止，请稍候");
             return true;
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源未采集");
@@ -565,12 +558,8 @@ public class DataSourceREST {
             parameters.setOffset(offset);
             parameters.setQuery(search);
             return ReturnUtil.success(dataSourceService.getNoUserGroupByDataSource(tenantId, parameters, id));
-        }catch (AtlasBaseException e){
-            LOG.error("获取无权限用户组失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取无权限用户组失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"获取无权限用户组失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取无权限用户组失败");
         }
     }
 
@@ -597,12 +586,8 @@ public class DataSourceREST {
             parameters.setOffset(offset);
             parameters.setQuery(search);
             return ReturnUtil.success(dataSourceService.getUserGroupByDataSource(tenantId,parameters,id));
-        }catch (AtlasBaseException e){
-            LOG.error("获取用户组失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取权限用户组失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取权限用户组失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取权限用户组失败");
         }
     }
 
@@ -623,12 +608,8 @@ public class DataSourceREST {
         try {
             dataSourceService.deleteUserGroupByDataSource(userGroups,id);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("删除用户组权限失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("删除用户组权限失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "删除用户组权限失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"删除用户组权限失败");
         }
     }
 
@@ -649,12 +630,8 @@ public class DataSourceREST {
         try {
             dataSourceService.updateUserGroupByDataSource(privileges,id);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("更新用户组权限失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("更新用户组权限失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "更新用户组权限失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"更新用户组权限失败");
         }
     }
 
@@ -672,16 +649,11 @@ public class DataSourceREST {
     public Result addUserGroup2DataSource(@PathParam("id") String id, DataSourcePrivileges privileges)
             throws Exception
     {
-        LOG.info("新增项目用户组权限，项目id："+id+"用户组和权限"+privileges);
         try {
             dataSourceService.addUserGroup2DataSource(id,privileges);
             return ReturnUtil.success();
-        }catch (AtlasBaseException e){
-            LOG.error("新增项目用户组权限失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("新增项目用户组权限失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "新增项目用户组权限失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"新增项目用户组权限失败");
         }
 
     }
@@ -696,13 +668,17 @@ public class DataSourceREST {
         try {
             List<APIIdAndName> apiRely = dataSourceService.getAPIRely(ids);
             return ReturnUtil.success(apiRely);
-        }catch (AtlasBaseException e){
-            LOG.error("获取数据源依赖失败",e);
-            throw e;
-        }catch (Exception e){
-            LOG.error("获取数据源依赖失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e, "获取数据源依赖失败："+e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源依赖失败");
         }
     }
 
+    @GET
+    @Path("/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourceType(){
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType();
+        return ReturnUtil.success(dataSourceType);
+    }
 }
