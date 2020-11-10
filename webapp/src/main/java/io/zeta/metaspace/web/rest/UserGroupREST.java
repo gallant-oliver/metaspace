@@ -126,7 +126,6 @@ public class UserGroupREST {
     @OperateType(INSERT)
     public Result addUserGroup(@HeaderParam("tenantId") String tenantId, UserGroup userGroup) throws AtlasBaseException {
         try {
-            LOG.info("新建用户组时，您的租户ID为:" + tenantId + ",用户组名称为:" + userGroup.getName() + ",描述信息为：" + userGroup.getDescription());
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新建用户组："+userGroup.getName());
             userGroupService.addUserGroup(tenantId, userGroup);
             return ReturnUtil.success();
@@ -145,7 +144,6 @@ public class UserGroupREST {
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteUserGroupByID(@PathParam("id") String id) throws AtlasBaseException {
         try {
-            LOG.info("删除用户组信息时，您的用户组ID为:" + id);
             UserGroup userGroupByID = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组："+userGroupByID.getName());
             userGroupService.deleteUserGroupByID(id);
@@ -170,7 +168,6 @@ public class UserGroupREST {
             @DefaultValue("10") @QueryParam("limit") int limit,
             @QueryParam("search") String search,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            LOG.info("获取用户组成员列表及搜索");
             PageResult<MemberListAndSearchResult> pageResult = userGroupService.getUserGroupMemberListAndSearch(id,offset, limit, search,tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
@@ -304,10 +301,8 @@ public class UserGroupREST {
             userGroupService.updateUserGroupInformation(groupId, userGroup,tenantId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
-            LOG.error("修改用户组管理信息失败", e);
             throw e;
         }catch (Exception e) {
-            LOG.error("修改用户组管理信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"修改用户组管理信息失败");
         }
     }

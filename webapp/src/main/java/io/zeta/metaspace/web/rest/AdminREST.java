@@ -185,27 +185,4 @@ public class AdminREST {
         }
     }
 
-    /**
-     * 根据版本获取api详情
-     * @param apiId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/apiinfo/{apiId}/{version}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiInfoByVersion(@PathParam("apiId")String apiId,@PathParam("version")String version) throws AtlasBaseException {
-        try {
-            ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId,version);
-            return ReturnUtil.success(apiInfo);
-        } catch (AtlasBaseException e) {
-            LOG.error("获取详情失败",e);
-            throw e;
-        } catch (Exception e) {
-            LOG.error("获取详情失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
-        }
-    }
-
 }
