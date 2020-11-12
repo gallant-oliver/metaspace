@@ -89,7 +89,7 @@ public class AtlasBaseException extends RuntimeException {
 
     public AtlasBaseException(String detail,AtlasErrorCode errorCode, Throwable cause, String ... params) {
         super(errorCode.getFormattedErrorMessage(params), cause);
-        this.atlasErrorCode = AtlasErrorCode.INTERNAL_ERROR;
+        this.atlasErrorCode = errorCode;
         this.detail=detail;
     }
 
