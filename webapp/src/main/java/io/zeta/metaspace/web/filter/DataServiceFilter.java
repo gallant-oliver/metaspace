@@ -57,11 +57,11 @@ public class DataServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         Gson gson = new Gson();
         QueryResult queryResult= null;
-        response.setContentType("text/html;charset=utf-8");
-        request.setCharacterEncoding("utf-8");
-        PrintWriter outputStream = response.getWriter();
         httpServletResponse.setHeader("Content-Type" ,"application/json; charset=UTF-8");
         if (FilterUtils.isDataService(requestURL)){
+            response.setContentType("text/html;charset=utf-8");
+            request.setCharacterEncoding("utf-8");
+            PrintWriter outputStream = response.getWriter();
             try {
                 queryResult = DataServiceUtil.queryApiData(httpServletRequest);
             } catch (AtlasBaseException e) {
