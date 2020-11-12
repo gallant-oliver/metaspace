@@ -23,6 +23,7 @@ import org.apache.atlas.type.BaseAtlasType;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,7 +57,9 @@ public class DataServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         Gson gson = new Gson();
         QueryResult queryResult= null;
-        ServletOutputStream outputStream = response.getOutputStream();
+        response.setContentType("text/html;charset=utf-8");
+        request.setCharacterEncoding("utf-8");
+        PrintWriter outputStream = response.getWriter();
         httpServletResponse.setHeader("Content-Type" ,"application/json; charset=UTF-8");
         if (FilterUtils.isDataService(requestURL)){
             try {
@@ -79,6 +82,7 @@ public class DataServiceFilter implements Filter {
                 return;
             }
             String jsonStr = gson.toJson(queryResult);
+
             outputStream.print(jsonStr);
             return;
         }else{
