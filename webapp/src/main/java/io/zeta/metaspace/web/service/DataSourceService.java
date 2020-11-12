@@ -1255,7 +1255,7 @@ public class DataSourceService {
     }
 
     public List<DataSourceTypeInfo> getDataSourceType(){
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->!type.isBuildIn()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->!(type.isBuildIn())&&type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.getDefaultPort())).collect(Collectors.toList());
         return typeNames;
     }
 }
