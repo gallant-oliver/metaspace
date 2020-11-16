@@ -1572,16 +1572,17 @@ public class DataShareService {
         List<String> groupIds = apiGroupDAO.getApiGroupIdByProject(projectIds);
         groupService.deleteApiGroup(groupIds);
         List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
-
-        apiMobiusByProjects.forEach(id->{
-            if(id!=null||id.length()!=0){
-                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
-                deleteApiMobius(id,groupMobiusIds);
-            }
-
-        });
-        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
-        mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
+//        apiMobiusByProjects.add("abc");
+//        apiMobiusByProjects.forEach(id->{
+//            throw new RuntimeException("abc");
+////            if(id!=null&&id.length()!=0){
+////                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
+////                deleteApiMobius(id,groupMobiusIds);
+////            }
+//
+//        });
+//        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
+//        mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
     }
 
     /**
@@ -2063,7 +2064,7 @@ public class DataShareService {
                     shareDAO.deleteApiByCategory(categoryDelete.getId());
                     List<String> apiMobiusByCategory = shareDAO.getApiMobiusByCategory(categoryDelete.getId());
                     apiMobiusByCategory.forEach(id->{
-                        if(id!=null||id.length()!=0){
+                        if(id!=null&&id.length()!=0){
                             List<String> groupIds  = shareDAO.getMobiusApiGroupIds(id);
                             deleteApiMobius(id,groupIds);
                         }
