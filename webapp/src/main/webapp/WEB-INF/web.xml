@@ -61,7 +61,6 @@
         <param-name>contextConfigLocation</param-name>
 
         <param-value>
-            classpath:net/bull/javamelody/monitoring-spring-aop.xml
             classpath:applicationContext.xml
         </param-value>
 
