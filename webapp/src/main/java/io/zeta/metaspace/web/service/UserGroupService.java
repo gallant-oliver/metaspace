@@ -201,13 +201,13 @@ public class UserGroupService {
         SecuritySearch securitySearch = new SecuritySearch();
         securitySearch.setUserName(search);
         securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(offset, limit, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
         if (userIds == null || userIds.size() == 0) {
             return commonResult;
         }
 
-        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,0, -1, null,userIds);
+        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,offset, limit, null,userIds);
 
         if (lists == null || lists.size() == 0) {
             return commonResult;
