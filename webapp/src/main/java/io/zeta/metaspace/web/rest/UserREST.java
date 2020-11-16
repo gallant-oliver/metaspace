@@ -13,9 +13,16 @@
 
 package io.zeta.metaspace.web.rest;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
+
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UserGroupService;
@@ -91,8 +98,11 @@ public class UserREST {
     @PUT
     @Path("{userId}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result updateGroupByUser(@PathParam("userId") String userId, Map<String,List<String>> map,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
+            User userInfo = usersService.getUserInfo(userId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USER.getAlias(), "修改用户的权限用户组用户组：" + userInfo.getUsername());
             List<String> userGroups=map.get("userGroups");
             usersService.updateGroupByUser(userId,userGroups,tenantId);
             return ReturnUtil.success();

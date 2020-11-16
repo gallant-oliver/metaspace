@@ -435,6 +435,12 @@ public class UsersService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }
+
+    public User getUserInfo(String userId){
+        User userInfo = userDAO.getUserInfo(userId);
+        return userInfo;
+    }
+
     public void updateGroupByUser(String userId,List<String> userGroups,String tenantId) throws AtlasBaseException {
         userDAO.deleteGroupByUser(userId,tenantId);
         if (userGroups==null||userGroups.size()==0){
