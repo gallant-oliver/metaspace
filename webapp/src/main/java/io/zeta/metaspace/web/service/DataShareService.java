@@ -2610,7 +2610,7 @@ public class DataShareService {
     }
 
     public List<DataSourceTypeInfo> getDataSourceType(){
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.isBuildIn())).collect(Collectors.toList());
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.isBuildIn())).collect(Collectors.toList());
         return typeNames;
     }
 }
