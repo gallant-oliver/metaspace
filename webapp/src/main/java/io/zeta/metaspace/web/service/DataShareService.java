@@ -2489,6 +2489,7 @@ public class DataShareService {
         return !(shareDAO.queryApiSameName(name, tenantId, projectId,"")==0);
     }
 
+    @HystrixCommand()
     public QueryResult queryApiDataV2(HttpServletRequest request) throws AtlasBaseException {
         String requestURL = request.getRequestURL().toString();
         String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
