@@ -262,12 +262,12 @@ public interface ApiGroupDAO {
     public String getApiGroupMobiusId(@Param("id")String id);
 
     @Select("<script>" +
-            "select mobius_id from api where valid=true and guid in " +
+            "select mobius_id from api_group where id in " +
             " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
             " #{id}" +
             " </foreach>" +
             "</script>")
-    public List<String> getApiMobiusIdsByIds(@Param("ids")List<String> ids);
+    public List<String> getApiGroupMobiusIdsByIds(@Param("ids")List<String> ids);
 
     @Select("select api.mobius_id from api_relation join api on api.guid=api_relation.apiid and api.version=api_relation.version where groupid=#{id} ")
     public List<String> getGroupRelationMobiusId(@Param("id")String id);

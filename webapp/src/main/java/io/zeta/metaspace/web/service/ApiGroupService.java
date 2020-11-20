@@ -455,10 +455,10 @@ public class ApiGroupService {
         for (String api:apiGroupIds){
             publish(api);
         }
+        List<String> apiMobiusIdsByIds = apiGroupDAO.getApiGroupMobiusIdsByIds(apiGroupIds);
         apiGroupDAO.deleteRelationByGroupIds(apiGroupIds);
         apiGroupDAO.deleteApiGroup(apiGroupIds);
         addApiGroupLogs(ApiGroupLogEnum.UNPUBLISH, apiGroupIds,AdminUtils.getUserData().getUserId());
-        List<String> apiMobiusIdsByIds = apiGroupDAO.getApiMobiusIdsByIds(apiGroupIds);
         for (String mobiusGroupId:apiMobiusIdsByIds){
             deleteMobiusGroup(mobiusGroupId);
         }
