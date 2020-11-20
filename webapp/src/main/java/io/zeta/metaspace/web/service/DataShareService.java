@@ -1564,6 +1564,18 @@ public class DataShareService {
         if (projectManagers.size() != 1 || !projectManagers.get(0).equals(userId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法删除项目权限");
         }
+        if (shareDAO.getApiUpNumByProjects(projectIds)!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在上架的api，无法删除");
+        }
+        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
+        List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
+        apiMobiusByProjects.forEach(id->{
+            if(id!=null&&id.length()!=0){
+                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
+                deleteApiMobius(id,groupMobiusIds);
+            }
+
+        });
         shareDAO.deleteProject(projectIds);
         shareDAO.deleteProjectRelation(projectIds);
         //删除项目下的api
@@ -1571,18 +1583,7 @@ public class DataShareService {
         shareDAO.deleteCategoryByProject(projectIds);
         List<String> groupIds = apiGroupDAO.getApiGroupIdByProject(projectIds);
         groupService.deleteApiGroup(groupIds);
-        List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
-//        apiMobiusByProjects.add("abc");
-//        apiMobiusByProjects.forEach(id->{
-//            throw new RuntimeException("abc");
-////            if(id!=null&&id.length()!=0){
-////                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
-////                deleteApiMobius(id,groupMobiusIds);
-////            }
-//
-//        });
-//        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
-//        mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
+        mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
     }
 
     /**
@@ -2050,14 +2051,10 @@ public class DataShareService {
             }
             String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
             String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-                shareDAO.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
-            }
-            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-                shareDAO.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
-            }
-            shareDAO.deleteCategory(categoryDelete.getId(),tenantId);
             if (categoryDelete.isDeleteApi()){
+                if (shareDAO.getApiUpByCategory(categoryDelete.getId())!=0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在上架的api，无法删除");
+                }
                 List<String> apiIds = shareDAO.getApiIdByCategory(categoryDelete.getId());
                 if (apiIds!=null&&apiIds.size()!=0){
                     addApiLogs(ApiLogEnum.DELETE,apiIds,AdminUtils.getUserData().getUserId());
@@ -2079,6 +2076,13 @@ public class DataShareService {
                 String newCategoryId = initCategory.getGuid();
                 shareDAO.upDateApiByCategory(categoryDelete.getId(),newCategoryId);
             }
+            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
+                shareDAO.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
+            }
+            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
+                shareDAO.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
+            }
+            shareDAO.deleteCategory(categoryDelete.getId(),tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
