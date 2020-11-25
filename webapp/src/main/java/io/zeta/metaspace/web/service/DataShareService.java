@@ -1771,7 +1771,7 @@ public class DataShareService {
         addApiLogs(ApiLogEnum.DELETE,ids,AdminUtils.getUserData().getUserId());
         for(String apiMobiuId:apiMobiusIds){
             if (StringUtils.isNotEmpty(apiMobiuId)){
-                if(apiMobiuId!=null||apiMobiuId.length()!=0){
+                if(apiMobiuId!=null&&apiMobiuId.length()!=0){
                     List<String> groupIds  = shareDAO.getMobiusApiGroupIds(apiMobiuId);
                     deleteApiMobius(apiMobiuId,groupIds);
                 }
@@ -2214,6 +2214,9 @@ public class DataShareService {
                 map.put("status","not_release");
             }
             for (String apiMobiusId:apiMobiusIds){
+                if (apiMobiusId==null){
+                    continue;
+                }
                 map.put("id",apiMobiusId);
                 Gson gson = new Gson();
                 String jsonStr = gson.toJson(map);

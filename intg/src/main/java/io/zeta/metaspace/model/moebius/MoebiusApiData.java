@@ -34,11 +34,15 @@ public class MoebiusApiData {
         urlBuffer.append(apiInfoV2.getGuid());
         urlBuffer.append("/");
         urlBuffer.append(apiInfoV2.getVersion());
+        this.path=urlBuffer.toString();
         if (apiInfoV2!=null&&apiInfoV2.getPath()!=null&&!apiInfoV2.getPath().startsWith("/")){
             urlBuffer.append("/");
         }
-        urlBuffer.append(apiInfoV2.getPath());
+        if (apiInfoV2.getPath()!=null){
+            urlBuffer.append(apiInfoV2.getPath());
+        }
         this.url = urlBuffer.toString();
+        path=url.substring(0,url.indexOf("{"));
         this.method=apiInfoV2.getRequestMode();
         this.version=apiInfoV2.getVersion();
     }
@@ -48,6 +52,8 @@ public class MoebiusApiData {
     private String desc;
     //路径
     private String url;
+    //path
+    private String path;
     //方法
     private String method;
     //地址
