@@ -111,6 +111,7 @@ public class ApiGroupService {
         moebiusApiGroup.setAuditor(usersEmailByIds);
         moebiusApiGroup.setDesc(group.getDescription());
         moebiusApiGroup.setApi_ids(apiIds);
+        moebiusApiGroup.setOrigin("metaspace");
         int retries = 3;
         int retryCount = 0;
         String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity";
