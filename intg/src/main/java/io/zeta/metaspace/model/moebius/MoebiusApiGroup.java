@@ -33,4 +33,5 @@ public class MoebiusApiGroup {
     private String id;
     //关联的api
     private List<String> api_ids;
+    private String origin;
 }

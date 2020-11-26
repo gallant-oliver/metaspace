@@ -221,9 +221,9 @@ public class AuditService {
     public String mobiusCreateApi(ApiInfoV2 apiInfoV2){
         MoebiusApi api = new MoebiusApi();
         MoebiusApiData data = new MoebiusApiData(apiInfoV2);
-        MoebiusApiParam param = getMoebiusApiParam(apiInfoV2);
+        api.setPath(data.getPath());
+        setMoebiusApiParam(apiInfoV2,api);
         data.setUpstream(apiInfoV2.getProtocol().toLowerCase()+"://"+getMetaspaceHost());
-        api.setApi_param(param);
         api.setMeta_data(data);
         if (ApiStatusEnum.DOWN.getName().equalsIgnoreCase(apiInfoV2.getStatus())){
             api.setStatus("draft");
@@ -278,12 +278,11 @@ public class AuditService {
         return response;
     }
 
-    public MoebiusApiParam getMoebiusApiParam(ApiInfoV2 apiInfoV2){
-        MoebiusApiParam moebiusApiParam = new MoebiusApiParam();
+    public MoebiusApi setMoebiusApiParam(ApiInfoV2 apiInfoV2,MoebiusApi api){
         getParam(apiInfoV2.getGuid(),apiInfoV2,apiInfoV2.getVersion());
         List<ApiInfoV2.FieldV2> params = apiInfoV2.getParam();
         List<MoebiusApiParam.HeaderParam> headerParamList = new ArrayList<>();
-        List<MoebiusApiParam.BodyParam> returnParamList = new ArrayList<>();
+        Map<String,MoebiusApiParam.BodyParam> returnParamMap = new HashMap<>();
         List<MoebiusApiParam.QueryParam> queryParamList = new ArrayList<>();
         params.forEach(param->{
             String place = param.getPlace();
@@ -307,23 +306,35 @@ public class AuditService {
         });
         apiInfoV2.getReturnParam().forEach(param->{
             MoebiusApiParam.BodyParam bodyParam = new MoebiusApiParam.BodyParam();
-            bodyParam.setType(param.getType());
+            bodyParam.setType(param.getColumnType());
             bodyParam.setDescription(param.getDescription());
-            returnParamList.add(bodyParam);
+            returnParamMap.put(param.getName(),bodyParam);
         });
 
         Gson gson = new Gson();
+        MoebiusApiParam.QueryParam numParam = new MoebiusApiParam.QueryParam();
+        numParam.setQueryName("page_num");
+        numParam.setQueryType("number");
+        numParam.setQueryExample("0");
+        numParam.setIsrequired(1);
+        queryParamList.add(numParam);
+        MoebiusApiParam.QueryParam sizeParam = new MoebiusApiParam.QueryParam();
+        sizeParam.setQueryName("page_size");
+        sizeParam.setQueryType("number");
+        sizeParam.setQueryExample("10");
+        sizeParam.setIsrequired(1);
+        queryParamList.add(sizeParam);
         String queryString = gson.toJson(queryParamList);
         String headerString = gson.toJson(headerParamList);
         Map<String,Object> map = new HashMap<>();
         map.put("type","object");
         map.put("title","empty object");
-        map.put("properties",returnParamList);
+        map.put("properties",returnParamMap);
         String returnString = gson.toJson(map);
-        moebiusApiParam.setResBody(returnString);
-        moebiusApiParam.setParamQuery(queryString);
-        moebiusApiParam.setParamHeaders(headerString);
-        return moebiusApiParam;
+        api.setResBody(returnString);
+        api.setParamQuery(queryString);
+        api.setParamHeaders(headerString);
+        return api;
     }
 
     public ApiInfoV2 getParam(String guid,ApiInfoV2 apiInfo,String version) throws AtlasBaseException {

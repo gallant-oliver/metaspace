@@ -111,6 +111,7 @@ public class ApiGroupService {
         moebiusApiGroup.setAuditor(usersEmailByIds);
         moebiusApiGroup.setDesc(group.getDescription());
         moebiusApiGroup.setApi_ids(apiIds);
+        moebiusApiGroup.setOrigin("metaspace");
         int retries = 3;
         int retryCount = 0;
         String mobiusURL= DataServiceUtil.mobiusUrl + "/v3/open/capacity";
@@ -455,10 +456,10 @@ public class ApiGroupService {
         for (String api:apiGroupIds){
             publish(api);
         }
+        List<String> apiMobiusIdsByIds = apiGroupDAO.getApiGroupMobiusIdsByIds(apiGroupIds);
         apiGroupDAO.deleteRelationByGroupIds(apiGroupIds);
         apiGroupDAO.deleteApiGroup(apiGroupIds);
         addApiGroupLogs(ApiGroupLogEnum.UNPUBLISH, apiGroupIds,AdminUtils.getUserData().getUserId());
-        List<String> apiMobiusIdsByIds = apiGroupDAO.getApiMobiusIdsByIds(apiGroupIds);
         for (String mobiusGroupId:apiMobiusIdsByIds){
             deleteMobiusGroup(mobiusGroupId);
         }

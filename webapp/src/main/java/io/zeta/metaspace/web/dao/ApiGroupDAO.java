@@ -242,7 +242,7 @@ public interface ApiGroupDAO {
             " select api.guid apiId,api.name apiName,api_category.guid categoryId,api_category.name categoryName,api.version apiVersion,api.status from" +
             " api join api_category on api_category.guid=api.categoryguid join " +
             " (select guid,max(version_num) version_num from api where " +
-            " valid=true and (status='up' or status='down') and projectid=#{projectId} " +
+            " valid=true and status='up' and projectid=#{projectId} " +
             " group by guid) v on api.guid=v.guid and api.version_num=v.version_num " +
             " where api.valid=true and api.projectid=#{projectId}" +
             " <if test=\"search != null and search!=''\">" +
@@ -262,12 +262,12 @@ public interface ApiGroupDAO {
     public String getApiGroupMobiusId(@Param("id")String id);
 
     @Select("<script>" +
-            "select mobius_id from api where valid=true and guid in " +
+            "select mobius_id from api_group where id in " +
             " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
             " #{id}" +
             " </foreach>" +
             "</script>")
-    public List<String> getApiMobiusIdsByIds(@Param("ids")List<String> ids);
+    public List<String> getApiGroupMobiusIdsByIds(@Param("ids")List<String> ids);
 
     @Select("select api.mobius_id from api_relation join api on api.guid=api_relation.apiid and api.version=api_relation.version where groupid=#{id} ")
     public List<String> getGroupRelationMobiusId(@Param("id")String id);

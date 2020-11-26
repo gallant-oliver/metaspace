@@ -22,7 +22,10 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.type.BaseAtlasType;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,31 +59,34 @@ public class DataServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         Gson gson = new Gson();
         QueryResult queryResult= null;
-        ServletOutputStream outputStream = response.getOutputStream();
         httpServletResponse.setHeader("Content-Type" ,"application/json; charset=UTF-8");
         if (FilterUtils.isDataService(requestURL)){
-            try {
-                queryResult = DataServiceUtil.queryApiData(httpServletRequest);
-            } catch (AtlasBaseException e) {
-                Map<String, String> errorJsonMap = new LinkedHashMap<>();
-                AtlasErrorCode errorCode = e.getAtlasErrorCode();
-                errorJsonMap.put("errorCode", errorCode.getErrorCode());
-                errorJsonMap.put("errorMessage", e.getMessage());
+            response.setContentType("text/html;charset=utf-8");
+            request.setCharacterEncoding("utf-8");
+            try(PrintWriter printWriter = response.getWriter()){
+                try {
+                    queryResult = DataServiceUtil.queryApiData(httpServletRequest);
+                } catch (AtlasBaseException e) {
+                    Map<String, String> errorJsonMap = new LinkedHashMap<>();
+                    AtlasErrorCode errorCode = e.getAtlasErrorCode();
+                    errorJsonMap.put("errorCode", errorCode.getErrorCode());
+                    errorJsonMap.put("errorMessage", e.getMessage());
 
-                if (e.getDetail() != null){
-                    errorJsonMap.put("detail", e.getDetail());
+                    if (e.getDetail() != null){
+                        errorJsonMap.put("detail", e.getDetail());
+                    }
+                    if (e.getCause() != null) {
+                        errorJsonMap.put("errorCause", e.getCause().getMessage());
+                    }
+                    httpServletResponse.setStatus(errorCode.getHttpCode().getStatusCode());
+                    String errorJson = gson.toJson(errorJsonMap);
+                    printWriter.print(errorJson);
+                    return;
                 }
-                if (e.getCause() != null) {
-                    errorJsonMap.put("errorCause", e.getCause().getMessage());
-                }
-                httpServletResponse.setStatus(errorCode.getHttpCode().getStatusCode());
-                String errorJson = gson.toJson(errorJsonMap);
-                outputStream.print(errorJson);
-                return;
+                String jsonStr = gson.toJson(queryResult);
+
+                printWriter.print(jsonStr);
             }
-            String jsonStr = gson.toJson(queryResult);
-            outputStream.print(jsonStr);
-            return;
         }else{
             chain.doFilter(request, response);
         }

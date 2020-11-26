@@ -207,7 +207,7 @@ public class UserGroupService {
             return commonResult;
         }
 
-        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,0, -1, null,userIds);
+        List<MemberListAndSearchResult> lists = userGroupDAO.getMemberListAndSearch(id,offset, limit, null,userIds);
 
         if (lists == null || lists.size() == 0) {
             return commonResult;

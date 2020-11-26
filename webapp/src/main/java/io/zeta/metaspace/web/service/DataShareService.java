@@ -1016,7 +1016,8 @@ public class DataShareService {
                 }
                 return str;
             }).collect(Collectors.toList());
-            filterJoiner.add(SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, valueList));
+            // 数据分享的过滤表达式固定是=
+            filterJoiner.add(SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName,"=", valueList));
         }
         return filterJoiner.toString();
     }
@@ -1564,6 +1565,18 @@ public class DataShareService {
         if (projectManagers.size() != 1 || !projectManagers.get(0).equals(userId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "非项目管理者无法删除项目权限");
         }
+        if (shareDAO.getApiUpNumByProjects(projectIds)!=0){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在上架的api，无法删除");
+        }
+        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
+        List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
+        apiMobiusByProjects.forEach(id->{
+            if(id!=null&&id.length()!=0){
+                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
+                deleteApiMobius(id,groupMobiusIds);
+            }
+
+        });
         shareDAO.deleteProject(projectIds);
         shareDAO.deleteProjectRelation(projectIds);
         //删除项目下的api
@@ -1571,16 +1584,6 @@ public class DataShareService {
         shareDAO.deleteCategoryByProject(projectIds);
         List<String> groupIds = apiGroupDAO.getApiGroupIdByProject(projectIds);
         groupService.deleteApiGroup(groupIds);
-        List<String> apiMobiusByProjects = shareDAO.getApiMobiusByProjects(projectIds);
-
-        apiMobiusByProjects.forEach(id->{
-            if(id!=null||id.length()!=0){
-                List<String> groupMobiusIds  = shareDAO.getMobiusApiGroupIds(id);
-                deleteApiMobius(id,groupMobiusIds);
-            }
-
-        });
-        List<String> mobiusGroupIds = apiGroupDAO.getMobiusByProjects(projectIds);
         mobiusGroupIds.forEach(apiGroupService::deleteMobiusGroup);
     }
 
@@ -1769,7 +1772,7 @@ public class DataShareService {
         addApiLogs(ApiLogEnum.DELETE,ids,AdminUtils.getUserData().getUserId());
         for(String apiMobiuId:apiMobiusIds){
             if (StringUtils.isNotEmpty(apiMobiuId)){
-                if(apiMobiuId!=null||apiMobiuId.length()!=0){
+                if(apiMobiuId!=null&&apiMobiuId.length()!=0){
                     List<String> groupIds  = shareDAO.getMobiusApiGroupIds(apiMobiuId);
                     deleteApiMobius(apiMobiuId,groupIds);
                 }
@@ -2049,21 +2052,17 @@ public class DataShareService {
             }
             String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
             String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
-            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-                shareDAO.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
-            }
-            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-                shareDAO.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
-            }
-            shareDAO.deleteCategory(categoryDelete.getId(),tenantId);
             if (categoryDelete.isDeleteApi()){
+                if (shareDAO.getApiUpByCategory(categoryDelete.getId())!=0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在上架的api，无法删除");
+                }
                 List<String> apiIds = shareDAO.getApiIdByCategory(categoryDelete.getId());
                 if (apiIds!=null&&apiIds.size()!=0){
                     addApiLogs(ApiLogEnum.DELETE,apiIds,AdminUtils.getUserData().getUserId());
                     shareDAO.deleteApiByCategory(categoryDelete.getId());
                     List<String> apiMobiusByCategory = shareDAO.getApiMobiusByCategory(categoryDelete.getId());
                     apiMobiusByCategory.forEach(id->{
-                        if(id!=null||id.length()!=0){
+                        if(id!=null&&id.length()!=0){
                             List<String> groupIds  = shareDAO.getMobiusApiGroupIds(id);
                             deleteApiMobius(id,groupIds);
                         }
@@ -2078,6 +2077,13 @@ public class DataShareService {
                 String newCategoryId = initCategory.getGuid();
                 shareDAO.upDateApiByCategory(categoryDelete.getId(),newCategoryId);
             }
+            if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
+                shareDAO.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid,tenantId);
+            }
+            if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
+                shareDAO.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid,tenantId);
+            }
+            shareDAO.deleteCategory(categoryDelete.getId(),tenantId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -2209,6 +2215,9 @@ public class DataShareService {
                 map.put("status","not_release");
             }
             for (String apiMobiusId:apiMobiusIds){
+                if (apiMobiusId==null){
+                    continue;
+                }
                 map.put("id",apiMobiusId);
                 Gson gson = new Gson();
                 String jsonStr = gson.toJson(map);
@@ -2401,12 +2410,14 @@ public class DataShareService {
                     continue;
                 }
             }
+            // 获取过滤表达式类型
+            String expressionType = field.getExpressionType();
             String columnType = field.getColumnType();
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
             String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
 
-            String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, Lists.newArrayList(str));
+            String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName,expressionType, Lists.newArrayList(str));
             filterJoiner.add(filterStr);
         }
         return filterJoiner.toString();
@@ -2488,6 +2499,7 @@ public class DataShareService {
         return !(shareDAO.queryApiSameName(name, tenantId, projectId,"")==0);
     }
 
+    @HystrixCommand()
     public QueryResult queryApiDataV2(HttpServletRequest request) throws AtlasBaseException {
         String requestURL = request.getRequestURL().toString();
         String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
@@ -2609,7 +2621,7 @@ public class DataShareService {
     }
 
     public List<DataSourceTypeInfo> getDataSourceType(){
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.isBuildIn())).collect(Collectors.toList());
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.isBuildIn())).collect(Collectors.toList());
         return typeNames;
     }
 }

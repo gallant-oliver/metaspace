@@ -414,7 +414,7 @@ public class UsersService {
             for (UserAndModule userAndModule:userAndModules.getLists()){
                 User user = userDAO.getUserByName(userAndModule.getUserName(), userAndModule.getEmail());
                 if (user==null){
-                    break;
+                    continue;
                 }
                 List<UserGroupIdAndName> userGroupName = userDAO.getUserGroupNameByUserId(user.getUserId(), tenantId);
                 user.setUserGroups(userGroupName);
@@ -435,6 +435,12 @@ public class UsersService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户列表失败");
         }
     }
+
+    public User getUserInfo(String userId){
+        User userInfo = userDAO.getUserInfo(userId);
+        return userInfo;
+    }
+
     public void updateGroupByUser(String userId,List<String> userGroups,String tenantId) throws AtlasBaseException {
         userDAO.deleteGroupByUser(userId,tenantId);
         if (userGroups==null||userGroups.size()==0){

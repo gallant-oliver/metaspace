@@ -22,6 +22,14 @@ import lombok.Data;
 @Data
 public class MoebiusApi {
     private MoebiusApiData meta_data;
-    private MoebiusApiParam api_param;
+    //body参数
+    private String paramBody;
+    //query参数
+    private String paramQuery;
+    //header参数
+    private String paramHeaders;
+    //返回参数
+    private String resBody;
     private String status;
+    private String path;
 }

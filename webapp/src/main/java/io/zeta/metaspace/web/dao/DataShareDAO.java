@@ -598,6 +598,9 @@ public interface DataShareDAO {
     @Select("select distinct guid from api where categoryguid=#{categoryId}")
     public List<String> getApiIdByCategory(@Param("categoryId")String categoryId);
 
+    @Select("select count(*) from api where categoryguid=#{categoryId} and status='up'")
+    public int getApiUpByCategory(@Param("categoryId")String categoryId);
+
     @Update("update api set status=#{status},updatetime=#{updateTime} where guid=#{guid}  and status!='draft' and status!='audit'")
     public int updateApiStatus(@Param("guid")String guid, @Param("status")String status, @Param("updateTime")Timestamp updateTime);
 
@@ -715,4 +718,12 @@ public interface DataShareDAO {
 
     @Select("select api_group.mobius_id from api join api_relation on api.guid=api_relation.apiid and api.version=api_relation.version join api_group on api_relation.groupid=api_group.id where api.mobius_id=#{id}")
     public List<String> getMobiusApiGroupIds(@Param("id")String id);
+
+    @Select("<script>" +
+            "select count(*) from api where status='up' and projectid in " +
+            " <foreach item='id' index='index' collection='projectIds' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public int getApiUpNumByProjects(@Param("projectIds")List<String> projectIds);
 }

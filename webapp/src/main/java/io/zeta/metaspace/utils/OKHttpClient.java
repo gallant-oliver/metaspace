@@ -190,6 +190,8 @@ public class OKHttpClient {
             if (StringUtils.isNotEmpty(bodyJson)){
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyJson);
                 builder.delete(body);
+            }else {
+                builder.delete();
             }
             if(Objects.nonNull(map)) {
                 Set<Map.Entry<String, String>> headerEntries = map.entrySet();
