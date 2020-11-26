@@ -48,9 +48,13 @@ public class OracleAdapterTransformer extends AbstractAdapterTransformer {
 
     /**
      * 处理 CLOB 类型的过滤条件
+     * @param column 过滤的列名
+     * @param values 过滤的值
+     * @param expressionType 过滤条件
+     * @return
      */
     @Override
-    public String getFilterConditionStr(String column, List<String> values) {
+    public String getFilterConditionStr(String column, List<String> values,String expressionType) {
         String template = "dbms_lob.instr(" + column + ",{0},1,1)<>0";
         return MessageFormat.format("( {0} )",values.stream().map(v->MessageFormat.format(template,v)).collect(Collectors.joining(" or ")));
     }

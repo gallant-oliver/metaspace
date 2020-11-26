@@ -1016,7 +1016,8 @@ public class DataShareService {
                 }
                 return str;
             }).collect(Collectors.toList());
-            filterJoiner.add(SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, valueList));
+            // 数据分享的过滤表达式固定是=
+            filterJoiner.add(SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName,"=", valueList));
         }
         return filterJoiner.toString();
     }
@@ -2409,12 +2410,14 @@ public class DataShareService {
                     continue;
                 }
             }
+            // 获取过滤表达式类型
+            String expressionType = field.getExpressionType();
             String columnType = field.getColumnType();
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
             String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
 
-            String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, Lists.newArrayList(str));
+            String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName,expressionType, Lists.newArrayList(str));
             filterJoiner.add(filterStr);
         }
         return filterJoiner.toString();
