@@ -379,10 +379,11 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                             LOG.info("接收数据条数为{}, 总耗时为{}ms", size, System.currentTimeMillis() - start);
                         }
                     } catch (IllegalStateException ex) {
+                        LOG.error("消费kafka数据发生错误", ex);
                         adaptiveWaiter.pause(ex);
                     } catch (Exception e) {
+                        LOG.warn("Exception in NotificationHookConsumer, 本次处理总耗时{}", System.currentTimeMillis() - start, e);
                         if (shouldRun.get()) {
-                            LOG.warn("Exception in NotificationHookConsumer, 本次处理总耗时{}",System.currentTimeMillis()- start, e);
                             adaptiveWaiter.pause(e);
                         } else {
                             break;
