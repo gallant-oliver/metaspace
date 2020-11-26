@@ -42,7 +42,12 @@ public class MoebiusApiData {
             urlBuffer.append(apiInfoV2.getPath());
         }
         this.url = urlBuffer.toString();
-        path=url.substring(0,url.indexOf("{"));
+        if (url.contains("{")){
+            path=url.substring(0,url.indexOf("{"));
+        }else{
+            path=url;
+        }
+
         this.method=apiInfoV2.getRequestMode();
         this.version=apiInfoV2.getVersion();
     }

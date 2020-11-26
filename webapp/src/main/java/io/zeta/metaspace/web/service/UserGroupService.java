@@ -201,7 +201,7 @@ public class UserGroupService {
         SecuritySearch securitySearch = new SecuritySearch();
         securitySearch.setUserName(search);
         securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(offset, limit, securitySearch);
+        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
         if (userIds == null || userIds.size() == 0) {
             return commonResult;

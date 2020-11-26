@@ -51,8 +51,15 @@ public interface AdapterTransformer {
         return originElement;
     }
 
-    default String getFilterConditionStr(String column, List<String> values) {
-        return SqlBuilderUtils.getFilterConditionStr(column, values);
+    /**
+     * 获取filter语句
+     * @param column 过滤的列名
+     * @param values 过滤的值
+     * @param expressionType 过滤条件
+     * @return
+     */
+    default String getFilterConditionStr(String column, List<String> values,String expressionType) {
+        return SqlBuilderUtils.getFilterConditionStr(column, values,expressionType);
     }
 
     /**
