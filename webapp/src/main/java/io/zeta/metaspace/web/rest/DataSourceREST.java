@@ -673,6 +673,10 @@ public class DataSourceREST {
         }
     }
 
+    /**
+     * 获取数据源类型
+     * @return
+     */
     @GET
     @Path("/type")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
