@@ -192,7 +192,12 @@ public class RoleService {
         try {
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             DateFormat startDf = new SimpleDateFormat("yyyyMMddHHmmss");
-            Date startDate = startDf.parse(startTime);
+            Date startDate;
+            if (startTime==null||startTime.length()==0){
+                startDate=new Date(0L);
+            }else{
+                startDate = startDf.parse(startTime);
+            }
             String formatStartTimeStr = df.format(startDate);
             List<Role> roles = roleDAO.getIncrRoles(formatStartTimeStr);
             for(int i=0; i<roles.size(); i++) {
