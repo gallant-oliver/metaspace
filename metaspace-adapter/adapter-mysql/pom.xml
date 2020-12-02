@@ -5,7 +5,7 @@
     <parent>
         <artifactId>metaspace-adapter</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.9.0-SNAPSHOT</version>
+        <version>1.9.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
