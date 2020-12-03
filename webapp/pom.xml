@@ -605,6 +605,10 @@
                     <artifactId>javax.servlet</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.eclipse.jetty.aggregate</groupId>
+                    <artifactId>jetty-all</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.calcite</groupId>
                     <artifactId>calcite-avatica</artifactId>
                 </exclusion>
