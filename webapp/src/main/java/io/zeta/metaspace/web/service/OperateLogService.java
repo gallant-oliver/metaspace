@@ -13,6 +13,8 @@
 package io.zeta.metaspace.web.service;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.OperateLogRequest;
 import io.zeta.metaspace.model.operatelog.OperateEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
@@ -70,6 +72,6 @@ public class OperateLogService {
     }
 
     public List<OperateModule> moduleList() {
-        return Arrays.stream(ModuleEnum.values()).map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
+        return Arrays.stream(ModuleEnum.values()).filter(module->module.getType()!=0).filter(module->MetaspaceConfig.getDataService()?!ModuleEnum.DATASHARE.equals(module):!(ModuleEnum.AUDIT.equals(module)||ModuleEnum.APIMANAGE.equals(module))).map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
     }
 }

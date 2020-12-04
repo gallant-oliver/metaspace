@@ -392,7 +392,7 @@ public class DataManageService {
         if(type==0||type==1){
             privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
         }else{
-            privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+            privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
         }
         if(type==technicalType){
             privilege.setDeleteRelation(false);
@@ -420,7 +420,7 @@ public class DataManageService {
         if(type==0||type==1){
             privilege = new CategoryPrivilege.Privilege(false,true,true,true,true,true,true,true,true,false);
         }else{
-            privilege = new CategoryPrivilege.Privilege(false,false,false,true,true,true,true,true,true,false);
+            privilege = new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,false);
         }
         if (type==1){
             privilege.setAsh(true);
@@ -494,6 +494,9 @@ public class DataManageService {
                 }
                 categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid,tenantId);
             }
+        }
+        if(type == 3||type == 4){
+            return new CategoryPrivilege.Privilege(false,false,true,true,true,true,true,true,true,true);
         }
         if (parentGuid==null){
             return new CategoryPrivilege.Privilege(false,true,true,true,false,true,false,false,true,false);
