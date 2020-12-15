@@ -20,7 +20,7 @@ public interface ApiAuditDAO {
      * @return
      */
     @Insert({"<script> " +
-            "INSERT INTO api_audit ( id,api_guid,api_version,api_version_num,applicant,applicant_name,status,reason,tenant_id )\n" +
+            "INSERT INTO api_audit ( id,api_guid,api_version,api_version_num,applicant,applicant_name,status,reason,api_poly_id,tenant_id )\n" +
             "VALUES (" +
             "    #{audit.id},\n" +
             "    #{audit.apiGuid},\n" +
@@ -29,7 +29,8 @@ public interface ApiAuditDAO {
             "    #{audit.applicant},\n" +
             "    #{audit.applicantName},\n" +
             "    #{audit.status},\n" +
-            "    #{audit.reason},\n" +
+            "    #{audit.reason}," +
+            "    #{audit.apiPolyId},\n" +
             "    #{tenantId}\n" +
             "    );\n" +
             "</script>"})
