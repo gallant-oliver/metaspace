@@ -1,6 +1,7 @@
 package io.zeta.metaspace.model.share;
 
 import io.zeta.metaspace.model.desensitization.ApiDesensitization;
+import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,4 +16,5 @@ import java.util.List;
 @NoArgsConstructor
 public class ApiPolyEntity {
     private List<ApiDesensitization> desensitization;
+    private ApiIpRestriction ipRestriction;
 }

@@ -36,6 +36,9 @@ import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.ApiDesensitization;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
+import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
+import io.zeta.metaspace.model.ip.restriction.IpRestriction;
+import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
@@ -55,10 +58,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CategoryUtil;
-import io.zeta.metaspace.web.util.DataServiceUtil;
-import io.zeta.metaspace.web.util.QualityEngine;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -73,6 +73,7 @@ import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -133,6 +134,8 @@ public class DataShareService {
     private ApiPolyDao apiPolyDao;
     @Autowired
     private DesensitizationDAO desensitizationDAO;
+    @Autowired
+    private IpRestrictionDAO ipRestrictionDAO;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -1679,6 +1682,7 @@ public class DataShareService {
         if (i != 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在相同名字的API");
         }
+        checkApiPolyEntity(info, info.getApiPolyEntity());
 
         //guid
         info.setGuid(guid);
@@ -1740,6 +1744,9 @@ public class DataShareService {
         if (ApiStatusEnum.AUDIT == apiStatus) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核状态，无法编辑");
         }
+
+        checkApiPolyEntity(apiInfo, apiInfo.getApiPolyEntity());
+
         info.setName(apiInfo.getName());
         info.setCreateTime(apiInfo.getCreateTime());
         info.setCreator(apiInfo.getCreator());
@@ -1782,6 +1789,8 @@ public class DataShareService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "已存在待审核的 API 策略");
             }
 
+            checkApiPolyEntity(apiInfo, apiPolyEntity);
+
             //插入策略表中
             ApiPoly apiPoly = new ApiPoly(apiId, version, apiPolyEntity);
             apiPolyDao.insert(apiPoly);
@@ -1790,6 +1799,33 @@ public class DataShareService {
             auditService.insertApiAudit(tenantId, apiId, version, apiInfo.getVersionNum(), apiPoly.getId());
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败 : " + e.getMessage());
+        }
+    }
+
+    public void checkApiPolyEntity(ApiInfoV2 apiInfo, ApiPolyEntity apiPolyEntity) {
+        if (apiPolyEntity != null) {
+            if (apiPolyEntity.getDesensitization() != null) {
+                apiPolyEntity.getDesensitization().forEach(d -> {
+                    if (desensitizationDAO.getRule(d.getRuleId()) == null) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "脱敏规则不存在，id : " + d.getRuleId());
+                    }
+                });
+            }
+            if (apiPolyEntity.getIpRestriction() != null && apiPolyEntity.getIpRestriction().getType() != null) {
+                IpRestrictionType type = apiPolyEntity.getIpRestriction().getType();
+                if (CollectionUtils.isEmpty(apiPolyEntity.getIpRestriction().getIpRestrictionIds())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "配置了黑白名单策略，列表不能为空");
+                }
+                apiPolyEntity.getIpRestriction().getIpRestrictionIds().forEach(id -> {
+                    IpRestriction ipRestriction = ipRestrictionDAO.getIpRestriction(id);
+                    if (ipRestriction == null) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "黑白名单策略不存在，id : " + id);
+                    }
+                    if (!type.equals(ipRestriction.getType())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API 的黑白名单策略不能混合类型配置");
+                    }
+                });
+            }
         }
     }
 
@@ -1944,12 +1980,20 @@ public class DataShareService {
         if (apiPolyEntity != null) {
             List<ApiDesensitization> desensitization = apiPolyEntity.getDesensitization();
             if (CollectionUtils.isNotEmpty(desensitization)) {
-                desensitization = desensitization.stream().map(item -> {
+                desensitization = desensitization.stream().peek(item -> {
                     DesensitizationRule desensitizationRule = desensitizationDAO.getRule(item.getRuleId());
                     item.setRuleName(desensitizationRule == null ? null : desensitizationRule.getName());
-                    return item;
                 }).filter(item -> Objects.nonNull(item.getRuleName())).collect(Collectors.toList());
                 apiPolyEntity.setDesensitization(desensitization);
+            }
+            ApiIpRestriction apiIpRestriction = apiPolyEntity.getIpRestriction();
+            if (apiIpRestriction != null && apiIpRestriction.getType() != null) {
+                if (CollectionUtils.isNotEmpty(apiIpRestriction.getIpRestrictionIds())) {
+                    List<IpRestriction> ipRestrictions = apiIpRestriction.getIpRestrictionIds().stream().map(id -> ipRestrictionDAO.getIpRestriction(id)).filter(Objects::nonNull).collect(Collectors.toList());
+                    apiIpRestriction.setIpRestrictionIds(ipRestrictions.stream().map(IpRestriction::getId).collect(Collectors.toList()));
+                    apiIpRestriction.setIpRestrictionNames(ipRestrictions.stream().map(IpRestriction::getName).collect(Collectors.toList()));
+                }
+                apiPolyEntity.setIpRestriction(apiIpRestriction);
             }
         }
         return apiPolyEntity;
@@ -1986,6 +2030,8 @@ public class DataShareService {
             ApiPoly apiPoly = getApiPoly(id, version);
             if (apiPoly != null) {
                 apiInfo.setApiPolyEntity(initApiPolyEntity(apiPoly.getPoly()));
+            }else {
+                apiInfo.setApiPolyEntity(initApiPolyEntity(apiInfo.getApiPolyEntity()));
             }
             return apiInfo;
         } catch (Exception e) {
@@ -2582,6 +2628,31 @@ public class DataShareService {
         return !(shareDAO.queryApiSameName(name, tenantId, projectId, "") == 0);
     }
 
+    public void handleIpRestriction(String ip, ApiIpRestriction apiIpRestriction) {
+        if (apiIpRestriction.getType() != null) {
+            IpRestrictionType type = apiIpRestriction.getType();
+            List<IpRestriction> ipRestrictions = apiIpRestriction.getIpRestrictionIds().stream().map(id -> ipRestrictionDAO.getIpRestriction(id)).filter(Objects::nonNull).collect(Collectors.toList());
+            if (ipRestrictions.stream().filter(i -> type.equals(i.getType())).count() != ipRestrictions.size()) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API 的黑白名单策略不能混合类型配置");
+            }
+            List<String> allIp = ipRestrictions.stream().map(IpRestriction::getIpList).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+            switch (type) {
+                case WHITE:
+                    if (allIp.stream().noneMatch(item -> new IpAddressMatcher(item).matches(ip))) {
+                        throw new AtlasBaseException("API 请求IP 不在白名单策略范围内，拒绝处理");
+                    }
+                    break;
+                case BLACK:
+                    if (allIp.stream().anyMatch(item -> new IpAddressMatcher(item).matches(ip))) {
+                        throw new AtlasBaseException("API 请求IP 在黑名单策略范围内，拒绝处理");
+                    }
+                    break;
+                default:
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API 的黑白名单策略类型错误");
+            }
+        }
+    }
+
     public QueryResult queryApiDataV2(HttpServletRequest request) throws AtlasBaseException {
         String requestURL = request.getRequestURL().toString();
         String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
@@ -2591,6 +2662,10 @@ public class DataShareService {
         ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
 
         ApiPolyEntity apiPolyEntity = apiInfoByVersion.getApiPolyEntity();
+
+        if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
+            handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
+        }
 
         if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
