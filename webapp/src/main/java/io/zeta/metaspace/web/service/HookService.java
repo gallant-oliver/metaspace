@@ -59,6 +59,7 @@ public class HookService {
     private final static String hookKeyTab = "atlas.jaas.KafkaClient.option.keyTab";
     private final static String hiveConfig = "metaspace.hive.conf";
     private final static String hiveBin = "metaspace.hive.bin";
+    private static final String ATLAS_HOME_DIRECTORY_PROPERTY = "atlas.home";
     private final static List<String> hookStringConfig = new ArrayList<String>(){
         {
             add("atlas.cluster.name");
@@ -93,7 +94,7 @@ public class HookService {
      */
     public boolean hookJar() throws IOException, AtlasException, AtlasBaseException {
         List<String> hookPaths = new ArrayList<>();
-        String metaspaceHook = System.getProperty(ApplicationProperties.ATLAS_CONFIGURATION_DIRECTORY_PROPERTY) + "/../hook/hive";
+        String metaspaceHook = System.getProperty(ATLAS_HOME_DIRECTORY_PROPERTY) + "/hook/hive";
         Configuration applicationProperties = ApplicationProperties.get();
         String hiveBinPath = applicationProperties.getString(hiveBin,"/usr/bin");
         File file = new File(hiveBinPath, "/hiveserver2");
