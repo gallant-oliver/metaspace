@@ -176,12 +176,12 @@ public class AdminREST {
     @Path("/apiinfo/{apiId}/{version}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiInfoByVersion(@PathParam("apiId")String apiId,@PathParam("version")String version) throws AtlasBaseException {
+    public Result getApiInfoByVersion(@PathParam("apiId") String apiId, @PathParam("version") String version, @QueryParam("apiPolyId") String apiPolyId) throws AtlasBaseException {
         try {
-            ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId,version);
+            ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId, version, apiPolyId);
             return ReturnUtil.success(apiInfo);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取详情失败:"+e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
         }
     }
 

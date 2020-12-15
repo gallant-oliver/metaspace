@@ -1,13 +1,17 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiAudit;
+import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.web.service.AuditService;
+import io.zeta.metaspace.web.service.DataShareService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -34,6 +38,8 @@ public class AuditREST {
 
     @Autowired
     private AuditService auditService;
+    @Autowired
+    private DataShareService dataShareService;
 
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -51,7 +57,7 @@ public class AuditREST {
             parameters.setOffset(offset);
             parameters.setQuery(search);
 
-            return auditService.getApiAuditList(parameters, tenantId, statuses,nonStatuses, applicant);
+            return auditService.getApiAuditList(parameters, tenantId, statuses, nonStatuses, applicant);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取审核记录列表失败");
         }
@@ -72,9 +78,23 @@ public class AuditREST {
 
             auditService.updateApiAudit(tenantId, auditId, apiAudit.getStatus(), apiAudit.getReason());
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "处理审核失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "处理审核失败");
         }
         return Response.status(200).entity("success").build();
+    }
+
+
+    @GET
+    @Path("/apiinfo/{apiId}/{version}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiInfoByVersion(@PathParam("apiId") String apiId, @PathParam("version") String version, @QueryParam("apiPolyId") String apiPolyId) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfo = dataShareService.getApiInfoByVersion(apiId, version, apiPolyId);
+            return ReturnUtil.success(apiInfo);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
+        }
     }
 
 }
