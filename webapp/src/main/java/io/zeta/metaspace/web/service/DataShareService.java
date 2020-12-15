@@ -61,10 +61,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CategoryUtil;
-import io.zeta.metaspace.web.util.DataServiceUtil;
-import io.zeta.metaspace.web.util.QualityEngine;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -2223,8 +2220,6 @@ public class DataShareService {
                         }
                     });
                     apiGroupDAO.deleteRelationByCategory(categoryDelete.getId());
-                    List<String> apiMobiusByCategory = shareDAO.getApiMobiusByCategory(categoryDelete.getId());
-                    apiMobiusByCategory.forEach(this::deleteApiMobius);
                 }
             } else {
                 CategoryEntityV2 initCategory = shareDAO.getCategoryByName(CategoryUtil.apiCategoryName, categoryDelete.getProjectId(), tenantId);
