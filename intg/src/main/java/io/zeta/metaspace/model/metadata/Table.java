@@ -15,6 +15,7 @@ package io.zeta.metaspace.model.metadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.table.Tag;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
@@ -332,34 +333,12 @@ public class Table implements Serializable {
         this.subscribeTo = subscribeTo;
     }
 
+    @Data
     public static class BusinessObject {
+        private String businessId;
         private String businessObject;
         private String department;
         private String businessLeader;
-
-        public String getBusinessObject() {
-            return businessObject;
-        }
-
-        public void setBusinessObject(String businessObject) {
-            this.businessObject = businessObject;
-        }
-
-        public String getDepartment() {
-            return department;
-        }
-
-        public void setDepartment(String department) {
-            this.department = department;
-        }
-
-        public String getBusinessLeader() {
-            return businessLeader;
-        }
-
-        public void setBusinessLeader(String businessLeader) {
-            this.businessLeader = businessLeader;
-        }
 
 
     }

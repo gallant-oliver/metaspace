@@ -71,7 +71,7 @@ public class RuleService {
 
     public Rule getById(String id,String tenantId) throws AtlasBaseException {
         try {
-            Rule rule = ruleDAO.getById(id);
+            Rule rule = ruleDAO.getRuleTemplate(id,tenantId);
             if(Objects.isNull(rule)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到规则详情");
             }
@@ -170,7 +170,7 @@ public class RuleService {
     private List<Rule> queryByCatetoryId(String categoryId, Parameters params,String tenantId) throws AtlasBaseException {
         try {
             String path = CategoryRelationUtils.getPath(categoryId,tenantId);
-            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
                 ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });
@@ -192,7 +192,7 @@ public class RuleService {
 
     public PageResult<Rule> search(Parameters params,String tenantId) throws AtlasBaseException {
         try {
-            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
                 ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });

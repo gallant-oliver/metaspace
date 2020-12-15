@@ -133,8 +133,8 @@ public class TaskManageREST {
     @Path("/{taskId}/{executionId}/report/pdf")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public ExecutionReportData getReportData(@PathParam("taskId")String taskId, @PathParam("executionId")String executionId) throws AtlasBaseException {
-        return taskManageService.getTaskReportData(taskId, executionId);
+    public ExecutionReportData getReportData(@PathParam("taskId")String taskId, @PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskReportData(taskId, executionId,tenantId);
     }
 
     /**
@@ -147,8 +147,8 @@ public class TaskManageREST {
     @Path("/{executionId}/record")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(executionId);
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(executionId,tenantId);
     }
 
     /**

@@ -41,6 +41,15 @@ public class EditionTaskInfo {
     private List<WarningGroup> contentWarningNotificationIdList;
     private List<WarningGroup> executionWarningNotificationIdList;
     private String pool;
+    private String tenantId;
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 
     public String getPool() {
         return pool;

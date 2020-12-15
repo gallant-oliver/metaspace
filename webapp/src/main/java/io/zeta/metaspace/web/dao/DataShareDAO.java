@@ -416,7 +416,7 @@ public interface DataShareDAO {
 
     @Insert({" <script>",
              " insert into api(guid,name,sourcetype,sourceid,schemaname,tablename,tableguid,dbguid,categoryguid,creator,createtime,version,description,",
-             " protocol,requestmode,path,updater,updatetime,tenantid,pool,status,approve,log,version_num,param,returnparam,sortparam,projectid,valid",
+             " protocol,requestmode,path,updater,updatetime,tenantid,pool,status,approve,log,version_num,param,returnparam,sortparam,api_poly_entity,projectid,valid",
              " )values(",
              " #{info.guid},#{info.name},#{info.sourceType},#{info.sourceId},#{info.schemaName},#{info.tableName},#{info.tableGuid},#{info.dbGuid}," +
              " #{info.categoryGuid},#{info.creator},#{info.createTime},#{info.version},#{info.description},#{info.protocol}," +
@@ -424,14 +424,16 @@ public interface DataShareDAO {
              " 1," +
              " #{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
              " #{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
-             " #{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},#{info.projectId},true",
+             " #{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
+             " #{info.apiPolyEntity,jdbcType=OTHER, typeHandler=io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler}," +
+             "#{info.projectId},true",
              " )",
              " </script>"})
     public int insertAPIInfoV2(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId);
 
     @Insert({" <script>",
              " insert into api(guid,name,sourcetype,sourceid,schemaname,tablename,tableguid,dbguid,categoryguid,creator,createtime,version,description,",
-             " protocol,requestmode,path,updater,updatetime,tenantid,pool,status,approve,log,version_num,param,returnparam,sortparam,projectid,valid",
+             " protocol,requestmode,path,updater,updatetime,tenantid,pool,status,approve,log,version_num,param,returnparam,sortparam,api_poly_entity,projectid,valid",
              " )values(",
              " #{info.guid},#{info.name},#{info.sourceType},#{info.sourceId},#{info.schemaName},#{info.tableName},#{info.tableGuid},#{info.dbGuid}," +
              " #{info.categoryGuid},#{info.creator},#{info.createTime},#{info.version},#{info.description},#{info.protocol}," +
@@ -439,7 +441,9 @@ public interface DataShareDAO {
              " (select COALESCE(max(cast(version_num as integer)) + 1, 1) from api where guid=#{info.guid})," +
              " #{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
              " #{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
-             " #{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg},#{info.projectId},true",
+             " #{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
+             " #{info.apiPolyEntity,jdbcType=OTHER, typeHandler=io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler}," +
+             "#{info.projectId},true",
              " )",
              " </script>"})
     public int updateAPIInfoV2(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId);
@@ -451,6 +455,7 @@ public interface DataShareDAO {
             " param=#{info.param,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
             " returnparam=#{info.returnParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}," +
             " sortparam=#{info.sortParam,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg}, " +
+            " api_poly_entity=#{info.apiPolyEntity,jdbcType=OTHER, typeHandler=io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler}, " +
             " version_num=(select COALESCE(max(cast(version_num as integer)) + 1, 1) from api where guid=#{info.guid}) " +
             " where guid=#{info.guid} and version_num=#{versionNum}")
     public int updateApiInfoV2OnDraft(@Param("info") ApiInfoV2 info, @Param("tenantId")String tenantId,@Param("versionNum")int versionNum);

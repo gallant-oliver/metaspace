@@ -29,16 +29,16 @@ public interface RuleDAO {
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and id=#{id}"})
     public Rule getById(@Param("id") String id);
 
-    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
+    @Select({" select a.id " ,
+             " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
     public List<Rule> getByCode(@Param("code") String code,@Param("tenantId") String tenantId);
 
     @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
              " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
     public List<Rule> getByCodeV2(@Param("id") String id,@Param("code") String code,@Param("tenantId") String tenantId);
 
-    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
+    @Select({" select a.id " ,
+             " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
     public List<Rule> getByName(@Param("name") String name,@Param("tenantId") String tenantId);
 
     @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
@@ -98,7 +98,7 @@ public interface RuleDAO {
             "</script>")
     public List<DataTaskIdAndName> getRuleUsed(@Param("ids") List<String> guids);
 
-    @Update("update data_quality_rule set enable=#{status} where id=#{id}")
+    @Update("update data_quality_rule_template set enable=#{status} where id=#{id} and tenantid=#{tenantId}")
     public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
 
     @Select("select id,name,scope,unit,description,delete,rule_type as ruleType from data_quality_rule_template")
@@ -113,5 +113,10 @@ public interface RuleDAO {
     @Select({" select name " ,
              " from data_quality_rule where delete=false and id=#{id}"})
     public String getNameById(@Param("id") String id);
+
+    //todo 需要修改检查类型
+    @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,0 as checkType,2 as checkExpressionType,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit" ,
+             " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and id=#{id} and tenantid=#{tenantId}"})
+    public Rule getRuleTemplate(@Param("id") String id,@Param("tenantId")String tenantId);
 
 }
