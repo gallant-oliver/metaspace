@@ -81,40 +81,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                     instance = get(APPLICATION_PROPERTIES);
                     boolean isApollo = instance.getBoolean("metaspace.apollo", false);
                     if (isApollo){
-                        //获取配置中心配置
-                        String meta = instance.getString("apollo.meta");
-                        System.setProperty("apollo.meta", meta);
-                        String cluster = instance.getString("apollo.cluster");
-                        System.setProperty("apollo.cluster", cluster);
-                        String id = instance.getString("app.id");
-                        System.setProperty("app.id", id);
-                        String cachedir = instance.getString("apollo.cacheDir");
-                        System.setProperty("apollo.cacheDir", cachedir);
-                        String secret = instance.getString("apollo.accesskey.secret");
-                        if (secret!=null&&secret.length()!=0){
-                            System.setProperty("apollo.accesskey.secret",secret);
-                        }
-                        String[] namespaces = instance.getStringArray("apollo.bootstrap.namespaces");
-                        //String namespace = instance.getString("apollo.bootstrap.namespaces");
-                        for(String namespace:namespaces){
-                            Config appConfig = ConfigService.getConfig(namespace);
-                            appConfig.addChangeListener(new ConfigChangeListener() {
-                                @Override
-                                public void onChange(ConfigChangeEvent changeEvent) {
-                                    for (String key : changeEvent.changedKeys()) {
-                                        ConfigChange change = changeEvent.getChange(key);
-                                        instance.setProperty(change.getPropertyName(),change.getNewValue());
-                                        LOG.info(String.format("Found change - key: %s, oldValue: %s, newValue: %s, changeType: %s", change.getPropertyName(), change.getOldValue(), change.getNewValue(), change.getChangeType()));
-                                    }
-                                }
-                            });
-                            //添加配置
-                            Set<String> propertyNames = appConfig.getPropertyNames();
-                            for (String key:propertyNames){
-                                String property = appConfig.getProperty(key, null);
-                                instance.setProperty(key,property);
-                            }
-                        }
+                        ApolloConfig.getConfig(instance);
                     }
                     InMemoryJAASConfiguration.init(instance);
                 }

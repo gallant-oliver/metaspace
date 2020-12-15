@@ -14,6 +14,8 @@
 package io.zeta.metaspace.web.service;
 
 
+import com.google.common.collect.Lists;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
@@ -1254,7 +1256,15 @@ public class DataSourceService {
         return MessageFormat.format("{0}***{1}", prefix, suffix);
     }
 
+    /**
+     * 获取数据源类型
+     * @return
+     */
     public List<DataSourceTypeInfo> getDataSourceType(){
+        if (!MetaspaceConfig.getDataService()){
+            DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(),DataSourceType.ORACLE.getDefaultPort());
+            return Lists.newArrayList(dataSourceTypeInfo);
+        }
         List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->!(type.isBuildIn())&&type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.getDefaultPort())).collect(Collectors.toList());
         return typeNames;
     }

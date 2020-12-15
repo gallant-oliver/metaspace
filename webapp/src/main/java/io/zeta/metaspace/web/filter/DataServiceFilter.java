@@ -59,9 +59,8 @@ public class DataServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         Gson gson = new Gson();
         QueryResult queryResult= null;
-        httpServletResponse.setHeader("Content-Type" ,"application/json; charset=UTF-8");
         if (FilterUtils.isDataService(requestURL)){
-            response.setContentType("text/html;charset=utf-8");
+            response.setContentType("application/json;charset=utf-8");
             request.setCharacterEncoding("utf-8");
             try(PrintWriter printWriter = response.getWriter()){
                 try {

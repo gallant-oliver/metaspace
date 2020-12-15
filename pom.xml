@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>1.9.0-SNAPSHOT</version>
+    <version>1.9.1</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>metaspace</name>
     <packaging>pom</packaging>
@@ -642,11 +642,6 @@
                 <version>${jersey.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>javax.servlet.jsp</groupId>
-                <artifactId>jsp-api</artifactId>
-                <version>2.1</version>
-            </dependency>
 
             <!-- JSON -->
             <dependency>
