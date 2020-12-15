@@ -23,6 +23,8 @@ import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
+import io.zeta.metaspace.model.ip.restriction.IpRestriction;
+import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -92,6 +94,8 @@ public class ApiManagerREST {
     private AuditService auditService;
     @Autowired
     private DesensitizationService desensitizationService;
+    @Autowired
+    private IpRestrictionService ipRestrictionService;
 
     private static int CATEGORY_TYPE = 2;
 
@@ -843,8 +847,26 @@ public class ApiManagerREST {
         parameters.setOffset(offset);
 
         Boolean enable = StringUtils.isNotEmpty(enableStr) ? Boolean.valueOf(enableStr) : null;
-
         return desensitizationService.getDesensitizationRuleList(parameters, enable, tenantId);
+    }
+
+
+    /**
+     * 获取黑白名单列表
+     */
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<IpRestriction> getIpRestrictionRuleList(@QueryParam("limit") int limit, @QueryParam("offset") int offset, @QueryParam("query") String query, @QueryParam("type") String typeStr, @QueryParam("enable") String enableStr, @HeaderParam("tenantId") String tenantId) {
+        Parameters parameters = new Parameters();
+        parameters.setQuery(query);
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+
+        Boolean enable = StringUtils.isNotEmpty(enableStr) ? Boolean.valueOf(enableStr) : null;
+        IpRestrictionType type = StringUtils.isNotEmpty(typeStr) ? IpRestrictionType.valueOf(typeStr) : null;
+
+        return ipRestrictionService.getIpRestrictionList(parameters, enable, type, tenantId);
 
     }
 }
