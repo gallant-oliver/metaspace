@@ -64,6 +64,7 @@ public class ApiInfoV2 {
 
     @Data
     public static class FieldV2 {
+        //别名
         private String name;
         private String description;
         private String place;
@@ -74,6 +75,7 @@ public class ApiInfoV2 {
         private String minSize;
         private String example;
         private String type;
+        //字段名
         private String columnName;
         private String columnType;
         private String columnDescription;

@@ -2054,7 +2054,7 @@ public class DataShareService {
             ApiPoly apiPoly = getApiPoly(id, version);
             if (apiPoly != null) {
                 apiInfo.setApiPolyEntity(initApiPolyEntity(apiPoly.getPoly()));
-            }else {
+            } else {
                 apiInfo.setApiPolyEntity(initApiPolyEntity(apiInfo.getApiPolyEntity()));
             }
             return apiInfo;
@@ -2518,7 +2518,7 @@ public class DataShareService {
 
             List<LinkedHashMap<String, Object>> result = pageResult.getLists();
             if (apiPolyEntity != null && CollectionUtils.isNotEmpty(apiPolyEntity.getDesensitization())) {
-                result = processSensitiveDataV2(apiPolyEntity.getDesensitization(), result);
+                result = processSensitiveDataV2(apiInfo, apiPolyEntity.getDesensitization(), result);
             }
 
             Map resultMap = new HashMap();
@@ -2751,7 +2751,8 @@ public class DataShareService {
         return queryResult;
     }
 
-    public List<LinkedHashMap<String, Object>> processSensitiveDataV2(List<ApiDesensitization> desensitization, List<LinkedHashMap<String, Object>> result) {
+    public List<LinkedHashMap<String, Object>> processSensitiveDataV2(ApiInfoV2 apiInfo, List<ApiDesensitization> desensitization, List<LinkedHashMap<String, Object>> result) {
+        List<ApiInfoV2.FieldV2> returnParam = apiInfo.getReturnParam();
         Map<String, DesensitizationRule> desensitizationRuleMap = new HashMap<>();
         for (ApiDesensitization apiDesensitization : desensitization) {
             DesensitizationRule rule = desensitizationDAO.getRule(apiDesensitization.getRuleId());
@@ -2760,9 +2761,12 @@ public class DataShareService {
             }
         }
 
-        for (LinkedHashMap<String, Object> itemMap : result) {
+        //通过索引定位返回参数，因为遍历查找别名可能重复无法区分
+        for (LinkedHashMap<String, Object> itemMap : result)  {
+            int i = 0;
             for (String filed : itemMap.keySet()) {
-                DesensitizationRule rule = desensitizationRuleMap.get(filed);
+                String columnName = returnParam.get(i++).getColumnName();
+                DesensitizationRule rule = desensitizationRuleMap.get(columnName);
                 if (rule != null) {
                     Object value = rule.getType().getHandle().apply(itemMap.get(filed), rule.getParams());
                     itemMap.put(filed, value);

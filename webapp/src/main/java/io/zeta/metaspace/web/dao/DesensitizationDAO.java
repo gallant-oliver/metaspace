@@ -17,9 +17,9 @@ public interface DesensitizationDAO {
     int countByName(@Param("id") String id, @Param("name") String name, @Param("tenantId") String tenantId);
 
 
-    @Insert("insert into  desensitization_rule(id,name,description,type,params,enable,tenant_id,create_time,update_time)  " +
-            "values(#{rule.id},#{rule.name},#{rule.description},#{rule.type,typeHandler=org.apache.ibatis.type.EnumTypeHandler},#{rule.params,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{rule.enable},#{tenantId},now(),now())")
-    int insert(@Param("userId") String userId, @Param("rule") DesensitizationRule rule, @Param("tenantId") String tenantId);
+    @Insert("insert into  desensitization_rule(id,name,description,type,params,enable,tenant_id,creator_id,create_time,update_time)  " +
+            "values(#{rule.id},#{rule.name},#{rule.description},#{rule.type,typeHandler=org.apache.ibatis.type.EnumTypeHandler},#{rule.params,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{rule.enable},#{tenantId},#{rule.creatorId},now(),now())")
+    int insert( @Param("rule") DesensitizationRule rule, @Param("tenantId") String tenantId);
 
 
     @Update("update desensitization_rule set name=#{rule.name}, description =#{rule.description}, type=#{rule.type,typeHandler=org.apache.ibatis.type.EnumTypeHandler}, params=#{rule.params,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler}, enable=#{rule.enable} where id=#{rule.id} ")
@@ -47,7 +47,7 @@ public interface DesensitizationDAO {
 
     @ResultMap("base")
     @Select({"<script>",
-            "select count(*) over() as total, t.* from desensitization_rule  t where  tenant_id =#{tenantId} ",
+            "select count(*) over() as total, t.*,u.username as creator from desensitization_rule  t  left join users u on u.userid = t.creator_id where  tenant_id =#{tenantId}  ",
             "<if test='enable!=null'>",
             "and enable = #{enable} ",
             "</if>",

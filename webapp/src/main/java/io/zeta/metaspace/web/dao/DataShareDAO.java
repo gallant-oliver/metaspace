@@ -22,20 +22,13 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.share.APIInfo;
-import io.zeta.metaspace.model.share.APIInfoHeader;
-import io.zeta.metaspace.model.share.ApiHead;
-import io.zeta.metaspace.model.share.ApiInfoV2;
-import io.zeta.metaspace.model.share.ApiLog;
-import io.zeta.metaspace.model.share.MoveApi;
-import io.zeta.metaspace.model.share.ProjectInfo;
+import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
+import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.type.EnumOrdinalTypeHandler;
+import org.apache.ibatis.type.JdbcType;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -469,6 +462,9 @@ public interface DataShareDAO {
     @Select("select count(*) from api where guid=#{id} and version=#{version} and status!='draft' and valid=true")
     public int queryApiSameVersion(@Param("id") String id,@Param("version")String version);
 
+    @Results(id="poly", value ={
+            @Result(property = "apiPolyEntity", column = "api_poly_entity", typeHandler = ApiPolyEntityTypeHandler.class, javaType = ApiPolyEntity.class)
+    })
     @Select("select * from api where guid=#{id} and version=#{version} and valid=true")
     public ApiInfoV2 getApiInfoByVersion(@Param("id") String id, @Param("version")String version);
 
@@ -643,6 +639,7 @@ public interface DataShareDAO {
             " </script>")
     public List<ApiLog> getApiLog(@Param("param") Parameters parameters,@Param("apiId") String apiId,@Param("type") String type);
 
+    @ResultMap("poly")
     @Select("<script>" +
             " select api.* from api join " +
             " (select guid,max(version_num) version_num from api where guid in  " +
@@ -654,6 +651,7 @@ public interface DataShareDAO {
             "</script>")
     public List<ApiInfoV2> getApiInfoByIds(@Param("ids")List<String> ids);
 
+    @ResultMap("poly")
     @Select("<script>" +
             " select api.* from api join " +
             " (select guid,max(version_num) version_num from api where guid in  " +
