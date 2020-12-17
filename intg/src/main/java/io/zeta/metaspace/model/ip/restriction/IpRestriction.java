@@ -20,6 +20,10 @@ public class IpRestriction {
     //是否启用
     private boolean enable;
 
+    private String creatorId;
+
+    private String creator;
+
     private long total;
 
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")

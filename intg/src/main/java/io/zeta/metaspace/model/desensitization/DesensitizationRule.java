@@ -23,6 +23,10 @@ public class DesensitizationRule {
 
     private long total;
 
+    private String creatorId;
+
+    private String creator;
+
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
 

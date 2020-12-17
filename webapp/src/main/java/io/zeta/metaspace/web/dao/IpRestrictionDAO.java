@@ -15,9 +15,9 @@ public interface IpRestrictionDAO {
     int countByName(@Param("id") String id, @Param("name") String name, @Param("tenantId") String tenantId);
 
 
-    @Insert("insert into  ip_restriction(id,name,description,type,ip_list,enable,tenant_id,create_time,update_time)  " +
-            "values(#{ipRestriction.id},#{ipRestriction.name},#{ipRestriction.description},#{ipRestriction.type,typeHandler=org.apache.ibatis.type.EnumTypeHandler},#{ipRestriction.ipList,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{ipRestriction.enable},#{tenantId},now(),now())")
-    int insert(@Param("userId") String userId, @Param("ipRestriction") IpRestriction ipRestriction, @Param("tenantId") String tenantId);
+    @Insert("insert into  ip_restriction(id,name,description,type,ip_list,enable,tenant_id,creator_id,create_time,update_time)  " +
+            "values(#{ipRestriction.id},#{ipRestriction.name},#{ipRestriction.description},#{ipRestriction.type,typeHandler=org.apache.ibatis.type.EnumTypeHandler},#{ipRestriction.ipList,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{ipRestriction.enable},#{tenantId},#{ipRestriction.creatorId},now(),now())")
+    int insert(@Param("ipRestriction") IpRestriction ipRestriction, @Param("tenantId") String tenantId);
 
 
     @Update("update ip_restriction set name=#{ipRestriction.name}, " +
@@ -50,7 +50,7 @@ public interface IpRestrictionDAO {
 
     @ResultMap("base")
     @Select({"<script>",
-            "select count(*) over() as total, t.* from ip_restriction  t where  tenant_id =#{tenantId} ",
+            "select count(*) over() as total, t.* ,u.username as creator from ip_restriction  t  left join users u on u.userid = t.creator_id where  tenant_id =#{tenantId} ",
             "<if test='enable!=null'>",
             "and enable = #{enable} ",
             "</if>",

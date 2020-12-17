@@ -48,11 +48,9 @@ public class DesensitizationService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不正确:" + desensitizationRule.getParams().toString());
             }
 
-            String userId = AdminUtils.getUserData().getUserId();
-            desensitizationRule.setCreateTime(new Timestamp(System.currentTimeMillis()));
-            desensitizationRule.setUpdateTime(desensitizationRule.getCreateTime());
+            desensitizationRule.setCreatorId(AdminUtils.getUserData().getUserId());
 
-            return desensitizationDAO.insert(userId, desensitizationRule, tenantId);
+            return desensitizationDAO.insert(desensitizationRule, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则创建失败 : " + e.getMessage());
         }

@@ -52,9 +52,9 @@ public class IpRestrictionService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "ip 格式错误：" + e.getMessage());
                 }
             }
-
-            String userId = AdminUtils.getUserData().getUserId();
-            return ipRestrictionDAO.insert(userId, ipRestriction, tenantId);
+            
+            ipRestriction.setCreatorId(AdminUtils.getUserData().getUserId());
+            return ipRestrictionDAO.insert(ipRestriction, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略创建失败 : " + e.getMessage());
         }
