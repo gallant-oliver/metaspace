@@ -22,7 +22,7 @@ public class RuleTemplateType {
     /**
      * 规则模版分类:1-空值校验,2-表体积,3-唯一值校验,4-重复值校验,5-数值型校验
      */
-    private Integer ruleType;
+    private String ruleType;
     /**
      * 分类名
      */
@@ -32,16 +32,16 @@ public class RuleTemplateType {
      */
     private long count;
 
-    public RuleTemplateType(Integer ruleType, String name) {
+    public RuleTemplateType(String ruleType, String name) {
         this.ruleType = ruleType;
         this.name = name;
     }
 
-    public Integer getRuleType() {
+    public String getRuleType() {
         return ruleType;
     }
 
-    public void setRuleType(Integer ruleType) {
+    public void setRuleType(String ruleType) {
         this.ruleType = ruleType;
     }
 
@@ -62,10 +62,10 @@ public class RuleTemplateType {
     }
 
     public static List<RuleTemplateType> all() {
-        return Lists.newArrayList(new RuleTemplateType(1, "表体积"),
-                                  new RuleTemplateType(2, "空值校验"),
-                                  new RuleTemplateType(3, "唯一值校验"),
-                                  new RuleTemplateType(4, "重复值校验"),
-                                  new RuleTemplateType(5, "数值型校验"));
+        return Lists.newArrayList(new RuleTemplateType("rule_1", "表体积"),
+                                  new RuleTemplateType("rule_2", "空值校验"),
+                                  new RuleTemplateType("rule_3", "唯一值校验"),
+                                  new RuleTemplateType("rule_4", "重复值校验"),
+                                  new RuleTemplateType("rule_5", "数值型校验"));
     }
 }

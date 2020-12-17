@@ -22,6 +22,9 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
+import io.zeta.metaspace.model.desensitization.DesensitizationRule;
+import io.zeta.metaspace.model.ip.restriction.IpRestriction;
+import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -32,15 +35,7 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
-import io.zeta.metaspace.model.share.APIInfo;
-import io.zeta.metaspace.model.share.ApiHead;
-import io.zeta.metaspace.model.share.ApiInfoV2;
-import io.zeta.metaspace.model.share.ApiLog;
-import io.zeta.metaspace.model.share.ApiLogEnum;
-import io.zeta.metaspace.model.share.ApiStatus;
-import io.zeta.metaspace.model.share.CategoryDelete;
-import io.zeta.metaspace.model.share.MoveApi;
-import io.zeta.metaspace.model.share.QueryParameter;
+import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -50,6 +45,7 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +92,10 @@ public class ApiManagerREST {
     private DataManageService dataManageService;
     @Autowired
     private AuditService auditService;
+    @Autowired
+    private DesensitizationService desensitizationService;
+    @Autowired
+    private IpRestrictionService ipRestrictionService;
 
     private static int CATEGORY_TYPE = 2;
 
@@ -111,10 +111,10 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result insertAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建api:"+info.getName());
+    public Result insertAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId, @PathParam("submit") boolean submit) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建api:" + info.getName());
         try {
-            shareService.insertAPIInfoV2(info,tenantId,submit);
+            shareService.insertAPIInfoV2(info, tenantId, submit);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建api失败");
@@ -123,6 +123,7 @@ public class ApiManagerREST {
 
     /**
      * 更新api
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -132,19 +133,43 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result updateAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId,@PathParam("submit") boolean submit) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api:"+info.getName());
+    public Result updateAPIInfo(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId, @PathParam("submit") boolean submit) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api:" + info.getName());
 
         try {
-            shareService.updateAPIInfoV2(info,tenantId,submit);
+            shareService.updateAPIInfoV2(info, tenantId, submit);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api失败");
         }
     }
 
+
+    /**
+     * 更新 api 策略
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/poly/{apiId}/{version}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result updateAPIPloy(@PathParam("apiId") String apiId, @PathParam("version") String version, ApiPolyEntity apiPolyEntity, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiId + " " + version);
+        try {
+            shareService.updateAPIInfoV2ApiPolyEntity(apiId, version, apiPolyEntity, tenantId);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api策略");
+        }
+    }
+
+
     /**
      * 提交api
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -154,12 +179,12 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result submitApi(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result submitApi(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(info.getGuid(), info.getVersion());
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "提交api审核:"+apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "提交api审核:" + apiInfoByVersion.getName());
 
         try {
-            shareService.submitApi(info.getGuid(),info.getVersion(),tenantId);
+            shareService.submitApi(info.getGuid(), info.getVersion(), tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "提交api失败");
@@ -168,6 +193,7 @@ public class ApiManagerREST {
 
     /**
      * 取消审核
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -177,15 +203,15 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result revokeApiAudit(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result revokeApiAudit(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(info.getGuid(), info.getVersion());
-        if(apiInfoByVersion == null){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"Api 不存在");
+        if (apiInfoByVersion == null) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Api 不存在");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "取消审核:"+apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "取消审核:" + apiInfoByVersion.getName());
 
         try {
-            auditService.cancelApiAudit(tenantId,info.getGuid(),info.getVersion());
+            auditService.cancelApiAudit(tenantId, info.getGuid(), info.getVersion());
             shareService.addApiLog(ApiLogEnum.UNSUBMIT, info.getGuid(), AdminUtils.getUserData().getUserId());
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -195,6 +221,7 @@ public class ApiManagerREST {
 
     /**
      * 删除api
+     *
      * @param ids
      * @return
      * @throws AtlasBaseException
@@ -203,14 +230,14 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteApi(List<String> ids,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result deleteApi(List<String> ids, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(apiInfoV2 -> apiInfoV2.getName()).collect(Collectors.toList());
-        if (projectNames==null||projectNames.size()==0){
+        if (projectNames == null || projectNames.size() == 0) {
             return ReturnUtil.success();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
         try {
-            shareService.deleteApi(ids,tenantId);
+            shareService.deleteApi(ids, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除api失败");
@@ -219,6 +246,7 @@ public class ApiManagerREST {
 
     /**
      * 删除api版本
+     *
      * @param api
      * @return
      * @throws AtlasBaseException
@@ -228,11 +256,11 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteApiVersion(ApiVersion api,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result deleteApiVersion(ApiVersion api, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         ApiInfoV2 apiInfoByVersion = shareService.getApiInfoByVersion(api.getApiId(), api.getVersion());
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除api:" +apiInfoByVersion.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除api:" + apiInfoByVersion.getName());
         try {
-            shareService.deleteApiVersion(api,tenantId);
+            shareService.deleteApiVersion(api, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除api失败");
@@ -241,6 +269,7 @@ public class ApiManagerREST {
 
     /**
      * 获取api详情
+     *
      * @param apiId
      * @return
      * @throws AtlasBaseException
@@ -249,7 +278,7 @@ public class ApiManagerREST {
     @Path("/{apiId}/info")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiInfo(@PathParam("apiId")String apiId) throws AtlasBaseException {
+    public Result getApiInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
         try {
             ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoMaxVersion(apiId);
             return ReturnUtil.success(apiInfoMaxVersion);
@@ -260,6 +289,7 @@ public class ApiManagerREST {
 
     /**
      * 根据版本获取api详情
+     *
      * @param apiId
      * @return
      * @throws AtlasBaseException
@@ -268,9 +298,9 @@ public class ApiManagerREST {
     @Path("/apiinfo/{apiId}/{version}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiInfoByVersion(@PathParam("apiId")String apiId,@PathParam("version")String version) throws AtlasBaseException {
+    public Result getApiInfoByVersion(@PathParam("apiId") String apiId, @PathParam("version") String version) throws AtlasBaseException {
         try {
-            ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(apiId,version);
+            ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(apiId, version);
             return ReturnUtil.success(apiInfo);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
@@ -279,6 +309,7 @@ public class ApiManagerREST {
 
     /**
      * 获取api版本
+     *
      * @param apiId
      * @return
      * @throws AtlasBaseException
@@ -287,11 +318,11 @@ public class ApiManagerREST {
     @Path("/version/{apiId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiVersion(@PathParam("apiId")String apiId) throws AtlasBaseException {
+    public Result getApiVersion(@PathParam("apiId") String apiId) throws AtlasBaseException {
         try {
             List<ApiVersion> apiVersion = shareService.getApiVersion(apiId);
             return ReturnUtil.success(apiVersion);
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api版本失败");
         }
     }
@@ -300,9 +331,9 @@ public class ApiManagerREST {
     @Path("/status")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateApiStatus(ApiStatus apiInfo, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result updateApiStatus(ApiStatus apiInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            shareService.updateApiStatus(apiInfo.getGuid(),apiInfo.isStatus());
+            shareService.updateApiStatus(apiInfo.getGuid(), apiInfo.isStatus());
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api上下架状态异常");
@@ -314,24 +345,25 @@ public class ApiManagerREST {
     @Path("/{apiId}/log")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiLog(@PathParam("apiId")String apiId,
-                            @DefaultValue("0")@QueryParam("offset")int offset,
-                            @DefaultValue("-1")@QueryParam("limit") int limit,
-                            @QueryParam("search")String search) throws AtlasBaseException {
+    public Result getApiLog(@PathParam("apiId") String apiId,
+                            @DefaultValue("0") @QueryParam("offset") int offset,
+                            @DefaultValue("-1") @QueryParam("limit") int limit,
+                            @QueryParam("search") String search) throws AtlasBaseException {
         try {
             Parameters param = new Parameters();
             param.setOffset(offset);
             param.setLimit(limit);
             param.setQuery(search);
-            PageResult<ApiLog> pageResult = shareService.getApiLog(param,apiId);
+            PageResult<ApiLog> pageResult = shareService.getApiLog(param, apiId);
             return ReturnUtil.success(pageResult);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api日志失败");
         }
     }
 
     /**
      * 创建目录
+     *
      * @param categoryInfo
      * @param tenantId
      * @param projectId
@@ -343,10 +375,10 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId,@PathParam("projectId")String projectId) throws Exception {
+    public Result createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId, @PathParam("projectId") String projectId) throws Exception {
         AtlasPerfTracer perf = null;
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建目录:"+categoryInfo.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "创建目录:" + categoryInfo.getName());
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.createCategory()");
             }
@@ -354,13 +386,14 @@ public class ApiManagerREST {
             return ReturnUtil.success(category);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "创建目录失败");
-        }finally {
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
     /**
      * 更新目录
+     *
      * @param categoryInfo
      * @param projectId
      * @param tenantId
@@ -372,24 +405,25 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result updateCategory(CategoryInfoV2 categoryInfo,@PathParam("projectId")String projectId,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result updateCategory(CategoryInfoV2 categoryInfo, @PathParam("projectId") String projectId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新目录:"+categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新目录:" + categoryInfo.getName());
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.updateCategory()");
             }
-            shareService.updateCategory(categoryInfo, projectId,tenantId);
+            shareService.updateCategory(categoryInfo, projectId, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新目录失败");
-        }finally {
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }
 
     /**
      * 删除目录
+     *
      * @param categoryDelete
      * @param projectId
      * @param tenantId
@@ -401,17 +435,17 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteCategory(CategoryDelete categoryDelete, @PathParam("projectId") String projectId, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result deleteCategory(CategoryDelete categoryDelete, @PathParam("projectId") String projectId, @HeaderParam("tenantId") String tenantId) throws Exception {
         categoryDelete.setProjectId(projectId);
         Servlets.validateQueryParamLength("categoryGuid", categoryDelete.getId());
         AtlasPerfTracer perf = null;
         CategoryEntityV2 category = shareService.getCategory(categoryDelete.getId(), tenantId);
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除目录:"+category.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除目录:" + category.getName());
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "ApiREST.deleteCategory(" + categoryDelete.getId() + ")");
             }
-            shareService.deleteCategory(categoryDelete,tenantId);
+            shareService.deleteCategory(categoryDelete, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除目录失败");
@@ -431,7 +465,7 @@ public class ApiManagerREST {
     @Path("/category/{projectId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getCategories(@PathParam("projectId")String projectId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result getCategories(@PathParam("projectId") String projectId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
@@ -448,6 +482,7 @@ public class ApiManagerREST {
 
     /**
      * 查询api
+     *
      * @param categoryId
      * @param projectId
      * @param limit
@@ -465,12 +500,12 @@ public class ApiManagerREST {
     @Path("{projectId}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result searchApi(@PathParam("categoryId")String categoryId,@PathParam("projectId")String projectId,
-                                             @DefaultValue("-1")@QueryParam("limit")int limit, @DefaultValue("0")@QueryParam("offset")int offset,
-                                             @QueryParam("search")String search, @QueryParam("order")String order,
-                                             @QueryParam("sortBy")String sort,@QueryParam("status")String status,
-                                             @QueryParam("isApprove")String approve,
-                                             @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result searchApi(@PathParam("categoryId") String categoryId, @PathParam("projectId") String projectId,
+                            @DefaultValue("-1") @QueryParam("limit") int limit, @DefaultValue("0") @QueryParam("offset") int offset,
+                            @QueryParam("search") String search, @QueryParam("order") String order,
+                            @QueryParam("sortBy") String sort, @QueryParam("status") String status,
+                            @QueryParam("isApprove") String approve,
+                            @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             Parameters parameters = new Parameters();
             parameters.setQuery(search);
@@ -487,6 +522,7 @@ public class ApiManagerREST {
 
     /**
      * 迁移目录
+     *
      * @param moveApi
      * @param tenantId
      * @return
@@ -497,20 +533,21 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result moveApi(MoveApi moveApi,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result moveApi(MoveApi moveApi, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         CategoryEntityV2 category = shareService.getCategory(moveApi.getOldCategoryId(), tenantId);
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "迁移目录:"+category.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "迁移目录:" + category.getName());
 
         try {
             shareService.moveApi(moveApi);
             return ReturnUtil.success();
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
         }
     }
 
     /**
      * 检查状态
+     *
      * @param fields
      * @return
      * @throws AtlasBaseException
@@ -526,6 +563,7 @@ public class ApiManagerREST {
 
     /**
      * 同名校验
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -534,10 +572,10 @@ public class ApiManagerREST {
     @Path("/same")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result querySameName(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result querySameName(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             String name = info.getName();
-            boolean bool = shareService.querySameNameV2(name, tenantId,info.getProjectId());
+            boolean bool = shareService.querySameNameV2(name, tenantId, info.getProjectId());
             return ReturnUtil.success(bool);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
@@ -546,6 +584,7 @@ public class ApiManagerREST {
 
     /**
      * 同版本校验
+     *
      * @param info
      * @return
      * @throws AtlasBaseException
@@ -554,9 +593,9 @@ public class ApiManagerREST {
     @Path("/same/version")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result querySameVersion(ApiInfoV2 info, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result querySameVersion(ApiInfoV2 info, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            boolean bool = shareService.isApiSameVersion(info.getGuid(),info.getVersion());
+            boolean bool = shareService.isApiSameVersion(info.getGuid(), info.getVersion());
             return ReturnUtil.success(bool);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询失败");
@@ -565,6 +604,7 @@ public class ApiManagerREST {
 
     /**
      * 获取库列表
+     *
      * @param parameters
      * @return
      * @throws AtlasBaseException
@@ -573,9 +613,9 @@ public class ApiManagerREST {
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDatabaseByQuery(Parameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result getDatabaseByQuery(Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取库列表失败");
@@ -584,6 +624,7 @@ public class ApiManagerREST {
 
     /**
      * 搜库
+     *
      * @param parameters
      * @return
      * @throws AtlasBaseException
@@ -592,9 +633,9 @@ public class ApiManagerREST {
     @Path("/search/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDatabaseAndTableByQuery(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result getDatabaseAndTableByQuery(Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters,tenantId);
+            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索库列表失败");
@@ -612,7 +653,7 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getTableByDB(@PathParam("databaseId") String databaseId, Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters,tenantId);
+            PageResult<TableInfo> pageResult = searchService.getTableByDBWithQueryWithoutTmp(databaseId, parameters, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
@@ -621,6 +662,7 @@ public class ApiManagerREST {
 
     /**
      * 获取表字段
+     *
      * @param tableGuid
      * @return
      * @throws AtlasBaseException
@@ -640,6 +682,7 @@ public class ApiManagerREST {
 
     /**
      * 获取ORACLE数据源
+     *
      * @param parameters
      * @param tenantId
      * @return
@@ -649,9 +692,9 @@ public class ApiManagerREST {
     @Path("/{type}/datasource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId,@PathParam("type")String type) throws AtlasBaseException {
+    public PageResult getDataSourceList(Parameters parameters, @HeaderParam("tenantId") String tenantId, @PathParam("type") String type) throws AtlasBaseException {
         try {
-            PageResult oracleDataSourceList = shareService.getDataSourceList(parameters,type, tenantId);
+            PageResult oracleDataSourceList = shareService.getDataSourceList(parameters, type, tenantId);
             return oracleDataSourceList;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据源失败");
@@ -660,6 +703,7 @@ public class ApiManagerREST {
 
     /**
      * 获取schema列表失败
+     *
      * @param sourceId
      * @param parameters
      * @return
@@ -680,6 +724,7 @@ public class ApiManagerREST {
 
     /**
      * 获取表列表
+     *
      * @param sourceId
      * @param schemaName
      * @param parameters
@@ -701,6 +746,7 @@ public class ApiManagerREST {
 
     /**
      * 获取表字段
+     *
      * @param sourceId
      * @param schemaName
      * @param tableName
@@ -723,6 +769,7 @@ public class ApiManagerREST {
 
     /**
      * 获取资源池失败
+     *
      * @param tenantId
      * @return
      * @throws AtlasBaseException
@@ -731,7 +778,7 @@ public class ApiManagerREST {
     @Path("/pools")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getPools(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result getPools(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             List<Queue> pools = shareService.getPools(tenantId);
             return ReturnUtil.success(pools);
@@ -744,21 +791,21 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/test/{randomName}")
-    public Result testApi(@HeaderParam("tenantId")String tenantId,ApiInfoV2 apiInfoV2,
-                          @DefaultValue("1")@QueryParam("page_num")Long pageNum,
-                          @DefaultValue("10")@QueryParam("page_size")Long pageSize,
+    public Result testApi(@HeaderParam("tenantId") String tenantId, ApiInfoV2 apiInfoV2,
+                          @DefaultValue("1") @QueryParam("page_num") Long pageNum,
+                          @DefaultValue("10") @QueryParam("page_size") Long pageSize,
                           @PathParam("randomName") String randomName) throws Exception {
         try {
             long limit = 10;
             long offset = 0;
-            if (pageSize!=null){
-                limit=Long.valueOf(pageSize);
+            if (pageSize != null) {
+                limit = Long.valueOf(pageSize);
             }
-            if (pageNum!=null&&Long.valueOf(pageNum)>0){
-                offset=(Long.valueOf(pageNum)-1)*limit;
+            if (pageNum != null && Long.valueOf(pageNum) > 0) {
+                offset = (Long.valueOf(pageNum) - 1) * limit;
             }
-            Map resultMap = shareService.testAPIV2(randomName, apiInfoV2,limit,offset);
-            List<LinkedHashMap<String,Object>> result = (List<LinkedHashMap<String,Object>>)resultMap.get("queryResult");
+            Map resultMap = shareService.testAPIV2(randomName, apiInfoV2, limit, offset);
+            List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
             return ReturnUtil.success(result);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "测试api失败");
@@ -781,8 +828,45 @@ public class ApiManagerREST {
     @Path("/type")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDataSourceType(){
+    public Result getDataSourceType() {
         List<DataSourceTypeInfo> dataSourceType = shareService.getDataSourceType();
         return ReturnUtil.success(dataSourceType);
+    }
+
+    /**
+     * 获取规则列表
+     */
+    @GET
+    @Path("desensitization")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DesensitizationRule> getDesensitizationRuleList(@QueryParam("limit") int limit, @QueryParam("offset") int offset, @QueryParam("query") String query, @QueryParam("enable") String enableStr, @HeaderParam("tenantId") String tenantId) {
+        Parameters parameters = new Parameters();
+        parameters.setQuery(query);
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+
+        Boolean enable = StringUtils.isNotEmpty(enableStr) ? Boolean.valueOf(enableStr) : null;
+        return desensitizationService.getDesensitizationRuleList(parameters, enable, tenantId);
+    }
+
+
+    /**
+     * 获取黑白名单列表
+     */
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<IpRestriction> getIpRestrictionRuleList(@QueryParam("limit") int limit, @QueryParam("offset") int offset, @QueryParam("query") String query, @QueryParam("type") String typeStr, @QueryParam("enable") String enableStr, @HeaderParam("tenantId") String tenantId) {
+        Parameters parameters = new Parameters();
+        parameters.setQuery(query);
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+
+        Boolean enable = StringUtils.isNotEmpty(enableStr) ? Boolean.valueOf(enableStr) : null;
+        IpRestrictionType type = StringUtils.isNotEmpty(typeStr) ? IpRestrictionType.valueOf(typeStr) : null;
+
+        return ipRestrictionService.getIpRestrictionList(parameters, enable, type, tenantId);
+
     }
 }

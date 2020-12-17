@@ -22,6 +22,7 @@ package io.zeta.metaspace.web.service.dataquality;
  * @date 2019/7/24 10:29
  */
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
@@ -202,7 +203,7 @@ public class TaskManageService {
             if(ObjectType.COLUMN == ObjectType.of(objType)) {
                 List<String> columnTypeList = taskManageDAO.getColumnTypeList(objIdList);
                 boolean allNumericValue = columnTypeList.stream().allMatch(columnType -> HiveNumericType.isNumericType(columnType));
-                List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId();
+                List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId(tenantId);
                 return allNumericValue == true ? ruleList
                         :ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getRuleTemplateId())).collect(Collectors.toList());
             }
@@ -232,6 +233,8 @@ public class TaskManageService {
     }
 
     public void addTask(TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
+        Gson gson = new Gson();
+        String s = gson.toJson(taskInfo);
         Timestamp currentTime = DateUtils.currentTimestamp();
         addDataQualityTask(currentTime, taskInfo,tenantId);
     }
@@ -280,7 +283,7 @@ public class TaskManageService {
             dataQualityTask.setPool(taskInfo.getPool());
             //子任务
             List<TaskInfo.SubTask> subTaskList = taskInfo.getTaskList();
-            addDataQualitySubTask(guid, currentTime, subTaskList);
+            addDataQualitySubTask(guid, currentTime, subTaskList,tenantId);
 
             taskManageDAO.addTaskWarningGroup(guid, WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
             taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
@@ -296,7 +299,7 @@ public class TaskManageService {
         }
     }
 
-    public void addDataQualitySubTask(String taskId, Timestamp currentTime, List<TaskInfo.SubTask> subTaskList) throws AtlasBaseException {
+    public void addDataQualitySubTask(String taskId, Timestamp currentTime, List<TaskInfo.SubTask> subTaskList,String tenantId) throws AtlasBaseException {
         try {
             for(int i=0, size=subTaskList.size(); i<size; i++) {
                 TaskInfo.SubTask subTask = subTaskList.get(i);
@@ -318,7 +321,7 @@ public class TaskManageService {
                 dataQualitySubTask.setDelete(false);
                 //subTaskRule
                 List<TaskInfo.SubTaskRule> subTaskRuleList = subTask.getSubTaskRuleList();
-                addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList);
+                addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList,tenantId);
                 //object
                 List<String> objectIdList = subTask.getObjectIdList();
                 addDataQualitySubTaskObject(taskId, guid, currentTime, objectIdList);
@@ -363,7 +366,7 @@ public class TaskManageService {
     }
 
     @Transactional(rollbackFor=Exception.class)
-    public void addDataQualitySubTaskRule(String subTaskId, Timestamp currentTime, List<TaskInfo.SubTaskRule> subTaskRuleList) throws AtlasBaseException {
+    public void addDataQualitySubTaskRule(String subTaskId, Timestamp currentTime, List<TaskInfo.SubTaskRule> subTaskRuleList,String tenantId) throws AtlasBaseException {
         try {
             for (int i=0,size=subTaskRuleList.size(); i<size; i++) {
                 TaskInfo.SubTaskRule rule = subTaskRuleList.get(i);
@@ -418,7 +421,7 @@ public class TaskManageService {
                 subTaskRule.setUpdateTime(currentTime);
                 //是否已删除
                 subTaskRule.setDelete(false);
-                String unit = taskManageDAO.getTaskRuleUnit(rule.getRuleId());
+                String unit = taskManageDAO.getTaskRuleUnit(rule.getRuleId(),tenantId);
                 subTaskRule.setCheckThresholdUnit(unit);
                 taskManageDAO.addDataQualitySubTaskRule(subTaskRule);
             }
@@ -445,6 +448,7 @@ public class TaskManageService {
     public EditionTaskInfo getTaskInfo(String taskId) throws AtlasBaseException {
         try {
             EditionTaskInfo info = taskManageDAO.getTaskInfo(taskId);
+            String tenantId = info.getTenantId();
             List<EditionTaskInfo.SubTask> subTaskList = taskManageDAO.getSubTaskInfo(taskId);
             for (EditionTaskInfo.SubTask subTask : subTaskList) {
                 String subTaskId = subTask.getSubTaskId();
@@ -467,7 +471,7 @@ public class TaskManageService {
                     }
                 }
                 subTask.setObjectIdList(objectInfoList);
-                List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId);
+                List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId,tenantId);
                 subTask.setSubTaskRuleList(subTaskRuleList);
 
             }
@@ -582,17 +586,18 @@ public class TaskManageService {
     public PageResult<TaskRuleHeader> getRuleList(String taskId, Parameters parameters) throws AtlasBaseException {
         try {
             PageResult pageResult = new PageResult();
-            List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters);
-            Map<Integer, String> ruleTemplateCategoryMap = new HashMap();
+            EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
+            List<TaskRuleHeader> lists = taskManageDAO.getRuleList(taskId, parameters,taskInfo.getTenantId());
+            Map<String, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {
                 ruleTemplateCategoryMap.put(ruleTemplateType.getRuleType(), ruleTemplateType.getName());
             });
             for (TaskRuleHeader rule : lists) {
-                Integer categoryId = taskManageDAO.getRuleTypeCodeByRuleId(rule.getRuleId());
+                String categoryId = taskManageDAO.getRuleTypeCodeByRuleId(rule.getRuleId(),taskInfo.getTenantId());
                 String typeName = ruleTemplateCategoryMap.get(categoryId);
                 rule.setTypeName(typeName);
             }
-            long totalSize = taskManageDAO.countRuleList(taskId);
+            long totalSize = taskManageDAO.countRuleList(taskId,taskInfo.getTenantId());
             pageResult.setLists(lists);
             pageResult.setCurrentSize(lists.size());
             pageResult.setTotalSize(totalSize);
@@ -616,7 +621,7 @@ public class TaskManageService {
         }
     }
 
-    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId) throws AtlasBaseException {
+    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId,String tenantId) throws AtlasBaseException {
         try {
             ExecutionReportData resultData = new ExecutionReportData();
             //basicInfo
@@ -624,10 +629,10 @@ public class TaskManageService {
             resultData.setBasicInfo(basicInfo);
             //checkStatus
             ExecutionReportData.TaskCheckResultCount checkResultCount = new ExecutionReportData.TaskCheckResultCount();
-            long tableRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 0);
-            long tableRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 1);
-            long columnRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 0);
-            long columnRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 1);
+            long tableRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 0,tenantId);
+            long tableRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 1,tenantId);
+            long columnRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 0,tenantId);
+            long columnRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 1,tenantId);
             checkResultCount.setTableRulePassedNumber(tableRulePassedNumber);
             checkResultCount.setTableRuleNoPassedNumber(tableRuleNoPassedNumber);
             checkResultCount.setColumnRulePassedNumber(columnRulePassedNumber);
@@ -670,7 +675,7 @@ public class TaskManageService {
             List<String> columnRuleSuggestion = new ArrayList<>();
             String suffix = "的结果不符合预期，请及时处理";
             String noEnd = "未执行完毕，请稍候再次进行下载";
-            List<TaskRuleExecutionRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId);
+            List<TaskRuleExecutionRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId,tenantId);
             for (TaskRuleExecutionRecord record : executeResult) {
                 if (0==record.getObjectType() &&record.getCheckStatus()==null){
                     tableRuleSuggestion.add(record.getObjectName() + noEnd);
@@ -696,9 +701,9 @@ public class TaskManageService {
         }
     }
 
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String executionId) throws AtlasBaseException {
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(String executionId,String tenantId) throws AtlasBaseException {
         try {
-            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId);
+            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId,tenantId);
             for (TaskRuleExecutionRecord record : list) {
                 if(0 == record.getObjectType()) {
                     String objectId = record.getObjectId();

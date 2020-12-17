@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.rest.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
@@ -53,10 +54,10 @@ public class RuleTemplateREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/categories")
-    public List<RuleTemplateType> templateCategory() throws AtlasBaseException {
+    public List<RuleTemplateType> templateCategory(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         return RuleTemplateType.all().stream().map(ruleTemplateCategory -> {
-            Integer categoryId = ruleTemplateCategory.getRuleType();
-            long count = ruleTemplateService.countByCategoryId(categoryId);
+            String categoryId = ruleTemplateCategory.getRuleType();
+            long count = ruleTemplateService.countByCategoryId(categoryId,tenantId);
             ruleTemplateCategory.setCount(count);
             return ruleTemplateCategory;
         }).collect(Collectors.toList());
@@ -66,16 +67,16 @@ public class RuleTemplateREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleType}/rules")
-    public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")Integer categoryId, Parameters parameters) throws AtlasBaseException {
-        return ruleTemplateService.getRuleTemplate(categoryId, parameters);
+    public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")String categoryId, RuleParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleTemplateService.getRuleTemplate(categoryId, parameters,tenantId);
     }
 
     @POST
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RuleTemplate> search(Parameters parameters) throws AtlasBaseException {
-        return ruleTemplateService.search(parameters);
+    public PageResult<RuleTemplate> search(RuleParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return ruleTemplateService.search(parameters,tenantId);
     }
 
     @POST
@@ -96,8 +97,8 @@ public class RuleTemplateREST {
     @Path("/{executionId}/record")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(executionId);
+    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskRuleExecutionRecordList(executionId,tenantId);
     }
 
     /**

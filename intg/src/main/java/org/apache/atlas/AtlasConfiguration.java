@@ -47,6 +47,7 @@ public enum AtlasConfiguration {
     ATLAS_CLUSTER_NAME("atlas.cluster.name", "ms"),
     METASPACE_ADAPTER_DIR("metaspace.adapter.dir", "adapters"),
 
+    METASPACE_API_POLY_EFFECTIVE_TIME("metaspace.api.ploy.effective.time", 60*5),
     METASPACE_QUALITY_ENGINE("metaspace.quality.engine", "impala");
 
     private static final Configuration APPLICATION_PROPERTIES;

@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao.dataquality;
 import io.zeta.metaspace.model.dataquality2.Report2RuleTemplate;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -13,31 +14,38 @@ import java.util.List;
 public interface RuleTemplateDAO {
 
 
-    @Select({" select count(1) from data_quality_rule_template where delete=false and rule_type=#{ruleType} "})
-    public long countByCategoryId(@Param("ruleType") Integer ruleType);
+    @Select({" select count(1) from data_quality_rule_template where delete=false and rule_type=#{ruleType} and tenantid=#{tenantId}"})
+    public long countByCategoryId(@Param("ruleType") String ruleType,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
-             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,",
+             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,code,",
              " count(*)over() as total",
              " from data_quality_rule_template",
-             " where rule_type=#{ruleType}",
+             " where rule_type=#{ruleType} and tenantid=#{tenantId} " +
+             " <if test='params.enable != null'>",
+             " and enable=#{params.enable}  ",
+             " </if>",
              " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<RuleTemplate> getRuleTemplateByCategoryId(@Param("ruleType")Integer ruleType, @Param("params") Parameters params);
+    public List<RuleTemplate> getRuleTemplateByCategoryId(@Param("ruleType")String ruleType, @Param("params") RuleParameters params,@Param("tenantId")String tenantId);
 
 
     @Select({"<script>",
-             " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime from data_quality_rule_template" ,
-             " <if test=\"params.query != null and params.query!=''\">",
-             " where (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' ) ",
+             " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime,code from data_quality_rule_template" ,
+             " where tenantid=#{tenantId} " +
+             "<if test=\"params.query != null and params.query!=''\">",
+             " and (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' )  " +
+             " <if test='params.enable != null'>",
+             " and enable=#{params.enable} ",
+             " </if>",
              " </if>",
              " <if test='params.limit != null and params.limit != -1'>",
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<RuleTemplate> searchRuleTemplate(@Param("params") Parameters params);
+    public List<RuleTemplate> searchRuleTemplate(@Param("params") RuleParameters params,@Param("tenantId")String tenantId);
 
     @Insert({" <script>",
              " insert into report2ruletemplate(rule_template_id,data_quality_execute_id,creator,create_time)values",
@@ -54,7 +62,7 @@ public interface RuleTemplateDAO {
             " (select rule_template_id as ruleTemplateId,data_quality_execute_id as executeId,",
             " report2ruletemplate.creator as creatorId,report2ruletemplate.create_time as createTime,rule_type as ruleTypeId",
             " from report2ruletemplate join data_quality_rule_template on data_quality_rule_template.id=report2ruletemplate.rule_template_id",
-            " where rule_template_id=#{templateId}) a",
+            " where rule_template_id=#{templateId} and tenantid=#{tenantId}) a",
             " join data_quality_task_execute",
             " on data_quality_task_execute.id=a.executeId)b",
             " join data_quality_task on data_quality_task.id=b.taskId where data_quality_task.tenantid=#{tenantId}) c",
