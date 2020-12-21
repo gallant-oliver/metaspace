@@ -87,16 +87,9 @@ public class HomePageService {
             homePageDAO.addStatistical(uuid, date, noAddedBusinessCount, SystemStatistical.BUSINESSE_NO_ADD.getCode(),TenantService.defaultTenant);
         }else{
             List<String> tenants = tenantDAO.getAllTenantId();
-            TenantDatabaseList tenantDatabaseList = tenantService.getDatabase();
             for (String tenantId:tenants){
                 homePageDAO.deleteStatistical(date,tenantId);
-                List<String> dbs=null;
-                for (TenantDatabaseList.TenantDatabase tenantDatabase:tenantDatabaseList.getTenantDatabaseList()){
-                    if (tenantDatabase.getTenantId().equals(tenantId)){
-                        dbs=tenantDatabase.getDatabases().stream().map(database -> database.getName()).collect(Collectors.toList());
-                        break;
-                    }
-                }
+                List<String> dbs=tenantService.getDatabase(tenantId);
                 String dbsToString = dbsToString(dbs);
                 List<Long> dbTotal = metaspaceGremlinService.getDBTotal(dbsToString);
                 List<Long> tbTotal = metaspaceGremlinService.getTBTotal(dbsToString);

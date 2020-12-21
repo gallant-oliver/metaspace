@@ -2279,7 +2279,8 @@ CREATE TABLE "public"."api" (
   "returnparam" json,
   "sortparam" json,
   "projectid" varchar(255) COLLATE "pg_catalog"."default",
-  "valid" bool
+  "valid" bool,
+  "mobius_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api"."guid" IS 'id';
@@ -2397,7 +2398,8 @@ CREATE TABLE "public"."api_group" (
   "updater" varchar(255) COLLATE "pg_catalog"."default",
   "updatetime" timestamptz(6),
   "tenantid" varchar(36) COLLATE "pg_catalog"."default" DEFAULT ''::character varying,
-  "projectid" varchar(36) COLLATE "pg_catalog"."default"
+  "projectid" varchar(36) COLLATE "pg_catalog"."default",
+  "mobius_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api_group"."id" IS '分组id';
