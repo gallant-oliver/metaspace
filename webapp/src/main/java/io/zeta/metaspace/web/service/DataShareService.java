@@ -2765,6 +2765,9 @@ public class DataShareService {
         for (LinkedHashMap<String, Object> itemMap : result)  {
             int i = 0;
             for (String filed : itemMap.keySet()) {
+                if(i == returnParam.size()){
+                    break;
+                }
                 String columnName = returnParam.get(i++).getColumnName();
                 DesensitizationRule rule = desensitizationRuleMap.get(columnName);
                 if (rule != null) {
