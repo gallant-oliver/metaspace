@@ -22,7 +22,7 @@ public enum DesensitizationAlgorithm {
     MD5("MD5 哈希", "哈希", new String[]{"盐值"}, (field, params) -> Hashing.md5().newHasher().putString(field.toString() + params.get(0).toString(), Charsets.UTF_8).hash().toString()),
     SHA1("SHA1 哈希", "哈希", new String[]{"盐值"}, (field, params) -> Hashing.sha1().newHasher().putString(field.toString() + params.get(0).toString(), Charsets.UTF_8).hash().toString()),
     SHA256("SHA256 哈希", "哈希", new String[]{"盐值"}, (field, params) -> Hashing.sha256().newHasher().putString(field.toString() + params.get(0).toString(), Charsets.UTF_8).hash().toString()),
-    HMAC("MHMACD5 哈希", "哈希", new String[]{"秘钥", "盐值"}, (field, params) -> Hashing.hmacSha256(params.get(0).getBytes()).newHasher().putString(field.toString() + params.get(1).toString(), Charsets.UTF_8).hash().toString()),
+    HMAC("HMAC SHA256 哈希", "哈希", new String[]{"密钥", "盐值"}, (field, params) -> Hashing.hmacSha256(params.get(0).getBytes()).newHasher().putString(field.toString() + params.get(1).toString(), Charsets.UTF_8).hash().toString()),
 
     NumericalTypeTruncation("数值类型截断", "截断", new String[]{"保留小数点前几位"}, (field, params) -> {
         Double filedValue = Double.valueOf(field.toString());
