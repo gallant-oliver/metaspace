@@ -65,7 +65,7 @@ public class TenantService {
     private final static String TENANT_MODULE="/service/tools/toolRoles";
     private final static String POOL="/service/cluster/pools";
     private final static String TENANT_USER_DATABASE="/service/tools/tables/";
-    private final static String TENANT_DATABASE="/service/tenant/databases";
+    private final static String TENANT_DATABASE="/service/external/getHiveDatabase";
     private final static String toolName="metaspace";
     public final static String defaultTenant="default";
     private static boolean isStandalone;
@@ -435,14 +435,9 @@ public class TenantService {
                     continue;
                 }
                 Object data = map.get("data");
-                dbs = new ArrayList<>();
-                TenantDatabaseList tenantDatabaseList = gson.fromJson(gson.toJson(data), TenantDatabaseList.class);
-                for (TenantDatabaseList.TenantDatabase tenantDatabase : tenantDatabaseList.getTenantDatabaseList()) {
-                    if (tenantDatabase.getTenantId().equals(tenantId)) {
-                        dbs.addAll(tenantDatabase.getDatabases().stream().map(database -> database.getName()).collect(Collectors.toList()));
-                        break;
-                    }
-                }
+                List<Map<String,String>> databaseList = gson.fromJson(gson.toJson(data), new TypeToken<List<Map<String, String>>>() {
+                }.getType());
+                dbs = databaseList.stream().map(database->database.get("resourceContent")).collect(Collectors.toList());
                 databaseCache.put(cacheKey, dbs);
                 return dbs;
             }
@@ -450,42 +445,6 @@ public class TenantService {
             throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
         }catch (Exception e){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
-        }
-        throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的hive库权限错误");
-    }
-
-    /**
-     * 获取所有租户的权限库
-     * @return
-     */
-    public TenantDatabaseList getDatabase() throws AtlasBaseException {
-        Object status=null;
-        Object msgDesc=null;
-        Gson gson = new Gson();
-        HashMap<String,String> hashMap = new HashMap<>();
-        hashMap.put("User-Agent","Chrome");
-        HashMap<String,String> query = new HashMap<>();
-        try {
-            SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
-            int retryCount = 0;
-            int retries = 3;
-            while(retryCount < retries) {
-                String string = OKHttpClient.doGet(SECURITY_HOST + TENANT_DATABASE, query, hashMap);
-                Map map = gson.fromJson(string, HashMap.class);
-                status = map.get("statusCode");
-                if (status==null||!status.toString().startsWith(successStatusCode)){
-                    msgDesc=map.get("msgDesc");
-                    retryCount++;
-                    continue;
-                }
-                Object data = map.get("data");
-                TenantDatabaseList tenantDatabaseList = gson.fromJson(gson.toJson(data), TenantDatabaseList.class);
-                return tenantDatabaseList;
-            }
-        }catch (AtlasBaseException e){
-            throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
-        }catch (Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误"+e.getMessage());
         }
         throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的hive库权限错误");
     }
