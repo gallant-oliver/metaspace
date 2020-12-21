@@ -2672,7 +2672,7 @@ public class DataShareService {
             if (ipRestrictions.stream().filter(i -> type.equals(i.getType())).count() != ipRestrictions.size()) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API 的黑白名单策略不能混合类型配置");
             }
-            List<String> allIp = ipRestrictions.stream().map(IpRestriction::getIpList).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+            List<String> allIp = ipRestrictions.stream().filter(IpRestriction::isEnable).map(IpRestriction::getIpList).flatMap(Collection::stream).distinct().collect(Collectors.toList());
             switch (type) {
                 case WHITE:
                     if (allIp.stream().noneMatch(item -> new IpAddressMatcher(item).matches(ip))) {
@@ -2765,6 +2765,9 @@ public class DataShareService {
         for (LinkedHashMap<String, Object> itemMap : result)  {
             int i = 0;
             for (String filed : itemMap.keySet()) {
+                if(i == returnParam.size()){
+                    break;
+                }
                 String columnName = returnParam.get(i++).getColumnName();
                 DesensitizationRule rule = desensitizationRuleMap.get(columnName);
                 if (rule != null) {
