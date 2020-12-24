@@ -18,6 +18,9 @@ public abstract class AbstractAdapterSource implements AdapterSource {
      * 连接池
      */
     protected DataSource dataSource;
+
+    private boolean initDataSource = true;
+
     /**
      * 连接池配置
      */
@@ -27,11 +30,25 @@ public abstract class AbstractAdapterSource implements AdapterSource {
      */
     protected DataSourceInfo dataSourceInfo;
 
+
     public AbstractAdapterSource(Adapter adapter, DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool) {
         this.adapter = adapter;
         this.dataSourcePool = dataSourcePool;
         this.dataSourceInfo = dataSourceInfo;
         this.dataSource = initDataSource();
+    }
+
+    public AbstractAdapterSource(Adapter adapter, DataSourceInfo dataSourceInfo) {
+        this.adapter = adapter;
+        this.dataSourceInfo = dataSourceInfo;
+        this.initDataSource = false;
+    }
+
+    public DataSource getDataSource() {
+        if(!initDataSource){
+            throw new AtlasBaseException("数据源连接池未初始化");
+        }
+        return dataSource;
     }
 
     /**
