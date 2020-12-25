@@ -354,14 +354,14 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.columns,relation.tables,relation.ruleid,",
+             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.ruleid,",
              " data_quality_rule_template.type as taskType,data_quality_rule_template.scope,data_quality_rule_template.sql as sql from data_quality_rule_template ",
              " join",
-             " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,obj.columns,obj.tables,template_rule.subTaskRuleId from" ,
+             " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,template_rule.subTaskRuleId from" ,
              " (select id as subTaskRuleId,subtask_id,ruleid,ruleid as rule_template_id from data_quality_sub_task_rule where subtask_id in ",
              " (select id from data_quality_sub_task where task_id=#{taskId})) template_rule",
              " join",
-             " (select object_id,subtask_id,columns,tables from data_quality_sub_task_object where subtask_id in",
+             " (select object_id,subtask_id from data_quality_sub_task_object where subtask_id in",
              " (select id from data_quality_sub_task where task_id=#{taskId})) obj",
              " on template_rule.subtask_id=obj.subtask_id) relation",
              " on relation.rule_template_id=data_quality_rule_template.id " +

@@ -52,6 +52,7 @@ import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
+import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -91,6 +92,8 @@ public class TaskManageREST {
     DataManageService dataManageService;
     @Autowired
     RuleTemplateService ruleTemplateService;
+    @Autowired
+    LivyTaskSubmitHelper livyTaskSubmitHelper;
 
     private static final int CategoryType = 4;
 

@@ -19,7 +19,13 @@ package io.zeta.metaspace.web.task.quartz;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.healthmarketscience.sqlbuilder.*;
+import com.healthmarketscience.sqlbuilder.BinaryCondition;
+import com.healthmarketscience.sqlbuilder.CaseStatement;
+import com.healthmarketscience.sqlbuilder.ComboCondition;
+import com.healthmarketscience.sqlbuilder.CustomSql;
+import com.healthmarketscience.sqlbuilder.FunctionCall;
+import com.healthmarketscience.sqlbuilder.SelectQuery;
+import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
@@ -57,7 +63,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
@@ -170,17 +176,19 @@ public class QuartzJob implements Job {
                     taskExecution.setTableName(column.getTableName());
                     taskExecution.setObjectName(column.getColumnName());
                     taskExecution.setObjectType(column.getType());
-                } else {
-                    if (2 == taskExecution.getScope()) {
-                        TaskType taskType = TaskType.getTaskByCode(taskExecution.getTaskType());
-                        if (TaskType.CONSISTENCY.equals(taskType)) {
-                            taskExecution.setConsistencyParams(GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
-                            }.getType()));
-                            return;
-                        }
+                } else if (2 == taskExecution.getScope()) {
+                    TaskType taskType = TaskType.getTaskByCode(taskExecution.getTaskType());
+                    if (TaskType.CONSISTENCY.equals(taskType)) {
+                        taskExecution.setConsistencyParams(GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
+                        }.getType()));
+                        return;
                     }
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
+                    if (TaskType.CUSTOMIZE.equals(taskType)) {
+                        taskExecution.setCustomizeParam(GsonUtils.getInstance().fromJson(objectId,CustomizeParam.class));
+                        return;
+                    }
                 }
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
@@ -282,6 +290,7 @@ public class QuartzJob implements Job {
         try {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             String pool = taskManageDAO.getPool(task.getTaskId());
+            Measure measure = null;
             switch (jobType) {
                 case TABLE_ROW_NUM:
                     ruleResultValue(task, true, false, pool);
@@ -338,33 +347,35 @@ public class QuartzJob implements Job {
                     getProportion(task, pool);
                     break;
                 case CONSISTENCY:
-                    consistencyRuleCheck(task, pool);
-                default:
+                    measure = buildMeasure(task, task.getTimeStamp());
+                    otherRuleCheck(task, pool,measure);
                     break;
+                case CUSTOMIZE:
+                    measure = builderCustomizeMeasure(task, task.getTimeStamp());
+                    otherRuleCheck(task,pool,measure);
+                    break;
+                default:break;
             }
         } catch (Exception e) {
-            LOG.info(e.getMessage());
+            LOG.info(e.getMessage(),e);
             throw e;
         }
     }
 
-
     /**
-     * 一致性校验
+     * 其他规则校验
      * <p>
-     * 1、构建参数，将任务转换为 Measure
-     * 2、livy提交任务
-     * 3、监控 spark 任务状态
-     * 4、从 Hdfs 上读取结果返回
+     * 1、livy提交任务
+     * 2、监控 spark 任务状态
+     * 3、从 Hdfs 上读取结果返回
      *
      * @param task
      * @param pool
      * @return
      */
-    public long consistencyRuleCheck(AtomicTaskExecution task, String pool) throws Exception {
+    public long otherRuleCheck(AtomicTaskExecution task, String pool,Measure measure) throws Exception {
         Long errorCount = 0L;
         try {
-            Measure measure = buildMeasure(task, task.getTimeStamp());
             MeasureLivyResult result = null;
             try {
 
@@ -401,6 +412,90 @@ public class QuartzJob implements Job {
         return "SUCCESS".equalsIgnoreCase(status) || "DEAD".equalsIgnoreCase(status);
     }
 
+    /**
+     * 自定义规则生成Measure
+     * @param task
+     * @param timestamp
+     * @return
+     */
+    public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
+        CustomizeParam customizeParam = task.getCustomizeParam();
+        List<CustomizeParam.ParamInfo> tables = customizeParam.getTable();
+        List<CustomizeParam.ParamInfo> columns = customizeParam.getColumn();
+
+        Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
+        for (CustomizeParam.ParamInfo table : tables) {
+            MeasureConnector connector = null;
+            if ("hive".equalsIgnoreCase(table.getDataSourceId())||"impala".equalsIgnoreCase(table.getDataSourceId())) {
+                connector = new MeasureConnector(new MeasureConnector.Config(table.getSchema(), table.getTable()));
+                connector.setType("HIVE");
+            } else {
+                DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(table.getDataSourceId());
+                AdapterSource adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+                connector = new MeasureConnector(new MeasureConnector.Config(
+                        adapterSource.getDriverClass(),
+                        adapterSource.getJdbcUrl(),
+                        dataSourceInfo.getUserName(),
+                        dataSourceInfo.getPassword(),
+                        table.getSchema(),
+                        table.getTable(),
+                        null,
+                        null
+                ));
+            }
+            MeasureDataSource dataSource = new MeasureDataSource();
+            dataSource.setName(table.getId());
+            dataSource.setConnector(connector);
+
+            dataSourceMap.put(table.getId(), dataSource);
+        }
+
+        String sql = task.getSql();
+        if (tables!=null){
+            for (CustomizeParam.ParamInfo table:tables){
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}",table.getId());
+            }
+        }
+
+        if (columns!=null){
+            for (CustomizeParam.ParamInfo column:columns){
+                sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}","`"+column.getColumn()+"`");
+            }
+        }
+        List<MeasureRule> rules = new ArrayList<>();
+        String outName = LivyTaskSubmitHelper.getOutName("data");
+        MeasureRuleOut recordOut = new MeasureRuleOut(MeasureRuleOut.Type.RECORD, outName);
+        MeasureRule rule = new MeasureRule(sql, outName, true, Collections.singletonList(recordOut));
+        rules.add(rule);
+
+        String countSql = "select count(*) as value from "+outName;
+        MeasureRuleOut metricOut = new MeasureRuleOut(MeasureRuleOut.Type.METRIC, "data");
+        MeasureRule countRule = new MeasureRule(countSql, LivyTaskSubmitHelper.getOutName(task.getId()), false, Collections.singletonList(metricOut));
+        rules.add(countRule);
+
+        Measure measure = new Measure();
+        measure.setName(task.getId());
+        measure.setTimestamp(timestamp);
+        measure.setDataSources(new ArrayList<>(dataSourceMap.values()));
+        measure.setRule(new MeasureEvaluateRule(rules));
+
+        return measure;
+    }
+
+//    private void getColumnName(List<ConsistencyParam> tables,List<ConsistencyParam> columns){
+//        Map<String, List<ConsistencyParam>> columnMap = columns.stream().collect(Collectors.groupingBy(column -> column.getDataSourceId() + column.getSchema() + column.getTable()));
+//        Map<String, String> tableMap = tables.stream().collect(Collectors.toMap(table -> table.getDataSourceId() + table.getSchema() + table.getTable(), table -> table.getId()));
+//        for (String key:columnMap.keySet()){
+//            columnMap.get(key);
+//        }
+//    }
+
+    /**
+     * 一致性生成Measure
+     * @param task
+     * @param timestamp
+     * @return
+     */
     public Measure buildMeasure(AtomicTaskExecution task, Long timestamp) {
         List<ConsistencyParam> consistencyParams = task.getConsistencyParams();
         if (consistencyParams == null || consistencyParams.isEmpty() || consistencyParams.size() < 2) {
@@ -421,7 +516,6 @@ public class QuartzJob implements Job {
                 connector.setType("HIVE");
             } else {
                 AdapterSource adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
-                String[] fields = Stream.of(consistencyParam.getJoinFields(), consistencyParam.getCompareFields()).flatMap(Collection::stream).distinct().toArray(String[]::new);
                 connector = new MeasureConnector(new MeasureConnector.Config(
                         adapterSource.getDriverClass(),
                         adapterSource.getJdbcUrl(),
@@ -429,8 +523,8 @@ public class QuartzJob implements Job {
                         dataSourceInfo.getPassword(),
                         consistencyParam.getSchema(),
                         consistencyParam.getTable(),
-                        fields,
-                        consistencyParam.getJoinFields().toArray(new String[0])
+                        null,
+                        null
                 ));
             }
             MeasureDataSource dataSource = new MeasureDataSource();

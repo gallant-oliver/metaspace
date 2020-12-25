@@ -205,7 +205,7 @@ public class TaskManageService {
                 boolean allNumericValue = columnTypeList.stream().allMatch(columnType -> HiveNumericType.isNumericType(columnType));
                 List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId(tenantId);
                 return allNumericValue == true ? ruleList
-                        :ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getRuleTemplateId())).collect(Collectors.toList());
+                        :ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getId())).collect(Collectors.toList());
             }
             return ruleList;
         }  catch (Exception e) {
@@ -303,6 +303,7 @@ public class TaskManageService {
         try {
             for(int i=0, size=subTaskList.size(); i<size; i++) {
                 TaskInfo.SubTask subTask = subTaskList.get(i);
+                Gson gson = new Gson();
                 DataQualitySubTask dataQualitySubTask = new DataQualitySubTask();
                 //id
                 String guid = UUID.randomUUID().toString();
@@ -323,15 +324,14 @@ public class TaskManageService {
                 List<TaskInfo.SubTaskRule> subTaskRuleList = subTask.getSubTaskRuleList();
                 addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList,tenantId);
                 //object
-                List<String> objectIdList = subTask.getObjectIdList();
+                List<String> objectIdList=subTask.getObjectIdList();;
                 addDataQualitySubTaskObject(taskId, guid, currentTime, objectIdList);
                 taskManageDAO.addDataQualitySubTask(dataQualitySubTask);
             }
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("添加子任务失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务失败");
         }
     }
 
@@ -360,8 +360,7 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskObject(dataQualitySubTaskObject);
             }
         } catch (Exception e) {
-            LOG.error("添加子任务对象失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务对象失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务对象失败");
         }
     }
 
@@ -426,8 +425,7 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskRule(subTaskRule);
             }
         } catch (Exception e) {
-            LOG.error("添加子任务规则失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加子任务规则失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务规则失败");
         }
     }
 
@@ -439,7 +437,6 @@ public class TaskManageService {
             taskInfo.setUpdater(userId);
             taskManageDAO.updateTaskInfo(taskInfo);
         } catch (Exception e) {
-            LOG.error("更新任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新任务失败");
         }
 
@@ -484,7 +481,6 @@ public class TaskManageService {
 
             return info;
         } catch (Exception e) {
-            LOG.error("获取任务信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
     }

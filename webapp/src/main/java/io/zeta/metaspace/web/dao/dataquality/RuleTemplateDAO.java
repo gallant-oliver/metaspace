@@ -18,10 +18,10 @@ public interface RuleTemplateDAO {
     public long countByCategoryId(@Param("ruleType") String ruleType,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
-             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,code,",
+             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,code,enable,sql, ",
              " count(*)over() as total",
              " from data_quality_rule_template",
-             " where rule_type=#{ruleType} and tenantid=#{tenantId} " +
+             " where rule_type=#{ruleType} and tenantid=#{tenantId} and delete=false" +
              " <if test='params.enable != null'>",
              " and enable=#{params.enable}  ",
              " </if>",
@@ -34,7 +34,7 @@ public interface RuleTemplateDAO {
 
     @Select({"<script>",
              " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime,code from data_quality_rule_template" ,
-             " where tenantid=#{tenantId} " +
+             " where tenantid=#{tenantId} and delete=falase " +
              "<if test=\"params.query != null and params.query!=''\">",
              " and (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' )  " +
              " <if test='params.enable != null'>",
