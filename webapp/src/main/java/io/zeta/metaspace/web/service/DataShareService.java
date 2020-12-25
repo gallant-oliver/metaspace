@@ -1822,7 +1822,7 @@ public class DataShareService {
             //添加审核记录
             auditService.insertApiAudit(tenantId, apiId, version, apiInfo.getVersionNum(), apiPoly.getId());
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败");
         }
     }
 
@@ -2072,7 +2072,7 @@ public class DataShareService {
             return apiInfo;
         } catch (Exception e) {
             LOG.error("获取api版本详情失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "获取api版本详情失败:" + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api版本详情失败");
         }
     }
 
@@ -2764,31 +2764,35 @@ public class DataShareService {
     }
 
     public List<LinkedHashMap<String, Object>> processSensitiveDataV2(ApiInfoV2 apiInfo, List<ApiDesensitization> desensitization, List<LinkedHashMap<String, Object>> result) {
-        List<ApiInfoV2.FieldV2> returnParam = apiInfo.getReturnParam();
-        Map<String, DesensitizationRule> desensitizationRuleMap = new HashMap<>();
-        for (ApiDesensitization apiDesensitization : desensitization) {
-            DesensitizationRule rule = desensitizationDAO.getRule(apiDesensitization.getRuleId());
-            if (rule != null && rule.isEnable()) {
-                desensitizationRuleMap.put(apiDesensitization.getField(), rule);
+        try {
+            List<ApiInfoV2.FieldV2> returnParam = apiInfo.getReturnParam();
+            Map<String, DesensitizationRule> desensitizationRuleMap = new HashMap<>();
+            for (ApiDesensitization apiDesensitization : desensitization) {
+                DesensitizationRule rule = desensitizationDAO.getRule(apiDesensitization.getRuleId());
+                if (rule != null && rule.isEnable()) {
+                    desensitizationRuleMap.put(apiDesensitization.getField(), rule);
+                }
             }
-        }
 
-        //通过索引定位返回参数，因为遍历查找别名可能重复无法区分
-        for (LinkedHashMap<String, Object> itemMap : result)  {
-            int i = 0;
-            for (String filed : itemMap.keySet()) {
-                if(i == returnParam.size()){
-                    break;
-                }
-                String columnName = returnParam.get(i++).getColumnName();
-                DesensitizationRule rule = desensitizationRuleMap.get(columnName);
-                if (rule != null) {
-                    Object value = rule.getType().getHandle().apply(itemMap.get(filed), rule.getParams());
-                    itemMap.put(filed, value);
+            //通过索引定位返回参数，因为遍历查找别名可能重复无法区分
+            for (LinkedHashMap<String, Object> itemMap : result) {
+                int i = 0;
+                for (String filed : itemMap.keySet()) {
+                    if (i == returnParam.size()) {
+                        break;
+                    }
+                    String columnName = returnParam.get(i++).getColumnName();
+                    DesensitizationRule rule = desensitizationRuleMap.get(columnName);
+                    if (rule != null) {
+                        Object value = rule.getType().getHandle().apply(itemMap.get(filed), rule.getParams());
+                        itemMap.put(filed, value);
+                    }
                 }
             }
+            return result;
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"API脱敏失败:"+e.getMessage());
         }
-        return result;
     }
 
     public void getFieldsValue(HttpServletRequest request, ApiInfoV2 apiInfo, String[] paths, Map<String, String> queryMap) throws AtlasBaseException {
