@@ -18,5 +18,6 @@ public class ConsistencyParam {
     List<String> compareFields;
     //是否是基准数据源
     boolean isStandard;
+    String column;
 
 }

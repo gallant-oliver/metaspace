@@ -41,6 +41,7 @@ public class Rule {
     private Timestamp updateTime;
     private boolean delete;
     private String path;
+    private String sql;
     @JsonIgnore
     private int total;
 

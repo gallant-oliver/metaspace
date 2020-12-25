@@ -41,6 +41,8 @@ public class AtomicTaskExecution {
     private Integer taskType;
     private Integer scope;
     private String ruleId;
+    private String sql;
     private Long timeStamp;
     private List<ConsistencyParam> consistencyParams;
+    private CustomizeParam customizeParam;
 }

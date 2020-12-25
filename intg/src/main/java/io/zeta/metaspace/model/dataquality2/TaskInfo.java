@@ -128,6 +128,7 @@ public class TaskInfo {
         private Integer dataSourceType;
         private List<String> objectIdList;
         private List<SubTaskRule> subTaskRuleList;
+        private int ruleScope;
     }
 
     public static class SubTaskRule {

@@ -10,32 +10,30 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/7/24 18:14
- */
+
 package io.zeta.metaspace.model.dataquality2;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import java.sql.Timestamp;
+import java.util.List;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/7/24 18:14
+/**
+ * @author lixiang03
+ * @Data 2020/11/16 10:03
  */
 @Data
-public class DataQualitySubTaskObject {
-    private String id;
-    private String taskId;
-    private String subTaskId;
-    private String objectId;
-    private Integer sequence;
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp createTime;
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp updateTime;
-    private Boolean delete;
+public class CustomizeParam {
+    private List<ParamInfo> table;
+    private List<ParamInfo> column;
+    @Data
+    public static class ParamInfo {
+        //一致性参数唯一标识
+        String id;
+        //数据源 id
+        String dataSourceId;
+        String schema;
+        String table;
+        String column;
+
+    }
 }
