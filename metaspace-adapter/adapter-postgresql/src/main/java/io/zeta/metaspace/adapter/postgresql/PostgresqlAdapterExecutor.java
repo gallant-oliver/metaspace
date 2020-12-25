@@ -4,10 +4,12 @@ import com.healthmarketscience.sqlbuilder.AliasedObject;
 import com.healthmarketscience.sqlbuilder.BinaryCondition;
 import com.healthmarketscience.sqlbuilder.ComboCondition;
 import com.healthmarketscience.sqlbuilder.CustomSql;
+import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.Subquery;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import com.healthmarketscience.sqlbuilder.ValueObject;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
@@ -23,7 +25,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
@@ -83,7 +88,7 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
         schemaName = schemaName.replaceAll("'","''");
         if (parameters.getQuery()==null){
             parameters.setQuery("");
@@ -97,9 +102,34 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 .addCondition(BinaryCondition.like(new CustomSql("column_name"), new CustomSql("'%" + parameters.getQuery() + "%'")));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
         query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
+
+        // 过滤数值型字段
+        if (isNum){
+            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type-> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
+            query.addCondition(new InCondition(new CustomSql("udt_name"),columnType));
+        }
         log.info("column sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }
 
+    @Override
+    public float getTableSize(String db, String tableName, String pool) {
+        String querySQL = "select pg_relation_size('%s.%s') size; ";
+        db=db.replaceAll("'","''");
+        tableName=tableName.replaceAll("'","''");
+        querySQL=String.format(querySQL,db,tableName);
+        Connection connection = getAdapterSource().getConnection();
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float totalSize = 0;
+                while (resultSet.next()) {
+                    totalSize = resultSet.getLong("size");
+                }
+                return totalSize;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
 
 }

@@ -23,17 +23,13 @@ import java.util.List;
  */
 @Data
 public class CustomizeParam {
-    private List<ParamInfo> table;
-    private List<ParamInfo> column;
-    @Data
-    public static class ParamInfo {
-        //一致性参数唯一标识
-        String id;
-        //数据源 id
-        String dataSourceId;
-        String schema;
-        String table;
-        String column;
-
-    }
+    //一致性参数唯一标识
+    String id;
+    //数据源 id
+    String dataSourceId;
+    String dataSourceName;
+    String schema;
+    String table;
+    String column;
+    String name;
 }

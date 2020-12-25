@@ -59,7 +59,6 @@ public enum TaskType {
     MAX_VALUE(23, "字段最大值"),
     CUSTOMIZE(32, "自定义"),
 
-
     //一致性校验
     CONSISTENCY(31, "多表一致性校验");
 

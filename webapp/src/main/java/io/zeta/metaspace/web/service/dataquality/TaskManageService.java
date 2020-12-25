@@ -23,7 +23,12 @@ package io.zeta.metaspace.web.service.dataquality;
  */
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.dataquality.Schedule;
+import io.zeta.metaspace.model.dataquality.TaskType;
+import io.zeta.metaspace.model.dataquality2.ConsistencyParam;
+import io.zeta.metaspace.model.dataquality2.CustomizeParam;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
 import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
@@ -35,6 +40,7 @@ import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.dataquality2.ObjectType;
+import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
 import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
@@ -44,7 +50,10 @@ import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
 import io.zeta.metaspace.model.dataquality2.WarningType;
+import io.zeta.metaspace.model.datasource.DataSourceHead;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
@@ -52,8 +61,11 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.Pool;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.GsonUtils;
+import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
@@ -65,6 +77,7 @@ import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.tinkerpop.shaded.minlog.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +125,10 @@ public class TaskManageService {
     BusinessService businessService;
     @Autowired
     private TenantService tenantService;
+    @Autowired
+    private DataShareService dataShareService;
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
 
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
@@ -133,12 +150,12 @@ public class TaskManageService {
         }
     }
 
-    public PageResult getTableList(String databaseId, Parameters parameters) throws AtlasBaseException {
+    public PageResult getTableList(String dbName, Parameters parameters) throws AtlasBaseException {
         try {
+            String databaseId = taskManageDAO.getDbIdByDbName(dbName);
             PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, true, parameters.getOffset(), parameters.getLimit());
 
             List<Table> tableList = pageResult.getLists();
-            String dbName = null;
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
                 dbName = tmpTable.getDatabaseName();
@@ -153,9 +170,17 @@ public class TaskManageService {
         }
     }
 
-    public PageResult getColumnList(String tableGuid, Parameters parameters) throws AtlasBaseException {
+    public PageResult getColumnList(String dbName,String tableName, ColumnParameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Column> pageResult = businessService.getTableColumnList(tableGuid, parameters, null, null);
+            String tableGuid = taskManageDAO.getTableId(dbName,tableName);
+            List<String> ruleIds = parameters.getRuleIds();
+            //判断规则是否还有数值型规则
+            int count = 0;
+            if (ruleIds!=null&&ruleIds.size()!=0){
+                count = taskManageDAO.getNumericTypeTemplateRuleIdCount(ruleIds,tenantId);
+            }
+            boolean isNum = count!=0;
+            PageResult<Column> pageResult = businessService.getTableColumnList(tableGuid, parameters, null, null,isNum);
             List<Column> columnList = pageResult.getLists();
             for (Column column : columnList) {
                 Column tmpColumn = taskManageDAO.getDbAndTableAndColumnName(column.getColumnId());
@@ -194,19 +219,13 @@ public class TaskManageService {
         }
     }
 
-    public List<RuleHeader> getValidRuleList(String groupId, int objType, List<String> objIdList,String tenantId) throws AtlasBaseException {
+    public List<RuleHeader> getValidRuleList(String groupId, String scope,String tenantId) throws AtlasBaseException {
         try {
+            Integer objType = null;
+            if (!"all".equals(scope)){
+                objType=Integer.valueOf(scope);
+            }
             List<RuleHeader> ruleList = taskManageDAO.getRuleListByCategoryId(groupId, objType,tenantId);
-            if(objIdList==null || objIdList.isEmpty() || ruleList==null) {
-                return ruleList;
-            }
-            if(ObjectType.COLUMN == ObjectType.of(objType)) {
-                List<String> columnTypeList = taskManageDAO.getColumnTypeList(objIdList);
-                boolean allNumericValue = columnTypeList.stream().allMatch(columnType -> HiveNumericType.isNumericType(columnType));
-                List<String> numericTypeTempateIdlist = taskManageDAO.getNumericTypeTemplateRuleId(tenantId);
-                return allNumericValue == true ? ruleList
-                        :ruleList.stream().filter(rule -> !numericTypeTempateIdlist.contains(rule.getId())).collect(Collectors.toList());
-            }
             return ruleList;
         }  catch (Exception e) {
             LOG.error("获取规则列表失败", e);
@@ -233,8 +252,6 @@ public class TaskManageService {
     }
 
     public void addTask(TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
-        Gson gson = new Gson();
-        String s = gson.toJson(taskInfo);
         Timestamp currentTime = DateUtils.currentTimestamp();
         addDataQualityTask(currentTime, taskInfo,tenantId);
     }
@@ -279,14 +296,17 @@ public class TaskManageService {
             dataQualityTask.setErrorTotalCount(0);
             //executionCount
             dataQualityTask.setExecutionCount(0);
-            //资源池
-            dataQualityTask.setPool(taskInfo.getPool());
             //子任务
             List<TaskInfo.SubTask> subTaskList = taskInfo.getTaskList();
             addDataQualitySubTask(guid, currentTime, subTaskList,tenantId);
 
-            taskManageDAO.addTaskWarningGroup(guid, WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
-            taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
+            if (taskInfo.getContentWarningNotificationIdList()!=null&&taskInfo.getContentWarningNotificationIdList().size()!=0){
+                taskManageDAO.addTaskWarningGroup(guid, WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
+            }
+            if (taskInfo.getExecutionWarningNotificationIdList()!=null&&taskInfo.getExecutionWarningNotificationIdList().size()!=0){
+                taskManageDAO.addTaskWarningGroup(guid, WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
+            }
+
 
             taskManageDAO.addDataQualityTask(dataQualityTask,tenantId);
 
@@ -320,11 +340,19 @@ public class TaskManageService {
                 dataQualitySubTask.setUpdateTime(currentTime);
                 //是否已删除
                 dataQualitySubTask.setDelete(false);
+                // 资源池
+                dataQualitySubTask.setPool(subTask.getPool());
+                // spark配置
+                String config = null;
+                if (subTask.getConfig()!=null){
+                    config = GsonUtils.getInstance().toJson(subTask.getConfig());
+                }
+                dataQualitySubTask.setConfig(config);
                 //subTaskRule
                 List<TaskInfo.SubTaskRule> subTaskRuleList = subTask.getSubTaskRuleList();
                 addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList,tenantId);
                 //object
-                List<String> objectIdList=subTask.getObjectIdList();;
+                List<String> objectIdList=subTask.getObjectIdList().stream().map(obj->GsonUtils.getInstance().toJson(obj)).collect(Collectors.toList());
                 addDataQualitySubTaskObject(taskId, guid, currentTime, objectIdList);
                 taskManageDAO.addDataQualitySubTask(dataQualitySubTask);
             }
@@ -429,6 +457,7 @@ public class TaskManageService {
         }
     }
 
+    @Transactional(rollbackFor=Exception.class)
     public void updateTask(DataQualityTask taskInfo) throws AtlasBaseException {
         Timestamp currentTime = DateUtils.currentTimestamp();
         try {
@@ -436,40 +465,77 @@ public class TaskManageService {
             taskInfo.setUpdateTime(currentTime);
             taskInfo.setUpdater(userId);
             taskManageDAO.updateTaskInfo(taskInfo);
+            taskManageDAO.deleteWarningGroupUsedByTaskId(taskInfo.getId());
+            if (taskInfo.getContentWarningNotificationIdList()!=null&&taskInfo.getContentWarningNotificationIdList().size()!=0){
+                taskManageDAO.addTaskWarningGroup(taskInfo.getId(), WarningType.WARNING.code, taskInfo.getContentWarningNotificationIdList());
+            }
+            if (taskInfo.getExecutionWarningNotificationIdList()!=null&&taskInfo.getExecutionWarningNotificationIdList().size()!=0){
+                taskManageDAO.addTaskWarningGroup(taskInfo.getId(), WarningType.ERROR.code, taskInfo.getExecutionWarningNotificationIdList());
+            }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新任务失败");
         }
 
     }
 
-    public EditionTaskInfo getTaskInfo(String taskId) throws AtlasBaseException {
+    public EditionTaskInfo getTaskInfo(String taskId,String tenantId) throws AtlasBaseException {
         try {
             EditionTaskInfo info = taskManageDAO.getTaskInfo(taskId);
-            String tenantId = info.getTenantId();
             List<EditionTaskInfo.SubTask> subTaskList = taskManageDAO.getSubTaskInfo(taskId);
             for (EditionTaskInfo.SubTask subTask : subTaskList) {
                 String subTaskId = subTask.getSubTaskId();
                 List<EditionTaskInfo.ObjectInfo> objectInfoList = taskManageDAO.getSubTaskRelatedObject(subTaskId);
-                Integer dataSourceType = subTask.getDataSourceType();
+                List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId,tenantId);
+                String sparkConfig = taskManageDAO.geSparkConfig(subTaskId);
+                if (sparkConfig!=null&&sparkConfig.length()!=0){
+                    Map<String,Integer> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Integer>>() {
+                    }.getType());
+                    subTask.setConfig(configMap);
+                }
+                subTask.setSubTaskRuleList(subTaskRuleList);
+
+                //获取规则类型
+                EditionTaskInfo.SubTaskRule subTaskRule = subTask.getSubTaskRuleList().get(0);
+                Rule rule = ruleService.getById(subTaskRule.getRuleId(), tenantId);
+                subTask.setScope(rule.getScope());
+                subTask.setType(rule.getType());
+                int dataSourceType = rule.getScope();
                 for (EditionTaskInfo.ObjectInfo objectInfo : objectInfoList) {
-                    String objectId = objectInfo.getObjectId();
+                    String objectId = objectInfo.getObjectId().toString();
                     if (0 == dataSourceType) {
-                        Table tableInfo = taskManageDAO.getDbAndTableName(objectId);
-                        objectInfo.setDbName(tableInfo.getDatabaseName());
-                        objectInfo.setTableName(tableInfo.getTableName());
-                        objectInfo.setObjectName(tableInfo.getTableName());
+                        //添加数据源名字
+                        CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                        String dataSourceId = paramInfo.getDataSourceId();
+                        String dataSourceName = getDataSourceName(dataSourceId);
+                        paramInfo.setDataSourceName(dataSourceName);
+                        objectInfo.setObjectId(paramInfo);
                     } else if (1 == dataSourceType) {
-                        Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
-                        objectInfo.setDbName(column.getDatabaseName());
-                        objectInfo.setTableName(column.getTableName());
-                        objectInfo.setObjectName(column.getColumnName());
-                    } else {
+                        //添加数据源名字
+                        CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                        String dataSourceId = paramInfo.getDataSourceId();
+                        String dataSourceName = getDataSourceName(dataSourceId);
+                        paramInfo.setDataSourceName(dataSourceName);
+                        objectInfo.setObjectId(paramInfo);
+                    } else if (2 == dataSourceType) {
+                        TaskType taskType = TaskType.getTaskByCode(rule.getType());
+                        if (TaskType.CONSISTENCY.equals(taskType)) {
+                            List<ConsistencyParam> lists = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
+                            }.getType());
+                            lists.forEach(param->param.setDataSourceName(getDataSourceName(param.getDataSourceId())));
+                            objectInfo.setObjectId(lists);
+                        }else if (TaskType.CUSTOMIZE.equals(taskType)) {
+                            List<CustomizeParam> lists = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
+                            }.getType());
+                            lists.forEach(param->param.setDataSourceName(getDataSourceName(param.getDataSourceId())));
+                            objectInfo.setObjectId(lists);
+                        }else{
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
+                        }
+                    }else{
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                     }
                 }
                 subTask.setObjectIdList(objectInfoList);
-                List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId,tenantId);
-                subTask.setSubTaskRuleList(subTaskRuleList);
 
             }
             info.setTaskList(subTaskList);
@@ -481,7 +547,20 @@ public class TaskManageService {
 
             return info;
         } catch (Exception e) {
+            Log.error(e.getMessage(),e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
+        }
+    }
+
+    public String getDataSourceName(String dataSourceId){
+        if (dataSourceId==null||dataSourceId.length()==0||QuartzJob.hiveId.equals(dataSourceId)){
+            return QuartzJob.hiveId;
+        }else{
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+            if (dataSourceInfo==null){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源不存在或已删除，请修改任务");
+            }
+            return dataSourceInfo.getSourceName();
         }
     }
 
@@ -703,16 +782,20 @@ public class TaskManageService {
             for (TaskRuleExecutionRecord record : list) {
                 if(0 == record.getObjectType()) {
                     String objectId = record.getObjectId();
-                    Table table = taskManageDAO.getDbAndTableName(objectId);
-                    if(table == null) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表信息，当前表已被删除!");
-                    }
+                    Table table = new Table();
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    table.setDatabaseName(paramInfo.getSchema());
+                    table.setTableName(paramInfo.getTable());
                     record.setDbName(table.getDatabaseName());
                     record.setTableName(table.getTableName());
                     record.setObjectName(table.getTableName());
                 } else if(1 == record.getObjectType()) {
                     String objectId = record.getObjectId();
-                    Column column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+                    Column column = new Column();
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    column.setDatabaseName(paramInfo.getSchema());
+                    column.setTableName(paramInfo.getTable());
+                    column.setColumnName(paramInfo.getColumn());
                     if(column == null) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到字段信息，当前字段已被删除!");
                     }
@@ -769,5 +852,38 @@ public class TaskManageService {
         } else {
             return pools.getHive();
         }
+    }
+
+    public PageResult getDataSourceList(Parameters parameters,String tenantId) throws AtlasBaseException {
+        PageResult dataSourceList = dataShareService.getDataSourceList(parameters, null, tenantId);
+        DataSourceHead hive = new DataSourceHead();
+        if (parameters.getOffset()==0){
+            hive.setSourceType("hive");
+            hive.setSourceName("hive");
+            hive.setSourceId("hive");
+            dataSourceList.getLists().add(hive);
+        }
+        return dataSourceList;
+    }
+
+    public List<RuleHeader> searchRules(Parameters parameters, String scope,String tenantId) throws AtlasBaseException {
+        Integer objType = null;
+        if (!"all".equals(scope)){
+            objType=Integer.valueOf(scope);
+        }
+        String query = parameters.getQuery();
+        if (query!=null){
+            parameters.setQuery(query.replaceAll("%", "/%").replaceAll("_", "/_"));
+        }
+        List<RuleHeader> ruleList = taskManageDAO.searchRuleList(parameters, objType,tenantId);
+        return ruleList;
+    }
+
+    public List<String> schedulePreview(Schedule schedule) throws AtlasBaseException {
+        return quartzManager.schedulePreview(schedule);
+    }
+
+    public boolean checkPreview(Schedule schedule) throws AtlasBaseException {
+        return quartzManager.checkSchedule(schedule);
     }
 }

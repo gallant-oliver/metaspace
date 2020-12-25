@@ -114,8 +114,16 @@ public interface RuleDAO {
              " from data_quality_rule where delete=false and id=#{id}"})
     public String getNameById(@Param("id") String id);
 
-    @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit" ,
+    @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit,type,scope" ,
              " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and id=#{id} and tenantid=#{tenantId}"})
     public Rule getRuleTemplate(@Param("id") String id,@Param("tenantId")String tenantId);
 
+    @Insert("<script>" +
+            " insert into data_quality_rule_template(id,name,code,rule_type,description,creator,create_time,update_time,delete,scope,tenantId,sql,type,enable) " +
+            " values" +
+            "<foreach collection='rules' item='rule' index='index' separator='),(' open='(' close=')'>" +
+            "#{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.scope},#{tenantId},#{rule.sql},#{rule.type},#{rule.enable}"+
+            "</foreach>"+
+            "</script>")
+    public int insertAll(@Param("rules") List<Rule> rules,@Param("tenantId")String tenantId);
 }

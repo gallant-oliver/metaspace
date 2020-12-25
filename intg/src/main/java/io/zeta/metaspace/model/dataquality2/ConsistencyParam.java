@@ -19,5 +19,6 @@ public class ConsistencyParam {
     //是否是基准数据源
     boolean isStandard;
     String column;
+    String dataSourceName;
 
 }

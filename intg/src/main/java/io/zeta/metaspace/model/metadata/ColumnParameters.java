@@ -10,27 +10,18 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/7/24 15:47
- */
-package io.zeta.metaspace.model.dataquality2;
+
+package io.zeta.metaspace.model.metadata;
 
 import lombok.Data;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/7/24 15:47
+import java.util.List;
+
+/**
+ * @author lixiang03
+ * @Data 2020/11/20 10:05
  */
 @Data
-public class RuleHeader {
-    private String id;
-    private String name;
-    private String ruleTemplateId;
-    private Integer scope;
-    private String taskType;
-    private String sql;
-    private String categoryName;
-    private String categoryId;
+public class ColumnParameters extends Parameters{
+    private List<String> ruleIds;
 }

@@ -28,6 +28,7 @@ import java.util.Map;
  * @author sunhaoning
  * @date 2019/7/24 17:28
  */
+@Data
 public class TaskInfo {
     private String taskName;
     private Integer level;
@@ -40,95 +41,15 @@ public class TaskInfo {
     private List<SubTask> taskList;
     private List<String> contentWarningNotificationIdList;
     private List<String> executionWarningNotificationIdList;
-    private String pool;
-
-    public String getPool() {
-        return pool;
-    }
-
-    public void setPool(String pool) {
-        this.pool = pool;
-    }
-
-    public String getTaskName() {
-        return taskName;
-    }
-
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
-    }
-
-
-    public Integer getLevel() {
-        return level;
-    }
-
-    public void setLevel(Integer level) {
-        this.level = level;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Timestamp getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Timestamp startTime) {
-        this.startTime = startTime;
-    }
-
-    public Timestamp getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Timestamp endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getCronExpression() {
-        return cronExpression;
-    }
-
-    public void setCronExpression(String cronExpression) {
-        this.cronExpression = cronExpression;
-    }
-
-    public List<SubTask> getTaskList() {
-        return taskList;
-    }
-
-    public void setTaskList(List<SubTask> taskList) {
-        this.taskList = taskList;
-    }
-
-    public List<String> getContentWarningNotificationIdList() {
-        return contentWarningNotificationIdList;
-    }
-
-    public void setContentWarningNotificationIdList(List<String> contentWarningNotificationIdList) {
-        this.contentWarningNotificationIdList = contentWarningNotificationIdList;
-    }
-
-    public List<String> getExecutionWarningNotificationIdList() {
-        return executionWarningNotificationIdList;
-    }
-
-    public void setExecutionWarningNotificationIdList(List<String> executionWarningNotificationIdList) {
-        this.executionWarningNotificationIdList = executionWarningNotificationIdList;
-    }
 
     @Data
     public static class SubTask {
         private Integer dataSourceType;
-        private List<String> objectIdList;
+        private List<Object> objectIdList;
         private List<SubTaskRule> subTaskRuleList;
         private int ruleScope;
+        private String pool;
+        private Map<String,Object> config;
     }
 
     public static class SubTaskRule {

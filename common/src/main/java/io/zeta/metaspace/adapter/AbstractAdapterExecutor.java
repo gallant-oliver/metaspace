@@ -1,6 +1,7 @@
 package io.zeta.metaspace.adapter;
 
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -190,7 +191,6 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
 
     @Override
     public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName,Parameters parameters) {
-        System.out.println(DateUtils.formatDateTime(System.currentTimeMillis()));
         PageResult<LinkedHashMap<String, Object>> pageResult = new PageResult<>();
         Collection<Table> allTable = getAllTable(schemaName,parameters.getQuery());
         ArrayList<Table> tables = new ArrayList<>(allTable);
@@ -206,7 +206,6 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
         pageResult.setTotalSize(tables.size());
         pageResult.setLists(lists);
         pageResult.setCurrentSize(lists.size());
-        System.out.println(DateUtils.formatDateTime(System.currentTimeMillis()));
 
 
         return pageResult;
@@ -232,10 +231,15 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
-        System.out.println(DateUtils.formatDateTime(System.currentTimeMillis()));
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
         PageResult<LinkedHashMap<String, Object>> pageResult = new PageResult<>();
         List<Column> allColumn = getAllColumn(schemaName,tableName,parameters.getQuery());
+
+        // 过滤数值型字段
+        if (isNum){
+            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type-> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
+            allColumn = allColumn.stream().filter(column -> columnType.contains(column.getType().toString().toLowerCase())).collect(Collectors.toList());
+        }
         Stream<Column> skip = allColumn.stream().skip(parameters.getOffset());
         if (parameters.getLimit()!=-1){
             skip = skip.limit(parameters.getLimit());
@@ -249,7 +253,6 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
         pageResult.setTotalSize(allColumn.size());
         pageResult.setLists(lists);
         pageResult.setCurrentSize(lists.size());
-        System.out.println(DateUtils.formatDateTime(System.currentTimeMillis()));
 
 
         return pageResult;

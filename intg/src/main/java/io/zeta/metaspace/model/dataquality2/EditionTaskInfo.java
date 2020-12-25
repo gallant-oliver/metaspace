@@ -17,9 +17,11 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 /*
  * @description
@@ -147,102 +149,22 @@ public class EditionTaskInfo {
         this.executionWarningNotificationIdList = executionWarningNotificationIdList;
     }
 
+    @Data
     public static class SubTask {
         private String subTaskId;
-        private Integer dataSourceType;
         private String sequence;
         private List<ObjectInfo> objectIdList;
         private List<EditionTaskInfo.SubTaskRule> subTaskRuleList;
-
-        public String getSubTaskId() {
-            return subTaskId;
-        }
-
-        public void setSubTaskId(String subTaskId) {
-            this.subTaskId = subTaskId;
-        }
-
-        public Integer getDataSourceType() {
-            return dataSourceType;
-        }
-
-        public void setDataSourceType(Integer dataSourceType) {
-            this.dataSourceType = dataSourceType;
-        }
-
-        public String getSequence() {
-            return sequence;
-        }
-
-        public void setSequence(String sequence) {
-            this.sequence = sequence;
-        }
-
-        public List<ObjectInfo> getObjectIdList() {
-            return objectIdList;
-        }
-
-        public void setObjectIdList(List<ObjectInfo> objectIdList) {
-            this.objectIdList = objectIdList;
-        }
-
-        public List<SubTaskRule> getSubTaskRuleList() {
-            return subTaskRuleList;
-        }
-
-        public void setSubTaskRuleList(List<SubTaskRule> subTaskRuleList) {
-            this.subTaskRuleList = subTaskRuleList;
-        }
+        private Map<String,Integer> config;
+        private String pool;
+        private int scope;
+        private int type;
     }
 
+    @Data
     public static class ObjectInfo {
         private Integer sequence;
-        private String objectId;
-        private String objectName;
-        private String dbName;
-        private String tableName;
-
-        public Integer getSequence() {
-            return sequence;
-        }
-
-        public void setSequence(Integer sequence) {
-            this.sequence = sequence;
-        }
-
-        public String getObjectId() {
-            return objectId;
-        }
-
-        public void setObjectId(String objectId) {
-            this.objectId = objectId;
-        }
-
-        public String getObjectName() {
-            return objectName;
-        }
-
-        public void setObjectName(String objectName) {
-            this.objectName = objectName;
-        }
-
-
-        public String getDbName() {
-            return dbName;
-        }
-
-        public void setDbName(String dbName) {
-            this.dbName = dbName;
-        }
-
-
-        public String getTableName() {
-            return tableName;
-        }
-
-        public void setTableName(String tableName) {
-            this.tableName = tableName;
-        }
+        private Object objectId;
     }
 
     public static class SubTaskRule {

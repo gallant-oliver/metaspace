@@ -19,6 +19,7 @@ package io.zeta.metaspace.model.dataquality2;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 /*
  * @description
@@ -44,5 +45,8 @@ public class AtomicTaskExecution {
     private String sql;
     private Long timeStamp;
     private List<ConsistencyParam> consistencyParams;
-    private CustomizeParam customizeParam;
+    private List<CustomizeParam> customizeParam;
+    private String dataSourceId;
+    private String pool;
+    private Map<String,Object> config;
 }

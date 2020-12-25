@@ -24,7 +24,9 @@ package io.zeta.metaspace.web.rest.dataquality;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dataquality.Schedule;
 import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
 import io.zeta.metaspace.model.dataquality2.DataQualityTask;
 import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
@@ -39,6 +41,7 @@ import io.zeta.metaspace.model.dataquality2.TaskInfo;
 import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
 import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
 import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
+import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -46,8 +49,10 @@ import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
+import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
@@ -55,6 +60,7 @@ import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +79,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
@@ -94,6 +101,8 @@ public class TaskManageREST {
     RuleTemplateService ruleTemplateService;
     @Autowired
     LivyTaskSubmitHelper livyTaskSubmitHelper;
+    @Autowired
+    DataShareService shareService;
 
     private static final int CategoryType = 4;
 
@@ -191,32 +200,34 @@ public class TaskManageREST {
 
     /**
      * 获取库下所有表列表
-     * @param databaseId
+     * @param dbName
      * @param parameters
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/tables/{databaseId}")
+    @Path("/tables/{dbName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getTableList(@PathParam("databaseId")String databaseId, Parameters parameters) throws AtlasBaseException {
-        return taskManageService.getTableList(databaseId, parameters);
+    public PageResult getTableList(@PathParam("dbName")String dbName, Parameters parameters) throws AtlasBaseException {
+        return taskManageService.getTableList(dbName, parameters);
     }
 
     /**
      * 获取表字段列表
-     * @param tableGuid
+     * @param dbName
+     * @param tableName
      * @param parameters
+     * @param tenantId
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/table/{tableGuid}/columns")
+    @Path("/table/{dbName}/{tableName}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getColumnList(@PathParam("tableGuid")String tableGuid, Parameters parameters) throws AtlasBaseException {
-        return taskManageService.getColumnList(tableGuid, parameters);
+    public PageResult getColumnList(@PathParam("dbName")String dbName,@PathParam("tableName")String tableName, ColumnParameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getColumnList(dbName,tableName, parameters,tenantId);
     }
 
     /**
@@ -264,7 +275,6 @@ public class TaskManageREST {
      * 获取规则分组下对当前校验对象有效的校验规则
      * @param groupId
      * @param objType
-     * @param objIdList
      * @return
      * @throws AtlasBaseException
      */
@@ -272,8 +282,8 @@ public class TaskManageREST {
     @Path("/{groupId}/{objType}/rules")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")Integer objType, List<String> objIdList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return taskManageService.getValidRuleList(groupId, objType, objIdList,tenantId);
+    public List<RuleHeader> getRuleList(@PathParam("groupId")String groupId,@PathParam("objType")String objType,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getValidRuleList(groupId, objType,tenantId);
     }
 
     /**
@@ -310,6 +320,7 @@ public class TaskManageREST {
     @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
+        String s = GsonUtils.getInstance().toJson(taskInfo);
         taskManageService.addTask(taskInfo,tenantId);
     }
 
@@ -317,8 +328,8 @@ public class TaskManageREST {
     @Path("/info/{taskId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public EditionTaskInfo getTaskInfo(@PathParam("taskId")String taskId) throws AtlasBaseException {
-        return taskManageService.getTaskInfo(taskId);
+    public EditionTaskInfo getTaskInfo(@PathParam("taskId")String taskId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskInfo(taskId,tenantId);
     }
 
 
@@ -450,5 +461,62 @@ public class TaskManageREST {
     public Result getPools(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         List<Queue> pools = taskManageService.getPools(tenantId);
         return ReturnUtil.success(pools);
+    }
+
+    /**
+     * 获取数据源
+     * @param parameters
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Permission({ModuleEnum.TASKMANAGE})
+    public PageResult getDataSourceList(Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            PageResult oracleDataSourceList = taskManageService.getDataSourceList(parameters, tenantId);
+
+            return oracleDataSourceList;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据源失败");
+        }
+    }
+
+    /**
+     * 获取规则分组下对当前校验对象有效的校验规则
+     * @param objType
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{objType}/rules")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<RuleHeader> getAllRuleList(@PathParam("objType")String objType, @HeaderParam("tenantId")String tenantId, @QueryParam("limit")int limit,@QueryParam("offset")int offset,
+                                           @QueryParam("search")String search) throws AtlasBaseException {
+        Parameters parameters = new Parameters();
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+        parameters.setQuery(search);
+        return taskManageService.searchRules(parameters, objType,tenantId);
+    }
+
+    @POST
+    @Path("/schedule/preview")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result schedulePreview(Schedule schedule) throws AtlasBaseException {
+        return ReturnUtil.success(taskManageService.schedulePreview(schedule));
+    }
+
+    @POST
+    @Path("/schedule/test")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkPreview(Schedule schedule) throws AtlasBaseException {
+        return ReturnUtil.success(taskManageService.checkPreview(schedule));
     }
 }

@@ -44,7 +44,26 @@ public class Rule {
     private String sql;
     @JsonIgnore
     private int total;
+    private int type;
 
     private Integer ruleType;
     private String ruleTypeName;
+
+    public Rule(String name,int scope,String unit,String description,Timestamp createTime,Timestamp updateTime,String id,String categoryId,int type){
+        this.name = name;
+        this.scope=scope;
+        this.description=description;
+        this.createTime=createTime;
+        this.updateTime=updateTime;
+        this.delete=false;
+        this.id=id;
+        this.categoryId=categoryId;
+        this.type=type;
+        this.enable=true;
+        this.code=id;
+    }
+
+    public Rule(){
+
+    }
 }

