@@ -35,4 +35,25 @@ public class Db2AdapterExecutor extends AbstractAdapterExecutor {
         }
         return null;
     }
+
+    @Override
+    public float getTableSize(String db, String tableName, String pool) {
+        String querySQL = "SELECT TABSCHEMA,TABNAME,sum(data_object_p_size + index_object_p_size + long_object_p_size + " +
+                          " lob_object_p_size + xml_object_p_size)*1024 size FROM TABLE (SYSPROC.ADMIN_GET_TAB_INFO('%s', '%s'))  group by TABSCHEMA,TABNAME ";
+        db=db.replaceAll("'","''");
+        tableName=tableName.replaceAll("'","''");
+        querySQL=String.format(querySQL,db,tableName);
+        Connection connection = getAdapterSource().getConnection();
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float totalSize = 0;
+                while (resultSet.next()) {
+                    totalSize = resultSet.getLong("size");
+                }
+                return totalSize;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
 }

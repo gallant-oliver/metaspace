@@ -70,7 +70,7 @@ public interface AdapterExecutor {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 
-    default PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
+    default PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 
@@ -130,4 +130,17 @@ public interface AdapterExecutor {
         throw new AtlasBaseException(getAdapterSource().getAdapter().getName() + " 未实现");
     }
 
+    /**
+     * 表或者字段增加转义符号
+     */
+    default String addEscapeChar(String string) {
+        return "\""+string+"\"";
+    }
+
+    /**
+     * 库增加转义符号
+     */
+    default String addSchemaEscapeChar(String string) {
+        return "\""+string+"\"";
+    }
 }

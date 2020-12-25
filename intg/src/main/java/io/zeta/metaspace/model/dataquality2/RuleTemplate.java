@@ -45,4 +45,5 @@ public class RuleTemplate {
     private Timestamp createTime;
     private String code;
     private String sql;
+    private String type;
 }

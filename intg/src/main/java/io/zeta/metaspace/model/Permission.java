@@ -10,27 +10,26 @@
 //
 //
 // ======================================================================
+
+package io.zeta.metaspace.model;
+
+
+
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+
 /**
- * @author sunhaoning@gridsum.com
- * @date 2019/7/24 15:47
+ * 增加权限判断，被标注的接口可以增加权限模块
  */
-package io.zeta.metaspace.model.dataquality2;
+public @interface Permission {
 
-import lombok.Data;
+    public ModuleEnum[] value();
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/7/24 15:47
- */
-@Data
-public class RuleHeader {
-    private String id;
-    private String name;
-    private String ruleTemplateId;
-    private Integer scope;
-    private String taskType;
-    private String sql;
-    private String categoryName;
-    private String categoryId;
 }

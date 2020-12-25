@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.business.ColumnPrivilege;
 import io.zeta.metaspace.model.business.ColumnPrivilegeRelation;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
@@ -94,6 +95,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -787,7 +789,7 @@ public class BusinessService {
         }
     }
 
-    public PageResult getTableColumnList(String tableGuid, Parameters parameters, String sortColumn, String sortOrder) throws AtlasBaseException {
+    public PageResult getTableColumnList(String tableGuid, Parameters parameters, String sortColumn, String sortOrder,boolean isNumber) throws AtlasBaseException {
         try {
             boolean existOnPg = columnDAO.tableColumnExist(tableGuid)>0?true:false;
             PageResult pageResult = new PageResult();
@@ -810,7 +812,12 @@ public class BusinessService {
             String sqlSortOrder = Objects.nonNull(sortOrder)? sortOrder.toLowerCase(): "asc";
             String sqlsortColumn = (Objects.nonNull(sortColumn) && "updatetime".equals(sortColumn.toLowerCase()))?"display_updatetime":"column_name";
 
-            List<Column> resultColumnInfoList = columnDAO.getTableColumnList(tableGuid, queryText, sqlsortColumn, sqlSortOrder, limit, offset);
+            //过滤数值型字段
+            List<String> columnType=null;
+            if (isNumber){
+                columnType = Arrays.stream(HiveNumericType.values()).filter(type->type.getCode()!=7).map(HiveNumericType::getName).collect(Collectors.toList());
+            }
+            List<Column> resultColumnInfoList = columnDAO.getTableColumnList(tableGuid, queryText, sqlsortColumn, sqlSortOrder, limit, offset,columnType);
             int totalCount = 0;
             if (resultColumnInfoList.size()!=0){
                 totalCount=resultColumnInfoList.get(0).getTotal();

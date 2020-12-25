@@ -37,4 +37,6 @@ public class DataQualitySubTask {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     private Boolean delete;
+    private String pool;
+    private String config;
 }

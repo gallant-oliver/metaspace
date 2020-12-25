@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
+import io.zeta.metaspace.model.dataquality.Schedule;
 import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.commons.lang.StringUtils;
 import org.omg.CORBA.INTERNAL;
@@ -30,12 +31,18 @@ import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
+import org.quartz.spi.MutableTrigger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import javax.print.attribute.standard.JobKOctets;
 
@@ -288,5 +295,65 @@ public class QuartzManager {
 
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
+    }
+
+    /**
+     * 获取定时执行器执行示例
+     * 最多5条
+     * @param schedule
+     * @return
+     */
+    public List<String> schedulePreview(Schedule schedule){
+        List<String> list = new ArrayList<>();
+
+        //时间转换类
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+
+        //定时解析器
+        CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(schedule.getCrontab());
+        MutableTrigger build = cronScheduleBuilder.build();
+        build.setStartTime(schedule.getStartTime());
+        build.setEndTime(schedule.getEndTime());
+
+        // 比较当前时间与起始时间，选取最大的作为预览时间的开始时间
+        long startTime = schedule.getStartTime().getTime();
+        long nowTime = System.currentTimeMillis();
+        long firstTime = Math.min(startTime, nowTime);
+        Date firstDate = new Date(firstTime);
+
+        //获取定时时间预览，最多5个
+        for(int i=0;i<5;i++){
+            Date fireTimeAfter = build.getFireTimeAfter(firstDate);
+            firstDate = fireTimeAfter;
+            if (firstDate==null){
+                break;
+            }
+            String format = formatter.format(fireTimeAfter);
+            list.add(format);
+        }
+        return list;
+    }
+
+    /**
+     * 校验定时执行器
+     * @param schedule
+     * @return
+     */
+    public boolean checkSchedule(Schedule schedule){
+        List<String> list = new ArrayList<>();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(schedule.getCrontab());
+        MutableTrigger build = cronScheduleBuilder.build();
+        Date firstDate = schedule.getStartTime();
+        build.setStartTime(schedule.getStartTime());
+        build.setEndTime(schedule.getEndTime());
+        Date fireTimeAfter = build.getFireTimeAfter(firstDate);
+        firstDate = fireTimeAfter;
+        if (firstDate == null){
+            return false;
+        }
+        return true;
     }
 }

@@ -129,8 +129,9 @@ public class LivyTaskSubmitHelper {
         return str.replaceAll(regex, escapeCh);
     }
 
-    private Map<String, Object> buildLivyArgs(Measure measure, String pool) throws IOException {
+    private Map<String, Object> buildLivyArgs(Measure measure, String pool,Map<String,Object> config) throws IOException {
         Map<String, Object> livyArgs = new HashMap<>(SparkConfig);
+        livyArgs.putAll(config);
 
         if (pool != null && !pool.isEmpty()) {
             livyArgs.put("queue", pool);
@@ -145,8 +146,8 @@ public class LivyTaskSubmitHelper {
         return livyArgs;
     }
 
-    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool) {
-        String result = postToLivy(measure, pool);
+    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool, Map<String,Object> config) {
+        String result = postToLivy(measure, pool, config);
         MeasureLivyResult measureLivyResult = null;
         if (result != null) {
             measureLivyResult = retryLivyGetAppId(result, appIdRetryCount);
@@ -199,7 +200,7 @@ public class LivyTaskSubmitHelper {
         return GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
     }
 
-    public String postToLivy(Measure measure, String pool) {
+    public String postToLivy(Measure measure, String pool,Map<String,Object> config) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -208,7 +209,7 @@ public class LivyTaskSubmitHelper {
         if (!isNeedKerberos) {
             String result = null;
             try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool)).replaceAll("\\{", "{ ").replaceAll("}", " }");
+                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
                 HttpEntity<String> springEntity = new HttpEntity<>(body, headers);
                 result = restTemplate.postForObject(url, springEntity, String.class);
                 log.info(result);
@@ -225,7 +226,7 @@ public class LivyTaskSubmitHelper {
             KerberosRestTemplate restTemplate = new KerberosRestTemplate(keyTabLocation, userPrincipal);
             HttpEntity<String> springEntity = null;
             try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool)).replaceAll("\\{", "{ ").replaceAll("}", " }");
+                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
                 springEntity = new HttpEntity<>(body, headers);
             } catch (HttpClientErrorException e) {
                 log.error("Post to livy ERROR. \n  response status : " + e.getMessage()

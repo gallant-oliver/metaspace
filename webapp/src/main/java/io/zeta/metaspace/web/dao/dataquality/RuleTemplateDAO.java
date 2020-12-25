@@ -18,7 +18,7 @@ public interface RuleTemplateDAO {
     public long countByCategoryId(@Param("ruleType") String ruleType,@Param("tenantId")String tenantId);
 
     @Select({"<script>",
-             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,code,enable,sql, ",
+             "select id,name,scope,unit,description,delete,create_time as createTime,rule_type as ruleType,code,enable,sql,type, ",
              " count(*)over() as total",
              " from data_quality_rule_template",
              " where rule_type=#{ruleType} and tenantid=#{tenantId} and delete=false" +

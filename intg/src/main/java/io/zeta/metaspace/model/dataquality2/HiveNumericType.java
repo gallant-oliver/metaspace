@@ -26,6 +26,19 @@ public enum HiveNumericType {
     FLOAT(4, "float"),
     DOUBLE(5, "double"),
     DECIMAL(6, "decimal"),
+    MEDIUMINT(8,"mediumint"),
+    INTEGER(9,"integer"),
+    BINARY_FLOAT(10,"binary_float"),
+    BINARY_DOUBLE(11,"binary_double"),
+    NUMBER(12,"number"),
+    FLOAT4(13,"float4"),
+    FLOAT8(14,"float8"),
+    INT2(15,"int2"),
+    INT4(16,"int4"),
+    INT8(17,"int8"),
+    NUMERIC(18,"numeric"),
+    DECFLOAT(19,"decfloat"),
+    REAL(20,"real"),
     UNKNOW(7, "unknow");
     String name;
     Integer code;
@@ -47,5 +60,21 @@ public enum HiveNumericType {
     public static boolean isNumericType(String name) {
         HiveNumericType currentType = getHiveNumericTypeByName(name);
         return currentType == HiveNumericType.UNKNOW? false:true;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
     }
 }

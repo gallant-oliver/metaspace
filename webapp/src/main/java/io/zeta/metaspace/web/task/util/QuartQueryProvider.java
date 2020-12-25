@@ -30,38 +30,38 @@ public class QuartQueryProvider {
             case TABLE_ROW_NUM:
             case TABLE_ROW_NUM_CHANGE:
             case TABLE_ROW_NUM_CHANGE_RATIO:
-                return "select count(*) from %s";
+                return "select count(*) from %s.%s";
             case AVG_VALUE:
             case AVG_VALUE_CHANGE:
             case AVG_VALUE_CHANGE_RATIO:
-                return "select avg(%s) from %s";
+                return "select avg(%s) from %s.%s";
             case TOTAL_VALUE:
             case TOTAL_VALUE_CHANGE:
             case TOTAL_VALUE_CHANGE_RATIO:
-                return "select sum(%s) from %s";
+                return "select sum(%s) from %s.%s";
             case MIN_VALUE:
             case MIN_VALUE_CHANGE:
             case MIN_VALUE_CHANGE_RATIO:
-                return "select min(%s) from %s";
+                return "select min(%s) from %s.%s";
             case MAX_VALUE:
             case MAX_VALUE_CHANGE:
             case MAX_VALUE_CHANGE_RATIO:
-                return "select max(%s) from %s";
+                return "select max(%s) from %s.%s";
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
             case UNIQUE_VALUE_NUM_CHANGE_RATIO:
             case UNIQUE_VALUE_NUM_RATIO:
-                return "SELECT count(*) from %s where %s in (SELECT %s from %s GROUP BY %s HAVING count(*)=1)";
+                return "SELECT count(*) from %s.%s where %s in (SELECT %s from %s.%s GROUP BY %s HAVING count(*)=1)";
             case EMPTY_VALUE_NUM:
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                return "SELECT count(*) from %s WHERE %s is NULL";
+                return "SELECT count(*) from %s.%s WHERE %s is NULL";
             case DUP_VALUE_NUM:
             case DUP_VALUE_NUM_CHANGE:
             case DUP_VALUE_NUM_CHANGE_RATIO:
             case DUP_VALUE_NUM_RATIO:
-                return "SELECT count(distinct(%s)) from %s where %s in (SELECT %s from %s GROUP BY %s HAVING count(*)>1)";
+                return "SELECT count(distinct(%s)) from %s.%s where %s in (SELECT %s from %s.%s GROUP BY %s HAVING count(*)>1)";
             default:break;
         }
         return null;

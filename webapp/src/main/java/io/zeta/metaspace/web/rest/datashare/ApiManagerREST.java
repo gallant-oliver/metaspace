@@ -18,6 +18,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceType;
@@ -26,6 +27,7 @@ import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -713,9 +715,9 @@ public class ApiManagerREST {
     @Path("/oracle/{sourceId}/schemas")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getSchemaList(@PathParam("sourceId") String sourceId, Parameters parameters) throws AtlasBaseException {
+    public Result getSchemaList(@PathParam("sourceId") String sourceId, ColumnParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters, sourceId);
+            PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters,tenantId, sourceId);
             return ReturnUtil.success(dataList);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取schema列表失败");
@@ -735,9 +737,9 @@ public class ApiManagerREST {
     @Path("/oracle/{sourceId}/{schemaName}/tables")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getTableList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, Parameters parameters) throws AtlasBaseException {
+    public Result getTableList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, ColumnParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult tableList = shareService.getDataList(DataShareService.SEARCH_TYPE.TABLE, parameters, sourceId, schemaName);
+            PageResult tableList = shareService.getDataList(DataShareService.SEARCH_TYPE.TABLE, parameters,tenantId, sourceId, schemaName);
             return ReturnUtil.success(tableList);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
@@ -758,9 +760,9 @@ public class ApiManagerREST {
     @Path("/oracle/{sourceId}/{schemaName}/{tableName}/columns")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getColumnList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, @PathParam("tableName") String tableName, Parameters parameters) throws AtlasBaseException {
+    public Result getColumnList(@PathParam("sourceId") String sourceId, @PathParam("schemaName") String schemaName, @PathParam("tableName") String tableName, ColumnParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.COLUMN, parameters, sourceId, schemaName, tableName);
+            PageResult dataList = shareService.getDataList(DataShareService.SEARCH_TYPE.COLUMN, parameters,tenantId, sourceId, schemaName, tableName);
             return ReturnUtil.success(dataList);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表字段失败");

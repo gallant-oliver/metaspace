@@ -24,7 +24,9 @@ public class DataSourceSearch {
 
     public DataSourceSearch(String sourceName, String sourceType, String createTime, String updateTime, String updateUserName) {
         this.sourceName = sourceName;
-        this.sourceType = sourceType;
+        if (sourceType!=null){
+            this.sourceType = sourceType.toUpperCase();
+        }
         this.createTime = createTime;
         this.updateTime = updateTime;
         this.updateUserName = updateUserName;

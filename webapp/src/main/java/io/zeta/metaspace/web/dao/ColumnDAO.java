@@ -75,6 +75,12 @@ public interface ColumnDAO {
              " where table_guid=#{tableGuid}",
              " and (column_name like '%${queryText}%' ESCAPE '/' or display_name like '%${queryText}%' ESCAPE '/')",
              " and status !='DELETED' ",
+             " <if test='columnTypes!= null'>",
+             " and type in ",
+             " <foreach item='type' index='index' collection='columnTypes' separator=',' open='(' close=')'>" +
+             " #{type}" +
+             " </foreach>" +
+             " </if>",
              " <if test='sortColumn!=null'>",
              " order by ${sortColumn}",
              "</if>",
@@ -86,7 +92,8 @@ public interface ColumnDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<Column> getTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText, @Param("sortColumn")String sortColumn, @Param("sortOrder")String sortOrder, @Param("limit")int limit, @Param("offset")int offset);
+    public List<Column> getTableColumnList(@Param("tableGuid")String tableGuid, @Param("queryText")String queryText, @Param("sortColumn")String sortColumn,
+                                           @Param("sortOrder")String sortOrder, @Param("limit")int limit, @Param("offset")int offset,@Param("columnTypes") List<String> columnTypes);
 
 
 

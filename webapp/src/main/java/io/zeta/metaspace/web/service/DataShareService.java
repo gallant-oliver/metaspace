@@ -61,6 +61,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -134,6 +135,7 @@ public class DataShareService {
     @Autowired
     private ApiGroupService apiGroupService;
     @Autowired
+    private TaskManageDAO taskManageDAO;
     private ApiPolyDao apiPolyDao;
     @Autowired
     private DesensitizationDAO desensitizationDAO;
@@ -1380,11 +1382,14 @@ public class DataShareService {
     }
 
 
-    public PageResult getDataSourceList(Parameters parameters,String type,String tenantId) throws AtlasBaseException {
-        return dataSourceService.searchDataSources(parameters.getLimit(),parameters.getOffset(),null,null,parameters.getQuery(),type.toUpperCase(),null,null,null,true,tenantId);
+    public PageResult getDataSourceList(Parameters parameters, String type, String tenantId) throws AtlasBaseException {
+        if(type!=null){
+            type=type.toUpperCase();
+        }
+        return dataSourceService.searchDataSources(parameters.getLimit(), parameters.getOffset(), null, null, parameters.getQuery(), type, null, null, null, true, tenantId);
     }
 
-    public PageResult getDataList(SEARCH_TYPE searchType, Parameters parameters, String sourceId, String... ids) throws AtlasBaseException {
+    public PageResult getDataList(SEARCH_TYPE searchType, ColumnParameters parameters,String tenantId, String sourceId, String... ids) throws AtlasBaseException {
         AdapterSource adapterSource = AdapterUtils.getAdapterSource(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         switch (searchType) {
@@ -1398,7 +1403,14 @@ public class DataShareService {
             case COLUMN: {
                 String schemaName = ids[0];
                 String tableName = ids[1];
-                return adapterExecutor.getColumnPage(schemaName, tableName, parameters);
+                //判断规则是否还有数值型规则
+                int count = 0;
+                List<String> ruleIds = parameters.getRuleIds();
+                if (ruleIds!=null&&ruleIds.size()!=0){
+                    count = taskManageDAO.getNumericTypeTemplateRuleIdCount(ruleIds,tenantId);
+                }
+                boolean isNum = count!=0;
+                return adapterExecutor.getColumnPage(schemaName, tableName, parameters,isNum);
             }
             default:
                 break;

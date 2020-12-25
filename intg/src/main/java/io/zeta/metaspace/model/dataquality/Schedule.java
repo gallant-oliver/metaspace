@@ -10,27 +10,23 @@
 //
 //
 // ======================================================================
-/**
- * @author sunhaoning@gridsum.com
- * @date 2019/7/24 15:47
- */
-package io.zeta.metaspace.model.dataquality2;
 
+package io.zeta.metaspace.model.dataquality;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-/*
- * @description
- * @author sunhaoning
- * @date 2019/7/24 15:47
+import java.sql.Timestamp;
+
+/**
+ * @author lixiang03
+ * @Data 2020/11/26 18:48
  */
 @Data
-public class RuleHeader {
-    private String id;
-    private String name;
-    private String ruleTemplateId;
-    private Integer scope;
-    private String taskType;
-    private String sql;
-    private String categoryName;
-    private String categoryId;
+public class Schedule {
+    private String crontab;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp startTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp endTime;
 }
