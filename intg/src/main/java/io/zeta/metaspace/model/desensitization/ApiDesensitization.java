@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiDesensitization {
+    private long index;
     private String field;
     private String ruleId;
     private String ruleName;

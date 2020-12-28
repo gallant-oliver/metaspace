@@ -52,7 +52,7 @@ public class DesensitizationService {
 
             return desensitizationDAO.insert(desensitizationRule, tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则创建失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则创建失败");
         }
     }
 
@@ -73,7 +73,7 @@ public class DesensitizationService {
             }
             return desensitizationDAO.update(desensitizationRule);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则更新失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则更新失败");
         }
     }
 
@@ -90,7 +90,7 @@ public class DesensitizationService {
 
             return desensitizationDAO.updateEnable(ruleId, enable);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则更新启用禁用失败 : " + e.getMessage());
+            throw new AtlasBaseException( e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "脱敏规则更新启用禁用失败" );
         }
     }
 
@@ -107,7 +107,7 @@ public class DesensitizationService {
             }
             return desensitizationDAO.delete(ruleIds);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则删除失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则删除失败" );
         }
     }
 
@@ -120,7 +120,7 @@ public class DesensitizationService {
             }
             return desensitizationDAO.getRule(id);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取失败");
         }
     }
 
@@ -135,7 +135,7 @@ public class DesensitizationService {
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取失败" );
         }
     }
 
@@ -149,7 +149,7 @@ public class DesensitizationService {
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取关联API失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则获取关联API失败" );
         }
     }
 
@@ -182,7 +182,7 @@ public class DesensitizationService {
             return algorithm.getHandle().apply(desensitizationAlgorithmTest.getField(), desensitizationAlgorithmTest.getParams());
 
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "测试脱敏规则失败:" + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "测试脱敏规则失败" );
         }
     }
 

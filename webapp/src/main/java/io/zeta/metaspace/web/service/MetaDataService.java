@@ -192,9 +192,9 @@ public class MetaDataService {
             if (e.getMessage().contains(message)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不存在该表信息，请确定该表是否为脏数据");
             }
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" );
         }
     }
 

@@ -49,14 +49,14 @@ public class IpRestrictionService {
                 try {
                     new IpAddressMatcher(ip);
                 } catch (Exception e) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "ip 格式错误：" + e.getMessage());
+                    throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "ip 格式错误");
                 }
             }
-            
+
             ipRestriction.setCreatorId(AdminUtils.getUserData().getUserId());
             return ipRestrictionDAO.insert(ipRestriction, tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略创建失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略创建失败");
         }
     }
 
@@ -84,13 +84,13 @@ public class IpRestrictionService {
                 try {
                     new IpAddressMatcher(ip);
                 } catch (Exception e) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "ip 格式错误：" + e.getMessage());
+                    throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "ip 格式错误");
                 }
             }
 
             return ipRestrictionDAO.update(ipRestriction);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略更新失败 : " + e.getMessage());
+            throw new AtlasBaseException( e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略更新失败");
         }
     }
 
@@ -107,7 +107,7 @@ public class IpRestrictionService {
 
             return ipRestrictionDAO.updateEnable(ipRestrictionId, enable);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略更新启用禁用失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略更新启用禁用失败");
         }
     }
 
@@ -124,7 +124,7 @@ public class IpRestrictionService {
             }
             return ipRestrictionDAO.delete(ipRestrictionIds);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略删除失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略删除失败");
         }
     }
 
@@ -138,7 +138,7 @@ public class IpRestrictionService {
             }
             return ipRestriction;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取失败");
         }
     }
 
@@ -153,7 +153,7 @@ public class IpRestrictionService {
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取失败");
         }
     }
 
@@ -167,7 +167,7 @@ public class IpRestrictionService {
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());
             return pageResult;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取关联API失败 : " + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略获取关联API失败");
         }
     }
 
