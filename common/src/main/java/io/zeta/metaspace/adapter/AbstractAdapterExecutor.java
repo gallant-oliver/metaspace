@@ -77,6 +77,7 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
     public <T> T queryResult(Connection connection, String sql, Function<ResultSet, T> call) {
         try (Connection con = connection) {
             PreparedStatement statement = con.prepareStatement(sql);
+            statement.setFetchSize(Integer.MAX_VALUE);
             return call.apply(statement.executeQuery());
         } catch (Exception e) {
             throw new AdapterBaseException(e);

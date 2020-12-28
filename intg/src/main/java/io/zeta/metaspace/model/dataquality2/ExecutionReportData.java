@@ -17,6 +17,7 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -26,44 +27,14 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/8/26 10:25
  */
+@Data
 public class ExecutionReportData {
     private TaskBasicInfo basicInfo;
     private TaskCheckResultCount checkResultCount;
     private ImprovingSuggestion suggestion;
-    private List<TaskRuleExecutionRecord> ruleCheckResult;
+    private List<SubTaskRecord> ruleCheckResult;
 
-    public TaskBasicInfo getBasicInfo() {
-        return basicInfo;
-    }
-
-    public void setBasicInfo(TaskBasicInfo basicInfo) {
-        this.basicInfo = basicInfo;
-    }
-
-    public TaskCheckResultCount getCheckResultCount() {
-        return checkResultCount;
-    }
-
-    public void setCheckResultCount(TaskCheckResultCount checkResultCount) {
-        this.checkResultCount = checkResultCount;
-    }
-
-    public ImprovingSuggestion getSuggestion() {
-        return suggestion;
-    }
-
-    public void setSuggestion(ImprovingSuggestion suggestion) {
-        this.suggestion = suggestion;
-    }
-
-    public List<TaskRuleExecutionRecord> getRuleCheckResult() {
-        return ruleCheckResult;
-    }
-
-    public void setRuleCheckResult(List<TaskRuleExecutionRecord> ruleCheckResult) {
-        this.ruleCheckResult = ruleCheckResult;
-    }
-
+    @Data
     public static class TaskBasicInfo {
         private String taskId;
         private String executionId;
@@ -78,86 +49,6 @@ public class ExecutionReportData {
         @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
         private Timestamp endTime;
         private String pool;
-
-        public String getPool() {
-            return pool;
-        }
-
-        public void setPool(String pool) {
-            this.pool = pool;
-        }
-
-        public String getTaskId() {
-            return taskId;
-        }
-
-        public void setTaskId(String taskId) {
-            this.taskId = taskId;
-        }
-
-        public String getExecutionId() {
-            return executionId;
-        }
-
-        public void setExecutionId(String executionId) {
-            this.executionId = executionId;
-        }
-
-        public String getTaskName() {
-            return taskName;
-        }
-
-        public void setTaskName(String taskName) {
-            this.taskName = taskName;
-        }
-
-        public String getTaskNumber() {
-            return taskNumber;
-        }
-
-        public void setTaskNumber(String taskNumber) {
-            this.taskNumber = taskNumber;
-        }
-
-        public Integer getLevel() {
-            return level;
-        }
-
-        public void setLevel(Integer level) {
-            this.level = level;
-        }
-
-        public String getCronExpression() {
-            return cronExpression;
-        }
-
-        public void setCronExpression(String cronExpression) {
-            this.cronExpression = cronExpression;
-        }
-
-        public Timestamp getExecuteTime() {
-            return executeTime;
-        }
-
-        public void setExecuteTime(Timestamp executeTime) {
-            this.executeTime = executeTime;
-        }
-
-        public Timestamp getStartTime() {
-            return startTime;
-        }
-
-        public void setStartTime(Timestamp startTime) {
-            this.startTime = startTime;
-        }
-
-        public Timestamp getEndTime() {
-            return endTime;
-        }
-
-        public void setEndTime(Timestamp endTime) {
-            this.endTime = endTime;
-        }
     }
 
     public static class TaskCheckResultCount {

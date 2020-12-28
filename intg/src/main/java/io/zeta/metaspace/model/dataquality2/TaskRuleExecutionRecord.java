@@ -16,7 +16,11 @@
  */
 package io.zeta.metaspace.model.dataquality2;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
 
 /*
  * @description
@@ -25,7 +29,8 @@ import lombok.Data;
  */
 @Data
 public class TaskRuleExecutionRecord {
-    private Integer objectType;
+    private Integer scope;
+    private Integer taskType;
     private String subTaskRuleId;
     private String subtaskId;
     private Integer subTaskSequence;
@@ -56,4 +61,47 @@ public class TaskRuleExecutionRecord {
     private Integer redCheckStatus;
     private String checkThresholdUnit;
     private Boolean filing;
+    @JsonIgnore
+    private Timestamp createTime;
+    private String tableId;
+
+    public TaskRuleExecutionRecord(){
+
+    }
+
+    public TaskRuleExecutionRecord(TaskRuleExecutionRecord taskRuleExecutionRecord){
+        this.scope = taskRuleExecutionRecord.scope;
+        this.taskType = taskRuleExecutionRecord.taskType;
+        this.subTaskRuleId = taskRuleExecutionRecord.subTaskRuleId;
+        this.subtaskId = taskRuleExecutionRecord.subtaskId;
+        this.subTaskSequence = taskRuleExecutionRecord.subTaskSequence;
+        this.executionId = taskRuleExecutionRecord.executionId;
+        this.ruleExecutionId = taskRuleExecutionRecord.ruleExecutionId;
+        this.ruleName = taskRuleExecutionRecord.ruleName;
+        this.description = taskRuleExecutionRecord.description;
+        this.dataSourceName = taskRuleExecutionRecord.dataSourceName;
+        this.dbName = taskRuleExecutionRecord.dbName;
+        this.tableName = taskRuleExecutionRecord.tableName;
+        this.objectId = taskRuleExecutionRecord.objectId;
+        this.objectName = taskRuleExecutionRecord.objectName;
+        this.checkType = taskRuleExecutionRecord.checkType;
+        this.checkExpression = taskRuleExecutionRecord.checkExpression;
+        this.result = taskRuleExecutionRecord.result;
+        this.checkMinValue = taskRuleExecutionRecord.checkMinValue;
+        this.checkMaxValue = taskRuleExecutionRecord.checkMaxValue;
+        this.checkStatus = taskRuleExecutionRecord.checkStatus;
+        this.orangeWarningCheckType = taskRuleExecutionRecord.orangeWarningCheckType;
+        this.orangeWarningCheckExpression = taskRuleExecutionRecord.orangeWarningCheckExpression;
+        this.orangeWarningMinValue = taskRuleExecutionRecord.orangeWarningMinValue;
+        this.orangeWarningMaxValue = taskRuleExecutionRecord.orangeWarningMaxValue;
+        this.orangeCheckStatus = taskRuleExecutionRecord.orangeCheckStatus;
+        this.redWarningCheckType = taskRuleExecutionRecord.redWarningCheckType;
+        this.redWarningCheckExpression = taskRuleExecutionRecord.redWarningCheckExpression;
+        this.redWarningMinValue = taskRuleExecutionRecord.redWarningMinValue;
+        this.redWarningMaxValue = taskRuleExecutionRecord.redWarningMaxValue;
+        this.redCheckStatus = taskRuleExecutionRecord.redCheckStatus;
+        this.checkThresholdUnit = taskRuleExecutionRecord.checkThresholdUnit;
+        this.filing = taskRuleExecutionRecord.filing;
+        this.createTime = taskRuleExecutionRecord.createTime;
+    }
 }
