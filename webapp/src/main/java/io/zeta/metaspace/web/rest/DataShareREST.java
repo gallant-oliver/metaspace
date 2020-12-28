@@ -575,7 +575,7 @@ public class DataShareREST {
         try {
             return shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters, sourceId);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源schema失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源schema失败，请检查数据源配置或者确认查询schema存在");
         }
     }
 
@@ -587,7 +587,7 @@ public class DataShareREST {
         try {
             return shareService.getDataList(DataShareService.SEARCH_TYPE.TABLE, parameters, sourceId, schemaName);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取schema下的表失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取schema下的表失败，请检查数据源配置或者确认相关表存在");
         }
     }
 

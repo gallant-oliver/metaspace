@@ -149,7 +149,7 @@ public class AdminREST {
             auditService.cancelApiAudit(tenantId, auditId);
             return ReturnUtil.success();
         }catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "取消审核失败:" + e.getMessage());
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "取消审核失败");
         }
     }
 
