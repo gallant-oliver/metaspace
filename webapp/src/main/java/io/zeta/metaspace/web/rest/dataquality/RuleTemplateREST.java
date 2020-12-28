@@ -97,7 +97,7 @@ public class RuleTemplateREST {
     @Path("/{executionId}/record")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public List<SubTaskRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         return taskManageService.getTaskRuleExecutionRecordList(executionId,tenantId);
     }
 

@@ -10,8 +10,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStreamWriter;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +80,6 @@ public class HdfsUtils {
             log.error("hdfs file path:{} is blank", hdfsFilePath);
             return null;
         }
-
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(new Path(hdfsFilePath)), UTF_8))) {
             List<String> result = new ArrayList<>();
             for (int i = 0; i <= lines || lines < 0; i++) {
@@ -88,6 +90,26 @@ public class HdfsUtils {
             }
             return result;
         }
+    }
+
+    public int getFileLine(String hdfsFilePath) throws IOException {
+        if (!fs.exists(new Path(hdfsFilePath))){
+            return 0;
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(new Path(hdfsFilePath)), UTF_8));
+             LineNumberReader lineReader = new LineNumberReader(reader);) {
+            long skipSize = Long.MAX_VALUE;
+            while(skipSize==Long.MAX_VALUE){
+                skipSize = lineReader.skip(Long.MAX_VALUE);
+            }
+            int lineNumber = lineReader.getLineNumber();
+            return lineNumber;
+        }
+    }
+
+    public BufferedWriter getFileBufferWriter(String hdfsFilePath) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(hdfsFilePath)), UTF_8));
+        return writer;
     }
 
 

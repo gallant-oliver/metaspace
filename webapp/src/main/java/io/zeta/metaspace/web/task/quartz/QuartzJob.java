@@ -27,6 +27,7 @@ import com.healthmarketscience.sqlbuilder.FunctionCall;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.adapter.AdapterBaseException;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.dataquality.CheckExpression;
@@ -62,7 +63,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -221,7 +226,7 @@ public class QuartzJob implements Job {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
-            long currentTime = System.currentTimeMillis();
+            long currentTime = System.currentTimeMillis()/1000*1000;
             task.setTimeStamp(currentTime);
             Timestamp currentTimeStamp = new Timestamp(currentTime);
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
@@ -712,6 +717,8 @@ public class QuartzJob implements Job {
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
             String superType = String.valueOf(jobType.code);
+            String fileName = LivyTaskSubmitHelper.getOutName("data");
+            String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
             if (columnRule) {
                 columnName = adapterExecutor.addEscapeChar(task.getObjectName());
                 switch (jobType) {
@@ -719,18 +726,23 @@ public class QuartzJob implements Job {
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
-                        sql = String.format(query, sqlDbName,tableName, columnName, columnName, tableName, columnName);
+                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
+                        sql = String.format(query, sqlDbName,tableName, columnName, columnName,sqlDbName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
-                        sql = String.format(query, columnName,sqlDbName, tableName, columnName, columnName, tableName, columnName);
+                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
+
+                        sql = String.format(query, columnName,sqlDbName, tableName, columnName, columnName,sqlDbName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
+                        sql = String.format(query, sqlDbName,tableName, columnName);
+                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
                         sql = String.format(query, sqlDbName,tableName, columnName);
                         break;
                     default:
@@ -784,6 +796,76 @@ public class QuartzJob implements Job {
                 checkResult(task, resultValue, resultValue);
             }
         }
+    }
+
+    public void writeErrorData(TaskType jobType,String tableName,String columnName,String sqlDbName,AdapterSource adapterSource,Connection connection,String hdfsOutPath){
+        String errDataSql = QuartQueryProvider.getErrData(jobType);
+        String sql=null;
+        switch (jobType) {
+            case UNIQUE_VALUE_NUM:
+            case UNIQUE_VALUE_NUM_CHANGE:
+            case UNIQUE_VALUE_NUM_CHANGE_RATIO:
+            case UNIQUE_VALUE_NUM_RATIO:
+            case DUP_VALUE_NUM:
+            case DUP_VALUE_NUM_CHANGE:
+            case DUP_VALUE_NUM_CHANGE_RATIO:
+            case DUP_VALUE_NUM_RATIO:
+
+                sql = String.format(errDataSql, columnName, sqlDbName,tableName, columnName);
+                break;
+            case EMPTY_VALUE_NUM:
+            case EMPTY_VALUE_NUM_CHANGE:
+            case EMPTY_VALUE_NUM_CHANGE_RATIO:
+            case EMPTY_VALUE_NUM_RATIO:
+                sql = String.format(errDataSql, sqlDbName,tableName, columnName);
+                break;
+            default:
+                sql = String.format(errDataSql, columnName,sqlDbName, tableName);
+                break;
+        }
+        AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+
+        adapterExecutor.queryResult(connection, sql, resultSet -> {
+            HdfsUtils hdfsUtils = new HdfsUtils();
+            try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);){
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+                while (resultSet.next()) {
+                    LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String column = metaData.getColumnName(i);
+                        Object value = resultSet.getObject(column);
+                        if (value instanceof Clob) {
+                            Clob clob = (Clob) value;
+                            StringBuilder buffer = new StringBuilder();
+                            clob.getCharacterStream();
+                            BufferedReader br = new BufferedReader(clob.getCharacterStream());
+                            clob.getCharacterStream();
+                            String line = br.readLine();
+                            while (line != null) {
+                                buffer.append(line);
+                                line = br.readLine();
+                            }
+                            value = buffer.toString();
+                        } else if (value instanceof Timestamp) {
+                            Timestamp timValue = (Timestamp) value;
+                            value = timValue.toString();
+                        } else {
+                            value = adapterSource.getAdapter().getAdapterTransformer().convertColumnValue(value);
+                        }
+
+                        map.put(column, value);
+                    }
+                    fileBufferWriter.write(GsonUtils.getInstance().toJson(map)+"\n");
+                }
+                fileBufferWriter.flush();
+                return null;
+            } catch (Exception e) {
+                throw new AdapterBaseException("解析查询结果失败", e);
+            }
+
+        });
+
     }
 
     //规则值变化

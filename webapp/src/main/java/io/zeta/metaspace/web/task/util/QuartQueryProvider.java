@@ -66,4 +66,26 @@ public class QuartQueryProvider {
         }
         return null;
     }
+
+    public static String getErrData(final TaskType taskType){
+        switch (taskType) {
+            case UNIQUE_VALUE_NUM:
+            case UNIQUE_VALUE_NUM_CHANGE:
+            case UNIQUE_VALUE_NUM_CHANGE_RATIO:
+            case UNIQUE_VALUE_NUM_RATIO:
+                return "SELECT %s from %s.%s GROUP BY %s HAVING count(*)=1";
+            case EMPTY_VALUE_NUM:
+            case EMPTY_VALUE_NUM_CHANGE:
+            case EMPTY_VALUE_NUM_CHANGE_RATIO:
+            case EMPTY_VALUE_NUM_RATIO:
+                return "SELECT * from %s.%s WHERE %s is NULL";
+            case DUP_VALUE_NUM:
+            case DUP_VALUE_NUM_CHANGE:
+            case DUP_VALUE_NUM_CHANGE_RATIO:
+            case DUP_VALUE_NUM_RATIO:
+                return "SELECT %s from %s.%s GROUP BY %s HAVING count(*)>1";
+            default:break;
+        }
+        return null;
+    }
 }
