@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class HdfsUtilsTest {
 
-    @Test
+    @Test(enabled = false)
     public void  testReadFile() throws IOException {
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
         System.setProperty("java.security.krb5.conf", "src/test/resources/krb5.conf");
