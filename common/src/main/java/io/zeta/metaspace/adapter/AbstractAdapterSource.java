@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourcePool;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
 import javax.sql.DataSource;
@@ -66,7 +67,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
             return getConnectionForDriver();
         } catch (Exception e) {
             log.info("getConnection for " + getJdbcUrl() + "," + getDataSourceInfo().getUserName() + "," + getDataSourceInfo().getPassword() + " error:" + e.getMessage(), e);
-            throw new AtlasBaseException(e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST,e,"获取连接失败，请求检查数据源配置信息");
         }
     }
 }

@@ -21,6 +21,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.dataquality.Report;
 import io.zeta.metaspace.model.dataquality.ReportError;
 import io.zeta.metaspace.model.dataquality.Template;
@@ -266,7 +267,8 @@ public class DataQualityREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> reportIds) throws AtlasBaseException {
         try {
-            return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), reportIds);
+            String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/quality/reports";
+            return ExportDataPathUtils.generateURL(url, reportIds);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取下载报表url失败");
         }

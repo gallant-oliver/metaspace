@@ -17,6 +17,7 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
 import io.zeta.metaspace.model.datastandard.DataStandToRule;
@@ -202,7 +203,8 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> ids) throws Exception {
-        return ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datastandard/export/selected";
+        return ExportDataPathUtils.generateURL(url, ids);
     }
 
     @GET
@@ -407,14 +409,15 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDownloadURLCategory(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datastandard/export/selected/category";
         //全局导出
         if (ids==null||ids.size()==0){
             DownloadUri uri = new DownloadUri();
-            String downURL = request.getRequestURL().toString() + "/" + "all";
+            String downURL = url + "/" + "all";
             uri.setDownloadUri(downURL);
             return  ReturnUtil.success(uri);
         }
-        DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
 
