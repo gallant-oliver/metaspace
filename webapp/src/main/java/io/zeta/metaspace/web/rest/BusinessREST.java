@@ -28,6 +28,8 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -419,6 +421,7 @@ public class BusinessREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -748,14 +751,15 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/businesses/export/selected";
         //全局导出
         if (ids==null||ids.size()==0){
             DownloadUri uri = new DownloadUri();
-            String downURL = request.getRequestURL().toString() + "/" + "all";
+            String downURL = url + "/" + "all";
             uri.setDownloadUri(downURL);
             return  ReturnUtil.success(uri);
         }
-        DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
 
@@ -799,6 +803,7 @@ public class BusinessREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -838,6 +843,7 @@ public class BusinessREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -879,6 +885,7 @@ public class BusinessREST {
      * @param moveCategory
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/place/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -907,6 +914,7 @@ public class BusinessREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/sort/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -925,6 +933,7 @@ public class BusinessREST {
         }
     }
 
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/excel/category/template")
     @Valid
@@ -949,14 +958,15 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getBusinessDownloadURL(List<String> ids,@PathParam("categoryId")String categoryId) throws Exception {
         try{
+            String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/businesses/file/export/"+categoryId;
             //全局导出
             if (ids==null||ids.size()==0){
                 DownloadUri uri = new DownloadUri();
-                String downURL = request.getRequestURL().toString() + "/" + "all";
+                String downURL = url + "/" + "all";
                 uri.setDownloadUri(downURL);
                 return  ReturnUtil.success(uri);
             }
-            DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+            DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
             return ReturnUtil.success(downloadUri);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"导出业务对象失败");
