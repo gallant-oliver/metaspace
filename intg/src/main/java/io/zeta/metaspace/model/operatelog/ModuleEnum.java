@@ -126,7 +126,7 @@ public enum ModuleEnum {
     public static String getModuleName(int moduleId){
         for (ModuleEnum module : ModuleEnum.values()) {
             if(module.id==moduleId)
-                return module.getTenantModule();
+                return module.toString();
         }
         return null;
     }
