@@ -4,11 +4,13 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.moebius.MoebiusApi;
 import io.zeta.metaspace.model.moebius.MoebiusApiData;
 import io.zeta.metaspace.model.moebius.MoebiusApiParam;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.user.User;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Type;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -163,6 +166,8 @@ public class AuditService {
             if (apiInfoV2 == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审核 Api 不存在");
             }
+
+            HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), MessageFormat.format("审核 Api : {0} {1}", apiInfoV2.getName(), apiInfoV2.getVersion()));
 
             if (apiAudit.getApiPolyId() == null) {
                 if (!ApiStatusEnum.AUDIT.getName().equals(apiInfoV2.getStatus())) {

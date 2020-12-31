@@ -1,8 +1,10 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiPolyInfo;
 import io.zeta.metaspace.web.dao.IpRestrictionDAO;
@@ -17,6 +19,8 @@ import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -66,9 +70,12 @@ public class IpRestrictionService {
             if (StringUtils.isEmpty(ipRestriction.getId()) || StringUtils.isEmpty(ipRestriction.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不正确");
             }
-            if (ipRestrictionDAO.getIpRestriction(ipRestriction.getId()) == null) {
+            IpRestriction old = ipRestrictionDAO.getIpRestriction(ipRestriction.getId());
+            if (old == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "黑白名单策略不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "更新黑白名单: " + old.getName());
+
             checkDuplicateName(ipRestriction.getId(), ipRestriction.getName(), tenantId);
 
             IpRestrictionType algorithm = ipRestriction.getType();
@@ -104,6 +111,8 @@ public class IpRestrictionService {
             if (rule == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "黑白名单策略不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "更新黑白名单启用禁用: " + rule.getName() + " " + enable);
+
 
             return ipRestrictionDAO.updateEnable(ipRestrictionId, enable);
         } catch (Exception e) {
@@ -115,13 +124,18 @@ public class IpRestrictionService {
     @Transactional(rollbackFor = Exception.class)
     public int deletedIpRestriction(List<String> ipRestrictionIds, String tenantId) {
         try {
+            List<String> name = new ArrayList<>();
             if (ipRestrictionIds != null && !ipRestrictionIds.isEmpty()) {
                 for (String ipRestrictionId : ipRestrictionIds) {
-                    if (ipRestrictionDAO.getIpRestriction(ipRestrictionId) == null) {
+                    IpRestriction ipRestriction = ipRestrictionDAO.getIpRestriction(ipRestrictionId);
+                    if (ipRestriction == null) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "黑白名单策略不存在 id : " + ipRestrictionId);
                     }
+                    name.add(ipRestriction.getName());
                 }
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "删除黑白名单: " + String.join(",",name));
+
             return ipRestrictionDAO.delete(ipRestrictionIds);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "黑白名单策略删除失败");

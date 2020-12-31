@@ -1,9 +1,13 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.desensitization.DesensitizationAlgorithmInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationAlgorithmTest;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiPolyInfo;
 import io.zeta.metaspace.web.service.DesensitizationService;
@@ -34,7 +38,10 @@ public class DesensitizationREST {
     @Path("")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public boolean createDesensitizationRule(DesensitizationRule desensitizationRule, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DESENSITIZATION.getAlias(), "创建脱敏: " + desensitizationRule.getName());
+
         desensitizationRule.setId(UUID.randomUUID().toString());
         desensitizationService.checkDuplicateName(desensitizationRule.getId(), desensitizationRule.getName(), tenantId);
         desensitizationService.createDesensitizationRule(desensitizationRule, tenantId);
@@ -48,7 +55,9 @@ public class DesensitizationREST {
     @Path("{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
     public boolean putDesensitizationRule(@PathParam("id") String id, DesensitizationRule desensitizationRule, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DESENSITIZATION.getAlias(), "更新脱敏: " + id);
         desensitizationRule.setId(id);
         desensitizationService.updateDesensitizationRule(desensitizationRule, tenantId);
         return true;
@@ -61,7 +70,9 @@ public class DesensitizationREST {
     @Path("{id}/enable/{enable}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
     public boolean putDesensitizationRuleStatus(@PathParam("id") String id, @PathParam("enable") Boolean enable, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DESENSITIZATION.getAlias(), "更新脱敏启用禁用: " + id + " " + enable);
         desensitizationService.updateDesensitizationRuleEnable(id, enable, tenantId);
         return true;
     }
@@ -73,7 +84,10 @@ public class DesensitizationREST {
     @Path("{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public boolean deletedDesensitizationRule(@PathParam("id") String ids, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DESENSITIZATION.getAlias(), "删除脱敏: " + ids);
+
         desensitizationService.deletedDesensitizationRule(Arrays.asList(ids.split(",")), tenantId);
         return true;
     }
