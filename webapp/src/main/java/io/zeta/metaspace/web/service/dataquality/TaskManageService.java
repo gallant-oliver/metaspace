@@ -65,6 +65,7 @@ import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -528,7 +529,7 @@ public class TaskManageService {
             taskManageDAO.updateTaskEnableStatus(taskId, true);
         } catch (Exception e) {
             LOG.error("开启任务失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
         }
     }
 
@@ -569,7 +570,12 @@ public class TaskManageService {
             Timestamp startTime = task.getStartTime();
             Timestamp endTime = task.getEndTime();
             Integer level = task.getLevel();
-            if(Objects.nonNull(cron)) {
+            if (Objects.nonNull(cron)) {
+                CronExpression cronExpression = new CronExpression(cron);
+                if (cronExpression.getNextValidTimeAfter(startTime).after(endTime)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "执行时间段内任务永远不会触发");
+                }
+
                 quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
             } else {
                 quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
@@ -577,6 +583,8 @@ public class TaskManageService {
             //添加qrtzName
             taskManageDAO.updateTaskQrtzName(taskId, jobName);
 
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");

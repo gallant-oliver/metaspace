@@ -794,7 +794,7 @@ public class DataShareREST {
         try{
             List<String> projectNames = shareService.getProjectInfoByIds(projectIds).stream().map(projectInfo -> projectInfo.getName()).collect(Collectors.toList());
             if (projectNames!=null){
-                HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除项目:[" + Joiner.on("、").join(projectNames) + "]");
+                HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "删除项目:[" + Joiner.on("、").join(projectNames) + "]");
             }
 
             shareService.deleteProject(projectIds);

@@ -1,8 +1,12 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiPolyInfo;
 import io.zeta.metaspace.web.service.IpRestrictionService;
@@ -31,8 +35,10 @@ public class IpRestrictionREST {
     @Path("")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public boolean createIpRestrictionRule(IpRestriction ipRestriction, @HeaderParam("tenantId") String tenantId) {
         ipRestriction.setId(UUID.randomUUID().toString());
+        HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "创建黑白名单: " + ipRestriction.getName() +" "+ ipRestriction.getType().toString());
         ipRestrictionService.checkDuplicateName(ipRestriction.getId(), ipRestriction.getName(), tenantId);
         ipRestrictionService.createIpRestriction(ipRestriction, tenantId);
         return true;
@@ -45,8 +51,11 @@ public class IpRestrictionREST {
     @Path("{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
     public boolean putIpRestrictionRule(@PathParam("id") String id, IpRestriction ipRestriction, @HeaderParam("tenantId") String tenantId) {
         ipRestriction.setId(id);
+        HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "更新黑白名单: " + id);
+
         ipRestrictionService.updateIpRestriction(ipRestriction, tenantId);
         return true;
     }
@@ -58,7 +67,10 @@ public class IpRestrictionREST {
     @Path("{id}/enable/{enable}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
+
     public boolean putIpRestrictionRuleStatus(@PathParam("id") String id, @PathParam("enable") Boolean enable, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "更新黑白名单启用禁用: " + id + " " + enable);
         ipRestrictionService.updateIpRestrictionEnable(id, enable, tenantId);
         return true;
     }
@@ -70,7 +82,9 @@ public class IpRestrictionREST {
     @Path("{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public boolean deletedIpRestrictionRule(@PathParam("id") String ids, @HeaderParam("tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.IPRESTRICTION.getAlias(), "删除黑白名单: " + ids);
         ipRestrictionService.deletedIpRestriction(Arrays.asList(ids.split(",")), tenantId);
         return true;
     }
