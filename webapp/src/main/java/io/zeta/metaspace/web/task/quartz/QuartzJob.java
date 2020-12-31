@@ -146,6 +146,7 @@ public class QuartzJob implements Job {
     public void execute(JobExecutionContext jobExecutionContext) {
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
+            LOG.warn("任务名为" + key.getName() + "开始执行");
             String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();

@@ -163,11 +163,11 @@ public class TaskManageREST {
      * @throws AtlasBaseException
      */
     @GET
-    @Path("/{taskId}/{executionId}/report/pdf")
+    @Path("/{taskId}/{executionId}/{subtaskId}/report/pdf")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public ExecutionReportData getReportData(@PathParam("taskId")String taskId, @PathParam("executionId")String executionId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return taskManageService.getTaskReportData(taskId, executionId,tenantId);
+    public ExecutionReportData getReportData(@PathParam("taskId")String taskId, @PathParam("executionId")String executionId,@PathParam("subtaskId")String subtaskId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        return taskManageService.getTaskReportData(taskId, executionId,subtaskId,tenantId);
     }
 
     /**
@@ -181,7 +181,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(executionId,tenantId);
+        return taskManageService.getTaskRuleExecutionRecordList(executionId,"all",tenantId); //查看全部子任务
     }
 
     /**
