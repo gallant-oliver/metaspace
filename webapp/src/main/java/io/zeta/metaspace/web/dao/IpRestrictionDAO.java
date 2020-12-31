@@ -60,6 +60,7 @@ public interface IpRestrictionDAO {
             "<if test='type!=null'>",
             "and type=#{type,typeHandler=org.apache.ibatis.type.EnumTypeHandler} ",
             "</if>",
+            "order by update_time desc",
             "<if test='parameters.limit!=-1'>",
             "limit ${parameters.limit} ",
             "</if>",

@@ -54,6 +54,7 @@ public interface DesensitizationDAO {
             "<if test='parameters.query!=null'>",
             "and name like '%${parameters.query}%' ESCAPE '/' ",
             "</if>",
+            "order by update_time desc",
             "<if test='parameters.limit!=-1'>",
             "limit ${parameters.limit} ",
             "</if>",
