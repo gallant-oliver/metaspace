@@ -448,6 +448,7 @@ public class BusinessREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @DELETE
     @Path("/categories/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -474,6 +475,7 @@ public class BusinessREST {
      * @return
      * @throws AtlasBaseException
      */
+    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
     @PUT
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

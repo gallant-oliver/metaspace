@@ -194,6 +194,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @DELETE
     @Path("/category/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -224,6 +225,7 @@ public class TechnicalREST {
      * @return
      * @throws AtlasBaseException
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/update/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
