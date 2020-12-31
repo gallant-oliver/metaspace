@@ -619,6 +619,11 @@ public class TaskManageService {
                 addQuartzJob(taskId);
             } else {
                 String jobGroupName = JOB_GROUP_NAME + qrtzName;
+                String triggerName = TRIGGER_NAME + qrtzName;
+                String triggerGroupName = TRIGGER_GROUP_NAME + qrtzName;
+                DataQualityTask task = taskManageDAO.getQrtzInfoByTemplateId(taskId);
+                String cron = task.getCronExpression();
+                quartzManager.modifyJobTime(qrtzName,jobGroupName,triggerName,triggerGroupName,cron);  //任务重新开启后检查cron是否有变化，如果有需要重新刷新trigger
                 quartzManager.resumeJob(qrtzName, jobGroupName);
             }
             //设置任务状态为【启用】
@@ -652,6 +657,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
+
 
 
     public void addQuartzJob(String taskId) throws AtlasBaseException {
@@ -718,7 +724,7 @@ public class TaskManageService {
         }
     }
 
-    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId,String tenantId) throws AtlasBaseException {
+    public ExecutionReportData getTaskReportData(String taskId, String taskExecuteId,String subtaskId,String tenantId) throws AtlasBaseException {
         try {
             ExecutionReportData resultData = new ExecutionReportData();
             //basicInfo
@@ -726,16 +732,17 @@ public class TaskManageService {
             resultData.setBasicInfo(basicInfo);
             //checkStatus
             ExecutionReportData.TaskCheckResultCount checkResultCount = new ExecutionReportData.TaskCheckResultCount();
-            long tableRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 0,tenantId);
-            long tableRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 1,tenantId);
-            long columnRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 0,tenantId);
-            long columnRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 1,tenantId);
+            //查询一个子任务或者All
+            long tableRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 0,tenantId,subtaskId);
+            long tableRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 0, 1,tenantId,subtaskId);
+            long columnRulePassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 0,tenantId,subtaskId);
+            long columnRuleNoPassedNumber =  taskManageDAO.countTaskRuleExecution(taskId, taskExecuteId, 1, 1,tenantId,subtaskId);
             checkResultCount.setTableRulePassedNumber(tableRulePassedNumber);
             checkResultCount.setTableRuleNoPassedNumber(tableRuleNoPassedNumber);
             checkResultCount.setColumnRulePassedNumber(columnRulePassedNumber);
             checkResultCount.setColumnRuleNoPassedNumber(columnRuleNoPassedNumber);
             //error
-            List<Integer> errorList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 0);
+            List<Integer> errorList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 0,subtaskId);
             if(null != errorList && errorList.size()>0) {
                 long errorNumber = errorList.stream().filter(status -> status==2).count();
                 checkResultCount.setErrorRuleNumber(errorNumber);
@@ -745,7 +752,7 @@ public class TaskManageService {
                 checkResultCount.setTotalRuleNumber(0);
             }
             //orangeWarning
-            List<Integer> checkOrangeWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 1);
+            List<Integer> checkOrangeWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 1,subtaskId);
             if(null != checkOrangeWarningStatusList && checkOrangeWarningStatusList.size()>0) {
                 long warningNumber = checkOrangeWarningStatusList.stream().filter(status -> status==1).count();
                 checkResultCount.setOrangeWarningNumber(warningNumber);
@@ -755,7 +762,7 @@ public class TaskManageService {
                 checkResultCount.setTotalOrangeWarningRuleNumber(0);
             }
             //redWarning
-            List<Integer> checkRedWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 2);
+            List<Integer> checkRedWarningStatusList = taskManageDAO.getWarningValueList(taskId, taskExecuteId, 2,subtaskId);
             if(null != checkRedWarningStatusList && checkRedWarningStatusList.size()>0) {
                 long warningNumber = checkRedWarningStatusList.stream().filter(status -> status==1).count();
                 checkResultCount.setRedWarningNumber(warningNumber);
@@ -772,7 +779,7 @@ public class TaskManageService {
             List<String> columnRuleSuggestion = new ArrayList<>();
             String suffix = "的结果不符合预期，请及时处理";
             String noEnd = "未执行完毕，请稍候再次进行下载";
-            List<SubTaskRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId,tenantId);
+            List<SubTaskRecord> executeResult = getTaskRuleExecutionRecordList(taskExecuteId,subtaskId,tenantId);
             for (SubTaskRecord subTaskRecord : executeResult) {
                 for (TaskRuleExecutionRecord record : subTaskRecord.getTaskRuleExecutionRecords()) {
                     if (0 == record.getScope() && record.getCheckStatus() == null) {
@@ -800,10 +807,10 @@ public class TaskManageService {
         }
     }
 
-    public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId,String tenantId) throws AtlasBaseException {
+    public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId,String subtaskId,String tenantId) throws AtlasBaseException {
         try {
             Map<String, SubTaskRecord> map = new HashMap<>();
-            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId,tenantId);
+            List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId,subtaskId,tenantId);
             for (TaskRuleExecutionRecord record : list) {
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
@@ -999,7 +1006,7 @@ public class TaskManageService {
                 String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, record.getCreateTime().getTime(), fileName);
                 List<String> list  = errorDataCache.getIfPresent(hdfsOutPath);
                 if (list==null){
-                    list = hdfsUtils.catFile(hdfsOutPath, errorDataSize);
+                    list = hdfsUtils.exists(hdfsOutPath)? hdfsUtils.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
                 }
                 errorDataCache.put(hdfsOutPath,list);
                 getDataByList(list,parameters,errorData);
@@ -1010,9 +1017,8 @@ public class TaskManageService {
         String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, record.getCreateTime().getTime(), fileName);
         List<String> list  = errorDataCache.getIfPresent(hdfsOutPath);
         if (list==null){
-            list = hdfsUtils.catFile(hdfsOutPath, errorDataSize);
+            list = hdfsUtils.exists(hdfsOutPath)? hdfsUtils.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
         }
-        list = hdfsUtils.catFile(hdfsOutPath, errorDataSize);
         errorDataCache.put(hdfsOutPath,list);
         getDataByList(list,parameters,errorData);
         return errorData;
