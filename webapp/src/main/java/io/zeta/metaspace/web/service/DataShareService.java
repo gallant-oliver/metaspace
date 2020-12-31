@@ -2050,6 +2050,16 @@ public class DataShareService {
             apiInfo.setCategoryName(categoryName);
             auditService.getParam(id,apiInfo,version);
             List<ApiGroupInfo> apiGroupByApiVersion = apiGroupDAO.getApiGroupByApiVersion(id, version);
+            Gson gson = new Gson();
+            apiGroupByApiVersion.forEach(apiGroupInfo -> {
+                String approveJson = apiGroupInfo.getApproveJson();
+                List list = gson.fromJson(approveJson, List.class);
+                List<String> userNames = new ArrayList<>();
+                if (list!=null&&list.size()!=0){
+                    userNames = userDAO.getUserNameByIds(list);
+                }
+                apiGroupInfo.setApprove(userNames);
+            });
             apiInfo.setApiGroup(apiGroupByApiVersion);
             ApiPoly apiPoly = getApiPoly(id, version);
             if (apiPoly != null) {
