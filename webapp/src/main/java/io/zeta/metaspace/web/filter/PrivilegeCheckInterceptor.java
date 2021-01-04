@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.filter;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
@@ -176,6 +177,14 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 } else if (moduleIds.contains(moduleId)) {
                     return invocation.proceed();
                 } else {
+                    Permission permission = method.getAnnotation(Permission.class);
+                    if (permission!=null){
+                        ModuleEnum[] value = permission.value();
+                        if (Arrays.stream(value).anyMatch(moduleEnum -> moduleIds.contains(moduleEnum.getId()))){
+                            return invocation.proceed();
+                        }
+                    }
+
                     String ip = HttpRequestContext.get().getIp();
                     auditLog(ModuleEnum.getModuleName(moduleId), ip, userId, tenantId);
 

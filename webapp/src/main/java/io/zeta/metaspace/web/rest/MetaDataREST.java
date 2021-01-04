@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.rest;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
@@ -528,7 +529,8 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
         try {
-            return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), tableGuidList);
+            String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/metadata/export";
+            return ExportDataPathUtils.generateURL(url, tableGuidList);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "下载报告失败");
         }
