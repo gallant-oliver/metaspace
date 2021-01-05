@@ -826,7 +826,7 @@ public class QuartzJob implements Job {
         }
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
 
-        adapterExecutor.queryResult(connection, sql, resultSet -> {
+        adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
             HdfsUtils hdfsUtils = new HdfsUtils();
             try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);){
                 ResultSetMetaData metaData = resultSet.getMetaData();

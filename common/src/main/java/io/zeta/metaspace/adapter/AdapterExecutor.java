@@ -95,6 +95,9 @@ public interface AdapterExecutor {
 
     <T> T queryResult(String sql, Function<ResultSet, T> call);
 
+    <T> T queryResultByFetchSize(Connection connection,String sql,Function<ResultSet, T> call);
+
+
     /**
      * 指定 call 为 extractResultSetToMap
      */

@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.cache.annotation.Cacheable;
 import schemacrawler.schema.Catalog;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Getter
+@Slf4j
+
 public abstract class AbstractAdapterExecutor implements AdapterExecutor {
     private final AdapterSource adapterSource;
     private final Adapter adapter;
@@ -77,12 +80,26 @@ public abstract class AbstractAdapterExecutor implements AdapterExecutor {
     public <T> T queryResult(Connection connection, String sql, Function<ResultSet, T> call) {
         try (Connection con = connection) {
             PreparedStatement statement = con.prepareStatement(sql);
-            statement.setFetchSize(Integer.MAX_VALUE);
             return call.apply(statement.executeQuery());
         } catch (Exception e) {
             throw new AdapterBaseException(e);
         }
     }
+
+    @Override
+    public <T> T queryResultByFetchSize(Connection connection, String sql,Function<ResultSet, T> call) {
+        try (Connection con = connection) {
+            PreparedStatement statement = con.prepareStatement(sql);
+            statement.setFetchSize(20);
+            return call.apply(statement.executeQuery());
+        } catch (Exception e) {
+            throw new AdapterBaseException(e);
+        }
+    }
+
+
+
+
 
     /**
      * 解析 ResultSet 忽略某些字段，用来忽略 Oracle 分页的 TEMP_COLUMN_RNUM 和 总数 total_rows__
