@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -9,12 +10,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +26,44 @@ public class HdfsUtils {
 
     static {
         try {
-            configuration = new Configuration();
-            configuration.set("fs.defaultFS", ApplicationProperties.get().getString("fs.defaultFS"));
+            configuration = getHadoopConf();
         } catch (Exception e) {
             log.error("初始化 Hdfs 工具类失败", e);
             throw new AtlasBaseException(e);
         }
     }
+
+    /**
+     * 获取Hadoop配置
+     * @return
+     */
+    public static Configuration getHadoopConf(){
+        Configuration configuration = new Configuration();
+        configuration.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
+        String hadoopConfDir;
+        try {
+            hadoopConfDir = ApplicationProperties.get().getString("metaspace.hdfs.conf");
+        } catch (AtlasException e) {
+            log.error("初始化 Hdfs 工具类失败", e);
+            throw new AtlasBaseException(e);
+        }
+        if (hadoopConfDir == null) {
+            log.error("ENV HADOOP_CONF_DIR {} is not setting");
+        }
+        else {
+            for (String file : new String[] {"yarn-site.xml", "core-site.xml", "hdfs-site.xml"}) {
+                File site = new File(hadoopConfDir, file);
+                if (site.exists() && site.isFile()) {
+                    configuration.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
+                }
+                else {
+                        throw new AtlasBaseException("NOT Found HADOOP file: " + site);
+                }
+            }
+        }
+        return configuration;
+    }
+
 
     public HdfsUtils() {
         this("metasapce");
