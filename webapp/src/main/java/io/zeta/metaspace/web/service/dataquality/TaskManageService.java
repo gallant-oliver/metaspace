@@ -204,10 +204,12 @@ public class TaskManageService {
             boolean isNum = count!=0;
             PageResult<Column> pageResult = businessService.getTableColumnList(tableGuid, parameters, null, null,isNum);
             List<Column> columnList = pageResult.getLists();
-            for (Column column : columnList) {
-                Column tmpColumn = taskManageDAO.getDbAndTableAndColumnName(column.getColumnId());
-                column.setDatabaseName(tmpColumn.getDatabaseName());
-                column.setTableName(tmpColumn.getTableName());
+            if(columnList!=null && columnList.size()>0) {  //JanusGraph中无column信息
+                for (Column column : columnList) {
+                    Column tmpColumn = taskManageDAO.getDbAndTableAndColumnName(column.getColumnId());
+                    column.setDatabaseName(tmpColumn.getDatabaseName());
+                    column.setTableName(tmpColumn.getTableName());
+                }
             }
             return pageResult;
         } catch (Exception e) {

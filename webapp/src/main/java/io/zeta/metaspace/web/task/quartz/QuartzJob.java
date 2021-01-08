@@ -52,6 +52,7 @@ import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -411,11 +412,13 @@ public class QuartzJob implements Job {
             } catch (InterruptedException e) {
                 throw new AtlasBaseException(e);
             } finally {
-                if (result != null) {
-                    livyTaskSubmitHelper.deleteByLivy(result.getId());
+                if(result != null){
+                    livyTaskSubmitHelper.deleteByLivy(result.getId()); //清除livy记录
+                }
+                if (result != null && "DEAD".equalsIgnoreCase(result.getState())) { //任务执行失败，抛出异常，不做后续处理
+                    throw new AtlasException("任务规则执行失败 task rule id="+task.getRuleId());
                 }
             }
-
             String _MetricFile = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), "_METRICS");
             HdfsUtils hdfsUtils = new HdfsUtils();
             String metricJson = String.join("\n", hdfsUtils.catFile(_MetricFile, -1));
