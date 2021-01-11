@@ -51,7 +51,7 @@ public class SyncTaskJob implements Job {
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
             instance.setDefinitionId(definitionId);
-            instance.setName(definitionId + "_" + LocalDateTime.now().toString());
+            instance.setName(definition.getName() + "_" + LocalDateTime.now().toString());
             instance.setExecutor(executor);
             instance.setStatus(SyncTaskInstance.Status.RUN);
             syncTaskInstanceDAO.insert(instance);

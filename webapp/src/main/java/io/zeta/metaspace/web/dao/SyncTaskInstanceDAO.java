@@ -36,6 +36,7 @@ public interface SyncTaskInstanceDAO {
             "<if test='null != status '>" +
             " and status = #{status} " +
             "</if> " +
+            " order by update_time desc " +
             "<if test='parameters.limit!=-1'>" +
             "limit ${parameters.limit} " +
             "</if>" +
