@@ -17,6 +17,7 @@
 package io.zeta.metaspace.model.business;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
 
 import java.util.List;
 
@@ -32,6 +33,7 @@ public class TechnologyInfo {
     private Boolean editTechnical;
     private List<Table> tables;
 
+    @Data
     public static class Table {
         private String tableGuid;
         private String tableName;
@@ -42,6 +44,7 @@ public class TechnologyInfo {
         private String databaseGuid;
         private String displayName;
         private String description;
+        private String sourceId;
 
         @JsonIgnore
         private int total;

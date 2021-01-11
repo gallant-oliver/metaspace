@@ -408,65 +408,6 @@ public class DataSourceREST {
         return Response.status(200).entity("success").build();
     }
 
-    @POST
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Path("/import/{databaseType}/{sourceId}")
-    public Response synchronizeMetaData(TableSchema tableSchema,@PathParam("databaseType") String databaseType, @PathParam("sourceId")String sourceId) throws Exception {
-        tableSchema.setInstance(sourceId);
-        UserPrivilegeDataSource userPrivilegeDataSource = dataSourceService.getUserPrivilegesDataSource(AdminUtils.getUserData().getUserId(), sourceId);
-        if (UserPrivilegeDataSource.READ.getPrivilege().equals(userPrivilegeDataSource.getPrivilege())) {
-            throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户", "不能采集元数据,没有该数据源的权限");
-        }
-        AtomicBoolean importing;
-        if (importings.containsKey(sourceId)){
-            importing = importings.get(sourceId);
-        }else{
-            importing = new AtomicBoolean(false);
-            importings.put(sourceId,importing);
-        }
-        if (!importing.getAndSet(true)) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    metadataService.synchronizeMetaData(databaseType, tableSchema);
-                    importing.set(false);
-                    metadataService.refreshRDBMSCache();
-                    importings.remove(tableSchema.getInstance());
-                    threadMap.remove(tableSchema.getInstance());
-                }
-            });
-            threadMap.put(sourceId,thread);
-            thread.start();
-        } else {
-            return Response.status(400).entity(String.format("%s元数据正在同步中", databaseType)).build();
-        }
-        return Response.status(202).entity(String.format("%s元数据增量同步已开始", databaseType)).build();
-    }
-
-    @POST
-    @Path("/stop/{sourceId}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public boolean stopSource(@PathParam("sourceId")String sourceId) throws AtlasBaseException {
-        if (threadMap.get(sourceId)!=null){
-            metadataService.stopSource(sourceId,threadMap.get(sourceId));
-            importings.remove(sourceId);
-            threadMap.remove(sourceId);
-            return true;
-        }else{
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源未采集");
-        }
-    }
-
-
-    @GET
-    @Path("/import/progress/{databaseType}/{sourceId}")
-    public Response importProgress(@PathParam("databaseType") String databaseType,@PathParam("sourceId") String sourceId) throws Exception {
-        Progress progress = metadataService.importProgress(databaseType, sourceId);
-        return Response.status(200).entity(new Gson().toJson(progress)).type(MediaType.APPLICATION_JSON_TYPE).build();
-    }
-
     /**
      * 获取更新用户
      * @param tenantId

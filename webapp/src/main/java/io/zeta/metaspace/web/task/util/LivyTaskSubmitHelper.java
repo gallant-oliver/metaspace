@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -54,28 +55,28 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Slf4j
 public class LivyTaskSubmitHelper {
     private static final String REQUEST_BY_HEADER = "X-Requested-By";
-    private static final int SLEEP_TIME;
-
-
+    private int SLEEP_TIME;
+    
     // Current number of tasks
     private RestTemplate restTemplate = new RestTemplate();
 
-    private static final String url;
+    private String url;
 
-    private static final boolean isNeedKerberos;
+    private boolean isNeedKerberos;
 
-    private static final String userPrincipal;
-    private static final String keyTabLocation;
+    private String userPrincipal;
+    private String keyTabLocation;
 
-    public static final String MeasureEnv;
+    public String MeasureEnv;
 
-    public static Map<String, Object> SparkConfig;
+    public Map<String, Object> SparkConfig;
 
-    private static final int appIdRetryCount;
+    private int appIdRetryCount;
     private static String hdfsOutBasePath;
 
 
-    static {
+    @PostConstruct
+    public void init() {
         try {
             Configuration configuration = ApplicationProperties.get();
             url = configuration.getString("livy.uri");
@@ -118,7 +119,7 @@ public class LivyTaskSubmitHelper {
 
 
     public static String getOutName(String name) {
-        return "_OUT_" + name.replace("-","_");
+        return "_OUT_" + name.replace("-", "_");
     }
 
     private String escapeCharacter(String str, String regex) {
@@ -129,7 +130,7 @@ public class LivyTaskSubmitHelper {
         return str.replaceAll(regex, escapeCh);
     }
 
-    private Map<String, Object> buildLivyArgs(Measure measure, String pool,Map<String,Object> config) throws IOException {
+    private Map<String, Object> buildLivyArgs(Measure measure, String pool, Map<String, Object> config) throws IOException {
         Map<String, Object> livyArgs = new HashMap<>(SparkConfig);
         livyArgs.putAll(config);
 
@@ -146,7 +147,7 @@ public class LivyTaskSubmitHelper {
         return livyArgs;
     }
 
-    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool, Map<String,Object> config) {
+    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool, Map<String, Object> config) {
         String result = postToLivy(measure, pool, config);
         MeasureLivyResult measureLivyResult = null;
         if (result != null) {
@@ -200,7 +201,7 @@ public class LivyTaskSubmitHelper {
         return GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
     }
 
-    public String postToLivy(Measure measure, String pool,Map<String,Object> config) {
+    public String postToLivy(Measure measure, String pool, Map<String, Object> config) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

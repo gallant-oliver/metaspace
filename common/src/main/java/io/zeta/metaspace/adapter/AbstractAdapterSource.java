@@ -45,7 +45,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
     }
 
     public DataSource getDataSource() {
-        if(!initDataSource){
+        if (!initDataSource) {
             throw new AtlasBaseException("数据源连接池未初始化");
         }
         return dataSource;
@@ -75,7 +75,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
                 log.error("getConnection for DataSource fail :" + e.getMessage(), e);
                 try {
                     closeDataSource();
-                    initDataSource();
+                    this.dataSource = initDataSource();
                 } catch (Exception e1) {
                     log.error("Refresh the connection pool fail : " + e1.getMessage(), e);
                 }

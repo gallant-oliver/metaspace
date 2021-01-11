@@ -349,6 +349,11 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
+    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters, String proxyUser) {
+        return getSchemaPage(parameters);
+    }
+
+    @Override
     public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
         schemaName = addAlternativeQuoting(schemaName);
         if (parameters.getQuery()==null){
@@ -424,6 +429,23 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 return totalSize;
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
+
+
+    @Override
+    public String getCreateTableSql(String schema, String table) {
+        String querySql = "select dbms_metadata.get_ddl('TABLE','" + table + "','" + schema + "') from dual";
+        return queryResult(querySql, resultSet -> {
+            try {
+                String sql = null;
+                if (resultSet.next()) {
+                    sql = resultSet.getString(1);
+                }
+                return sql;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询建表语句失败", e);
             }
         });
     }

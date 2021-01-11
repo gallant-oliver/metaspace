@@ -14,6 +14,7 @@
 package io.zeta.metaspace.web.metadata;
 
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.web.service.DataManageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
@@ -30,11 +31,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.PostConstruct;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,18 +44,30 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  * @author lixiang03
  * @Data 2020/10/15 11:28
  */
+@Component
 public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
     private static final Logger LOG = LoggerFactory.getLogger(MetaStoreBridgeUtils.class);
     protected  String         clusterName;
+    @Autowired
     protected  AtlasEntityStore atlasEntityStore;
+
+    @Autowired
     protected  AtlasTypeRegistry atlasTypeRegistry;
     protected volatile AtomicInteger totalTables = new AtomicInteger(0);
     protected volatile AtomicInteger updatedTables = new AtomicInteger(0);
     protected volatile AtomicLong startTime = new AtomicLong(0);
     protected volatile AtomicLong endTime = new AtomicLong(0);
     protected  AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider;
+    @Autowired
     protected  AtlasGraph graph;
     protected  EntityGraphRetriever entityRetriever;
+    @Autowired
+    protected DataManageService dataManageService;
+
+    @PostConstruct
+    public void init(){
+        this.entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
+    }
 
     /**
      * 共用
@@ -116,7 +129,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
-
+                    dataManageService.addEntity(Arrays.asList(ret.getEntity()));
                     LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
@@ -128,7 +141,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
                             ret.addReferredEntity(entry.getKey(), entry.getValue());
                         }
                     }
-
+                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()));
                     LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
                 }
             }
@@ -150,29 +163,10 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
         atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
     }
 
-    @Override
-    public AtomicInteger getTotalTables() {
-        return totalTables;
-    }
-
-    @Override
-    public AtomicInteger getUpdatedTables() {
-        return updatedTables;
-    }
-
-    @Override
-    public AtomicLong getStartTime() {
-        return startTime;
-    }
-
-    @Override
-    public AtomicLong getEndTime() {
-        return endTime;
-    }
-
     protected void deleteEntity(AtlasEntity tableEntity) throws AtlasBaseException {
         AtlasEntityType type = (AtlasEntityType) atlasTypeRegistry.getType(tableEntity.getTypeName());
         final AtlasObjectId objectId = getObjectId(tableEntity);
         atlasEntityStore.deleteByUniqueAttributes(type, objectId.getUniqueAttributes());
+        dataManageService.updateStatus(Arrays.asList(tableEntity));
     }
 }

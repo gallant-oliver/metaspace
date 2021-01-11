@@ -13,51 +13,25 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 import java.util.List;
 
+@Data
 public class Database implements Serializable {
+    private String sourceId;
+    private String sourceName;
+
     private String databaseId;
     private String databaseName;
     private String databaseDescription;
     private String status;
     private List tableList;
-    public String getDatabaseDescription() {
-        return databaseDescription;
-    }
 
-    public void setDatabaseDescription(String databaseDescription) {
-        this.databaseDescription = databaseDescription;
-    }
-    public String getDatabaseId() {
-        return databaseId;
-    }
+    private long tableCount;
+    private String owner;
 
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
-    }
-
-    public List getTableList() {
-        return tableList;
-    }
-
-    public void setTableList(List tableList) {
-        this.tableList = tableList;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 }
