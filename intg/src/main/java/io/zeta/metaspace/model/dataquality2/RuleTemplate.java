@@ -38,9 +38,12 @@ public class RuleTemplate {
     private Boolean delete;
     private String ruleType;
     private String ruleTypeName;
+    private boolean enable;
     @JsonIgnore
     private Integer total;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     private String code;
+    private String sql;
+    private String type;
 }

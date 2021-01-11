@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.Organization;
+import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.model.TemplateEnum;
@@ -92,9 +93,23 @@ public class TechnicalREST {
 
     @Context
     private HttpServletResponse response;
-    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
+    private static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
     @Context
     private HttpServletRequest request;
+
+    /**
+     * 添加关联表时搜数据源
+     *
+     * @return List<DatabaseHeader>
+     */
+    @POST
+    @Path("/search/datasource/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DataSourceHeader> getAllDataSource(Parameters parameters, @PathParam("categoryId") String categoryId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        PageResult<DataSourceHeader> pageResult = searchService.getTechnicalDataSourcePageResultV2(parameters, categoryId, tenantId);
+        return pageResult;
+    }
 
     /**
      * 添加关联表时搜库
@@ -105,10 +120,21 @@ public class TechnicalREST {
     @Path("/search/database/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, categoryId,tenantId);
+    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("categoryId") String categoryId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, null, categoryId, tenantId);
         return pageResult;
     }
+
+
+    @POST
+    @Path("/search/database/{sourceId}/{categoryId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DatabaseHeader> getAllDatabase(Parameters parameters, @PathParam("sourceId") String sourceId, @PathParam("categoryId") String categoryId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        PageResult<DatabaseHeader> pageResult = searchService.getTechnicalDatabasePageResultV2(parameters, sourceId, categoryId, tenantId);
+        return pageResult;
+    }
+
     /**
      * 添加关联表时根据库搜表
      *
@@ -118,10 +144,11 @@ public class TechnicalREST {
     @Path("/search/database/table/{databaseGuid}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid,@PathParam("categoryId") String categotyId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid,categotyId,tenantId);
+    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid, @PathParam("categoryId") String categotyId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid, categotyId, tenantId);
         return pageResult;
     }
+
     /**
      * 添加关联表时搜表
      *
@@ -131,8 +158,8 @@ public class TechnicalREST {
     @Path("/search/table/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId,tenantId);
+    public PageResult<AddRelationTable> getTableByQuery(Parameters parameters, @PathParam("categoryId") String categoryId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultV2(parameters, categoryId, tenantId);
         return pageResult;
     }
 
@@ -147,7 +174,7 @@ public class TechnicalREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -172,14 +199,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId") String tenantId) throws Exception {
+    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
-            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE, tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -200,14 +227,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid, @HeaderParam("tenantId") String tenantId) throws Exception {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
             }
-            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid,tenantId);
+            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
             CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
             return ReturnUtil.success(deleteReturn);
@@ -231,14 +258,14 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public String updateCategory(CategoryInfoV2 categoryInfo,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public String updateCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.CategoryEntity()");
             }
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), categoryInfo.getName());
-            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE, tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -259,15 +286,15 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
             }
-            String categoryName = dataManageService.getCategoryNameById(categoryGuid,tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:"+categoryName);
+            String categoryName = dataManageService.getCategoryNameById(categoryGuid, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:" + categoryName);
             List<String> ids = relations.stream().map(relation -> relation.getTableGuid()).collect(Collectors.toList());
             dataManageService.assignTablesToCategory(categoryGuid, ids);
         } catch (CannotCreateTransactionException e) {
@@ -289,14 +316,14 @@ public class TechnicalREST {
     @Path("/category/relations/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "GlossaryREST.getCategoryRelations(" + categoryGuid + ")");
             }
-            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery,tenantId);
+            return dataManageService.getRelationsByCategoryGuid(categoryGuid, relationQuery, tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -314,7 +341,7 @@ public class TechnicalREST {
     @DELETE
     @Path("/category/relation")
     @OperateType(DELETE)
-    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -323,14 +350,14 @@ public class TechnicalREST {
             List<String> categoryNameList = new ArrayList<>();
             for (RelationEntityV2 relationEntity : relationshipList) {
                 String guid = relationEntity.getRelationshipGuid();
-                String categoryName = dataManageService.getCategoryNameByRelationId(guid,tenantId);
-                if(categoryName != null)
+                String categoryName = dataManageService.getCategoryNameByRelationId(guid, tenantId);
+                if (categoryName != null)
                     categoryNameList.add(categoryName);
             }
-            if(categoryNameList!=null && categoryNameList.size()>0) {
+            if (categoryNameList != null && categoryNameList.size() > 0) {
                 HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]中的表关联");
             }
-            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList,tenantId);
+            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList, tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -350,13 +377,13 @@ public class TechnicalREST {
     @Path("/table/relations")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE,tenantId);
+            return dataManageService.getRelationsByTableName(relationQuery, CATEGORY_TYPE, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "搜索关联表失败");
         } finally {
@@ -369,7 +396,7 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Response addOwners(TableOwner tableOwner,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Response addOwners(TableOwner tableOwner, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         List<String> tableNames = metaDataService.getTableNames(tableOwner.getTables());
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "修改表owner:[" + Joiner.on("、").join(tableNames) + "]");
         AtlasPerfTracer perf = null;
@@ -377,7 +404,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.addOwners()");
             }
-            dataManageService.addTableOwner(tableOwner,tenantId);
+            dataManageService.addTableOwner(tableOwner, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加组织架构失败");
         } finally {
@@ -430,9 +457,9 @@ public class TechnicalREST {
         AtlasPerfTracer perf = null;
         try {
             if (!updating.getAndSet(true)) {
-                try{
+                try {
                     dataManageService.updateOrganization();
-                }finally {
+                } finally {
                     updating.set(false);
                 }
             } else {
@@ -448,6 +475,7 @@ public class TechnicalREST {
 
     /**
      * 导出目录
+     *
      * @param ids
      * @return
      * @throws Exception
@@ -459,11 +487,11 @@ public class TechnicalREST {
     public Result getDownloadURL(List<String> ids) throws Exception {
         String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/technical/export/selected";
         //全局导出
-        if (ids==null||ids.size()==0){
+        if (ids == null || ids.size() == 0) {
             DownloadUri uri = new DownloadUri();
             String downURL = url + "/" + "all";
             uri.setDownloadUri(downURL);
-            return  ReturnUtil.success(uri);
+            return ReturnUtil.success(uri);
         }
         DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
@@ -472,15 +500,15 @@ public class TechnicalREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
         File exportExcel;
         //全局导出
         String all = "all";
-        if (all.equals(downloadId)){
-            exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE,tenantId);
-        }else{
+        if (all.equals(downloadId)) {
+            exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE, tenantId);
+        } else {
             List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-            exportExcel = dataManageService.exportExcel(ids, CATEGORY_TYPE,tenantId);
+            exportExcel = dataManageService.exportExcel(ids, CATEGORY_TYPE, tenantId);
         }
         try {
             String filePath = exportExcel.getAbsolutePath();
@@ -493,6 +521,7 @@ public class TechnicalREST {
             exportExcel.delete();
         }
     }
+
     public static String filename(String filePath) throws UnsupportedEncodingException {
         String filename = filePath.substring(filePath.lastIndexOf(File.separatorChar) + 1);
         filename = URLEncoder.encode(filename, "UTF-8");
@@ -502,6 +531,7 @@ public class TechnicalREST {
 
     /**
      * 上传文件并校验
+     *
      * @param categoryId
      * @param fileInputStream
      * @param contentDispositionHeader
@@ -514,19 +544,19 @@ public class TechnicalREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
-                                             @DefaultValue("false")@FormDataParam("all") boolean all,@FormDataParam("direction")String direction,
-                                             @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
-                                             @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+                                 @DefaultValue("false") @FormDataParam("all") boolean all, @FormDataParam("direction") String direction,
+                                 @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
+                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(),  name);
-            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), name);
+            file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
-            if (all){
-                upload = dataManageService.uploadAllCategory(file,CATEGORY_TYPE,tenantId);
-            }else{
-                upload = dataManageService.uploadCategory(categoryId,direction,file,CATEGORY_TYPE,tenantId);
+            if (all) {
+                upload = dataManageService.uploadAllCategory(file, CATEGORY_TYPE, tenantId);
+            } else {
+                upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_TYPE, tenantId);
             }
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
@@ -535,7 +565,7 @@ public class TechnicalREST {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
-            if(Objects.nonNull(file) && file.exists()) {
+            if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
             }
         }
@@ -543,6 +573,7 @@ public class TechnicalREST {
 
     /**
      * 根据文件导入目录
+     *
      * @param upload
      * @param importCategory
      * @return
@@ -554,38 +585,40 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importCategory(@PathParam("upload")String upload, ImportCategory importCategory,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result importCategory(@PathParam("upload") String upload, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
             String categoryId = importCategory.getCategoryId();
             String name;
-            if (importCategory.isAll()){
-                name="全部";
-            }else if (categoryId==null||categoryId.length()==0){
-                name="一级目录";
-            }else{
-                name  = dataManageService.getCategoryNameById(categoryId,tenantId);
+            if (importCategory.isAll()) {
+                name = "全部";
+            } else if (categoryId == null || categoryId.length() == 0) {
+                name = "一级目录";
+            } else {
+                name = dataManageService.getCategoryNameById(categoryId, tenantId);
             }
 
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(),  "导入目录:"+name+","+importCategory.getDirection());
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
-            List<CategoryPrivilege> categoryPrivileges=null;
-            if (importCategory.isAll()){
-                dataManageService.importAllCategory(file,CATEGORY_TYPE,tenantId);
-            }else{
-                categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
+            List<CategoryPrivilege> categoryPrivileges = null;
+            if (importCategory.isAll()) {
+                dataManageService.importAllCategory(file, CATEGORY_TYPE, tenantId);
+            } else {
+                categoryPrivileges = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
             }
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
-            if(Objects.nonNull(file) && file.exists()) {
+            if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
             }
         }
     }
+
     /**
      * 变更目录结构
+     *
      * @param moveCategory
      * @throws Exception
      */
@@ -595,15 +628,15 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result moveCategory(MoveCategory moveCategory,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result moveCategory(MoveCategory moveCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         try {
-            if(moveCategory.getGuid()==null){
+            if (moveCategory.getGuid() == null) {
                 HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "变更目录结构：all");
-            }else{
-                CategoryEntityV2 category = dataManageService.getCategory(moveCategory.getGuid(),tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "变更目录结构："+category.getName());
+            } else {
+                CategoryEntityV2 category = dataManageService.getCategory(moveCategory.getGuid(), tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "变更目录结构：" + category.getName());
             }
-            dataManageService.moveCategories(moveCategory,CATEGORY_TYPE,tenantId);
+            dataManageService.moveCategories(moveCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "变更目录结构失败");
@@ -612,6 +645,7 @@ public class TechnicalREST {
 
     /**
      * 获取排序后的目录
+     *
      * @param sort
      * @param order
      * @param guid
@@ -623,8 +657,8 @@ public class TechnicalREST {
     @Path("/sort/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result sortCategory(@QueryParam("sort")String sort, @DefaultValue("asc")@QueryParam("order")String order,
-                                                             @QueryParam("guid")String guid,@HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result sortCategory(@QueryParam("sort") String sort, @DefaultValue("asc") @QueryParam("order") String order,
+                               @QueryParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws Exception {
         try {
             SortCategory sortCategory = new SortCategory();
             sortCategory.setSort(sort);
@@ -654,12 +688,12 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Valid
-    public Result migrateCategory(MigrateCategory migrateCategory, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result migrateCategory(MigrateCategory migrateCategory, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             CategoryEntityV2 category = dataManageService.getCategory(migrateCategory.getCategoryId(), tenantId);
             CategoryEntityV2 parentCategory = dataManageService.getCategory(migrateCategory.getParentId(), tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移目录"+category.getName()+"到"+parentCategory.getName());
-            dataManageService.migrateCategory(migrateCategory.getCategoryId(),migrateCategory.getParentId(),CATEGORY_TYPE,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移目录" + category.getName() + "到" + parentCategory.getName());
+            dataManageService.migrateCategory(migrateCategory.getCategoryId(), migrateCategory.getParentId(), CATEGORY_TYPE, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录迁移失败");
@@ -679,15 +713,15 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result moveTableToCategory(CategoryItem item, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result moveTableToCategory(CategoryItem item, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            if (item.getIds()==null||item.getIds().size()==0){
+            if (item.getIds() == null || item.getIds().size() == 0) {
                 return ReturnUtil.success();
             }
             String path = CategoryRelationUtils.getPath(item.getCategoryId(), tenantId);
             List<String> tableNames = metaDataService.getTableNames(item.getIds());
-            if (tableNames!=null||tableNames.size()!=0){
-                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到"+path);
+            if (tableNames != null || tableNames.size() != 0) {
+                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到" + path);
 
             }
             dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds());
@@ -699,6 +733,7 @@ public class TechnicalREST {
 
     /**
      * 获取目录迁移可迁移到的目录
+     *
      * @param categoryId
      * @param tenantId
      * @return
@@ -709,7 +744,7 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result getMigrateCategory(@PathParam("categoryId") String categoryId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             List<CategoryPrivilege> migrateCategory = dataManageService.getMigrateCategory(categoryId, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(migrateCategory);

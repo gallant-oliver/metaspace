@@ -13,12 +13,16 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import lombok.Data;
+
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author lixiang03
  * @Data 2019/10/12 13:53
  */
+@Data
 public class RDBMSDatabase implements Serializable {
     private String databaseId;
     private String databaseName;
@@ -27,60 +31,15 @@ public class RDBMSDatabase implements Serializable {
     private String sourceId;
     private String sourceName;
     private String sourceStatus;
+     private long tableCount;
 
-    public String getSourceStatus() {
-        return sourceStatus;
-    }
-
-    public void setSourceStatus(String sourceStatus) {
-        this.sourceStatus = sourceStatus;
-    }
-
-    public String getDatabaseId() {
-        return databaseId;
-    }
-
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
-    }
-
-    public String getDatabaseDescription() {
-        return databaseDescription;
-    }
-
-    public void setDatabaseDescription(String databaseDescription) {
-        this.databaseDescription = databaseDescription;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    public void setSourceName(String sourceName) {
-        this.sourceName = sourceName;
+    public Database toDatabase() {
+        Database database = new Database();
+        database.setDatabaseId(databaseId);
+        database.setDatabaseName(databaseName);
+        database.setDatabaseDescription(databaseDescription);
+        database.setStatus(status);
+        database.setTableCount(tableCount);
+        return database;
     }
 }

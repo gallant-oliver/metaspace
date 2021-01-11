@@ -52,9 +52,9 @@ public class ImpalaAdapterSource extends AbstractAdapterSource {
     @Override
     public Connection getConnection(String proxyUser, String schema, String pool) {
         Properties properties = new Properties();
-        if (pool == null || pool.length() == 0)
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源池不能为空");
-        properties.setProperty("REQUEST_POOL", "'" + pool + "'");
+        if (pool != null && pool.length() != 0) {
+            properties.setProperty("REQUEST_POOL", "'" + pool + "'");
+        }
 
         try {
             return DriverManager.getConnection(getJdbcUrl(proxyUser, schema), properties);

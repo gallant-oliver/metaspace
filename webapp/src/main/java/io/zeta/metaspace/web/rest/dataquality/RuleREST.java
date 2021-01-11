@@ -298,7 +298,7 @@ public class RuleREST {
             ruleName = rule.getName();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleName);
-        ruleService.updateRuleStatus(ruleId, true);
+        ruleService.updateRuleStatus(ruleId, true,tenantId);
     }
 
     @PUT
@@ -313,13 +313,14 @@ public class RuleREST {
             ruleName = rule.getName();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), ruleName);
-        ruleService.updateRuleStatus(ruleId, false);
+        ruleService.updateRuleStatus(ruleId, false,tenantId);
     }
 
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/ruleTemplate")
+    //删除
     public List<RuleTemplate> disableRule() throws AtlasBaseException {
         return ruleService.getAllRuleTemplateList();
     }
@@ -335,6 +336,7 @@ public class RuleREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/dataStandard")
     @OperateType(UPDATE)
+    //删除
     public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId());
         if(null == ruleName) {
@@ -355,6 +357,7 @@ public class RuleREST {
      * @return
      * @throws AtlasBaseException
      */
+    //删除
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -371,6 +374,7 @@ public class RuleREST {
     @Path("/used")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    //变成规则模板列表
     public Result getRuleUsed(List<String> ids)
             throws Exception
     {

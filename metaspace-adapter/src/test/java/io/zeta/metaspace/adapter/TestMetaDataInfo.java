@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
  * 元数据获取测试
  */
 @Slf4j
-@Test(enabled = false)
+@Test(enabled = true)
 public class TestMetaDataInfo extends AdapterTestConfig {
 
     /**
@@ -91,7 +91,7 @@ public class TestMetaDataInfo extends AdapterTestConfig {
 
             tablePageResult.getLists().stream().parallel().map(m -> m.get("tableName").toString()).forEach(tableName -> {
                 try {
-                    PageResult<LinkedHashMap<String, Object>> columnPageResult = adapterExecutor.getColumnPage(schemaName, tableName, parameters);
+                    PageResult<LinkedHashMap<String, Object>> columnPageResult = adapterExecutor.getColumnPage(schemaName, tableName, parameters,false);
                     log.info("column : " + columnPageResult.getTotalSize() + "  " + columnPageResult.getLists().toString());
                 } catch (Exception e) {
                     log.info(e.getMessage() + " " + tableName);

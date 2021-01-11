@@ -101,17 +101,12 @@ public class RuleService {
 
     @Transactional(rollbackFor=Exception.class)
     public void deleteById(String number) throws AtlasBaseException {
-        try {
-            Boolean enableStatus = ruleDAO.getEnableStatusById(number);
-            if (true == enableStatus) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
-            }
-            dataStandardDAO.deleteByRuleId(number);
-            ruleDAO.deleteById(number);
-        } catch (Exception e) {
-            LOG.error("删除规则失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除规则失败");
+        Boolean enableStatus = ruleDAO.getEnableStatusById(number);
+        if (true == enableStatus) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则已被启用，不允许删除");
         }
+        dataStandardDAO.deleteByRuleId(number);
+        ruleDAO.deleteById(number);
     }
 
     public void deleteByIdList(List<String> numberList) throws AtlasBaseException {
@@ -230,7 +225,12 @@ public class RuleService {
     public List<CategoryPrivilege> getAll(Integer categoryType,String tenantId) throws AtlasBaseException {
         try {
             List<CategoryPrivilege> resultList = TenantService.defaultTenant.equals(tenantId) ?dataManageService.getAll(categoryType) : dataManageService.getAllByUserGroup(categoryType, tenantId) ;
+            String parentPattern = "^rule_([0-9])";
             for (CategoryPrivilege res : resultList) {
+                if (res.getGuid().matches(parentPattern)){
+                    res.getPrivilege().setEdit(false);
+                    res.getPrivilege().setDelete(false);
+                }
                 Integer count = ruleDAO.getCategoryObjectCount(res.getGuid(),tenantId);
                 res.setObjectCount(count);
             }
@@ -241,9 +241,9 @@ public class RuleService {
         }
     }
 
-    public int updateRuleStatus(String id, Boolean enable) throws AtlasBaseException {
+    public int updateRuleStatus(String id, Boolean enable,String tenantId) throws AtlasBaseException {
         try {
-            return ruleDAO.updateRuleStatus(id, enable);
+            return ruleDAO.updateRuleStatus(id, enable,tenantId);
         } catch (Exception e) {
             LOG.error("更新规则状态失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新规则状态失败");

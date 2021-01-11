@@ -83,10 +83,10 @@ public class HiveAdapterSource extends AbstractAdapterSource {
         }.getType());
 
         Properties properties = new Properties();
-        if (pool == null || pool.length() == 0)
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源池不能为空");
-        properties.setProperty("hiveconf:tez.queue.name", pool);
-        properties.setProperty("hiveconf:mapreduce.job.queuename", pool);
+        if (pool != null && pool.length() != 0) {
+            properties.setProperty("hiveconf:tez.queue.name", pool);
+            properties.setProperty("hiveconf:mapreduce.job.queuename", pool);
+        }
 
         for (String jdbcUrl : jdbcUrls) {
             try {

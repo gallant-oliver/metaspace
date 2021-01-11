@@ -5,6 +5,7 @@ import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -28,6 +29,7 @@ import sf.util.Utility;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class OracleAdapterExecutor extends AbstractAdapterExecutor {
@@ -347,6 +349,11 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
+    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters, String proxyUser) {
+        return getSchemaPage(parameters);
+    }
+
+    @Override
     public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
         schemaName = addAlternativeQuoting(schemaName);
         if (parameters.getQuery()==null){
@@ -364,7 +371,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters) {
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
         schemaName = addAlternativeQuoting(schemaName);
         tableName = addAlternativeQuoting(tableName);
         if (parameters.getQuery()==null){
@@ -378,7 +385,13 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 .addCondition(ComboCondition.and().addConditions(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)), BinaryCondition.equalTo(new CustomSql("TABLE_NAME"), new CustomSql(tableName))));
         query = getAdapter().getAdapterTransformer().addTotalCount(query);
         query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset())
-                .addCondition(BinaryCondition.like(new CustomSql("COLUMN_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
+                .addCondition(BinaryCondition.like(new CustomSql("\"columnName\""), new CustomSql("'%" + parameters.getQuery() + "%'")));
+
+        // 过滤数值型字段
+        if (isNum){
+            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type-> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
+            query.addCondition(new InCondition(new FunctionCall("lower").addCustomParams(new CustomSql("DATA_TYPE")),columnType));
+        }
         log.info("column sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
     }
@@ -398,5 +411,42 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
             }
         }
         return "'" + str + "'";
+    }
+
+    @Override
+    public float getTableSize(String db, String tableName, String pool) {
+        String querySQL = "select sum(num_rows * avg_row_len) data_length from ALL_TABLES where table_name = '%s' and owner='%s'";
+        db=db.replaceAll("'","''");
+        tableName=tableName.replaceAll("'","''");
+        querySQL=String.format(querySQL,tableName,db);
+        Connection connection = getAdapterSource().getConnection();
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float totalSize = 0;
+                while (resultSet.next()) {
+                    totalSize = resultSet.getLong("data_length");
+                }
+                return totalSize;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
+
+
+    @Override
+    public String getCreateTableSql(String schema, String table) {
+        String querySql = "select dbms_metadata.get_ddl('TABLE','" + table + "','" + schema + "') from dual";
+        return queryResult(querySql, resultSet -> {
+            try {
+                String sql = null;
+                if (resultSet.next()) {
+                    sql = resultSet.getString(1);
+                }
+                return sql;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询建表语句失败", e);
+            }
+        });
     }
 }

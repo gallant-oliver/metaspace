@@ -24,4 +24,6 @@ public interface AdapterSource {
 
     void closeDataSource();
 
+    String getJdbcUrl();
+
 }

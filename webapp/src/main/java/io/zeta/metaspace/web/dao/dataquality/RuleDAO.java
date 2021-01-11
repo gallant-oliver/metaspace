@@ -13,15 +13,15 @@ import java.util.List;
 
 public interface RuleDAO {
 
-    @Insert(" insert into data_quality_rule(id,rule_template_id,name,code,category_id,enable,description,check_type,check_expression_type,check_threshold_min_value,check_threshold_max_value,creator,create_time,update_time,delete,check_threshold_unit,scope,tenantId) " +
-            " values(#{rule.id},#{rule.ruleTemplateId},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.enable},#{rule.description},#{rule.checkType},#{rule.checkExpressionType},#{rule.checkThresholdMinValue},#{rule.checkThresholdMaxValue},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.unit},#{rule.scope},#{tenantId})")
+    @Insert(" insert into data_quality_rule_template(id,name,code,rule_type,description,creator,create_time,update_time,delete,scope,tenantId,sql,type,enable) " +
+            " values(#{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},2,#{tenantId},#{rule.sql},32,#{rule.enable})")
     public int insert(@Param("rule") Rule rule,@Param("tenantId")String tenantId);
 
     @Select("select unit from data_quality_rule_template where id=#{ruleTemplateId}")
     public String getRuleTemplateUnit(@Param("ruleTemplateId")String ruleTemplateId);
 
-    @Update(" update data_quality_rule set " +
-            " rule_template_id=#{ruleTemplateId},name=#{name},code=#{code},category_id=#{categoryId},enable=#{enable},description=#{description},check_type=#{checkType},check_expression_type=#{checkExpressionType},check_threshold_min_value=#{checkThresholdMinValue},check_threshold_max_value=#{checkThresholdMaxValue},update_time=#{updateTime},check_threshold_unit=#{unit},scope=#{scope}" +
+    @Update(" update data_quality_rule_template set " +
+            " name=#{name},code=#{code},rule_type=#{categoryId},description=#{description},update_time=#{updateTime},sql=#{sql},enable=#{enable} " +
             " where id=#{id}")
     public int update(Rule rule);
 
@@ -30,29 +30,29 @@ public interface RuleDAO {
     public Rule getById(@Param("id") String id);
 
     @Select({" select a.id " ,
-             " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
+             " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
     public List<Rule> getByCode(@Param("code") String code,@Param("tenantId") String tenantId);
 
-    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    @Select({" select a.id " ,
+             " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
     public List<Rule> getByCodeV2(@Param("id") String id,@Param("code") String code,@Param("tenantId") String tenantId);
 
     @Select({" select a.id " ,
-             " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
+             " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
     public List<Rule> getByName(@Param("name") String name,@Param("tenantId") String tenantId);
 
-    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    @Select({" select a.id " ,
+             " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId} and a.id!=#{id}"})
     public List<Rule> getByNameV2(@Param("id") String id,@Param("name") String name,@Param("tenantId") String tenantId);
 
-    @Select("select enable from data_quality_rule where id=#{id}")
+    @Select("select enable from data_quality_rule_template where id=#{id}")
     public Boolean getEnableStatusById(@Param("id") String id);
 
-    @Select("update data_quality_rule set delete=true where id=#{id}")
+    @Select("update data_quality_rule_template set delete=true where id=#{id}")
     public void deleteById(@Param("id") String id);
 
     @Insert({" <script>",
-             " update data_quality_rule set delete=true where id in ",
+             " update data_quality_rule_template set delete=true where id in ",
              " <foreach collection='idList' item='id' index='index' open='(' close=')' separator=','>",
              " #{id}",
              " </foreach>",
@@ -99,12 +99,12 @@ public interface RuleDAO {
     public List<DataTaskIdAndName> getRuleUsed(@Param("ids") List<String> guids);
 
     @Update("update data_quality_rule_template set enable=#{status} where id=#{id} and tenantid=#{tenantId}")
-    public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status);
+    public int updateRuleStatus(@Param("id") String guid, @Param("status") Boolean status,@Param("tenantId")String tenantId);
 
     @Select("select id,name,scope,unit,description,delete,rule_type as ruleType from data_quality_rule_template")
     public List<RuleTemplate> getAllRuleTemplateList();
 
-    @Select("select count(*) from data_quality_rule where category_id=#{categoryId} and delete=false and tenantid=#{tenantId}")
+    @Select("select count(*) from data_quality_rule_template where rule_type=#{categoryId} and delete=false and tenantid=#{tenantId}")
     public Integer getCategoryObjectCount(@Param("categoryId") String guid,@Param("tenantId")String tenantId);
 
     @Select("select name from category where guid=#{categoryId} and tenantid=#{tenantId}")
@@ -114,9 +114,16 @@ public interface RuleDAO {
              " from data_quality_rule where delete=false and id=#{id}"})
     public String getNameById(@Param("id") String id);
 
-    //todo 需要修改检查类型
-    @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,0 as checkType,2 as checkExpressionType,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit" ,
+    @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit,type,scope" ,
              " from data_quality_rule_template a left join users b on a.creator=b.userid where a.delete=false and id=#{id} and tenantid=#{tenantId}"})
     public Rule getRuleTemplate(@Param("id") String id,@Param("tenantId")String tenantId);
 
+    @Insert("<script>" +
+            " insert into data_quality_rule_template(id,name,code,rule_type,description,creator,create_time,update_time,delete,scope,tenantId,sql,type,enable) " +
+            " values" +
+            "<foreach collection='rules' item='rule' index='index' separator='),(' open='(' close=')'>" +
+            "#{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.scope},#{tenantId},#{rule.sql},#{rule.type},#{rule.enable}"+
+            "</foreach>"+
+            "</script>")
+    public int insertAll(@Param("rules") List<Rule> rules,@Param("tenantId")String tenantId);
 }

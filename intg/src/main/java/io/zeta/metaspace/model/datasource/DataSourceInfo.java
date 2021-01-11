@@ -14,6 +14,7 @@
 package io.zeta.metaspace.model.datasource;
 
 import lombok.Data;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 public class DataSourceInfo {
@@ -32,4 +33,8 @@ public class DataSourceInfo {
     private String managerId;
     private String serviceType;
     private String pool;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private String createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private String updateTime;
 }

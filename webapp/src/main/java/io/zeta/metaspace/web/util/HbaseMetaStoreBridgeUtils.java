@@ -113,7 +113,6 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         this.atlasTypeRegistry=typeRegistry;
         this.gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
         this.graph=atlasGraph;
-        this.entityRetriever = new EntityGraphRetriever(typeRegistry);
         org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
 
         LOG.info("checking HBase availability..");
@@ -399,7 +398,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
 
     @Override
-    public void importDatabases(TableSchema tableSchema) throws Exception {
+    public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         updatedTables = new AtomicInteger(0);
         startTime = new AtomicLong(System.currentTimeMillis());
         endTime = new AtomicLong(0);
