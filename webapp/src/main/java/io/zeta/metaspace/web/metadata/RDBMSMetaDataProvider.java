@@ -8,10 +8,13 @@ import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
+import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -27,12 +30,18 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import schemacrawler.schema.*;
 import schemacrawler.schemacrawler.SchemaCrawlerException;
 import schemacrawler.utility.SchemaCrawlerUtility;
 
+import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,57 +49,55 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.*;
+import static io.zeta.metaspace.web.util.BaseHiveEvent.ATTRIBUTE_TABLE_TYPE;
 
 /**
  * @author zhuxuetong
- * @date 2019-08-21 17:31
+ * @date 2019-08-21 17:31  HiveMetaStoreBridgeUtils
  */
-public class AbstractMetaDataProvider implements IMetaDataProvider {
+@Component
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractMetaDataProvider.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RDBMSMetaDataProvider.class);
     private static final String clusterName = AtlasConfiguration.ATLAS_CLUSTER_NAME.getString();
 
+    @Autowired
     private AtlasEntityStore entitiesStore;
+    @Autowired
     private AtlasGraph graph;
+    @Autowired
     private AtlasTypeRegistry atlasTypeRegistry;
+    @Autowired
     private AtlasEntityStore atlasEntityStore;
+    @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    private SyncTaskInstanceDAO syncTaskInstanceDAO;
+    @Autowired
+    private DataManageService dataManageService;
 
     /**
      * 因为用 new 创建实例，所以不能自动注入相关参数
      */
-    public AbstractMetaDataProvider(AtlasEntityStore entitiesStore, AtlasGraph graph, AtlasTypeRegistry atlasTypeRegistry, DataSourceService dataSourceService) {
-        this.entitiesStore = entitiesStore;
-        this.graph = graph;
-        this.atlasTypeRegistry = atlasTypeRegistry;
-        this.atlasEntityStore = entitiesStore;
-        this.dataSourceService = dataSourceService;
-        entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
+    public RDBMSMetaDataProvider() {
     }
 
     private EntityGraphRetriever entityRetriever;
+
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
     protected MetaDataContext metaDataContext = new MetaDataContext();
 
-
-    private volatile AtomicInteger updatedTables = new AtomicInteger(0);
-    private volatile AtomicLong startTime = new AtomicLong(0);
-    private volatile AtomicLong endTime = new AtomicLong(0);
-
     private boolean isSource;
-    private boolean isThread = false;
-
-    public boolean isThread() {
-        return isThread;
-    }
-
-    public void setThread(boolean thread) {
-        isThread = thread;
-    }
 
     private DataSourceInfo dataSourceInfo;
     private AdapterExecutor adapterExecutor;
     private MetaDataInfo metaDataInfo;
+
+    @PostConstruct
+    public void initObject(){
+        this.entityRetriever = new EntityGraphRetriever(atlasTypeRegistry);
+    }
 
     /**
      * 每次开始导入之前，需要执行的初始化，获取元数据
@@ -102,23 +109,20 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
     }
 
 
-    public void importDatabases(TableSchema tableSchema) throws Exception {
+    public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", new Date());
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
 
         init(tableSchema);
 
-        updatedTables.set(0);
-        startTime.set(System.currentTimeMillis());
-        endTime.set(0);
         metaDataContext = new MetaDataContext();
 
         String instanceId = tableSchema.getInstance();
 
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId,tableSchema.isAllDatabase());
-        updatedTables.incrementAndGet();
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll());
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
-        if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas())&&!tableSchema.isAllDatabase()) {
+        if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas()) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", metaDataInfo.getSchemas().size());
 
             //导入table
@@ -132,22 +136,18 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
                     clearRelationshipAttributes(dbEntity);
                     metaDataContext.putEntity(dbQualifiedName, dbEntity);
                 }
-                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid);
+                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId);
             }
 
         } else {
             LOG.info("No database found");
         }
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
     }
 
-    @Override
-    public AtomicInteger getTotalTables() {
-        return new AtomicInteger(metaDataInfo == null ? 0 : metaDataInfo.getTables().size()+1);
-    }
 
-
-    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId,boolean allDatabase) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, boolean allDatabase) throws Exception {
         AtlasEntity.AtlasEntityWithExtInfo ret;
         String instanceQualifiedName = getInstanceQualifiedName(instanceId);
         if (metaDataContext.isKownEntity(instanceQualifiedName)) {
@@ -159,12 +159,12 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         }
         AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
         if (ret == null) {
-            instanceEntity = toInstanceEntity(null, instanceId,allDatabase);
+            instanceEntity = toInstanceEntity(null, instanceId, allDatabase);
             ret = registerEntity(instanceEntity);
             isSource = false;
         } else {
             LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, ret.getEntity().getGuid());
-            ret = toInstanceEntity(ret, instanceId,allDatabase);
+            ret = toInstanceEntity(ret, instanceId, allDatabase);
             createOrUpdateEntity(ret);
             isSource = true;
         }
@@ -172,7 +172,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         return ret;
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId,boolean allDatabase) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId, boolean allDatabase) {
         if (instanceEntity == null) {
             instanceEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getInstanceTypeName()));
         }
@@ -199,16 +199,18 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
             instanceEntity.addReferredEntity(dbEntity.getEntity());
         }
         List<AtlasObjectId> objectIds = getObjectIds(dbEntities);
-        if (!allDatabase){
-            List<AtlasObjectId> attributes = (List<AtlasObjectId>)entity.getAttribute(ATTRIBUTE_DATABASES);
-            for (AtlasObjectId atlasObjectId:attributes){
-                AtlasEntity referredEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
-                if (referredEntity.getStatus()==null){
-                    deleteEntity(referredEntity);
-                }
+        if (allDatabase) {
+            List<AtlasObjectId> attributes = (List<AtlasObjectId>) entity.getAttribute(ATTRIBUTE_DATABASES);
+            if (attributes != null) {
+                for (AtlasObjectId atlasObjectId : attributes) {
+                    AtlasEntity referredEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
+                    if (referredEntity.getStatus() == null) {
+                        deleteEntityById(referredEntity);
+                    }
 
-                if (!objectIds.contains(atlasObjectId)&&(referredEntity==null||!"DELETED".equals(referredEntity.getStatus().toString()))){
-                    objectIds.add(atlasObjectId);
+                    if (!objectIds.contains(atlasObjectId) && (referredEntity == null || !"DELETED".equals(referredEntity.getStatus().toString()))) {
+                        objectIds.add(atlasObjectId);
+                    }
                 }
             }
         }
@@ -236,14 +238,14 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
     protected List<AtlasObjectId> getKeyColumns(SchemaCrawlerForeignKey foreignKey, List<AtlasEntity> columns) {
         return columns.stream()
                 .filter(atlasEntity -> foreignKey.getForeignKeyColumnNames().contains(atlasEntity.getAttribute(ATTRIBUTE_NAME).toString()))
-                .map(AbstractMetaDataProvider::getObjectId)
+                .map(RDBMSMetaDataProvider::getObjectId)
                 .collect(Collectors.toList());
     }
 
     protected List<AtlasObjectId> getPrimaryKeyColumns(SchemaCrawlerForeignKey foreignKey, List<AtlasEntity> columns) {
         return columns.stream()
                 .filter(atlasEntity -> foreignKey.getPrimaryKeyColumnNames().contains(atlasEntity.getAttribute(ATTRIBUTE_NAME).toString()))
-                .map(AbstractMetaDataProvider::getObjectId)
+                .map(RDBMSMetaDataProvider::getObjectId)
                 .collect(Collectors.toList());
     }
 
@@ -426,6 +428,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         tableAtlasEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, table.getName()));
         tableAtlasEntity.setAttribute(ATTRIBUTE_NAME, table.getName().toLowerCase());
         tableAtlasEntity.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
+        tableAtlasEntity.setAttribute(ATTRIBUTE_TABLE_TYPE, table.getTableType().toString().toUpperCase());
         try {
             long time = adapterExecutor.getTableCreateTime(databaseName, table.getName()).toInstant(ZoneOffset.of("+8")).toEpochMilli();
             tableAtlasEntity.setAttribute(ATTRIBUTE_CREATE_TIME, time);
@@ -435,6 +438,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
 
         tableAtlasEntity.setAttribute(ATTRIBUTE_COMMENT, table.getRemarks());
         tableAtlasEntity.setAttribute(ATTRIBUTE_NAME_PATH, table.getFullName());
+        tableAtlasEntity.setUpdateTime(new Date());
 
         boolean isIncompleteTable = metaDataInfo.isIncompleteTable(table.getFullName());
 
@@ -528,6 +532,10 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
             ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid);
 
             createOrUpdateEntity(ret);
+            AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
+            atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
+            ret.getEntity().setRelationshipAttribute("db",atlasRelatedObjectId);
+            dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
         }
 
         return ret;
@@ -607,7 +615,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
      * @param failOnError
      * @throws Exception
      */
-    private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames, final boolean failOnError, String instanceGuid) throws Exception {
+    private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames, final boolean failOnError, String instanceGuid, String taskInstanceId) throws Exception {
         int tablesImported = 0;
 
         if (!CollectionUtils.isEmpty(tableNames)) {
@@ -620,7 +628,8 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
                 }
 
                 for (Table tableName : tableNames) {
-                    if (isThread) {
+                    SyncTaskInstance taskInstance = syncTaskInstanceDAO.getById(taskInstanceId);
+                    if (taskInstance == null || SyncTaskInstance.Status.FAIL.equals(taskInstance.getStatus())) {
                         LOG.error("终止元数据同步,数据源：");
                         throw new InterruptedException("终止元数据同步,数据源：" + dataSourceInfo.getSourceName());
                     }
@@ -628,9 +637,11 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
                         LOG.debug("导入{}表的元数据", tableName.getFullName());
                     }
                     int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid);
+                    if (imported == 1) {
+                        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "成功导入表: " + tableName.getFullName());
+                    }
 
                     tablesImported += imported;
-                    updatedTables.incrementAndGet();
                 }
             } catch (InterruptedException e) {
                 throw e;
@@ -670,6 +681,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
+                    dataManageService.addEntity(Arrays.asList(ret.getEntity()));
                     LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
@@ -681,7 +693,7 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
                             ret.addReferredEntity(entry.getKey(), entry.getValue());
                         }
                     }
-
+                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()));
                     LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
                 }
             }
@@ -785,6 +797,12 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         AtlasEntityType type = (AtlasEntityType) atlasTypeRegistry.getType(tableEntity.getTypeName());
         final AtlasObjectId objectId = getObjectId(tableEntity);
         atlasEntityStore.deleteByUniqueAttributes(type, objectId.getUniqueAttributes());
+        dataManageService.updateStatus(Arrays.asList(tableEntity));
+    }
+
+    private void deleteEntityById(AtlasEntity tableEntity) throws AtlasBaseException {
+        atlasEntityStore.deleteById(tableEntity.getGuid());
+        dataManageService.updateStatus(Arrays.asList(tableEntity));
     }
 
     public static AtlasObjectId getObjectId(AtlasEntity entity) {
@@ -816,18 +834,6 @@ public class AbstractMetaDataProvider implements IMetaDataProvider {
         if (entity != null && entity.getRelationshipAttributes() != null) {
             entity.getRelationshipAttributes().clear();
         }
-    }
-
-    public AtomicInteger getUpdatedTables() {
-        return updatedTables;
-    }
-
-    public AtomicLong getStartTime() {
-        return startTime;
-    }
-
-    public AtomicLong getEndTime() {
-        return endTime;
     }
 
     public Collection<Table> getTables(final Schema schema) {

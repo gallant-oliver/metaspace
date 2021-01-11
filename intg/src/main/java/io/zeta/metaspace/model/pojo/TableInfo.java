@@ -1,7 +1,10 @@
 package io.zeta.metaspace.model.pojo;
 
+import lombok.Data;
+
 import java.util.List;
 
+@Data
 public class TableInfo {
     private String tableGuid;
     private String tableName;
@@ -19,6 +22,7 @@ public class TableInfo {
     private String catalogAdmin;
     private String displayName;
     private String description;
+    private String sourceId;
 
     public String getDescription() {
         return description;

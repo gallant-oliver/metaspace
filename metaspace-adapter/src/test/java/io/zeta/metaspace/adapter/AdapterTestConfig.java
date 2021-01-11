@@ -17,7 +17,7 @@ public class AdapterTestConfig {
         System.setProperty("atlas.conf", "src/test/resources");
         System.setProperty("metaspace.adapter.dir", "target/pluginZip");
 
-        UnitTestUtils.skipTest();
+//        UnitTestUtils.skipTest();
 
         Collection<Adapter> adapters = AdapterUtils.findDatabaseAdapters();
         log.info("已经加载成功插件：" + adapters.size());

@@ -278,6 +278,14 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
         }
     }
 
+    public void removeRelationshipAttribute(String name) {
+        Map<String, Object> a = this.relationshipAttributes;
+
+        if (a != null && a.containsKey(name)) {
+            a.remove(name);
+        }
+    }
+
     public Object getRelationshipAttribute(String name) {
         Map<String, Object> a = this.relationshipAttributes;
 

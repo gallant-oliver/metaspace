@@ -16,18 +16,22 @@
  */
 package io.zeta.metaspace.model.table;
 
+import lombok.Data;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/4/18 15:09
  * check 0 未勾选，1 全选 ，2 半选
  */
+@Data
 public class DatabaseHeader {
 
     private String databaseGuid;
     private String dbName;
     private String databasestatus;
     private int check;
+    private int total;
 
     public int getCheck() {
         return check;

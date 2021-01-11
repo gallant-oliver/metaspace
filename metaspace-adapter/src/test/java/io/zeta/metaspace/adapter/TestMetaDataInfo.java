@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
  * 元数据获取测试
  */
 @Slf4j
-@Test(enabled = false)
+@Test(enabled = true)
 public class TestMetaDataInfo extends AdapterTestConfig {
 
     /**

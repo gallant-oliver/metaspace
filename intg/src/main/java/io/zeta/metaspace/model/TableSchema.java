@@ -6,13 +6,13 @@ import java.util.List;
 
 @Data
 public class TableSchema {
-    /**
-     * 数据源id
-     */
+    //数据源id
     String instance;
-    String database;
+    //指定数据库
     List<String> databases;
     String table;
+    //只同步数据库
     boolean allDatabase;
-    boolean all=false;
+    //同步所有数据库和表
+    boolean all = false;
 }

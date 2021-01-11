@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.GroupPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.share.ProjectHeader;
+import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -481,6 +482,21 @@ public interface UserGroupDAO {
             "</script>")
     public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
+
+    @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.source_id as sourceId,(case tableinfo.source_id = 'hive' when true then  'hive' else  data_source.source_name end) as sourceName ,( case (select count(*)>0  from data_source where source_id = tableinfo.source_id) or (tableinfo.source_id = 'hive') when true then 'ACTIVE' else 'DELETED' end ) as sourceStatus from category,table_relation,tableinfo " +
+            " left join data_source on data_source.source_id = tableinfo.source_id " +
+            " where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    ) t " +
+            "  where t.sourceName like '%'||#{query}||'%' ESCAPE '/' " +
+            "order by t.sourceId <if test='limit!= -1'>limit #{limit}</if> offset #{offset} " +
+            "</script>")
+    public List<DataSourceHeader> getSourceInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit, @Param("tenantId") String tenantId);
+
+
     @Select("<script>select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
@@ -497,6 +513,25 @@ public interface UserGroupDAO {
     public List<DatabaseHeader> getDBInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
 
+    @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
+            "    <foreach item='item' index='index' collection='guids'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' " +
+            "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
+            "    <foreach item='item' index='index' collection='databases'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>)" +
+            " <if test='sourceId!=null'>"+
+            " and tableinfo.source_id = #{sourceId}"+
+            " </if>"+
+            "    order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset} ) t" +
+            "</script>")
+    public List<DatabaseHeader> getDBInfo2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases, @Param("sourceId") String sourceId,@Param("tenantId") String tenantId);
+
+
     @Select("<script>select COUNT(DISTINCT tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
@@ -511,18 +546,18 @@ public interface UserGroupDAO {
             "</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
-    @Select("<script>select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
+    @Select("<script>select count(*) over() as total, t.* from (select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid,tableinfo.source_id from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
             "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' " +
-            "    and tableinfo.dbname in " +
+            "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
             "    <foreach item='item' index='index' collection='databases'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
-            "    </foreach>" +
-            "     order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
+            "    </foreach>) ) t" +
+            "     order by t.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 

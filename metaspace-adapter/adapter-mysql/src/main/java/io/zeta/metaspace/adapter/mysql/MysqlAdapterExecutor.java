@@ -39,9 +39,9 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "select data_length from information_schema.tables where table_schema='%s' and table_name='%s'";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
-        querySQL = String.format(querySQL,db,tableName);
+        db = db.replaceAll("'", "''");
+        tableName = tableName.replaceAll("'", "''");
+        querySQL = String.format(querySQL, db, tableName);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
             try {
@@ -61,11 +61,28 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
      */
     @Override
     public String addEscapeChar(String string) {
-        return "`"+string+"`";
+        return "`" + string + "`";
     }
 
     @Override
     public String addSchemaEscapeChar(String string) {
-        return "`"+string+"`";
+        return "`" + string + "`";
+    }
+
+
+    @Override
+    public String getCreateTableSql(String schema, String table) {
+        String querySql = "SHOW CREATE TABLE " + schema + "." + table;
+        return queryResult(querySql, resultSet -> {
+            try {
+                String sql = null;
+                if (resultSet.next()) {
+                    sql = resultSet.getString(2);
+                }
+                return sql;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询建表语句失败", e);
+            }
+        });
     }
 }
